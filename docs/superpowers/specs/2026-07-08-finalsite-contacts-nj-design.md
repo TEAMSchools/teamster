@@ -314,13 +314,15 @@ the Phase 2 discovery checklist and pins the Phase 3 model shape.
   accepted). The `relationships` array mixes parents with siblings/relatives, so
   array position is not a reliable second-parent selector — which is why no
   `contact_2` is derived.
-- Consumer parent2 (**resolved**): the ~5 feeds that read the old PS
-  `contact_2_*` (parent2/father) and `pickup_*` columns **drop those columns**
-  under the 1+4 surface — they report `contact_1` + emergencies only. Affected:
-  `rpt_deanslist__student_misc`, `rpt_gsheets__kfwd_taf_contact_feed`,
-  `rpt_gsheets__kippfwd_miami_roster`,
-  `rpt_gsheets__njsmart_transfer_unverified`,
-  `rpt_gsheets__student_contact_info`.
+- Consumer parent2 (**resolved, revised**): 1+4 is a DATA-shape decision — only
+  `contact_1` + `emergency_1..4` carry data. But the retired `contact_2_*` /
+  `pickup_*` **columns are NOT removed** from reporting views: external
+  consumers (Google Sheets tabs, Tableau, DeansList, NJSMART, Clever) read fixed
+  column schemas, and dropping a column breaks the feed. So the new pivot
+  preserves the old column surface (contact_2/pickup emit NULL) and downstream
+  feeds keep their columns unchanged. This supersedes the body's "removed from
+  all surfaces" line; the enrollment team's 1+4 ask governs the data model, not
+  the view column list. The switch itself is mandated (no go/no-go gate).
 - Bridge flags (**resolved**): `emrg_N_pickup_yn` / `_custody_yn` /
   `_lives_with_yn` map to the redefined bridge's `is_pickup` / `is_custodial` /
   `is_household_member`. `contact_1` (primary relationship) carries no such

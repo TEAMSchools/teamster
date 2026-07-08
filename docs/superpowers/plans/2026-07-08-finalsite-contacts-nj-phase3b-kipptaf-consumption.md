@@ -30,10 +30,21 @@ does not consume the marts.
   `git -C <worktree>`; `uv run dbt ... --project-dir <worktree>/src/dbt/kipptaf`
   (kipptaf models) or `.../src/dbt/kippnewark` (package/district builds); dev
   target with `--defer --state /workspaces/teamster/src/dbt/<proj>/target/prod`.
-- **Surface shape (resolved):** strict **1+4** — `contact_1` + `emergency_1..4`.
-  **No `contact_2`, no `pickup_*`** anywhere. Typed phone columns
+- **Surface shape (resolved):** strict **1+4** — only `contact_1` +
+  `emergency_1..4` carry DATA. Typed phone columns
   `phone_mobile`/`_home`/`_work`/`_daytime`/`_primary` (per Plan 3a mapping:
   Cell→mobile, Home→home, Work→work, daytime→null, primary→first phone).
+- **PRESERVE reporting-view output schemas — do NOT remove now-dead columns.**
+  The `contact_2_*` and `pickup_*` columns have no data under 1+4, but external
+  consumers (Google Sheets tabs, Tableau, DeansList, NJSMART, Clever) read
+  **fixed column sets** — dropping a column breaks the feed. So every model an
+  external consumer reads (the `rpt_*` views, and the pivot / `int_extracts_*` /
+  `int_kippadb__roster` columns those views select) **keeps its existing output
+  columns**; the now-dead ones simply emit NULL. Prune a dead column ONLY from a
+  purely-internal model that no external consumer and no downstream view reads.
+  Net: this migration is mostly a **source swap** (PS → Finalsite 1+4) that
+  leaves column surfaces intact and nulls the retired slots. `emergency_4_*` is
+  a NEW additive column set (safe — consumers ignore unknown columns).
 - **Column families per contact:** `<slot>_name`, `<slot>_relationship`,
   `<slot>_email_current`, `<slot>_phone_mobile/_home/_daytime/_work/_primary`,
   and (contact_1 + emergency only where present) `<slot>_address_home`.
@@ -49,29 +60,34 @@ does not consume the marts.
 - **Miami stays PS-sourced** (Focus migration owns its cutover). The PS-mapped
   CTE covers Miami + any NJ region not yet cut over; its region list shrinks per
   cutover. Mark it `-- TODO(focus)`.
-- **SQL guide + marts rubric:** no `contact_2`/`pickup` in any mart SELECT;
-  source-agnostic column names (strip `powerschool_`/`finalsite_`); PK/FK
-  surrogate keys; `union_dataset_join_clause` / `_dbt_source_project` for union
-  joins; no `QUALIFY`/`ORDER BY`/`SELECT *` in marts; contract + uniqueness on
-  every dim/fct/rpt.
+- **SQL guide + marts rubric:** source-agnostic column names (strip
+  `powerschool_`/`finalsite_`); PK/FK surrogate keys;
+  `union_dataset_join_clause` / `_dbt_source_project` for union joins; no
+  `QUALIFY`/`ORDER BY`/`SELECT *` in marts; contract + uniqueness on every
+  dim/fct/rpt. (The preserve-schema rule above overrides any impulse to strip
+  retired `contact_2`/`pickup` columns from views.)
 - Conventional commits; branch `cbini/feat/claude-finalsite-contacts-dbt`.
 
 ## Consumer map (authoritative — from the current tree)
 
-| Consumer                                                  | Reads today                                                                                                                                           | 3b action                                                                                                                                                              |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `base_powerschool__student_enrollments` (powerschool pkg) | 73 `scw.*` contact cols from `int_powerschool__student_contacts_pivot`                                                                                | **Remove all** — package can't ref finalsite. Contact join moves to kipptaf (Task 6).                                                                                  |
-| `int_extracts__student_enrollments`                       | `e.contact_1/2_email_current` (guardian_email coalesce)                                                                                               | Join new kipptaf pivot; `guardian_email = contact_1_email_current` (drop contact_2).                                                                                   |
-| `int_extracts__student_enrollments_subjects_weeks`        | full `co.contact_1/2_*`, `emergency_1/2/3_*`, `pickup_1/2/3_*` (73 cols)                                                                              | Repoint to new pivot; keep `contact_1_*` + `emergency_1..4_*`; **drop `contact_2_*`, `pickup_*`**.                                                                     |
-| `int_kippadb__roster`                                     | `se.contact_1/2_*`, `se.emergency_1/2/3_*` → `powerschool_*` aliases                                                                                  | Keep `contact_1` + `emergency_1..3` (add `emergency_4`); **drop `contact_2_*`**. Downstream `powerschool_contact_2_*` consumers below also drop.                       |
-| `rpt_deanslist__student_misc`                             | `contact_1_name/phone_mobile/email`, `contact_2_name/phone_mobile`                                                                                    | Keep parent1 (contact_1); **drop parent2** (`contact_2_name`→`parent2_name`, `contact_2_phone_mobile`→`parent2_cell`).                                                 |
-| `rpt_gsheets__kfwd_taf_contact_feed`                      | `r.powerschool_contact_1/2_*`, `r.powerschool_emergency_contact_1/2_*`                                                                                | Keep contact_1 + emergency_1/2; **drop contact_2** block.                                                                                                              |
-| `rpt_gsheets__kippfwd_collab_roster`                      | `ktc.powerschool_contact_1_*` only                                                                                                                    | No change (contact_1 only). Verify after roster edit.                                                                                                                  |
-| `rpt_gsheets__kippfwd_miami_roster`                       | `co.contact_1/2_*`                                                                                                                                    | **Drop contact_2_*** (Miami PS-mapped → contact_1 only).                                                                                                               |
-| `rpt_gsheets__njsmart_transfer_unverified`                | `co.contact_1/2_*` (name/relationship/phone)                                                                                                          | **Drop contact_2_*** (both `contact_2` block + the `contact_2_phone` coalesce).                                                                                        |
-| `rpt_gsheets__student_contact_info`                       | `contact_1` (mother), `contact_2` (father), `pickup_1/2/3` (release_1/2/3), coalesce(contact_1,contact_2) email                                       | Keep mother (contact_1); **drop father** (contact_2) + **release_1/2/3** (pickup); email = `contact_1_email_current`.                                                  |
-| `rpt_tableau__next_year_status`                           | `co.contact_1/2_phone_mobile`, `contact_1_email` (tel_mother_cell / tel_father_cell)                                                                  | Keep tel_mother_cell (contact_1); **drop tel_father_cell** (contact_2).                                                                                                |
-| `rpt_clever__students`                                    | LONG model: `sc.person_type in ('mother','father','contact1','contact2')`, `sc.contact_name`, `sc.contact`, `sc.relationship_type`, `sc.contact_type` | Remap to the new long model's `contact_slot` values (`contact_1`, `emergency_1..4`); rebuild the phone-type `contact_type` logic from typed-phone columns. See Task 8. |
+**Governing rule:** external-facing views keep ALL current output columns; the
+retired `contact_2_*`/`pickup_*` just go NULL. "Prune" happens only inside
+internal models with no external/view consumer.
+
+| Consumer                                                  | Reads today                                                                                                       | 3b action                                                                                                                                                                                                                                            |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base_powerschool__student_enrollments` (powerschool pkg) | 73 `scw.*` cols from `int_powerschool__student_contacts_pivot`                                                    | Remove the contact join/cols (package can't ref finalsite); the contact surface moves to kipptaf `int_extracts__student_enrollments*` (Task 6). This is an internal package model — safe to prune here since the columns are re-provided downstream. |
+| `int_extracts__student_enrollments`                       | `e.contact_1/2_email_current` (guardian_email coalesce)                                                           | Source from new kipptaf pivot; **keep** `guardian_email = coalesce(contact_1_email_current, contact_2_email_current)` unchanged (contact_2 side is just NULL now).                                                                                   |
+| `int_extracts__student_enrollments_subjects_weeks`        | full `co.contact_1/2_*`, `emergency_1/2/3_*`, `pickup_1/2/3_*` (73 cols)                                          | Source from new pivot; **keep the full existing column list** (contact_2/pickup emit NULL); ADD `emergency_4_*`. Contract YAML: keep all + add emergency_4.                                                                                          |
+| `int_kippadb__roster`                                     | `se.contact_1/2_*`, `se.emergency_1/2/3_*` → `powerschool_*` aliases                                              | **Keep** all existing `powerschool_contact_1/2_*` + `emergency_1/2/3_*` aliases (contact_2 NULL); ADD `emergency_4`.                                                                                                                                 |
+| `rpt_deanslist__student_misc`                             | `contact_1/2_name/phone`, email                                                                                   | **No change** — `parent2_name`/`parent2_cell` stay, now NULL.                                                                                                                                                                                        |
+| `rpt_gsheets__kfwd_taf_contact_feed`                      | `powerschool_contact_1/2_*`, `powerschool_emergency_contact_1/2_*`                                                | **No change** — contact_2 columns stay NULL. (Optionally add emergency_3/4.)                                                                                                                                                                         |
+| `rpt_gsheets__kippfwd_collab_roster`                      | `powerschool_contact_1_*` only                                                                                    | No change.                                                                                                                                                                                                                                           |
+| `rpt_gsheets__kippfwd_miami_roster`                       | `co.contact_1/2_*`                                                                                                | **No change** — contact_2 stays NULL (Miami PS-mapped fills contact_1 only).                                                                                                                                                                         |
+| `rpt_gsheets__njsmart_transfer_unverified`                | `co.contact_1/2_*`                                                                                                | **No change** — contact_2 columns/coalesce stay NULL.                                                                                                                                                                                                |
+| `rpt_gsheets__student_contact_info`                       | `contact_1` (mother), `contact_2` (father), `pickup_1/2/3` (release), email                                       | **No change** — `father` + `release_1/2/3` stay NULL.                                                                                                                                                                                                |
+| `rpt_tableau__next_year_status`                           | `contact_1/2_phone_mobile`, `contact_1_email`                                                                     | **No change** — `tel_father_cell` stays NULL.                                                                                                                                                                                                        |
+| `rpt_clever__students`                                    | LONG model person_type-keyed (`mother`/`father`/`contact1`/`contact2`, `contact_name`, `contact`, `contact_type`) | Point at the new long model; **preserve the emitted person_type/contact_type rows/codes Clever expects** (map new `contact_slot` → the codes Clever ingests; rows for retired types simply produce no data). See Task 8.                             |
 
 ---
 
@@ -143,12 +159,23 @@ every column. Materialize table (intermediate default here).
 ## Task 2: New pivot `int_students__contacts_pivot`
 
 Replaces `int_powerschool__student_contacts_pivot` as the reporting source. One
-row per `(student_number, _dbt_source_project)`; columns `contact_1_<attr>` +
-`emergency_{1..4}_<attr>` for attr in {`name`, `relationship`, `email_current`,
-`phone_mobile`, `phone_home`, `phone_daytime`, `phone_work`, `phone_primary`,
-`address_home`}. BigQuery `PIVOT` (or conditional aggregation) over
-`contact_slot`. Grain test on `[student_number, _dbt_source_project]`. Build +
-verify the column set matches what the enrollment chain needs (Task 6). Commit.
+row per `(student_number, _dbt_source_project)`. **To preserve downstream/output
+schemas, emit the SAME column surface the old pivot did** — `contact_1_<attr>`,
+`contact_2_<attr>`, `emergency_{1,2,3}_<attr>`, `pickup_{1..5}_<attr>` — PLUS
+the new `emergency_4_<attr>`, for attr in {`name`, `relationship`,
+`email_current`, `phone_mobile`, `phone_home`, `phone_daytime`, `phone_work`,
+`phone_primary`, `address_home`}. Under 1+4 the long model has no rows for
+`contact_2`/`pickup_*`, so those columns pivot to NULL automatically (the
+`PIVOT`/conditional-aggregation over `contact_slot` just finds no matching
+rows). No consumer or contract needs a column removed; `int_extracts_*` keeps
+its existing list. Grain test on `[student_number, _dbt_source_project]`.
+Build + verify the old column set is present-but-null for contact_2/pickup and
+populated for contact_1/emergency_1-4. Commit.
+
+> Get the authoritative old-pivot column list from
+> `int_powerschool__student_contacts_pivot` (or `INFORMATION_SCHEMA.COLUMNS` on
+> the prod table) so the new pivot's `for contact_slot in (...)` + projected
+> columns reproduce every existing name.
 
 ---
 
@@ -200,26 +227,31 @@ projects locally to confirm no other consumer of
 - Join `int_students__contacts_pivot` (on `student_number` +
   `_dbt_source_project`) in place of the removed `base_powerschool` contact
   columns.
-- `int_extracts__student_enrollments`:
-  `guardian_email = contact_1_email_current` (drop the `contact_2` coalesce).
-- `int_extracts__student_enrollments_subjects_weeks`: keep `contact_1_*` +
-  `emergency_1..4_*`; DROP every `contact_2_*` and `pickup_*` column. Update the
-  contract YAMLs (these are contract-enforced) in the same change. Build +
-  verify. Commit.
+- `int_extracts__student_enrollments`: **keep**
+  `guardian_email = coalesce(contact_1_email_current, contact_2_email_current)`
+  as-is (the contact_2 side is NULL now; leaving it costs nothing and avoids a
+  diff).
+- `int_extracts__student_enrollments_subjects_weeks`: **keep the full existing
+  column list** (contact_2_* / pickup_* emit NULL from the new pivot); ADD
+  `emergency_4_*`. Contracts stay as-is plus the new emergency_4 columns. Do NOT
+  remove columns — external consumers read this chain. Build + verify. Commit.
 
 ---
 
 ## Task 7: Update `int_kippadb__roster` + the extract feeds
 
-Per the consumer-map table. For each file: drop `contact_2_*` (and
-`powerschool_contact_2_*`) and `pickup_*` refs; keep `contact_1` + emergency;
-add `emergency_4` where the feed lists emergencies. Update contract YAMLs where
-present. One commit per file (subagent-driven task each), building + verifying
-each against dev. Feeds: `int_kippadb__roster`, `rpt_deanslist__student_misc`,
-`rpt_gsheets__kfwd_taf_contact_feed`, `rpt_gsheets__kippfwd_miami_roster`,
-`rpt_gsheets__njsmart_transfer_unverified`, `rpt_gsheets__student_contact_info`,
-`rpt_tableau__next_year_status`. (`rpt_gsheets__kippfwd_collab_roster` reads
-only `contact_1` — verify, likely no edit.)
+Per the consumer-map table. **Most of these need NO edit** — because the pivot
+(Task 2) preserves the old column surface, the existing `contact_2_*`/`pickup_*`
+selects just resolve to NULL. `int_kippadb__roster` is the one worth touching:
+**keep** its existing `powerschool_contact_1/2_*` + `emergency_1/2/3_*` aliases
+(contact_2 NULL) and optionally ADD `emergency_4`. The `rpt_*` feeds
+(`rpt_deanslist__student_misc`, `rpt_gsheets__kfwd_taf_contact_feed`,
+`rpt_gsheets__kippfwd_miami_roster`, `rpt_gsheets__njsmart_transfer_unverified`,
+`rpt_gsheets__student_contact_info`, `rpt_tableau__next_year_status`,
+`rpt_gsheets__kippfwd_collab_roster`) are **verify-only** — build each and
+confirm it still compiles and its external output columns are intact (now partly
+NULL). The whole point of preserving the pivot surface is that these feeds don't
+churn. Only touch a feed if you're intentionally wiring `emergency_4` into it.
 
 ---
 
@@ -237,10 +269,12 @@ emit (Clever expects specific contact-type codes). Build + verify. Commit.
 
 - [ ] Grain/uniqueness + `relationships` FK tests on the new dim/bridge/pivot
       (warn or error per layer).
-- [ ] **Cutover coverage gate (Newark):** compare Finalsite-sourced vs the prior
-      PS-sourced surface for Newark enrolled students — % with `contact_1`, %
-      with ≥1 emergency, phone/email fill. A material drop blocks the Newark PR
-      from flipping the reporting source. Query documented inline.
+- [ ] **Cutover coverage check (Newark) — informational, NOT a gate.** The
+      switch is mandated by the enrollment team (no go/no-go). Still worth
+      running once for confidence + to spot ingestion gaps: compare
+      Finalsite-sourced vs prior PS-sourced fill for Newark enrolled students (%
+      with `contact_1`, % with ≥1 emergency, phone/email fill). Report it;
+      surface surprises but don't block on it.
 - [ ] Update dbt exposures for any changed extract (the feeds have exposures
       under `models/exposures/`); no Cube exposure change (not a consumer).
 - [ ] Trunk-check all changed SQL/YAML from inside the worktree.
@@ -250,15 +284,18 @@ emit (Clever expects specific contact-type codes). Build + verify. Commit.
 ## Self-review notes
 
 - **Spec coverage:** covers spec §2 kipptaf items (union, pivot, dim, bridge,
-  powerschool-package removal, consumer updates) + the resolved decisions (1+4,
-  typed phones, drop parent2/pickup, PS-mapped Miami CTE). Cube task dropped
-  (not a consumer — verified). Finalsite-package foundation is Plan 3a.
+  powerschool-package removal, consumer source-swap) + the resolved decisions
+  (1+4 DATA shape with preserved output columns, typed phones, PS-mapped Miami
+  CTE). Cube task dropped (not a consumer — verified). Finalsite-package
+  foundation is Plan 3a.
 - **Sequencing risk:** Task 5 (package) + Task 1 (finalsite source reads) cross
   the project boundary — follow two-PR or single-PR cross-project workflow, or
   CI fails on stale `zz_stg_*`. Do not merge this before 3a is in prod.
-- **Blast radius:** removing `contact_2`/`pickup` changes live external feeds
-  (DeansList, KIPP Forward sheets, NJSMART, Tableau, Clever). The cutover
-  coverage gate (Task 9) must pass before the Newark reporting source flips.
+- **Low blast radius by design:** because the pivot preserves the old column
+  surface, retired `contact_2_*`/`pickup_*` go NULL instead of disappearing —
+  external feeds (DeansList, KIPP Forward sheets, NJSMART, Tableau, Clever) keep
+  their schemas and mostly need no edit. This is a source swap, not a
+  surface-breaking change. The switch is mandated (no go/no-go gate).
 - **Camden/Paterson:** creds now in 1Password — their ingestion (a Phase-1
   repeat) + per-region `emrg`/phone-type discovery re-check must land before
   moving them from the PS-mapped branch to the Finalsite branch in Task 1.
