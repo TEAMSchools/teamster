@@ -236,9 +236,11 @@ the Phase 2 discovery checklist and pins the Phase 3 model shape.
   **94.7%** (6,389 / 6,740 with relationships); on non-student records only
   22.3% (parent records point back at the student, primary unset).
 - **Rule:** `contact_1` = the `relationships` element with `primary = true` on
-  the student record. **Open decision:** fallback for the ~5.3% of students with
-  relationships but no `primary` — first array element, `rel_type` priority, or
-  leave null.
+  the student record. **Fallback (resolved):** for the ~5.3% of students with
+  relationships but no `primary`, use the **first array element**
+  (`relationships[0]`) — justified because when `primary` IS set it sits at
+  offset 0 in 79.1% of cases (offset 1: 15.4%, tail after), so array order
+  tracks rank.
 
 ### contact_1 detail resolution
 
@@ -278,8 +280,14 @@ the Phase 2 discovery checklist and pins the Phase 3 model shape.
 - `contact_1`: primary-relationship join (details from the resolved parent
   record), plus a fallback-pick rule for no-primary students.
 - `emergency_1..4`: direct from `emrg_N_*` fields; no `rel_id` join. Emergency
-  ordering — **open decision:** natural set order vs `emrg_N_priority_ss`.
-- Bridge flags: `emrg_N_pickup_yn` / `_custody_yn` / `_lives_with_yn` map to the
-  redefined bridge's `is_pickup` / `is_custodial` / `is_household_member`.
-  `contact_1` (primary relationship) carries no such flags — **confirm** those
-  bridge columns are null for the top contact.
+  ordering (**resolved**): order by `emrg_N_priority_ss` (numeric string) asc,
+  tiebreak on natural set order (`emrg_1`..`emrg_4`), nulls last. `priority_ss`
+  values run 1-8 and appear to be a **global family ranking** (priority 1 is
+  typically the primary guardian in the contacts module, so emergency sets
+  usually start at 2 — emrg_1 is modally priority 2, emrg_2 priority 3, etc.);
+  values collide across sets, hence the natural-order tiebreaker.
+- Bridge flags (**resolved**): `emrg_N_pickup_yn` / `_custody_yn` /
+  `_lives_with_yn` map to the redefined bridge's `is_pickup` / `is_custodial` /
+  `is_household_member`. `contact_1` (primary relationship) carries no such
+  flags — they are **null/false** for the top contact (the two sources don't
+  share these flags; no fuzzy matching between them).
