@@ -2,14 +2,15 @@
   One row per active, primary staff member, keyed on staff_key. Resolves each
   person's current role to the Cube access model: the student location scope,
   the staff sensitive-field remit (location + department), and the per-field
-  sensitive scopes. Read by Cube's contextToGroups (by google_email) to build
-  the access group list and the queryRewrite filters; not exposed as a Cube.
-  Assembled intra-mart from the current primary work assignment; mappings come
-  from the Google Sheets crosswalks (department override wins over the role
-  mapping). entity (KTAF/Region) is derived from business_unit_name. The viewer
-  identity keys (region_key, location_abbreviation, department_group) are carried
-  so cube.js builds location/department filters from the scope level. Rows that
-  resolve to no role emit 'none' (deny) rather than NULL.
+  sensitive scopes. Read by cube.js's resolveAccess (by google_email) to build
+  the securityContext groups and the location/department allow-lists that each
+  view's access_policy reads; not exposed as a Cube. Assembled intra-mart from
+  the current primary work assignment; mappings come from the Google Sheets
+  crosswalks (department override wins over the role mapping). entity
+  (KTAF/Region) is derived from business_unit_name. The viewer identity keys
+  (region_key, location_abbreviation, department_group) are carried so
+  resolveAccess precomputes the location/department allow-lists from the scope
+  level. Rows that resolve to no role emit 'none' (deny) rather than NULL.
 
   Role crosswalk fan-out invariant: the cube_access_role sheet must never carry
   both a wildcard row (entity='any') and a specific row for the same

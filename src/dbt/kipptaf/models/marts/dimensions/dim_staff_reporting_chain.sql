@@ -1,9 +1,10 @@
 {#-
   Transitive closure of the CURRENT org tree, keyed on staff_key. One row per
   (manager_staff_key, reportee_staff_key) reachable through the reporting chain,
-  plus a depth-0 self-pair per staff. Read by Cube's contextToGroups to grant a
-  manager detail access to their own downline. Edges are the current primary
-  reporting relationships only, so the closure reflects today's org.
+  plus a depth-0 self-pair per staff. Read by cube.js's resolveAccess to grant a
+  manager PII access to their own downline (the staff-pii-reporting_chain scope).
+  Edges are the current primary reporting relationships only, so the closure
+  reflects today's org.
 
   Uses WITH RECURSIVE, so this model sets contract: enforced: false — contract
   validation wraps the model SQL in a subquery, and BigQuery only allows
@@ -12,9 +13,10 @@
   Isolated-node gap: all_staff derives exclusively from edges
   (dim_work_assignment_reporting_relationships). A staff member with no reporting
   relationship row at all — no manager, no direct reports — will not appear in
-  all_staff and therefore receives no self-pair. For cube.js reporting_chain
-  scope, this means reporteeStaffKeys resolves to [] and the scope filter denies
-  access as if they had no downline. In practice virtually all KTAF staff have at
+  all_staff and therefore receives no self-pair. For the
+  staff-pii-reporting_chain scope, this means reportee_staff_keys resolves to []
+  and the staff_pii row_level filter denies access as if they had no downline. In
+  practice virtually all KTAF staff have at
   least one reporting relationship, but a newly-hired executive before their
   direct reports are loaded, or an ADP data-quality gap, will hit this silently.
   Debug by checking dim_work_assignment_reporting_relationships for the affected
