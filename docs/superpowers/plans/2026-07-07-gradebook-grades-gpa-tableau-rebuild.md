@@ -1609,7 +1609,3 @@ Tableau data source points at
 `kipptaf_tableau.rpt_tableau__student_course_grades` +
 `kipptaf_tableau.rpt_tableau__gpa_cumulative_year` related on `student_number`;
 exposure yml lands once the workbook LSID exists (#4340).
-
-```
-
-```
