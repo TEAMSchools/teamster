@@ -258,10 +258,20 @@ git -C /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-dbt 
 - Produces: grain `(finalsite_enrollment_id, contact_slot)` where
   `contact_slot ∈ {'contact_1','emergency_1','emergency_2','emergency_3','emergency_4'}`.
   Columns (all nullable except keys): `finalsite_enrollment_id` (student contact
-  id), `contact_slot`, `contact_name`, `relationship`, `email`, `phone`,
-  `phone_type`, `home_address`, `is_pickup`, `is_custodial`,
-  `is_household_member`, `is_emergency`. Sparse — a slot row is emitted only
-  when that slot has data.
+  id), `contact_slot`, `contact_name`, `relationship`, `email`, **typed phones**
+  `phone_mobile`, `phone_home`, `phone_work`, `phone_daytime`, `phone_primary`,
+  `home_address`, `is_pickup`, `is_custodial`, `is_household_member`,
+  `is_emergency`. Sparse — a slot row is emitted only when that slot has data.
+- **Phone typing (both slots):** map the up-to-3 phones by their `_type` value —
+  `phone_mobile` = the phone with type `Cell`; `phone_home` = type `Home`;
+  `phone_work` = type `Work`; `phone_daytime` = null (no Finalsite equivalent);
+  `phone_primary` = `phone_1.number` / `emrg_N_phone_1_number` (the first phone,
+  regardless of type — ~32% of parent phones are blank-type so only `_primary`
+  catches them). For `contact_1` the phones come from the parent record's
+  `phone_1/2/3` (each `{number, phone_type}`); for `emergency_N` from
+  `emrg_N_phone_{1,2,3}_number` + `_type`. Derive each typed column with
+  `coalesce(if(type='Cell', number, null) ...)` over the 3 phones in an upstream
+  CTE (max 1 function nesting; no subqueries) — do NOT emit a single `phone`.
 
 - [ ] **Step 1: Identify student records**
 

@@ -275,6 +275,28 @@ the Phase 2 discovery checklist and pins the Phase 3 model shape.
   `id_attributes.powerschool_student_number` (existing
   `int_finalsite__contact_id_attributes` pivot).
 
+### Phone typing (for the downstream surface)
+
+- The existing pivot surface exposes typed phone columns (`*_phone_mobile` /
+  `_home` / `_daytime` / `_work` / `_primary`). Finalsite `phone_type`
+  vocabulary is **`Cell` / `Home` / `Work`** (plus blank). Mapping:
+  `phone_mobile`←Cell, `phone_home`←Home, `phone_work`←Work,
+  `phone_daytime`←null (no Finalsite equivalent), `phone_primary`←`phone_1`
+  (first listed, ~32% are blank-type so only `_primary` catches them). Both
+  `contact_1` (parent `phone_1/2/3`) and `emergency_N` (`emrg_N_phone_1/2/3`)
+  carry `_type` per phone. So `int_finalsite__student_contacts` emits the typed
+  phone columns, not a single `phone`.
+
+### Consumers of the marts
+
+- `dim_student_contact_persons` / `bridge_student_contacts` are **not**
+  referenced by Cube (`grep src/cube` empty) — the spec's "ship a Cube update"
+  step does not apply. Their consumers are the enrollment-pivot chain
+  (`base_powerschool__student_enrollments` → `int_extracts__student_enrollments`
+  (+`_subjects_weeks`) → the extract feeds) and `int_kippadb__roster`;
+  `rpt_clever__students` reads the LONG contact model (person_type-keyed), not
+  the pivot.
+
 ### Model-shape implications (Phase 3)
 
 - `contact_1`: primary-relationship join (details from the resolved parent
@@ -286,6 +308,20 @@ the Phase 2 discovery checklist and pins the Phase 3 model shape.
   typically the primary guardian in the contacts module, so emergency sets
   usually start at 2 — emrg_1 is modally priority 2, emrg_2 priority 3, etc.);
   values collide across sets, hence the natural-order tiebreaker.
+- Contacts-module shape (**resolved**): strict **1+4** — `contact_1` only from
+  the module (no `contact_2`), ranked over **any** relationship type (no
+  guardian-type filter; `primary` is ~99% a parent so contact_1 is a parent in
+  practice, and the first-element fallback may occasionally be a sibling —
+  accepted). The `relationships` array mixes parents with siblings/relatives, so
+  array position is not a reliable second-parent selector — which is why no
+  `contact_2` is derived.
+- Consumer parent2 (**resolved**): the ~5 feeds that read the old PS
+  `contact_2_*` (parent2/father) and `pickup_*` columns **drop those columns**
+  under the 1+4 surface — they report `contact_1` + emergencies only. Affected:
+  `rpt_deanslist__student_misc`, `rpt_gsheets__kfwd_taf_contact_feed`,
+  `rpt_gsheets__kippfwd_miami_roster`,
+  `rpt_gsheets__njsmart_transfer_unverified`,
+  `rpt_gsheets__student_contact_info`.
 - Bridge flags (**resolved**): `emrg_N_pickup_yn` / `_custody_yn` /
   `_lives_with_yn` map to the redefined bridge's `is_pickup` / `is_custodial` /
   `is_household_member`. `contact_1` (primary relationship) carries no such
