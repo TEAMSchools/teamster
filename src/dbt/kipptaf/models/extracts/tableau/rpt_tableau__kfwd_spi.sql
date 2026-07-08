@@ -1,3 +1,26 @@
+with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    overgrad_award_letters_pre as (
+        select
+            student__external_student_id,
+            cast(university__ipeds_id as string) as university__ipeds_id,
+            award_letter__unmet_need,
+            award_letter__out_of_pocket,
+            award_letter__unmet_need_with_max_family_contribution,
+            updated_at,
+        from {{ ref("stg_overgrad__admissions") }}
+    ),
+
+    overgrad_award_letters as (
+        {{
+            dbt_utils.deduplicate(
+                relation="overgrad_award_letters_pre",
+                partition_by="student__external_student_id, university__ipeds_id",
+                order_by="(award_letter__unmet_need is null) asc, updated_at desc",
+            )
+        }}
+    )
+
 select
     r.contact_id,
     r.lastfirst as student_name,
@@ -31,6 +54,10 @@ select
     a.billing_state as school_state,
     a.name as school_name,
     a.hbcu,
+
+    oa.award_letter__unmet_need,
+    oa.award_letter__out_of_pocket,
+    oa.award_letter__unmet_need_with_max_family_contribution,
 
     'Enrollments' as `data_source`,
 
@@ -139,6 +166,10 @@ inner join
     and e.status != 'Did Not Enroll'
 left join {{ ref("stg_kippadb__account") }} as a on e.school = a.id
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
+left join
+    overgrad_award_letters as oa
+    on r.contact_id = oa.student__external_student_id
+    and a.nces_id = oa.university__ipeds_id
 
 union all
 
@@ -180,6 +211,10 @@ select
     a.account_billing_state as school_state,
     a.account_name as school_name,
     a.hbcu,
+
+    oa.award_letter__unmet_need,
+    oa.award_letter__out_of_pocket,
+    oa.award_letter__unmet_need_with_max_family_contribution,
 
     'Applications' as `data_source`,
 
@@ -223,3 +258,8 @@ left join
     on r.contact_id = a.applicant
     and a.rn_application_school = 1
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on r.contact_id = ei.student
+left join {{ ref("stg_kippadb__account") }} as acct on a.school = acct.id
+left join
+    overgrad_award_letters as oa
+    on r.contact_id = oa.student__external_student_id
+    and acct.nces_id = oa.university__ipeds_id
