@@ -1,0 +1,48 @@
+models:
+  - name: stg_focus__students_join_address
+    description: >-
+      Focus student-to-address links (live rows only) — one row per join id,
+      relating a student to an address with mailing / residence / bus flags.
+      Soft-deleted rows are excluded. Used to tell whether a student already has
+      an address in Focus.
+    columns:
+      - name: id
+        description: Primary key — Focus students_join_address id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Focus student id the address is linked to.
+        data_type: int
+      - name: address_id
+        description: Focus address id linked to the student.
+        data_type: int
+      - name: mailing
+        description: Y/N — whether this is the student's mailing address.
+        data_type: string
+      - name: residence
+        description: Y/N — whether this is the student's residential address.
+        data_type: string
+      - name: bus_pickup
+        description: Y/N — whether this address is a bus pickup location.
+        data_type: string
+      - name: bus_dropoff
+        description: Y/N — whether this address is a bus dropoff location.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the link originated from an import.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp

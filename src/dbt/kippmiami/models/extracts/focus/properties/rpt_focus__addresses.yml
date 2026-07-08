@@ -1,5 +1,13 @@
 models:
   - name: rpt_focus__addresses
+    description: >-
+      Address export for Focus SIS — import-once: emits a student's address only
+      when the student has no address linked in Focus yet (anti-join on
+      stg_focus__students_join_address) and the mailable address is complete
+      (address, city, state, zipcode all present). The completeness gate keeps a
+      blank address from being imported once and then locking out the real one.
+      Existing Focus addresses are never overwritten; enrollment ops harmonize
+      post-import changes manually.
     columns:
       - name: student_id
         data_type: string
@@ -25,3 +33,57 @@ models:
         data_type: string
       - name: mail_state
         data_type: string
+
+unit_tests:
+  - name: addresses_import_once_suppresses_existing
+    description: >-
+      Import-once plus completeness gate — a student with a complete address and
+      no Focus address is kept; a student already in Focus is suppressed; a
+      student with a blank address is suppressed so an empty record is not
+      imported once and locked in.
+    model: rpt_focus__addresses
+    given:
+      - input: source("kipptaf_extracts", "rpt_focus__addresses")
+        format: sql
+        rows: |
+          select
+              '8400000001' as student_id, '1 Main St' as address,
+              cast(null as string) as address2, 'Miami' as city,
+              'FL' as state, '33101' as zipcode, cast(null as string) as phone,
+              cast(null as string) as mailing,
+              cast(null as string) as mail_address,
+              cast(null as string) as mail_address2,
+              cast(null as string) as mail_city, cast(null as string) as mail_state
+          union all
+          select
+              '8400000002' as student_id, '2 Oak Ave' as address,
+              cast(null as string) as address2, 'Miami' as city,
+              'FL' as state, '33102' as zipcode, cast(null as string) as phone,
+              cast(null as string) as mailing,
+              cast(null as string) as mail_address,
+              cast(null as string) as mail_address2,
+              cast(null as string) as mail_city, cast(null as string) as mail_state
+          union all
+          select
+              '8400000003' as student_id, cast(null as string) as address,
+              cast(null as string) as address2, cast(null as string) as city,
+              cast(null as string) as state, cast(null as string) as zipcode,
+              cast(null as string) as phone, cast(null as string) as mailing,
+              cast(null as string) as mail_address,
+              cast(null as string) as mail_address2,
+              cast(null as string) as mail_city, cast(null as string) as mail_state
+      - input: ref("stg_focus__students_join_address")
+        format: sql
+        rows: |
+          select 8400000002 as student_id
+    expect:
+      format: sql
+      rows: |
+        select
+            '8400000001' as student_id, '1 Main St' as address,
+            cast(null as string) as address2, 'Miami' as city,
+            'FL' as state, '33101' as zipcode, cast(null as string) as phone,
+            cast(null as string) as mailing,
+            cast(null as string) as mail_address,
+            cast(null as string) as mail_address2,
+            cast(null as string) as mail_city, cast(null as string) as mail_state

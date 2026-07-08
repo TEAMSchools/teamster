@@ -61,8 +61,12 @@ school_calendars) go in `cubes/conformed/`.
   resolutions: a compound join on the canonical path (see
   `student_attendance.yml` → `school_calendars`), or a degenerate FK with no
   declared join. Comment the choice.
-- **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:`; joins from
-  facts cast through (`CAST({CUBE}.date_key AS TIMESTAMP)`).
+- **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:` — but never
+  reference a time dimension in a join `sql:`. Cube substitutes the
+  query-timezone conversion (`convertTz`) into join predicates, so
+  `{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)` matches zero rows
+  under any non-UTC query timezone (#4298). Join on raw DATE keys instead
+  (`{dates.date_key} = {CUBE}.date_key`).
 - **Hidden helper measures** prefix with `_` and set `public: false` (see
   `_sum_attendance_value` building blocks).
 - **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in

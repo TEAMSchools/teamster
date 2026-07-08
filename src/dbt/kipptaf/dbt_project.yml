@@ -117,6 +117,8 @@ models:
       +schema: finance
     fldoe:
       +schema: fldoe
+    focus:
+      +schema: focus
     google:
       appsheet:
         +schema: google_appsheet

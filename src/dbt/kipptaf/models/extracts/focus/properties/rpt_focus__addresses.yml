@@ -7,10 +7,11 @@ models:
       One row per in-scope Finalsite student reshaped into the Focus `ADDRESS`
       SFTP template layout. Joins `stg_finalsite__contacts` to
       `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
-      `finalsite_enrollment_id`), then left joins
-      `int_finalsite__contact_id_attributes` for the Focus student ID. Produces
-      12 columns in `ADDRESS_LAYOUT` order. Focus column header casing
-      (`STUDENT_ID`, `ADDRESS`, etc.) is applied at transport time via
+      `finalsite_enrollment_id`), then inner joins
+      `int_finalsite__contact_id_attributes` for the Focus student ID, excluding
+      contacts without a minted Focus id. Produces 12 columns in
+      `ADDRESS_LAYOUT` order. Focus column header casing (`STUDENT_ID`,
+      `ADDRESS`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. Mailing address columns are always null — Focus does
       not receive a separate mailing address from Finalsite.
@@ -19,11 +20,13 @@ models:
         data_type: string
         description:
           Focus student id (Focus `STDT_ID`) from
-          `int_finalsite__contact_id_attributes.focus_student_id`; null for
-          contacts where Finalsite has not minted the id.
+          `int_finalsite__contact_id_attributes.focus_student_id_prefixed`. Rows
+          for contacts without a minted Focus id are excluded from this extract.
         data_tests:
           - unique
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: address
         data_type: string
         description: Primary street address line 1 from Finalsite (`address_1`).
@@ -90,11 +93,11 @@ unit_tests:
         rows: |
           select
             'enr-001' as finalsite_enrollment_id,
-            '4004004' as focus_student_id
+            '84004004004' as focus_student_id_prefixed
     expect:
       rows:
         - {
-            student_id: "4004004",
+            student_id: "84004004004",
             address: 123 Main St,
             address2: Apt 4B,
             city: Miami,

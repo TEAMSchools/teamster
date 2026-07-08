@@ -73,6 +73,8 @@ models:
           +enabled: false
         int_powerschool__gpa_cumulative:
           +enabled: false
+        int_powerschool__gpa_cumulative_year:
+          +enabled: false
         int_powerschool__gpa_term:
           +enabled: false
         int_powerschool__category_grades:
