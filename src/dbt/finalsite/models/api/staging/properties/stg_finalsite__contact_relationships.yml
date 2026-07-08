@@ -46,3 +46,9 @@ models:
       - name: has_portal_access
         data_type: boolean
         description: Whether the related person has Finalsite portal access.
+      - name: rel_offset
+        data_type: integer
+        description:
+          Zero-based position of this relationship within the contact's
+          `relationships` array; used to pick a deterministic fallback
+          relationship when no `is_primary` row exists.
