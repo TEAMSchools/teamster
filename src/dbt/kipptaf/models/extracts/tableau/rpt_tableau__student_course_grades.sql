@@ -160,8 +160,14 @@ with
         where
             enr.rn_year = 1
             and not enr.is_out_of_district
-            and enr.enroll_status != -1
+            /* status guard drops pre-registered (-1, which can pass
+               is_enrolled_recent) and invalid (1) rows */
+            and enr.enroll_status in (0, 2, 3)
+            and enr.is_enrolled_recent
+            /* upper bound keeps next-year pre-enrollment stubs out of the
+               2-year window */
             and enr.academic_year >= {{ var("current_academic_year") - 1 }}
+            and enr.academic_year <= {{ var("current_academic_year") }}
             /* Miami hard-excluded: region unsupported in the rebuilt
                dashboard (#4340) */
             -- TODO(#4340): add Paterson once PS gradebook data is populated

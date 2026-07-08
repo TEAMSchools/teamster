@@ -429,6 +429,14 @@ the allowlist.
   entity-encode `&`→`&amp;` and `"`→`&#34;` (not strip) — harmless in rendered
   prose but rendered literally inside code spans and in titles, so avoid `&` /
   `"` in PR/issue titles and code spans (use "and" / single quotes).
+- **The `mcp__github__*` read tools also sanitize on OUTPUT**:
+  `pull_request_read` / `issue_read` strip `<...>` and encode `'`→`&#39;` in the
+  body they return, so a just-written body read back through them shows phantom
+  corruption even when the stored body is intact (likely why the "even inside a
+  fence" stripping above reads worse than it stores). Verify the TRUE stored
+  body with raw `gh api repos/<owner>/<repo>/pulls/<n> --jq .body` (a GET —
+  works via Bash, whereas `gh pr view` is denied) before re-writing to "fix"
+  apparent corruption.
 - `mcp__github__pull_request_review_write` `method=create` requires the FULL
   40-char `commitID` — an abbreviated SHA fails with "Could not coerce value ...
   to GitObjectID".

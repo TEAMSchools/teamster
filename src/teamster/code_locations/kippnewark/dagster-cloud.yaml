@@ -185,6 +185,16 @@ locations:
                   secretKeyRef:
                     name: op-amplify-sftp-kipptaf
                     key: username
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippnewark
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippnewark
+                    key: password
         run_k8s_config:
           container_config:
             env:
@@ -227,6 +237,16 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-ssh-kippnewark
+                    key: password
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippnewark
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippnewark
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:
