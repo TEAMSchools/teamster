@@ -90,8 +90,11 @@ views:
             - status_reason
             - position_title
             - job_code
+            - job_function_code
+            - job_function_level
             - worker_type
             - department_name
+            - department_group
             - business_unit_name
             - is_primary_position
             - is_management_position
