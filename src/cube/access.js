@@ -14,10 +14,6 @@
 //     staff_pii_scope (staff-pii-<scope>), scoped by a location ∩ department
 //     remit precomputed into allowed_abbreviations / allowed_department_groups.
 
-// A query member is "<view>.<member>"; the domain is the leading token.
-const isStudentMember = (member) => member.startsWith("student");
-const isStaffMember = (member) => member.startsWith("staff");
-
 // Sensitive staff leaf → the access-row scope column that gates it. The PII
 // members live in the staff_pii view; compensation is registered here
 // (forward-compat) but gates nothing until its cube + view are built.
@@ -44,15 +40,6 @@ const STAFF_SENSITIVE_TIERS = [
   { scope: "staff_observations_scope", group: "staff-observations" },
   { scope: "staff_benefits_scope", group: "staff-benefits" },
 ];
-
-function queryMembers(query) {
-  return [
-    ...(query.dimensions ?? []),
-    ...(query.measures ?? []),
-    ...(query.timeDimensions ?? []).map((td) => td.dimension).filter(Boolean),
-    ...(query.filters ?? []).map((f) => f.member).filter(Boolean),
-  ];
-}
 
 // Column-visibility tiers the views gate on. The staff directory + summary are
 // open to every staff viewer (any resolved row), so a single staff-directory
@@ -157,9 +144,6 @@ function buildSecurityContext(
 }
 
 module.exports = {
-  isStudentMember,
-  isStaffMember,
-  queryMembers,
   buildGroups,
   buildSecurityContext,
   computeAllowedAbbreviations,

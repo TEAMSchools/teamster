@@ -22,13 +22,6 @@ const SL = {
   staff_benefits_scope: "none",
 };
 
-test("isStudentMember / isStaffMember key off the view prefix", () => {
-  assert.ok(a.isStudentMember("student_attendance_detail.x"));
-  assert.ok(!a.isStudentMember("staff_detail.x"));
-  assert.ok(a.isStaffMember("staff_summary.race"));
-  assert.ok(!a.isStaffMember("student_enrollments_detail.x"));
-});
-
 test("buildGroups: SL gets the single student tier and staff directory+pii", () => {
   const g = a.buildGroups(SL);
   assert.ok(g.includes("student-school"));

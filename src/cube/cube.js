@@ -1,5 +1,9 @@
 const access = require("./access");
 const jwt = require("jsonwebtoken");
+// CubejsHandlerError carries an HTTP status Cube's api-gateway honors; a bare
+// Error from checkAuth becomes a 500. Resolved transitively from the bundled
+// @cubejs-backend/server (not pinned in package.json, to avoid version skew).
+const { CubejsHandlerError } = require("@cubejs-backend/api-gateway");
 
 const groupCache = new Map(); // email → { ctx, expiresAt }
 
@@ -29,9 +33,9 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// All access-resolution logic (isStudentMember / isStaffMember, group building,
-// row filters) lives in access.js (pure, unit-tested). cube.js owns only the
-// BigQuery identity reads + cache below.
+// All pure access-resolution logic (buildGroups, buildSecurityContext, the
+// allow-list computations) lives in access.js (unit-tested). cube.js owns only
+// the BigQuery identity reads + cache below.
 
 // Fetches the domain-agnostic "universes" (all location abbreviations+regions,
 // all distinct department groups) that access.computeAllowedAbbreviations /
@@ -182,14 +186,20 @@ module.exports = {
     // `auth` is the raw bearer token STRING (a custom checkAuth replaces Cube's
     // default JWT verify+decode). Verify the HS256 signature against
     // CUBEJS_API_SECRET ourselves, then resolve identity from the email claim.
-    // No/invalid token → jwt.verify throws → Cube rejects the request. A request
-    // with no Authorization header resolves to the empty default-deny context.
+    // An invalid/expired token → clean 403 (see catch below). A request with no
+    // Authorization header resolves to the empty default-deny context.
     let email;
     if (auth) {
-      const payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
-        algorithms: ["HS256"],
-      });
-      email = payload?.email;
+      try {
+        const payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
+          algorithms: ["HS256"],
+        });
+        email = payload?.email;
+      } catch (err) {
+        // Mirror Cube's default checkAuth: a bad/expired token is a clean 403,
+        // not a bare-Error 500 (only CubejsHandlerError carries a status).
+        throw new CubejsHandlerError(403, "Forbidden", "Invalid token", err);
+      }
     }
     req.securityContext = await resolveAccess(email);
   },

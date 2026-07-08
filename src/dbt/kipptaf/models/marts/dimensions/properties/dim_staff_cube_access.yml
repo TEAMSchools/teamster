@@ -7,10 +7,23 @@ models:
       and the per-field sensitive scopes, derived from the current primary work
       assignment and the Google Sheets access crosswalks (department
       special-access override taking precedence over the role mapping). Read by
-      Cube's contextToGroups, matched on google_email, to build the access group
-      list and queryRewrite filters; not exposed as a Cube. The staff directory
-      and aggregate summary are open — these scopes only constrain sensitive
-      fields. Unresolved roles emit 'none' (deny), never NULL.
+      cube.js's resolveAccess, matched on google_email, to build the
+      securityContext groups and location/department allow-lists that each
+      view's access_policy reads; not exposed as a Cube. The staff directory and
+      aggregate summary are open — these scopes only constrain sensitive fields.
+      Unresolved roles emit 'none' (deny), never NULL.
+    data_tests:
+      # A non-none staff_pii_scope grants a PII group, but the rows it exposes
+      # are bounded by the location remit (staff_location_scope drives
+      # allowed_abbreviations). With location scope none the remit is empty, so
+      # PII resolves to zero rows (fail-closed) — but that pairing is a
+      # resolution bug, not intended state.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression:
+              staff_pii_scope = 'none' or staff_location_scope != 'none'
+          config:
+            severity: warn
     columns:
       - name: staff_key
         data_type: string
