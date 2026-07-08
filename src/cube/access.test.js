@@ -209,8 +209,8 @@ test("computeAllowedDepartmentGroups: none/undefined scope denies", () => {
   );
 });
 
-test("STAFF_PII_MEMBERS lists all gated sensitive columns", () => {
-  assert.deepEqual(a.STAFF_PII_MEMBERS.sort(), [
+test("STAFF_SENSITIVE_MEMBERS lists all gated sensitive columns", () => {
+  assert.deepEqual(a.STAFF_SENSITIVE_MEMBERS.sort(), [
     "birth_date",
     "gender_identity",
     "is_hispanic",

@@ -12,7 +12,10 @@ views:
       their location/department remit (added in Task 5's row_level policy).
       job_function_level, job_function_code, and department_group are exposed
       here because the remit filter matches on them; abbreviation and region_key
-      are exposed because the remit filter also scopes by location.
+      are exposed because the remit filter also scopes by location. Those three
+      role attributes are the viewed staff member's CURRENT role (from
+      dim_staff_cube_access), not the value per historical period — so the remit
+      gate is person-level, not period-accurate.
 
     cubes:
       - join_path: staff_work_history
@@ -128,6 +131,10 @@ views:
                     - member: department_group
                       operator: equals
                       values: "{ securityContext.allowed_department_groups }"
+                    # job_function_level is non-NULL whenever this scope is
+                    # granted: the role crosswalk that assigns the scope also
+                    # populates the level (an unresolved role → 'none' scope, no
+                    # level). The OR'd staff_key branch is the fallback regardless.
                     - member: job_function_level
                       operator: gt
                       values: ["{ securityContext.job_function_level }"]

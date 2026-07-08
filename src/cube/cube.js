@@ -47,6 +47,10 @@ async function loadUniverses(bq) {
   const [locs] = await bq.query({
     query: "SELECT abbreviation, region_key FROM `kipptaf_marts.dim_locations`",
   });
+  // A NULL department_group can't be in the universe, and `department_group IN
+  // (...)` never matches NULL — so a staff member with a NULL department_group
+  // is invisible to every remit-scoped PII policy (fail-closed). Zero such rows
+  // today; if that changes, backfill a sentinel group upstream.
   const [deps] = await bq.query({
     query:
       "SELECT DISTINCT department_group FROM `kipptaf_marts.dim_staff_cube_access` WHERE department_group IS NOT NULL",

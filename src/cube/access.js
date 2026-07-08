@@ -27,9 +27,12 @@ const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
   salary: "staff_compensation_scope",
 };
 
-// The sensitive columns kept out of the open staff_directory view and surfaced
-// only in staff_pii (gated per staff_pii_scope).
-const STAFF_PII_MEMBERS = Object.keys(STAFF_SENSITIVE_SCOPE_BY_MEMBER);
+// The sensitive staff columns kept out of the open staff_directory view. Each
+// maps to its gating scope column in STAFF_SENSITIVE_SCOPE_BY_MEMBER — the six
+// PII fields to staff_pii_scope (surfaced in staff_pii), salary to
+// staff_compensation_scope (forward-compat; no view yet). Not PII-only, so not
+// named *_PII_*.
+const STAFF_SENSITIVE_MEMBERS = Object.keys(STAFF_SENSITIVE_SCOPE_BY_MEMBER);
 
 // One column-visibility tier per forward-compat sensitive staff scope.
 // buildGroups emits the tier when its scope is anything other than "none".
@@ -148,6 +151,6 @@ module.exports = {
   buildSecurityContext,
   computeAllowedAbbreviations,
   computeAllowedDepartmentGroups,
-  STAFF_PII_MEMBERS,
+  STAFF_SENSITIVE_MEMBERS,
   STAFF_SENSITIVE_SCOPE_BY_MEMBER,
 };
