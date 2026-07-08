@@ -8,9 +8,13 @@ models:
       Student-grain as-of-today measures (cumulative GPA, needed-GPA, 1/2/4-week
       lookbacks) populate current-year rows only. Newark and Camden only — Miami
       is hard-excluded (region unsupported in the rebuilt dashboard) and
-      Paterson is pending gradebook data (TODO(#4340)).
+      Paterson is pending gradebook data.
     data_tests:
-      # TODO(#3915): returns to error when the storedgrades double-write cleanup completes
+      # TODO(#3915): returns to error when the storedgrades double-write cleanup
+      # completes. All duplicates are prior-year storedgrades rows; current-year
+      # branches are structurally disjoint (base_powerschool__final_grades holds
+      # only Q/E storecodes, so the explicit Y1 branch is the sole Y1 emitter,
+      # and E rows never match the term spine).
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:

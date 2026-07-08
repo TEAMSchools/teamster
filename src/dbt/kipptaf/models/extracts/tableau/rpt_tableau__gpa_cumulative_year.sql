@@ -54,7 +54,7 @@ inner join
     on gcy.studentid = e.studentid
     and gcy.academic_year = e.academic_year
     and gcy.schoolid = e.schoolid
-    and {{ union_dataset_join_clause(left_alias="gcy", right_alias="e") }}
+    and gcy._dbt_source_project = e._dbt_source_project
 where
     e.rn_year = 1
     and not e.is_out_of_district
