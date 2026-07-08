@@ -292,3 +292,31 @@ models:
         description:
           Year of high school graduation derived from actual HS grad date or
           projected
+      - name: postsec_completed_pursuing_degree_type
+        data_type: string
+        description: Completed (if available) enrollment pursuing degree type.
+      - name: postsec_completed_status
+        data_type: string
+        description: Completed (if available) enrollment status.
+      - name: postsec_completed_start_date
+        data_type: date
+        description: Completed (if available) enrollment start date.
+      - name: postsec_completed_actual_end_date
+        data_type: date
+        description: Completed (if available) enrollment actual end date.
+      - name: postsec_completed_anticipated_graduation
+        data_type: date
+        description:
+          Completed (if available) enrollment anticipated graduation date.
+      - name: postsec_completed_account_type
+        data_type: string
+        description:
+          Completed (if available) enrollment institution account type.
+      - name: postsec_completed_account_name
+        data_type: string
+        description: Completed (if available) enrollment institution name.
+      - name: postsec_completed_adjusted_6_year_minority_graduation_rate
+        data_type: numeric
+        description:
+          Completed (if available) enrollment institution adjusted six-year
+          minority graduation rate.
