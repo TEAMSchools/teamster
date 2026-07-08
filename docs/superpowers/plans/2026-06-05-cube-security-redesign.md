@@ -1184,7 +1184,7 @@ views:
           includes: "*"
 ```
 
-- [ ] **Step 3: Run cube schema test (no `dim*/fct*` names)**
+[ ] **Step 3: Run cube schema test (no `dim*/fct*` names)**
 
 ```bash
 uv run pytest tests/cube/test_cube_schema.py -v
