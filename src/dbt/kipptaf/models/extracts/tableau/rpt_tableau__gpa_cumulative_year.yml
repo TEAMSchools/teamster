@@ -67,7 +67,7 @@ models:
         description: Display form of the academic year (e.g. 2025-26).
       - name: region
         data_type: string
-        description: District region in that year (Newark/Camden/Paterson).
+        description: District region (Newark or Camden; see model description).
       - name: school_level
         data_type: string
         description: School level (ES/MS/HS) in that year.

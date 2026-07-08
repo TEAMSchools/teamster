@@ -61,4 +61,5 @@ where
     and e.enroll_status in (0, 3)
     /* Miami hard-excluded: region unsupported in the rebuilt dashboard
        (#4340) */
-    and e.region != 'Miami'
+    -- TODO(#4340): add Paterson once PS gradebook data is populated
+    and e.region in ('Newark', 'Camden')
