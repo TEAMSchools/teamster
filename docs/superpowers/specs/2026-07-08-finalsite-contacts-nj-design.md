@@ -122,8 +122,7 @@ kipptaf
      `surrogate_key(source, student, slot)`.
    - Dim slims to name/phone/email/address; bridge carries student ↔ person
      links with slot and `is_emergency`.
-   - Cube reads both (`cube.yml` exposure) — grep `src/cube/model/` for removed
-     columns and ship Cube updates in the same change.
+   - Cube does NOT consume these marts (see addendum) — no Cube change needed.
 4. **Contact columns move out of the powerschool package** — drop the `scw.*`
    pivot columns from `base_powerschool__student_enrollments` (the package
    cannot reference finalsite models); `int_extracts__student_enrollments` joins
