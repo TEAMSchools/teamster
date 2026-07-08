@@ -38,21 +38,17 @@ IO manager, BigQuery external tables.
 - **Conventional commits**; branch `cbini/feat/claude-finalsite-contacts-nj`
   (already created, linked to #4346).
 
-## Open config value (resolve before Task 4 deploy)
+## Confirmed config values
 
-- **Finalsite server subdomain for Newark.** `FinalsiteResource._service_root`
-  is `https://{server}.fsenrollment.com/api/external`. Miami passes
-  `server=CODE_LOCATION` → `kippmiami.fsenrollment.com`. This plan defaults
-  Newark to the same pattern (`server=CODE_LOCATION` → `kippnewark`), but the
-  actual Newark Finalsite subdomain MUST be confirmed with whoever provisioned
-  Newark's API access. If it differs, pass an explicit string instead of
-  `CODE_LOCATION` in Task 1.
-- **k8s secret provisioning.** Task 4 assumes a k8s secret named
-  `op-finalsite-api-kippnewark` with keys `username` (credential id) and
-  `password` (secret) exists in the `dagster-cloud` namespace, mirroring
-  `op-finalsite-api-kippmiami`. Creating it from 1Password is an Ops task
-  outside this repo — confirm it exists before deploy, or the asset run fails
-  auth at `setup_for_execution`.
+- **Finalsite server subdomain for Newark:** `kippnewark.fsenrollment.com`
+  (confirmed) — matches the `server=CODE_LOCATION` default, so Task 1 needs no
+  change.
+- **Newark 1Password item:** `vaults/Data Team/items/Finalsite API - Newark`
+  (confirmed). The `op-finalsite-api-kippnewark` k8s secret does NOT exist yet —
+  Task 4 declares the `OnePasswordItem` that syncs it. The field internal names
+  are ASSUMED to be `username` (credential id) / `password` (secret), mirroring
+  the Miami item; Task 4 Step 4 verifies this against the synced secret before
+  Task 5 wires `secretKeyRef.key`.
 
 ---
 
@@ -335,14 +331,93 @@ git -C /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj \
 
 ---
 
-## Task 4: k8s secret env-var wiring in `dagster-cloud.yaml`
+## Task 4: Declare the Newark Finalsite 1Password item
+
+The `op-finalsite-api-kippnewark` k8s secret does not exist. The
+1Password-Connect operator creates each k8s secret from an `OnePasswordItem`
+manifest declared in `.k8s/1password/items.yaml`. Add Newark's, mirroring the
+Miami entry (lines 385-392). Applying the manifest to the cluster is a manual
+`kubectl` step (Step 3) that needs cluster access — hand it to the user if
+Claude lacks `kubectl` context.
+
+**Files:**
+
+- Modify: `.k8s/1password/items.yaml`
+
+- [ ] **Step 1: Append the Newark `OnePasswordItem`**
+
+Append to the end of `.k8s/1password/items.yaml` (each item is a `---`-separated
+document; match the Miami finalsite entry shape exactly):
+
+```yaml
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-finalsite-api-kippnewark
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Finalsite API - Newark
+```
+
+- [ ] **Step 2: Validate YAML + trunk-check**
+
+Run:
+
+```bash
+cd /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj && \
+  VIRTUAL_ENV= uv run python -c "import yaml; docs=list(yaml.safe_load_all(open('.k8s/1password/items.yaml'))); print(sum(1 for d in docs if d and d['metadata']['name']=='op-finalsite-api-kippnewark'), 'newark item')" && \
+  /workspaces/teamster/.trunk/tools/trunk check --force .k8s/1password/items.yaml
+```
+
+Expected: prints `1 newark item`, then `✔ No issues`.
+
+- [ ] **Step 3: Apply to the cluster (manual / user)**
+
+Requires `dagster-cloud` cluster credentials (see `.k8s/setup.sh`). Hand to the
+user if Claude has no `kubectl` context:
+
+```bash
+kubectl apply -f .k8s/1password/items.yaml
+```
+
+The operator then creates the `op-finalsite-api-kippnewark` secret from the
+1Password item (may take a few seconds to sync).
+
+- [ ] **Step 4: Verify the synced secret's key names**
+
+k8s secret keys come from the 1Password field's INTERNAL name, not the UI label
+(`.k8s/CLAUDE.md` — SFTP items remap `password` → `newPassword`, etc.). Confirm
+Task 5's `secretKeyRef.key` values before wiring:
+
+```bash
+kubectl -n dagster-cloud get secret op-finalsite-api-kippnewark -o jsonpath='{.data}' | jq keys
+```
+
+Expected: includes `"username"` and `"password"`. If the Newark item uses
+different field names, use those exact names as the `key:` values in Task 5
+instead of `username`/`password`.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git -C /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj \
+  add .k8s/1password/items.yaml
+git -C /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj \
+  commit -m "feat(k8s): declare Newark Finalsite API 1Password item. Refs #4346"
+```
+
+---
+
+## Task 5: k8s secret env-var wiring in `dagster-cloud.yaml`
 
 `FinalsiteResource` reads `FINALSITE_CREDENTIAL_ID` and `FINALSITE_SECRET` from
 the environment. These must be projected from the k8s secret into BOTH the
 `server_k8s_config` (code-server pod) and `run_k8s_config` (run pod) env blocks,
 mirroring `kippmiami/dagster-cloud.yaml` lines 190-199 (server) and 218-227
 (run). Miami sources them from secret `op-finalsite-api-kippmiami`; Newark uses
-`op-finalsite-api-kippnewark`.
+`op-finalsite-api-kippnewark` (declared in Task 4). Use the key names verified
+in Task 4 Step 4 (defaults `username`/`password` below).
 
 **Files:**
 
@@ -410,13 +485,13 @@ git -C /workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj \
 
 > **Deploy note:** merging a change to a code location's `dagster-cloud.yaml`
 > triggers that location's prod deploy. Confirm the
-> `op-finalsite-api-kippnewark` k8s secret exists (see "Open config value")
+> `op-finalsite-api-kippnewark` k8s secret exists (Task 4 applied + synced)
 > BEFORE merge, or the code server boots without the credential and the first
 > `contacts` run fails auth.
 
 ---
 
-## Task 5: Open the PR
+## Task 6: Open the PR
 
 **Files:** none (PR only).
 
@@ -529,15 +604,18 @@ is the input to the Phase 3 dbt plan.
 
 ## Self-review notes
 
-- **Spec coverage (Phase 1 scope only):** Tasks 1-4 cover the spec's "Dagster
-  ingestion (per NJ region)" bullets for Newark; the discovery section covers
-  the spec's "Discovery checklist (Phase 2)". The `Relationship` schema
-  extension, finalsite package models, kipptaf union/pivot/dim/bridge, consumer
-  updates, and the `+enabled` flip are Phase 3+ and intentionally OUT of this
-  plan.
+- **Spec coverage (Phase 1 scope only):** Tasks 1-5 cover the spec's "Dagster
+  ingestion (per NJ region)" bullets for Newark (resource, asset, schedule,
+  1Password secret sync, k8s env wiring); Task 6 opens the PR; the discovery
+  section covers the spec's "Discovery checklist (Phase 2)". The `Relationship`
+  schema extension, finalsite package models, kipptaf union/pivot/dim/bridge,
+  consumer updates, and the `+enabled` flip are Phase 3+ and intentionally OUT
+  of this plan.
 - **No library edits** this phase — the rank field can't be added to the
   `Relationship` model until discovery names it. The `contacts` asset ingests
   the full raw payload regardless, so discovery has everything it needs without
   the schema change.
-- **Deferred decisions:** Finalsite server subdomain and k8s secret existence
-  are flagged as pre-deploy gates, not silently assumed.
+- **Confirmed config:** Newark subdomain `kippnewark.fsenrollment.com`; secret
+  item `vaults/Data Team/items/Finalsite API - Newark` (secret not yet synced —
+  Task 4 declares + applies it; Task 4 Step 4 verifies key names before Task 5
+  wires them).
