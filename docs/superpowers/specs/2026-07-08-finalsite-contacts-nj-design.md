@@ -218,3 +218,68 @@ Blocks final SQL shape; answers recorded as a spec addendum:
   — separate, existing work)
 - Deleting the PowerSchool contact staging/int models (raw PS contact tables
   keep loading; deletion waits for Miami/Focus)
+
+## Addendum: Discovery findings (2026-07-08, Newark)
+
+Sourced from 23,585 Newark contacts (materialization run `df1a3807`, commit
+`22e7461`), queried via a dev-staged external over the prod GCS Avro. Resolves
+the Phase 2 discovery checklist and pins the Phase 3 model shape.
+
+### Top-ranked contact (contacts module)
+
+- No explicit rank field on `relationships`; the Avro schema-drift check is
+  clean at top level (no hidden field). The ranking signal is
+  `relationships[].primary`.
+- `primary` is **at most one true per contact** (never multiple).
+- The `contacts` dataset mixes **student** and **parent/prospect** records. On
+  student records (those carrying `emrg_*` fields), `primary` is set on
+  **94.7%** (6,389 / 6,740 with relationships); on non-student records only
+  22.3% (parent records point back at the student, primary unset).
+- **Rule:** `contact_1` = the `relationships` element with `primary = true` on
+  the student record. **Open decision:** fallback for the ~5.3% of students with
+  relationships but no `primary` — first array element, `rel_type` priority, or
+  leave null.
+
+### contact_1 detail resolution
+
+- The primary relationship's `rel_id` resolves to another Contact record's `id`
+  in the same dataset **100%** of the time (when `primary` set).
+- That resolved (parent) record carries `email` 99.5%, `phone_1.number` 99.9%,
+  `households[0]` address 96.5%.
+- **So** `contact_1` details = student → primary `rel_id` → contact record
+  (`email`, `phone_1/2/3`, `households[0]`); `rel_name` / `rel_type` on the
+  relationship give the display name and relationship label.
+
+### Emergency contacts — 4 custom-field sets
+
+- Global `custom_attributes` (NOT `track_attributes`); field-name pattern
+  `emrg_<N>_<attr>`; exactly **4 sets** (`emrg_1`..`emrg_4`).
+- Per-set fields:
+  - `emrg_N_name_first_name`, `emrg_N_name_last_name`
+  - `emrg_N_email`
+  - `emrg_N_phone_1_number` / `_phone_1_type` / `_phone_1_opt_in`, plus
+    `_phone_2_*` and `_phone_3_*`
+  - `emrg_N_relationship_ss` (single-select), `emrg_N_relationship_txt` (free
+    text)
+  - `emrg_N_priority_ss`
+  - `emrg_N_custody_yn`, `emrg_N_lives_with_yn`, `emrg_N_pickup_yn`
+- Value subtypes: names/email/phone/relationship/priority = `string_value`;
+  `_yn`/`_opt_in` = `boolean_value`. No arrays.
+- Fill tapers: set 1 ~6,748, set 2 ~6,604, set 3 ~1,734, set 4 ~441.
+
+### SIS join
+
+- Student records carry `emrg_*`; join to PowerSchool via
+  `id_attributes.powerschool_student_number` (existing
+  `int_finalsite__contact_id_attributes` pivot).
+
+### Model-shape implications (Phase 3)
+
+- `contact_1`: primary-relationship join (details from the resolved parent
+  record), plus a fallback-pick rule for no-primary students.
+- `emergency_1..4`: direct from `emrg_N_*` fields; no `rel_id` join. Emergency
+  ordering — **open decision:** natural set order vs `emrg_N_priority_ss`.
+- Bridge flags: `emrg_N_pickup_yn` / `_custody_yn` / `_lives_with_yn` map to the
+  redefined bridge's `is_pickup` / `is_custodial` / `is_household_member`.
+  `contact_1` (primary relationship) carries no such flags — **confirm** those
+  bridge columns are null for the top contact.
