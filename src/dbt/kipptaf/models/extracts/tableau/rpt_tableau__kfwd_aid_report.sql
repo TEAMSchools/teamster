@@ -80,6 +80,14 @@ select
     e.ugrad_account_type,
     e.ugrad_account_name,
     e.ugrad_adjusted_6_year_minority_graduation_rate,
+    e.postsec_completed_pursuing_degree_type,
+    e.postsec_completed_status,
+    e.postsec_completed_start_date,
+    e.postsec_completed_actual_end_date,
+    e.postsec_completed_anticipated_graduation,
+    e.postsec_completed_account_type,
+    e.postsec_completed_account_name,
+    e.postsec_completed_adjusted_6_year_minority_graduation_rate,
 
     r.contact_most_recent_iep_date is not null as is_iep,
 from {{ ref("stg_kippadb__kipp_aid") }} as a
