@@ -58,9 +58,9 @@ inner join
 where
     e.rn_year = 1
     and not e.is_out_of_district
-    /* pre-registered rows can pass is_enrolled_recent (future entry, year-end
-       exit), so the status guard stays */
-    and e.enroll_status != -1
+    /* status guard drops pre-registered (-1, which can pass
+       is_enrolled_recent) and invalid (1) rows */
+    and e.enroll_status in (0, 2, 3)
     and e.is_enrolled_recent
     /* Miami hard-excluded: region unsupported in the rebuilt dashboard
        (#4340) */
