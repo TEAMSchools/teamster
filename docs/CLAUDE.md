@@ -66,6 +66,11 @@ not appear in site navigation.
 `uv run scripts/gen-automations-doc.py`. Never edit it directly. Regenerate when
 adding, removing, or renaming schedules or sensors.
 
+The script imports every code location's `definitions` and silently SKIPS any
+that fail to import — so running it in the codespace (district `definitions`
+fail on unset `PS_SSH_PORT`, etc.) drops those locations from the catalog.
+Regenerate only in a full environment where all locations load.
+
 ## `superpowers/` Directory
 
 Design specs (`specs/`) and implementation plans (`plans/`) for major features
