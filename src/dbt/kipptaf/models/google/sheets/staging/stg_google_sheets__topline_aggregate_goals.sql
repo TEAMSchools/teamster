@@ -5,7 +5,7 @@ with
 
             cast(goal as numeric) as goal,
 
-            {{ region_to_city("entity") }} as entity,
+            {{ region_to_city("entity") }} as `Entity`,
         from
             {{ source("google_sheets", "src_google_sheets__topline__aggregate_goals") }}
     )
