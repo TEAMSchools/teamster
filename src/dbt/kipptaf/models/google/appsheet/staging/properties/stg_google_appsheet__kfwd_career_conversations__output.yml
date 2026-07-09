@@ -8,8 +8,12 @@ models:
         description: Unique identifier for the alumni contact.
         data_type: string
         data_tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: notes
         description: Free-text notes from the career conversation.
         data_type: string
