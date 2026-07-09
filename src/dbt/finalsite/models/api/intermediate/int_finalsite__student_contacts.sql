@@ -13,6 +13,7 @@ with
             r.rel_name,
             r.rel_type,
 
+            cp.finalsite_enrollment_id as finalsite_contact_id,
             cp.email,
             cp.phone_1_number,
 
@@ -47,6 +48,7 @@ with
     contact_1 as (
         select
             finalsite_enrollment_id,
+            finalsite_contact_id,
             email,
             phone_mobile,
             phone_home,
@@ -226,6 +228,7 @@ with
 
             true as is_emergency,
 
+            cast(null as string) as finalsite_contact_id,
             cast(null as string) as phone_daytime,
             cast(null as string) as home_address,
         from emergency_long
@@ -234,6 +237,7 @@ with
 select
     finalsite_enrollment_id,
     contact_slot,
+    finalsite_contact_id,
     contact_name,
     relationship,
     email,
@@ -254,6 +258,7 @@ union all
 select
     finalsite_enrollment_id,
     contact_slot,
+    finalsite_contact_id,
     contact_name,
     relationship,
     email,
