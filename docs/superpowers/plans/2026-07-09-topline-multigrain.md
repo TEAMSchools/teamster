@@ -1,0 +1,2239 @@
+# Topline Cascade Multi-Grain Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use
+> superpowers:subagent-driven-development (recommended) or
+> superpowers:executing-plans to implement this plan task-by-task. Steps use
+> checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Produce the topline cascade dashboard extract at week, month,
+academic-quarter, and YTD grains, config-driven per indicator, with the
+aggregation materialized as a table (cost fix).
+
+**Architecture:** A periods dimension (`int_topline__periods`) defines all
+period windows. Period-scoped indicators (ADA, truancy, chronic absenteeism,
+suspensions, contacts, i-Ready usage) get student × period variants computed
+from date-bearing sources. Everything else is "as-of": the aggregated weekly
+rows are relabeled into periods post-aggregation by picking each series' last
+available week inside the period — no upstream changes. Goals resolve
+most-specific-wins from a new long-format period-goals sheet tab, falling back
+to the existing base goal.
+
+**Tech Stack:** dbt (BigQuery), Google Sheets external sources, Tableau extract.
+
+Spec: `docs/superpowers/specs/2026-07-09-topline-multigrain-design.md` (issue
+[#4363](https://github.com/TEAMSchools/teamster/issues/4363)).
+
+## Global Constraints
+
+- Branch: `anthonygwalters/feat/claude-topline-multigrain` (exists, linked to
+  #4363).
+- All dbt commands: `uv run dbt ... --project-dir src/dbt/kipptaf` from repo
+  root, target `dev`, with `--defer --state target/prod` (path relative to
+  `--project-dir`).
+- SQL conventions from `src/dbt/CLAUDE.md` apply: no `QUALIFY`, no `ORDER BY`,
+  no subqueries against tables/CTEs, max 1 level of function nesting, ST06
+  column ordering, trailing commas, 88-char lines.
+- Staging tests set `config: severity: error`; staging models are
+  contract-enforced and table-materialized by directory default.
+- New/modified models need `description:` on the model and every column.
+- Regression invariant: `period_type = 'week'` rows of the final extract must
+  match current production output exactly (column adds excepted).
+- `period_rollup` blank/absent ⇒ `as_of`. Period goals only apply where the base
+  config row has `has_goal = true`.
+- Period labels are join keys with the sheet: months use full names (`October`),
+  quarters `Q1`–`Q4` (reporting-terms `name`), weeks
+  `format_date('%G-W%V', week_start_monday)`, YTD literal `YTD`.
+- Commit after every task (conventional commits, `Refs #4363` in body).
+
+## Documented deviations from the spec (flag in PR body)
+
+1. **Chronic Absenteeism Interventions defaults to `as_of`, not `period`.** Its
+   source is a snapshot (`snapshot_students__attendance_interventions_rollup`)
+   holding cumulative counts — there is no event-grain data to recompute within
+   a window. As-of is the only implementable semantics.
+2. **i-Ready month boundaries are week-assigned, not exact.** The vendor source
+   (`stg_iready__personalized_instruction_summary`) is pre-aggregated to weekly
+   buckets; a bucket belongs to the month of its `date_range_start`. All other
+   period-scoped indicators use exact daily or event dates.
+
+---
+
+### Task 1: Sheet prerequisites (USER ACTIONS — hand off, do not automate)
+
+No files. This task is coordination with the spreadsheet owner and must complete
+before Task 2 can build. Present this checklist to the user:
+
+- [ ] **Step 1: Add `period_rollup` column to the existing
+      `src_google_sheets__topline_aggregate_goals` tab** (spreadsheet
+      `1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0`). Header exactly
+      `period_rollup`. Values `as_of` or `period` on every row. Initial
+      assignments — `period` for indicators: `ADA`, `Chronic Absenteeism`,
+      `Truancy`, `Suspensions`, `Successful Contacts`, `i-Ready Lessons Passed`,
+      `i-Ready Time on Task`. `as_of` for all other rows (including
+      `Chronic Absenteeism Interventions` — see deviations).
+
+- [ ] **Step 2: Create new tab named `src_google_sheets__topline_period_goals`**
+      in the same spreadsheet, header row (row 1), columns in this order:
+
+```text
+org_level | entity | schoolid | grade_low | grade_high | layer | topline_indicator | academic_year | period_type | period_label | goal
+```
+
+Column semantics (give to the sheet owner verbatim):
+
+- `org_level`/`entity`/`schoolid`/`grade_low`/`grade_high`/`layer`/`topline_indicator`
+  — identical values/format to the same-named columns on the aggregate goals tab
+  (the row must correspond to an existing config row).
+- `academic_year` — start year (2026 = SY26-27); blank = applies every year.
+- `period_type` — one of `week` / `month` / `quarter` / `ytd`.
+- `period_label` — `October`-style full month name, `Q1`–`Q4`, or blank = every
+  instance of that grain.
+- `goal` — numeric, same units as the base `goal` column.
+
+Seed at least the known ADA rows (monthly + annual goals) so tests have data.
+
+- [ ] **Step 3: User re-stages the staging externals** (classifier-blocked for
+      Claude — user runs in their terminal, AFTER Task 2's source entry is
+      committed on the branch):
+
+```bash
+uv run dbt run-operation stage_external_sources \
+  --args "select: google_sheets.src_google_sheets__topline__period_goals" \
+  --vars '{ext_full_refresh: true}' \
+  --target staging --project-dir src/dbt/kipptaf
+```
+
+Note for execution ordering: Steps 1–2 must happen before any dbt build of Task
+2+. Step 3 must happen after Task 2 is committed but before dbt Cloud CI can
+pass. Post-merge, the prod external picks up the tab on the next Dagster sheet
+materialization (all tabs on this URI trigger together).
+
+---
+
+### Task 2: Period-goals source + staging model
+
+**Files:**
+
+- Modify: `src/dbt/kipptaf/models/google/sheets/sources-external.yml` (after the
+  `src_google_sheets__topline__enrollment_targets` entry, ~line 343)
+- Create:
+  `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__topline_period_goals.sql`
+- Create: entry in
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__topline_period_goals.yml`
+
+**Interfaces:**
+
+- Produces: model `stg_google_sheets__topline_period_goals` with columns
+  `org_level string, entity string, schoolid int64, grade_low int64, grade_high int64, layer string, topline_indicator string, academic_year int64, period_type string, period_label string, goal numeric, aggregation_hash string`.
+  Task 10 joins on (`layer`, `topline_indicator`, `aggregation_hash`,
+  `period_type`) plus `period_label` / `academic_year` specificity.
+
+- [ ] **Step 1: Add the source entry.** Declared `columns:` are REQUIRED —
+      `academic_year` and `period_label` are sparse and autodetect drops
+      all-NULL columns. Insert into the `tables:` list of the `google_sheets`
+      source:
+
+```yaml
+- name: src_google_sheets__topline__period_goals
+  external:
+    options:
+      format: GOOGLE_SHEETS
+      uris:
+        - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
+      sheet_range: src_google_sheets__topline_period_goals
+      skip_leading_rows: 1
+  config:
+    meta:
+      dagster:
+        asset_key:
+          - kipptaf
+          - google
+          - sheets
+          - topline
+          - period_goals
+  columns:
+    - name: org_level
+      data_type: STRING
+    - name: entity
+      data_type: STRING
+    - name: schoolid
+      data_type: INT64
+    - name: grade_low
+      data_type: INT64
+    - name: grade_high
+      data_type: INT64
+    - name: layer
+      data_type: STRING
+    - name: topline_indicator
+      data_type: STRING
+    - name: academic_year
+      data_type: INT64
+    - name: period_type
+      data_type: STRING
+    - name: period_label
+      data_type: STRING
+    - name: goal
+      data_type: FLOAT64
+```
+
+- [ ] **Step 2: Write the staging model.** Mirrors the base goals staging hash
+      derivation exactly
+      (`stg_google_sheets__topline_aggregate_goals.sql:12-25`), filters sheet
+      phantom rows:
+
+```sql
+select
+    org_level,
+    entity,
+    schoolid,
+    grade_low,
+    grade_high,
+    layer,
+    topline_indicator,
+    academic_year,
+    period_type,
+    period_label,
+
+    cast(goal as numeric) as goal,
+
+    case
+        when layer = 'Outstanding Teammates' and org_level = 'org'
+        then org_level
+        when layer = 'Outstanding Teammates' and org_level = 'region'
+        then entity
+        when layer = 'Outstanding Teammates' and org_level = 'school'
+        then cast(schoolid as string)
+        when org_level = 'org'
+        then 'org_' || grade_low || '-' || grade_high
+        when org_level = 'region'
+        then entity || '_' || grade_low || '-' || grade_high
+        when org_level = 'school'
+        then schoolid || '_' || grade_low || '-' || grade_high
+    end as aggregation_hash,
+from {{ source("google_sheets", "src_google_sheets__topline__period_goals") }}
+where topline_indicator is not null
+```
+
+- [ ] **Step 3: Write the properties yml** (contract + uniqueness, staging
+      severity error; composite key includes the nullable wildcard columns —
+      BigQuery `group by` treats NULLs as equal, which is what we want):
+
+```yaml
+models:
+  - name: stg_google_sheets__topline_period_goals
+    description:
+      Long-format period-specific goals for topline indicators, maintained by
+      stakeholders on the topline goals spreadsheet. Each row overrides the base
+      goal for one grain (period_type), optionally narrowed to a single period
+      instance (period_label) and/or academic year. Blank period_label or
+      academic_year acts as a wildcard. Resolution is most-specific-wins in
+      int_topline__dashboard_aggregations.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - layer
+              - topline_indicator
+              - aggregation_hash
+              - academic_year
+              - period_type
+              - period_label
+          config:
+            severity: error
+    columns:
+      - name: period_type
+        description: Grain this goal applies to.
+        data_type: string
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [week, month, quarter, ytd]
+              config:
+                severity: error
+      - name: goal
+        description: Goal value, same units as the base goal column.
+        data_type: numeric
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: org_level
+        description:
+          Aggregation level the goal row targets — org, region, or school.
+        data_type: string
+      - name: entity
+        description: Region entity name, matching the aggregate goals tab.
+        data_type: string
+      - name: schoolid
+        description:
+          PowerSchool school id for school-level rows; null otherwise.
+        data_type: int64
+      - name: grade_low
+        description:
+          Low end of the grade band, matching the aggregate goals tab.
+        data_type: int64
+      - name: grade_high
+        description:
+          High end of the grade band, matching the aggregate goals tab.
+        data_type: int64
+      - name: layer
+        description: Topline layer the indicator belongs to.
+        data_type: string
+      - name: topline_indicator
+        description: Indicator name, matching the aggregate goals tab.
+        data_type: string
+      - name: academic_year
+        description:
+          Academic year (start year) the goal applies to; blank = every year.
+        data_type: int64
+      - name: period_label
+        description:
+          Period instance the goal applies to (full month name or Q1-Q4); blank
+          = every instance of the grain.
+        data_type: string
+      - name: aggregation_hash
+        description:
+          Aggregation-grain hash derived identically to the aggregate goals
+          staging model — joins period goals to their config row.
+        data_type: string
+```
+
+- [ ] **Step 4: Build and test** (requires Task 1 Steps 1–2 done and the user to
+      have staged the external per Task 1 Step 3, or build with your own dev
+      staging):
+
+Run:
+
+```bash
+uv run dbt build --select stg_google_sheets__topline_period_goals \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: model builds, tests PASS. If the external is not yet staged, this
+errors "table not found" — hand Task 1 Step 3 back to the user before
+proceeding.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/google/sheets
+git commit -m "feat(kipptaf): stage topline period goals sheet tab
+
+Refs #4363"
+```
+
+---
+
+### Task 3: `period_rollup` through the base goals chain
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__topline_aggregate_goals.yml`
+- Modify:
+  `src/dbt/kipptaf/models/google/sheets/intermediate/int_google_sheets__topline_aggregate_goals.sql`
+- Modify:
+  `src/dbt/kipptaf/models/google/sheets/intermediate/properties/int_google_sheets__topline_aggregate_goals.yml`
+
+**Interfaces:**
+
+- Consumes: sheet column `period_rollup` (Task 1 Step 1).
+- Produces: `int_google_sheets__topline_aggregate_goals.period_rollup` (string,
+  values `as_of`/`period`, never null — blank coalesced to `as_of`). Tasks 9–10
+  read it.
+
+- [ ] **Step 1: Declare the new column in the staging contract.** The staging
+      model is `select * except (goal)` — the sheet column flows through
+      automatically, but the enforced contract fails until declared. Add to the
+      `columns:` list of `stg_google_sheets__topline_aggregate_goals.yml`:
+
+```yaml
+- name: period_rollup
+  description:
+    Per-indicator rollup treatment for non-week grains. as_of takes the last
+    available week's value inside each period; period recomputes the metric
+    within the period window from date-bearing sources. Blank defaults to as_of
+    downstream.
+  data_type: string
+  data_tests:
+    - accepted_values:
+        arguments:
+          values: [as_of, period]
+        config:
+          severity: error
+```
+
+- [ ] **Step 2: Pass through the int model with blank-safe default.** In
+      `int_google_sheets__topline_aggregate_goals.sql`, add to the select list
+      (after `g.grade_band,`, before the `case` expression, per ST06 simple
+      functions ordering):
+
+```sql
+    coalesce(g.period_rollup, 'as_of') as period_rollup,
+```
+
+Add the matching column entry to the int properties yml:
+
+```yaml
+- name: period_rollup
+  description: Rollup treatment for non-week grains, blank-coalesced to as_of.
+  data_type: string
+  data_tests:
+    - not_null
+    - accepted_values:
+        arguments:
+          values: [as_of, period]
+```
+
+- [ ] **Step 3: Add a rollup-consistency singular test.** `period_rollup` must
+      be identical across all entity rows of the same indicator (the aggregation
+      reads one value per indicator). Create
+      `src/dbt/kipptaf/tests/topline/test_topline_period_rollup_consistency.sql`:
+
+```sql
+select layer, topline_indicator,
+from {{ ref("int_google_sheets__topline_aggregate_goals") }}
+group by layer, topline_indicator
+having count(distinct period_rollup) > 1
+```
+
+- [ ] **Step 4: Build and test**
+
+Run:
+
+```bash
+uv run dbt build \
+  --select stg_google_sheets__topline_aggregate_goals+1 \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS (requires the sheet column from Task 1; the staging table rebuild
+reads the sheet live).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/google/sheets src/dbt/kipptaf/tests/topline
+git commit -m "feat(kipptaf): add period_rollup config to topline goals
+
+Refs #4363"
+```
+
+---
+
+### Task 4: Periods dimension — `int_topline__periods`
+
+**Files:**
+
+- Create: `src/dbt/kipptaf/models/topline/intermediate/int_topline__periods.sql`
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/properties/int_topline__periods.yml`
+
+**Interfaces:**
+
+- Consumes: `int_powerschool__calendar_week` (kipptaf union; columns `schoolid`,
+  `region`, `academic_year`, `week_start_monday`, `week_end_sunday`,
+  `school_week_start_date`, `school_week_end_date`, `quarter`,
+  `first_day_school_year`, `last_day_school_year`, `is_current_week_mon_sun`),
+  `stg_google_sheets__reporting__terms` (type `RT` quarter dates per school).
+- Produces: one row per scope × academic_year × period. Columns:
+  `scope_key string` (school rows: `cast(schoolid as string)`; region rows:
+  region name; org row: `'All'`), `org_scope string` (`school`/`region`/`org`),
+  `region string`, `schoolid int64` (null on region/org rows),
+  `academic_year int64`, `period_type string`, `period_label string`,
+  `period_start date`, `period_end date`, `is_current_period boolean`,
+  `is_most_recent_complete_period boolean`. Tasks 5–10 join on `scope_key` (or
+  `schoolid` + `academic_year` for school-scope student variants) and window
+  containment.
+
+- [ ] **Step 1: Write the model.** School-scope periods are built from the
+      calendar; region/org scopes derive as min/max of school windows per label
+      (weeks are Mon–Sun aligned network-wide, months/quarters/ytd take the
+      widest school window in scope):
+
+```sql
+with
+    calendar_week as (
+        select
+            schoolid,
+            region,
+            academic_year,
+            week_start_monday,
+            week_end_sunday,
+            school_week_start_date,
+            school_week_end_date,
+            first_day_school_year,
+            last_day_school_year,
+            `quarter`,
+
+            format_date('%G-W%V', week_start_monday) as week_label,
+        from {{ ref("int_powerschool__calendar_week") }}
+        where academic_year >= {{ var("current_academic_year") - 1 }}
+    ),
+
+    school_weeks as (
+        select
+            schoolid,
+            region,
+            academic_year,
+
+            'week' as period_type,
+
+            week_label as period_label,
+            week_start_monday as period_start,
+            week_end_sunday as period_end,
+        from calendar_week
+    ),
+
+    school_months as (
+        select
+            schoolid,
+            region,
+            academic_year,
+
+            'month' as period_type,
+
+            format_date('%B', month_start) as period_label,
+            month_start as period_start,
+            last_day(month_start, month) as period_end,
+        from calendar_week
+        cross join
+            unnest(
+                generate_date_array(
+                    date_trunc(first_day_school_year, month),
+                    last_day_school_year,
+                    interval 1 month
+                )
+            ) as month_start
+        group by schoolid, region, academic_year, month_start
+    ),
+
+    school_quarters as (
+        select
+            rt.school_id as schoolid,
+            rt.city as region,
+            rt.academic_year,
+
+            'quarter' as period_type,
+
+            rt.name as period_label,
+            rt.start_date as period_start,
+            rt.end_date as period_end,
+        from {{ ref("stg_google_sheets__reporting__terms") }} as rt
+        where
+            rt.type = 'RT'
+            and rt.academic_year >= {{ var("current_academic_year") - 1 }}
+    ),
+
+    school_ytd as (
+        select
+            schoolid,
+            region,
+            academic_year,
+
+            'ytd' as period_type,
+            'YTD' as period_label,
+
+            min(school_week_start_date) as period_start,
+            max(last_day_school_year) as period_end,
+        from calendar_week
+        group by schoolid, region, academic_year
+    ),
+
+    school_scope as (
+        select *
+        from school_weeks
+
+        union all
+
+        select *
+        from school_months
+
+        union all
+
+        select *
+        from school_quarters
+
+        union all
+
+        select *
+        from school_ytd
+    ),
+
+    region_scope as (
+        select
+            cast(null as int) as schoolid,
+
+            region,
+            academic_year,
+            period_type,
+            period_label,
+
+            min(period_start) as period_start,
+            max(period_end) as period_end,
+        from school_scope
+        group by region, academic_year, period_type, period_label
+    ),
+
+    org_scope as (
+        select
+            cast(null as int) as schoolid,
+
+            'All' as region,
+
+            academic_year,
+            period_type,
+            period_label,
+
+            min(period_start) as period_start,
+            max(period_end) as period_end,
+        from school_scope
+        group by academic_year, period_type, period_label
+    ),
+
+    all_scopes as (
+        select
+            schoolid,
+            region,
+            academic_year,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'school' as org_scope,
+
+            cast(schoolid as string) as scope_key,
+        from school_scope
+
+        union all
+
+        select
+            schoolid,
+            region,
+            academic_year,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'region' as org_scope,
+
+            region as scope_key,
+        from region_scope
+
+        union all
+
+        select
+            schoolid,
+            region,
+            academic_year,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'org' as org_scope,
+
+            region as scope_key,
+        from org_scope
+    ),
+
+    flagged as (
+        select
+            *,
+
+            if(
+                current_date('{{ var("local_timezone") }}')
+                between period_start and period_end,
+                true,
+                false
+            ) as is_current_period,
+
+            max(
+                if(
+                    period_end < current_date('{{ var("local_timezone") }}'),
+                    period_end,
+                    null
+                )
+            ) over (
+                partition by org_scope, scope_key, academic_year, period_type
+            ) as max_complete_period_end,
+        from all_scopes
+    )
+
+select
+    schoolid,
+    region,
+    academic_year,
+    period_type,
+    period_label,
+    period_start,
+    period_end,
+    org_scope,
+    scope_key,
+    is_current_period,
+
+    if(
+        period_end < current_date('{{ var("local_timezone") }}')
+        and period_end = max_complete_period_end
+        and academic_year = {{ var("current_academic_year") }},
+        true,
+        false
+    ) as is_most_recent_complete_period,
+from flagged
+```
+
+- [ ] **Step 2: Write properties yml** — description per column, uniqueness
+      test:
+
+```yaml
+models:
+  - name: int_topline__periods
+    description:
+      Periods dimension for the topline cascade dashboard. One row per scope
+      (school / region / org) x academic year x period, where periods are
+      Mon-Sun weeks (from the PowerSchool calendar), exact calendar months
+      clipped to the school year, reporting-term quarters (type RT), and one YTD
+      row spanning the school year. Region and org scope windows are the min
+      start / max end of the school windows sharing the label. Weeks are Mon-Sun
+      aligned network-wide; school calendars diverge at year end, so consumers
+      must pick each series' last available week inside a window rather than
+      assuming the window's final week exists.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - org_scope
+              - scope_key
+              - academic_year
+              - period_type
+              - period_label
+    columns:
+      - name: schoolid
+        description: PowerSchool school id; null on region and org scope rows.
+        data_type: int64
+      - name: region
+        description: Region name; the literal All on org scope rows.
+        data_type: string
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: period_type
+        description: Grain of the row — week, month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description:
+          Display and join label — ISO week (2026-W14), full month name, Q1-Q4,
+          or YTD.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description:
+          Last date of the period window (calendar end, not clipped to today).
+        data_type: date
+      - name: org_scope
+        description: Scope of the row — school, region, or org.
+        data_type: string
+      - name: scope_key
+        description:
+          Join key unifying scopes — schoolid as string for school rows, region
+          name for region rows, All for the org rows.
+        data_type: string
+      - name: is_current_period
+        description: True when today falls inside the period window.
+        data_type: boolean
+      - name: is_most_recent_complete_period
+        description:
+          True for the latest fully-elapsed period of its grain and scope in the
+          current academic year.
+        data_type: boolean
+```
+
+- [ ] **Step 3: Build and validate**
+
+Run:
+
+```bash
+uv run dbt build --select int_topline__periods \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS. Then sanity-check via BigQuery MCP against the dev schema: per
+school × year expect ~40-44 week rows, 10-12 month rows, 4 quarter rows, 1 ytd
+row; org scope has exactly one row per period_type × label × year.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/topline
+git commit -m "feat(kipptaf): add topline periods dimension
+
+Refs #4363"
+```
+
+---
+
+### Task 5: Attendance period variant (ADA, Truancy, Chronic Absenteeism)
+
+**Files:**
+
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__attendance_period.sql`
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/properties/int_topline__attendance_period.yml`
+
+**Interfaces:**
+
+- Consumes: `int_powerschool__ps_adaadm_daily_ctod` (daily; columns
+  `student_number`, `studentid`, `schoolid`, `academic_year`, `calendardate`,
+  `attendancevalue`, `membershipvalue`, `is_truant`), `int_topline__periods`
+  (Task 4, school scope only).
+- Produces: grain (`student_number`, `academic_year`, `schoolid`, `period_type`,
+  `period_label`); columns additionally `period_start date`, `period_end date`,
+  `attendance_value_sum float64`, `membership_value_sum float64`,
+  `ada_period float64`, `is_truant_period_int int64`,
+  `is_chronically_absent_period_int int64`. Task 9 consumes.
+
+- [ ] **Step 1: Write the model.** Non-week periods only (week rows keep the
+      existing weekly path). Date membership is exact (`calendardate` between
+      window bounds):
+
+```sql
+with
+    daily as (
+        select
+            student_number,
+            schoolid,
+            academic_year,
+            calendardate,
+            attendancevalue,
+            membershipvalue,
+
+            if(is_truant, 1, 0) as is_truant_int,
+        from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
+        where
+            attendancevalue is not null
+            and calendardate >= '{{ var("current_academic_year") - 1 }}-07-01'
+            and calendardate < current_date('{{ var("local_timezone") }}')
+    ),
+
+    periods as (
+        select schoolid, academic_year, period_type, period_label,
+            period_start, period_end,
+        from {{ ref("int_topline__periods") }}
+        where org_scope = 'school' and period_type != 'week'
+    )
+
+select
+    d.student_number,
+    d.academic_year,
+    d.schoolid,
+
+    p.period_type,
+    p.period_label,
+    p.period_start,
+    p.period_end,
+
+    sum(d.attendancevalue) as attendance_value_sum,
+    sum(d.membershipvalue) as membership_value_sum,
+    max(d.is_truant_int) as is_truant_period_int,
+
+    round(
+        safe_divide(sum(d.attendancevalue), sum(d.membershipvalue)), 3
+    ) as ada_period,
+
+    if(
+        safe_divide(sum(d.attendancevalue), sum(d.membershipvalue)) <= 0.90, 1, 0
+    ) as is_chronically_absent_period_int,
+from daily as d
+inner join
+    periods as p
+    on d.schoolid = p.schoolid
+    and d.academic_year = p.academic_year
+    and d.calendardate between p.period_start and p.period_end
+group by
+    d.student_number,
+    d.academic_year,
+    d.schoolid,
+    p.period_type,
+    p.period_label,
+    p.period_start,
+    p.period_end
+```
+
+- [ ] **Step 2: Properties yml** with descriptions and uniqueness on
+      (`student_number`, `academic_year`, `schoolid`, `period_type`,
+      `period_label`):
+
+```yaml
+models:
+  - name: int_topline__attendance_period
+    description:
+      Student-level attendance metrics recomputed within exact non-week period
+      windows (month / quarter / ytd) for the topline cascade dashboard. ADA is
+      attendance over membership within the window; truancy is whether the
+      student was flagged truant on any day in the window; chronic absenteeism
+      is window ADA at or below 0.90.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description: Last date of the period window.
+        data_type: date
+      - name: attendance_value_sum
+        description: Sum of attendance values on in-window days.
+        data_type: float64
+      - name: membership_value_sum
+        description: Sum of membership values on in-window days.
+        data_type: float64
+      - name: ada_period
+        description: Window ADA — attendance over membership, 3 decimals.
+        data_type: float64
+      - name: is_truant_period_int
+        description: 1 when the student was truant on any day in the window.
+        data_type: int64
+      - name: is_chronically_absent_period_int
+        description: 1 when window ADA is at or below 0.90.
+        data_type: int64
+```
+
+- [ ] **Step 3: Build, test, reconcile**
+
+Run:
+
+```bash
+uv run dbt build --select int_topline__attendance_period \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS. Reconciliation (BigQuery MCP, dev schema): for a handful of
+students, `ytd` rows' `ada_period` must equal the latest
+`int_topline__ada_running_weekly.ada_running` (prod) for the same student — same
+numerator/denominator definition, so exact match.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/topline
+git commit -m "feat(kipptaf): add attendance period-grain topline variant
+
+Refs #4363"
+```
+
+---
+
+### Task 6: Suspension period variant
+
+**Files:**
+
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__suspension_period.sql`
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/properties/int_topline__suspension_period.yml`
+
+**Interfaces:**
+
+- Consumes: `int_deanslist__incidents__penalties` (event grain; columns
+  `student_school_id`, `create_ts_academic_year`, `school_id`, `start_date`,
+  `incident_penalty_id`, `is_suspension`, `referral_tier`),
+  `int_extracts__student_enrollments_weeks` (for the student→deanslist school
+  mapping, mirroring `int_topline__suspension_weekly.sql:13-21`),
+  `int_topline__periods`.
+- Produces: grain (`student_number`, `academic_year`, `schoolid`, `period_type`,
+  `period_label`) + `period_start`, `period_end`,
+  `is_suspended_period_int int64`. Task 9 consumes.
+
+- [ ] **Step 1: Write the model.** Mirror the weekly model's join hygiene
+      (enrollment spine carries `deanslist_school_id`), but window by penalty
+      `start_date` against the period. Use the deduplicated one-row-per-
+      student-week spine only to resolve enrollment attributes — here we instead
+      anchor on distinct student × school enrollment spans to avoid week
+      fan-out:
+
+```sql
+with
+    enrollments as (
+        select distinct
+            student_number,
+            academic_year,
+            schoolid,
+            deanslist_school_id,
+        from {{ ref("int_extracts__student_enrollments_weeks") }}
+        where academic_year >= {{ var("current_academic_year") - 1 }}
+    ),
+
+    periods as (
+        select schoolid, academic_year, period_type, period_label,
+            period_start, period_end,
+        from {{ ref("int_topline__periods") }}
+        where org_scope = 'school' and period_type != 'week'
+    )
+
+select
+    e.student_number,
+    e.academic_year,
+    e.schoolid,
+
+    p.period_type,
+    p.period_label,
+    p.period_start,
+    p.period_end,
+
+    if(
+        count(distinct if(ip.is_suspension, ip.incident_penalty_id, null)) > 0, 1, 0
+    ) as is_suspended_period_int,
+from enrollments as e
+inner join
+    periods as p
+    on e.schoolid = p.schoolid
+    and e.academic_year = p.academic_year
+left join
+    {{ ref("int_deanslist__incidents__penalties") }} as ip
+    on e.student_number = ip.student_school_id
+    and e.academic_year = ip.create_ts_academic_year
+    and e.deanslist_school_id = ip.school_id
+    and ip.start_date between p.period_start and p.period_end
+    and ip.referral_tier not in ('Non-Behavioral', 'Social Work')
+group by
+    e.student_number,
+    e.academic_year,
+    e.schoolid,
+    p.period_type,
+    p.period_label,
+    p.period_start,
+    p.period_end
+```
+
+- [ ] **Step 2: Properties yml** — same key/uniqueness pattern as Task 5
+      (columns: the five key columns plus `period_start`, `period_end`,
+      `is_suspended_period_int`; model description "1 when the student received
+      any qualifying suspension penalty starting within the period window;
+      mirrors the weekly running suspension definition scoped to the window").
+      Copy the Task 5 yml structure, adjust names/descriptions.
+
+```yaml
+models:
+  - name: int_topline__suspension_period
+    description:
+      Student-level suspension flag recomputed within exact non-week period
+      windows for the topline cascade dashboard. 1 when the student received any
+      qualifying suspension penalty (is_suspension, non-behavioral and
+      social-work referral tiers excluded) with a start date inside the window.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description: Last date of the period window.
+        data_type: date
+      - name: is_suspended_period_int
+        description:
+          1 when any qualifying suspension penalty started inside the window.
+        data_type: int64
+```
+
+- [ ] **Step 3: Build and reconcile**
+
+```bash
+uv run dbt build --select int_topline__suspension_period \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS. Reconcile: `ytd` rows' school-level average must match the
+latest weekly `is_suspended_y1_all_running` school average from prod for the
+same school (spot-check 2-3 schools).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/topline
+git commit -m "feat(kipptaf): add suspension period-grain topline variant
+
+Refs #4363"
+```
+
+---
+
+### Task 7: Attendance-contacts period variant
+
+**Files:**
+
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__attendance_contacts_period.sql`
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/properties/int_topline__attendance_contacts_period.yml`
+
+**Interfaces:**
+
+- Consumes: `int_topline__attendance_contacts` (one row per absence day ×
+  student; columns `student_number`, `academic_year`, `schoolid`,
+  `calendardate`, `is_successful_int`, `is_enrolled_week`),
+  `int_topline__periods`.
+- Produces: grain (`student_number`, `academic_year`, `schoolid`, `period_type`,
+  `period_label`) + `period_start`, `period_end`, `successful_comms_sum int64`,
+  `required_comms_count int64`. Task 9 consumes.
+
+- [ ] **Step 1: Write the model** (exact date membership on the absence day):
+
+```sql
+with
+    contacts as (
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            calendardate,
+            is_successful_int,
+        from {{ ref("int_topline__attendance_contacts") }}
+        where
+            is_enrolled_week
+            and academic_year >= {{ var("current_academic_year") - 1 }}
+    ),
+
+    periods as (
+        select schoolid, academic_year, period_type, period_label,
+            period_start, period_end,
+        from {{ ref("int_topline__periods") }}
+        where org_scope = 'school' and period_type != 'week'
+    )
+
+select
+    c.student_number,
+    c.academic_year,
+    c.schoolid,
+
+    p.period_type,
+    p.period_label,
+    p.period_start,
+    p.period_end,
+
+    sum(c.is_successful_int) as successful_comms_sum,
+    count(c.is_successful_int) as required_comms_count,
+from contacts as c
+inner join
+    periods as p
+    on c.schoolid = p.schoolid
+    and c.academic_year = p.academic_year
+    and c.calendardate between p.period_start and p.period_end
+group by
+    c.student_number,
+    c.academic_year,
+    c.schoolid,
+    p.period_type,
+    p.period_label,
+    p.period_start,
+    p.period_end
+```
+
+- [ ] **Step 2: Properties yml:**
+
+```yaml
+models:
+  - name: int_topline__attendance_contacts_period
+    description:
+      Successful attendance-contact rate inputs recomputed within exact non-week
+      period windows for the topline cascade dashboard. Numerator is successful
+      contacts on absence days inside the window; denominator is required
+      contacts (absence days) inside the window.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description: Last date of the period window.
+        data_type: date
+      - name: successful_comms_sum
+        description: Successful attendance contacts on in-window absence days.
+        data_type: int64
+      - name: required_comms_count
+        description: Required attendance contacts (absence days) in the window.
+        data_type: int64
+```
+
+- [ ] **Step 3: Build and reconcile**
+
+```bash
+uv run dbt build --select int_topline__attendance_contacts_period \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS. Reconcile `ytd` sums vs. the latest weekly
+`successful_comms_sum_running` / `required_comms_count_running` (prod) for
+sampled students.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/topline
+git commit -m "feat(kipptaf): add attendance contacts period-grain variant
+
+Refs #4363"
+```
+
+---
+
+### Task 8: i-Ready lessons period variant
+
+**Files:**
+
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__iready_lessons_period.sql`
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/properties/int_topline__iready_lessons_period.yml`
+
+**Interfaces:**
+
+- Consumes: `int_topline__iready_lessons_weekly` (student × week × discipline;
+  `n_lessons_passed_week`, `time_on_task_min_week`, `week_start_monday`),
+  `int_extracts__student_enrollments_subjects_weeks` (already joined upstream —
+  reuse the weekly model, do NOT re-derive), `int_topline__periods`.
+- Produces: grain (`student_number`, `academic_year`, `schoolid`, `discipline`,
+  `period_type`, `period_label`) + `period_start`, `period_end`,
+  `week_count int64`, `lessons_passed_sum int64`,
+  `time_on_task_min_sum float64`, `meets_lessons_passed_period_int int64` (avg ≥
+  2 lessons/week), `time_on_task_min_week_avg float64`. Task 9 consumes.
+
+- [ ] **Step 1: Write the model.** DEVIATION (documented above): iReady buckets
+      are weekly; a bucket belongs to the month of its `week_start_monday`.
+      `schoolid` comes from the weekly model's spine — confirm
+      `int_topline__iready_lessons_weekly` exposes it; it currently does NOT
+      (only `student_number`, `academic_year`, weeks, `discipline`, metrics).
+      First add `co.schoolid,` to `int_topline__iready_lessons_weekly.sql`'s
+      select (spine column passthrough, backwards-compatible), then:
+
+```sql
+with
+    weekly as (
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            discipline,
+            week_start_monday,
+
+            coalesce(n_lessons_passed_week, 0) as n_lessons_passed_week,
+            coalesce(time_on_task_min_week, 0) as time_on_task_min_week,
+        from {{ ref("int_topline__iready_lessons_weekly") }}
+    ),
+
+    periods as (
+        select schoolid, academic_year, period_type, period_label,
+            period_start, period_end,
+        from {{ ref("int_topline__periods") }}
+        where org_scope = 'school' and period_type != 'week'
+    )
+
+select
+    w.student_number,
+    w.academic_year,
+    w.schoolid,
+    w.discipline,
+
+    p.period_type,
+    p.period_label,
+    p.period_start,
+    p.period_end,
+
+    count(*) as week_count,
+    sum(w.n_lessons_passed_week) as lessons_passed_sum,
+    sum(w.time_on_task_min_week) as time_on_task_min_sum,
+
+    round(
+        safe_divide(sum(w.time_on_task_min_week), count(*)), 1
+    ) as time_on_task_min_week_avg,
+
+    if(
+        safe_divide(sum(w.n_lessons_passed_week), count(*)) >= 2, 1, 0
+    ) as meets_lessons_passed_period_int,
+from weekly as w
+inner join
+    periods as p
+    on w.schoolid = p.schoolid
+    and w.academic_year = p.academic_year
+    and w.week_start_monday between p.period_start and p.period_end
+group by
+    w.student_number,
+    w.academic_year,
+    w.schoolid,
+    w.discipline,
+    p.period_type,
+    p.period_label,
+    p.period_start,
+    p.period_end
+```
+
+- [ ] **Step 2: Properties yml.** Also add the new `schoolid` column entry
+      (description "PowerSchool school id from the enrollment spine.", data_type
+      int64) to `int_topline__iready_lessons_weekly.yml`:
+
+```yaml
+models:
+  - name: int_topline__iready_lessons_period
+    description:
+      Student-level i-Ready usage metrics aggregated over non-week period
+      windows for the topline cascade dashboard. The vendor source is
+      pre-aggregated to weekly buckets, so a bucket belongs to the month of its
+      week start (week-assigned month boundaries, not exact). Metrics are
+      per-enrolled-week averages so weekly goals stay comparable across grains.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - discipline
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: discipline
+        description: Subject area — ELA or Math.
+        data_type: string
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description: Last date of the period window.
+        data_type: date
+      - name: week_count
+        description: Enrolled weeks with an i-Ready row inside the window.
+        data_type: int64
+      - name: lessons_passed_sum
+        description: Lessons passed across in-window weeks.
+        data_type: int64
+      - name: time_on_task_min_sum
+        description: Time on task minutes across in-window weeks.
+        data_type: float64
+      - name: time_on_task_min_week_avg
+        description: Average time on task minutes per in-window week.
+        data_type: float64
+      - name: meets_lessons_passed_period_int
+        description:
+          1 when the student averaged at least 2 lessons passed per in-window
+          week.
+        data_type: int64
+```
+
+- [ ] **Step 3: Build both models and test**
+
+```bash
+uv run dbt build \
+  --select int_topline__iready_lessons_weekly int_topline__iready_lessons_period \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/topline
+git commit -m "feat(kipptaf): add iready lessons period-grain topline variant
+
+Refs #4363"
+```
+
+---
+
+### Task 9: Period-grain student metric union — `int_topline__student_metrics_periods`
+
+**Files:**
+
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__student_metrics_periods.sql`
+- Create:
+  `src/dbt/kipptaf/models/topline/intermediate/properties/int_topline__student_metrics_periods.yml`
+
+**Interfaces:**
+
+- Consumes: Tasks 5–8 variants; `int_extracts__student_enrollments_weeks`
+  (student attributes: `region`, `school`, `grade_level`, `week_start_monday`,
+  `is_enrolled_week`).
+- Produces: same shape as `int_topline__student_metrics` plus period columns —
+  (`student_number`, `academic_year`, `region`, `schoolid`, `school`,
+  `grade_level`, `layer`, `indicator`, `discipline`, `term date` (=
+  period_start), `term_end date` (= period_end), `period_type`, `period_label`,
+  `numerator`, `denominator`, `metric_value`). Task 10 unions it into the
+  aggregation input.
+
+- [ ] **Step 1: Write the model.** Student attributes come from the last
+      enrolled week inside the window (window max + `where`, no `qualify`):
+
+```sql
+with
+    metric_union as (
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'Attendance and Enrollment' as layer,
+            'ADA' as indicator,
+            cast(null as string) as discipline,
+
+            attendance_value_sum as numerator,
+            membership_value_sum as denominator,
+            ada_period as metric_value,
+        from {{ ref("int_topline__attendance_period") }}
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'Attendance and Enrollment' as layer,
+            'Truancy' as indicator,
+            cast(null as string) as discipline,
+
+            null as numerator,
+            null as denominator,
+
+            is_truant_period_int as metric_value,
+        from {{ ref("int_topline__attendance_period") }}
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'Attendance and Enrollment' as layer,
+            'Chronic Absenteeism' as indicator,
+            cast(null as string) as discipline,
+
+            null as numerator,
+            null as denominator,
+
+            is_chronically_absent_period_int as metric_value,
+        from {{ ref("int_topline__attendance_period") }}
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'Attendance and Enrollment' as layer,
+            'Successful Contacts' as indicator,
+            cast(null as string) as discipline,
+
+            successful_comms_sum as numerator,
+            required_comms_count as denominator,
+
+            safe_divide(successful_comms_sum, required_comms_count) as metric_value,
+        from {{ ref("int_topline__attendance_contacts_period") }}
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'Student and Family Experience' as layer,
+            'Suspensions' as indicator,
+            cast(null as string) as discipline,
+
+            null as numerator,
+            null as denominator,
+
+            is_suspended_period_int as metric_value,
+        from {{ ref("int_topline__suspension_period") }}
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'K-8 Reading and Math' as layer,
+            'i-Ready Lessons Passed' as indicator,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+
+            meets_lessons_passed_period_int as metric_value,
+        from {{ ref("int_topline__iready_lessons_period") }}
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'K-8 Reading and Math' as layer,
+            'i-Ready Time on Task' as indicator,
+            discipline,
+
+            null as numerator,
+            null as denominator,
+
+            time_on_task_min_week_avg as metric_value,
+        from {{ ref("int_topline__iready_lessons_period") }}
+    ),
+
+    enrolled_weeks as (
+        select
+            student_number,
+            academic_year,
+            schoolid,
+            region,
+            school,
+            grade_level,
+            week_start_monday,
+        from {{ ref("int_extracts__student_enrollments_weeks") }}
+        where
+            is_enrolled_week
+            and academic_year >= {{ var("current_academic_year") - 1 }}
+            and region != 'Paterson'
+    ),
+
+    attrs_ranked as (
+        select
+            mu.*,
+
+            ew.region,
+            ew.school,
+            ew.grade_level,
+
+            max(ew.week_start_monday) over (
+                partition by
+                    mu.student_number,
+                    mu.academic_year,
+                    mu.schoolid,
+                    mu.layer,
+                    mu.indicator,
+                    mu.discipline,
+                    mu.period_type,
+                    mu.period_label
+            ) as max_week_in_period,
+
+            ew.week_start_monday as attr_week,
+        from metric_union as mu
+        inner join
+            enrolled_weeks as ew
+            on mu.student_number = ew.student_number
+            and mu.academic_year = ew.academic_year
+            and mu.schoolid = ew.schoolid
+            and ew.week_start_monday between mu.period_start and mu.period_end
+    )
+
+select
+    student_number,
+    academic_year,
+    region,
+    schoolid,
+    school,
+    grade_level,
+    layer,
+    indicator,
+    discipline,
+    period_type,
+    period_label,
+    numerator,
+    denominator,
+    metric_value,
+
+    period_start as term,
+    period_end as term_end,
+from attrs_ranked
+where attr_week = max_week_in_period
+```
+
+- [ ] **Step 2: Properties yml:**
+
+```yaml
+models:
+  - name: int_topline__student_metrics_periods
+    description:
+      Period-scoped student metric rows (month / quarter / ytd) for the topline
+      cascade dashboard, unioning the period-grain indicator variants into the
+      same shape as int_topline__student_metrics. Student attributes (region,
+      school, grade level) come from the student's last enrolled week inside the
+      window; the inner join to enrolled weeks also applies the Paterson
+      exclusion and enrollment gate matching the weekly path. Week rows are NOT
+      produced here — they stay on the weekly path.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - layer
+              - indicator
+              - discipline
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: region
+        description: Region name from the last enrolled in-window week.
+        data_type: string
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: school
+        description: School name from the last enrolled in-window week.
+        data_type: string
+      - name: grade_level
+        description: Grade level from the last enrolled in-window week.
+        data_type: int64
+      - name: layer
+        description: Topline layer the indicator belongs to.
+        data_type: string
+      - name: indicator
+        description: Topline indicator name.
+        data_type: string
+      - name: discipline
+        description: Subject area where applicable; null otherwise.
+        data_type: string
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: numerator
+        description: Rate numerator for Divide-aggregated indicators.
+        data_type: float64
+      - name: denominator
+        description: Rate denominator for Divide-aggregated indicators.
+        data_type: float64
+      - name: metric_value
+        description: Student-level metric value for the period.
+        data_type: float64
+      - name: term
+        description: Period start date (mirrors the weekly column name).
+        data_type: date
+      - name: term_end
+        description: Period end date (mirrors the weekly column name).
+        data_type: date
+```
+
+- [ ] **Step 3: Build and test**
+
+```bash
+uv run dbt build --select int_topline__student_metrics_periods \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/topline
+git commit -m "feat(kipptaf): union period-grain topline student metrics
+
+Refs #4363"
+```
+
+---
+
+### Task 10: Rewrite `int_topline__dashboard_aggregations`
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__dashboard_aggregations.sql`
+  (full rewrite)
+- Modify:
+  `src/dbt/kipptaf/models/topline/intermediate/properties/int_topline__dashboard_aggregations.yml`
+  (materialization, tests, contract-free but full column docs)
+
+**Interfaces:**
+
+- Consumes: everything above plus the existing weekly inputs
+  (`int_topline__student_metrics`, `int_topline__staff_metrics`,
+  `int_topline__student_retention_weekly_aggregations`,
+  `int_topline__seats_staffed_weekly_aggregations`,
+  `stg_google_sheets__topline_enrollment_targets`).
+- Produces: today's column set PLUS `period_type string`, `period_label string`,
+  `is_current_period boolean`, `is_most_recent_complete_period boolean`.
+  `term`/`term_end` hold period bounds. `is_current_week` is preserved and now
+  carries the row's period-currency (identical values on week rows). Task 11
+  consumes.
+
+Structure of the rewrite (the full file follows this exact CTE order):
+
+1. `student_metrics` — existing weekly student rows with `'week' as period_type`
+   and `format_date('%G-W%V', term) as period_label`.
+2. `student_metrics_periods` — passthrough of Task 9's model.
+3. `student_metrics_all` — union of 1 and 2. Task 9 rows have no
+   `is_current_week` — select `cast(null as boolean) as is_current_week` in that
+   branch; the final select outputs
+   `coalesce(is_current_week, is_current_period) as is_current_week` so the
+   legacy column carries period-currency on non-week rows.
+4. `pre_agg_union_student` — the existing three org-level GROUP BY blocks
+   (preserve verbatim from the current file), with `period_type`, `period_label`
+   added to every select list and every `group by`.
+5. `agg_union_staff` — existing staff blocks (weekly only), same two period
+   columns added (`'week'`, ISO label from `week_start_monday`); the
+   seats-staffed passthrough block likewise.
+6. `retention` — passthrough of the retention weekly aggregations with the two
+   week period columns.
+7. `agg_week_and_period` — one union of all aggregated rows with `metric_type`
+   assigned per branch (retention → `'Student Metrics'`, seats staffed →
+   `'Staff Metrics'`, matching today's final union membership).
+8. Novel CTEs — complete SQL below: `scoped`, `rollup_config`,
+   `as_of_candidates`, `as_of_rows`, `all_rows`, then targets and goal
+   resolution, then the single final select with the existing goal math and
+   `where term <= current_date('{{ var("local_timezone") }}')` (period rows:
+   `term` = period_start, so future periods drop out).
+
+**CRITICAL — staff region names.** Staff and seats-staffed rows carry long-form
+business unit names (`TEAM Academy Charter School`); the periods dimension and
+student rows use short names (`Newark`). The `scoped` CTE must decode long →
+short BEFORE deriving `scope_key`, or the staff as-of join returns zero rows
+silently. Complete SQL for the novel CTEs (column lists abbreviated to the
+mechanism-relevant ones — carry ALL existing metric and goal-config columns
+through every CTE):
+
+```sql
+    scoped as (
+        select
+            *,
+
+            case
+                when region = 'TEAM Academy Charter School'
+                then 'Newark'
+                when region = 'KIPP Cooper Norcross Academy'
+                then 'Camden'
+                when region = 'KIPP Miami'
+                then 'Miami'
+                when region = 'KIPP Paterson'
+                then 'Paterson'
+                else region
+            end as region_short,
+        from agg_week_and_period
+    ),
+
+    keyed as (
+        select
+            *,
+
+            coalesce(cast(schoolid as string), region_short) as scope_key,
+        from scoped
+    ),
+
+    rollup_config as (
+        select distinct layer, topline_indicator, period_rollup,
+        from {{ ref("int_google_sheets__topline_aggregate_goals") }}
+    ),
+
+    flags as (
+        select
+            k.*,
+
+            p.is_current_period,
+            p.is_most_recent_complete_period,
+        from keyed as k
+        left join
+            {{ ref("int_topline__periods") }} as p
+            on k.scope_key = p.scope_key
+            and k.academic_year = p.academic_year
+            and k.period_type = p.period_type
+            and k.period_label = p.period_label
+    ),
+
+    as_of_candidates as (
+        select
+            f.*,
+
+            p.period_type as p_period_type,
+            p.period_label as p_period_label,
+            p.period_start as p_period_start,
+            p.period_end as p_period_end,
+            p.is_current_period as p_is_current_period,
+            p.is_most_recent_complete_period as p_is_most_recent_complete_period,
+
+            max(f.term) over (
+                partition by
+                    f.metric_type,
+                    f.academic_year,
+                    f.scope_key,
+                    f.region,
+                    f.schoolid,
+                    f.school,
+                    f.layer,
+                    f.indicator,
+                    f.discipline,
+                    f.aggregation_hash,
+                    p.period_type,
+                    p.period_label
+            ) as max_term_in_period,
+        from flags as f
+        inner join
+            {{ ref("int_topline__periods") }} as p
+            on f.scope_key = p.scope_key
+            and f.academic_year = p.academic_year
+            and f.term between p.period_start and p.period_end
+            and p.period_type != 'week'
+        left join
+            rollup_config as rc
+            on f.layer = rc.layer
+            and f.indicator = rc.topline_indicator
+        where
+            f.period_type = 'week'
+            and (rc.period_rollup = 'as_of' or rc.period_rollup is null)
+    ),
+
+    as_of_rows as (
+        select
+            * except (
+                term,
+                term_end,
+                period_type,
+                period_label,
+                is_current_period,
+                is_most_recent_complete_period,
+                p_period_type,
+                p_period_label,
+                p_period_start,
+                p_period_end,
+                p_is_current_period,
+                p_is_most_recent_complete_period,
+                max_term_in_period
+            ),
+
+            p_period_start as term,
+            p_period_end as term_end,
+            p_period_type as period_type,
+            p_period_label as period_label,
+            p_is_current_period as is_current_period,
+            p_is_most_recent_complete_period as is_most_recent_complete_period,
+        from as_of_candidates
+        where term = max_term_in_period
+    ),
+
+    all_rows as (
+        select <canonical column list>
+        from flags
+
+        union all
+
+        select <canonical column list>
+        from as_of_rows
+    ),
+```
+
+Where `<canonical column list>` appears, enumerate exactly these columns (the
+model's working set — internal helpers `region_short` and `scope_key` are
+carried through to the final select, which drops them):
+
+```text
+metric_type, academic_year, region, region_short, scope_key, schoolid,
+school, layer, indicator, discipline, term, term_end, is_current_week,
+period_type, period_label, is_current_period,
+is_most_recent_complete_period, indicator_display, org_level, has_goal,
+goal_type, goal_direction, aggregation_data_type, aggregation_type,
+aggregation_hash, aggregation_display, goal, metric_aggregate_value
+```
+
+The targets chain then reads `all_rows` (not `pre_agg_union_student`):
+`enrollment` filters `indicator = 'Total Enrollment (Without SC OOD)'` and keeps
+`period_type`/`period_label`/flag columns through `targets`, `target_unpivot`
+(add the four period/flag columns to the unpivot select list), and
+`target_goals` — otherwise identical to the current file. Then:
+
+```sql
+    with_target_rows as (
+        select <canonical column list>
+        from all_rows
+
+        union all
+
+        select <canonical column list>
+        from target_goals
+    ),
+
+    resolved_goals as (
+        select
+            r.*,
+
+            coalesce(pg1.goal, pg2.goal, pg3.goal, pg4.goal, r.goal) as goal_resolved,
+        from with_target_rows as r
+        left join
+            {{ ref("stg_google_sheets__topline_period_goals") }} as pg1
+            on r.layer = pg1.layer
+            and r.indicator = pg1.topline_indicator
+            and r.aggregation_hash = pg1.aggregation_hash
+            and r.period_type = pg1.period_type
+            and r.period_label = pg1.period_label
+            and r.academic_year = pg1.academic_year
+            and r.has_goal
+        left join
+            {{ ref("stg_google_sheets__topline_period_goals") }} as pg2
+            on r.layer = pg2.layer
+            and r.indicator = pg2.topline_indicator
+            and r.aggregation_hash = pg2.aggregation_hash
+            and r.period_type = pg2.period_type
+            and r.period_label = pg2.period_label
+            and pg2.academic_year is null
+            and r.has_goal
+        left join
+            {{ ref("stg_google_sheets__topline_period_goals") }} as pg3
+            on r.layer = pg3.layer
+            and r.indicator = pg3.topline_indicator
+            and r.aggregation_hash = pg3.aggregation_hash
+            and r.period_type = pg3.period_type
+            and r.academic_year = pg3.academic_year
+            and pg3.period_label is null
+            and r.has_goal
+        left join
+            {{ ref("stg_google_sheets__topline_period_goals") }} as pg4
+            on r.layer = pg4.layer
+            and r.indicator = pg4.topline_indicator
+            and r.aggregation_hash = pg4.aggregation_hash
+            and r.period_type = pg4.period_type
+            and pg4.period_label is null
+            and pg4.academic_year is null
+            and r.has_goal
+    )
+```
+
+Final select: the current file's goal math verbatim, once, with every `goal`
+reference replaced by `goal_resolved`, and `goal_resolved` output under the
+column name `goal` (so downstream contracts are unchanged). Output the ORIGINAL
+`region` column (long-form for staff rows) — the rpt keeps doing the region
+decode, preserving the week-row regression exactly; drop the internal
+`region_short` and `scope_key` helpers by enumerating the final projection (the
+canonical list minus the two helpers, plus the derived goal columns).
+
+- [ ] **Step 1: Capture the regression baseline BEFORE editing.** Save current
+      prod output aggregates (BigQuery MCP):
+
+```sql
+select
+    metric_type, academic_year, org_level, layer, indicator,
+    count(*) as row_count,
+    round(sum(coalesce(metric_aggregate_value, 0)), 3) as value_sum,
+from `teamster-332318`.kipptaf_topline.int_topline__dashboard_aggregations
+group by metric_type, academic_year, org_level, layer, indicator
+```
+
+Save the result to `.claude/scratch/topline-regression-baseline.csv` (local
+only).
+
+- [ ] **Step 2: Rewrite the model** following the 15-CTE structure above. The
+      existing six GROUP BY blocks are preserved verbatim except for the two
+      added period columns; the goal math moves to a single final select. This
+      is the largest step — reread `src/dbt/CLAUDE.md` SQL conventions before
+      writing, and keep the existing blocks' column order.
+
+- [ ] **Step 3: Properties yml** — set materialization and PK:
+
+```yaml
+models:
+  - name: int_topline__dashboard_aggregations
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - metric_type
+              - academic_year
+              - org_level
+              - region
+              - schoolid
+              - layer
+              - indicator
+              - discipline
+              - aggregation_hash
+              - period_type
+              - term
+```
+
+Add model + column descriptions for every output column (existing and new).
+
+- [ ] **Step 4: Build and run the regression check**
+
+```bash
+uv run dbt build --select int_topline__dashboard_aggregations \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS. Then re-run the Step 1 baseline query against the dev table with
+`where period_type = 'week'` added — every (metric_type, academic_year,
+org_level, layer, indicator) group's `row_count` and `value_sum` must match the
+baseline exactly. Investigate any diff before proceeding; do not rationalize
+mismatches.
+
+- [ ] **Step 5: YTD reconciliation.** For period-scoped indicators, ytd rows
+      must match the most recent complete week's as-of values within rounding:
+
+```sql
+select w.indicator, w.schoolid,
+    w.metric_aggregate_value as week_value,
+    y.metric_aggregate_value as ytd_value,
+from `<dev>`.int_topline__dashboard_aggregations as w
+inner join `<dev>`.int_topline__dashboard_aggregations as y
+    on w.indicator = y.indicator
+    and w.aggregation_hash = y.aggregation_hash
+    and w.academic_year = y.academic_year
+    and y.period_type = 'ytd'
+where w.period_type = 'week'
+    and w.is_most_recent_complete_period
+    and w.indicator in ('ADA', 'Suspensions', 'Successful Contacts')
+    and abs(w.metric_aggregate_value - y.metric_aggregate_value) > 0.005
+```
+
+Expected: 0 rows (small tolerance for the current-week vs complete-week
+boundary; investigate anything larger).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/topline
+git commit -m "feat(kipptaf): multi-grain topline dashboard aggregations
+
+Refs #4363"
+```
+
+---
+
+### Task 11: Update the Tableau extract
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__topline_cascade_dashboard.sql`
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__topline_cascade_dashboard.yml`
+
+**Interfaces:**
+
+- Consumes: Task 10 output.
+- Produces: existing extract columns + `period_type`, `period_label`,
+  `is_current_period`, `is_most_recent_complete_period`.
+
+- [ ] **Step 1: Update the SQL.** Add to the select list (after
+      `db.is_current_week,`):
+
+```sql
+    db.period_type,
+    db.period_label,
+    db.is_current_period,
+    db.is_most_recent_complete_period,
+```
+
+Replace the inline `is_most_recent_complete_week` computation
+(`rpt_tableau__topline_cascade_dashboard.sql:32-37`) with a passthrough that
+preserves the legacy column for week rows:
+
+```sql
+    if(
+        db.period_type = 'week' and db.is_most_recent_complete_period,
+        true,
+        false
+    ) as is_most_recent_complete_week,
+```
+
+- [ ] **Step 2: Update the contract yml** — add the four new columns
+      (`period_type` string, `period_label` string, `is_current_period` boolean,
+      `is_most_recent_complete_period` boolean) with descriptions; add
+      descriptions to the model entry noting the Tableau contract: every
+      worksheet must filter `period_type` or aggregates mix grains.
+
+- [ ] **Step 3: Build and regression-check**
+
+```bash
+uv run dbt build --select rpt_tableau__topline_cascade_dashboard \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS. Verify with BigQuery MCP that
+`where period_type = 'week' and is_most_recent_complete_week` returns the same
+row count as prod's `where is_most_recent_complete_week`.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/extracts
+git commit -m "feat(kipptaf): expose period grains in topline cascade extract
+
+Refs #4363"
+```
+
+---
+
+### Task 12: Full validation, lint, PR
+
+- [ ] **Step 1: Full downstream build**
+
+```bash
+uv run dbt build --select int_topline__periods+ \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: all models and tests PASS.
+
+- [ ] **Step 2: Lint everything changed**
+
+```bash
+.trunk/tools/trunk check --force \
+  $(git diff --name-only origin/main...HEAD | tr '\n' ' ')
+```
+
+Expected: no issues (sqlfluff fires here, not at commit).
+
+- [ ] **Step 3: Push and open the PR** using `.github/pull_request_template.md`
+      as the body skeleton. Body must include: `Closes #4363`, the two
+      documented deviations (CA Interventions as_of; i-Ready week-assigned
+      months), the regression + ytd reconciliation evidence (aggregate counts
+      only — NO PII), and the deployment coordination notes: (a) user re-runs
+      `stage_external_sources` against prod is NOT needed (Dagster
+      rematerializes the sheet asset), (b) confirm dbt Cloud CI is terminal
+      before pushing fixes, (c) after merge the Tableau workbook needs a
+      `period_type` filter added before stakeholders use non-week rows.
+
+- [ ] **Step 4: After dbt Cloud CI passes**, fetch warnings with
+      `mcp__dbt__get_job_run_error(run_id=<ci_run>, warning_only=true)` before
+      declaring done.
