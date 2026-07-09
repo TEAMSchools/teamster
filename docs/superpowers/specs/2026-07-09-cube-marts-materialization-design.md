@@ -81,10 +81,11 @@ with `is_incremental()` filtered to the current-and-prior academic year (a
 
 ### 3. Cube pre-aggregation — sub-second hot path
 
-Add a `rollup` pre-aggregation on the assessment cube (a second layer, on the
-now-table mart) over the additive primitives `count_scores` and
-`_sum_proficient` for the recurring standard-level-proficiency-by-demographic
-pattern.
+Conditional on the A/B/C measurement below (ship only if it beats table-only by
+a margin worth the refresh complexity). Add a `rollup` pre-aggregation on the
+assessment cube (a second layer, on the now-table mart) over the additive
+primitives `count_scores` and `_sum_proficient` for the recurring
+standard-level-proficiency-by-demographic pattern.
 
 Shape:
 
@@ -162,6 +163,45 @@ Pre-aggregations are defined on the cube, not the view (Cube convention).
    `loadUniverses`' department query to `zz_<user>_kipptaf_marts` to see live
    data — uncommittable scaffold, revert before commit).
 
+## Performance measurement (A/B/C)
+
+Pre-aggregations never block or change query results — an unmatched query
+transparently falls back to the underlying table (same answer, slower). So the
+pre-agg layer is optional acceleration, and whether it is worth its
+build/refresh complexity in this cycle is a measured decision, not an
+assumption. If table-conversion alone (B) clears the 55 s deadline with
+comfortable margin, the pre-agg (C) may be deferred.
+
+Measure the #4298 repro (`count_scores` by `academic_year`, `module_code = QA1`)
+in three states over the SQL API:
+
+| Scenario                | State                                    |
+| ----------------------- | ---------------------------------------- |
+| **A** — baseline        | view (current); 65.5 s cold (measured)   |
+| **B** — table only      | fact materialized as a table, no pre-agg |
+| **C** — table + pre-agg | rollup added, pre-built, confirmed hit   |
+
+The **C vs B** delta answers "how much does the pre-agg buy over just tables."
+
+Methodology (so the numbers are trustworthy):
+
+- **Measure cold.** Cube caches results; the issue's "retry works" is a warmed
+  cache. Control for it (cold each run); report warm separately as
+  informational.
+- **Pre-build the rollup before timing C.** The first query against an unbuilt
+  pre-agg pays the build cost — not query latency. Report rollup build time
+  separately.
+- **Confirm the hit.** Inspect the compiled SQL — a matched query reads the
+  rollup table (`..._pre_aggregations.*`), not the fact. If it still reads the
+  fact, the pre-agg did not match and the C number is meaningless.
+- **Median of 3 runs** per scenario, to smooth BigQuery straggler variance.
+- Capture BigQuery `total_bytes_processed` + `total_slot_ms` alongside
+  wall-clock, so the scan reduction is visible, not just latency.
+
+Ship the pre-agg (layer 3) only if C beats B by a margin that justifies the
+refresh complexity; otherwise defer it and ship B alone (which already resolves
+#4333 if it clears the deadline).
+
 ## Out of scope
 
 - Tesseract snapshot `_eop` migration and the `queryRewrite` snapshot-block
@@ -171,6 +211,8 @@ Pre-aggregations are defined on the cube, not the view (Cube convention).
 ## Validation / success criteria
 
 - The #4298 repro runs < 55 s cold over the SQL API (from 65.5 s).
+- The A/B/C measurement table is produced; the C-vs-B delta is recorded and the
+  ship/defer decision on the pre-agg layer is made from it.
 - Assessment MCP queries stop intermittently timing out.
 - `dbt build` of the changed marts is green; contract + uniqueness tests pass;
   no new `warn_unenforced` parse warnings.
