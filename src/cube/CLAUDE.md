@@ -353,9 +353,14 @@ exercise it; a plain dev server silently default-denies every gated view.
   start the server with `NODE_ENV=production` and DROP `CUBEJS_DEV_MODE` (it
   overrides `NODE_ENV`), then hit REST `/load` with an HS256 JWT carrying the
   viewer's `email` claim, signed with `CUBEJS_API_SECRET`. `checkSqlAuth` (SQL
-  API) DOES run in dev mode, but the SQL API + Tesseract fails on any JOINED
-  view (`JoinDefinitionStatic`) — use REST `/load`, not `psycopg2`, for real
-  views.
+  API) also runs in dev mode. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`, default
+  `true`) is the planner on BOTH the REST and SQL APIs, and joining views is a
+  supported SQL-API Tesseract feature (Cube docs → multi-fact views), so either
+  API validates RLS. REST `/load` with an HS256 JWT is the path used here; the
+  SQL API (`psycopg2`, the BI/Superset surface) works too. An earlier
+  `JoinDefinitionStatic` error was a Playground observation (the Playground
+  issues REST queries) — never confirmed as a SQL-API limit; re-verify current
+  behavior rather than assuming either API is broken.
 - **`CUBE_GROUP_MAP` cannot validate `row_level`** — it supplies `groups` only,
   not the `region_key` / `allowed_abbreviations` / `reportee_staff_keys` the
   filters interpolate. Worse, `.env.example`'s placeholder value uses stale

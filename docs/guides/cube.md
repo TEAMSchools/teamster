@@ -216,11 +216,18 @@ policy matches → every view denies**. Comment out (or delete) `CUBE_GROUP_MAP`
 so `resolveAccess` reads real HR data. (It is inert under the auth-on command
 above anyway — the bypass only fires when `NODE_ENV !== production`.)
 
-**The SQL API can't validate joined views.** `checkSqlAuth` _does_ run in
-developer mode (unlike `checkAuth`), but with
-`CUBEJS_TESSERACT_SQL_PLANNER=true` the SQL API fails on any view with a join
-(`Failed to deserialize ... JoinDefinitionStatic`). Use REST `/load` for RLS
-validation of real (joined) views.
+**Validating RLS through the APIs.** `checkSqlAuth` _does_ run in developer mode
+(unlike `checkAuth`), so the SQL API resolves identity in dev too. Tesseract
+(`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the query planner on both
+the REST and SQL APIs, and joining views on the SQL API is a supported Tesseract
+feature
+([multi-fact views](https://docs.cube.dev/docs/data-modeling/multi-fact-views))
+— so either API validates RLS on real (joined) views. This guide uses REST
+`/load` with an HS256 JWT; the SQL API (the BI/Superset surface) is equally
+valid. An earlier `Failed to deserialize ... JoinDefinitionStatic` error was
+seen in the Playground, which issues REST queries — it was never confirmed as a
+SQL-API limitation, so re-verify current behavior on whichever surface you
+depend on.
 
 **Testing branch models not yet in production.** The cubes and `resolveAccess`
 read `kipptaf_marts` (production). If your branch reworks a mart the cubes read
