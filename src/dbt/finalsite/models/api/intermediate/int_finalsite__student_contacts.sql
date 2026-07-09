@@ -75,13 +75,12 @@ with
             emrg_1_custody_yn as is_custodial,
             emrg_1_lives_with_yn as is_household_member,
 
-            1 as set_order,
+            'emergency_1' as contact_slot,
 
             coalesce(emrg_1_relationship_ss, emrg_1_relationship_txt) as relationship,
             array_to_string(
                 [emrg_1_name_first_name, emrg_1_name_last_name], ' '
             ) as contact_name,
-            safe_cast(emrg_1_priority_ss as int64) as priority,
 
             coalesce(
                 if(emrg_1_phone_1_type = 'Cell', emrg_1_phone_1_number, null),
@@ -111,13 +110,12 @@ with
             emrg_2_custody_yn as is_custodial,
             emrg_2_lives_with_yn as is_household_member,
 
-            2 as set_order,
+            'emergency_2' as contact_slot,
 
             coalesce(emrg_2_relationship_ss, emrg_2_relationship_txt) as relationship,
             array_to_string(
                 [emrg_2_name_first_name, emrg_2_name_last_name], ' '
             ) as contact_name,
-            safe_cast(emrg_2_priority_ss as int64) as priority,
 
             coalesce(
                 if(emrg_2_phone_1_type = 'Cell', emrg_2_phone_1_number, null),
@@ -147,13 +145,12 @@ with
             emrg_3_custody_yn as is_custodial,
             emrg_3_lives_with_yn as is_household_member,
 
-            3 as set_order,
+            'emergency_3' as contact_slot,
 
             coalesce(emrg_3_relationship_ss, emrg_3_relationship_txt) as relationship,
             array_to_string(
                 [emrg_3_name_first_name, emrg_3_name_last_name], ' '
             ) as contact_name,
-            safe_cast(emrg_3_priority_ss as int64) as priority,
 
             coalesce(
                 if(emrg_3_phone_1_type = 'Cell', emrg_3_phone_1_number, null),
@@ -183,13 +180,12 @@ with
             emrg_4_custody_yn as is_custodial,
             emrg_4_lives_with_yn as is_household_member,
 
-            4 as set_order,
+            'emergency_4' as contact_slot,
 
             coalesce(emrg_4_relationship_ss, emrg_4_relationship_txt) as relationship,
             array_to_string(
                 [emrg_4_name_first_name, emrg_4_name_last_name], ' '
             ) as contact_name,
-            safe_cast(emrg_4_priority_ss as int64) as priority,
 
             coalesce(
                 if(emrg_4_phone_1_type = 'Cell', emrg_4_phone_1_number, null),
@@ -210,30 +206,13 @@ with
         where emrg_4_name_first_name is not null and emrg_4_name_first_name != ''
     ),
 
-    emergency_ranked as (
+    emergency as (
+        -- Positional passthrough: emergency_N is the emrg_N custom-field set
+        -- as-is. No ranking, no priority re-sort, no gap-filling — if an
+        -- emrg_N set is empty it simply produces no emergency_N row.
         select
             finalsite_enrollment_id,
-            contact_name,
-            relationship,
-            email,
-            phone_mobile,
-            phone_home,
-            phone_work,
-            phone_primary,
-            is_pickup,
-            is_custodial,
-            is_household_member,
-
-            row_number() over (
-                partition by finalsite_enrollment_id
-                order by priority asc nulls last, set_order asc
-            ) as rn,
-        from emergency_long
-    ),
-
-    emergency_slots as (
-        select
-            finalsite_enrollment_id,
+            contact_slot,
             contact_name,
             relationship,
             email,
@@ -249,10 +228,7 @@ with
 
             cast(null as string) as phone_daytime,
             cast(null as string) as home_address,
-
-            concat('emergency_', cast(rn as string)) as contact_slot,
-        from emergency_ranked
-        where rn <= 4
+        from emergency_long
     )
 
 select
@@ -291,4 +267,4 @@ select
     is_custodial,
     is_household_member,
     is_emergency,
-from emergency_slots
+from emergency
