@@ -81,11 +81,11 @@ with `is_incremental()` filtered to the current-and-prior academic year (a
 
 ### 3. Cube pre-aggregation — sub-second hot path
 
-Conditional on the A/B/C measurement below (ship only if it beats table-only by
-a margin worth the refresh complexity). Add a `rollup` pre-aggregation on the
-assessment cube (a second layer, on the now-table mart) over the additive
-primitives `count_scores` and `_sum_proficient` for the recurring
-standard-level-proficiency-by-demographic pattern.
+Ship/defer decided by the cost/benefit weighing in the measurement section below
+(informed by the C-vs-B numbers, not by the 55 s deadline). Add a `rollup`
+pre-aggregation on the assessment cube (a second layer, on the now-table mart)
+over the additive primitives `count_scores` and `_sum_proficient` for the
+recurring standard-level-proficiency-by-demographic pattern.
 
 Shape:
 
@@ -167,10 +167,9 @@ Pre-aggregations are defined on the cube, not the view (Cube convention).
 
 Pre-aggregations never block or change query results — an unmatched query
 transparently falls back to the underlying table (same answer, slower). So the
-pre-agg layer is optional acceleration, and whether it is worth its
-build/refresh complexity in this cycle is a measured decision, not an
-assumption. If table-conversion alone (B) clears the 55 s deadline with
-comfortable margin, the pre-agg (C) may be deferred.
+pre-agg layer is optional acceleration, and whether to ship it is a cost/benefit
+judgment, **not** an automatic pass/fail on the 55 s deadline (clearing 55 s is
+the floor, not the bar). The measurement below makes both sides concrete.
 
 Measure the #4298 repro (`count_scores` by `academic_year`, `module_code = QA1`)
 in three states over the SQL API:
@@ -182,6 +181,38 @@ in three states over the SQL API:
 | **C** — table + pre-agg | rollup added, pre-built, confirmed hit   |
 
 The **C vs B** delta answers "how much does the pre-agg buy over just tables."
+
+### Cost/benefit of the pre-agg layer
+
+The decision weighs these, informed by the measurement plus two usage inputs
+(hot-path query frequency; the fact's row-growth trajectory):
+
+Benefits:
+
+- **Latency (C vs B).** A rollup hit is typically sub-second even when the table
+  clears 55 s — the difference between "the MCP tolerates it" and "an analyst
+  iterates interactively."
+- **Per-query scan reduction × frequency.** A hit reads a tiny aggregated table
+  instead of scanning the fact; `scan_saved × runs/day` is recurring BQ cost
+  avoided. Often the largest number, and invisible in a single-query latency
+  test — so record hot-path frequency.
+- **Concurrency + reliability headroom.** Lighter queries free BQ slots and cut
+  timeout risk under load.
+- **Growth headroom.** The fact is 14.2M rows and climbing; table-only latency
+  degrades as it grows, a coarse-grain rollup far less — the advantage widens
+  over time.
+
+Costs:
+
+- **Refresh compute + cadence.** The rollup must be kept fresh (scheduled /
+  `refresh_key` rebuild). Partitioned refresh limits this to recent partitions,
+  but it is recurring scan.
+- **Operational surface.** Pre-agg storage, refresh scheduling, and monitoring
+  in Cube Cloud.
+- **Maintenance coupling (the real ongoing cost).** The rollup's dimension set
+  must track how analysts group/filter AND the RLS scoping keys. Add a breakdown
+  or scoping dim and forget the rollup, and it **silently stops matching** —
+  queries fall back to the fact with no error.
 
 Methodology (so the numbers are trustworthy):
 
@@ -198,9 +229,8 @@ Methodology (so the numbers are trustworthy):
 - Capture BigQuery `total_bytes_processed` + `total_slot_ms` alongside
   wall-clock, so the scan reduction is visible, not just latency.
 
-Ship the pre-agg (layer 3) only if C beats B by a margin that justifies the
-refresh complexity; otherwise defer it and ship B alone (which already resolves
-#4333 if it clears the deadline).
+Make the ship/defer call by weighing the cost/benefit above with these numbers
+in hand — not by whether B alone happens to clear 55 s.
 
 ## Out of scope
 
@@ -211,8 +241,9 @@ refresh complexity; otherwise defer it and ship B alone (which already resolves
 ## Validation / success criteria
 
 - The #4298 repro runs < 55 s cold over the SQL API (from 65.5 s).
-- The A/B/C measurement table is produced; the C-vs-B delta is recorded and the
-  ship/defer decision on the pre-agg layer is made from it.
+- The A/B/C measurement table is produced; the C-vs-B latency + scan delta,
+  hot-path query frequency, and the pre-agg cost/benefit are characterized so
+  the ship/defer decision is made on the tradeoff (not on the 55 s deadline).
 - Assessment MCP queries stop intermittently timing out.
 - `dbt build` of the changed marts is green; contract + uniqueness tests pass;
   no new `warn_unenforced` parse warnings.
