@@ -122,11 +122,37 @@ replaces per-refresh view recompute; this is the primary cost fix and more than
 absorbs the ~4× row growth from added grains.
 
 `rpt_tableau__topline_cascade_dashboard` stays a thin view: passthrough +
-leadership crosswalk + region decode, now exposing `period_type` and
-`period_label`. `term` / `term_end` hold each period's start/end so existing
-workbook fields keep resolving.
+leadership crosswalk (its region decode is removed — see section 6), now
+exposing `period_type` and `period_label`. `term` / `term_end` hold each
+period's start/end so existing workbook fields keep resolving.
 
-### 6. Tableau usage contract
+### 6. Region normalization (added after initial approval)
+
+All topline models emit city-name regions (`Newark` / `Camden` / `Miami` /
+`Paterson`, and `TAF` for central-office staff), replacing the mixed domain
+where staff rows carried long ADP business-unit names
+(`TEAM Academy Charter School`) that the extract only partially decoded —
+central-office and Paterson staff currently leak long names into the extract's
+region column.
+
+- Mechanism: a shared `region_to_city` macro mapping business-unit names to the
+  same values as `dim_regions.name` — NOT a join to `dim_regions`, which is a
+  semantic-layer mart; no intermediate refs marts in this project, and this
+  feature does not introduce the first such inversion.
+- Applied in `int_topline__staff_metrics` and
+  `int_topline__seats_staffed_weekly_aggregations` (the two long-form inputs).
+  Student-side models already use city names.
+- The goals staging models normalize `entity` (and the hash/display derivations)
+  through the macro, so the sheet works in either form — the Ops edit moving
+  `entity` to city names on Outstanding Teammates rows is non-blocking cleanup,
+  and both goals tabs use only city names going forward. `aggregation_hash` /
+  `aggregation_display` values change for staff region-level rows as a result.
+- The periods dimension adds a `TAF` region-scope alias cloned from the
+  org-scope windows (central office has no school calendar).
+- The extract's region decode CASE is removed (passthrough); week-row regression
+  comparisons must expect the region-value change on staff rows.
+
+### 7. Tableau usage contract
 
 Stacked long output: one datasource, multiple grains as rows. One dashboard can
 show a weekly trend, a quarter scorecard, and a YTD headline simultaneously —

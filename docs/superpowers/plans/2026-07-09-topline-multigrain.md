@@ -37,7 +37,16 @@ Spec: `docs/superpowers/specs/2026-07-09-topline-multigrain-design.md` (issue
   contract-enforced and table-materialized by directory default.
 - New/modified models need `description:` on the model and every column.
 - Regression invariant: `period_type = 'week'` rows of the final extract must
-  match current production output exactly (column adds excepted).
+  match current production output exactly (column adds excepted), EXCEPT the
+  `region` column on staff-side rows: region normalization (Task 4b)
+  intentionally changes `KIPP TEAM and Family Schools Inc.` → `TAF`,
+  `KIPP Paterson` → `Paterson`, and staff region-level `aggregation_hash` /
+  `aggregation_display` values shift with the sheet's entity rename. All other
+  columns and all student-side rows match exactly.
+- Region domain everywhere in the topline layer: `Newark` / `Camden` / `Miami` /
+  `Paterson` / `TAF` (central-office staff) / `All` (org rows). The mapping
+  lives in the `region_to_city` macro (Task 4b) — values match
+  `dim_regions.name`; never join `dim_regions` from an intermediate.
 - `period_rollup` blank/absent ⇒ `as_of`. Period goals only apply where the base
   config row has `has_goal = true`.
 - Period labels are join keys with the sheet: months use full names (`October`),
@@ -71,6 +80,18 @@ before Task 2 can build. Present this checklist to the user:
       `Truancy`, `Suspensions`, `Successful Contacts`, `i-Ready Lessons Passed`,
       `i-Ready Time on Task`. `as_of` for all other rows (including
       `Chronic Absenteeism Interventions` — see deviations).
+
+- [ ] **Step 1b (non-blocking cleanup, any time after merge): Normalize `entity`
+      values on the aggregate goals tab.** On every `Outstanding Teammates` row,
+      replace long business-unit names with city names:
+      `TEAM Academy Charter School` → `Newark`, `KIPP Cooper Norcross Academy` →
+      `Camden`, `KIPP Miami` → `Miami`, `KIPP Paterson` → `Paterson`,
+      `KIPP TEAM and Family Schools Inc.` → `TAF`. Student-layer rows already
+      use city names — leave them. This is cosmetic: the goals staging models
+      normalize `entity` through the `region_to_city` macro (Task 2 / Task 4b),
+      which maps long names and passes city names through unchanged, so the
+      pipeline works with either form. New rows (including everything on the
+      period-goals tab) should use city names only.
 
 - [ ] **Step 2: Create new tab named `src_google_sheets__topline_period_goals`**
       in the same spreadsheet, header row (row 1), columns in this order:
@@ -110,10 +131,11 @@ materialization (all tabs on this URI trigger together).
 
 ---
 
-### Task 2: Period-goals source + staging model
+### Task 2: Region macro + period-goals source + staging model
 
 **Files:**
 
+- Create: `src/dbt/kipptaf/macros/region_to_city.sql`
 - Modify: `src/dbt/kipptaf/models/google/sheets/sources-external.yml` (after the
   `src_google_sheets__topline__enrollment_targets` entry, ~line 343)
 - Create:
@@ -127,6 +149,32 @@ materialization (all tabs on this URI trigger together).
   `org_level string, entity string, schoolid int64, grade_low int64, grade_high int64, layer string, topline_indicator string, academic_year int64, period_type string, period_label string, goal numeric, aggregation_hash string`.
   Task 10 joins on (`layer`, `topline_indicator`, `aggregation_hash`,
   `period_type`) plus `period_label` / `academic_year` specificity.
+
+- [ ] **Step 0: Create the region macro.** Maps long ADP business-unit names to
+      city names; city names pass through unchanged (idempotent), so sheet
+      inputs work in either form. Values intentionally match `dim_regions.name`
+      — do NOT join `dim_regions` from intermediates (mart → intermediate layer
+      inversion). Write `src/dbt/kipptaf/macros/region_to_city.sql`:
+
+```sql
+{% macro region_to_city(column_name) %}
+    /* values match dim_regions.name — keep the two in sync */
+    case
+        {{ column_name }}
+        when 'TEAM Academy Charter School'
+        then 'Newark'
+        when 'KIPP Cooper Norcross Academy'
+        then 'Camden'
+        when 'KIPP Miami'
+        then 'Miami'
+        when 'KIPP Paterson'
+        then 'Paterson'
+        when 'KIPP TEAM and Family Schools Inc.'
+        then 'TAF'
+        else {{ column_name }}
+    end
+{% endmacro %}
+```
 
 - [ ] **Step 1: Add the source entry.** Declared `columns:` are REQUIRED —
       `academic_year` and `period_label` are sparse and autodetect drops
@@ -177,14 +225,39 @@ materialization (all tabs on this URI trigger together).
 ```
 
 - [ ] **Step 2: Write the staging model.** Mirrors the base goals staging hash
-      derivation exactly
-      (`stg_google_sheets__topline_aggregate_goals.sql:12-25`), filters sheet
+      derivation (`stg_google_sheets__topline_aggregate_goals.sql:12-25`) but
+      derives the hash from the CITY-normalized entity (cast-early — the
+      normalized entity is a named column in the source CTE), and filters sheet
       phantom rows:
 
 ```sql
+with
+    source as (
+        select
+            org_level,
+            schoolid,
+            grade_low,
+            grade_high,
+            layer,
+            topline_indicator,
+            academic_year,
+            period_type,
+            period_label,
+
+            cast(goal as numeric) as goal,
+
+            {{ region_to_city("entity") }} as entity,
+        from
+            {{
+                source(
+                    "google_sheets", "src_google_sheets__topline__period_goals"
+                )
+            }}
+        where topline_indicator is not null
+    )
+
 select
     org_level,
-    entity,
     schoolid,
     grade_low,
     grade_high,
@@ -193,8 +266,8 @@ select
     academic_year,
     period_type,
     period_label,
-
-    cast(goal as numeric) as goal,
+    goal,
+    entity,
 
     case
         when layer = 'Outstanding Teammates' and org_level = 'org'
@@ -210,8 +283,7 @@ select
         when org_level = 'school'
         then schoolid || '_' || grade_low || '-' || grade_high
     end as aggregation_hash,
-from {{ source("google_sheets", "src_google_sheets__topline__period_goals") }}
-where topline_indicator is not null
+from source
 ```
 
 - [ ] **Step 3: Write the properties yml** (contract + uniqueness, staging
@@ -596,6 +668,24 @@ with
         group by academic_year, period_type, period_label
     ),
 
+    /* central-office staff normalize to region TAF (dim_regions.name) but
+       have no school calendar — alias the network-wide org windows */
+    taf_scope as (
+        select
+            cast(null as int) as schoolid,
+
+            'TAF' as region,
+
+            academic_year,
+            period_type,
+            period_label,
+
+            min(period_start) as period_start,
+            max(period_end) as period_end,
+        from school_scope
+        group by academic_year, period_type, period_label
+    ),
+
     all_scopes as (
         select
             schoolid,
@@ -626,6 +716,22 @@ with
 
             region as scope_key,
         from region_scope
+
+        union all
+
+        select
+            schoolid,
+            region,
+            academic_year,
+            period_type,
+            period_label,
+            period_start,
+            period_end,
+
+            'region' as org_scope,
+
+            region as scope_key,
+        from taf_scope
 
         union all
 
@@ -701,10 +807,12 @@ models:
       Mon-Sun weeks (from the PowerSchool calendar), exact calendar months
       clipped to the school year, reporting-term quarters (type RT), and one YTD
       row spanning the school year. Region and org scope windows are the min
-      start / max end of the school windows sharing the label. Weeks are Mon-Sun
-      aligned network-wide; school calendars diverge at year end, so consumers
-      must pick each series' last available week inside a window rather than
-      assuming the window's final week exists.
+      start / max end of the school windows sharing the label; a TAF region
+      alias clones the network-wide org windows for central-office staff, who
+      have no school calendar. Weeks are Mon-Sun aligned network-wide; school
+      calendars diverge at year end, so consumers must pick each series' last
+      available week inside a window rather than assuming the window's final
+      week exists.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -776,6 +884,145 @@ row; org scope has exactly one row per period_type × label × year.
 ```bash
 git add src/dbt/kipptaf/models/topline
 git commit -m "feat(kipptaf): add topline periods dimension
+
+Refs #4363"
+```
+
+---
+
+### Task 4b: Region normalization — goals staging + staff-side intermediates
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__topline_aggregate_goals.sql`
+- Modify:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__staff_metrics.sql`
+- Modify:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__seats_staffed_weekly_aggregations.sql`
+- Modify: matching properties ymls (new/changed column entries)
+
+**Interfaces:**
+
+- Consumes: `region_to_city` macro (Task 2 Step 0).
+- Produces: `entity` on both goals staging models is city-normalized
+  (`Newark`/`Camden`/`Miami`/`Paterson`/`TAF`) regardless of sheet form;
+  `int_topline__staff_metrics.region` (new column, city-normalized);
+  `int_topline__seats_staffed_weekly_aggregations.region` now city-normalized.
+  Task 10's staff blocks join and group on `m.region`.
+
+- [ ] **Step 1: Normalize the base goals staging model.** Restructure
+      `stg_google_sheets__topline_aggregate_goals.sql` so entity is normalized
+      in a source CTE and the hash/display derivations read the normalized value
+      (output columns unchanged — contract untouched):
+
+```sql
+with
+    source as (
+        select
+            * except (goal, entity),
+
+            cast(goal as numeric) as goal,
+
+            {{ region_to_city("entity") }} as entity,
+        from
+            {{
+                source(
+                    "google_sheets", "src_google_sheets__topline__aggregate_goals"
+                )
+            }}
+    )
+
+select
+    *,
+
+    if(
+        grade_low = grade_high,
+        cast(grade_high as string),
+        if(grade_low = 0, 'K', cast(grade_low as string)) || '-' || grade_high
+    ) as grade_band,
+
+    case
+        when layer = 'Outstanding Teammates' and org_level = 'org'
+        then org_level
+        when layer = 'Outstanding Teammates' and org_level = 'region'
+        then entity
+        when layer = 'Outstanding Teammates' and org_level = 'school'
+        then cast(schoolid as string)
+        when org_level = 'org'
+        then 'org_' || grade_low || '-' || grade_high
+        when org_level = 'region'
+        then entity || '_' || grade_low || '-' || grade_high
+        when org_level = 'school'
+        then schoolid || '_' || grade_low || '-' || grade_high
+    end as aggregation_hash,
+from source
+```
+
+Update the `entity` column description in the staging yml: "Region entity,
+normalized to city names (Newark / Camden / Miami / Paterson / TAF) via
+region_to_city regardless of the sheet's form."
+
+- [ ] **Step 2: Add normalized `region` to `int_topline__staff_metrics`.** In
+      BOTH union branches: the macro renders a CASE expression, so per ST06
+      ordering it belongs with the case statements near the bottom of each
+      select (after `metric_value`), not beside the plain
+      `ss.home_business_unit_name` ref:
+
+```sql
+    {{ region_to_city("ss.home_business_unit_name") }} as region,
+```
+
+Add the `region` column entry to the staff metrics properties yml (description:
+"Region as city name, normalized from the ADP business unit — TAF for central
+office."). Keep `home_business_unit_name` — downstream code switches to `region`
+in Task 10 but the raw column remains for reference.
+
+- [ ] **Step 3: Normalize `int_topline__seats_staffed_weekly_aggregations`.** In
+      the `seat_tracker` CTE, replace the plain `entity` projection with the
+      normalized value so every downstream join (including the internal goals
+      joins on `entity`) and the output `region` column speak city names:
+
+```sql
+    seat_tracker as (
+        select
+            staffing_model_id,
+            adp_location,
+            valid_from,
+            valid_to,
+            is_staffed,
+
+            {{ region_to_city("entity") }} as entity,
+        from {{ ref("int_seat_tracker__snapshot") }}
+        /* only active seats for the current academic year */
+        where academic_year = {{ var("current_academic_year") }} and is_active
+    ),
+```
+
+- [ ] **Step 4: Build and verify goal-join coverage is unchanged.**
+
+```bash
+uv run dbt build \
+  --select stg_google_sheets__topline_aggregate_goals \
+  int_google_sheets__topline_aggregate_goals int_topline__staff_metrics \
+  int_topline__seats_staffed_weekly_aggregations \
+  --project-dir src/dbt/kipptaf --target dev \
+  --defer --state target/prod
+```
+
+Expected: PASS. Then verify (BigQuery MCP) that the count of staff-side
+aggregated rows with a matched goal config (`org_level is not null` in dev
+`int_topline__dashboard_aggregations` — or, before Task 10 lands, count matched
+rows joining dev `int_topline__staff_metrics.region` to dev goals `entity`)
+equals the prod count of rows matched via `home_business_unit_name`. A drop
+means an entity value fell through the macro — check for un-mapped business-unit
+spellings.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/dbt/kipptaf/models src/dbt/kipptaf/macros
+git commit -m "feat(kipptaf): normalize topline regions to city names
 
 Refs #4363"
 ```
@@ -1811,52 +2058,36 @@ Structure of the rewrite (the full file follows this exact CTE order):
    (preserve verbatim from the current file), with `period_type`, `period_label`
    added to every select list and every `group by`.
 5. `agg_union_staff` — existing staff blocks (weekly only), same two period
-   columns added (`'week'`, ISO label from `week_start_monday`); the
-   seats-staffed passthrough block likewise.
+   columns added (`'week'`, ISO label from `week_start_monday`), and switched to
+   the normalized region: select/group `m.region` (Task 4b column) instead of
+   `m.home_business_unit_name`, and join goals on `m.region = g.entity` (both
+   sides city-normalized after Task 4b). The seats-staffed passthrough block
+   needs only the period columns — its `region` is already normalized.
 6. `retention` — passthrough of the retention weekly aggregations with the two
    week period columns.
 7. `agg_week_and_period` — one union of all aggregated rows with `metric_type`
    assigned per branch (retention → `'Student Metrics'`, seats staffed →
-   `'Staff Metrics'`, matching today's final union membership).
-8. Novel CTEs — complete SQL below: `scoped`, `rollup_config`,
+   `'Staff Metrics'`, matching today's final union membership). All branches
+   emit city-normalized `region` (`Newark` / `Camden` / `Miami` / `Paterson` /
+   `TAF` / `All`) — the periods dimension speaks the same domain, so no decode
+   layer is needed here.
+8. Novel CTEs — complete SQL below: `keyed`, `rollup_config`,
    `as_of_candidates`, `as_of_rows`, `all_rows`, then targets and goal
    resolution, then the single final select with the existing goal math and
    `where term <= current_date('{{ var("local_timezone") }}')` (period rows:
    `term` = period_start, so future periods drop out).
 
-**CRITICAL — staff region names.** Staff and seats-staffed rows carry long-form
-business unit names (`TEAM Academy Charter School`); the periods dimension and
-student rows use short names (`Newark`). The `scoped` CTE must decode long →
-short BEFORE deriving `scope_key`, or the staff as-of join returns zero rows
-silently. Complete SQL for the novel CTEs (column lists abbreviated to the
+Complete SQL for the novel CTEs (column lists abbreviated to the
 mechanism-relevant ones — carry ALL existing metric and goal-config columns
 through every CTE):
 
 ```sql
-    scoped as (
-        select
-            *,
-
-            case
-                when region = 'TEAM Academy Charter School'
-                then 'Newark'
-                when region = 'KIPP Cooper Norcross Academy'
-                then 'Camden'
-                when region = 'KIPP Miami'
-                then 'Miami'
-                when region = 'KIPP Paterson'
-                then 'Paterson'
-                else region
-            end as region_short,
-        from agg_week_and_period
-    ),
-
     keyed as (
         select
             *,
 
-            coalesce(cast(schoolid as string), region_short) as scope_key,
-        from scoped
+            coalesce(cast(schoolid as string), region) as scope_key,
+        from agg_week_and_period
     ),
 
     rollup_config as (
@@ -1961,11 +2192,11 @@ through every CTE):
 ```
 
 Where `<canonical column list>` appears, enumerate exactly these columns (the
-model's working set — internal helpers `region_short` and `scope_key` are
-carried through to the final select, which drops them):
+model's working set — the internal helper `scope_key` is carried through to the
+final select, which drops it):
 
 ```text
-metric_type, academic_year, region, region_short, scope_key, schoolid,
+metric_type, academic_year, region, scope_key, schoolid,
 school, layer, indicator, discipline, term, term_end, is_current_week,
 period_type, period_label, is_current_period,
 is_most_recent_complete_period, indicator_display, org_level, has_goal,
@@ -2037,11 +2268,12 @@ The targets chain then reads `all_rows` (not `pre_agg_union_student`):
 
 Final select: the current file's goal math verbatim, once, with every `goal`
 reference replaced by `goal_resolved`, and `goal_resolved` output under the
-column name `goal` (so downstream contracts are unchanged). Output the ORIGINAL
-`region` column (long-form for staff rows) — the rpt keeps doing the region
-decode, preserving the week-row regression exactly; drop the internal
-`region_short` and `scope_key` helpers by enumerating the final projection (the
-canonical list minus the two helpers, plus the derived goal columns).
+column name `goal` (so downstream contracts are unchanged). The `region` column
+is city-normalized end to end (Task 4b) — staff week rows change from long
+business-unit names to city names/`TAF`, per the amended regression invariant in
+Global Constraints. Drop the internal `scope_key` helper by enumerating the
+final projection (the canonical list minus the helper, plus the derived goal
+columns).
 
 - [ ] **Step 1: Capture the regression baseline BEFORE editing.** Save current
       prod output aggregates (BigQuery MCP):
@@ -2058,11 +2290,13 @@ group by metric_type, academic_year, org_level, layer, indicator
 Save the result to `.claude/scratch/topline-regression-baseline.csv` (local
 only).
 
-- [ ] **Step 2: Rewrite the model** following the 15-CTE structure above. The
-      existing six GROUP BY blocks are preserved verbatim except for the two
-      added period columns; the goal math moves to a single final select. This
-      is the largest step — reread `src/dbt/CLAUDE.md` SQL conventions before
-      writing, and keep the existing blocks' column order.
+- [ ] **Step 2: Rewrite the model** following the CTE structure above. The
+      existing six GROUP BY blocks are preserved verbatim except for (a) the two
+      added period columns and (b) the staff blocks switching from
+      `m.home_business_unit_name` to `m.region` in select, join, and group by;
+      the goal math moves to a single final select. This is the largest step —
+      reread `src/dbt/CLAUDE.md` SQL conventions before writing, and keep the
+      existing blocks' column order.
 
 - [ ] **Step 3: Properties yml** — set materialization and PK:
 
@@ -2162,6 +2396,13 @@ Refs #4363"
     db.is_most_recent_complete_period,
 ```
 
+Remove the region decode CASE
+(`rpt_tableau__topline_cascade_dashboard.sql:39-47`) entirely — `region` is
+city-normalized upstream (Task 4b); replace with a plain `db.region,` in the
+column enumeration (plain refs group, per ST06). Note the new region values
+`TAF` (central-office staff) and `Paterson` (staff) now flow to the workbook's
+region filter.
+
 Replace the inline `is_most_recent_complete_week` computation
 (`rpt_tableau__topline_cascade_dashboard.sql:32-37`) with a passthrough that
 preserves the legacy column for week rows:
@@ -2227,12 +2468,16 @@ Expected: no issues (sqlfluff fires here, not at commit).
 - [ ] **Step 3: Push and open the PR** using `.github/pull_request_template.md`
       as the body skeleton. Body must include: `Closes #4363`, the two
       documented deviations (CA Interventions as_of; i-Ready week-assigned
-      months), the regression + ytd reconciliation evidence (aggregate counts
-      only — NO PII), and the deployment coordination notes: (a) user re-runs
-      `stage_external_sources` against prod is NOT needed (Dagster
-      rematerializes the sheet asset), (b) confirm dbt Cloud CI is terminal
-      before pushing fixes, (c) after merge the Tableau workbook needs a
-      `period_type` filter added before stakeholders use non-week rows.
+      months), the intentional region change (staff rows: long business-unit
+      names → city names/`TAF`; staff region-level `aggregation_hash` /
+      `aggregation_display` values shift), the regression + ytd reconciliation
+      evidence (aggregate counts only — NO PII), and the deployment coordination
+      notes: (a) user re-runs `stage_external_sources` against prod is NOT
+      needed (Dagster rematerializes the sheet asset), (b) confirm dbt Cloud CI
+      is terminal before pushing fixes, (c) after merge the Tableau workbook
+      needs a `period_type` filter added before stakeholders use non-week rows,
+      and its region filter/aliases should be checked for the new `TAF` and
+      `Paterson` staff values.
 
 - [ ] **Step 4: After dbt Cloud CI passes**, fetch warnings with
       `mcp__dbt__get_job_run_error(run_id=<ci_run>, warning_only=true)` before
