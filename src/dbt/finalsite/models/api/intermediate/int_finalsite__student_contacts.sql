@@ -1,32 +1,13 @@
 with
     students as (
+        -- Scope to Finalsite records carrying a PowerSchool student number. This
+        -- is intentional: the downstream kipptaf consumer (Phase 3b) joins
+        -- finalsite_enrollment_id -> powerschool_student_number to key contacts
+        -- to a student, so records without a PS number cannot be consumed there
+        -- yet. Revisit if scoping needs to become SIS-neutral.
         select finalsite_enrollment_id,
         from {{ ref("int_finalsite__contact_id_attributes") }}
         where powerschool_student_number is not null
-    ),
-
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    rel_candidates as (
-        select
-            r.finalsite_enrollment_id,
-            r.rel_id,
-            r.rel_name,
-            r.rel_type,
-            r.is_primary,
-            r.rel_offset,
-        from {{ ref("stg_finalsite__contact_relationships") }} as r
-        inner join
-            students as s on r.finalsite_enrollment_id = s.finalsite_enrollment_id
-    ),
-
-    picked_rel as (
-        {{
-            dbt_utils.deduplicate(
-                relation="rel_candidates",
-                partition_by="finalsite_enrollment_id",
-                order_by="is_primary desc, rel_offset asc",
-            )
-        }}
     ),
 
     contact_1_parent as (
@@ -47,38 +28,76 @@ with
         from {{ ref("stg_finalsite__contacts") }}
     ),
 
-    contact_1_typed as (
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    rel_candidates as (
+        -- Resolve rel_id -> the related person's contact record BEFORE ranking,
+        -- so the pick only considers relationships that resolve to a real
+        -- contact. Sibling/child links point outside the pulled cohort and will
+        -- not match; ranking them first would silently drop a student's
+        -- contact_1 even when a resolvable relationship exists lower in the list.
         select
-            pr.finalsite_enrollment_id,
-            pr.rel_name,
-            pr.rel_type,
+            r.finalsite_enrollment_id,
+            r.rel_id,
+            r.rel_name,
+            r.rel_type,
+            r.is_primary,
+            r.rel_offset,
 
             cp.email,
+            cp.phone_1_type,
             cp.phone_1_number,
+            cp.phone_2_type,
+            cp.phone_2_number,
+            cp.phone_3_type,
+            cp.phone_3_number,
+            cp.address_1,
+            cp.address_2,
+            cp.city,
+            cp.state,
+            cp.zip,
+        from {{ ref("stg_finalsite__contact_relationships") }} as r
+        inner join
+            students as s on r.finalsite_enrollment_id = s.finalsite_enrollment_id
+        inner join contact_1_parent as cp on r.rel_id = cp.rel_finalsite_enrollment_id
+    ),
+
+    picked_rel as (
+        {{
+            dbt_utils.deduplicate(
+                relation="rel_candidates",
+                partition_by="finalsite_enrollment_id",
+                order_by="is_primary desc, rel_offset asc",
+            )
+        }}
+    ),
+
+    contact_1_typed as (
+        select
+            finalsite_enrollment_id,
+            rel_name,
+            rel_type,
+            email,
+            phone_1_number,
 
             coalesce(
-                if(cp.phone_1_type = 'Cell', cp.phone_1_number, null),
-                if(cp.phone_2_type = 'Cell', cp.phone_2_number, null),
-                if(cp.phone_3_type = 'Cell', cp.phone_3_number, null)
+                if(phone_1_type = 'Cell', phone_1_number, null),
+                if(phone_2_type = 'Cell', phone_2_number, null),
+                if(phone_3_type = 'Cell', phone_3_number, null)
             ) as phone_mobile,
             coalesce(
-                if(cp.phone_1_type = 'Home', cp.phone_1_number, null),
-                if(cp.phone_2_type = 'Home', cp.phone_2_number, null),
-                if(cp.phone_3_type = 'Home', cp.phone_3_number, null)
+                if(phone_1_type = 'Home', phone_1_number, null),
+                if(phone_2_type = 'Home', phone_2_number, null),
+                if(phone_3_type = 'Home', phone_3_number, null)
             ) as phone_home,
             coalesce(
-                if(cp.phone_1_type = 'Work', cp.phone_1_number, null),
-                if(cp.phone_2_type = 'Work', cp.phone_2_number, null),
-                if(cp.phone_3_type = 'Work', cp.phone_3_number, null)
+                if(phone_1_type = 'Work', phone_1_number, null),
+                if(phone_2_type = 'Work', phone_2_number, null),
+                if(phone_3_type = 'Work', phone_3_number, null)
             ) as phone_work,
             nullif(
-                array_to_string(
-                    [cp.address_1, cp.address_2, cp.city, cp.state, cp.zip], ', '
-                ),
-                ''
+                array_to_string([address_1, address_2, city, state, zip], ', '), ''
             ) as home_address,
-        from picked_rel as pr
-        inner join contact_1_parent as cp on pr.rel_id = cp.rel_finalsite_enrollment_id
+        from picked_rel
     ),
 
     contact_1 as (
