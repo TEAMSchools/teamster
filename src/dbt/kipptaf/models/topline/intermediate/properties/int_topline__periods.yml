@@ -1,0 +1,64 @@
+models:
+  - name: int_topline__periods
+    description:
+      Periods dimension for the topline cascade dashboard. One row per scope
+      (school / region / org) x academic year x period, where periods are
+      Mon-Sun weeks (from the PowerSchool calendar), exact calendar months
+      clipped to the school year, reporting-term quarters (type RT), and one YTD
+      row spanning the school year. Region and org scope windows are the min
+      start / max end of the school windows sharing the label; a TAF region
+      alias clones the network-wide org windows for central-office staff, who
+      have no school calendar. Weeks are Mon-Sun aligned network-wide; school
+      calendars diverge at year end, so consumers must pick each series' last
+      available week inside a window rather than assuming the window's final
+      week exists.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - org_scope
+              - scope_key
+              - academic_year
+              - period_type
+              - period_label
+    columns:
+      - name: schoolid
+        description: PowerSchool school id; null on region and org scope rows.
+        data_type: int64
+      - name: region
+        description: Region name; the literal All on org scope rows.
+        data_type: string
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: period_type
+        description: Grain of the row — week, month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description:
+          Display and join label — ISO week (2026-W14), full month name, Q1-Q4,
+          or YTD.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description:
+          Last date of the period window (calendar end, not clipped to today).
+        data_type: date
+      - name: org_scope
+        description: Scope of the row — school, region, or org.
+        data_type: string
+      - name: scope_key
+        description:
+          Join key unifying scopes — schoolid as string for school rows, region
+          name for region rows, All for the org rows.
+        data_type: string
+      - name: is_current_period
+        description: True when today falls inside the period window.
+        data_type: boolean
+      - name: is_most_recent_complete_period
+        description:
+          True for the latest fully-elapsed period of its grain and scope in the
+          current academic year.
+        data_type: boolean
