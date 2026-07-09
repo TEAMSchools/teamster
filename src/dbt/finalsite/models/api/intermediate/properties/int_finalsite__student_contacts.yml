@@ -45,6 +45,14 @@ models:
                   - emergency_4
               config:
                 severity: error
+      - name: finalsite_contact_id
+        data_type: string
+        description:
+          The contact person's own Finalsite contact UUID (their
+          `finalsite_enrollment_id`), resolved through the primary
+          relationship's `rel_id`. Populated for `contact_1`; null for
+          `emergency_*` slots, which are free-text custom-field sets with no
+          linked contact record.
       - name: contact_name
         data_type: string
         description:
