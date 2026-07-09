@@ -1,93 +1,47 @@
 with
-    students as (
-        -- Scope to Finalsite records carrying a PowerSchool student number. This
-        -- is intentional: the downstream kipptaf consumer (Phase 3b) joins
-        -- finalsite_enrollment_id -> powerschool_student_number to key contacts
-        -- to a student, so records without a PS number cannot be consumed there
-        -- yet. Revisit if scoping needs to become SIS-neutral.
-        select finalsite_enrollment_id,
-        from {{ ref("int_finalsite__contact_id_attributes") }}
-        where powerschool_student_number is not null
-    ),
-
-    contact_1_parent as (
-        select
-            finalsite_enrollment_id as rel_finalsite_enrollment_id,
-            email,
-            phone_1_type,
-            phone_1_number,
-            phone_2_type,
-            phone_2_number,
-            phone_3_type,
-            phone_3_number,
-            address_1,
-            address_2,
-            city,
-            state,
-            zip,
-        from {{ ref("stg_finalsite__contacts") }}
-    ),
-
-    contact_1_rel as (
+    contact_1_typed as (
         -- contact_1 is EXCLUSIVELY the relationship Finalsite flags `primary`
-        -- (its parent1 designation), resolved to a real contact record. No
-        -- fallback: a student with no primary flag (a Finalsite data-entry gap,
-        -- ~6% of Newark students) gets no contact_1 rather than an arbitrary
-        -- non-primary relationship. `primary` is a per-student singleton, so the
-        -- filter alone is a deterministic pick (the grain uniqueness test guards
-        -- against any future multi-primary anomaly). The inner join to
-        -- contact_1_parent also drops a primary link pointing outside the cohort.
+        -- (its parent1 designation), resolved to the related person's own
+        -- contact record. No fallback: a record with no primary flag (a
+        -- Finalsite data-entry gap) gets no contact_1. `primary` is a
+        -- per-record singleton, so the filter alone is a deterministic pick
+        -- (the grain uniqueness test guards any future multi-primary anomaly).
+        -- No SIS scoping here — downstream receivers filter to enrolled
+        -- students by joining on the student id.
         select
             r.finalsite_enrollment_id,
             r.rel_name,
             r.rel_type,
 
             cp.email,
-            cp.phone_1_type,
             cp.phone_1_number,
-            cp.phone_2_type,
-            cp.phone_2_number,
-            cp.phone_3_type,
-            cp.phone_3_number,
-            cp.address_1,
-            cp.address_2,
-            cp.city,
-            cp.state,
-            cp.zip,
-        from {{ ref("stg_finalsite__contact_relationships") }} as r
-        inner join
-            students as s on r.finalsite_enrollment_id = s.finalsite_enrollment_id
-        inner join contact_1_parent as cp on r.rel_id = cp.rel_finalsite_enrollment_id
-        where r.is_primary
-    ),
-
-    contact_1_typed as (
-        select
-            finalsite_enrollment_id,
-            rel_name,
-            rel_type,
-            email,
-            phone_1_number,
 
             coalesce(
-                if(phone_1_type = 'Cell', phone_1_number, null),
-                if(phone_2_type = 'Cell', phone_2_number, null),
-                if(phone_3_type = 'Cell', phone_3_number, null)
+                if(cp.phone_1_type = 'Cell', cp.phone_1_number, null),
+                if(cp.phone_2_type = 'Cell', cp.phone_2_number, null),
+                if(cp.phone_3_type = 'Cell', cp.phone_3_number, null)
             ) as phone_mobile,
             coalesce(
-                if(phone_1_type = 'Home', phone_1_number, null),
-                if(phone_2_type = 'Home', phone_2_number, null),
-                if(phone_3_type = 'Home', phone_3_number, null)
+                if(cp.phone_1_type = 'Home', cp.phone_1_number, null),
+                if(cp.phone_2_type = 'Home', cp.phone_2_number, null),
+                if(cp.phone_3_type = 'Home', cp.phone_3_number, null)
             ) as phone_home,
             coalesce(
-                if(phone_1_type = 'Work', phone_1_number, null),
-                if(phone_2_type = 'Work', phone_2_number, null),
-                if(phone_3_type = 'Work', phone_3_number, null)
+                if(cp.phone_1_type = 'Work', cp.phone_1_number, null),
+                if(cp.phone_2_type = 'Work', cp.phone_2_number, null),
+                if(cp.phone_3_type = 'Work', cp.phone_3_number, null)
             ) as phone_work,
             nullif(
-                array_to_string([address_1, address_2, city, state, zip], ', '), ''
+                array_to_string(
+                    [cp.address_1, cp.address_2, cp.city, cp.state, cp.zip], ', '
+                ),
+                ''
             ) as home_address,
-        from contact_1_rel
+        from {{ ref("stg_finalsite__contact_relationships") }} as r
+        inner join
+            {{ ref("stg_finalsite__contacts") }} as cp
+            on r.rel_id = cp.finalsite_enrollment_id
+        where r.is_primary
     ),
 
     contact_1 as (
@@ -110,13 +64,6 @@ with
             cast(null as boolean) as is_custodial,
             cast(null as boolean) as is_household_member,
         from contact_1_typed
-    ),
-
-    emergency_attrs as (
-        select a.*,
-        from {{ ref("int_finalsite__contact_custom_attributes") }} as a
-        inner join
-            students as s on a.finalsite_enrollment_id = s.finalsite_enrollment_id
     ),
 
     emergency_long as (
@@ -151,7 +98,7 @@ with
                 if(emrg_1_phone_2_type = 'Work', emrg_1_phone_2_number, null),
                 if(emrg_1_phone_3_type = 'Work', emrg_1_phone_3_number, null)
             ) as phone_work,
-        from emergency_attrs
+        from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_1_name_first_name is not null and emrg_1_name_first_name != ''
 
         union all
@@ -187,7 +134,7 @@ with
                 if(emrg_2_phone_2_type = 'Work', emrg_2_phone_2_number, null),
                 if(emrg_2_phone_3_type = 'Work', emrg_2_phone_3_number, null)
             ) as phone_work,
-        from emergency_attrs
+        from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_2_name_first_name is not null and emrg_2_name_first_name != ''
 
         union all
@@ -223,7 +170,7 @@ with
                 if(emrg_3_phone_2_type = 'Work', emrg_3_phone_2_number, null),
                 if(emrg_3_phone_3_type = 'Work', emrg_3_phone_3_number, null)
             ) as phone_work,
-        from emergency_attrs
+        from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_3_name_first_name is not null and emrg_3_name_first_name != ''
 
         union all
@@ -259,7 +206,7 @@ with
                 if(emrg_4_phone_2_type = 'Work', emrg_4_phone_2_number, null),
                 if(emrg_4_phone_3_type = 'Work', emrg_4_phone_3_number, null)
             ) as phone_work,
-        from emergency_attrs
+        from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_4_name_first_name is not null and emrg_4_name_first_name != ''
     ),
 
