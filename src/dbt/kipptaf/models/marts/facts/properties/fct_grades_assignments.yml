@@ -17,6 +17,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           # TODO(#3915): remove the warn override once PS source cleanup
           # completes; residual ~71 duplicate rows are historical PowerSchool
@@ -37,6 +38,7 @@ models:
             to: ref('dim_student_section_enrollments')
             to_columns: [student_section_enrollment_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
 
@@ -56,6 +58,7 @@ models:
             to: ref('dim_terms')
             to_columns: [term_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -77,6 +80,7 @@ models:
             to: ref('dim_dates')
             to_columns: [date_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

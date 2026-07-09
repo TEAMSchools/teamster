@@ -9,6 +9,7 @@ models:
       - type: primary_key
         columns: [date_key, location_key]
         warn_unsupported: false
+        warn_unenforced: false
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -30,6 +31,7 @@ models:
             to: ref('dim_dates')
             to_columns: [date_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
 
@@ -51,6 +53,7 @@ models:
             to: ref('dim_locations')
             to_columns: [location_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
 

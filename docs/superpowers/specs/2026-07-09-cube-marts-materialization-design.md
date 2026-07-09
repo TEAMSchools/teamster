@@ -117,14 +117,24 @@ Pre-aggregations are defined on the cube, not the view (Cube convention).
 
 ## Wrinkles (decided fallbacks)
 
+- **FK constraints on table marts require the referenced dims to be
+  tables-with-PKs (discovered in execution).** When a fact/dim is materialized
+  as a table, its `foreign_key` constraints render into `CREATE TABLE` DDL, and
+  BigQuery rejects an FK whose referenced table lacks a `primary_key` constraint
+  — even for unenforced FKs (`... does not have Primary Key constraints`). A
+  referenced dim that is still a view has no PK, so the FK DDL fails. Therefore
+  the flip cannot be applied to one fact in isolation: it must land atomically
+  across all marts (one `dbt_project.yml` change marks every mart
+  `state:modified`, so CI/prod build the whole DAG together) and build in
+  dependency order (dims before facts). 60 of the marts carry FK constraints.
+  `dim_staff_reporting_chain` is the only constraint-carrying mart with no PK
+  constraint, but nothing FKs to it (read only by `cube.js`), so it is not an FK
+  target.
+
 - **`dim_staff_reporting_chain` is `WITH RECURSIVE`**
-  (`contract: enforced: false`). Per `src/dbt/CLAUDE.md`, dbt's table CTAS may
-  wrap the model SQL in a subquery, and BigQuery allows `WITH RECURSIVE` only at
-  the top level — so the table materialization may fail. **Verify by building it
-  as a table** (do not assume `CREATE TABLE AS WITH RECURSIVE` is accepted). If
-  it fails, override that one model back to `+materialized: view` — it is tiny
-  (transitive closure of ~1,500 staff), and the only cost of leaving it a view
-  is `resolveAccess` recomputing it per auth resolution.
+  (`contract: enforced: false`) — **verified in execution: it builds cleanly as
+  a table** (`CREATE TABLE AS WITH RECURSIVE`, 8.1k rows). The feared
+  subquery-wrap failure did not occur; no view override is needed.
 
 - **`warn_unenforced: false` sweep.** A `config: materialized: table` mart
   renders `constraints:` into `CREATE TABLE` DDL. Every table-mart PK constraint
@@ -174,13 +184,19 @@ the floor, not the bar). The measurement below makes both sides concrete.
 Measure the #4298 repro (`count_scores` by `academic_year`, `module_code = QA1`)
 in three states over the SQL API:
 
-| Scenario                | State                                    |
-| ----------------------- | ---------------------------------------- |
-| **A** — baseline        | view (current); 65.5 s cold (measured)   |
-| **B** — table only      | fact materialized as a table, no pre-agg |
-| **C** — table + pre-agg | rollup added, pre-built, confirmed hit   |
+| Scenario                | State                         | Cold (measured) |
+| ----------------------- | ----------------------------- | --------------- |
+| **A** — baseline        | marts as views                | 65.5 s          |
+| **B** — table only      | marts as tables, no pre-agg   | **19.9 s**      |
+| **C** — table + pre-agg | tables + `proficiency_rollup` | **~0.2 s**      |
 
-The **C vs B** delta answers "how much does the pre-agg buy over just tables."
+Measured over the SQL API (local dev server, `psycopg2`, network-scope viewer).
+B clears the 55 s deadline (3.3× over A). C is a confirmed rollup hit (~100×
+over B; distinct cache-cold queries by subject / demographic / region all
+returned in 0.2 s), with a one-time ~56 s rollup build per refresh. **Decision:
+ship C** — the ~100× cold-latency win plus per-query scan elimination outweighs
+the daily rebuild and dimension-sync maintenance. The **C vs B** delta answers
+"how much does the pre-agg buy over just tables."
 
 ### Cost/benefit of the pre-agg layer
 

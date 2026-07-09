@@ -198,6 +198,7 @@ models:
           enforced: true
     marts:
       +schema: marts
+      +materialized: table
       +contract:
         enforced: true
     nsc:

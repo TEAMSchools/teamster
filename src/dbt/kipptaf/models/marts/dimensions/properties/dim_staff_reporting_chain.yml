@@ -31,6 +31,7 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
           - relationships:
@@ -47,6 +48,7 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
           - relationships:

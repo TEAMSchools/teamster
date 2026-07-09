@@ -10,6 +10,7 @@ models:
       - type: primary_key
         columns: [course_section_key, term_key]
         warn_unsupported: false
+        warn_unenforced: false
     columns:
       - name: course_section_key
         data_type: string
@@ -21,6 +22,7 @@ models:
             to: ref('dim_course_sections')
             to_columns: [course_section_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
 
@@ -38,6 +40,7 @@ models:
             to: ref('dim_terms')
             to_columns: [term_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
 

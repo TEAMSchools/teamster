@@ -16,6 +16,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -33,6 +34,7 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -50,6 +52,7 @@ models:
             to: ref('dim_staff_observation_types')
             to_columns: [staff_observation_type_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -68,6 +71,7 @@ models:
             to: ref('dim_staff_observation_rubrics')
             to_columns: [staff_observation_rubric_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
           - relationships:
@@ -88,6 +92,7 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -104,6 +109,7 @@ models:
             to: ref('dim_locations')
             to_columns: [location_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -120,6 +126,7 @@ models:
             to: ref('dim_terms')
             to_columns: [term_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -135,6 +142,7 @@ models:
             to: ref('dim_dates')
             to_columns: [date_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

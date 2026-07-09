@@ -29,8 +29,8 @@ API (Postgres wire) via `psycopg2`, BigQuery MCP for build-stat inspection.
 - **No prod dbt runs from Claude.** `--target prod` `dbt build`/`run` and
   `stage_external_sources --target staging` are classifier-blocked — hand prod
   runs to the user. Local validation is
-  `--target dev --defer --state src/dbt/kipptaf/target/prod` (or
-  `--target staging`). `dbt parse`/`compile --target prod` are allowed (no
+  `--target dev --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod`
+  (or `--target staging`). `dbt parse`/`compile --target prod` are allowed (no
   warehouse write).
 - **Dev-schema redirects are uncommittable.** When redirecting a cube
   `sql_table` or `cube.js` read to `zz_<user>_kipptaf_marts`, never `git add`
@@ -95,7 +95,7 @@ joins, materialized as tables, into `zz_<user>_kipptaf_marts`:
 uv run dbt build \
   --select fct_assessment_scores_enrollment_scoped \
   --project-dir src/dbt/kipptaf --target dev \
-  --defer --state src/dbt/kipptaf/target/prod \
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod \
   --vars '{}' \
   --full-refresh
 ```
@@ -316,7 +316,7 @@ SQL):
 ```bash
 uv run dbt build --select dim_staff_reporting_chain \
   --project-dir src/dbt/kipptaf --target dev \
-  --defer --state src/dbt/kipptaf/target/prod --full-refresh 2>&1 | tail -20
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --full-refresh 2>&1 | tail -20
 ```
 
 Expected: SUCCESS. If it FAILS with a WITH RECURSIVE / top-level error, override
@@ -336,7 +336,7 @@ noting the table CTAS breaks WITH RECURSIVE, so it stays a view.
 ```bash
 uv run dbt build --select fct_assessment_scores_enrollment_scoped \
   --project-dir src/dbt/kipptaf --target dev \
-  --defer --state src/dbt/kipptaf/target/prod --full-refresh 2>&1 | tail -20
+  --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod --full-refresh 2>&1 | tail -20
 ```
 
 Expected: SUCCESS; contract + `unique`/`not_null` tests pass. (The full 75-mart

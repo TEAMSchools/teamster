@@ -25,6 +25,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -39,6 +40,7 @@ models:
             to: ref('dim_staff_observation_rubrics')
             to_columns: [staff_observation_rubric_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
           - relationships:
