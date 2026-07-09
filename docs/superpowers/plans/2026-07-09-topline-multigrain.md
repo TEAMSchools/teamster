@@ -67,81 +67,47 @@ Spec: `docs/superpowers/specs/2026-07-09-topline-multigrain-design.md` (issue
 
 ---
 
-### Task 1: Sheet prerequisites (USER ACTIONS — hand off, do not automate)
+### Task 1: Mock config seeds (DONE — committed on the branch)
 
-No files. This task is coordination with the spreadsheet owner and must complete
-before Task 2 can build. Present this checklist to the user:
+The sheet tab and `period_rollup` column are deferred until stakeholders can
+populate real data (Task 13). Two seeds stand in so the whole pipeline builds
+and tests now:
 
-- [ ] **Step 1: Add `period_rollup` column to the existing
-      `src_google_sheets__topline_aggregate_goals` tab** (spreadsheet
-      `1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0`). Header exactly
-      `period_rollup`. Values `as_of` or `period` on every row. Initial
-      assignments — `period` for indicators: `ADA`, `Chronic Absenteeism`,
-      `Truancy`, `Suspensions`, `Successful Contacts`, `i-Ready Lessons Passed`,
-      `i-Ready Time on Task`. `as_of` for all other rows (including
-      `Chronic Absenteeism Interventions` — see deviations).
+- `src/dbt/kipptaf/seeds/seed_topline_period_rollup.csv` — one row per layer ×
+  indicator (every pair on the current goals sheet, plus
+  `Total Enrollment (Without SC OOD)`, `DIBELS PM Mastery`, and
+  `Miami CRQ Mastery`, which have metric rows but no goal config) with the
+  planned `as_of` / `period` assignments. Consumed DIRECTLY by Task 10's
+  `rollup_config` CTE.
+- `src/dbt/kipptaf/seeds/seed_topline_period_goals.csv` — mock period goals
+  mirroring real config combinations (entities, school ids, grade bands all
+  verified to hash-join against the normalized base sheet) with mock goal
+  values. Rows deliberately exercise all four resolution-specificity branches
+  plus a quarter ramp and a period goal on an as-of staff metric.
+- `src/dbt/kipptaf/seeds/properties.yml` — column types, uniqueness,
+  `accepted_values` tests. Both seeds are marked MOCK in their descriptions and
+  are deleted at cutover (Task 13).
 
-- [ ] **Step 1b (non-blocking cleanup, any time after merge): Normalize `entity`
-      values on the aggregate goals tab.** On every `Outstanding Teammates` row,
-      replace long business-unit names with city names:
-      `TEAM Academy Charter School` → `Newark`, `KIPP Cooper Norcross Academy` →
-      `Camden`, `KIPP Miami` → `Miami`, `KIPP Paterson` → `Paterson`,
-      `KIPP TEAM and Family Schools Inc.` → `TAF`. Student-layer rows already
-      use city names — leave them. This is cosmetic: the goals staging models
-      normalize `entity` through the `region_to_city` macro (Task 2 / Task 4b),
-      which maps long names and passes city names through unchanged, so the
-      pipeline works with either form. New rows (including everything on the
-      period-goals tab) should use city names only.
+Already validated: `dbt seed` + 7 tests pass in dev; rollup seed covers every
+sheet indicator pair with zero sheet-only gaps; every goals-seed row matches a
+base config hash under the `region_to_city` normalization.
 
-- [ ] **Step 2: Create new tab named `src_google_sheets__topline_period_goals`**
-      in the same spreadsheet, header row (row 1), columns in this order:
-
-```text
-org_level | entity | schoolid | grade_low | grade_high | layer | topline_indicator | academic_year | period_type | period_label | goal
-```
-
-Column semantics (give to the sheet owner verbatim):
-
-- `org_level`/`entity`/`schoolid`/`grade_low`/`grade_high`/`layer`/`topline_indicator`
-  — identical values/format to the same-named columns on the aggregate goals tab
-  (the row must correspond to an existing config row).
-- `academic_year` — start year (2026 = SY26-27); blank = applies every year.
-- `period_type` — one of `week` / `month` / `quarter` / `ytd`.
-- `period_label` — `October`-style full month name, `Q1`–`Q4`, or blank = every
-  instance of that grain.
-- `goal` — numeric, same units as the base `goal` column.
-
-Seed at least the known ADA rows (monthly + annual goals) so tests have data.
-
-- [ ] **Step 3: User re-stages the staging externals** (classifier-blocked for
-      Claude — user runs in their terminal, AFTER Task 2's source entry is
-      committed on the branch):
-
-```bash
-uv run dbt run-operation stage_external_sources \
-  --args "select: google_sheets.src_google_sheets__topline__period_goals" \
-  --vars '{ext_full_refresh: true}' \
-  --target staging --project-dir src/dbt/kipptaf
-```
-
-Note for execution ordering: Steps 1–2 must happen before any dbt build of Task
-2+. Step 3 must happen after Task 2 is committed but before dbt Cloud CI can
-pass. Post-merge, the prod external picks up the tab on the next Dagster sheet
-materialization (all tabs on this URI trigger together).
+Nothing to execute here — proceed to Task 2.
 
 ---
 
-### Task 2: Region macro + period-goals source + staging model
+### Task 2: Region macro + period-goals staging model (seed-backed)
 
 **Files:**
 
 - Create: `src/dbt/kipptaf/macros/region_to_city.sql`
-- Modify: `src/dbt/kipptaf/models/google/sheets/sources-external.yml` (after the
-  `src_google_sheets__topline__enrollment_targets` entry, ~line 343)
 - Create:
   `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__topline_period_goals.sql`
 - Create: entry in
   `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__topline_period_goals.yml`
+
+The staging model reads `seed_topline_period_goals` for now; Task 13 swaps the
+`from` clause to the sheet-tab source. Downstream models are agnostic.
 
 **Interfaces:**
 
@@ -176,59 +142,12 @@ materialization (all tabs on this URI trigger together).
 {% endmacro %}
 ```
 
-- [ ] **Step 1: Add the source entry.** Declared `columns:` are REQUIRED —
-      `academic_year` and `period_label` are sparse and autodetect drops
-      all-NULL columns. Insert into the `tables:` list of the `google_sheets`
-      source:
-
-```yaml
-- name: src_google_sheets__topline__period_goals
-  external:
-    options:
-      format: GOOGLE_SHEETS
-      uris:
-        - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
-      sheet_range: src_google_sheets__topline_period_goals
-      skip_leading_rows: 1
-  config:
-    meta:
-      dagster:
-        asset_key:
-          - kipptaf
-          - google
-          - sheets
-          - topline
-          - period_goals
-  columns:
-    - name: org_level
-      data_type: STRING
-    - name: entity
-      data_type: STRING
-    - name: schoolid
-      data_type: INT64
-    - name: grade_low
-      data_type: INT64
-    - name: grade_high
-      data_type: INT64
-    - name: layer
-      data_type: STRING
-    - name: topline_indicator
-      data_type: STRING
-    - name: academic_year
-      data_type: INT64
-    - name: period_type
-      data_type: STRING
-    - name: period_label
-      data_type: STRING
-    - name: goal
-      data_type: FLOAT64
-```
-
 - [ ] **Step 2: Write the staging model.** Mirrors the base goals staging hash
       derivation (`stg_google_sheets__topline_aggregate_goals.sql:12-25`) but
       derives the hash from the CITY-normalized entity (cast-early — the
-      normalized entity is a named column in the source CTE), and filters sheet
-      phantom rows:
+      normalized entity is a named column in the source CTE), and filters
+      phantom rows. Reads the MOCK seed for now — the `-- TODO(#4363):` comment
+      marks the Task 13 swap point:
 
 ```sql
 with
@@ -247,12 +166,9 @@ with
             cast(goal as numeric) as goal,
 
             {{ region_to_city("entity") }} as entity,
-        from
-            {{
-                source(
-                    "google_sheets", "src_google_sheets__topline__period_goals"
-                )
-            }}
+        -- TODO(#4363): swap to the sheet-tab source at cutover (see plan
+        -- Task 13) and delete the seed
+        from {{ ref("seed_topline_period_goals") }}
         where topline_indicator is not null
     )
 
@@ -373,128 +289,41 @@ models:
         data_type: string
 ```
 
-- [ ] **Step 4: Build and test** (requires Task 1 Steps 1–2 done and the user to
-      have staged the external per Task 1 Step 3, or build with your own dev
-      staging):
+- [ ] **Step 4: Build and test** (no sheet dependency — the seed is on the
+      branch):
 
 Run:
 
 ```bash
-uv run dbt build --select stg_google_sheets__topline_period_goals \
+uv run dbt build \
+  --select seed_topline_period_goals stg_google_sheets__topline_period_goals \
   --project-dir src/dbt/kipptaf --target dev \
   --defer --state target/prod
 ```
 
-Expected: model builds, tests PASS. If the external is not yet staged, this
-errors "table not found" — hand Task 1 Step 3 back to the user before
-proceeding.
+Expected: seed loads, model builds, tests PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/dbt/kipptaf/models/google/sheets
-git commit -m "feat(kipptaf): stage topline period goals sheet tab
+git add src/dbt/kipptaf/models/google/sheets src/dbt/kipptaf/macros
+git commit -m "feat(kipptaf): stage topline period goals from mock seed
 
 Refs #4363"
 ```
 
 ---
 
-### Task 3: `period_rollup` through the base goals chain
+### Task 3: `period_rollup` config (COLLAPSED — supplied by seed, no work)
 
-**Files:**
+`period_rollup` comes from `seed_topline_period_rollup` (Task 1), which Task
+10's `rollup_config` CTE reads DIRECTLY — the seed's grain (one row per layer ×
+indicator, uniqueness-tested) is exactly the config the aggregation needs, so
+nothing flows through the base goals chain for now.
 
-- Modify:
-  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__topline_aggregate_goals.yml`
-- Modify:
-  `src/dbt/kipptaf/models/google/sheets/intermediate/int_google_sheets__topline_aggregate_goals.sql`
-- Modify:
-  `src/dbt/kipptaf/models/google/sheets/intermediate/properties/int_google_sheets__topline_aggregate_goals.yml`
-
-**Interfaces:**
-
-- Consumes: sheet column `period_rollup` (Task 1 Step 1).
-- Produces: `int_google_sheets__topline_aggregate_goals.period_rollup` (string,
-  values `as_of`/`period`, never null — blank coalesced to `as_of`). Tasks 9–10
-  read it.
-
-- [ ] **Step 1: Declare the new column in the staging contract.** The staging
-      model is `select * except (goal)` — the sheet column flows through
-      automatically, but the enforced contract fails until declared. Add to the
-      `columns:` list of `stg_google_sheets__topline_aggregate_goals.yml`:
-
-```yaml
-- name: period_rollup
-  description:
-    Per-indicator rollup treatment for non-week grains. as_of takes the last
-    available week's value inside each period; period recomputes the metric
-    within the period window from date-bearing sources. Blank defaults to as_of
-    downstream.
-  data_type: string
-  data_tests:
-    - accepted_values:
-        arguments:
-          values: [as_of, period]
-        config:
-          severity: error
-```
-
-- [ ] **Step 2: Pass through the int model with blank-safe default.** In
-      `int_google_sheets__topline_aggregate_goals.sql`, add to the select list
-      (after `g.grade_band,`, before the `case` expression, per ST06 simple
-      functions ordering):
-
-```sql
-    coalesce(g.period_rollup, 'as_of') as period_rollup,
-```
-
-Add the matching column entry to the int properties yml:
-
-```yaml
-- name: period_rollup
-  description: Rollup treatment for non-week grains, blank-coalesced to as_of.
-  data_type: string
-  data_tests:
-    - not_null
-    - accepted_values:
-        arguments:
-          values: [as_of, period]
-```
-
-- [ ] **Step 3: Add a rollup-consistency singular test.** `period_rollup` must
-      be identical across all entity rows of the same indicator (the aggregation
-      reads one value per indicator). Create
-      `src/dbt/kipptaf/tests/topline/test_topline_period_rollup_consistency.sql`:
-
-```sql
-select layer, topline_indicator,
-from {{ ref("int_google_sheets__topline_aggregate_goals") }}
-group by layer, topline_indicator
-having count(distinct period_rollup) > 1
-```
-
-- [ ] **Step 4: Build and test**
-
-Run:
-
-```bash
-uv run dbt build \
-  --select stg_google_sheets__topline_aggregate_goals+1 \
-  --project-dir src/dbt/kipptaf --target dev \
-  --defer --state target/prod
-```
-
-Expected: PASS (requires the sheet column from Task 1; the staging table rebuild
-reads the sheet live).
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/dbt/kipptaf/models/google/sheets src/dbt/kipptaf/tests/topline
-git commit -m "feat(kipptaf): add period_rollup config to topline goals
-
-Refs #4363"
-```
+The sheet-column path (staging contract column, int passthrough with blank-safe
+coalesce, rollup-consistency singular test) is specified in Task 13 for cutover.
+Proceed to Task 4.
 
 ---
 
@@ -2091,8 +1920,10 @@ through every CTE):
     ),
 
     rollup_config as (
-        select distinct layer, topline_indicator, period_rollup,
-        from {{ ref("int_google_sheets__topline_aggregate_goals") }}
+        /* TODO(#4363): repoint to int_google_sheets__topline_aggregate_goals
+           .period_rollup at sheet cutover (plan Task 13) */
+        select layer, topline_indicator, period_rollup,
+        from {{ ref("seed_topline_period_rollup") }}
     ),
 
     flags as (
@@ -2482,3 +2313,178 @@ Expected: no issues (sqlfluff fires here, not at commit).
 - [ ] **Step 4: After dbt Cloud CI passes**, fetch warnings with
       `mcp__dbt__get_job_run_error(run_id=<ci_run>, warning_only=true)` before
       declaring done.
+
+---
+
+### Task 13: Sheet cutover (DEFERRED — separate PR, after stakeholders populate real data)
+
+Replaces the mock seeds with the real Google Sheet tab and column. Do NOT start
+until the user says the sheet data is ready.
+
+**Files:**
+
+- Modify: `src/dbt/kipptaf/models/google/sheets/sources-external.yml`
+- Modify:
+  `src/dbt/kipptaf/models/google/sheets/staging/stg_google_sheets__topline_period_goals.sql`
+- Modify:
+  `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__topline_aggregate_goals.yml`
+- Modify:
+  `src/dbt/kipptaf/models/google/sheets/intermediate/int_google_sheets__topline_aggregate_goals.sql`
+  (+ its properties yml)
+- Modify:
+  `src/dbt/kipptaf/models/topline/intermediate/int_topline__dashboard_aggregations.sql`
+- Create:
+  `src/dbt/kipptaf/tests/topline/test_topline_period_rollup_consistency.sql`
+- Delete: `src/dbt/kipptaf/seeds/seed_topline_period_goals.csv`,
+  `src/dbt/kipptaf/seeds/seed_topline_period_rollup.csv`,
+  `src/dbt/kipptaf/seeds/properties.yml`
+
+- [ ] **Step 1 (USER/Ops): Add `period_rollup` column to the aggregate goals
+      tab** (spreadsheet `1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0`). Header
+      exactly `period_rollup`, values `as_of` or `period` on every row. Source
+      of truth for assignments: `seed_topline_period_rollup.csv` on this branch.
+
+- [ ] **Step 2 (USER/Ops): Create tab
+      `src_google_sheets__topline_period_goals`** with header row:
+      `org_level, entity, schoolid, grade_low, grade_high,     layer, topline_indicator, academic_year, period_type, period_label,     goal`.
+      Semantics: entity keys mirror the aggregate goals tab (city names only —
+      Newark / Camden / Miami / Paterson / TAF); `academic_year` start-year,
+      blank = every year; `period_type` one of week / month / quarter / ytd;
+      `period_label` full month name or Q1-Q4, blank = every instance; `goal`
+      numeric. Populate real goals (the seed CSV shows the shape).
+
+- [ ] **Step 3 (USER/Ops, cosmetic, any time): normalize `entity` on Outstanding
+      Teammates rows** to city names (`TEAM Academy Charter     School` to
+      `Newark`, `KIPP Cooper Norcross Academy` to `Camden`, `KIPP Miami` to
+      `Miami`, `KIPP Paterson` to `Paterson`,
+      `KIPP TEAM and     Family Schools Inc.` to `TAF`). Non-blocking — staging
+      normalizes either form via `region_to_city`.
+
+- [ ] **Step 4: Add the source entry** to `sources-external.yml` (after the
+      `src_google_sheets__topline__enrollment_targets` entry). Declared
+      `columns:` are REQUIRED — `academic_year` and `period_label` are sparse
+      and autodetect drops all-NULL columns:
+
+```yaml
+- name: src_google_sheets__topline__period_goals
+  external:
+    options:
+      format: GOOGLE_SHEETS
+      uris:
+        - https://docs.google.com/spreadsheets/d/1as2rMlr8Z6r9-aI3auBLQ-g79-l-NNarHphGN14_IV0
+      sheet_range: src_google_sheets__topline_period_goals
+      skip_leading_rows: 1
+  config:
+    meta:
+      dagster:
+        asset_key:
+          - kipptaf
+          - google
+          - sheets
+          - topline
+          - period_goals
+  columns:
+    - name: org_level
+      data_type: STRING
+    - name: entity
+      data_type: STRING
+    - name: schoolid
+      data_type: INT64
+    - name: grade_low
+      data_type: INT64
+    - name: grade_high
+      data_type: INT64
+    - name: layer
+      data_type: STRING
+    - name: topline_indicator
+      data_type: STRING
+    - name: academic_year
+      data_type: INT64
+    - name: period_type
+      data_type: STRING
+    - name: period_label
+      data_type: STRING
+    - name: goal
+      data_type: FLOAT64
+```
+
+- [ ] **Step 5: Swap the staging `from`.** In
+      `stg_google_sheets__topline_period_goals.sql`, replace the seed ref (and
+      its TODO comment) with the source:
+
+```sql
+        from
+            {{
+                source(
+                    "google_sheets", "src_google_sheets__topline__period_goals"
+                )
+            }}
+```
+
+- [ ] **Step 6: Route `period_rollup` through the base goals chain.** (a)
+      Declare the column in the staging contract yml:
+
+```yaml
+- name: period_rollup
+  description:
+    Per-indicator rollup treatment for non-week grains. as_of takes the last
+    available week's value inside each period; period recomputes the metric
+    within the period window from date-bearing sources. Blank defaults to as_of
+    downstream.
+  data_type: string
+  data_tests:
+    - accepted_values:
+        arguments:
+          values: [as_of, period]
+        config:
+          severity: error
+```
+
+(b) Pass through `int_google_sheets__topline_aggregate_goals.sql` (ST06: with
+the simple functions):
+
+```sql
+    coalesce(g.period_rollup, 'as_of') as period_rollup,
+```
+
+(c) Repoint `rollup_config` in `int_topline__dashboard_aggregations.sql` (remove
+the TODO comment):
+
+```sql
+    rollup_config as (
+        select distinct layer, topline_indicator, period_rollup,
+        from {{ ref("int_google_sheets__topline_aggregate_goals") }}
+    ),
+```
+
+(d) Add the consistency singular test
+`src/dbt/kipptaf/tests/topline/test_topline_period_rollup_consistency.sql` (one
+`period_rollup` value per indicator):
+
+```sql
+select layer, topline_indicator,
+from {{ ref("int_google_sheets__topline_aggregate_goals") }}
+group by layer, topline_indicator
+having count(distinct period_rollup) > 1
+```
+
+- [ ] **Step 7: Delete the seeds** (`git rm` the three files under
+      `src/dbt/kipptaf/seeds/`).
+
+- [ ] **Step 8 (USER): Stage the new external for CI** (classifier-blocked for
+      Claude; run after the source entry is committed on the cutover branch):
+
+```bash
+uv run dbt run-operation stage_external_sources \
+  --args "select: google_sheets.src_google_sheets__topline__period_goals" \
+  --vars '{ext_full_refresh: true}' \
+  --target staging --project-dir src/dbt/kipptaf
+```
+
+- [ ] **Step 9: Rebuild and verify.** Build
+      `stg_google_sheets__topline_period_goals+` and
+      `int_topline__dashboard_aggregations` in dev; verify goal resolution
+      counts match expectations (rows with a period-goal override before vs
+      after should reflect the real sheet, not the mock). Post-merge, the prod
+      external picks up the tab on the next Dagster sheet materialization (all
+      tabs on this URI trigger together).

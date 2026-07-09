@@ -1,0 +1,42 @@
+layer,topline_indicator,period_rollup
+Attendance and Enrollment,ADA,period
+Attendance and Enrollment,Budget Target,as_of
+Attendance and Enrollment,Chronic Absenteeism,period
+Attendance and Enrollment,Chronic Absenteeism Interventions,as_of
+Attendance and Enrollment,Seat Target,as_of
+Attendance and Enrollment,Successful Contacts,period
+Attendance and Enrollment,Total Enrollment,as_of
+Attendance and Enrollment,Total Enrollment (Without SC OOD),as_of
+Attendance and Enrollment,Truancy,period
+College Matriculation,BA Accepted,as_of
+College Matriculation,BA Applied,as_of
+College Matriculation,BA Matriculated,as_of
+College Matriculation,BA Quality Bar,as_of
+"GPA, ACT, SAT",Formative Assessments,as_of
+"GPA, ACT, SAT",Highest PSAT 8/9,as_of
+"GPA, ACT, SAT",Highest PSAT NMSQT,as_of
+"GPA, ACT, SAT",Highest SAT,as_of
+"GPA, ACT, SAT",Projected Unweighted Cumulative GPA,as_of
+"GPA, ACT, SAT",Weighted Y1 GPA,as_of
+"GPA, ACT, SAT",i-Ready B/FB Meeting Stretch Growth,as_of
+"GPA, ACT, SAT",i-Ready Diagnostic,as_of
+K-8 Reading and Math,DIBELS Benchmark Proficiency,as_of
+K-8 Reading and Math,DIBELS PM Fidelity,as_of
+K-8 Reading and Math,DIBELS PM Mastery,as_of
+K-8 Reading and Math,FAST,as_of
+K-8 Reading and Math,Formative Assessments,as_of
+K-8 Reading and Math,Miami CRQ Mastery,as_of
+K-8 Reading and Math,State Assessments,as_of
+K-8 Reading and Math,Star Diagnostic,as_of
+K-8 Reading and Math,Weighted Y1 GPA,as_of
+K-8 Reading and Math,i-Ready B/FB Meeting Stretch Growth,as_of
+K-8 Reading and Math,i-Ready Diagnostic,as_of
+K-8 Reading and Math,i-Ready Lessons Passed,period
+K-8 Reading and Math,i-Ready Time on Task,period
+Outstanding Teammates,Microgoals,as_of
+Outstanding Teammates,Staff Retention,as_of
+Outstanding Teammates,Staffed,as_of
+Student and Family Experience,Quarterly Incentives,as_of
+Student and Family Experience,School Community Diagnostic,as_of
+Student and Family Experience,Student Retention,as_of
+Student and Family Experience,Suspensions,period
