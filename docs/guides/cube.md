@@ -183,25 +183,30 @@ validate the production path. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`, default
 `true`) is the planner on the SQL API, and joining views is a supported feature
 there
 ([multi-fact views](https://docs.cube.dev/docs/data-modeling/multi-fact-views)).
-Enable the SQL API in `src/cube/.env` and set the viewer to resolve as:
+Enable the SQL API in `src/cube/.env`:
 
 ```bash
 CUBEJS_PG_SQL_PORT=15432
 CUBEJS_SQL_USER=cube_dev
 CUBEJS_SQL_PASSWORD=local-dev-sql
-# dev-only override of the connecting user — whose access you validate as
-CUBE_SQL_DEV_EMAIL=you@apps.teamschools.org
+# Optional: pin EVERY connection to one viewer (dev-only override of the
+# connecting user). Leave it commented to resolve as the connecting SQL user
+# instead, which lets you switch viewers per connection with no restart.
+# CUBE_SQL_DEV_EMAIL=someone@apps.teamschools.org
 ```
 
-Restart the **Cube: Dev Server** task, then query over the Postgres wire
-protocol (`MEASURE()` wraps measures; change `CUBE_SQL_DEV_EMAIL` + restart to
-switch viewer):
+Restart the **Cube: Dev Server** task. Identity resolves from the **SQL `user`
+you connect as** (unless `CUBE_SQL_DEV_EMAIL` is set, which overrides it) — so
+put the viewer's email in `user`, and switch viewers by opening a new connection
+rather than restarting. `MEASURE()` wraps measures:
 
 ```bash
 uv run --with psycopg2-binary python - <<'PY'
 import psycopg2
 
-conn = psycopg2.connect(host="localhost", port=15432, user="cube_dev",
+# identity = the `user` you connect as; swap it to test a different viewer
+conn = psycopg2.connect(host="127.0.0.1", port=15432,
+                        user="you@apps.teamschools.org",
                         password="local-dev-sql", dbname="cube")
 cur = conn.cursor()
 cur.execute("SELECT MEASURE(count_employees) FROM staff_directory")

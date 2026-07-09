@@ -351,9 +351,12 @@ exercise it; a plain dev server silently default-denies every gated view.
   even in dev mode; `checkAuth` (REST) does NOT — with `CUBEJS_DEV_MODE=true`
   REST skips auth, so `resolveAccess` never runs and every gated view zero-rows
   for ALL REST viewers. So validate over the SQL API via `psycopg2`: set
-  `CUBEJS_PG_SQL_PORT` + `CUBEJS_SQL_USER`/`_PASSWORD` and
-  `CUBE_SQL_DEV_EMAIL=<viewer>` (dev-only override of the connecting user) — no
-  `NODE_ENV` flip, and it's the prod BI/Superset surface. Tesseract
+  `CUBEJS_PG_SQL_PORT` + `CUBEJS_SQL_USER`/`_PASSWORD`, then connect as the
+  viewer's email in the SQL `user` — identity resolves from the connecting user,
+  so switch viewers per connection with no restart.
+  (`CUBE_SQL_DEV_EMAIL=<viewer>` optionally pins every connection to one alias,
+  overriding the connecting user — change + restart to switch.) No `NODE_ENV`
+  flip, and it's the prod BI/Superset surface. Tesseract
   (`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on both APIs
   and joining views is a supported SQL-API feature (multi-fact views); the old
   `JoinDefinitionStatic` note was a Playground (REST) observation, not a SQL-API
