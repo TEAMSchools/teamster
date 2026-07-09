@@ -1,0 +1,54 @@
+models:
+  - name: int_topline__attendance_period
+    description:
+      Student-level attendance metrics recomputed within exact non-week period
+      windows (month / quarter / ytd) for the topline cascade dashboard. ADA is
+      attendance over membership within the window; truancy is whether the
+      student was flagged truant on any day in the window; chronic absenteeism
+      is window ADA at or below 0.90.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description: Last date of the period window.
+        data_type: date
+      - name: attendance_value_sum
+        description: Sum of attendance values on in-window days.
+        data_type: float64
+      - name: membership_value_sum
+        description: Sum of membership values on in-window days.
+        data_type: float64
+      - name: ada_period
+        description: Window ADA — attendance over membership, 3 decimals.
+        data_type: float64
+      - name: is_truant_period_int
+        description: 1 when the student was truant on any day in the window.
+        data_type: int64
+      - name: is_chronically_absent_period_int
+        description: 1 when window ADA is at or below 0.90.
+        data_type: int64
