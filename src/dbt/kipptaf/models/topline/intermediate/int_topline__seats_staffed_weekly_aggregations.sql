@@ -12,7 +12,13 @@ with
 
     seat_tracker as (
         select
-            staffing_model_id, entity, adp_location, valid_from, valid_to, is_staffed,
+            staffing_model_id,
+            adp_location,
+            valid_from,
+            valid_to,
+            is_staffed,
+
+            {{ region_to_city("entity") }} as entity,
         from {{ ref("int_seat_tracker__snapshot") }}
         /* only active seats for the current academic year */
         where academic_year = {{ var("current_academic_year") }} and is_active

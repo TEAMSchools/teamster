@@ -1,7 +1,17 @@
-select
-    * except (goal),
+with
+    source as (
+        select
+            * except (goal, entity),
 
-    cast(goal as numeric) as goal,
+            cast(goal as numeric) as goal,
+
+            {{ region_to_city("entity") }} as entity,
+        from
+            {{ source("google_sheets", "src_google_sheets__topline__aggregate_goals") }}
+    )
+
+select
+    *,
 
     if(
         grade_low = grade_high,
@@ -23,4 +33,4 @@ select
         when org_level = 'school'
         then schoolid || '_' || grade_low || '-' || grade_high
     end as aggregation_hash,
-from {{ source("google_sheets", "src_google_sheets__topline__aggregate_goals") }}
+from source

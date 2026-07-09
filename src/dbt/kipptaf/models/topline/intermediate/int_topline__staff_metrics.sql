@@ -22,6 +22,8 @@ select
     null as denominator,
 
     if(ma.microgoals_assigned >= 1, 1, 0) as metric_value,
+
+    {{ region_to_city("ss.home_business_unit_name") }} as region,
 from {{ ref("int_topline__people_spine") }} as ss
 left join
     {{ ref("int_topline__microgoals_assigned_weekly") }} as ma
@@ -59,6 +61,8 @@ select
     null as denominator,
 
     sr.is_retention as metric_value,
+
+    {{ region_to_city("ss.home_business_unit_name") }} as region,
 from {{ ref("int_topline__people_spine") }} as ss
 left join
     {{ ref("int_topline__staff_retention") }} as sr

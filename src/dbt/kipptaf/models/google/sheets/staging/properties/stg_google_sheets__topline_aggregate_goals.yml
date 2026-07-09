@@ -9,6 +9,9 @@ models:
         data_type: string
       - name: Entity
         data_type: string
+        description: >-
+          Region entity, normalized to city names (Newark / Camden / Miami /
+          Paterson / TAF) via region_to_city regardless of the sheet's form.
       - name: Schoolid
         data_type: int64
       - name: Grade_Low
