@@ -30,11 +30,12 @@ with
 
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     rel_candidates as (
-        -- Resolve rel_id -> the related person's contact record BEFORE ranking,
-        -- so the pick only considers relationships that resolve to a real
-        -- contact. Sibling/child links point outside the pulled cohort and will
-        -- not match; ranking them first would silently drop a student's
-        -- contact_1 even when a resolvable relationship exists lower in the list.
+        -- contact_1 is EXCLUSIVELY the relationship Finalsite flags `primary`
+        -- (its parent1 designation), resolved to a real contact record. No
+        -- fallback: a student with no primary flag (a Finalsite data-entry gap,
+        -- ~6% of Newark students) gets no contact_1 rather than an arbitrary
+        -- non-primary relationship. The inner join to contact_1_parent also
+        -- drops a primary link that points outside the pulled cohort.
         select
             r.finalsite_enrollment_id,
             r.rel_id,
@@ -59,6 +60,7 @@ with
         inner join
             students as s on r.finalsite_enrollment_id = s.finalsite_enrollment_id
         inner join contact_1_parent as cp on r.rel_id = cp.rel_finalsite_enrollment_id
+        where r.is_primary
     ),
 
     picked_rel as (
@@ -66,7 +68,7 @@ with
             dbt_utils.deduplicate(
                 relation="rel_candidates",
                 partition_by="finalsite_enrollment_id",
-                order_by="is_primary desc, rel_offset asc",
+                order_by="rel_offset asc",
             )
         }}
     ),
