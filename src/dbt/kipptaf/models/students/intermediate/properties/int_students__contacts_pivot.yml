@@ -1,0 +1,189 @@
+models:
+  - name: int_students__contacts_pivot
+    description:
+      Wide one-row-per-student contact surface, pivoted from
+      `int_students__contacts`. Preserves the legacy contact column surface
+      (`contact_1`/`contact_2`, `emergency_1` through `emergency_3`, and
+      `pickup_1` through `pickup_3`, each with the nine attribute suffixes) plus
+      the new additive `emergency_4` set. Under the 1+4 contact shape only
+      `contact_1` and `emergency_1` through `emergency_4` carry data;
+      `contact_2` and the `pickup` slots are retained as NULL so downstream
+      extracts keep their column lists. Grain is one row per (student, source
+      project).
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+          config:
+            severity: error
+    columns:
+      - name: student_number
+        data_type: integer
+      - name: _dbt_source_project
+        data_type: string
+      - name: contact_1_address_home
+        data_type: string
+      - name: contact_1_email_current
+        data_type: string
+      - name: contact_1_name
+        data_type: string
+      - name: contact_1_phone_daytime
+        data_type: string
+      - name: contact_1_phone_home
+        data_type: string
+      - name: contact_1_phone_mobile
+        data_type: string
+      - name: contact_1_phone_primary
+        data_type: string
+      - name: contact_1_phone_work
+        data_type: string
+      - name: contact_1_relationship
+        data_type: string
+      - name: contact_2_address_home
+        data_type: string
+      - name: contact_2_email_current
+        data_type: string
+      - name: contact_2_name
+        data_type: string
+      - name: contact_2_phone_daytime
+        data_type: string
+      - name: contact_2_phone_home
+        data_type: string
+      - name: contact_2_phone_mobile
+        data_type: string
+      - name: contact_2_phone_primary
+        data_type: string
+      - name: contact_2_phone_work
+        data_type: string
+      - name: contact_2_relationship
+        data_type: string
+      - name: emergency_1_address_home
+        data_type: string
+      - name: emergency_1_email_current
+        data_type: string
+      - name: emergency_1_name
+        data_type: string
+      - name: emergency_1_phone_daytime
+        data_type: string
+      - name: emergency_1_phone_home
+        data_type: string
+      - name: emergency_1_phone_mobile
+        data_type: string
+      - name: emergency_1_phone_primary
+        data_type: string
+      - name: emergency_1_phone_work
+        data_type: string
+      - name: emergency_1_relationship
+        data_type: string
+      - name: emergency_2_address_home
+        data_type: string
+      - name: emergency_2_email_current
+        data_type: string
+      - name: emergency_2_name
+        data_type: string
+      - name: emergency_2_phone_daytime
+        data_type: string
+      - name: emergency_2_phone_home
+        data_type: string
+      - name: emergency_2_phone_mobile
+        data_type: string
+      - name: emergency_2_phone_primary
+        data_type: string
+      - name: emergency_2_phone_work
+        data_type: string
+      - name: emergency_2_relationship
+        data_type: string
+      - name: emergency_3_address_home
+        data_type: string
+      - name: emergency_3_email_current
+        data_type: string
+      - name: emergency_3_name
+        data_type: string
+      - name: emergency_3_phone_daytime
+        data_type: string
+      - name: emergency_3_phone_home
+        data_type: string
+      - name: emergency_3_phone_mobile
+        data_type: string
+      - name: emergency_3_phone_primary
+        data_type: string
+      - name: emergency_3_phone_work
+        data_type: string
+      - name: emergency_3_relationship
+        data_type: string
+      - name: emergency_4_address_home
+        data_type: string
+      - name: emergency_4_email_current
+        data_type: string
+      - name: emergency_4_name
+        data_type: string
+      - name: emergency_4_phone_daytime
+        data_type: string
+      - name: emergency_4_phone_home
+        data_type: string
+      - name: emergency_4_phone_mobile
+        data_type: string
+      - name: emergency_4_phone_primary
+        data_type: string
+      - name: emergency_4_phone_work
+        data_type: string
+      - name: emergency_4_relationship
+        data_type: string
+      - name: pickup_1_address_home
+        data_type: string
+      - name: pickup_1_email_current
+        data_type: string
+      - name: pickup_1_name
+        data_type: string
+      - name: pickup_1_phone_daytime
+        data_type: string
+      - name: pickup_1_phone_home
+        data_type: string
+      - name: pickup_1_phone_mobile
+        data_type: string
+      - name: pickup_1_phone_primary
+        data_type: string
+      - name: pickup_1_phone_work
+        data_type: string
+      - name: pickup_1_relationship
+        data_type: string
+      - name: pickup_2_address_home
+        data_type: string
+      - name: pickup_2_email_current
+        data_type: string
+      - name: pickup_2_name
+        data_type: string
+      - name: pickup_2_phone_daytime
+        data_type: string
+      - name: pickup_2_phone_home
+        data_type: string
+      - name: pickup_2_phone_mobile
+        data_type: string
+      - name: pickup_2_phone_primary
+        data_type: string
+      - name: pickup_2_phone_work
+        data_type: string
+      - name: pickup_2_relationship
+        data_type: string
+      - name: pickup_3_address_home
+        data_type: string
+      - name: pickup_3_email_current
+        data_type: string
+      - name: pickup_3_name
+        data_type: string
+      - name: pickup_3_phone_daytime
+        data_type: string
+      - name: pickup_3_phone_home
+        data_type: string
+      - name: pickup_3_phone_mobile
+        data_type: string
+      - name: pickup_3_phone_primary
+        data_type: string
+      - name: pickup_3_phone_work
+        data_type: string
+      - name: pickup_3_relationship
+        data_type: string
