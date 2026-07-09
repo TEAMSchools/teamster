@@ -287,3 +287,27 @@ cubes:
         type: number
         format: percent
         public: true
+
+    pre_aggregations:
+      # Rollup on the additive proficiency primitives for the standard-level
+      # proficiency-by-demographic hot path. Includes the RLS scoping keys
+      # (locations.region_key / locations.abbreviation) so region/school viewers
+      # hit the rollup rather than falling back to the fact.
+      - name: proficiency_rollup
+        measures:
+          - student_assessment_scores.count_scores
+          - student_assessment_scores._sum_proficient
+        dimensions:
+          - dates.academic_year
+          - student_assessments.module_code
+          - student_assessments.academic_subject
+          - student_assessments.grade_level_tested
+          - student_assessment_administrations.administration_period
+          - student_assessment_scores.response_type_code
+          - students.race
+          - students.gender_identity
+          - student_school_enrollments.grade_level
+          - locations.region_key
+          - locations.abbreviation
+        refresh_key:
+          every: 1 day
