@@ -197,7 +197,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `commits/<sha>/check-runs`). Check both before calling a PR green.
   `claude-review` triggers only on PR `opened` / `ready_for_review` (not
   `synchronize`) — it does NOT re-run when you push fixes, so don't wait or
-  monitor for a re-review after a fix push.
+  monitor for a re-review after a fix push. A PR with all checks green but
+  `mergeable_state: blocked` (from `gh api repos/<owner>/<repo>/pulls/<n>`) is
+  awaiting a required review approval (CODEOWNERS `src/dbt/` =
+  analytics-engineers), not a CI failure.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -650,7 +653,11 @@ SELECT-only constraints apply. `bq query` with the SQL passed as a positional
 arg crashes its flag parser when the query text starts with a `--` comment
 ("Unknown command line flag ..." / RecursionError) — the `--` end-of-flags
 separator does NOT help. Start the query with `WITH`/`SELECT` (strip leading
-comment lines).
+comment lines). Pass backtick/quote-heavy SQL via `"$(cat file.sql)"` to dodge
+shell-quoting. `--max_rows` defaults to 100 — raise it for full dumps. To hand
+PII to Ops, redirect to a local `.claude/scratch/*.csv`
+(`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
+verify with `wc -l`, and reference the FILE (never the values) in any tracker.
 
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is

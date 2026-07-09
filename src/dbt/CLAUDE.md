@@ -252,6 +252,19 @@ standalone — build/test them via a **consuming district** project-dir with tha
 district's prod manifest for `--defer` (e.g. focus → kippmiami):
 `uv run dbt build --select <model> --project-dir src/dbt/kippmiami --defer --state src/dbt/kippmiami/target/prod --target dev`.
 
+## Local dev schema naming
+
+Local dev builds land in `zz_<GITHUB_USER>_<district>[_<source>]` (repo
+`.dbt/profiles.yml` dev target, e.g. `zz_cbini_kippnewark_finalsite`) — NOT the
+shipped `src/dbt/*/profiles.yml` `zz_dagster_*` schema. Find where a model
+actually built with:
+
+```sql
+select schema_name
+from `teamster-332318`.INFORMATION_SCHEMA.SCHEMATA
+where schema_name like '%<frag>%'
+```
+
 ## Dev `--defer` for unstaged externals
 
 Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
