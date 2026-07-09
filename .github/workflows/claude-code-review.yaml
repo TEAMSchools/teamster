@@ -25,13 +25,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@f87768c6d25f92ae6efa7175e223ef77d4cbf97f # v1.0.166
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -50,11 +50,34 @@ jobs:
           track_progress: true
           prompt: >-
             /requesting-code-review ${{ github.repository }}/pull/${{
-            github.event.pull_request.number }}. Apply dignified-python for
-            Python standards, dagster-expert for Dagster assets and pipelines,
-            and dbt:using-dbt-for-analytics-engineering for dbt models and
+            github.event.pull_request.number }}.
+
+
+            Apply dignified-python for Python standards, dagster-expert for
+            Dagster assets and pipelines, and
+            dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
+
+
+            Environment: you run in GitHub Actions with NO warehouse or data
+            access. No BigQuery connection, and none of the cube, dbt, dagster,
+            or bigquery MCP servers are available. You cannot run queries, `dbt
+            show`, `dbt compile`, or materialize any model. Do not state
+            data-dependent claims (row counts, null rates, join fan-out, grain
+            or duplicate violations, value distributions) as fact. When a
+            finding depends on the data, label it "needs local verification" and
+            give the exact query or dbt command the author should run.
+
+
+            Review what is checkable statically: SQL and Jinja logic,
+            ref()/source() wiring, incremental and materialization config, join
+            grain inferred from schema, test coverage, and PII exposure. Before
+            reporting a repo-convention violation, confirm the convention
+            against existing models with git grep; do not invent naming or style
+            rules the codebase does not already follow. Report every issue with
+            a severity label; do not withhold lower-severity findings.
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true
-          claude_args: --model sonnet
+          display_report: true
+          claude_args: --model opus
