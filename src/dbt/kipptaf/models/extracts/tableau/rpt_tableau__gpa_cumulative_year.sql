@@ -58,7 +58,10 @@ inner join
 where
     e.rn_year = 1
     and not e.is_out_of_district
-    and e.enroll_status in (0, 3)
+    /* status guard drops pre-registered (-1, which can pass
+       is_enrolled_recent) and invalid (1) rows */
+    and e.enroll_status in (0, 2, 3)
+    and e.is_enrolled_recent
     /* Miami hard-excluded: region unsupported in the rebuilt dashboard
        (#4340) */
     -- TODO(#4340): add Paterson once PS gradebook data is populated

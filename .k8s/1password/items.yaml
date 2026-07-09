@@ -390,3 +390,11 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Finalsite API - Miami
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-finalsite-api-kippnewark
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Finalsite API - Newark
