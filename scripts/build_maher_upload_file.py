@@ -24,12 +24,12 @@ Workflow (see the `building-maher-upload-files` skill for the full runbook):
         uv run scripts/build_maher_upload_file.py --input roster.csv --print-students
   2. Query LIVE staging for those students' existing Maher (student, amount)
      pairs and save as a 2-column CSV `student,amount` (the dedup export).
-  3. Build the upload files:
+  3. Build the upload files (named <object>_<operation>_<yyyymmdd>.csv):
         uv run scripts/build_maher_upload_file.py \
             --input roster.csv \
             --existing-pairs existing_pairs.csv \
-            --out-new   maher_upload_new_records.csv \
-            --out-existing maher_upload_already_in_sf.csv
+            --out-new   .claude/scratch/maher/kipp_aid__c_add_20260709.csv \
+            --out-existing .claude/scratch/maher/kipp_aid__c_skip_20260709.csv
 """
 
 from __future__ import annotations
@@ -159,9 +159,17 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="skip dedup (treat every row as new) — emits a loud warning",
     )
-    p.add_argument("--out-new", type=Path, default=Path("maher_upload_new_records.csv"))
     p.add_argument(
-        "--out-existing", type=Path, default=Path("maher_upload_already_in_sf.csv")
+        "--out-new",
+        type=Path,
+        default=None,
+        help="records to insert (default: kipp_aid__c_add_<yyyymmdd>.csv)",
+    )
+    p.add_argument(
+        "--out-existing",
+        type=Path,
+        default=None,
+        help="records already in Salesforce (default: kipp_aid__c_skip_<yyyymmdd>.csv)",
     )
     p.add_argument(
         "--print-students",
@@ -184,6 +192,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--first-name-col", default="Alumni First Name")
     p.add_argument("--last-name-col", default="Alumni Last Name")
     args = p.parse_args(argv)
+
+    # Upload artifacts follow <object>_<operation>_<yyyymmdd>.csv.
+    today = datetime.now().strftime("%Y%m%d")
+    if args.out_new is None:
+        args.out_new = Path(f"kipp_aid__c_add_{today}.csv")
+    if args.out_existing is None:
+        args.out_existing = Path(f"kipp_aid__c_skip_{today}.csv")
 
     rows = read_rows(args.input)
     if not rows:

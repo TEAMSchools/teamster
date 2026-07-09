@@ -85,16 +85,18 @@ Save the result to a CSV with a `student,amount` header — this is the
 
 ### 3. Build the upload files
 
-Write the output files under `.claude/scratch/` so PII stays local — relative
-paths are resolved from the current directory (the repo root), so name them
-explicitly:
+Upload artifacts follow the naming convention
+`<object>_<operation>_<yyyymmdd>.csv` — e.g. `kipp_aid__c_add_20260709.csv`.
+Operations: `add` (insert), `skip` (already-in-SF audit file), `update`,
+`delete`. The script defaults to this pattern dated today, but writes to the
+current directory — pass explicit `.claude/scratch/` paths so PII stays local:
 
 ```bash
 uv run scripts/build_maher_upload_file.py \
   --input <roster>.csv \
   --existing-pairs .claude/scratch/maher/existing_pairs.csv \
-  --out-new .claude/scratch/maher/maher_upload_new_records.csv \
-  --out-existing .claude/scratch/maher/maher_upload_already_in_sf.csv
+  --out-new .claude/scratch/maher/kipp_aid__c_add_<yyyymmdd>.csv \
+  --out-existing .claude/scratch/maher/kipp_aid__c_skip_<yyyymmdd>.csv
 ```
 
 The script prints input / new / already-in-SF counts (plus a `skipped` line only
@@ -104,8 +106,8 @@ new-record dollar total. Review them. It warns if any new record is
 
 ### 4. Hand off for loading
 
-Give the user the new-records file
-(`.claude/scratch/maher/maher_upload_new_records.csv`). They load it via
+Give the user the add file
+(`.claude/scratch/maher/kipp_aid__c_add_<yyyymmdd>.csv`). They load it via
 Salesforce Data Loader as an **insert** on `KIPP_Aid__c`, mapping each `*__c`
 column to the matching field. The `ref_*` columns are for human review — leave
 them unmapped.
