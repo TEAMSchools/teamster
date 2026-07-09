@@ -45,7 +45,7 @@ models:
             enforced: true
   finalsite:
     api:
-      +enabled: false
+      +enabled: true
   amplify:
     dds:
       +enabled: false
@@ -143,7 +143,7 @@ sources:
   finalsite:
     finalsite:
       contacts:
-        +enabled: false
+        +enabled: true
   powerschool:
     sis:
       staging:

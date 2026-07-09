@@ -48,6 +48,21 @@ each has a pivot int model above. Scan all three when sourcing a field, and
 verify by VALUES, not field name (e.g. `current_residence_ss` is McKinney-Vento
 housing status, not a county).
 
+## Contact relationships and custom-attribute gotchas
+
+- `relationships` is bidirectional (a parent record carries the reverse
+  `rel_type='child'` link). `relationships.primary` is a per-record singleton
+  and **NULL, not false, when unset**; only child/student records carry a
+  primary link, and that set includes non-PS-enrolled students
+  (prospects/applicants). Filtering `where is_primary` yields ALL Finalsite
+  student records — scope to enrolled students downstream via
+  `powerschool_student_number`, not in this SIS-agnostic package.
+- `custom_attributes`/`id_attributes` are **per-contact** — `is_parent2/3/4`
+  (`is_parent3/4` are always false), `emrg_*`, etc. appear on ANY contact,
+  including a sibling who is also a student (carrying their own). Reading a
+  custom field via a relationship's `rel_id` measures the RELATED contact, not a
+  parent designation of the student.
+
 ## Cross-Project Usage
 
 Referenced as a dbt package by all four district projects (`kippnewark`,
