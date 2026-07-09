@@ -190,3 +190,24 @@ models:
         description:
           Date of the alumnus's most recent IEP on their Salesforce contact
           record.
+      - name: ktc_cohort
+        data_type: int64
+        description:
+          KIPP-to-college cohort year for the alumnus, from their Salesforce
+          contact record.
+      - name: currently_enrolled_school
+        data_type: string
+        description:
+          School the alumnus is currently enrolled in, from their Salesforce
+          contact record.
+      - name: current_college_cumulative_gpa
+        data_type: numeric
+        description:
+          Current cumulative college GPA, from the alumnus's Salesforce contact
+          record.
+      - name: primary_phone
+        data_type: string
+        description: Mobile phone from the alumnus's Salesforce contact record.
+      - name: secondary_phone
+        data_type: string
+        description: Home phone from the alumnus's Salesforce contact record.

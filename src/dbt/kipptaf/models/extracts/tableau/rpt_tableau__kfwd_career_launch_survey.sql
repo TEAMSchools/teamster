@@ -61,6 +61,11 @@ with
             r.contact_most_recent_iep_date as most_recent_iep_date,
             r.contact_middle_school_attended as middle_school_attended,
             r.contact_high_school_graduated_from as high_school_graduated_from,
+            r.ktc_cohort,
+            r.contact_currently_enrolled_school as currently_enrolled_school,
+            r.contact_current_college_cumulative_gpa as current_college_cumulative_gpa,
+            r.contact_mobile_phone as primary_phone,
+            r.contact_home_phone as secondary_phone,
 
             e.pursuing_degree_type,
             e.type,
@@ -265,6 +270,11 @@ select
     r.most_recent_iep_date,
     r.middle_school_attended,
     r.high_school_graduated_from,
+    r.ktc_cohort,
+    r.currently_enrolled_school,
+    r.current_college_cumulative_gpa,
+    r.primary_phone,
+    r.secondary_phone,
 
     sp.survey_id,
     sp.survey_title,
