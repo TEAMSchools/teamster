@@ -171,29 +171,58 @@ Row-level security is enforced by per-view `access_policy`, driven by the
 (`checkAuth` for REST, `checkSqlAuth` for the SQL API). That placement has a
 sharp consequence for local testing:
 
-**Developer mode disables REST auth.** With `CUBEJS_DEV_MODE=true` (what the
-**Cube: Dev Server** task uses), Cube skips `checkAuth` entirely — so
-`resolveAccess` never runs, `securityContext` is empty, `contextToGroups`
-returns `[]`, and **every gated view default-denies (zero rows)** for _all_
-viewers. Neither the Playground's **Edit Security Context** nor `CUBE_GROUP_MAP`
-fixes this: both only supply `groups`, not the `region_key` /
-`allowed_abbreviations` / `reportee_staff_keys` values the `row_level` filters
-interpolate — so they can't exercise real row-level scoping. To test RLS
-end-to-end you must run with auth **on**.
+Developer mode skips `checkAuth` (REST) — so the Playground and REST `/load`
+default-deny every gated view (empty `securityContext`, `contextToGroups`
+returns `[]`) unless you turn auth on. But `checkSqlAuth` (the SQL API's hook)
+runs **even in developer mode**, which makes the SQL API the easier and
+truer-to-prod way to validate.
 
-**Run the dev server with auth on**, so `checkAuth` runs and resolves your real
-identity (from `src/cube`):
+**Prefer the SQL API for validation.** It resolves your real identity with no
+`NODE_ENV` change, and it is the surface Superset/BI actually use — so you
+validate the production path. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`, default
+`true`) is the planner on the SQL API, and joining views is a supported feature
+there
+([multi-fact views](https://docs.cube.dev/docs/data-modeling/multi-fact-views)).
+Enable the SQL API in `src/cube/.env` and set the viewer to resolve as:
 
 ```bash
-NODE_ENV=production CUBEJS_API_SECRET=<your-dev-secret> \
-  CUBEJS_DB_BQ_PROJECT_ID=teamster-332318 npm run dev
+CUBEJS_PG_SQL_PORT=15432
+CUBEJS_SQL_USER=cube_dev
+CUBEJS_SQL_PASSWORD=local-dev-sql
+# dev-only override of the connecting user — whose access you validate as
+CUBE_SQL_DEV_EMAIL=you@apps.teamschools.org
 ```
 
-`NODE_ENV=production` is what enables auth — `CUBEJS_DEV_MODE=true` overrides
-it, so drop `CUBEJS_DEV_MODE` entirely (you lose the playground/hot-reload, not
-needed for a validation pass). Then query the **REST `/load` API** with an HS256
-JWT whose `email` claim is the viewer you want to test, signed with
-`CUBEJS_API_SECRET`:
+Restart the **Cube: Dev Server** task, then query over the Postgres wire
+protocol (`MEASURE()` wraps measures; change `CUBE_SQL_DEV_EMAIL` + restart to
+switch viewer):
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+conn = psycopg2.connect(host="localhost", port=15432, user="cube_dev",
+                        password="local-dev-sql", dbname="cube")
+cur = conn.cursor()
+cur.execute("SELECT MEASURE(count_employees) FROM staff_directory")
+print(cur.fetchall())
+PY
+```
+
+`resolveAccess` reads that email's row from `dim_staff_cube_access`, builds the
+real `securityContext`, and the policies enforce. Compare a scoped viewer's
+counts against a network viewer's breakdown to confirm scoping.
+
+**Alternative: REST `/load` with a JWT.** The REST hook is disabled in developer
+mode, so this path needs auth **on** — run with `NODE_ENV=production` and drop
+`CUBEJS_DEV_MODE` (it overrides `NODE_ENV`):
+
+```bash
+NODE_ENV=production npm run dev
+```
+
+Then sign an HS256 JWT whose `email` claim is the viewer (with
+`CUBEJS_API_SECRET`) and POST it:
 
 ```bash
 tok=$(node -e "const j=require('jsonwebtoken');console.log(j.sign({email:'you@apps.teamschools.org'},process.env.CUBEJS_API_SECRET,{algorithm:'HS256'}))")
@@ -202,32 +231,15 @@ curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
   http://localhost:4000/cubejs-api/v1/load
 ```
 
-`resolveAccess` reads that email's row from `dim_staff_cube_access`, builds the
-real `securityContext`, and the policies enforce. Compare a scoped viewer's
-counts against a network viewer's per-region/per-school breakdown to confirm
-scoping.
-
 **The `CUBE_GROUP_MAP` trap.** `.env.example` ships a `CUBE_GROUP_MAP` line
 whose placeholder value uses **stale group names** (`cube-network-detail`,
 `cube-access-student-data`) that predate the current taxonomy (`student-<scope>`
 / `staff-directory` / `staff-pii-<scope>`). If you `cp .env.example .env`
 verbatim, that map's dev-bypass **overrides real resolution with dead groups no
 policy matches → every view denies**. Comment out (or delete) `CUBE_GROUP_MAP`
-so `resolveAccess` reads real HR data. (It is inert under the auth-on command
-above anyway — the bypass only fires when `NODE_ENV !== production`.)
-
-**Validating RLS through the APIs.** `checkSqlAuth` _does_ run in developer mode
-(unlike `checkAuth`), so the SQL API resolves identity in dev too. Tesseract
-(`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the query planner on both
-the REST and SQL APIs, and joining views on the SQL API is a supported Tesseract
-feature
-([multi-fact views](https://docs.cube.dev/docs/data-modeling/multi-fact-views))
-— so either API validates RLS on real (joined) views. This guide uses REST
-`/load` with an HS256 JWT; the SQL API (the BI/Superset surface) is equally
-valid. An earlier `Failed to deserialize ... JoinDefinitionStatic` error was
-seen in the Playground, which issues REST queries — it was never confirmed as a
-SQL-API limitation, so re-verify current behavior on whichever surface you
-depend on.
+so `resolveAccess` reads real HR data. (The bypass fires whenever
+`NODE_ENV !== production`, so it is inert on the REST auth-on path but active on
+the SQL-API/dev-mode path — keep it commented out either way.)
 
 **Testing branch models not yet in production.** The cubes and `resolveAccess`
 read `kipptaf_marts` (production). If your branch reworks a mart the cubes read
