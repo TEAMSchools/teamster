@@ -28,21 +28,19 @@ with
         from {{ ref("stg_finalsite__contacts") }}
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    rel_candidates as (
+    contact_1_rel as (
         -- contact_1 is EXCLUSIVELY the relationship Finalsite flags `primary`
         -- (its parent1 designation), resolved to a real contact record. No
         -- fallback: a student with no primary flag (a Finalsite data-entry gap,
         -- ~6% of Newark students) gets no contact_1 rather than an arbitrary
-        -- non-primary relationship. The inner join to contact_1_parent also
-        -- drops a primary link that points outside the pulled cohort.
+        -- non-primary relationship. `primary` is a per-student singleton, so the
+        -- filter alone is a deterministic pick (the grain uniqueness test guards
+        -- against any future multi-primary anomaly). The inner join to
+        -- contact_1_parent also drops a primary link pointing outside the cohort.
         select
             r.finalsite_enrollment_id,
-            r.rel_id,
             r.rel_name,
             r.rel_type,
-            r.is_primary,
-            r.rel_offset,
 
             cp.email,
             cp.phone_1_type,
@@ -61,16 +59,6 @@ with
             students as s on r.finalsite_enrollment_id = s.finalsite_enrollment_id
         inner join contact_1_parent as cp on r.rel_id = cp.rel_finalsite_enrollment_id
         where r.is_primary
-    ),
-
-    picked_rel as (
-        {{
-            dbt_utils.deduplicate(
-                relation="rel_candidates",
-                partition_by="finalsite_enrollment_id",
-                order_by="rel_offset asc",
-            )
-        }}
     ),
 
     contact_1_typed as (
@@ -99,7 +87,7 @@ with
             nullif(
                 array_to_string([address_1, address_2, city, state, zip], ', '), ''
             ) as home_address,
-        from picked_rel
+        from contact_1_rel
     ),
 
     contact_1 as (
