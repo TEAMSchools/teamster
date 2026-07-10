@@ -4,6 +4,16 @@
 - **Status:** Design
 - **Date:** 2026-07-10
 
+> **Amendment (per-city secrets):** during implementation the monolithic
+> `op-deanslist-api` item was split **by city** — one 1Password item and K8s
+> secret per district (`op-deanslist-api-<district>`), each repeating the
+> `subdomain` field plus that city's school keys, synced by one
+> `OnePasswordItem` CR per city in `.k8s/1password/items.yaml`. Read every
+> "single shared secret" statement below as per-city; the resource mechanism is
+> unchanged (it still reads one mounted directory). kipptaf's vestigial
+> `DEANSLIST_SUBDOMAIN` mapping (an SFTP-only location that never used the API
+> resource) was removed as part of the split.
+
 ## Summary
 
 Two related changes to the DeansList integration:

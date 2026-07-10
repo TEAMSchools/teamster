@@ -45,6 +45,13 @@ projected secret volumes via the 1Password Operator, dbt (BigQuery) with
   dedicated, non-nested volume — chosen over the spec's illustrative
   `/etc/secret-volume/deanslist` to avoid mounting one projected volume inside
   another).
+- **Per-city secrets (amendment):** the 1Password item is split by city — each
+  district mounts `op-deanslist-api-<district>`, NOT the monolithic
+  `op-deanslist-api` shown in the Task 3/6 snippets. Add one `OnePasswordItem`
+  CR per city to `.k8s/1password/items.yaml`, and remove the vestigial
+  `DEANSLIST_SUBDOMAIN` mapping from `kipptaf`'s `dagster-cloud.yaml` (SFTP-only
+  location — the dangling ref would break its pods once the monolithic secret is
+  deleted).
 - **PR boundary:** Tasks 1-8 are PR 1 (Python + K8s, no dbt). Tasks 9-11 are PR
   2 (dbt only). Do not mix dbt changes into PR 1.
 - **Markdown/YAML/SQL:** fenced blocks need a language (MD040); headings
