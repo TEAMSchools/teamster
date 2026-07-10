@@ -2,7 +2,6 @@ import pathlib
 
 import fastavro
 import fastavro.types
-import yaml
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
@@ -10,9 +9,22 @@ from requests import Session
 from requests.exceptions import HTTPError
 
 
+def load_deanslist_config(
+    key_dir: pathlib.Path,
+) -> tuple[str, dict[int, str]]:
+    subdomain = (key_dir / "subdomain").read_text().strip()
+
+    api_key_map = {
+        int(f.name): f.read_text().strip()
+        for f in key_dir.iterdir()
+        if f.is_file() and not f.name.startswith(".") and f.name.isdigit()
+    }
+
+    return subdomain, api_key_map
+
+
 class DeansListResource(ConfigurableResource):
-    subdomain: str
-    api_key_map: str
+    api_key_dir: str
     request_timeout: float = 60.0
 
     _session: Session = PrivateAttr(default_factory=Session)
@@ -22,10 +34,12 @@ class DeansListResource(ConfigurableResource):
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
         self._log = check.not_none(value=context.log)
-        self._base_url = f"https://{self.subdomain}.deanslistsoftware.com/api"
 
-        with open(self.api_key_map) as f:
-            self._api_key_map = yaml.safe_load(f)["api_key_map"]
+        subdomain, self._api_key_map = load_deanslist_config(
+            pathlib.Path(self.api_key_dir)
+        )
+
+        self._base_url = f"https://{subdomain}.deanslistsoftware.com/api"
 
     def _get_url(self, api_version: str, endpoint: str, *args):
         if api_version == "beta":
