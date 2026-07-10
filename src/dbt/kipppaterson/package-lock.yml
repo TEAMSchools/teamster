@@ -1,6 +1,8 @@
 packages:
   - local: ../amplify
     name: amplify
+  - local: ../deanslist
+    name: deanslist
   - local: ../finalsite
     name: finalsite
   - local: ../pearson
@@ -13,4 +15,4 @@ packages:
   - name: dbt_utils
     package: dbt-labs/dbt_utils
     version: 1.4.1
-sha1_hash: e8986a0f1726db71d70527227388fe1d2e0eaa70
+sha1_hash: 15227b8eff77471b17ff6a67f5b905d4aa92cdb8

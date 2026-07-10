@@ -53,6 +53,17 @@ models:
         staging:
           stg_amplify__mclass__sftp__pm_student_summary_aimline:
             +enabled: false
+  deanslist:
+    +materialized: table
+    staging:
+      stg_deanslist__dff_stats:
+        +enabled: false
+      stg_deanslist__followups:
+        +enabled: false
+      stg_deanslist__homework:
+        +enabled: false
+      stg_deanslist__lists:
+        +enabled: false
   pearson:
     +materialized: table
     staging:
@@ -169,6 +180,16 @@ sources:
   finalsite:
     finalsite:
       contacts:
+        +enabled: false
+  deanslist:
+    deanslist:
+      src_deanslist__dff_stats:
+        +enabled: false
+      src_deanslist__followups:
+        +enabled: false
+      src_deanslist__homework:
+        +enabled: false
+      src_deanslist__lists:
         +enabled: false
   pearson:
     pearson:
