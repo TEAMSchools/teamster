@@ -422,3 +422,19 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Finalsite API - Newark
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-finalsite-api-kippcamden
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Finalsite API - Camden
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-finalsite-api-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Finalsite API - Paterson
