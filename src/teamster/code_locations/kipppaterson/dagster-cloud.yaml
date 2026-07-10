@@ -17,7 +17,7 @@ locations:
             projected:
               sources:
                 - secret:
-                    name: op-deanslist-api
+                    name: op-deanslist-api-kipppaterson
         server_k8s_config:
           pod_spec_config:
             affinity:
