@@ -16,6 +16,7 @@ GCS bucket: `teamster-kipppaterson`
 | `dbt`                    | dbt assets                | `AutomationConditionSensor`                 |
 | `powerschool` (sis/sftp) | SFTP assets via Couchdrop | sensor (`couchdrop_sftp_sensor`)            |
 | `amplify` (mclass sftp)  | SFTP assets               | sensor (`build_amplify_mclass_sftp_sensor`) |
+| `deanslist`              | API assets                | schedule (nightly)                          |
 | `finalsite`              | API assets                | `AutomationConditionSensor`                 |
 | `pearson`                | SFTP assets               | `AutomationConditionSensor`                 |
 | `couchdrop`              | sensor only               | sensor (Google Drive watcher)               |
@@ -33,12 +34,12 @@ Consequences:
 - No `db_bigquery` resource (no BigQuery writes from this location)
 - No `io_manager_gcs_file` resource (no file-based IO manager needed)
 - No extracts module (no BigQuery to query)
-- No `deanslist`, `edplan`, `iready`, `overgrad`, `renlearn`, or `titan`
+- No `edplan`, `iready`, `overgrad`, `renlearn`, or `titan`
 
-## No Asset Checks, No Schedules
+## Schedules
 
-Paterson has no freshness checks and no data-pull schedules. All ingestion is
-sensor-driven (`couchdrop_sftp_sensor` for PowerSchool,
+Paterson has no freshness checks. DeansList adds nightly data-pull schedules;
+all other ingestion is sensor-driven (`couchdrop_sftp_sensor` for PowerSchool,
 `build_amplify_mclass_sftp_sensor` for Amplify). `AutomationConditionSensor`
 handles any assets with an automation condition defined (e.g. `finalsite`,
 `pearson`).
