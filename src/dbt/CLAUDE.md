@@ -853,7 +853,9 @@ the plain column.
   — then project the typed column per field (`s_x as x` / `b_x as x`). Output
   columns are `{agg_alias}_{value}`; a SINGLE-aggregate pivot names them by the
   bare value (`'x'` → column `x`). `max()` can't aggregate ARRAY — use
-  `any_value()` for array fields.
+  `any_value()` for array fields. A reserved-word aggregate alias (e.g. `name`)
+  must be backticked (sqlfluff RF04); the backtick doesn't change the produced
+  column name (`name_<value>`).
 - **BigQuery `UNPIVOT` excludes null rows** — an entity whose unpivoted columns
   are all null drops out of the result. Harmless for a pure decode companion (a
   left join from staging yields null labels anyway), but when the model also

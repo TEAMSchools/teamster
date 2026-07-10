@@ -88,6 +88,24 @@ are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
 
+### Finalsite contact unions
+
+`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` are
+kipptaf `union_relations` views over per-region finalsite sources.
+
+- **Union CUTOVER regions, not merely api-enabled ones.** Miami has the
+  finalsite api enabled with contacts data AND `powerschool_student_number`s, so
+  unioning it into `int_finalsite__student_contacts` double-counts against the
+  PowerSchool branch of `int_students__contacts` (the grain test catches it).
+  `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
+  and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
+  Newark rows (null prefix) never reach the Focus feeds.
+- **Asymmetric source schema**: `sources-kippmiami.yml` finalsite carries a
+  `staging`→`zz_stg_` branch (single-PR pattern, needs a staged copy for CI),
+  while `sources-kippnewark.yml` is dev-only (staging→prod). A cross-region
+  finalsite union pulls a `zz_stg` seeding dependency from Miami but reads prod
+  for Newark — a Newark-only union is CI-safe without staging.
+
 ### `extracts/powerschool/` special case
 
 `rpt_powerschool__autocomm_*` models define a shared export format but are

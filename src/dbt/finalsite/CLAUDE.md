@@ -71,7 +71,7 @@ tables via `source()` (network-wide union models live in
 `kipptaf/models/finalsite/`).
 
 **The `api/` layer is enabled only where Finalsite Contacts ingestion is
-wired.** Today that is `kippmiami` only; `kippnewark`, `kippcamden`, and
+wired.** Today that is `kippmiami` and `kippnewark`; `kippcamden` and
 `kipppaterson` set `finalsite: api: +enabled: false` in their `dbt_project.yml`.
 The `sftp/` layer (`status_report`) stays enabled everywhere — kipptaf unions it
 across all four regions. Re-enable a region's `api` when its Finalsite contacts

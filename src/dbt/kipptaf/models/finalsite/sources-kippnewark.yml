@@ -13,3 +13,21 @@ sources:
                 - kippnewark
                 - finalsite
                 - stg_finalsite__status_report
+      - name: int_finalsite__student_contacts
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippnewark
+                - finalsite
+                - int_finalsite__student_contacts
+      - name: int_finalsite__contact_id_attributes
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippnewark
+                - finalsite
+                - int_finalsite__contact_id_attributes
