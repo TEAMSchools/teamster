@@ -1,0 +1,71 @@
+models:
+  - name: int_topline__student_metrics_periods
+    description:
+      Period-scoped student metric rows (month / quarter / ytd) for the topline
+      cascade dashboard, unioning the period-grain indicator variants into the
+      same shape as int_topline__student_metrics. Student attributes (region,
+      school, grade level) come from the student's last enrolled week inside the
+      window; the inner join to enrolled weeks also applies the Paterson
+      exclusion and enrollment gate matching the weekly path. Week rows are NOT
+      produced here — they stay on the weekly path.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - layer
+              - indicator
+              - discipline
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: region
+        description: Region name from the last enrolled in-window week.
+        data_type: string
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: school
+        description: School name from the last enrolled in-window week.
+        data_type: string
+      - name: grade_level
+        description: Grade level from the last enrolled in-window week.
+        data_type: int64
+      - name: layer
+        description: Topline layer the indicator belongs to.
+        data_type: string
+      - name: indicator
+        description: Topline indicator name.
+        data_type: string
+      - name: discipline
+        description: Subject area where applicable; null otherwise.
+        data_type: string
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: numerator
+        description: Rate numerator for Divide-aggregated indicators.
+        data_type: float64
+      - name: denominator
+        description: Rate denominator for Divide-aggregated indicators.
+        data_type: float64
+      - name: metric_value
+        description: Student-level metric value for the period.
+        data_type: float64
+      - name: term
+        description: Period start date (mirrors the weekly column name).
+        data_type: date
+      - name: term_end
+        description: Period end date (mirrors the weekly column name).
+        data_type: date
