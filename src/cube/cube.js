@@ -1,4 +1,17 @@
-const groupCache = new Map(); // email → { groups, expiresAt }
+const access = require("./access");
+const jwt = require("jsonwebtoken");
+// CubejsHandlerError carries an HTTP status Cube's api-gateway honors; a bare
+// Error from checkAuth becomes a 500. Resolved transitively from the bundled
+// @cubejs-backend/server (not pinned in package.json, to avoid version skew).
+const { CubejsHandlerError } = require("@cubejs-backend/api-gateway");
+
+const groupCache = new Map(); // email → { ctx, expiresAt }
+
+// Global (not per-email) cache of the "universes" computeAllowedAbbreviations
+// / computeAllowedDepartmentGroups need: every location abbreviation+region
+// and every distinct department_group. Same midnight-ET expiry as
+// groupCache — one shared entry, not one per viewer.
+let universeCache = null; // { data: { locations: [...], deptGroups: [...] }, expiresAt }
 
 function nextMidnightEastern() {
   const now = new Date();
@@ -20,15 +33,102 @@ function nextMidnightEastern() {
   return now.getTime() + (24 * 60 * 60 * 1000 - msElapsedToday);
 }
 
-// Student-domain membership is derived from the cube-name prefix, not a static
-// array — a query member is "<cube>.<member>", so the cube name is the prefix.
-// Student-domain cube names start with "student" (see src/cube/CLAUDE.md).
-// Staff-domain RLS was intentionally removed from cube.js: staff visibility is
-// governed by the location scope filter below plus each staff view's
-// cube-access-staff-data access policy. Manager-hierarchy scoping is deferred;
-// when it returns it must work for view queries (segment on the view, not the
-// underlying cube).
-const isStudentMember = (member) => member.startsWith("student");
+// All pure access-resolution logic (buildGroups, buildSecurityContext, the
+// allow-list computations) lives in access.js (unit-tested). cube.js owns only
+// the BigQuery identity reads + cache below.
+
+// Fetches the domain-agnostic "universes" (all location abbreviations+regions,
+// all distinct department groups) that access.computeAllowedAbbreviations /
+// computeAllowedDepartmentGroups turn into per-viewer allow-lists. Cached
+// globally (not per-email) until next midnight ET.
+async function loadUniverses(bq) {
+  if (universeCache && universeCache.expiresAt > Date.now())
+    return universeCache.data;
+  const [locs] = await bq.query({
+    query: "SELECT abbreviation, region_key FROM `kipptaf_marts.dim_locations`",
+  });
+  // A NULL department_group can't be in the universe, and `department_group IN
+  // (...)` never matches NULL — so a staff member with a NULL department_group
+  // is invisible to every remit-scoped PII policy (fail-closed). Zero such rows
+  // today; if that changes, backfill a sentinel group upstream.
+  const [deps] = await bq.query({
+    query:
+      "SELECT DISTINCT department_group FROM `kipptaf_marts.dim_staff_cube_access` WHERE department_group IS NOT NULL",
+  });
+  const data = {
+    locations: locs.map((r) => ({
+      abbreviation: r.abbreviation,
+      region_key: r.region_key,
+    })),
+    deptGroups: deps.map((r) => r.department_group),
+  };
+  universeCache = { data, expiresAt: nextMidnightEastern() };
+  return data;
+}
+
+// Resolves a viewer's email to an enriched securityContext (access.js
+// buildSecurityContext output, including `groups`). Shared by checkAuth
+// (REST/MCP) and checkSqlAuth (SQL API) so both auth paths populate the same
+// shape. Cached per-email until next midnight ET.
+async function resolveAccess(email) {
+  if (!email) return access.buildSecurityContext(null, []);
+  const cached = groupCache.get(email);
+  if (cached && cached.expiresAt > Date.now()) return cached.ctx;
+
+  // Local dev bypass (unchanged intent): CUBE_GROUP_MAP supplies groups only.
+  if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
+    const map = JSON.parse(process.env.CUBE_GROUP_MAP);
+    const ctx = {
+      ...access.buildSecurityContext(null, []),
+      groups: map[email] ?? [],
+    };
+    groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
+    return ctx;
+  }
+
+  try {
+    const { BigQuery } = require("@google-cloud/bigquery");
+    const bq = new BigQuery();
+    const [rows] = await bq.query({
+      query:
+        "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email LIMIT 1",
+      params: { email },
+    });
+    const row = rows[0] ?? null;
+    let reporteeStaffKeys = [];
+    if (row?.staff_key) {
+      const [rc] = await bq.query({
+        query:
+          "SELECT reportee_staff_key FROM `kipptaf_marts.dim_staff_reporting_chain` WHERE manager_staff_key = @k",
+        params: { k: row.staff_key },
+      });
+      reporteeStaffKeys = rc.map((r) => r.reportee_staff_key);
+    }
+    const universes = await loadUniverses(bq);
+    const allowedAbbreviations = access.computeAllowedAbbreviations(
+      row?.staff_location_scope,
+      row?.region_key,
+      row?.location_abbreviation,
+      universes.locations,
+    );
+    const allowedDepartmentGroups = access.computeAllowedDepartmentGroups(
+      row?.staff_department_scope,
+      row?.department_group,
+      universes.deptGroups,
+    );
+    const ctx = access.buildSecurityContext(
+      row,
+      reporteeStaffKeys,
+      allowedAbbreviations,
+      allowedDepartmentGroups,
+    );
+    groupCache.set(email, { ctx, expiresAt: nextMidnightEastern() });
+    return ctx;
+  } catch (err) {
+    console.error(`resolveAccess failed for ${email}:`, err);
+    return access.buildSecurityContext(null, []); // fail closed, stay available
+  }
+}
 
 // Convention for snapshot cubes: cumulative daily flags that overcount without
 // a point-in-time anchor. All snapshot cubes expose these three dimensions.
@@ -84,134 +184,48 @@ module.exports = {
     database: "kipptaf_marts",
   }),
 
-  contextToGroups: async ({ securityContext }) => {
-    const email =
-      securityContext?.email ??
-      securityContext?.cubeCloud?.userAttributes?.email;
-    if (!email) return [];
+  contextToGroups: async ({ securityContext }) => securityContext?.groups ?? [],
 
-    // Local dev only: CUBE_GROUP_MAP bypasses Directory API.
-    // Must never be set in Cube Cloud — see docs/guides/cube.md.
-    if (process.env.NODE_ENV !== "production" && process.env.CUBE_GROUP_MAP) {
+  checkAuth: async (req, auth) => {
+    // `auth` is the raw bearer token STRING (a custom checkAuth replaces Cube's
+    // default JWT verify+decode). Verify the HS256 signature against
+    // CUBEJS_API_SECRET ourselves, then resolve identity from the email claim.
+    // An invalid/expired token → clean 403 (see catch below). A request with no
+    // Authorization header resolves to the empty default-deny context.
+    let email;
+    if (auth) {
       try {
-        const map = JSON.parse(process.env.CUBE_GROUP_MAP);
-        const groups = (map[email] ?? []).filter((g) => g.startsWith("cube-"));
-        groupCache.set(email, { groups, expiresAt: nextMidnightEastern() });
-        return groups;
+        const payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
+          algorithms: ["HS256"],
+        });
+        email = payload?.email;
       } catch (err) {
-        console.error("CUBE_GROUP_MAP is not valid JSON:", err.message);
-        return [];
+        // Mirror Cube's default checkAuth: a bad/expired token is a clean 403,
+        // not a bare-Error 500 (only CubejsHandlerError carries a status).
+        throw new CubejsHandlerError(403, "Forbidden", "Invalid token", err);
       }
     }
-
-    // Check cache
-    const cached = groupCache.get(email);
-    if (cached && cached.expiresAt > Date.now()) return cached.groups;
-
-    // Call Admin Directory API.
-    // GOOGLE_DIRECTORY_SA_KEY: base64-encoded service account JSON with
-    //   domain-wide delegation granted by GOOGLE_DIRECTORY_SA_SUBJECT.
-    // GOOGLE_DIRECTORY_SA_SUBJECT: email of the Workspace admin that granted
-    //   delegation (must be a super-admin in apps.teamschools.org).
-    try {
-      const { google } = require("googleapis");
-      const auth = new google.auth.GoogleAuth({
-        credentials: JSON.parse(
-          Buffer.from(process.env.GOOGLE_DIRECTORY_SA_KEY, "base64").toString(),
-        ),
-        scopes: [
-          "https://www.googleapis.com/auth/admin.directory.group.readonly",
-        ],
-        clientOptions: {
-          subject: process.env.GOOGLE_DIRECTORY_SA_SUBJECT,
-        },
-      });
-      const admin = google.admin({ version: "directory_v1", auth });
-
-      let groups = [];
-      let pageToken;
-      do {
-        const res = await admin.groups.list({ userKey: email, pageToken });
-        groups = groups.concat(
-          (res.data.groups ?? []).map((g) => (g.email ?? "").split("@")[0]),
-        );
-        pageToken = res.data.nextPageToken;
-      } while (pageToken);
-
-      const cubeGroups = groups.filter((g) => g.startsWith("cube-"));
-      groupCache.set(email, {
-        groups: cubeGroups,
-        expiresAt: nextMidnightEastern(),
-      });
-      return cubeGroups;
-    } catch (err) {
-      console.error(`contextToGroups failed for ${email}:`, err);
-      return []; // default deny on API failure
-    }
+    req.securityContext = await resolveAccess(email);
   },
 
-  queryRewrite: (query, { securityContext }) => {
+  checkSqlAuth: async (req, user, password) => {
     const email =
-      securityContext?.email ??
-      securityContext?.cubeCloud?.userAttributes?.email;
-    const cached = email ? groupCache.get(email) : null;
-    const groups = cached?.expiresAt > Date.now() ? cached.groups : [];
+      (process.env.NODE_ENV !== "production" &&
+        process.env.CUBE_SQL_DEV_EMAIL) ||
+      user;
+    // Cube validates the presented password against the RETURNED one — returning
+    // null rejects every connection (Task 1 verdict). Return the server-known
+    // SQL password (Cube's canonical checkSqlAuth pattern); RLS identity comes
+    // from securityContext.email, not the SQL user. `password` (the presented
+    // value) is absent on SET-USER re-auth flows, so do not compare against it.
+    return {
+      password: process.env.CUBEJS_SQL_PASSWORD,
+      securityContext: await resolveAccess(email),
+    };
+  },
 
-    if (!groups.includes("cube-access-student-data")) {
-      query = {
-        ...query,
-        dimensions: (query.dimensions ?? []).filter((d) => !isStudentMember(d)),
-        measures: (query.measures ?? []).filter((m) => !isStudentMember(m)),
-      };
-    }
-
-    // Location scope — evaluate in priority order
-    const networkGroup = groups.find((g) => g.startsWith("cube-network-"));
-    const regionGroup = groups.find((g) =>
-      /^cube-region-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
-    );
-    const schoolGroup = groups.find((g) =>
-      /^cube-school-[a-z0-9][a-z0-9-]*-(?:detail|summary)$/.test(g),
-    );
-
-    let locationFilter = null;
-
-    if (networkGroup) {
-      // No location filter
-    } else if (regionGroup) {
-      const region = regionGroup
-        .replace(/^cube-region-/, "")
-        .replace(/-(?:detail|summary)$/, "");
-      locationFilter = {
-        member: "locations.region_key",
-        operator: "equals",
-        values: [region],
-      };
-    } else if (schoolGroup) {
-      const slug = schoolGroup
-        .replace(/^cube-school-/, "")
-        .replace(/-(?:detail|summary)$/, "");
-      locationFilter = {
-        member: "locations.abbreviation",
-        operator: "equals",
-        values: [slug],
-      };
-    } else {
-      // Default deny — no scope group
-      return {
-        ...query,
-        filters: [
-          {
-            member: "locations.abbreviation",
-            operator: "equals",
-            values: [],
-          },
-        ],
-      };
-    }
-
+  queryRewrite: (query) => {
     const filters = [...(query.filters ?? [])];
-    if (locationFilter) filters.push(locationFilter);
 
     // Snapshot anchor guard: for cubes with cumulative daily flags, inject
     // the appropriate period-end anchor when the query has none.

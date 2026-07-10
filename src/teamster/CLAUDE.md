@@ -212,3 +212,10 @@ uv run dagster-dbt project prepare-and-package --file src/teamster/code_location
 codespace cause false errors unrelated to production failures. Fall back to
 `uv run python -c "import <module>"` for syntactic checks when validate fails on
 missing manifest or env vars.
+
+A district `definitions.py` itself won't import in the codespace —
+`get_powerschool_ssh_resource()` reads unset `PS_SSH_PORT` at module load, so
+the `import <module>` fallback fails for `.definitions`. Validate a
+per-integration change by importing that integration submodule alone (e.g.
+`import teamster.code_locations.kippnewark.finalsite`), not the `definitions`
+module.

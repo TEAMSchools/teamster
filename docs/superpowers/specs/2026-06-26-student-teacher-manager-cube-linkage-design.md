@@ -127,7 +127,7 @@ teacher).
   `count_enrollments`, a stint count — not a headcount).
 - `student_enrollments` cube reads `fct_student_attendance_daily` and owns
   `count_students` (the point-in-time headcount, `count_distinct`); it backs the
-  existing `student_enrollments_detail` / `student_enrollments_summary` views.
+  existing `student_enrollments_view`.
 - `fct_assessment_scores_enrollment_scoped`: FK `student_section_enrollment_key`
   (already subject-resolved) plus `enrollment_resolution` value
   `subject_section` or `homeroom`. Its cube already joins `many_to_one` to
@@ -197,34 +197,36 @@ cubes.
 ### 3. Cube — edits to existing views
 
 Add teacher members (prefix the `staff` join so members read `staff_full_name`,
-etc.). New `Teacher` folder on each view. All under the view's existing
-`cube-access-student-data` scope.
+etc.). New `Teacher` folder on each view. The teacher members ride each view's
+existing `student-region` / `student-school` / `student-network` access groups
+(all `member_level.includes: "*"` with `row_level` location scoping) — no PII
+excludes; teacher name/`staff_key` are staff-directory-tier info, not student
+PII, so any scope-specific `student-*` group already sees them.
 
-- **`student_attendance_detail` / `..._summary`** — homeroom teacher (detail:
-  name + `staff_key`; summary: `staff_key` grouper).
-- **`student_assessment_scores_detail` / `..._summary`** — section lead teacher
-  (detail: name + `staff_key` + `teacher_role`; summary: `staff_key` +
-  `teacher_role`).
-- **`student_enrollments_detail` / `..._summary`** — homeroom teacher. With the
-  cube's existing `count_students`, this answers homeroom headcount ("students
-  in this teacher's advisory") and, via detail, the **advisory roster**.
+- **`student_attendance_view`** — homeroom teacher (name + `staff_key`).
+- **`student_assessment_scores_view`** — section lead teacher (name +
+  `staff_key` + `teacher_role`).
+- **`student_enrollments_view`** — homeroom teacher. With the cube's existing
+  `count_students`, this answers homeroom headcount ("students in this teacher's
+  advisory") and the **advisory roster**.
 
-### 4. Cube — new `student_section_enrollments` roster view
+### 4. Cube — new `student_section_enrollments_view` roster view
 
 A per-teacher **class roster** and section headcount need a section-grained
-analyst surface, which does not exist today. Add
-`student_section_enrollments_detail` and `student_section_enrollments_summary`
-(`src/cube/model/views/students/`):
+analyst surface, which does not exist today. Add a single
+`student_section_enrollments_view` (`src/cube/model/views/students/`):
 
-- **Detail**: section (course/section descriptors via existing joins), lead
+- **Members**: section (course/section descriptors via existing joins), lead
   teacher (name + `staff_key` + `teacher_role`), student identity, `entry_date`
-  / `exit_date`, `is_dropped_section`, and the new `count_students` measure.
-  Filtering to a teacher yields their class roster; grouping by teacher yields
-  per-teacher headcount. Carries student PII → two access blocks
-  (`cube-access-student-data` with PII excludes + `cube-access-student-pii`),
-  per the detail-view pattern.
-- **Summary**: non-PII groupers (teacher `staff_key`, `teacher_role`, section,
-  `academic_year`) + `count_students`. Single `cube-access-student-data` block.
+  / `exit_date`, `is_dropped_section`, non-PII groupers (teacher `staff_key`,
+  `teacher_role`, section, `academic_year`), and the new `count_students`
+  measure. Filtering to a teacher yields their class roster; grouping by teacher
+  yields per-teacher headcount.
+- **Access**: the three `student-*` groups (`student-region` / `student-school`
+  / `student-network`), each `member_level.includes: "*"` with `row_level`
+  location filters. No PII split — the collapsed view carries every field
+  (including student PII and teacher name) under the wildcard include, gated
+  only by the caller's location scope.
 
 ### Fan-out and measure safety (the key risk)
 
@@ -253,10 +255,10 @@ analyst surface, which does not exist today. Add
 | Modify | `dim_student_enrollments.sql` plus its `.yml` (marts/dimensions)                    |
 | Modify | `src/cube/model/cubes/students/student_section_enrollments.yml` (dims, join, count) |
 | Modify | `src/cube/model/cubes/students/student_school_enrollments.yml` (dim, join)          |
-| Modify | `views/student_attendance/student_attendance_detail.yml`, `..._summary.yml`         |
-| Modify | `views/student_assessments/student_assessment_scores_detail.yml`, `..._summary.yml` |
-| Modify | `views/students/student_enrollments_detail.yml`, `..._summary.yml`                  |
-| Create | `views/students/student_section_enrollments_detail.yml`, `..._summary.yml`          |
+| Modify | `views/student_attendance/student_attendance_view.yml`                              |
+| Modify | `views/student_assessments/student_assessment_scores_view.yml`                      |
+| Modify | `views/students/student_enrollments_view.yml`                                       |
+| Create | `views/students/student_section_enrollments_view.yml`                               |
 
 Possibly one new `int_` helper model feeding the homeroom resolution
 (implementation-plan call). No `cube.js` change (existing student-prefixed cubes
@@ -270,8 +272,9 @@ keep their `isStudentMember` gating; no new SNAPSHOT cube).
    `uv run dbt build --select dim_student_section_enrollments dim_student_enrollments --project-dir src/dbt/kipptaf --target dev`.
 2. Cube: widen `student_section_enrollments` (+ `count_students`) and
    `student_school_enrollments`.
-3. Edit the six existing views; create the two new roster views with access
-   policies and folders.
+3. Edit the three existing views; create the new
+   `student_section_enrollments_view` roster view with access policies and
+   folders.
 
 ## Verification
 
@@ -288,9 +291,10 @@ keep their `isStudentMember` gating; no new SNAPSHOT cube).
   enrollments, section) and `count_scores` (assessments) are **identical**
   grouped-by-teacher vs. ungrouped over the same filter; repeat for one snapshot
   measure.
-- **Access**: confirm the teacher block and the new roster detail view are
-  hidden without `cube-access-student-data`, and roster PII without
-  `cube-access-student-pii`.
+- **Access**: confirm the teacher members and the new roster view are hidden
+  without a `student-*` group, and that a caller in one `student-*` scope sees
+  only their location's rows (`row_level` filter) while still seeing every field
+  — teacher name/`staff_key` and student PII alike — under the wildcard include.
 
 ## Follow-up: co-taught / multi-lead sections
 

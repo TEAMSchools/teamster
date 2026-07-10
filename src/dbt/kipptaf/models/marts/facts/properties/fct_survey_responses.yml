@@ -17,6 +17,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 
@@ -30,6 +31,7 @@ models:
             to: ref('fct_survey_submissions')
             to_columns: [survey_submission_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -47,6 +49,7 @@ models:
             to: ref('dim_survey_questions')
             to_columns: [survey_question_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

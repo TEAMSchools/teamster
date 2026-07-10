@@ -141,7 +141,7 @@ sources. Multiple space-separated selectors work in one call:
 `select: pearson.src_pearson__njsla pearson.src_pearson__njsla_science`.
 
 `stage_external_sources` is a `dbt run-operation` — `--threads` doesn't apply.
-Running it in parallel across all 5 district projects exhausts BigQuery's
+Running it in parallel across all five `kipp*` projects exhausts BigQuery's
 `INFORMATION_SCHEMA.simple_rate.user` quota (429). Serialize across projects, or
 run only the project you need.
 
@@ -227,6 +227,15 @@ conversions with either an explicit
 `DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
 `dbt build --select <model> --full-refresh` once after merge.
 
+## `WITH RECURSIVE` needs `contract: enforced: false`
+
+BigQuery allows `WITH RECURSIVE` only at the top level of a statement, but dbt's
+contract validation (and the table CTAS) wrap the model SQL in a subquery — so a
+recursive model fails with "WITH RECURSIVE is only allowed at the top level".
+Set `contract: enforced: false` on the model and keep `relationships`/uniqueness
+data tests for coverage. A bounded Jinja unroll is the alternative but hits
+"query is too complex" when it re-expands view upstreams once per level.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
@@ -266,6 +275,10 @@ manifest". The prod manifest is refreshed by `.git/hooks/post-merge` on every
 (`/workspaces/teamster/src/dbt/<project>/target/prod`). The relative form
 resolves under the worktree, which has no `target/prod/` — only the main repo's
 manifest is refreshed by `post-merge`.
+
+Validate a newly-added data test against prod before pushing:
+`dbt test --select <model> --target dev --defer --state <prod manifest>` runs
+the compiled test SQL against the deferred prod relation — no dev build needed.
 
 ## Multi-line SQL in YAML `data_tests:` expressions
 
@@ -339,6 +352,12 @@ Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
 date-range join. Query prod before filing upstream bugs or adding defensive
 dedupe from a dev mart-test failure.
 
+A stale dev copy missing a NEW column breaks the BUILD too ("Name <col> not
+found inside <alias>"), not just relationships tests.
+`dbt build --favor-state --defer --state <prod>` resolves every unselected
+upstream to prod regardless of stale dev copies — cleaner than enumerating
+parents in `--select`.
+
 ## Column-rename refactors strand dependent prod views
 
 When a staging column is dropped or renamed and a downstream view's SQL is
@@ -407,6 +426,10 @@ text-formatted `00000` in Sheets becomes INT64.
   fail with ~N results. Filter them in the staging model:
   `where <key> is not null` (e.g.
   `stg_google_sheets__finance__enrollment_targets`).
+- **New sheet column vs `select *` contract**: a contract-enforced `select *`
+  Sheets staging model breaks the instant Ops adds a column — declare the new
+  column in the staging `properties.yml` (and `columns:` in the source) in the
+  same change, or CI fails on the undeclared column.
 
 ### Rebuild staging after sheet edits before testing
 
@@ -415,6 +438,12 @@ After Ops edits a Google Sheet source or after running
 (default materialization is `table`) before trusting test results:
 `dbt build --select <staging_model>+1 --exclude resource_type:test`. A "drift"
 against stale staging is a false positive.
+
+Google Sheets externals read the sheet **live**, so a _value_ edit (not a new
+column) is picked up by rebuilding the `stg_` model into your dev schema
+(`dbt build --select <model> --target dev --defer --state <abs prod manifest>`)
+— no `stage_external_sources` needed (it's classifier-blocked anyway). Use this
+to verify an Ops sheet fix, then query the rebuilt `zz_<user>_*` table.
 
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
@@ -496,6 +525,10 @@ data_tests:
           - column_a
           - column_b
 ```
+
+**History-carrying staging (active-flag + superseded rows)**: scope the key
+`unique` test `where: <active_flag>` — a plain `unique` false-fails on
+legitimately-superseded inactive rows that repeat the key.
 
 ### Test config defaults
 
@@ -609,7 +642,9 @@ and enr.entrydate <= cc.dateenrolled
 and enr.exitdate > cc.dateenrolled
 ```
 
-### Nullable surrogate keys
+### Row picking, dedup & surrogate keys
+
+#### Nullable surrogate keys
 
 `dbt_utils.generate_surrogate_key()` hashes NULL inputs into a deterministic
 placeholder string — it never returns NULL. When a surrogate key column can be
@@ -629,7 +664,7 @@ dimension and fail.
 Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
 never returns NULL.
 
-### Nullable PK inputs need a fallback, not a null-wrap
+#### Nullable PK inputs need a fallback, not a null-wrap
 
 For a primary key (not an FK), wrapping `generate_surrogate_key` in
 `if(col is not null, ..., cast(null as string))` makes the PK nullable and fails
@@ -638,7 +673,7 @@ For a primary key (not an FK), wrapping `generate_surrogate_key` in
 unique-per-row within the rows the primary would have disambiguated — otherwise
 rows with NULL primary collide on the placeholder hash and fail `unique`.
 
-### dbt_utils.deduplicate `order_by` on BigQuery
+#### dbt_utils.deduplicate `order_by` on BigQuery
 
 The macro compiles to `array_agg(original order by <expr> limit 1)`. BigQuery
 rejects `asc nulls last` and `desc nulls first` inside aggregate `array_agg`.
@@ -661,34 +696,100 @@ invariants. Use
 `if(<row-belongs-to-picked-partition>, picked.attr, fallback.attr)` to branch on
 row-membership, not on value-nullness.
 
-### sqlfluff ST03 on dbt_utils.deduplicate input CTEs
+#### sqlfluff ST03 on dbt_utils.deduplicate input CTEs
 
 A CTE referenced only via `dbt_utils.deduplicate(relation="<cte>")` fails
 sqlfluff ST03. Add
 `# trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below`
 above the CTE.
 
-### Don't inline CASE expressions in generate_surrogate_key
+#### Don't inline CASE expressions in generate_surrogate_key
 
 `dbt_utils.generate_surrogate_key(["case <col> when ... end"])` compiles via
 Jinja's implicit-string-concat across adjacent list elements — unreviewable, and
 a comma inserted between fragments silently changes the SQL. Derive the computed
 value as a named column in an upstream CTE, then hash that column.
 
-### Namespace UNION-ed `generate_surrogate_key` branches
+#### Namespace UNION-ed `generate_surrogate_key` branches
 
 When two `generate_surrogate_key()` calls feed `UNION ALL` into one key column,
 prepend a branch-discriminator literal (`"'left'"` / `"'right'"`) as the first
 input. `generate_surrogate_key` stringifies inputs, so `'1'` (string) and `1`
 (int) collide when remaining inputs align.
 
-### Canonical attributes from a partition
+#### Canonical attributes from a partition
 
 Use `first_value(... order by <pk>)` for every attribute, not separate `min()`
 calls — independent mins on different columns can pick from different rows in
 the same partition.
 
 ### SQL conventions
+
+`sqlfmt` / `sqlfluff` enforce formatting (see _SQL formatting_ below); the rules
+here enforce reviewability. Common remedy for the restructure prohibitions:
+derive the expression as a **named column in an upstream CTE**, then reference
+the plain column.
+
+- **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
+  the limit; anything deeper gets split into a CTE. Aggregates as direct
+  function arguments don't count toward depth —
+  `round(safe_divide(sum(a), sum(b)), 2)` is fine.
+- **Cast early, once.** `cast()` belongs in staging, or at the earliest point
+  where the raw value first appears, as a named column. Downstream expressions
+  operate on already-typed columns — never nest `cast()` inside another
+  function.
+- **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
+  lookups, or correlated subqueries; restructure as a CTE and join it.
+  Carve-out: a scalar _aggregate_ over `unnest` of an array
+  (`(select min(x) from unnest([...]))`) is row-local and allowed — this is the
+  ONLY blessed `unnest` subquery form. An `order by ... limit 1` pick over
+  `unnest` is NOT allowed (it violates No `ORDER BY`); for a priority pick over
+  a fixed candidate set, use `coalesce(if(cond, a, null), ..., a, ...)`, which
+  returns the first non-null in priority order with no subquery.
+- **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models;
+  this includes `order by ... limit 1` as a single-row pick inside a scalar
+  subquery (express a pick with `coalesce`/`if` or a ranked column filtered by
+  `WHERE`). Exempt: macro-generated ordering (`dbt_utils.deduplicate` emits
+  `array_agg(... order by ... limit 1)`) and `array(select ... order by ...)`
+  element ordering.
+- **No `QUALIFY`.** Compute the window function as a named column in a CTE and
+  filter it with `WHERE` in the next CTE.
+- **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
+  breaks silently when upstream columns change.
+- **`DISTINCT` — grain projection only, never dup-masking.** Use `DISTINCT` for
+  a `GROUP BY` with no aggregation, and for pure grain projection (every
+  projected column is functionally determined by the partition key, so
+  byte-identical tuples coalesce) — annotate the latter with
+  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
+  NEVER `SELECT DISTINCT` or `qualify row_number() over (...) = 1` to mask
+  upstream duplicates, and never `DISTINCT` when a projected column varies
+  within the partition (`min()`, `first_value()`) — use
+  `dbt_utils.deduplicate()` (see _Row picking, dedup & surrogate keys_) with a
+  `-- TODO:` naming the upstream fix.
+- **No one-sided calculations in join predicates.** Any expression computable
+  from a single table's columns is precomputed as a named column upstream — `ON`
+  matches plain columns. Expressions that inherently combine columns from both
+  sides (`st_distance(a.geo, b.geo)`, `st_dwithin(...)`) are allowed — they
+  cannot be hoisted. Column-to-column inequality comparisons (half-open
+  date-range joins) are comparisons, not calculations.
+- **No row-level calculations in `WHERE`.** No functions applied to table
+  columns — precompute as a named column. Row-independent expressions on the
+  other side of the comparison (`current_date(...)`, `{{ var(...) }}`, literals)
+  are fine.
+- **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
+  not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
+  Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
+  them to `WHERE` collapses the join to an inner.
+- **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
+  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
+  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+
+  ```sql
+  select column_name
+  from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+  where table_name = '<model_name>'
+  order by ordinal_position
+  ```
 
 - **Soft-delete filters**: Apply in the **staging model**, not in downstream
   `ON` clauses. Deleted rows should never reach intermediate or mart models.
@@ -703,18 +804,6 @@ the same partition.
   must match that case, or use explicit `<raw> as <renamed>` aliasing in the
   staging SQL. Don't rename columns in `sources-external.yml` just to normalize
   case — that rebuilds the external table and forces sheet-header coordination.
-- **No `GROUP BY` without aggregation** — use `DISTINCT` instead (see next rule
-  for deduplication constraints).
-- **No manual deduplication for dirty data** — do not use `SELECT DISTINCT` or
-  `qualify row_number() over (...) = 1` to work around upstream duplicates. Use
-  `dbt_utils.deduplicate()` with explicit `partition_by` and `order_by`; add
-  `-- TODO:` naming the upstream fix.
-- **DISTINCT is allowed for pure grain projection** — every projected column is
-  functionally determined by the partition key, so byte-identical tuples
-  coalesce. Annotate with a two-line comment:
-  `grain projection: every selected column is functionally determined / by the partition key; not a mask for upstream duplicates`.
-  If any projected column varies within the partition (`min()`, `first_value()`,
-  etc.), use `dbt_utils.deduplicate()` instead.
 - **Least/earliest of N nullable columns**:
   `(select min(x) from unnest([c1, c2, ...]) as x)` — aggregate `min` ignores
   NULLs, unlike `least()` (which returns NULL if any arg is NULL). Avoids the
@@ -723,24 +812,6 @@ the same partition.
   literal must NOT have one (BigQuery rejects a trailing comma in an array).
 - **`dbt_utils.generate_surrogate_key` coerces nulls internally** —
   `cast(null as <type>)` and bare `null` hash identically. Don't add the cast.
-- **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
-  breaks silently when upstream columns change.
-- **No `ORDER BY`** — ordering belongs in the reporting layer, not dbt models.
-- **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
-  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
-  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
-
-  ```sql
-  select column_name
-  from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
-  where table_name = '<model_name>'
-  order by ordinal_position
-  ```
-
-- **`ON` vs `WHERE`** — row filters on the preserved table belong in `WHERE`,
-  not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
-  Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
-  them to `WHERE` collapses the join to an inner.
 - **DATE literal across UNION ALL branches needs explicit cast**: BQ coerces
   `'9999-12-31'` to DATE inside `coalesce(date_col, ...)` but NOT across UNION
   ALL branches when one side is CTE-typed STRING. Use
@@ -847,17 +918,10 @@ Existing `base_` models are being renamed to `int_`
 ([#2541](https://github.com/TEAMSchools/teamster/issues/2541)). Do not create
 new `base_` models.
 
-## SQL Style
+### SQL formatting (sqlfluff-enforced)
 
-All SQL follows `.trunk/config/.sqlfluff`. Key enforced rules:
-
-- **Dialect**: BigQuery
-- **Trailing commas**: required in `SELECT` clauses
-- **Reserved words**: BigQuery reserved words as column names must be
-  backtick-quoted in SQL and have `quote: true` in properties YAML
-- **No self-aliases** (sqlfluff AL09): drop `as <name>` when the output name
-  equals the source column, including backticked reserved words
-- **String literals**: single quotes only (no double quotes)
-- **Line length**: 88 characters max
-
-Do not flag code that follows these rules.
+All SQL follows `.trunk/config/.sqlfluff` (BigQuery dialect; trailing commas in
+`SELECT`; single-quoted strings; 88-char lines; reserved words backtick-quoted
+in SQL with `quote: true` in YAML; no self-aliases per AL09 — drop `as <name>`
+when it equals the source column). CI enforces these — **do not flag code that
+already follows them.**

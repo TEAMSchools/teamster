@@ -287,3 +287,35 @@ cubes:
         type: number
         format: percent
         public: true
+
+    pre_aggregations:
+      # Rollup on the additive proficiency primitives for the standard-level
+      # proficiency-by-demographic hot path. Includes the RLS scoping keys
+      # (locations.region_key / locations.abbreviation) so region/school viewers
+      # hit the rollup rather than falling back to the fact. Also includes the
+      # lead teacher (key + name) so "proficiency by teacher" queries — grouped
+      # by lead_teacher_staff_key or staff_lead_teacher.full_name — hit the
+      # rollup. A rollup only serves a query whose grouped members are all in
+      # it, so the name must be here (and exposed on the view) or a name-grouped
+      # query falls back to the fact. The key adds cardinality; the name is 1:1
+      # with the key (adds width, not rows).
+      - name: proficiency_rollup
+        measures:
+          - student_assessment_scores.count_scores
+          - student_assessment_scores._sum_proficient
+        dimensions:
+          - dates.academic_year
+          - student_assessments.module_code
+          - student_assessments.academic_subject
+          - student_assessments.grade_level_tested
+          - student_assessment_administrations.administration_period
+          - student_assessment_scores.response_type_code
+          - students.race
+          - students.gender_identity
+          - student_school_enrollments.grade_level
+          - locations.region_key
+          - locations.abbreviation
+          - student_section_enrollments.lead_teacher_staff_key
+          - staff_lead_teacher.full_name
+        refresh_key:
+          every: 1 day

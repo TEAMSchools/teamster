@@ -12,6 +12,7 @@ models:
       - type: primary_key
         columns: [student_key, student_contact_person_key]
         warn_unsupported: false
+        warn_unenforced: false
     columns:
       - name: student_key
         data_type: string
@@ -23,6 +24,7 @@ models:
             to: ref('dim_students')
             to_columns: [student_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
 
@@ -41,6 +43,7 @@ models:
             to: ref('dim_student_contact_persons')
             to_columns: [student_contact_person_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
 

@@ -58,18 +58,18 @@ _ACADEMIC_YEAR_LABEL_DESC = (
 META_STUB: dict[str, Any] = {
     "cubes": [
         {
-            "name": "student_attendance_summary",
-            "title": "Student Attendance Summary",
+            "name": "student_attendance_view",
+            "title": "Student Attendance",
             "type": "view",
             "measures": [
                 {
-                    "name": "student_attendance_summary.count_students",
+                    "name": "student_attendance_view.count_students",
                     "title": "Count Students",
                     "type": "number",
                     "description": "Distinct students served.",
                 },
                 {
-                    "name": "student_attendance_summary.count_chronically_absent",
+                    "name": "student_attendance_view.count_chronically_absent",
                     "title": "Count Chronically Absent",
                     "type": "number",
                     "description": (
@@ -77,7 +77,7 @@ META_STUB: dict[str, Any] = {
                     ),
                 },
                 {
-                    "name": "student_attendance_summary.percent_chronically_absent",
+                    "name": "student_attendance_view.percent_chronically_absent",
                     "title": "Percent Chronically Absent",
                     "type": "number",
                     "description": "Share of students chronically absent.",
@@ -85,19 +85,19 @@ META_STUB: dict[str, Any] = {
             ],
             "dimensions": [
                 {
-                    "name": "student_attendance_summary.dates_academic_year",
+                    "name": "student_attendance_view.dates_academic_year",
                     "title": "Dates Academic Year",
                     "type": "number",
                     "description": _ACADEMIC_YEAR_DESC,
                 },
                 {
-                    "name": "student_attendance_summary.dates_academic_year_label",
+                    "name": "student_attendance_view.dates_academic_year_label",
                     "title": "Dates Academic Year Label",
                     "type": "string",
                     "description": _ACADEMIC_YEAR_LABEL_DESC,
                 },
                 {
-                    "name": "student_attendance_summary.school_abbreviation",
+                    "name": "student_attendance_view.school_abbreviation",
                     "title": "School",
                     "type": "string",
                     "description": "School abbreviation.",

@@ -1,15 +1,13 @@
 views:
-  - name: student_enrollments_detail
+  - name: student_enrollments_view
     description: >-
-      Row-level point-in-time student enrollment drill-down — one row per
-      enrolled student-day. Use for roster exports and questions like "who was
-      enrolled on October 1?" (pin a single date by filtering dates_date_day).
-      Same count_students measure as the summary view, plus the
-      student-identifier members and the enrollment_date time dimension.
+      Point-in-time student enrollment — row-level (one row per enrolled
+      student-day, for roster exports and questions like "who was enrolled on
+      October 1?"; pin a single date by filtering dates_date_day) and aggregate
+      headcount breakdowns in a single view.
 
       count_students is point-in-time (as of the most recent in-session day in
-      the query, or the pinned date). Detail-view count_students for a fixed
-      date equals the summary view's for the same filter.
+      the query, or the pinned date).
 
     cubes:
       - join_path: student_enrollments
@@ -37,6 +35,7 @@ views:
         includes:
           - location_name
           - abbreviation
+          - region_key
           - grade_band
           - campus
           - city
@@ -91,7 +90,7 @@ views:
       folders:
         - name: Enrollment
           members:
-            - student_enrollment_daily_key
+            - student_attendance_daily_key
             - student_enrollment_key
             - grade_level
             - graduation_year
@@ -118,6 +117,7 @@ views:
           members:
             - locations_location_name
             - locations_abbreviation
+            - locations_region_key
             - locations_grade_band
             - locations_campus
             - locations_city
@@ -148,20 +148,29 @@ views:
             - staff_homeroom_teacher_last_name
 
     access_policy:
-      # Teacher fields (staff_homeroom_teacher_* names,
-      # homeroom_teacher_staff_key) are intentionally NOT in excludes — staff
-      # base-tier / a staff FK, not
-      # student PII.
-      - group: cube-access-student-data
+      # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
+      # holds exactly one student-<scope> group (buildGroups); none => no group =>
+      # default-deny. row_level uses this view's flat location member names (see
+      # the includes/folders below), not cube-qualified paths.
+      # Teacher fields (staff_homeroom_teacher_* names, homeroom_teacher_staff_key)
+      # ride the wildcard include — staff-directory-tier info, not student PII.
+      - group: student-region
         member_level:
           includes: "*"
-          excludes:
-            - full_name
-            - birth_date
-            - lea_student_identifier
-            - state_student_identifier
-            - salesforce_contact_id
-            - district_student_identifier
-      - group: cube-access-student-pii
+        row_level:
+          filters:
+            - member: locations_region_key
+              operator: equals
+              values: ["{ securityContext.region_key }"]
+      - group: student-school
         member_level:
           includes: "*"
+        row_level:
+          filters:
+            - member: locations_abbreviation
+              operator: equals
+              values: ["{ securityContext.location_abbreviation }"]
+      - group: student-network
+        member_level:
+          includes: "*"
+        # network: no row_level (sees all locations)

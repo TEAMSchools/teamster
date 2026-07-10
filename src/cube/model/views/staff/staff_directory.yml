@@ -1,19 +1,20 @@
 views:
-  - name: staff_detail
+  - name: staff_directory
     description: >-
-      Row-level staff employment history. One row per employee x employment
-      period — a contiguous window during which status, job, worker type, org
-      unit, and location all held simultaneously — with point-in-time manager
-      context. Use for the staff roster, drill-down, and individual
-      investigations.
+      Open staff directory — roster, employment history, and work-contact info.
+      One row per employee x employment period — a contiguous window during
+      which status, job, worker type, org unit, and location all held
+      simultaneously — with point-in-time manager context. Use for the staff
+      roster, drill-down, and individual investigations. Contains no personal or
+      sensitive data (personal contact, DOB, demographics) — see staff_pii for
+      those fields.
 
       Always apply a date filter. Without one, each employment period fans out
       to one row per calendar day in its effective range. For a current roster,
       filter dates to today; for headcount over time, filter a date range or
       month-ends. Filter is_primary_position = true to count each person once;
       status_name = 'Active' filters to active employees (excludes Leave). Use
-      count_employees (count_distinct on staff_key) for headcounts. Contains
-      direct staff and manager identifiers.
+      count_employees (count_distinct on staff_key) for headcounts.
 
     cubes:
       - join_path: staff_work_history
@@ -48,17 +49,14 @@ views:
           - full_name
           - first_name
           - last_name
-          - birth_date
           - work_email
           - google_email
-          - personal_email
-          - personal_cell_phone
           - active_directory_username
-          - gender_identity
-          - race
-          - is_hispanic
           - original_hire_date
           - rehire_date
+          - job_function_level
+          - job_function_code
+          - department_group
 
       - join_path: staff_work_history.locations
         prefix: true
@@ -92,8 +90,11 @@ views:
             - status_reason
             - position_title
             - job_code
+            - job_function_code
+            - job_function_level
             - worker_type
             - department_name
+            - department_group
             - business_unit_name
             - is_primary_position
             - is_management_position
@@ -122,15 +123,9 @@ views:
             - full_name
             - first_name
             - last_name
-            - birth_date
             - work_email
             - google_email
-            - personal_email
-            - personal_cell_phone
             - active_directory_username
-            - gender_identity
-            - race
-            - is_hispanic
             - original_hire_date
             - rehire_date
         - name: Manager
@@ -142,20 +137,11 @@ views:
             - staff_manager_work_email
 
     access_policy:
-      # Non-PII staff tier: roster/employment structure without personal or
-      # sensitive data. Personal contact, DOB, and demographics are gated to
-      # cube-access-staff-pii. Work-directory info (names, work/google email,
-      # AD username, manager contacts) stays visible — already internally public.
-      - group: cube-access-staff-data
-        member_level:
-          includes: "*"
-          excludes:
-            - personal_email
-            - personal_cell_phone
-            - birth_date
-            - gender_identity
-            - race
-            - is_hispanic
-      - group: cube-access-staff-pii
+      # Open staff-directory tier: roster/employment structure without personal
+      # or sensitive data. Personal contact, DOB, and demographics live in
+      # staff_pii instead — they are simply absent here, so no excludes are
+      # needed. Work-directory info (names, work/google email, AD username,
+      # manager contacts) stays visible — already internally public.
+      - group: staff-directory
         member_level:
           includes: "*"

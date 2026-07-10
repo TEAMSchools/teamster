@@ -14,8 +14,9 @@ per-teacher headcount and class-roster capability.
 `role = 'Lead Teacher'`, date-overlap, deduped most-recent); derive the homeroom
 teacher on `dim_student_enrollments` by referencing the section dim's `HR` rows.
 Expose both on the existing enrollment Cubes via a `many_to_one` join to `staff`
-(no fan-out), add a section `count_students` measure, edit the six existing
-views, and add two new `student_section_enrollments` roster views.
+(no fan-out), add a section `count_students` measure, edit the three existing
+collapsed student views, and add one new `student_section_enrollments_view`
+roster view.
 
 **Tech Stack:** dbt (BigQuery), Cube semantic layer (YAML), `dbt_utils`.
 
@@ -38,8 +39,9 @@ views, and add two new `student_section_enrollments` roster views.
 - Cube: cubes stay `public: false`; only views are public. Dim joins from a fact
   set `relationship: many_to_one`. Time dims cast to `TIMESTAMP`. `role` is a
   BigQuery reserved word — backtick in SQL, `quote: true` in YAML.
-- Cube summary views carry NO direct identifiers: teacher `staff_key` +
-  `teacher_role` only, never the teacher name. Detail views may carry the name.
+- Collapsed student views surface both the teacher `staff_key` + `teacher_role`
+  groupers and the teacher name on the same view — teacher work-directory names
+  are staff-directory-tier info riding the wildcard include, not student PII.
 - SQL style: BigQuery dialect, trailing commas in SELECT, single quotes, 88-char
   lines, no `select *` in final mart SELECT, ST06 column ordering (plain refs
   grouped by source table, then constants, simple funcs, logicals, case,
@@ -648,30 +650,29 @@ git commit -m "feat(cube): add homeroom teacher dim and staff join to student_sc
 
 ---
 
-### Task 5: Add the section teacher to the assessment views
+### Task 5: Add the section teacher to the assessment view
 
 **Files:**
 
 - Modify:
-  `src/cube/model/views/student_assessments/student_assessment_scores_detail.yml`
-- Modify:
-  `src/cube/model/views/student_assessments/student_assessment_scores_summary.yml`
+  `src/cube/model/views/student_assessments/student_assessment_scores_view.yml`
 
 **Interfaces:**
 
 - Consumes: Task 3 (`lead_teacher_staff_key`, `teacher_role` on
   `student_section_enrollments`; `staff` join).
-- Produces: a `Teacher` folder on both views.
+- Produces: a `Teacher` folder on the collapsed view.
 
-- [ ] **Step 1: Detail view — add teacher members**
+- [ ] **Step 1: Add the teacher members**
 
-In `student_assessment_scores_detail.yml`, add `lead_teacher_staff_key` and
+In `student_assessment_scores_view.yml`, add `lead_teacher_staff_key` and
 `teacher_role` to the existing
 `join_path: student_assessment_scores.student_section_enrollments` includes
-block, and add a new join_path for the teacher name:
+block, and add a new join_path for the teacher name (the cube join alias is
+`staff_lead_teacher`):
 
 ```yaml
-- join_path: student_assessment_scores.student_section_enrollments.staff
+- join_path: student_assessment_scores.student_section_enrollments.staff_lead_teacher
   prefix: true
   includes:
     - full_name
@@ -679,80 +680,64 @@ block, and add a new join_path for the teacher name:
     - last_name
 ```
 
-Add a `Teacher` folder under `meta.folders`:
+Add a `Teacher` folder under `meta.folders` (the `prefix: true` join surfaces
+the name members as `staff_lead_teacher_*`):
 
 ```yaml
 - name: Teacher
   members:
     - lead_teacher_staff_key
     - teacher_role
-    - staff_full_name
-    - staff_first_name
-    - staff_last_name
+    - staff_lead_teacher_full_name
+    - staff_lead_teacher_first_name
+    - staff_lead_teacher_last_name
 ```
 
-- [ ] **Step 2: Detail view — exclude the teacher name from the base tier if
-      PII-gated**
+- [ ] **Step 2: Leave the access_policy unchanged**
 
-Teacher work-directory names are internally public (staff base tier), so no
-change to the `access_policy` excludes is required — the view's existing
-`cube-access-student-data` / `cube-access-student-pii` blocks already gate the
-whole view. Leave `access_policy` unchanged. (Do NOT add `staff_full_name` to
-excludes.)
+The collapsed view already gates access through its three `student-*` groups
+(`student-region` / `student-school` / `student-network`), each with
+`member_level: { includes: "*" }` and, for region/school, a `row_level` location
+filter (bare `region_key` / `abbreviation` — this view joins `locations`
+unprefixed). Teacher name/`staff_key`/`teacher_role` members ride the wildcard
+include as staff-directory-tier info, so no PII excludes and no new group are
+needed. Leave `access_policy` unchanged.
 
-- [ ] **Step 3: Summary view — add teacher groupers only (no name)**
+- [ ] **Step 3: Compile-test (user-run), lint, commit**
 
-In `student_assessment_scores_summary.yml`, add `lead_teacher_staff_key` and
-`teacher_role` to the
-`join_path: student_assessment_scores.student_section_enrollments` includes
-block. Do NOT add the `staff` join or any name member. Add the folder:
-
-```yaml
-- name: Teacher
-  members:
-    - lead_teacher_staff_key
-    - teacher_role
-```
-
-- [ ] **Step 4: Compile-test (user-run), lint, commit**
-
-Have the user confirm both views compile in the Cube dev server (with the Task 1
+Have the user confirm the view compiles in the Cube dev server (with the Task 1
 dev `sql_table` redirect active), then:
 
 ```bash
 /workspaces/teamster/.trunk/tools/trunk check --force \
-  src/cube/model/views/student_assessments/student_assessment_scores_detail.yml \
-  src/cube/model/views/student_assessments/student_assessment_scores_summary.yml
-git add src/cube/model/views/student_assessments/student_assessment_scores_detail.yml \
-  src/cube/model/views/student_assessments/student_assessment_scores_summary.yml
-git commit -m "feat(cube): surface section lead teacher on assessment scores views"
+  src/cube/model/views/student_assessments/student_assessment_scores_view.yml
+git add src/cube/model/views/student_assessments/student_assessment_scores_view.yml
+git commit -m "feat(cube): surface section lead teacher on assessment scores view"
 ```
 
 ---
 
-### Task 6: Add the homeroom teacher to the attendance views
+### Task 6: Add the homeroom teacher to the attendance view
 
 **Files:**
 
-- Modify:
-  `src/cube/model/views/student_attendance/student_attendance_detail.yml`
-- Modify:
-  `src/cube/model/views/student_attendance/student_attendance_summary.yml`
+- Modify: `src/cube/model/views/student_attendance/student_attendance_view.yml`
 
 **Interfaces:**
 
 - Consumes: Task 4 (`homeroom_teacher_staff_key` + `staff` join on
   `student_school_enrollments`).
-- Produces: a `Teacher` folder on both views.
+- Produces: a `Teacher` folder on the collapsed view.
 
-- [ ] **Step 1: Detail view — add teacher members**
+- [ ] **Step 1: Add the teacher members**
 
-In `student_attendance_detail.yml`, add `homeroom_teacher_staff_key` to the
+In `student_attendance_view.yml`, add `homeroom_teacher_staff_key` to the
 existing `join_path: student_attendance.student_school_enrollments` includes
-block, and add the teacher-name join_path:
+block, and add the teacher-name join_path (the cube join alias is
+`staff_homeroom_teacher`):
 
 ```yaml
-- join_path: student_attendance.student_school_enrollments.staff
+- join_path: student_attendance.student_school_enrollments.staff_homeroom_teacher
   prefix: true
   includes:
     - full_name
@@ -760,68 +745,62 @@ block, and add the teacher-name join_path:
     - last_name
 ```
 
-Add a `Teacher` folder under `meta.folders`:
+Add a `Teacher` folder under `meta.folders` (the `prefix: true` join surfaces
+the name members as `staff_homeroom_teacher_*`):
 
 ```yaml
 - name: Teacher
   members:
     - homeroom_teacher_staff_key
-    - staff_full_name
-    - staff_first_name
-    - staff_last_name
+    - staff_homeroom_teacher_full_name
+    - staff_homeroom_teacher_first_name
+    - staff_homeroom_teacher_last_name
 ```
 
-Leave `access_policy` unchanged (teacher names are staff base tier).
+- [ ] **Step 2: Leave the access_policy unchanged**
 
-- [ ] **Step 2: Summary view — add teacher grouper only (no name)**
-
-In `student_attendance_summary.yml`, add `homeroom_teacher_staff_key` to the
-`join_path: student_attendance.student_school_enrollments` includes block. Do
-NOT add the `staff` join. Add the folder:
-
-```yaml
-- name: Teacher
-  members:
-    - homeroom_teacher_staff_key
-```
+The collapsed view gates access through its three `student-*` groups, each with
+`member_level: { includes: "*" }` and, for region/school, a `row_level` location
+filter (prefixed `locations_region_key` / `locations_abbreviation`). Teacher
+name and `homeroom_teacher_staff_key` members ride the wildcard include as
+staff-directory-tier info, so no PII excludes and no new group are needed. Leave
+`access_policy` unchanged.
 
 - [ ] **Step 3: Compile-test (user-run), lint, commit**
 
-Have the user confirm both compile (Task 2 dev `sql_table` redirect active),
-then:
+Have the user confirm the view compiles (Task 2 dev `sql_table` redirect
+active), then:
 
 ```bash
 /workspaces/teamster/.trunk/tools/trunk check --force \
-  src/cube/model/views/student_attendance/student_attendance_detail.yml \
-  src/cube/model/views/student_attendance/student_attendance_summary.yml
-git add src/cube/model/views/student_attendance/student_attendance_detail.yml \
-  src/cube/model/views/student_attendance/student_attendance_summary.yml
-git commit -m "feat(cube): surface homeroom teacher on attendance views"
+  src/cube/model/views/student_attendance/student_attendance_view.yml
+git add src/cube/model/views/student_attendance/student_attendance_view.yml
+git commit -m "feat(cube): surface homeroom teacher on attendance view"
 ```
 
 ---
 
-### Task 7: Add the homeroom teacher to the enrollment views
+### Task 7: Add the homeroom teacher to the enrollment view
 
 **Files:**
 
-- Modify: `src/cube/model/views/students/student_enrollments_detail.yml`
-- Modify: `src/cube/model/views/students/student_enrollments_summary.yml`
+- Modify: `src/cube/model/views/students/student_enrollments_view.yml`
 
 **Interfaces:**
 
 - Consumes: Task 4 (`homeroom_teacher_staff_key` + `staff` join).
 - Produces: a `Teacher` folder; with the existing `count_students`, this answers
-  homeroom headcount and (detail) the advisory roster.
+  homeroom headcount and the advisory roster from the one collapsed view.
 
-- [ ] **Step 1: Detail view — add teacher members**
+- [ ] **Step 1: Add the teacher members**
 
-In `student_enrollments_detail.yml`, add `homeroom_teacher_staff_key` to the
+In `student_enrollments_view.yml`, add `homeroom_teacher_staff_key` to the
 `join_path: student_enrollments.student_school_enrollments` (prefix: false)
-includes block, and add:
+includes block, and add the teacher-name join_path (the cube join alias is
+`staff_homeroom_teacher`):
 
 ```yaml
-- join_path: student_enrollments.student_school_enrollments.staff
+- join_path: student_enrollments.student_school_enrollments.staff_homeroom_teacher
   prefix: true
   includes:
     - full_name
@@ -829,71 +808,70 @@ includes block, and add:
     - last_name
 ```
 
-Add the folder:
+Add the folder (the `prefix: true` join surfaces the name members as
+`staff_homeroom_teacher_*`):
 
 ```yaml
 - name: Teacher
   members:
     - homeroom_teacher_staff_key
-    - staff_full_name
-    - staff_first_name
-    - staff_last_name
+    - staff_homeroom_teacher_full_name
+    - staff_homeroom_teacher_first_name
+    - staff_homeroom_teacher_last_name
 ```
 
-- [ ] **Step 2: Summary view — add teacher grouper only**
+- [ ] **Step 2: Leave the access_policy unchanged**
 
-In `student_enrollments_summary.yml`, add `homeroom_teacher_staff_key` to the
-`join_path: student_enrollments.student_school_enrollments` includes block; add
-the folder:
-
-```yaml
-- name: Teacher
-  members:
-    - homeroom_teacher_staff_key
-```
+The collapsed view gates access through its three `student-*` groups, each with
+`member_level: { includes: "*" }` and, for region/school, a `row_level` location
+filter (prefixed `locations_region_key` / `locations_abbreviation`). Teacher
+members ride the wildcard include as staff-directory-tier info — no PII
+excludes, no new group. Leave `access_policy` unchanged.
 
 - [ ] **Step 3: Compile-test (user-run), lint, commit**
 
 ```bash
 /workspaces/teamster/.trunk/tools/trunk check --force \
-  src/cube/model/views/students/student_enrollments_detail.yml \
-  src/cube/model/views/students/student_enrollments_summary.yml
-git add src/cube/model/views/students/student_enrollments_detail.yml \
-  src/cube/model/views/students/student_enrollments_summary.yml
-git commit -m "feat(cube): surface homeroom teacher on enrollment views"
+  src/cube/model/views/students/student_enrollments_view.yml
+git add src/cube/model/views/students/student_enrollments_view.yml
+git commit -m "feat(cube): surface homeroom teacher on enrollment view"
 ```
 
 ---
 
-### Task 8: Create the `student_section_enrollments` roster views
+### Task 8: Create the `student_section_enrollments_view` roster view
 
 **Files:**
 
-- Create: `src/cube/model/views/students/student_section_enrollments_detail.yml`
-- Create:
-  `src/cube/model/views/students/student_section_enrollments_summary.yml`
+- Create: `src/cube/model/views/students/student_section_enrollments_view.yml`
 
 **Interfaces:**
 
 - Consumes: Task 3 cube (`count_students`, teacher dims, `staff` join) and its
   existing joins (`course_sections`, `terms`, `student_school_enrollments` →
   `students` / `locations` / `student_enrollment_status`).
-- Produces: two new public views — a per-teacher class roster (detail, PII) and
-  a section/teacher headcount surface (summary).
+- Produces: one new collapsed public view — a per-teacher class roster and a
+  section/teacher headcount surface on the same view (row-level identifiers plus
+  aggregate breakdowns).
 
-- [ ] **Step 1: Create the detail (roster) view**
+- [ ] **Step 1: Create the collapsed roster view**
 
-Write `student_section_enrollments_detail.yml`:
+Write `student_section_enrollments_view.yml` (the cube join alias for the lead
+teacher is `staff_lead_teacher`, so its `prefix: true` name members surface as
+`staff_lead_teacher_*`; `locations` is joined `prefix: true`, so its filter
+members are `locations_region_key` / `locations_abbreviation`):
 
 ```yaml
 views:
-  - name: student_section_enrollments_detail
+  - name: student_section_enrollments_view
     description: >-
-      Row-level student section enrollments — one row per student x section
-      enrollment. Use for per-teacher class rosters (filter to a lead teacher)
-      and section drill-down. count_students is a distinct-student headcount,
-      correct per teacher. Contains direct student identifiers — see
-      access_policy for PII gating.
+      Student section enrollments — row-level (one row per student x section
+      enrollment) and aggregate headcounts in a single view. Use for per-teacher
+      class rosters (filter to a lead teacher) and section drill-down.
+      count_students is a distinct-student headcount, correct per teacher —
+      grouped by lead teacher it answers "how many students does this teacher
+      teach?". Contains direct student identifiers — see access_policy for PII
+      gating.
 
     cubes:
       - join_path: student_section_enrollments
@@ -910,7 +888,7 @@ views:
           - teacher_role
           - lead_teacher_staff_key
 
-      - join_path: student_section_enrollments.staff
+      - join_path: student_section_enrollments.staff_lead_teacher
         prefix: true
         includes:
           - full_name
@@ -963,6 +941,7 @@ views:
         includes:
           - location_name
           - abbreviation
+          - region_key
           - grade_band
           - campus
           - city
@@ -979,9 +958,9 @@ views:
           members:
             - lead_teacher_staff_key
             - teacher_role
-            - staff_full_name
-            - staff_first_name
-            - staff_last_name
+            - staff_lead_teacher_full_name
+            - staff_lead_teacher_first_name
+            - staff_lead_teacher_last_name
         - name: Course
           members:
             - discipline
@@ -1001,6 +980,7 @@ views:
           members:
             - locations_location_name
             - locations_abbreviation
+            - locations_region_key
             - locations_grade_band
             - locations_campus
             - locations_city
@@ -1033,159 +1013,47 @@ views:
             - is_retained_year
 
     access_policy:
-      - group: cube-access-student-data
+      # Row-level location scoping. A viewer holds exactly one student-<scope>
+      # group; none => no group => default-deny. Teacher fields
+      # (staff_lead_teacher_* names, lead_teacher_staff_key) ride the wildcard
+      # include — staff-directory-tier info, not student PII.
+      - group: student-region
         member_level:
           includes: "*"
-          excludes:
-            - full_name
-            - birth_date
-            - lea_student_identifier
-            - state_student_identifier
-      - group: cube-access-student-pii
+        row_level:
+          filters:
+            - member: locations_region_key
+              operator: equals
+              values: ["{ securityContext.region_key }"]
+      - group: student-school
         member_level:
           includes: "*"
+        row_level:
+          filters:
+            - member: locations_abbreviation
+              operator: equals
+              values: ["{ securityContext.location_abbreviation }"]
+      - group: student-network
+        member_level:
+          includes: "*"
+        # network: no row_level (sees all locations)
 ```
 
-- [ ] **Step 2: Create the summary view**
+- [ ] **Step 2: Compile-test (user-run)**
 
-Write `student_section_enrollments_summary.yml`:
-
-```yaml
-views:
-  - name: student_section_enrollments_summary
-    description: >-
-      Aggregated section-enrollment headcounts by teacher, section, and
-      demographics. One row per filter slice — never per enrollment.
-      count_students is a distinct-student headcount; grouped by lead teacher it
-      answers "how many students does this teacher teach?". No direct student
-      identifiers — demographic dimensions are aggregate breakdowns only.
-
-    cubes:
-      - join_path: student_section_enrollments
-        includes:
-          - count_students
-          - academic_year
-          - is_homeroom
-          - is_dropped_section
-          - is_dropped_course
-          - teacher_role
-          - lead_teacher_staff_key
-
-      - join_path: student_section_enrollments.course_sections.courses
-        includes:
-          - discipline
-          - course_title
-          - course_code
-          - credit_type
-          - is_foundations
-
-      - join_path: student_section_enrollments.terms
-        includes:
-          - semester
-          - term_name
-          - term_code
-          - term_type
-
-      - join_path: student_section_enrollments.student_school_enrollments
-        prefix: false
-        includes:
-          - grade_level
-          - graduation_year
-          - year_in_network
-          - is_retained_year
-
-      - join_path: student_section_enrollments.student_school_enrollments.students
-        prefix: false
-        includes:
-          - gender_identity
-          - race
-          - is_gifted
-
-      - join_path: student_section_enrollments.student_school_enrollments.locations
-        prefix: true
-        includes:
-          - location_name
-          - abbreviation
-          - grade_band
-          - campus
-          - city
-
-      - join_path: student_section_enrollments.student_school_enrollments.locations.regions
-        prefix: true
-        includes:
-          - region_name
-          - state
-
-    meta:
-      folders:
-        - name: Teacher
-          members:
-            - lead_teacher_staff_key
-            - teacher_role
-        - name: Course
-          members:
-            - discipline
-            - course_title
-            - course_code
-            - credit_type
-            - is_foundations
-        - name: Term
-          members:
-            - semester
-            - term_name
-            - term_code
-            - term_type
-        - name: Location
-          members:
-            - locations_location_name
-            - locations_abbreviation
-            - locations_grade_band
-            - locations_campus
-            - locations_city
-            - regions_region_name
-            - regions_state
-        - name: Student
-          members:
-            - gender_identity
-            - race
-            - is_gifted
-        - name: Enrollment
-          members:
-            - academic_year
-            - is_homeroom
-            - is_dropped_section
-            - is_dropped_course
-            - grade_level
-            - graduation_year
-            - year_in_network
-            - is_retained_year
-
-    access_policy:
-      # No PII tier — view contains no direct student identifiers.
-      # Demographic dimensions (race, gender_identity, is_gifted) are
-      # aggregate breakdowns only.
-      - group: cube-access-student-data
-        member_level:
-          includes: "*"
-```
-
-- [ ] **Step 3: Compile-test (user-run)**
-
-Have the user confirm both new views compile and `/load` returns a class roster
+Have the user confirm the new view compiles and `/load` returns a class roster
 when filtered to a `lead_teacher_staff_key` (Task 1 dev `sql_table` redirect
 active). Watch for a diamond-path error reaching `locations` — the section cube
 reaches `locations` only through `student_school_enrollments`; if Cube reports a
 diamond, remove any redundant `locations` join_path.
 
-- [ ] **Step 4: Lint and commit**
+- [ ] **Step 3: Lint and commit**
 
 ```bash
 /workspaces/teamster/.trunk/tools/trunk check --force \
-  src/cube/model/views/students/student_section_enrollments_detail.yml \
-  src/cube/model/views/students/student_section_enrollments_summary.yml
-git add src/cube/model/views/students/student_section_enrollments_detail.yml \
-  src/cube/model/views/students/student_section_enrollments_summary.yml
-git commit -m "feat(cube): add student_section_enrollments roster views"
+  src/cube/model/views/students/student_section_enrollments_view.yml
+git add src/cube/model/views/students/student_section_enrollments_view.yml
+git commit -m "feat(cube): add student_section_enrollments_view roster view"
 ```
 
 ---
@@ -1202,12 +1070,12 @@ Via the Cube MCP (or dev server), for the same filter (single academic year,
 single school), confirm each measure is identical grouped-by-teacher vs.
 ungrouped:
 
-- `student_attendance_summary.count_students` and `avg_daily_attendance` grouped
-  by `homeroom_teacher_staff_key` vs. ungrouped.
-- `student_assessment_scores_summary.count_scores` grouped by
+- `student_attendance_view.count_students` and `avg_daily_attendance` grouped by
+  `homeroom_teacher_staff_key` vs. ungrouped.
+- `student_assessment_scores_view.count_scores` grouped by
   `lead_teacher_staff_key` vs. ungrouped.
 - One snapshot measure
-  (`student_attendance_summary.count_chronically_absent_year_end`) grouped by
+  (`student_attendance_view.count_chronically_absent_year_end`) grouped by
   teacher vs. ungrouped.
 
 Expected: totals match (the join is `many_to_one`, so no fan). Any divergence
@@ -1216,16 +1084,19 @@ test.
 
 - [ ] **Step 2: Confirm the headcount + roster answer the question**
 
-Via the Cube MCP: `student_section_enrollments_summary.count_students` grouped
-by `lead_teacher_staff_key` returns per-teacher counts; a
-`student_section_enrollments_detail` query filtered to one
+Via the Cube MCP: `student_section_enrollments_view.count_students` grouped by
+`lead_teacher_staff_key` returns per-teacher counts; a
+`student_section_enrollments_view` query filtered to one
 `lead_teacher_staff_key` returns that teacher's student list.
 
 - [ ] **Step 3: Confirm access gating**
 
-Confirm the teacher blocks and the new roster detail view are hidden for a
-security context without `cube-access-student-data`, and roster PII
-(`full_name`, identifiers) hidden without `cube-access-student-pii`.
+Confirm the new roster view (teacher blocks included) is default-denied for a
+security context holding none of the three `student-*` groups, and that a
+`student-region` / `student-school` viewer sees only their in-scope locations
+via the `row_level` filter — a `student-network` viewer sees every location. All
+three groups see every field (`member_level: { includes: "*" }`), so there is no
+separate PII tier to test.
 
 - [ ] **Step 4: Final lint sweep and push**
 

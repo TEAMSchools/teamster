@@ -17,6 +17,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -31,6 +32,7 @@ models:
             to: ref('dim_locations')
             to_columns: [location_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           # TODO: #3686 — adp_location vs dim_locations.location_name coverage
           # gap (same class as #3672). Promote to error once crosswalk is clean.
@@ -49,6 +51,7 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           # TODO: #3710 — Seat Tracker retains historical incumbents outside
           # dim_staff's active-primary scope. Promote to error once resolved.
@@ -68,6 +71,7 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           # TODO: #3710 — Seat Tracker recruiter values include staff outside
           # dim_staff's active-primary scope. Promote to error once resolved.
