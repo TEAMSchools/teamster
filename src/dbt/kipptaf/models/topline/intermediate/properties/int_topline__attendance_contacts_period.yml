@@ -1,0 +1,44 @@
+models:
+  - name: int_topline__attendance_contacts_period
+    description:
+      Successful attendance-contact rate inputs recomputed within exact non-week
+      period windows for the topline cascade dashboard. Numerator is successful
+      contacts on absence days inside the window; denominator is required
+      contacts (absence days) inside the window.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description: Last date of the period window.
+        data_type: date
+      - name: successful_comms_sum
+        description: Successful attendance contacts on in-window absence days.
+        data_type: int64
+      - name: required_comms_count
+        description: Required attendance contacts (absence days) in the window.
+        data_type: int64
