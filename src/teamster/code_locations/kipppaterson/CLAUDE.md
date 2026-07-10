@@ -32,7 +32,6 @@ Consequences:
 
 - No `db_powerschool` or `ssh_powerschool` resources in `definitions.py`
 - No `db_bigquery` resource (no BigQuery writes from this location)
-- No `io_manager_gcs_file` resource (no file-based IO manager needed)
 - No extracts module (no BigQuery to query)
 - No `edplan`, `iready`, `overgrad`, `renlearn`, or `titan`
 

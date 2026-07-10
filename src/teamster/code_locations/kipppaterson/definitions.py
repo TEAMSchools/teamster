@@ -25,6 +25,7 @@ from teamster.core.resources import (
     SSH_RESOURCE_AMPLIFY,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
+    get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
 )
 
@@ -57,6 +58,7 @@ defs = Definitions(
         "gcs": GCS_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
+        "io_manager_gcs_file": get_io_manager_gcs_file(CODE_LOCATION),
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,

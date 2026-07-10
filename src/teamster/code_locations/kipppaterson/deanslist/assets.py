@@ -8,10 +8,14 @@ from dagster import (
 )
 
 from teamster.code_locations.kipppaterson import CODE_LOCATION, LOCAL_TIMEZONE
-from teamster.code_locations.kipppaterson.deanslist.schema import ASSET_SCHEMA
+from teamster.code_locations.kipppaterson.deanslist.schema import (
+    ASSET_SCHEMA,
+    BEHAVIOR_SCHEMA,
+)
 from teamster.core.utils.classes import FiscalYearPartitionsDefinition
 from teamster.libraries.deanslist.assets import (
     build_deanslist_multi_partition_asset,
+    build_deanslist_paginated_multi_partition_asset,
     build_deanslist_static_partition_asset,
 )
 
@@ -75,6 +79,16 @@ year_partitioned_assets = [
         "endpoints"
     ]
 ]
+
+year_partitioned_assets.append(
+    build_deanslist_paginated_multi_partition_asset(
+        code_location=CODE_LOCATION,
+        endpoint="behavior",
+        api_version="v1",
+        schema=BEHAVIOR_SCHEMA,
+        partitions_def=DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF,
+    )
+)
 
 assets = [
     *static_partitioned_assets,
