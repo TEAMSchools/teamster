@@ -1,30 +1,10 @@
 with
-    -- NJ Finalsite branch: the SIS-agnostic student-contacts model, scoped to
-    -- enrolled students by crosswalking the Finalsite enrollment id to a
-    -- PowerSchool student number. Add Camden/Paterson sources here as they cut
-    -- over from PowerSchool to Finalsite.
-    finalsite_contacts as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source("kippnewark_finalsite", "int_finalsite__student_contacts"),
-                ]
-            )
-        }}
-    ),
-
-    finalsite_crosswalk as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source(
-                        "kippnewark_finalsite", "int_finalsite__contact_id_attributes"
-                    ),
-                ]
-            )
-        }}
-    ),
-
+    -- NJ Finalsite branch: the SIS-agnostic student-contacts union (cutover
+    -- regions only — the region scope lives in int_finalsite__student_contacts),
+    -- reduced to enrolled students by crosswalking the Finalsite enrollment id
+    -- to a PowerSchool student number. The crosswalk union also carries Miami's
+    -- Focus contacts, but they never match here because
+    -- int_finalsite__student_contacts unions only cutover regions.
     finalsite as (
         select
             fc.contact_slot,
@@ -40,19 +20,18 @@ with
             fc.is_pickup,
             fc.is_custodial,
             fc.is_household_member,
+            fc._dbt_source_project,
             fc.email as email_current,
             fc.home_address as address_home,
 
             cast(null as string) as personid,
 
             safe_cast(xw.powerschool_student_number as int64) as student_number,
-
-            {{ extract_code_location("fc") }} as _dbt_source_project,
-        from finalsite_contacts as fc
+        from {{ ref("int_finalsite__student_contacts") }} as fc
         inner join
-            finalsite_crosswalk as xw
+            {{ ref("int_finalsite__contact_id_attributes") }} as xw
             on fc.finalsite_enrollment_id = xw.finalsite_enrollment_id
-            and {{ union_dataset_join_clause(left_alias="fc", right_alias="xw") }}
+            and fc._dbt_source_project = xw._dbt_source_project
         where xw.powerschool_student_number is not null
     ),
 

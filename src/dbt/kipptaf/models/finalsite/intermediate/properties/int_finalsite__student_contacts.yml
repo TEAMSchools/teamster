@@ -1,0 +1,27 @@
+models:
+  - name: int_finalsite__student_contacts
+    description:
+      Network-wide union of the per-region Finalsite
+      `int_finalsite__student_contacts` models — the SIS-agnostic long-format
+      contact list (one row per student per contact slot, `contact_1` plus
+      `emergency_1` through `emergency_4`). Enabled only where the Finalsite API
+      layer is wired (today KIPP Miami and KIPP Newark); carries
+      `_dbt_source_relation` and the derived `_dbt_source_project`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+              - contact_slot
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description:
+          Finalsite contact UUID of the student this contact belongs to.
+        data_tests:
+          - not_null
+      - name: contact_slot
+        data_type: string
+        description:
+          Which contact this row represents — `contact_1` or `emergency_1`
+          through `emergency_4`.
