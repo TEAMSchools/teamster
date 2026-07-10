@@ -23,167 +23,557 @@ models:
     columns:
       - name: student_number
         data_type: integer
+        description: The student's PowerSchool student number.
       - name: _dbt_source_project
         data_type: string
+        description:
+          Dagster code location (district) the row's contacts were sourced from.
       - name: contact_1_address_home
         data_type: string
+        description:
+          Home address for the student's single reportable parent contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_email_current
         data_type: string
+        description:
+          Email address for the student's single reportable parent contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_name
         data_type: string
+        description:
+          Full name for the student's single reportable parent contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_daytime
         data_type: string
+        description:
+          Daytime phone number for the student's single reportable parent
+          contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_home
         data_type: string
+        description:
+          Home phone number for the student's single reportable parent contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_mobile
         data_type: string
+        description:
+          Mobile (Cell) phone number for the student's single reportable parent
+          contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for the student's
+          single reportable parent contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_phone_work
         data_type: string
+        description:
+          Work phone number for the student's single reportable parent contact.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_1_relationship
         data_type: string
+        description:
+          Relationship to the student for the student's single reportable parent
+          contact.
       - name: contact_2_address_home
         data_type: string
+        description:
+          Home address for the second contact slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_email_current
         data_type: string
+        description:
+          Email address for the second contact slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_name
         data_type: string
+        description:
+          Full name for the second contact slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_daytime
         data_type: string
+        description:
+          Daytime phone number for the second contact slot, always null under
+          the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_home
         data_type: string
+        description:
+          Home phone number for the second contact slot, always null under the
+          1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_mobile
         data_type: string
+        description:
+          Mobile (Cell) phone number for the second contact slot, always null
+          under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for the second contact
+          slot, always null under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_phone_work
         data_type: string
+        description:
+          Work phone number for the second contact slot, always null under the
+          1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_2_relationship
         data_type: string
+        description:
+          Relationship to the student for the second contact slot, always null
+          under the 1+4 shape.
       - name: emergency_1_address_home
         data_type: string
+        description: Home address for emergency contact 1.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_email_current
         data_type: string
+        description: Email address for emergency contact 1.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_name
         data_type: string
+        description: Full name for emergency contact 1.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_daytime
         data_type: string
+        description: Daytime phone number for emergency contact 1.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_home
         data_type: string
+        description: Home phone number for emergency contact 1.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_mobile
         data_type: string
+        description: Mobile (Cell) phone number for emergency contact 1.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for emergency contact
+          1.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_phone_work
         data_type: string
+        description: Work phone number for emergency contact 1.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_1_relationship
         data_type: string
+        description: Relationship to the student for emergency contact 1.
       - name: emergency_2_address_home
         data_type: string
+        description: Home address for emergency contact 2.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_email_current
         data_type: string
+        description: Email address for emergency contact 2.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_name
         data_type: string
+        description: Full name for emergency contact 2.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_daytime
         data_type: string
+        description: Daytime phone number for emergency contact 2.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_home
         data_type: string
+        description: Home phone number for emergency contact 2.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_mobile
         data_type: string
+        description: Mobile (Cell) phone number for emergency contact 2.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for emergency contact
+          2.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_phone_work
         data_type: string
+        description: Work phone number for emergency contact 2.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_2_relationship
         data_type: string
+        description: Relationship to the student for emergency contact 2.
       - name: emergency_3_address_home
         data_type: string
+        description: Home address for emergency contact 3.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_email_current
         data_type: string
+        description: Email address for emergency contact 3.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_name
         data_type: string
+        description: Full name for emergency contact 3.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_daytime
         data_type: string
+        description: Daytime phone number for emergency contact 3.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_home
         data_type: string
+        description: Home phone number for emergency contact 3.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_mobile
         data_type: string
+        description: Mobile (Cell) phone number for emergency contact 3.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for emergency contact
+          3.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_phone_work
         data_type: string
+        description: Work phone number for emergency contact 3.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_3_relationship
         data_type: string
+        description: Relationship to the student for emergency contact 3.
       - name: emergency_4_address_home
         data_type: string
+        description: Home address for emergency contact 4.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_4_email_current
         data_type: string
+        description: Email address for emergency contact 4.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_4_name
         data_type: string
+        description: Full name for emergency contact 4.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_4_phone_daytime
         data_type: string
+        description: Daytime phone number for emergency contact 4.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_4_phone_home
         data_type: string
+        description: Home phone number for emergency contact 4.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_4_phone_mobile
         data_type: string
+        description: Mobile (Cell) phone number for emergency contact 4.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_4_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for emergency contact
+          4.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_4_phone_work
         data_type: string
+        description: Work phone number for emergency contact 4.
+        config:
+          meta:
+            contains_pii: true
       - name: emergency_4_relationship
         data_type: string
+        description: Relationship to the student for emergency contact 4.
       - name: pickup_1_address_home
         data_type: string
+        description:
+          Home address for the first pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_email_current
         data_type: string
+        description:
+          Email address for the first pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_name
         data_type: string
+        description:
+          Full name for the first pickup slot, always null under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_daytime
         data_type: string
+        description:
+          Daytime phone number for the first pickup slot, always null under the
+          1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_home
         data_type: string
+        description:
+          Home phone number for the first pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_mobile
         data_type: string
+        description:
+          Mobile (Cell) phone number for the first pickup slot, always null
+          under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for the first pickup
+          slot, always null under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_phone_work
         data_type: string
+        description:
+          Work phone number for the first pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_1_relationship
         data_type: string
+        description:
+          Relationship to the student for the first pickup slot, always null
+          under the 1+4 shape.
       - name: pickup_2_address_home
         data_type: string
+        description:
+          Home address for the second pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_email_current
         data_type: string
+        description:
+          Email address for the second pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_name
         data_type: string
+        description:
+          Full name for the second pickup slot, always null under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_daytime
         data_type: string
+        description:
+          Daytime phone number for the second pickup slot, always null under the
+          1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_home
         data_type: string
+        description:
+          Home phone number for the second pickup slot, always null under the
+          1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_mobile
         data_type: string
+        description:
+          Mobile (Cell) phone number for the second pickup slot, always null
+          under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for the second pickup
+          slot, always null under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_phone_work
         data_type: string
+        description:
+          Work phone number for the second pickup slot, always null under the
+          1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_2_relationship
         data_type: string
+        description:
+          Relationship to the student for the second pickup slot, always null
+          under the 1+4 shape.
       - name: pickup_3_address_home
         data_type: string
+        description:
+          Home address for the third pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_email_current
         data_type: string
+        description:
+          Email address for the third pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_name
         data_type: string
+        description:
+          Full name for the third pickup slot, always null under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_daytime
         data_type: string
+        description:
+          Daytime phone number for the third pickup slot, always null under the
+          1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_home
         data_type: string
+        description:
+          Home phone number for the third pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_mobile
         data_type: string
+        description:
+          Mobile (Cell) phone number for the third pickup slot, always null
+          under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_primary
         data_type: string
+        description:
+          Primary phone number (first regardless of type) for the third pickup
+          slot, always null under the 1+4 shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_phone_work
         data_type: string
+        description:
+          Work phone number for the third pickup slot, always null under the 1+4
+          shape.
+        config:
+          meta:
+            contains_pii: true
       - name: pickup_3_relationship
         data_type: string
+        description:
+          Relationship to the student for the third pickup slot, always null
+          under the 1+4 shape.
