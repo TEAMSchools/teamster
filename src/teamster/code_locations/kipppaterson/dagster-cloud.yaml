@@ -8,6 +8,16 @@ locations:
     working_directory: /app
     container_context:
       k8s:
+        volume_mounts:
+          - name: deanslist-keys
+            readOnly: true
+            mountPath: /etc/deanslist
+        volumes:
+          - name: deanslist-keys
+            projected:
+              sources:
+                - secret:
+                    name: op-deanslist-api
         server_k8s_config:
           pod_spec_config:
             affinity:
