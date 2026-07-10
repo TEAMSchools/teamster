@@ -62,6 +62,16 @@ locations:
                   secretKeyRef:
                     name: op-amplify-sftp-kipppaterson
                     key: username
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kipppaterson
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kipppaterson
+                    key: password
         run_k8s_config:
           container_config:
             env:
@@ -95,3 +105,13 @@ locations:
                   secretKeyRef:
                     name: op-amplify-sftp-kipppaterson
                     key: username
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kipppaterson
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kipppaterson
+                    key: password

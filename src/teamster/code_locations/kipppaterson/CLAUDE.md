@@ -11,15 +11,15 @@ GCS bucket: `teamster-kipppaterson`
 
 ## Active Integrations
 
-| Module                   | Type                      | Trigger                                     |
-| ------------------------ | ------------------------- | ------------------------------------------- |
-| `dbt`                    | dbt assets                | `AutomationConditionSensor`                 |
-| `powerschool` (sis/sftp) | SFTP assets via Couchdrop | sensor (`couchdrop_sftp_sensor`)            |
-| `amplify` (mclass sftp)  | SFTP assets               | sensor (`build_amplify_mclass_sftp_sensor`) |
-| `deanslist`              | API assets                | schedule (nightly)                          |
-| `finalsite`              | API assets                | `AutomationConditionSensor`                 |
-| `pearson`                | SFTP assets               | `AutomationConditionSensor`                 |
-| `couchdrop`              | sensor only               | sensor (Google Drive watcher)               |
+| Module                   | Type                      | Trigger                                               |
+| ------------------------ | ------------------------- | ----------------------------------------------------- |
+| `dbt`                    | dbt assets                | `AutomationConditionSensor`                           |
+| `powerschool` (sis/sftp) | SFTP assets via Couchdrop | sensor (`couchdrop_sftp_sensor`)                      |
+| `amplify` (mclass sftp)  | SFTP assets               | sensor (`build_amplify_mclass_sftp_sensor`)           |
+| `deanslist`              | API assets                | schedule (nightly)                                    |
+| `finalsite`              | API + SFTP assets         | schedule (`contacts`, 4am) + sensor (`status_report`) |
+| `pearson`                | SFTP assets               | `AutomationConditionSensor`                           |
+| `couchdrop`              | sensor only               | sensor (Google Drive watcher)                         |
 
 ## Critical Difference: PowerSchool via SFTP
 
@@ -37,8 +37,8 @@ Consequences:
 
 ## Schedules
 
-Paterson has no freshness checks. DeansList adds nightly data-pull schedules;
-all other ingestion is sensor-driven (`couchdrop_sftp_sensor` for PowerSchool,
+Paterson has no freshness checks. DeansList and Finalsite `contacts` add nightly
+data-pull schedules; all other ingestion is sensor-driven
+(`couchdrop_sftp_sensor` for PowerSchool and Finalsite `status_report`,
 `build_amplify_mclass_sftp_sensor` for Amplify). `AutomationConditionSensor`
-handles any assets with an automation condition defined (e.g. `finalsite`,
-`pearson`).
+handles any assets with an automation condition defined (e.g. `pearson`).

@@ -138,6 +138,16 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippcamden
                     key: credential
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippcamden
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippcamden
+                    key: password
         run_k8s_config:
           container_config:
             env:
@@ -241,3 +251,13 @@ locations:
                   secretKeyRef:
                     name: op-overgrad-api-kippcamden
                     key: credential
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippcamden
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippcamden
+                    key: password
