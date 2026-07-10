@@ -3,15 +3,16 @@ models:
     description:
       SIS-agnostic long-format contact list for Finalsite student records — one
       row per (student, contact slot), grain `(finalsite_enrollment_id,
-      contact_slot)`. `contact_slot` is `contact_1` (the student's relationship
-      flagged `primary` in Finalsite — its parent1 designation — resolved to
-      that person's own Finalsite contact record; absent when no relationship is
-      flagged primary, with no fallback to a non-primary relationship) or
-      `emergency_1` through `emergency_4` (the `custom_attributes` `emrg_N` sets
-      mapped positionally — `emergency_N` is `emrg_N` as-is, with no priority
-      re-sort and no gap-filling). Sparse — a slot row is emitted only when that
-      slot has data, so emergency slots may have gaps. Feeds the downstream
-      PowerSchool/Focus contact receivers built on top of this model.
+      contact_slot)`. `contact_slot` is `contact_1` (the student's single
+      reportable parent contact — the relationship flagged `primary` in
+      Finalsite, or the one flagged `financial` when no primary is set, resolved
+      to that person's own Finalsite contact record; absent when the student has
+      neither a primary nor a financial relationship) or `emergency_1` through
+      `emergency_4` (the `custom_attributes` `emrg_N` sets mapped positionally —
+      `emergency_N` is `emrg_N` as-is, with no priority re-sort and no
+      gap-filling). Sparse — a slot row is emitted only when that slot has data,
+      so emergency slots may have gaps. Feeds the downstream PowerSchool/Focus
+      contact receivers built on top of this model.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -49,7 +50,7 @@ models:
         data_type: string
         description:
           The contact person's own Finalsite contact UUID (their
-          `finalsite_enrollment_id`), resolved through the primary
+          `finalsite_enrollment_id`), resolved through the selected
           relationship's `rel_id`. Populated for `contact_1`; null for
           `emergency_*` slots, which are free-text custom-field sets with no
           linked contact record.
