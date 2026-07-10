@@ -82,6 +82,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   unchanged and dirties `main` (the worktree commit then reports "nothing to
   commit").
 
+- **IDE Pyright diagnostics on worktree files are false-positive-prone** — it
+  resolves imports against the MAIN checkout, so worktree-only signature/symbol
+  changes surface phantom `unknown import` / `no parameter named X` errors.
+  Trust `uv run` executed inside the worktree, not the IDE.
+
 - **Branch switch**: with an issue,
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
   declined an issue, `git checkout -b <branch>`.
@@ -332,7 +337,8 @@ tagging.
 - **`trunk check` the spec/plan `.md` you write before pushing** — markdownlint
   (MD040 fenced-block language, MD036) fires only at pre-push/CI, not the
   pre-commit `fmt` hook; checking only the code files misses a doc-only Trunk
-  failure.
+  failure. Run it non-interactively (`--no-fix </dev/null`) — `--force` on a
+  large `.md` can hang on the interactive "Apply formatting?" prompt.
 
 - **`finishing-a-development-branch` / `using-git-worktrees` tests & setup**:
   this repo uses `uv`, not `poetry`/`pip`, and
