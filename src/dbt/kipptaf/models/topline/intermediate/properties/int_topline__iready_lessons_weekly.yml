@@ -1,2 +1,6 @@
 models:
   - name: int_topline__iready_lessons_weekly
+    columns:
+      - name: schoolid
+        description: PowerSchool school id from the enrollment spine.
+        data_type: int64
