@@ -145,7 +145,10 @@ with
         from {{ ref("int_topline__iready_lessons_period") }}
     ),
 
-    enrolled_weeks as (
+    /* all calendar weeks per student x school-year (not just enrolled weeks) —
+       matches the weekly path's spine semantics so window-edge activity keeps
+       its attribution */
+    spine_weeks as (
         select
             student_number,
             academic_year,
@@ -156,8 +159,7 @@ with
             week_start_monday,
         from {{ ref("int_extracts__student_enrollments_weeks") }}
         where
-            is_enrolled_week
-            and academic_year >= {{ var("current_academic_year") - 1 }}
+            academic_year >= {{ var("current_academic_year") - 1 }}
             and region != 'Paterson'
     ),
 
@@ -184,7 +186,7 @@ with
             ew.week_start_monday as attr_week,
         from metric_union as mu
         inner join
-            enrolled_weeks as ew
+            spine_weeks as ew
             on mu.student_number = ew.student_number
             and mu.academic_year = ew.academic_year
             and mu.schoolid = ew.schoolid
