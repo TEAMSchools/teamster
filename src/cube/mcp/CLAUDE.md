@@ -125,7 +125,8 @@ Cloud Run service via `--set-secrets`).
 
 ## PII reminder
 
-Tools return Cube query results. `*_detail` views carry row-level student
-identifiers (see the FastMCP `instructions=` block in `server.py`). Never emit
-detail-view values to PR comments, issues, or scheduled-agent outputs — only to
-the local conversation. See project CLAUDE.md PII reference.
+Tools return Cube query results. Student views carry row-level student
+identifiers alongside aggregate-safe dimensions (see the FastMCP `instructions=`
+block in `server.py`). Never emit identifying values to PR comments, issues, or
+scheduled-agent outputs — only to the local conversation. See project CLAUDE.md
+PII reference.

@@ -44,10 +44,15 @@ school_calendars) go in `cubes/conformed/`.
   misnamed cube has no security consequence, but keep the convention so the
   domain is legible from the name. Conformed dims (`dates`, `locations`,
   `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
-  carry no domain access tier. View names are `<domain>_<grain>`
-  (`student_attendance_detail`, `student_attendance_summary`). `sql_table`
-  always points at `kipptaf_marts.<table>` (the warehouse table keeps its
-  `dim_`/`fct_` prefix) — cubes never read district datasets directly.
+  carry no domain access tier. Student views are single, collapsed views named
+  `<domain>_view` (`student_attendance_view`, `student_assessment_scores_view`,
+  `student_enrollments_view`) — a view can't share a bare name with its
+  same-domain cube, hence the `_view` suffix. Staff views keep the
+  `<domain>_<grain>` pattern (`staff_directory`, `staff_pii`) since that split
+  is a genuine access tier, not a grain distinction (see View access policies
+  below). `sql_table` always points at `kipptaf_marts.<table>` (the warehouse
+  table keeps its `dim_`/`fct_` prefix) — cubes never read district datasets
+  directly.
 - **Joins use cube-reference syntax** (`{students.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
@@ -91,13 +96,17 @@ scope-specific group emitted by `access.buildGroups`; a viewer holds exactly one
 group per domain axis, so exactly one policy per view is ever active — no AND/OR
 combination to reason about.
 
-- **Student views** (detail = row-level with identifiers; summary = aggregate
-  breakdowns): three policies, one per non-`none` `student_location_scope` —
-  `student-region` (`row_level` on the region key), `student-school`
-  (`row_level` on the school abbreviation), `student-network` (no `row_level` —
-  every location). All three use `member_level: { includes: "*" }` — any viewer
-  holding one of these groups sees every field on every student view, including
-  PII. `none` scope → no group → default-deny (zero rows).
+- **Student views are single, collapsed views** — each student domain
+  (`student_attendance_view`, `student_assessment_scores_view`,
+  `student_enrollments_view`) exposes both row-level identifiers and
+  aggregate-breakdown dimensions on the same view; there is no separate
+  detail/summary pair. Three policies, one per non-`none`
+  `student_location_scope` — `student-region` (`row_level` on the region key),
+  `student-school` (`row_level` on the school abbreviation), `student-network`
+  (no `row_level` — every location). All three use
+  `member_level: { includes: "*" }` — any viewer holding one of these groups
+  sees every field on every student view, including PII. `none` scope → no group
+  → default-deny (zero rows).
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
   `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
@@ -360,11 +369,11 @@ exercise it; a plain dev server silently default-denies every gated view.
   (`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on both APIs
   and joining views is a supported SQL-API feature (multi-fact views); the old
   `JoinDefinitionStatic` note was a Playground (REST) observation, not a SQL-API
-  limit — verified: `student_attendance_summary` / `staff_directory` /
-  `student_assessment_scores_summary` query cleanly on the SQL API under
-  Tesseract. REST `/load` also works but needs auth on (`NODE_ENV=production`,
-  drop `CUBEJS_DEV_MODE`) + an HS256 JWT with the viewer's `email` claim signed
-  with `CUBEJS_API_SECRET`.
+  limit — verified: `student_attendance_view` / `staff_directory` /
+  `student_assessment_scores_view` query cleanly on the SQL API under Tesseract.
+  REST `/load` also works but needs auth on (`NODE_ENV=production`, drop
+  `CUBEJS_DEV_MODE`) + an HS256 JWT with the viewer's `email` claim signed with
+  `CUBEJS_API_SECRET`.
 - **`CUBE_GROUP_MAP` cannot validate `row_level`** — it supplies `groups` only,
   not the `region_key` / `allowed_abbreviations` / `reportee_staff_keys` the
   filters interpolate. Worse, `.env.example`'s placeholder value uses stale

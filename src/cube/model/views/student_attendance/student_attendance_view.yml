@@ -1,20 +1,18 @@
 views:
-  - name: student_attendance_detail
+  - name: student_attendance_view
     description: >-
-      Row-level student attendance. One row per student × school day with
-      attendance recorded. Use for drill-down, individual investigations, or
-      breakdowns that need raw codes; for ADA / truancy roll-ups, use
-      student_attendance_summary instead. ADA is always SUM(attendance_value) /
-      SUM(membership_value); never average a per-row ratio. attendance_value
-      (0.0–1.0) is the fractional attendance contribution; membership_value
-      (0.0–1.0) is the school's claim on the student that day (split across
-      schools if dual-enrolled); present_weight equals attendance_value but
-      tardies count 0.67. attendance_category is the coarse rollup (Present,
-      Absent, Tardy, In-School Suspension, Out-of-School Suspension);
-      attendance_code is the raw SIS code for specific drill-down. is_in_session
-      and is_membership_day come from school_calendars and are joined on
-      (date_key, student_school_enrollments.location_key). Contains direct
-      student identifiers — see access_policy for PII gating.
+      Student attendance — row-level (one row per student × school day with
+      attendance recorded) and aggregate breakdowns in a single view. ADA is
+      always SUM(attendance_value) / SUM(membership_value); never average a
+      per-row ratio. attendance_value (0.0–1.0) is the fractional attendance
+      contribution; membership_value (0.0–1.0) is the school's claim on the
+      student that day (split across schools if dual-enrolled); present_weight
+      equals attendance_value but tardies count 0.67. attendance_category is the
+      coarse rollup (Present, Absent, Tardy, In-School Suspension, Out-of-School
+      Suspension); attendance_code is the raw SIS code for specific drill-down.
+      is_in_session and is_membership_day come from school_calendars and are
+      joined on (date_key, student_school_enrollments.location_key). Contains
+      direct student identifiers — see access_policy for PII gating.
 
       CA, tier, and truancy base measures default to year-end snapshots when
       queried without an anchor — no filter required for year-over-year

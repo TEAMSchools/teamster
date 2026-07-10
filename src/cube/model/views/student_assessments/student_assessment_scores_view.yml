@@ -1,12 +1,11 @@
 views:
-  - name: student_assessment_scores_detail
+  - name: student_assessment_scores_view
     description: >-
-      Row-level assessment scores across internal Illuminate interims and NJ/FL
-      state assessments. One row per student x assessment x administration x
-      response type. Use for drill-down and individual investigations; for
-      roll-ups use student_assessment_scores_summary. pct_proficient (mastery
-      rate) is the source-agnostic headline; scale_score is null for internal
-      rows and percent_correct is null for state rows. response_type /
+      Assessment scores across internal Illuminate interims and NJ/FL state
+      assessments — row-level (one row per student x assessment x administration
+      x response type) and aggregate breakdowns in a single view. pct_proficient
+      (mastery rate) is the source-agnostic headline; scale_score is null for
+      internal rows and percent_correct is null for state rows. response_type /
       response_type_code carry the standard/skill breakdown. State rows have
       null administration dates by design (no exact administered date). Contains
       direct student identifiers — see access_policy for PII gating.
