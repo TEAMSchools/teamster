@@ -743,6 +743,7 @@ with
                 term_end,
                 period_type,
                 period_label,
+                is_current_week,
                 is_current_period,
                 is_most_recent_complete_period,
                 p_period_type,
@@ -753,6 +754,10 @@ with
                 p_is_most_recent_complete_period,
                 max_term_in_period
             ),
+
+            /* null so the final coalesce falls through to is_current_period —
+               the source week's currency flag is not this period's */
+            cast(null as boolean) as is_current_week,
 
             p_period_start as term,
             p_period_end as term_end,
