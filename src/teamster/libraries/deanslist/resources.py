@@ -29,7 +29,7 @@ class DeansListResource(ConfigurableResource):
 
     _session: Session = PrivateAttr(default_factory=Session)
     _base_url: str = PrivateAttr()
-    _api_key_map: dict = PrivateAttr()
+    _api_key_map: dict[int, str] = PrivateAttr()
     _log: DagsterLogManager = PrivateAttr()
 
     def setup_for_execution(self, context: InitResourceContext) -> None:
@@ -56,7 +56,16 @@ class DeansListResource(ConfigurableResource):
     def _request(self, method: str, url: str, school_id: int, params: dict, **kwargs):
         self._log.info(f"GET:\t{url}\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}")
 
-        params["apikey"] = self._api_key_map[school_id]
+        api_key = self._api_key_map.get(school_id)
+
+        if api_key is None:
+            raise KeyError(
+                f"No DeansList API key for school_id {school_id} in "
+                f"{self.api_key_dir}: add a field labeled '{school_id}' to the "
+                "district's DeansList 1Password item, then re-sync the secret."
+            )
+
+        params["apikey"] = api_key
 
         response = self._session.request(
             method=method,

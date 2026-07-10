@@ -1,6 +1,12 @@
+import logging
 import pathlib
 
-from teamster.libraries.deanslist.resources import load_deanslist_config
+import pytest
+
+from teamster.libraries.deanslist.resources import (
+    DeansListResource,
+    load_deanslist_config,
+)
 
 
 def test_load_deanslist_config(tmp_path: pathlib.Path):
@@ -15,3 +21,14 @@ def test_load_deanslist_config(tmp_path: pathlib.Path):
 
     assert subdomain == "kippnj"
     assert api_key_map == {121: "key-121", 122: "key-122"}
+
+
+def test_request_missing_school_key_raises_named_error():
+    resource = DeansListResource(api_key_dir="/etc/deanslist")
+    object.__setattr__(resource, "_api_key_map", {121: "key-121"})
+    object.__setattr__(resource, "_log", logging.getLogger("test"))
+
+    # school_id 999 has no key file synced — the guard must raise before any
+    # network call, naming the school id and the mount
+    with pytest.raises(KeyError, match="No DeansList API key for school_id 999"):
+        resource._request(method="GET", url="https://x/api", school_id=999, params={})
