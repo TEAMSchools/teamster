@@ -1,35 +1,40 @@
 with
-    contacts as (
-        -- One row per (student, contact slot, phone type) for the Clever feed.
-        -- Unpivots the 1+4 contact surface from int_students__contacts:
-        -- contact_1 is the single reportable parent (contact_type 'primary');
-        -- emergency_1..4 are emergency contacts. The Work phone prefers the
-        -- typed Work number, falling back to the legacy daytime slot for
-        -- PS-sourced regions. Contacts with no phone of a given type emit no
-        -- row for that type.
+    contacts_base as (
+        -- Resolve the Work phone (typed Work, else the legacy daytime slot for
+        -- PS-sourced regions) and contact_type before unpivoting so the unpivot
+        -- operates on plain phone columns.
         select
             student_number,
             _dbt_source_project,
             contact_name,
             relationship,
+            phone_home,
+            phone_mobile,
 
-            phone.contact_phone_type,
-            phone.contact_phone,
+            coalesce(phone_work, phone_daytime) as phone_work,
 
             if(is_emergency, 'emergency', 'primary') as contact_type,
         from {{ ref("int_students__contacts") }}
-        cross join
-            unnest(
-                [
-                    struct('Home' as contact_phone_type, phone_home as contact_phone),
-                    struct('Cell' as contact_phone_type, phone_mobile as contact_phone),
-                    struct(
-                        'Work' as contact_phone_type,
-                        coalesce(phone_work, phone_daytime) as contact_phone
-                    )
-                ]
-            ) as phone
-        where phone.contact_phone is not null
+    ),
+
+    contacts as (
+        -- One row per (student, contact slot, phone type) for the Clever feed.
+        -- UNPIVOT drops null inputs, so a contact with no phone of a given type
+        -- emits no row for it. contact_1 is the single reportable parent
+        -- (contact_type 'primary'); emergency_1..4 are emergency contacts.
+        select
+            student_number,
+            _dbt_source_project,
+            contact_name,
+            relationship,
+            contact_type,
+            contact_phone_type,
+            contact_phone,
+        from
+            contacts_base unpivot (
+                contact_phone for contact_phone_type
+                in (phone_home as 'Home', phone_mobile as 'Cell', phone_work as 'Work')
+            )
     )
 
 select
