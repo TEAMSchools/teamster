@@ -1,5 +1,7 @@
 with
     enrollments as (
+        /* grain projection: every selected column is functionally determined
+           by the partition key; not a mask for upstream duplicates */
         select distinct student_number, academic_year, schoolid, deanslist_school_id,
         from {{ ref("int_extracts__student_enrollments_weeks") }}
         where academic_year >= {{ var("current_academic_year") - 1 }}
