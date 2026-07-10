@@ -1,5 +1,7 @@
 models:
   - name: int_topline__periods
+    config:
+      materialized: table
     description:
       Periods dimension for the topline cascade dashboard. One row per scope
       (school / region / org) x academic year x period, where periods are

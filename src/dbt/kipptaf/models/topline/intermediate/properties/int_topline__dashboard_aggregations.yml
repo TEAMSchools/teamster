@@ -1,2 +1,169 @@
 models:
   - name: int_topline__dashboard_aggregations
+    description:
+      Multi-grain topline dashboard fact — one row per metric x scope (school /
+      region / org) x period (week / month / quarter / ytd) x academic year.
+      Unions weekly and period-scoped student metrics, weekly staff metrics,
+      weekly student retention, and weekly seats-staffed rates, then layers on
+      three cross-cutting steps common to every grain — a rollup pass that
+      recomputes as-of (cumulative-to-date) metrics for non-week periods from
+      the underlying weekly rows, governed per layer x indicator by
+      seed_topline_period_rollup; enrollment-driven seat/budget target rows
+      unpivoted alongside the metric rows; and goal resolution that prefers a
+      period-specific sheet goal, most to least specific — exact academic year x
+      period label, any-year x period label, exact year x any period, any year x
+      any period — before falling back to the base aggregate-goals config.
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - metric_type
+              - academic_year
+              - org_level
+              - region
+              - schoolid
+              - layer
+              - indicator
+              - discipline
+              - aggregation_hash
+              - period_type
+              - term
+    columns:
+      - name: metric_type
+        description:
+          Student Metrics or Staff Metrics — which spine (student-side layers,
+          retention, and enrollment targets, vs. staff microgoals, retention,
+          and seats staffed) produced the row.
+        data_type: string
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: region
+        description:
+          Region name — Newark, Camden, Miami, Paterson, TAF (central-office
+          staff), or All on org-scope rows.
+        data_type: string
+      - name: schoolid
+        description: PowerSchool school id; null on region and org scope rows.
+        data_type: int64
+      - name: school
+        description: School name; All on region and org scope rows.
+        data_type: string
+      - name: layer
+        description: Topline layer the indicator belongs to.
+        data_type: string
+      - name: indicator
+        description:
+          Topline indicator name, including the unpivoted Seat Target and Budget
+          Target rows.
+        data_type: string
+      - name: discipline
+        description: Subject area where applicable; null otherwise.
+        data_type: string
+      - name: term
+        description:
+          Period start date — the week's Monday on week rows, the period
+          window's start on month/quarter/ytd rows (including as-of rollup rows,
+          which carry the period's own start, not the source week's).
+        data_type: date
+      - name: term_end
+        description: Period end date, mirroring term's grain.
+        data_type: date
+      - name: period_type
+        description: Grain of the row — week, month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description:
+          Period instance label from the periods dimension — ISO week, full
+          month name, Q1-Q4, or YTD.
+        data_type: string
+      - name: is_current_period
+        description:
+          True when today falls inside the row's period window, for the row's
+          scope and grain.
+        data_type: boolean
+      - name: is_most_recent_complete_period
+        description:
+          True for the latest fully-elapsed period of the row's grain and scope
+          in the current academic year.
+        data_type: boolean
+      - name: indicator_display
+        description: Display label for the indicator, from the goal config.
+        data_type: string
+      - name: org_level
+        description: Scope of the row's goal config — school, region, or org.
+        data_type: string
+      - name: has_goal
+        description: Whether a goal is configured for this indicator/scope.
+        data_type: boolean
+      - name: goal_type
+        description: Goal type from the goal config (e.g. target, threshold).
+        data_type: string
+      - name: goal_direction
+        description:
+          Direction that counts as improvement — baseball (higher is better) or
+          golf (lower is better).
+        data_type: string
+      - name: aggregation_data_type
+        description:
+          Display data type for the aggregated value — Numeric or Integer.
+        data_type: string
+      - name: aggregation_type
+        description:
+          How the metric is aggregated across rows — Average, Divide, or Sum.
+        data_type: string
+      - name: aggregation_hash
+        description:
+          Key identifying the goal config's grade-band/entity combination; joins
+          metric rows to period-specific sheet goals.
+        data_type: string
+      - name: aggregation_display
+        description: Display label combining school/region and grade band.
+        data_type: string
+      - name: metric_aggregate_value
+        description:
+          The aggregated metric value for this scope, indicator, and period — an
+          average, rate, sum, or (for as-of rows) the source week's value at the
+          period's most recent in-window week.
+        data_type: float64
+      - name: goal
+        description:
+          Resolved goal value — a period-specific sheet goal when one matches
+          (exact year x period label, any year x period label, exact year x any
+          period, any year x any period, in that preference order), else the
+          base aggregate-goals config value.
+        data_type: numeric
+      - name: is_current_week
+        description:
+          True for the current calendar week on week-grain rows; on
+          month/quarter/ytd rows, carries the row's period-currency
+          (is_current_period) instead, since those rows have no week to be
+          current within.
+        data_type: boolean
+      - name: metric_aggregate_value_numeric
+        description:
+          metric_aggregate_value when aggregation_data_type is Numeric; null
+          otherwise.
+        data_type: float64
+      - name: metric_aggregate_value_integer
+        description:
+          metric_aggregate_value when aggregation_data_type is Integer; null
+          otherwise.
+        data_type: float64
+      - name: is_goal_met
+        description:
+          Whether the metric meets its goal, given goal_direction; null when
+          has_goal is false.
+        data_type: boolean
+      - name: goal_difference_percent
+        description:
+          Signed percent gap between the metric and its goal, given
+          goal_direction; null when has_goal is false.
+        data_type: float64
+      - name: progress_to_goal_pct
+        description:
+          Progress toward the goal as a 0-1 ratio, capped at 1; null when
+          has_goal is false.
+        data_type: float64
