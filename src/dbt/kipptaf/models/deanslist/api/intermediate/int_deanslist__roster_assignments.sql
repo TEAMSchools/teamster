@@ -12,6 +12,9 @@ with
                     source(
                         "kippmiami_deanslist", "int_deanslist__roster_assignments"
                     ),
+                    source(
+                        "kipppaterson_deanslist", "int_deanslist__roster_assignments"
+                    ),
                 ]
             )
         }}

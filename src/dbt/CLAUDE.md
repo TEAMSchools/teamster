@@ -156,6 +156,16 @@ model to a shared source package, confirm the source ingestion exists in every
 consuming district, or the promoted model builds empty there (or fails on a
 missing external).
 
+**Partial-endpoint onboarding**: when a district ingests only a subset of a
+source package's endpoints, disable BOTH the unused `stg_*` models AND their
+`src_*` sources in the district `dbt_project.yml`. An enabled staging model over
+a disabled source is a parse error, and `stage_external_sources` fails creating
+an AVRO external over an empty GCS prefix (autodetect needs >=1 file). Don't
+copy a peer district's disable list blindly — a district that _once_ pulled an
+endpoint keeps stale Avro so its source still stages (e.g. Newark deanslist
+leaves `homework`/`lists`/`dff_stats` enabled), but a never-pulled district must
+disable them.
+
 To gate an _optional_ package layer per region, split the package into
 method/source subfolders (`api/`, `sftp/` — the amplify convention) and set
 `<package>: <method>: +enabled: false` in the unwired district's
