@@ -84,6 +84,9 @@ k8s Secret keys come from the 1Password field's internal name, not the UI label.
 Known re-mappings on SFTP items: `password` → `newPassword`, `host` → `url`.
 Verify before writing `secretKeyRef.key`:
 `kubectl -n dagster-cloud get secret <op-name> -o jsonpath='{.data}' | jq keys`.
+Custom (user-added) text fields sync under their label verbatim (verified:
+numeric DeansList school-id labels → keys `121`, `966`); the remaps above only
+hit built-in login/SFTP-template fields.
 
 ## Security
 

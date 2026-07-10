@@ -12,11 +12,13 @@ from teamster.code_locations.kipppaterson import (
     amplify,
     couchdrop,
     dbt,
+    deanslist,
     finalsite,
     pearson,
     powerschool,
 )
 from teamster.core.resources import (
+    DEANSLIST_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
     SSH_COUCHDROP,
@@ -32,11 +34,15 @@ defs = Definitions(
         modules=[
             dbt,
             amplify,
+            deanslist,
             finalsite,
             pearson,
             powerschool,
         ]
     ),
+    schedules=[
+        *deanslist.schedules,
+    ],
     sensors=[
         *amplify.sensors,
         *couchdrop.sensors,
@@ -47,6 +53,7 @@ defs = Definitions(
     ],
     resources={
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
+        "deanslist": DEANSLIST_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),

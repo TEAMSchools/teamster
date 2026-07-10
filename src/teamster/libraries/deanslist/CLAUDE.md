@@ -20,5 +20,8 @@ Date windows are computed from `FiscalYear` (July start). For
 
 ## Resource: `DeansListResource`
 
-Configured with `subdomain` + `api_key_map` (a YAML file mapping school IDs to
-API keys). Provides `get()` and `list()` methods.
+Configured with a single `api_key_dir` — a directory (the per-city
+`op-deanslist-api-<district>` K8s secret mounted at `/etc/deanslist`) holding
+one file per school (filename = `school_id`, contents = API key) plus a
+`subdomain` file. `load_deanslist_config()` reads the subdomain and builds the
+`{school_id: key}` map from numeric-named files. Provides `get()` and `list()`.
