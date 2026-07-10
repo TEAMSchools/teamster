@@ -84,8 +84,7 @@ DB_POWERSCHOOL = PowerSchoolODBCResource(
 )
 
 DEANSLIST_RESOURCE = DeansListResource(
-    subdomain=EnvVar("DEANSLIST_SUBDOMAIN"),
-    api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
+    api_key_dir="/etc/deanslist",
     request_timeout=90.0,
 )
 
