@@ -21,7 +21,7 @@ DEANSLIST_FISCAL_MULTI_PARTITIONS_DEF = MultiPartitionsDefinition(
     partitions_defs={
         "school": DEANSLIST_STATIC_PARTITIONS_DEF,
         "date": FiscalYearPartitionsDefinition(
-            start_date="2016-07-01",
+            start_date="2025-07-01",
             start_month=7,
             timezone=str(LOCAL_TIMEZONE),
             end_offset=1,
@@ -52,7 +52,7 @@ month_partitioned_assets = [
             partitions_defs={
                 "school": DEANSLIST_STATIC_PARTITIONS_DEF,
                 "date": MonthlyPartitionsDefinition(
-                    start_date="2016-07-01", timezone=str(LOCAL_TIMEZONE), end_offset=1
+                    start_date="2025-07-01", timezone=str(LOCAL_TIMEZONE), end_offset=1
                 ),
             }
         ),
