@@ -1,3 +1,8 @@
+-- The powerschool package dropped the contact/emergency/pickup columns from
+-- base_powerschool__student_enrollments; the contact surface now lives in
+-- int_students__contacts_pivot, consumed downstream by int_extracts. This
+-- comment also forces state:modified so CI rebuilds the wrapper against the
+-- narrowed district schema.
 {% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
 
 with
