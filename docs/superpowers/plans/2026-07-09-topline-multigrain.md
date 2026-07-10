@@ -753,7 +753,7 @@ with
 
             cast(goal as numeric) as goal,
 
-            {{ region_to_city("entity") }} as entity,
+            {{ region_to_city("entity") }} as `Entity`,
         from
             {{
                 source(
@@ -761,6 +761,15 @@ with
                 )
             }}
     )
+```
+
+NOTE (as built): the alias must be the backtick-quoted sheet-header case
+`Entity` — the enforced contract compares column names case-sensitively and this
+Google-Sheets staging model's contract declares the sheet case. A lowercase
+alias fails the build. BigQuery column REFS are case-insensitive, so the
+hash/grade-band expressions below still reference `entity` unquoted.
+
+```sql
 
 select
     *,
@@ -1684,7 +1693,11 @@ with
         from {{ ref("int_topline__iready_lessons_period") }}
     ),
 
-    enrolled_weeks as (
+    /* all calendar weeks per student x school-year (not just enrolled weeks)
+       — matches the weekly path's spine semantics so window-edge activity
+       keeps its attribution (as-built correction: an is_enrolled_week filter
+       here silently dropped boundary-stint rows) */
+    spine_weeks as (
         select
             student_number,
             academic_year,
@@ -1695,8 +1708,7 @@ with
             week_start_monday,
         from {{ ref("int_extracts__student_enrollments_weeks") }}
         where
-            is_enrolled_week
-            and academic_year >= {{ var("current_academic_year") - 1 }}
+            academic_year >= {{ var("current_academic_year") - 1 }}
             and region != 'Paterson'
     ),
 
@@ -1723,7 +1735,7 @@ with
             ew.week_start_monday as attr_week,
         from metric_union as mu
         inner join
-            enrolled_weeks as ew
+            spine_weeks as ew
             on mu.student_number = ew.student_number
             and mu.academic_year = ew.academic_year
             and mu.schoolid = ew.schoolid
@@ -1905,6 +1917,19 @@ Structure of the rewrite (the full file follows this exact CTE order):
    resolution, then the single final select with the existing goal math and
    `where term <= current_date('{{ var("local_timezone") }}')` (period rows:
    `term` = period_start, so future periods drop out).
+
+AS-BUILT notes (corrections discovered during implementation):
+
+- The region/org student GROUP BY blocks must aggregate period-grain rows with a
+  `min(term)` / `max(term_end)` envelope instead of grouping by the per-school
+  `term`/`term_end` — school-year calendars diverge, so grouping by per-school
+  dates duplicates region/org period rows. Week rows are unaffected (Mon-Sun
+  aligned network-wide, so min = max). Same envelope pattern as
+  `int_topline__periods`' region/org scopes.
+- `int_topline__periods` gains `config: materialized: table` in its properties
+  yml — this model inlines ~6x into the aggregation and a view hits BigQuery's
+  "query is too complex" planning limit (the documented
+  materialize-the-fan-out-point remedy).
 
 Complete SQL for the novel CTEs (column lists abbreviated to the
 mechanism-relevant ones — carry ALL existing metric and goal-config columns
