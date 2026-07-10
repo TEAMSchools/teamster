@@ -9,6 +9,10 @@ select
     db.term,
     db.term_end,
     db.is_current_week,
+    db.period_type,
+    db.period_label,
+    db.is_current_period,
+    db.is_most_recent_complete_period,
     db.indicator_display,
     db.org_level,
     db.has_goal,
@@ -25,26 +29,14 @@ select
     db.is_goal_met,
     db.goal_difference_percent,
     db.progress_to_goal_pct,
+    db.region,
 
     lc.mdso_preferred_name_lastfirst as mdso_name,
     lc.head_of_school_preferred_name_lastfirst as hos_name,
 
     if(
-        date_sub(current_date('{{ var("local_timezone") }}'), interval 7 day)
-        between db.term and db.term_end,
-        true,
-        false
+        db.period_type = 'week' and db.is_most_recent_complete_period, true, false
     ) as is_most_recent_complete_week,
-
-    case
-        when db.region = 'TEAM Academy Charter School'
-        then 'Newark'
-        when db.region = 'KIPP Cooper Norcross Academy'
-        then 'Camden'
-        when db.region = 'KIPP Miami'
-        then 'Miami'
-        else db.region
-    end as region,
 from {{ ref("int_topline__dashboard_aggregations") }} as db
 left join
     {{ ref("int_people__leadership_crosswalk") }} as lc
