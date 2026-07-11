@@ -341,6 +341,16 @@ from there. Seed EVERY district that unions into the kipptaf model (e.g.
 
 Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
 
+## Stale-wide `zz_stg` union defer copy
+
+When a kipptaf `union_relations` wrapper's `zz_stg` defer copy is wider than
+current (e.g. a district lags a column-drop rollout, so the prod-cloned copy
+still carries the dropped column), rebuild the wrapper `--target staging`:
+`union_relations` recomputes the column intersection from the CURRENT district
+`zz_stg` sources, yielding a corrected (narrow) copy — no prod rematerialization
+and no waiting on the lagging district. Used to unblock CI on a downstream
+consumer that fails on the stale wide column.
+
 ## Verifying a coalesce/override layer is vestigial
 
 Compare the override source against the **raw upstream**, not the

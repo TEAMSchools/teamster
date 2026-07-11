@@ -3,7 +3,13 @@
 ## Workflows
 
 - `claude-code-review.yaml` — auto-reviews PRs touching `src/`, `tests/`,
-  `scripts/`, `mcp/` (excludes markdown).
+  `scripts/`, `mcp/` (excludes markdown). **Gated to `base=main`
+  (`branches: [main]`)**, as is dbt Cloud CI — a **stacked PR** (base = another
+  feature branch) fires NEITHER; only Trunk + Dagster deploy run (not
+  base-gated). Review a stacked PR via `superpowers:requesting-code-review` or
+  an `@claude` PR comment (`claude.yaml` is comment-triggered, not base-gated).
+  A base-retarget after the parent merges does NOT re-fire `opened`, so neither
+  auto-triggers then.
 - `claude.yaml` — responds to `@claude` mentions on issues/PRs.
 - `dagster-cloud-deploy.yaml` — reusable workflow (`workflow_call`) for
   multi-arch Docker builds and Dagster Cloud deploys. Called by per-location
