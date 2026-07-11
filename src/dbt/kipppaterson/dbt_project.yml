@@ -100,6 +100,10 @@ models:
           +enabled: false
         int_powerschool__teacher_grade_levels:
           +enabled: false
+        int_powerschool__contacts:
+          +enabled: false
+        int_powerschool__person_contacts:
+          +enabled: false
       staging:
         odbc:
           +enabled: false
@@ -162,6 +166,28 @@ models:
           stg_powerschool__u_clg_et_stu:
             +enabled: false
           stg_powerschool__u_clg_et_stu_alt:
+            +enabled: false
+          stg_powerschool__codeset:
+            +enabled: false
+          stg_powerschool__emailaddress:
+            +enabled: false
+          stg_powerschool__originalcontactmap:
+            +enabled: false
+          stg_powerschool__person:
+            +enabled: false
+          stg_powerschool__personaddress:
+            +enabled: false
+          stg_powerschool__personaddressassoc:
+            +enabled: false
+          stg_powerschool__personemailaddressassoc:
+            +enabled: false
+          stg_powerschool__personphonenumberassoc:
+            +enabled: false
+          stg_powerschool__phonenumber:
+            +enabled: false
+          stg_powerschool__studentcontactassoc:
+            +enabled: false
+          stg_powerschool__studentcontactdetail:
             +enabled: false
 
 sources:
@@ -297,4 +323,26 @@ sources:
             src_powerschool__gpversion:
               +enabled: false
             src_powerschool__gpstudentwaiver:
+              +enabled: false
+            src_powerschool__codeset:
+              +enabled: false
+            src_powerschool__emailaddress:
+              +enabled: false
+            src_powerschool__originalcontactmap:
+              +enabled: false
+            src_powerschool__person:
+              +enabled: false
+            src_powerschool__personaddress:
+              +enabled: false
+            src_powerschool__personaddressassoc:
+              +enabled: false
+            src_powerschool__personemailaddressassoc:
+              +enabled: false
+            src_powerschool__personphonenumberassoc:
+              +enabled: false
+            src_powerschool__phonenumber:
+              +enabled: false
+            src_powerschool__studentcontactassoc:
+              +enabled: false
+            src_powerschool__studentcontactdetail:
               +enabled: false

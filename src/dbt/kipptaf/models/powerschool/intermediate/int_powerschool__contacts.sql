@@ -1,12 +1,13 @@
+-- Only Miami still sources contacts from PowerSchool; the NJ regions (Newark,
+-- Camden, Paterson) are Finalsite-sourced, so their PowerSchool contacts chain
+-- (int_powerschool__contacts and upstreams) is disabled (#4346). Add a region
+-- back here if it reverts to the PowerSchool branch.
 with
     union_relations as (
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippnewark_powerschool", "int_powerschool__contacts"),
-                    source("kippcamden_powerschool", "int_powerschool__contacts"),
                     source("kippmiami_powerschool", "int_powerschool__contacts"),
-                    source("kipppaterson_powerschool", "int_powerschool__contacts"),
                 ]
             )
         }}
