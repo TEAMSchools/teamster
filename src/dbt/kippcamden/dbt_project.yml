@@ -43,7 +43,7 @@ models:
             enforced: true
   finalsite:
     api:
-      +enabled: false
+      +enabled: true
   deanslist:
     +materialized: table
     staging:
@@ -111,7 +111,7 @@ sources:
   finalsite:
     finalsite:
       contacts:
-        +enabled: false
+        +enabled: true
   powerschool:
     sis:
       staging:

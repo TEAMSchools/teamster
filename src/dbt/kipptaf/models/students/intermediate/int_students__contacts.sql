@@ -35,11 +35,12 @@ with
         where xw.powerschool_student_number is not null
     ),
 
-    -- PowerSchool-mapped branch: regions not yet cut over to Finalsite
-    -- (Miami, plus Camden/Paterson until they migrate). Mirrors the legacy
-    -- pivot slotting: contact_1 is the priority-1 contact; emergency_N are the
-    -- priority>=3 emergency contacts ranked by priority. Remove a region from
-    -- the filter below as it cuts over to Finalsite.
+    -- PowerSchool-mapped branch: regions not yet cut over to Finalsite (today
+    -- Miami only — the NJ regions Newark, Camden, and Paterson are all
+    -- Finalsite-sourced). Mirrors the legacy pivot slotting: contact_1 is the
+    -- priority-1 contact; emergency_N are the priority>=3 emergency contacts
+    -- ranked by priority. Remove a region from the filter below as it cuts over
+    -- to Finalsite.
     ps_base as (
         select
             _dbt_source_relation,
@@ -55,7 +56,9 @@ with
             liveswithflg = 1 as is_household_member,
             schoolpickupflg = 1 as is_pickup,
         from {{ ref("int_powerschool__contacts") }}
-        where person_type != 'self' and _dbt_source_project != 'kippnewark'
+        where
+            person_type != 'self'
+            and _dbt_source_project not in ('kippnewark', 'kippcamden', 'kipppaterson')
     ),
 
     ps_contact_1 as (
@@ -117,18 +120,16 @@ with
         from ps_emergency
     ),
 
+    -- Only Miami still sources contacts from PowerSchool; the NJ regions are
+    -- Finalsite-sourced and drop out of ps_base above, so their person-contact
+    -- enrichment rows would never match. Add a region back here if it reverts
+    -- to the PowerSchool branch.
     ps_person_contacts as (
         {{
             dbt_utils.union_relations(
                 relations=[
                     source(
-                        "kippcamden_powerschool", "int_powerschool__person_contacts"
-                    ),
-                    source(
                         "kippmiami_powerschool", "int_powerschool__person_contacts"
-                    ),
-                    source(
-                        "kipppaterson_powerschool", "int_powerschool__person_contacts"
                     ),
                 ]
             )
