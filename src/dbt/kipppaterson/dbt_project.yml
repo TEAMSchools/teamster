@@ -42,7 +42,7 @@ models:
       +schema: pearson
   finalsite:
     api:
-      +enabled: false
+      +enabled: true
   amplify:
     dds:
       +enabled: false
@@ -180,7 +180,7 @@ sources:
   finalsite:
     finalsite:
       contacts:
-        +enabled: false
+        +enabled: true
   deanslist:
     deanslist:
       src_deanslist__dff_stats:

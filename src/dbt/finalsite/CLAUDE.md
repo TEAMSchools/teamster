@@ -11,7 +11,7 @@ region can enable one integration method without the other:
 
 ```text
 models/
-  api/             # Finalsite Contacts API (Miami-only today)
+  api/             # Finalsite Contacts API (all four regions)
     staging/       # materialized: table, contract enforced
     intermediate/  # materialized: table — SIS-agnostic enrollment models
   sftp/            # Finalsite Status Report SFTP feed (network-wide)
@@ -71,8 +71,8 @@ tables via `source()` (network-wide union models live in
 `kipptaf/models/finalsite/`).
 
 **The `api/` layer is enabled only where Finalsite Contacts ingestion is
-wired.** Today that is `kippmiami` and `kippnewark`; `kippcamden` and
-`kipppaterson` set `finalsite: api: +enabled: false` in their `dbt_project.yml`.
-The `sftp/` layer (`status_report`) stays enabled everywhere — kipptaf unions it
-across all four regions. Re-enable a region's `api` when its Finalsite contacts
-ingestion lands.
+wired.** Today that is all four regions (`kippmiami`, `kippnewark`,
+`kippcamden`, `kipppaterson`). The `sftp/` layer (`status_report`) stays enabled
+everywhere — kipptaf unions it across all four regions. Set
+`finalsite: api: +enabled: false` in a region's `dbt_project.yml` if its
+Finalsite contacts ingestion is ever removed.
