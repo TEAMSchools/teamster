@@ -1,3 +1,0 @@
-# codeset was the only nightly asset; it fed only the PowerSchool contacts chain
-# (int_powerschool__contacts / __person_contacts), retired for NJ in #4346.
-assets: []
