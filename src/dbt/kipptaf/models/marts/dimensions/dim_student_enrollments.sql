@@ -15,11 +15,12 @@ with
             }} as course_section_key,
         from {{ ref("base_powerschool__course_enrollments") }} as cc
         where
-            -- HR/Advisory credit-type test is duplicated in
+            -- Credit-type test is duplicated in
             -- dim_student_section_enrollments.sql (is_homeroom column), which
             -- flags homeroom sections independently to avoid a build cycle.
-            -- Keep the credit-type list in sync across both.
-            cc.courses_credittype in ('HR', 'Advisory')
+            -- Both read the var("homeroom_credit_types") list.
+            cc.courses_credittype
+            in ({{ "'" ~ (var("homeroom_credit_types") | join("', '")) ~ "'" }})
             and not cc.is_dropped_section
             and not cc.is_dropped_course
     ),

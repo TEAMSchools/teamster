@@ -198,7 +198,10 @@ select
     ltr.lead_teacher_staff_key,
     ltr.teacher_role,
 
-    se.courses_credittype in ('HR', 'Homeroom') as is_homeroom,
+    -- Shipped as ('HR', 'Advisory') -- the implementation diverged from this
+    -- plan's original ('HR', 'Homeroom') shorthand; both models agree with
+    -- each other via var("homeroom_credit_types"), which is what matters.
+    se.courses_credittype in ('HR', 'Advisory') as is_homeroom,
 from section_enrollments as se
 left join
     lead_teacher_resolved as ltr
@@ -338,7 +341,8 @@ with
             }} as course_section_key,
         from {{ ref("base_powerschool__course_enrollments") }} as cc
         where
-            cc.courses_credittype in ('HR', 'Homeroom')
+            -- Shipped as ('HR', 'Advisory') -- see the divergence note above.
+            cc.courses_credittype in ('HR', 'Advisory')
             and not cc.is_dropped_section
             and not cc.is_dropped_course
     ),

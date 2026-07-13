@@ -186,10 +186,14 @@ select
     ltr.lead_teacher_staff_key,
     ltr.teacher_role,
 
-    -- HR/Advisory credit-type test is duplicated in dim_student_enrollments.sql
+    -- Credit-type test is duplicated in dim_student_enrollments.sql
     -- (homeroom_sections CTE), which resolves the homeroom teacher independently
-    -- to avoid a build cycle. Keep the credit-type list in sync across both.
-    coalesce(se.courses_credittype in ('HR', 'Advisory'), false) as is_homeroom,
+    -- to avoid a build cycle. Both read the var("homeroom_credit_types") list.
+    coalesce(
+        se.courses_credittype
+        in ({{ "'" ~ (var("homeroom_credit_types") | join("', '")) ~ "'" }}),
+        false
+    ) as is_homeroom,
 from section_enrollments as se
 left join
     lead_teacher_resolved as ltr
