@@ -122,6 +122,13 @@ combination to reason about.
   the chain-IN check). The location∩department remit is precomputed server-side
   into `securityContext.allowed_abbreviations` / `allowed_department_groups` —
   domain-agnostic, reused as-is when comp/observations/benefits views are built.
+- **No aggregate-demographics view yet.** A `staff_summary` view once exposed
+  `gender_identity`/`race`/`is_hispanic` as open, unscoped aggregate breakdowns
+  — removed because small-cell slices (e.g. location × race) can re-identify an
+  individual, and suppression isn't built. Re-introduce only once
+  [#4237](https://github.com/TEAMSchools/teamster/issues/4237) (small-cell
+  suppression) ships; don't add demographic fields to `staff_directory` in the
+  meantime as a workaround.
 - **Forward-compatible staff tiers**: `staff-compensation`,
   `staff-observations`, `staff-benefits` are emitted by `buildGroups` when the
   corresponding `*_scope` column is non-`none`, but no view has an
