@@ -233,8 +233,6 @@ with
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
-            if(subject = 'Math', 'Math', 'ELA') as scope,
-
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -242,6 +240,8 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            if(subject = 'Math', 'Math', 'ELA') as scope,
         from {{ ref("int_iready__diagnostic_results") }}
         where overall_scale_score is not null
     ),
@@ -258,8 +258,6 @@ with
             false as is_internal_assessment,
             'enrollment' as assessment_scope,
 
-            if(star_subject = 'Math', 'Math', 'ELA') as scope,
-
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
             cast(null as string) as module_type,
@@ -267,6 +265,8 @@ with
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
+
+            if(star_subject = 'Math', 'Math', 'ELA') as scope,
         from {{ ref("stg_renlearn__star") }}
         where completed_date_value is not null and unified_score is not null
     ),
