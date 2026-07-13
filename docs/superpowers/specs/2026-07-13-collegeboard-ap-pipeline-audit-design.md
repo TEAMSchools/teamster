@@ -149,6 +149,26 @@ placeholder slots, not real codes. Including unscored rows produces false
 positives on every run. Scoped correctly (2025-2026 validation): **0 gaps** —
 every code that actually matters is already covered.
 
+**When a gap is found, don't just report it — help fix it:**
+
+1. **Identify** the missing code(s) and which domain each belongs to
+   (`Exam Codes` vs. `Irregularity Scores`), as above.
+2. **Look up the meaning.** College Board publishes an official "AP Student
+   Datafile for Schools and Districts [Year] Layout Format" PDF at
+   `apcentral.collegeboard.org` (e.g. `ap-datafile-layout-2026.pdf`), updated
+   annually, documenting the exact code tables. Search for the layout doc
+   matching the relevant admin year, then **fetch and read the actual PDF** —
+   don't trust a search-result summary at face value. (Validated during design:
+   a `WebSearch` summary for this returned a suspicious, repetitive-looking code
+   list that doesn't match how sparse/varied real code tables look — the doc
+   exists and is findable, but the skill must read the source itself, not relay
+   an AI-search paraphrase, before telling the user what a code means.)
+3. **Hand off, don't write.** Present the user the missing code(s), the
+   looked-up description, and the direct URL to the `ap_codes` sheet tab
+   (`https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE`,
+   tab `src_collegeboard__ap_codes`) so they can add the row manually — same "no
+   write access to Sheets" constraint as the crosswalk fix.
+
 ## AP Course Tagging Check
 
 `ap_course_subject` (the field
@@ -399,8 +419,12 @@ rest of the skill's output.
    materialized more recently than `stg_collegeboard__ap`. If so, explain why to
    the user and ask approval to launch a `stg_collegeboard__ap` run; only
    proceed once approved and the run succeeds.
-2. **Codes completeness check.** Run once staging is fresh; present any gaps
-   (expected to be rare/zero).
+2. **Codes completeness check.** Run once staging is fresh (expected to be
+   rare/zero). For any gap found: identify the missing code + domain, look up
+   its meaning by fetching the current College Board "AP Student Datafile ...
+   Layout Format" PDF (don't trust a search-summary paraphrase — read the actual
+   document), then hand the user the missing code, its looked-up description,
+   and the direct URL to the `ap_codes` sheet tab so they can add it manually.
 3. **AP course tagging check.** Independent of the crosswalk gaps; present any
    PowerSchool-side gaps found (`academic_year >= 2024`).
 4. **Pre-audit summary.** Get cheap counts: total students in the raw file for
