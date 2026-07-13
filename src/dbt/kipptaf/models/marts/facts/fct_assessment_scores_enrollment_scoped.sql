@@ -187,7 +187,7 @@ with
 
             overall_relative_placement_int >= 4 as is_mastery,
         from {{ ref("int_iready__diagnostic_results") }}
-        where overall_scale_score is not null
+        where overall_scale_score is not null and _dbt_source_project is not null
     ),
 
     -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;

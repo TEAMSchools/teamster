@@ -256,6 +256,7 @@ with
                     [
                         "powerschool_student_number",
                         "_dbt_source_project",
+                        "source_type",
                         "canonical_assessment_id",
                         "academic_year",
                         "administration_period",
