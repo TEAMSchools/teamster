@@ -47,6 +47,29 @@ unpicked-up and manually trigger the `stg_collegeboard__ap` materialization.
   diacritic-strip) are used.
 - Resolving the `no_match` bucket automatically — those need a human to
   investigate (DOB typo, name mismatch beyond diacritics, student not in PS).
+- Detecting or flagging _why_ a given crosswalk gap exists (see below) on a
+  per-row basis, and any Ops escalation or College Board account-merge workflow
+  — the action taken (add a new `CB ID → student_number` row) is the same
+  regardless of cause, so there's nothing to branch on.
+
+## Why Crosswalk Gaps Happen
+
+A `College_Board_ID` can be missing from the crosswalk sheet for two distinct
+reasons:
+
+1. **First-time tester** — the student has never taken an AP exam with a CB
+   account before, so no ID existed to add previously.
+2. **Duplicate CB account** — the student already has a crosswalk entry under a
+   _different_ `College_Board_ID`, but somehow ended up with a second CB account
+   (and therefore a second ID) for this admin. College Board's account-merge
+   process is long and tedious enough that KTAF doesn't pursue it — the
+   practical fix is just adding the new ID as another mapping to the same
+   `student_number`.
+
+Both cases resolve identically (add the row), so the skill doesn't need to
+distinguish them to act — but the skill should say this explanation out loud
+when it presents results, so the user understands what's happening and why,
+rather than wondering if a "new" ID means something went wrong.
 
 ## Ingestion Refresh Design
 
@@ -144,6 +167,7 @@ New skill: `.claude/skills/collegeboard-ap-crosswalk-gaps/SKILL.md`.
   missing from the AP score dashboard due to crosswalk or ingestion gaps.
 - **Contents**: the raw-vs-staging staleness check and approval-gated
   `stg_collegeboard__ap` run steps, the tiered SQL query (parameter-free,
-  self-scoping by year), the bucket definitions, the chat-table output format
-  (batches of 20 for `resolved`), the PII-stays-local reminder, and the
+  self-scoping by year), the bucket definitions, the "why crosswalk gaps happen"
+  explanation to surface to the user alongside results, the chat-table output
+  format (batches of 20 for `resolved`), the PII-stays-local reminder, and the
   paste-then-reverify workflow steps above.
