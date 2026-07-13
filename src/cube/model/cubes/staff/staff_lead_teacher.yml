@@ -2,8 +2,26 @@ cubes:
   # Role alias for staff, used as the lead-teacher join target on
   # student_section_enrollments. Distinct role-play cube (like staff_manager) so
   # the lead-teacher members can't collide with the homeroom-teacher role
-  # (staff_homeroom_teacher) when a view reaches both. Inherits all of staff's
-  # dimensions.
+  # (staff_homeroom_teacher) when a view reaches both. Inherits staff's
+  # dimension definitions via extends (Cube's "derive specific cubes from
+  # base" pattern: extends merges member lists, sql: is fully replaced, not
+  # merged), but overrides sql: to project only the columns the
+  # student-side joins actually consume: staff_key (join key,
+  # student_section_enrollments.yml) and full_name/first_name/last_name
+  # (the only staff_lead_teacher.* members any view includes — see
+  # student_section_enrollments_view.yml and student_assessment_scores_view.yml).
+  # staff's own sql: (SELECT s.*, ...) carries every dim_staff column,
+  # including birth_date/race/gender_identity, which also exist on the
+  # student side of these views — a SELECT * on a teacher-joined student
+  # view then errors "birth_date is ambiguous". Narrowing this cube's
+  # projection removes the duplicate columns entirely. See #4385.
   - name: staff_lead_teacher
     extends: staff
     public: false
+    sql: |
+      SELECT
+        staff_key,
+        full_name,
+        first_name,
+        last_name
+      FROM kipptaf_marts.dim_staff
