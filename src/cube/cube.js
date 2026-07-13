@@ -195,8 +195,16 @@ module.exports = {
     let email;
     if (auth) {
       try {
+        // maxAge is a defense-in-depth cap independent of the token's own
+        // `exp`: it derives from `iat` (issued-at) instead, so a compromised
+        // or misconfigured minter can't extend a token's life by inflating
+        // `exp` alone — jsonwebtoken rejects any token missing `iat` once
+        // maxAge is set (fails closed). `mcp/server.py`'s `_mint_token` sets
+        // both `iat` and a 5-minute `exp`, so this 12h ceiling is a backstop,
+        // not the primary control.
         const payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
           algorithms: ["HS256"],
+          maxAge: "12h",
         });
         email = payload?.email;
       } catch (err) {
