@@ -95,6 +95,71 @@ with
         where test_date is not null and student_number is not null
     ),
 
+    -- iReady diagnostics. test_round is the reporting-terms IR window (BOY /
+    -- MOY / EOY / Outside Round); illuminate_subject maps Reading -> Text
+    -- Study, Math -> Mathematics upstream.
+    iready_scores as (
+        select
+            student_id as powerschool_student_number,
+            academic_year_int as academic_year,
+            test_round as administration_period,
+            illuminate_subject as subject_area,
+            _dbt_source_project,
+
+            completion_date as anchor_date,
+
+            cast(null as int64) as canonical_assessment_id,
+
+            'iready' as source_type,
+        from {{ ref("int_iready__diagnostic_results") }}
+        where completion_date is not null and overall_scale_score is not null
+    ),
+
+    -- STAR attempts. screening_period_window_name is the vendor window (Fall /
+    -- Winter / Spring); rows without a crosswalk-resolved project cannot join
+    -- course enrollments and are dropped (out of scope).
+    star_scores as (
+        select
+            student_display_id as powerschool_student_number,
+            academic_year,
+            screening_period_window_name as administration_period,
+            illuminate_subject as subject_area,
+            _dbt_source_project,
+
+            completed_date_value as anchor_date,
+
+            cast(null as int64) as canonical_assessment_id,
+
+            'star' as source_type,
+        from {{ ref("stg_renlearn__star") }}
+        where
+            completed_date_value is not null
+            and unified_score is not null
+            and _dbt_source_project is not null
+    ),
+
+    -- DIBELS benchmark composites. One row per student x benchmark window
+    -- (BOY / MOY / EOY); PM probes and subskill measures are out of scope.
+    dibels_scores as (
+        select
+            student_number as powerschool_student_number,
+            academic_year,
+            `period` as administration_period,
+            illuminate_subject as subject_area,
+            _dbt_source_project,
+
+            client_date as anchor_date,
+
+            cast(null as int64) as canonical_assessment_id,
+
+            'dibels' as source_type,
+        from {{ ref("int_amplify__all_assessments") }}
+        where
+            assessment_type = 'Benchmark'
+            and measure_standard = 'Composite'
+            and client_date is not null
+    ),
+
     scores as (
         select
             powerschool_student_number,
@@ -132,6 +197,45 @@ with
             anchor_date,
             source_type,
         from state_fl_scores
+
+        union all
+
+        select
+            powerschool_student_number,
+            canonical_assessment_id,
+            academic_year,
+            administration_period,
+            subject_area,
+            _dbt_source_project,
+            anchor_date,
+            source_type,
+        from iready_scores
+
+        union all
+
+        select
+            powerschool_student_number,
+            canonical_assessment_id,
+            academic_year,
+            administration_period,
+            subject_area,
+            _dbt_source_project,
+            anchor_date,
+            source_type,
+        from star_scores
+
+        union all
+
+        select
+            powerschool_student_number,
+            canonical_assessment_id,
+            academic_year,
+            administration_period,
+            subject_area,
+            _dbt_source_project,
+            anchor_date,
+            source_type,
+        from dibels_scores
     ),
 
     -- course_subject is the section subject the resolver matches against. For
