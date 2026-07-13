@@ -223,6 +223,80 @@ with
 
     -- grain projection: every selected column is functionally determined
     -- by the partition key; not a mask for upstream duplicates
+    iready_assessments as (
+        select distinct
+            subject as subject_area,
+            subject as module_code,
+
+            'iready' as assessment_type,
+            'i-Ready Diagnostic' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            if(subject = 'Math', 'Math', 'ELA') as scope,
+
+            cast(null as int64) as grade_level,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("int_iready__diagnostic_results") }}
+        where overall_scale_score is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    star_assessments as (
+        select distinct
+            star_subject as subject_area,
+            star_subject as module_code,
+
+            'star' as assessment_type,
+            'STAR' as title,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            if(star_subject = 'Math', 'Math', 'ELA') as scope,
+
+            cast(null as int64) as grade_level,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("stg_renlearn__star") }}
+        where completed_date_value is not null and unified_score is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    dibels_assessments as (
+        select distinct
+            measure_standard as module_code,
+
+            'Reading' as subject_area,
+            'dibels' as assessment_type,
+            'DIBELS' as title,
+            'ELA' as scope,
+            false as is_internal_assessment,
+            'enrollment' as assessment_scope,
+
+            cast(null as int64) as grade_level,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as module_type,
+            cast(null as string) as combined_academic_subject,
+            cast(null as string) as aligned_academic_subject,
+            cast(null as string) as credit_category,
+            cast(null as string) as test_type,
+        from {{ ref("int_amplify__all_assessments") }}
+        where assessment_type = 'Benchmark' and measure_standard = 'Composite'
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
     college_assessments as (
         select distinct
             scope as title,
@@ -337,6 +411,15 @@ with
         union all
         select {{ union_cols }},
         from state_fl_science
+        union all
+        select {{ union_cols }},
+        from iready_assessments
+        union all
+        select {{ union_cols }},
+        from star_assessments
+        union all
+        select {{ union_cols }},
+        from dibels_assessments
         union all
         select {{ union_cols }},
         from college_assessments
