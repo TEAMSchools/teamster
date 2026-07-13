@@ -19,15 +19,8 @@ models/
 PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
 `sftp.+enabled: false`)
 
-## Active Source Packages
+## Source Packages
 
-All materialized as tables via cross-project `ref()`:
-
-- `powerschool` (ODBC)
-- `deanslist`
-- `finalsite`
-- `iready`
-- `renlearn`
-- `focus` — `focus_schema` points to `dagster_kippmiami_dlt_focus`
-
-Note: Miami does not use `edplan`, `overgrad`, `pearson`, or `titan`.
+Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`). `focus`
+— `focus_schema` points to `dagster_kippmiami_dlt_focus`. Miami does not use
+`edplan`, `overgrad`, `pearson`, or `titan`.

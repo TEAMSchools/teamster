@@ -51,7 +51,8 @@
   event — use `!` negation patterns instead (e.g., `!**/*.md`).
 - YAML values should not be redundantly quoted — Trunk flags it. Only quote when
   required (e.g., `!` negation patterns need quotes).
-- All workflows use `actions/checkout@v6` — keep this consistent.
+- All workflows use `actions/checkout` v6 (some pin the full SHA for the v6 tag)
+  — keep the major version consistent.
 - Dagster Cloud actions are pinned to a specific version tag (not `@latest`) —
   update all occurrences together when upgrading.
 - All workflows gate on `github.actor != 'dependabot[bot]'` — maintain this when
