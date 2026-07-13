@@ -167,7 +167,7 @@ with
             dbt_utils.deduplicate(
                 relation="lead_teacher_overlap",
                 partition_by="student_section_enrollment_key",
-                order_by="effective_start_date desc",
+                order_by="effective_start_date desc, lead_teacher_staff_key asc",
             )
         }}
     )

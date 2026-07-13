@@ -66,7 +66,7 @@ with
             dbt_utils.deduplicate(
                 relation="homeroom_teacher",
                 partition_by="student_enrollment_key",
-                order_by="cc_dateenrolled desc, effective_start_date desc",
+                order_by="cc_dateenrolled desc, effective_start_date desc, homeroom_teacher_staff_key asc",
             )
         }}
     ),
