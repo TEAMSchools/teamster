@@ -37,6 +37,9 @@ with
 
     -- TODO: a few staff carry two concurrent current primary work assignments;
     -- pick one deterministically until the upstream ADP data is corrected.
+    -- work_assignment_key is dim_staff_work_assignments' own surrogate PK
+    -- (globally unique), so ordering by it alone is already a fully
+    -- deterministic pick -- no additional tiebreaker needed.
     primary_deduped as (
         {{
             dbt_utils.deduplicate(

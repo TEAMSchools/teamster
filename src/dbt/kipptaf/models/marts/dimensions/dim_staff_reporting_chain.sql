@@ -44,7 +44,12 @@ with recursive
 
     -- TODO: a small number of active+primary staff can carry two current
     -- reporting relationships; dedupe to one manager per reportee
-    -- deterministically until the upstream ADP data is corrected.
+    -- deterministically until the upstream ADP data is corrected. The
+    -- order_by is an arbitrary (but stable) tiebreaker on manager_staff_key,
+    -- not a business rule -- dim_work_assignment_reporting_relationships
+    -- carries effective_start_date, which could pick the most-recent
+    -- relationship instead; left as-is pending a product decision on which
+    -- manager should win.
     edges as (
         {{
             dbt_utils.deduplicate(

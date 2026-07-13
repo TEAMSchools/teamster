@@ -91,7 +91,7 @@ async function resolveAccess(email) {
     const bq = new BigQuery();
     const [rows] = await bq.query({
       query:
-        "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email LIMIT 1",
+        "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email ORDER BY staff_key LIMIT 1",
       params: { email },
     });
     const row = rows[0] ?? null;
