@@ -271,6 +271,53 @@ has the old schema and resolution fails closed. To test against your branch:
 For a location-scoping check that returns real numbers year-round, use
 `student_attendance`'s `count_students` (additive over a date range).
 
+### SQL-level RLS invariants to check
+
+The default-deny behavior rests entirely on Cube compiling an empty allow-list
+array to `IN ()` — no explicit "deny" branch exists at the SQL level. These two
+cases exercise that boundary directly and are worth running whenever
+`access_policy` or a pre-aggregation's dimension list changes.
+
+**1. Empty-allow-list case.** A viewer whose role resolves
+`staff_pii_scope='all_in_scope'` but `staff_department_scope='none'` should get
+zero rows on `staff_pii`, not an error and not every row. Over the SQL API
+(viewer identity = the connecting `user`):
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+conn = psycopg2.connect(host="127.0.0.1", port=15432,
+                        user="a-department-scope-none-viewer@apps.teamschools.org",
+                        password="local-dev-sql", dbname="cube")
+cur = conn.cursor()
+cur.execute("SELECT MEASURE(count_employees) FROM staff_pii")
+print(cur.fetchall())  # expect zero rows / zero count, not an error
+PY
+```
+
+**2. Pre-agg-served scoped case.** Once a cube carries a pre-aggregation (e.g.
+`proficiency_rollup` on `student_assessment_scores`), a region-scoped viewer
+querying a rolled-up measure by subject on the corresponding view should get
+region-scoped rows AND the response should show the query was served by the
+pre-aggregation (rollup hit), not a fact-table fallback. Over the REST API,
+check `usedPreAggregations` in the response metadata:
+
+```bash
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{
+    "measures":["student_assessment_scores_view.pct_proficient"],
+    "dimensions":["student_assessment_scores_view.academic_subject"]
+  }}' \
+  http://localhost:4000/cubejs-api/v1/load | jq '.usedPreAggregations'
+```
+
+An empty `{}` means the query fell back to the fact — check that every
+`row_level` scoping member the view filters on (e.g. `region_key`,
+`abbreviation`) is also declared in the pre-aggregation's `dimensions:` list. A
+schema test can catch this statically; this case confirms it end-to-end against
+a live server.
+
 ## Warnings
 
 Do **not** set `CUBE_GROUP_MAP` in Cube Cloud. This variable is a dev bypass
