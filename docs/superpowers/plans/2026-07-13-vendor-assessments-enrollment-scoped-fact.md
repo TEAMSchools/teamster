@@ -13,11 +13,15 @@
 spec
 `docs/superpowers/specs/2026-07-13-vendor-assessments-enrollment-scoped-fact-design.md`.
 
-**Architecture:** Inline branches (spec Approach A). Each vendor intermediate
-gains two additive columns (`_dbt_source_project`, `illuminate_subject`); then
-the section resolver, both assessment dims, and the fact each gain vendor
-branches mirroring the existing `state_nj`/`state_fl` pattern. iReady and STAR
-fact branches dedupe at PK grain (verified upstream duplicates).
+**Architecture:** Inline branches (spec Approach A). Each vendor source model
+gains additive columns (`_dbt_source_project`, `illuminate_subject`, plus a DATE
+test date for STAR) — iReady on `int_iready__diagnostic_results`, DIBELS on
+`int_amplify__all_assessments`, STAR on `stg_renlearn__star` (the consolidated
+union view; the old `int_renlearn__star_rollup` was retired in Nov 2025 and
+stays disabled — see the Task 3 PLAN CORRECTION). Then the section resolver,
+both assessment dims, and the fact each gain vendor branches mirroring the
+existing `state_nj`/`state_fl` pattern. iReady and STAR fact branches dedupe at
+PK grain (verified upstream duplicates).
 
 **Tech Stack:** dbt (BigQuery), `dbt_utils.generate_surrogate_key`,
 `dbt_utils.deduplicate`.
@@ -43,7 +47,8 @@ fact branches dedupe at PK grain (verified upstream duplicates).
   `-- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below`.
 - Hash values 'iready' / 'star' / 'dibels' (`score_source` = `source_type` =
   `assessment_type`) must be byte-identical across resolver, dims, and fact.
-- Dedupe TODOs reference the follow-up issues from Task 1 as `TODO(#NNNN)`.
+- Dedupe TODOs reference the follow-up issues filed in Task 1: `TODO(#4387)`
+  (iReady), `TODO(#4388)` (renlearn).
 - Do not run `--target prod` builds or `stage_external_sources` — not needed
   here; all touched models read existing prod/staging relations via `--defer`.
 - Trunk: verify SQL/YAML with
@@ -58,7 +63,8 @@ fact branches dedupe at PK grain (verified upstream duplicates).
 
 **Interfaces:**
 
-- Produces: two issue numbers used in `TODO(#NNNN)` comments in Task 7.
+- Produces: two issue numbers used in the `TODO(...)` comments in Task 8 (filed:
+  #4387 iReady, #4388 renlearn).
 
 - [ ] **Step 1: ASK THE USER for approval to open two issues** (repo rule: never
       open issues without asking). If declined, use `TODO:` without numbers in
@@ -166,128 +172,205 @@ Refs #3625"
 
 ---
 
-### Task 3: STAR rollup — additive columns
+### Task 3: STAR staging — additive columns
+
+**PLAN CORRECTION (supersedes the original approach):**
+`int_renlearn__star_rollup` was **deliberately disabled**
+(`config: enabled: false`) by the Nov 2025 "consolidate star calcs" refactor,
+which moved its logic into `stg_renlearn__star` and repointed all 8 STAR
+consumers there. Do **NOT** revive or edit the rollup — leave it disabled. Add
+the vendor-needed columns to `stg_renlearn__star` (the consolidated
+kipptaf-level union view, materialized as a table, contract-enforced) instead.
+This was confirmed with the user, who also chose the crosswalk (not
+`extract_code_location`) for district resolution.
 
 **Files:**
 
+- Modify: `{wt}/src/dbt/kipptaf/models/renlearn/staging/stg_renlearn__star.sql`
 - Modify:
-  `{wt}/src/dbt/kipptaf/models/renlearn/intermediate/int_renlearn__star_rollup.sql`
-- Modify:
-  `{wt}/src/dbt/kipptaf/models/renlearn/intermediate/properties/int_renlearn__star_rollup.yml`
+  `{wt}/src/dbt/kipptaf/models/renlearn/staging/properties/stg_renlearn__star.yml`
 
 **Interfaces:**
 
-- Produces: columns `completed_date` (DATE), `percentile_rank` (int64),
-  `assessment_id` (string), `_dbt_source_project` (string), `illuminate_subject`
-  (string) on `int_renlearn__star_rollup`. Existing columns and row set
-  unchanged. Consumed by Tasks 5–8.
+- Produces THREE new columns on `stg_renlearn__star`: `illuminate_subject`
+  (string), `completed_date_value` (date), `_dbt_source_project` (string).
+  Existing columns, row set, and window columns unchanged. Consumed by Tasks
+  5–8, which source STAR from `stg_renlearn__star` directly (not the rollup).
+- STAR column map for downstream tasks (all already on `stg_renlearn__star`
+  except the three new ones): student id = `student_display_id`; academic year =
+  `academic_year`; module/subject = `star_subject`; administration period =
+  `screening_period_window_name` (Fall/Winter/Spring); scale score =
+  `unified_score`; growth percentile = `percentile_rank`; proficiency =
+  `state_benchmark_category_name`; mastery =
+  `state_benchmark_proficient = 'Yes'`; dedupe tiebreaker = `assessment_id`;
+  test date (DATE) = new `completed_date_value`; course subject = new
+  `illuminate_subject`; district = new `_dbt_source_project`. The staging model
+  already filters `where deactivation_reason is null`, so vendor branches must
+  NOT re-filter it.
 
-- [ ] **Step 1: Replace the model SQL** with (the crosswalk join requires
-      aliasing every existing column with `s.`; window functions unchanged):
+- [ ] **Step 1: Verify blast radius is nil** — confirm no contract-enforced
+      `select *` consumer of `stg_renlearn__star` (adding columns would break
+      one). Already checked during planning: all 8 consumers enumerate columns,
+      none does `select *` off it. Re-confirm quickly:
 
-```sql
-select
-    s.student_display_id,
-    s.state_benchmark_category_level,
-    s.state_benchmark_category_name,
-    s.state_benchmark_proficient,
-    s.district_benchmark_category_level,
-    s.district_benchmark_category_name,
-    s.district_benchmark_proficient,
-    s.unified_score,
-    s.screening_period_window_name,
-    s.percentile_rank,
-    s.assessment_id,
-
-    lc.location_dagster_code_location as _dbt_source_project,
-
-    safe_cast(left(s.school_year, 4) as int) as academic_year,
-
-    safe_cast(if(s.grade = 'K', '0', s.grade) as int) as grade_level,
-
-    cast(left(s.completed_date_local, 10) as date) as completed_date,
-
-    case
-        when s.state_benchmark_proficient = 'Yes'
-        then 1
-        when s.state_benchmark_proficient = 'No'
-        then 0
-    end as is_state_benchmark_proficient_int,
-
-    case
-        when s.district_benchmark_proficient = 'Yes'
-        then 1
-        when s.district_benchmark_proficient = 'No'
-        then 0
-    end as is_district_benchmark_proficient_int,
-
-    case
-        when s._dagster_partition_subject = 'SM'
-        then 'Math'
-        when s._dagster_partition_subject = 'SR'
-        then 'Reading'
-        when s._dagster_partition_subject = 'SEL'
-        then 'Early Literacy'
-    end as star_subject,
-
-    case
-        when s._dagster_partition_subject = 'SM'
-        then 'Math'
-        when s.grade = 'K' and s._dagster_partition_subject = 'SEL'
-        then 'ELA'
-        when s._dagster_partition_subject = 'SR'
-        then 'ELA'
-    end as star_discipline,
-
-    if(
-        s._dagster_partition_subject = 'SM', 'Mathematics', 'Text Study'
-    ) as illuminate_subject,
-
-    row_number() over (
-        partition by
-            s.student_display_id,
-            s._dagster_partition_subject,
-            s.school_year,
-            s.screening_period_window_name
-        order by s.completed_date desc
-    ) as rn_subj_round,
-
-    row_number() over (
-        partition by
-            s.student_display_id,
-            s._dagster_partition_subject,
-            s.school_year,
-            s.screening_period_window_name
-        order by s.completed_date desc
-    ) as rn_subj_year,
-from {{ ref("stg_renlearn__star") }} as s
-left join
-    {{ ref("int_people__location_crosswalk") }} as lc
-    on s.school_name = lc.location_name
-where s.deactivation_reason is null
+```bash
+grep -rln "stg_renlearn__star\b" {wt}/src/dbt/kipptaf/models --include=*.sql \
+  | grep -v "staging/stg_renlearn__star.sql"
 ```
 
-Notes: `illuminate_subject` maps Reading AND Early Literacy to `Text Study` (all
-reading-family scores resolve to ELA sections — per spec). `completed_date`
-casts the LOCAL datetime string's date part (`completed_date_local`, format
-`YYYY-MM-DD HH:MM:SS.mmm`). Do NOT change the two `row_number()` definitions
-(existing consumers filter on them; ordering by the raw string
-`s.completed_date` is lexicographically correct for ISO datetimes).
+For any hit, eyeball its SELECT from `stg_renlearn__star` — if any is a bare
+`select *`, STOP and flag it (its contract yml would need the 3 columns too).
 
-- [ ] **Step 2: Add the five new columns to the properties yml** `columns:`
-      list:
+- [ ] **Step 2: Edit the model SQL.** The current model is
+      `select *, <derived...> from union_relations where deactivation_reason is null`.
+      Wrap the existing logic in a `derived` CTE (so the existing bare-column
+      derivations keep working with no join in scope), add the two row-local
+      derived columns there, then add the crosswalk join in a final SELECT.
+      Replace the entire file body with:
+
+```sql
+with
+    union_relations as (
+        {{
+            dbt_utils.union_relations(
+                relations=[
+                    source("kippnj_renlearn", "stg_renlearn__star"),
+                    source("kippmiami_renlearn", "stg_renlearn__star"),
+                ]
+            )
+        }}
+    ),
+
+    -- trunk-ignore(sqlfluff/AM04)
+    derived as (
+        select
+            *,
+
+            _dagster_partition_fiscal_year - 1 as academic_year,
+
+            safe_cast(if(grade = 'K', '0', grade) as int) as grade_level,
+
+            cast(left(completed_date_local, 10) as date) as completed_date_value,
+
+            case
+                when _dagster_partition_subject = 'SM'
+                then 'Math'
+                when _dagster_partition_subject = 'SR'
+                then 'Reading'
+                when _dagster_partition_subject = 'SEL'
+                then 'Early Literacy'
+            end as star_subject,
+
+            case
+                when _dagster_partition_subject = 'SM'
+                then 'Math'
+                when grade = 'K' and _dagster_partition_subject = 'SEL'
+                then 'ELA'
+                when _dagster_partition_subject = 'SR'
+                then 'ELA'
+            end as star_discipline,
+
+            case
+                _dagster_partition_subject
+                when 'SR'
+                then 'Reading'
+                when 'SM'
+                then 'Math'
+                when 'SEL'
+                then 'Reading'
+            end as `subject`,
+
+            case
+                screening_period_window_name
+                when 'Fall'
+                then 'BOY'
+                when 'Winter'
+                then 'MOY'
+                when 'Spring'
+                then 'EOY'
+            end as administration_window,
+
+            if(
+                _dagster_partition_subject = 'SM', 'Mathematics', 'Text Study'
+            ) as illuminate_subject,
+
+            case
+                when district_benchmark_proficient = 'Yes'
+                then 1
+                when district_benchmark_proficient = 'No'
+                then 0
+            end as is_district_benchmark_proficient_int,
+
+            case
+                when state_benchmark_proficient = 'Yes'
+                then 1
+                when state_benchmark_proficient = 'No'
+                then 0
+            end as is_state_benchmark_proficient_int,
+
+            row_number() over (
+                partition by
+                    _dbt_source_relation,
+                    _dagster_partition_subject,
+                    _dagster_partition_fiscal_year,
+                    student_identifier,
+                    screening_period_window_name
+                order by completed_date desc
+            ) as rn_subject_round,
+
+            row_number() over (
+                partition by
+                    _dbt_source_relation,
+                    _dagster_partition_subject,
+                    _dagster_partition_fiscal_year,
+                    student_identifier
+                order by completed_date desc
+            ) as rn_subject_year,
+        from union_relations
+        where deactivation_reason is null
+    )
+
+select
+    d.*,
+
+    lc.location_dagster_code_location as _dbt_source_project,
+from derived as d
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on d.school_name = lc.location_name
+```
+
+Notes:
+
+- This preserves every existing derived column and the existing
+  `where deactivation_reason is null` filter — the ONLY additions are
+  `completed_date_value`, `illuminate_subject`, and `_dbt_source_project`. The
+  existing `completed_date` (raw string) and the window
+  `order by completed_date desc` are unchanged (raw-string ISO ordering is
+  correct).
+- `completed_date_value` = the local calendar date, cast from
+  `completed_date_local` (`YYYY-MM-DD HH:MM:SS.mmm`).
+- `illuminate_subject` maps Math → `Mathematics`, everything else (Reading,
+  Early Literacy) → `Text Study` (reading-family resolves to ELA sections).
+- `_dbt_source_project` via `int_people__location_crosswalk` on `school_name`
+  (each crosswalk row is one alias → verify no fan-out in Step 4).
+
+- [ ] **Step 3: Add the three new columns to the properties yml** `columns:`
+      list (contract-enforced — order-independent, name+type must match):
 
 ```yaml
-- name: percentile_rank
-  data_type: int64
+- name: completed_date_value
+  data_type: date
   description: >-
-    National percentile rank for the attempt, passed through from
-    stg_renlearn__star.
-- name: assessment_id
+    Local-time completion calendar date of the attempt, cast from the
+    completed_date_local datetime string. Distinct from the raw string
+    completed_date column.
+- name: illuminate_subject
   data_type: string
   description: >-
-    Renaissance per-attempt assessment identifier, passed through from
-    stg_renlearn__star. Used downstream as a deterministic dedupe tiebreaker.
+    Course-subject mapping used by the assessment section-enrollment resolver —
+    Math partitions map to Mathematics; Reading and Early Literacy map to Text
+    Study.
 - name: _dbt_source_project
   data_type: string
   description: >-
@@ -295,31 +378,20 @@ casts the LOCAL datetime string's date part (`completed_date_local`, format
     school_name. Required because NJ districts share one Renaissance instance
     (kippnj), so the source relation cannot identify the district. NULL when the
     school name has no crosswalk alias.
-- name: completed_date
-  data_type: date
-  description: >-
-    Local-time completion date of the attempt, cast from the
-    completed_date_local datetime string.
-- name: illuminate_subject
-  data_type: string
-  description: >-
-    Course-subject mapping used by the section-enrollment resolver — Math
-    partitions map to Mathematics; Reading and Early Literacy map to Text Study.
 ```
 
-Check `assessment_id`'s actual staging type first
-(`grep -A1 'name: assessment_id' {wt}/src/dbt/kipptaf/models/renlearn/staging/properties/stg_renlearn__star.yml`)
-and mirror it.
-
-- [ ] **Step 3: Build and verify:**
+- [ ] **Step 4: Build and verify:**
 
 ```bash
-uv run dbt build --select int_renlearn__star_rollup \
+uv run dbt build --select stg_renlearn__star \
   --project-dir {wt}/src/dbt/kipptaf --target dev \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod
 ```
 
-Then via BigQuery MCP:
+Expected: contract passes (the 3 new columns matched). Then via BigQuery MCP
+(find the dev schema if the name differs:
+`select schema_name from \`teamster-332318\`.INFORMATION_SCHEMA.SCHEMATA where
+schema_name like '%kipptaf_renlearn%'`):
 
 ```sql
 select
@@ -327,21 +399,29 @@ select
     illuminate_subject,
 
     count(*) as n_rows,
-    countif(completed_date is null) as n_null_date,
-    countif(percentile_rank is null) as n_null_pr,
-from `teamster-332318.zz_cbini_kipptaf_renlearn.int_renlearn__star_rollup`
+    countif(completed_date_value is null) as n_null_date,
+from `teamster-332318.zz_cbini_kipptaf_renlearn.stg_renlearn__star`
 group by 1, 2
 ```
 
-Expected: rows land under a `kipp*` project (currently Miami-only, one school);
-`n_null_date` ~8 (rows with null `completed_date_local`); row count unchanged
-from before the edit (~9,843 active rows).
+Expected: rows land under a `kipp*` project (Miami-only today, one school);
+`n_null_date` small (~8, null `completed_date_local`). **Fan-out check:** the
+total row count must equal the pre-change active-row count (~9,843) — if the
+crosswalk join multiplied rows, `school_name` matched multiple alias rows and
+you must dedupe the crosswalk side. Compare:
 
-- [ ] **Step 4: Commit:**
+```sql
+select count(*) as n_after,
+from `teamster-332318.zz_cbini_kipptaf_renlearn.stg_renlearn__star`
+```
+
+against prod `teamster-332318.kipptaf_renlearn.stg_renlearn__star` count.
+
+- [ ] **Step 5: Commit:**
 
 ```bash
-git -C {wt} add src/dbt/kipptaf/models/renlearn
-git -C {wt} commit -m "feat(renlearn): add project, subject mapping, date, percentile to star rollup
+git -C {wt} add src/dbt/kipptaf/models/renlearn/staging
+git -C {wt} commit -m "feat(renlearn): add source project, subject mapping, date to stg_renlearn__star
 
 Refs #3625"
 ```
@@ -473,14 +553,14 @@ Refs #3625"
             illuminate_subject as subject_area,
             _dbt_source_project,
 
-            completed_date as anchor_date,
+            completed_date_value as anchor_date,
 
             cast(null as int64) as canonical_assessment_id,
 
             'star' as source_type,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where
-            completed_date is not null
+            completed_date_value is not null
             and unified_score is not null
             and _dbt_source_project is not null
     ),
@@ -633,8 +713,8 @@ Refs #3625"
             cast(null as string) as aligned_academic_subject,
             cast(null as string) as credit_category,
             cast(null as string) as test_type,
-        from {{ ref("int_renlearn__star_rollup") }}
-        where completed_date is not null and unified_score is not null
+        from {{ ref("stg_renlearn__star") }}
+        where completed_date_value is not null and unified_score is not null
     ),
 
     -- grain projection: every selected column is functionally determined
@@ -772,9 +852,9 @@ Refs #3625"
             cast(null as int64) as grade_level,
             cast(null as int64) as source_assessment_id,
             cast(null as string) as test_type,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where
-            completed_date is not null
+            completed_date_value is not null
             and unified_score is not null
             and _dbt_source_project is not null
     ),
@@ -876,8 +956,9 @@ Refs #3625"
   `assessment_score_key`; new contract column `growth_percentile` (numeric).
 
 - [ ] **Step 1: Add vendor CTEs** after the `state_union` CTE (inside the `with`
-      block; remember to add a comma after the `state_union` closing paren).
-      Replace `#NNNN1` / `#NNNN2` with Task 1's issue numbers:
+      block; remember to add a comma after the `state_union` closing paren). The
+      TODO issue numbers below are already filled in (#4387 iReady, #4388
+      renlearn):
 
 ```sql
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
@@ -904,7 +985,7 @@ Refs #3625"
         where overall_scale_score is not null
     ),
 
-    -- TODO(#NNNN1): stg_iready__diagnostic_results has no uniqueness test;
+    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
     -- same-day retests and duplicate rows exist upstream. Remove this dedupe
     -- when staging is fixed.
     iready_scores as (
@@ -932,7 +1013,7 @@ Refs #3625"
             star_subject as module_code,
             illuminate_subject,
             screening_period_window_name as administration_period,
-            completed_date as test_date,
+            completed_date_value as test_date,
             assessment_id,
             _dbt_source_project,
 
@@ -944,14 +1025,14 @@ Refs #3625"
             cast(percentile_rank as numeric) as growth_percentile,
 
             state_benchmark_proficient = 'Yes' as is_mastery,
-        from {{ ref("int_renlearn__star_rollup") }}
+        from {{ ref("stg_renlearn__star") }}
         where
-            completed_date is not null
+            completed_date_value is not null
             and unified_score is not null
             and _dbt_source_project is not null
     ),
 
-    -- TODO(#NNNN2): stg_renlearn__star holds fiscal-year re-pull duplicates
+    -- TODO(#4388): stg_renlearn__star holds fiscal-year re-pull duplicates
     -- (same assessment_id in two partitions) and same-day retests. Remove
     -- this dedupe when staging is fixed.
     star_scores as (
@@ -1210,7 +1291,7 @@ Closes #3625"
 ```bash
 git -C {wt} fetch origin main && git -C {wt} merge origin/main
 uv run dbt build \
-  --select int_iready__diagnostic_results int_renlearn__star_rollup \
+  --select int_iready__diagnostic_results stg_renlearn__star \
     int_amplify__all_assessments int_assessments__resolved_section_enrollments \
     dim_assessments dim_assessment_administrations \
     fct_assessment_scores_enrollment_scoped \
@@ -1226,13 +1307,16 @@ caveat).
       guards against an accidental non-additive edit):
 
 ```bash
-uv run dbt ls --select int_renlearn__star_rollup+1 int_iready__diagnostic_results+1 \
+uv run dbt ls --select stg_renlearn__star+1 int_iready__diagnostic_results+1 \
     int_amplify__all_assessments+1 --project-dir {wt}/src/dbt/kipptaf --target dev
-uv run dbt compile --select int_renlearn__star_rollup+1 int_iready__diagnostic_results+1 \
+uv run dbt compile --select stg_renlearn__star+1 int_iready__diagnostic_results+1 \
     int_amplify__all_assessments+1 \
   --project-dir {wt}/src/dbt/kipptaf --target dev \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod
 ```
+
+Note: `stg_renlearn__star+1` includes its 8 existing consumers — a build/compile
+guard confirming the additive columns didn't break any enumerating consumer.
 
 Expected: compile green (additive columns cannot break enumerating consumers;
 this guards against accidental non-additive edits).
@@ -1242,7 +1326,7 @@ this guards against accidental non-additive edits).
 ```bash
 cd {wt} && /workspaces/teamster/.trunk/tools/trunk check --no-fix \
   src/dbt/kipptaf/models/iready/intermediate/int_iready__diagnostic_results.sql \
-  src/dbt/kipptaf/models/renlearn/intermediate/int_renlearn__star_rollup.sql \
+  src/dbt/kipptaf/models/renlearn/staging/stg_renlearn__star.sql \
   src/dbt/kipptaf/models/amplify/intermediate/int_amplify__all_assessments.sql \
   src/dbt/kipptaf/models/assessments/intermediate/int_assessments__resolved_section_enrollments.sql \
   src/dbt/kipptaf/models/marts/dimensions/dim_assessments.sql \

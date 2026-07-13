@@ -26,7 +26,12 @@ Models touched:
 3. `dim_assessments` — assessment grain-projection CTEs
 4. `fct_assessment_scores_enrollment_scoped` — union branches + new
    `growth_percentile` contract column
-5. `int_renlearn__star_rollup` — additive upstream edits (STAR only)
+5. Vendor source models — additive columns (`_dbt_source_project`,
+   `illuminate_subject`): `int_iready__diagnostic_results` (iReady),
+   `int_amplify__all_assessments` (DIBELS), and `stg_renlearn__star` (STAR — the
+   consolidated union view; also gains a DATE `completed_date_value`). The old
+   `int_renlearn__star_rollup` was retired in Nov 2025 and stays disabled — see
+   the plan's Task 3 correction.
 
 ## Decisions (from brainstorming)
 
@@ -44,14 +49,14 @@ Models touched:
 
 ## Column mapping
 
-| fact concept                       | iReady (`int_iready__diagnostic_results`)    | STAR (`int_renlearn__star_rollup`)                      | DIBELS (`int_amplify__all_assessments`)                              |
+| fact concept                       | iReady (`int_iready__diagnostic_results`)    | STAR (`stg_renlearn__star`)                             | DIBELS (`int_amplify__all_assessments`)                              |
 | ---------------------------------- | -------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
 | grain filter                       | every completed diagnostic                   | every attempt (rollup already excludes deactivated)     | `assessment_type = 'Benchmark'` and `measure_standard = 'Composite'` |
 | `student_number`                   | `student_id`                                 | `student_display_id`                                    | `student_number`                                                     |
 | `academic_year`                    | `academic_year_int`                          | `academic_year`                                         | `academic_year`                                                      |
 | course subject (resolver)          | Reading → `Text Study`, Math → `Mathematics` | Math (`SM`) → `Mathematics`, else `Text Study`          | `Text Study`                                                         |
 | `administration_period`            | `test_round`                                 | `screening_period_window_name`                          | `period` (BOY/MOY/EOY)                                               |
-| test/anchor date                   | `completion_date`                            | `completed_date` (upstream edit)                        | `client_date`                                                        |
+| test/anchor date                   | `completion_date`                            | `completed_date_value` (new DATE on staging)            | `client_date`                                                        |
 | `scale_score`                      | `overall_scale_score`                        | `unified_score`                                         | `measure_standard_score`                                             |
 | `growth_percentile`                | `percentile`                                 | `percentile_rank` (upstream edit)                       | `measure_percentile`                                                 |
 | `proficiency_level`                | `overall_relative_placement`                 | `state_benchmark_category_name`                         | `measure_standard_level`                                             |
@@ -69,7 +74,7 @@ sources.
 Per the marts CLAUDE.md `_dbt_source_project` promotion pattern
 ([#3142](https://github.com/TEAMSchools/teamster/issues/3142)) and the
 `illuminate_subject` precedent in `int_pearson__all_assessments` /
-`int_fldoe__all_assessments`, each vendor intermediate gains two additive
+`int_fldoe__all_assessments`, each vendor source model gains two additive
 columns so the resolver, dims, and fact all read materialized values instead of
 re-deriving them per consumer:
 
@@ -84,9 +89,16 @@ re-deriving them per consumer:
   `Text Study` (Reading and Early Literacy both resolve to ELA sections); DIBELS
   constant `Text Study`.
 
-`int_renlearn__star_rollup` additionally gains `completed_date` (DATE, cast from
-`completed_date_local`'s first 10 chars — the staging column is a local datetime
-string) and `percentile_rank` (both exist in `stg_renlearn__star`).
+STAR's columns land on `stg_renlearn__star` (the consolidated kipptaf union
+view), NOT on `int_renlearn__star_rollup` — that rollup was disabled by the Nov
+2025 "consolidate star calcs" refactor and every STAR consumer already reads the
+staging model. `stg_renlearn__star` additionally gains `completed_date_value`
+(DATE, cast from `completed_date_local`'s first 10 chars); `percentile_rank`,
+`unified_score`, `star_subject`, `screening_period_window_name`,
+`academic_year`, and the benchmark columns already exist there. This puts a
+crosswalk join in a staging model (a layering trade-off), accepted because the
+model is functionally a kipptaf-level union view and it is the single promotion
+point.
 
 ## Duplicate findings (data-verified during planning)
 
