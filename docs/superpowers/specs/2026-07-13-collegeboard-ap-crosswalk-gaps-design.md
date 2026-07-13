@@ -169,23 +169,38 @@ Tier C/D matches from the 2025-2026 backlog:
    Tier C/D matches agreed on gender in the 2025-2026 validation — 0 flagged.
 2. **AP course enrollment (informational, not a gate).** For Tier C/D matches
    only, check whether the matched student was enrolled in the course
-   corresponding to the exam's `ps_ap_course_subject_code` (from
-   `int_collegeboard__ap_unpivot`, already joined via
-   `stg_google_sheets__collegeboard__ap_course_crosswalk`) in
+   corresponding to the exam, in
    `kipptaf_powerschool.base_powerschool__course_enrollments` for the same
-   academic_year. **ID-space note:** everything else in this skill matches to
-   PowerSchool's human-facing `student_number` (the column the crosswalk sheet
-   itself uses) — `base_powerschool__course_enrollments` keys enrollments by
-   `cc_studentid`, PowerSchool's internal numeric ID, which is a _different_
-   value from `student_number`. The join has to go through
-   `base_powerschool__student_enrollments` (same academic_year), which carries
-   both `student_number` and `studentid` (matching `cc_studentid`), to bridge
-   the two ID spaces — don't compare `student_number` to `cc_studentid`
-   directly. Presence is corroborating evidence; absence is _not_ evidence
-   against the match — testing without taking the class (and vice versa) is
-   normal, since College Board doesn't require enrollment in the course to sit
-   the exam. Surfaced as an annotation on the Tier C/D rows, not used to
-   include/exclude anything.
+   academic_year. This can't reuse `int_collegeboard__ap_unpivot` — that model
+   only emits a row once the crosswalk already resolves the student, which is
+   exactly what's being checked, so an unresolved candidate is invisible to it.
+   Instead, unpivot `exam_code_01`-`exam_code_30` directly off
+   `stg_collegeboard__ap` for just the candidate rows, resolve each to a
+   `test_name` via `stg_google_sheets__collegeboard__ap_codes`
+   (`domain = 'Exam Codes'`), then to one or more `ps_ap_course_subject_code`
+   values via `stg_google_sheets__collegeboard__ap_course_crosswalk`
+   (`data_source = 'CB File'`, comma-split). Ops manually tags this crosswalk's
+   `ps_ap_course_subject_code` to match `base_powerschool__course_enrollments`
+   `ap_course_subject` — **not** `cc_course_number` (a plain PS course code like
+   `ENG01005C3`; comparing against that is always false). Match on
+   `ap_course_subject`, filtered to `rn_course_number_year = 1` and
+   `not is_dropped_section` (per `src/dbt/kipptaf/CLAUDE.md`'s guidance on this
+   model's known duplicate-row issue). **ID-space + district-union note:**
+   everything else in this skill matches to PowerSchool's human-facing
+   `student_number` — `base_powerschool__course_enrollments` keys enrollments by
+   `cc_studentid`, PowerSchool's internal numeric ID, bridged via
+   `base_powerschool__student_enrollments.studentid` (same academic_year). Both
+   tables are network-wide union models over district-level source tables, so
+   `studentid` values aren't globally unique — the join also needs
+   `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` matching on both sides
+   (the `union_dataset_join_clause` macro's raw-SQL equivalent, since this runs
+   outside dbt) or it can silently cross-match a student in one district to a
+   course-enrollment row from another. Validated against all 13 Tier C/D
+   matches: 100% had a matching course enrollment. Presence is corroborating
+   evidence; absence is _not_ evidence against the match — testing without
+   taking the class (and vice versa) is normal, since College Board doesn't
+   require enrollment in the course to sit the exam. Surfaced as an annotation
+   on the Tier C/D rows, not used to include/exclude anything.
 
 Tier A/B rows skip both checks — the match is already tight enough that this
 would just be noise.
