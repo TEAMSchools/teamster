@@ -71,7 +71,7 @@ cubes:
         type: time
         public: true
 
-      # Demographic — gated to staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
+      # Demographic — gated to staff-pii in staff_pii; aggregate-only breakdown in staff_summary.
       - name: gender_identity
         description: >-
           Staff member's preferred gender identity as reported in the staff
@@ -80,7 +80,7 @@ cubes:
         type: string
         public: true
 
-      # Demographic — gated to staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
+      # Demographic — gated to staff-pii in staff_pii; aggregate-only breakdown in staff_summary.
       - name: race
         description: >-
           Staff member's racial category for reporting purposes, sourced from
@@ -89,7 +89,7 @@ cubes:
         type: string
         public: true
 
-      # Demographic — gated to staff-pii in staff_detail; aggregate-only breakdown in staff_summary.
+      # Demographic — gated to staff-pii in staff_pii; aggregate-only breakdown in staff_summary.
       - name: is_hispanic
         description: >-
           TRUE if the staff member identified as Hispanic/Latino/Latinx in the
