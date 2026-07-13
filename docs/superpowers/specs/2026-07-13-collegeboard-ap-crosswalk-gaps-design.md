@@ -43,10 +43,13 @@ unpicked-up and manually trigger the `stg_collegeboard__ap` materialization.
 
 - Writing directly to the Google Sheet (no available tool can edit Sheet cells —
   Drive MCP only creates/reads files).
-- Fuzzy/similarity name matching. Only deterministic transforms (case-fold,
-  diacritic-strip) are used.
-- Resolving the `no_match` bucket automatically — those need a human to
-  investigate (DOB typo, name mismatch beyond diacritics, student not in PS).
+- Fuzzy/similarity name matching (edit distance, phonetic matching, etc.). Only
+  deterministic transforms (case-fold, diacritic-strip, hyphen/space
+  token-splitting, exact ±1-year day-count comparison) are used.
+- Resolving a residual `no_match` case automatically — whatever's left after all
+  tiers still needs a human to investigate. (For the validated 2025-2026
+  backlog, that residual was zero — see below — but future years' causes may
+  differ.)
 - Detecting or flagging _why_ a given crosswalk gap exists (see below) on a
   per-row basis, and any Ops escalation or College Board account-merge workflow
   — the action taken (add a new `CB ID → student_number` row) is the same
@@ -108,30 +111,85 @@ parameter needed, so the same query works unchanged in future years.
 2. **Tier B** — same DOB, but `last_name` compared with diacritics stripped on
    both sides via `REGEXP_REPLACE(NORMALIZE(x, NFD), r"\pM", "")` (handles CB's
    ASCII-only file format vs. accented PowerSchool names, e.g. `Peña` → `Pena`).
-3. **Tiebreak** — when Tier A/B together yield more than one distinct
-   `student_number`, narrow further using `first_name` (same case-fold /
-   diacritic-strip logic).
+3. **Tier C** — same DOB, but `last_name` compared by token instead of whole
+   string: split on hyphens/spaces on both sides (case-fold + diacritic-strip
+   each token), match if any token is shared. Handles compound/hyphenated
+   surnames recorded inconsistently between CB and PowerSchool — e.g. a CB
+   single-word surname vs. a PS surname with a name-suffix (`Jr`, `II`, ...)
+   appended, or a two-word surname where CB kept only one half and PS kept both
+   (in either direction), or a hyphen on one side vs. a space on the other.
+   Still a deterministic string transform, not similarity scoring.
+4. **Tier D** — DOB exactly 365 or 366 days apart
+   (`ABS(DATE_DIFF(...)) IN (365, 366)` — equivalent to "same month/day, year
+   off by exactly one" accounting for leap years) **and** both `first_name` and
+   `last_name` match exactly (post case-fold/diacritic-strip). Handles a
+   DOB-year transcription mismatch between CB and PowerSchool. Requires both
+   names to match (not just last name) since loosening the DOB itself raises
+   collision risk more than Tier C does.
+5. **Tiebreak** — when Tiers A-D together yield more than one distinct
+   `student_number` for a gap, narrow further using `first_name` (same case-fold
+   / diacritic-strip logic, plus stripping non-alphanumeric characters so an
+   apostrophe in a name doesn't block the match either).
 
 Each gap buckets into:
 
-| Bucket        | Meaning                                              | Validated count (2025-2026) |
-| ------------- | ---------------------------------------------------- | --------------------------- |
-| `resolved`    | Exactly one PS candidate after Tier A/B (+ tiebreak) | 157                         |
-| `multi_match` | Still >1 candidate after the first-name tiebreak     | 3                           |
-| `no_match`    | No PS candidate found at all                         | 13                          |
+| Bucket     | Meaning                                             | Validated count (2025-2026) |
+| ---------- | --------------------------------------------------- | --------------------------- |
+| `resolved` | Exactly one PS candidate after Tiers A-D + tiebreak | 173                         |
+| `no_match` | No PS candidate found at all                        | 0                           |
 
-Query validated live against the current 173-gap backlog during design (see
-conversation) — a single `WITH` query using the tiers above.
+Query validated live against the full 173-gap backlog during design (see
+conversation, PII redacted here per repo policy — real names/DOBs are not
+committed to git). Tiers A/B alone resolved 157 directly + 3 via tiebreak (one
+tiebreak pair was same-DOB/same-surname twins, correctly split by first name).
+The remaining 13 all initially landed in `no_match`; reviewing each one by hand
+surfaced two deterministic, generalizable causes (9 compound/ hyphenated-surname
+cases → Tier C, 3 DOB-year-off-by-one cases → Tier D, 1 case that turned out to
+already be covered by Tier C once re-checked carefully). Adding Tiers C and D
+resolved all 13, and — verified by comparing old vs. new `student_number` for
+every gap that already had a clean Tier A/B match — introduced zero regressions.
+
+This is not a guarantee that every future year's backlog reaches 0 `no_match` —
+see "Continuous Improvement" below.
+
+## Continuous Improvement — No-Match Root Cause Review
+
+Whatever remains in `no_match` after Tiers A-D is not a dead end. Before handing
+that bucket to the user as "needs manual investigation," the skill should try to
+characterize _why_ each one didn't match — the same process used during design
+(with results discussed in chat, never written to a committed file, since it
+necessarily involves real student names):
+
+1. Loosen the DOB constraint (any academic_year, not just the gap's own year)
+   and look for the same last_name/token — reveals students who exist in PS
+   under a different year (e.g., withdrawn, or an enrollment-year mismatch).
+2. Loosen the last_name constraint (same DOB, any last_name in the same year) —
+   reveals a name that changed or was recorded very differently.
+3. If a case reveals a new deterministic, generalizable pattern (not one-off
+   noise), that's a signal to add another tier — the same way Tier C and D were
+   derived from the 2025-2026 backlog. If it's genuinely one-off (e.g., the
+   student really isn't in PowerSchool at all), it stays a manual case.
+
+This step is diagnostic, not a promise to keep expanding tiers forever — the
+goal is to keep the manual-review bucket small and to make future additions
+evidence-based rather than speculative.
 
 ## Output Format
 
-No files. Results are presented as markdown tables directly in chat:
+No files. Results are presented as markdown tables directly in chat, delivered
+progressively rather than all at once (see Workflow) so the user doesn't lose
+track of where they are:
 
-- `resolved`: batched 20 rows at a time (`College_Board_ID`,
+- A one-line **pre-audit summary** (raw student count, exam-score count, gap
+  count) before running the match.
+- A **tier breakdown** (counts per Tier A/B/C/D + tiebreak + residual
+  `no_match`) after running the match, before showing any data.
+- `resolved`: one batch of 20 rows at a time (`College_Board_ID`,
   `PowerSchool_Student_Number`) — ready to copy straight into the Google Sheet.
-- `multi_match` and `no_match`: small enough (single digits to low teens) for
-  one table each, including CB first/last name and DOB so the user can
-  investigate.
+  The skill waits for the user to confirm before showing the next batch.
+- residual `no_match` (if any): a single table with CB first/last name and DOB
+  so the user can investigate — small enough (single digits to low teens
+  historically) not to need batching.
 
 ## PII Handling
 
@@ -142,20 +200,46 @@ constraint explicitly since it's meant to be picked up by future sessions.
 
 ## Workflow
 
-1. Check whether raw `kipptaf/collegeboard/ap` partitions materialized more
-   recently than `stg_collegeboard__ap`. If so, explain why to the user and ask
-   approval to launch a `stg_collegeboard__ap` run; only proceed once approved
-   and the run succeeds.
-2. Query
-   `kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves`
-   joined to `stg_collegeboard__ap` to get the current gap list.
-3. Run the tiered match against
-   `kipptaf_powerschool.base_powerschool__student_enrollments`.
-4. Present `resolved` in batches of 20, then `multi_match`, then `no_match`.
-5. User manually pastes `resolved` rows (and any manually-confirmed
-   `multi_match` / `no_match` resolutions) into the Google Sheet.
-6. User (or the agent, on request) re-runs the audit query to confirm the gap
-   count dropped.
+1. **Ingestion check.** Check whether raw `kipptaf/collegeboard/ap` partitions
+   materialized more recently than `stg_collegeboard__ap`. If so, explain why to
+   the user and ask approval to launch a `stg_collegeboard__ap` run; only
+   proceed once approved and the run succeeds.
+2. **Pre-audit summary.** Before running the tiered match, get cheap counts:
+   total students in the raw file for the relevant admin (`stg_collegeboard__ap`
+   row count for the year), total exam scores (`int_collegeboard__ap_unpivot`
+   row count for the year), and the gap count (from
+   `kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves`).
+   Present as: "The raw AP file has _N_ students resolving to _M_ exam scores.
+   Of those, _G_ aren't in the crosswalk yet." Ask: "Ready for me to run the
+   matching audit against PowerSchool?" Don't proceed until the user confirms.
+3. **Run the tiered match** (Tiers A-D + tiebreak) against
+   `kipptaf_powerschool.base_powerschool__student_enrollments` once approved.
+4. **Tier breakdown.** Present counts per tier (how many resolved at Tier A, B,
+   C, D, via tiebreak, and how many remain `no_match`). Ask: "Ready to start
+   copy-pasting matches into the sheet?" Don't proceed until confirmed.
+5. **Batch-by-batch delivery.** Present `resolved` one batch of 20 at a time.
+   After each batch, ask "Ready for the next batch?" and wait for confirmation
+   before showing the next one — never dump all batches in a single message.
+6. User manually pastes each batch's rows into the Google Sheet as they go (or
+   after the last batch — whichever the user prefers).
+7. **Post-paste reconciliation.** Once the last batch has been delivered,
+   monitor for the Google Sheet's sync to land: watch
+   `stg_google_sheets__collegeboard__ap_id_crosswalk`'s row count (via Dagster
+   asset health / BigQuery) until it increases by the number of resolved rows
+   generated. Once it does, tell the user explicitly that a reconciliation check
+   is about to run, then compare the generated `resolved` list against the
+   actual new rows in that table to catch:
+   - **missing rows** — a generated pair that never made it in (paste error,
+     lost row)
+   - **duplicate rows** — the same `College_Board_ID` appearing more than once,
+     possibly mapped to different student numbers
+   - **incorrect rows** — a `College_Board_ID` present but with a different
+     `student_number` than generated (transcription/copy-paste error)
+8. User (or the agent, on request) re-runs the audit query to confirm the gap
+   count dropped to the expected residual (0 for a fully-resolved run, or the
+   remaining `no_match` count otherwise).
+9. **No-match root-cause review** (if any remain) — see "Continuous Improvement"
+   above.
 
 ## Skill Packaging
 
@@ -166,8 +250,12 @@ New skill: `.claude/skills/collegeboard-ap-crosswalk-gaps/SKILL.md`.
   the dashboard," "push the AP file to Dagster," or any question about students
   missing from the AP score dashboard due to crosswalk or ingestion gaps.
 - **Contents**: the raw-vs-staging staleness check and approval-gated
-  `stg_collegeboard__ap` run steps, the tiered SQL query (parameter-free,
-  self-scoping by year), the bucket definitions, the "why crosswalk gaps happen"
-  explanation to surface to the user alongside results, the chat-table output
-  format (batches of 20 for `resolved`), the PII-stays-local reminder, and the
-  paste-then-reverify workflow steps above.
+  `stg_collegeboard__ap` run steps; the pre-audit-summary and tier-breakdown
+  confirmation gates; the Tier A-D + tiebreak SQL (parameter-free, self-scoping
+  by year); the "why crosswalk gaps happen" explanation to surface alongside
+  results; the one-batch-at-a-time chat-table delivery (batches of 20, confirm
+  between each); the post-paste reconciliation check against
+  `stg_google_sheets__collegeboard__ap_id_crosswalk`
+  (missing/duplicate/incorrect rows); the no-match root-cause review process;
+  and the PII-stays-local reminder (including: never write real student
+  names/DOBs into a committed file — chat/terminal only).
