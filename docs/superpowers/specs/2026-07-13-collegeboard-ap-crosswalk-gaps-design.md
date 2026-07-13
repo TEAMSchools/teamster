@@ -133,10 +133,11 @@ parameter needed, so the same query works unchanged in future years.
 
 Each gap buckets into:
 
-| Bucket     | Meaning                                             | Validated count (2025-2026) |
-| ---------- | --------------------------------------------------- | --------------------------- |
-| `resolved` | Exactly one PS candidate after Tiers A-D + tiebreak | 173                         |
-| `no_match` | No PS candidate found at all                        | 0                           |
+| Bucket               | Meaning                                                 | Validated count (2025-2026) |
+| -------------------- | ------------------------------------------------------- | --------------------------- |
+| `resolved`           | Tier A/B match, or Tier C/D match with gender agreement | 173                         |
+| `flagged_for_review` | Tier C/D match but gender _disagrees_ — see below       | 0                           |
+| `no_match`           | No PS candidate found at all                            | 0                           |
 
 Query validated live against the full 173-gap backlog during design (see
 conversation, PII redacted here per repo policy — real names/DOBs are not
@@ -151,6 +152,43 @@ every gap that already had a clean Tier A/B match — introduced zero regression
 
 This is not a guarantee that every future year's backlog reaches 0 `no_match` —
 see "Continuous Improvement" below.
+
+## Confidence Corroboration for Tier C/D
+
+Tiers C and D loosen a matching field (partial surname / DOB year), which is a
+strictly wider net than Tiers A/B. Rather than asserting these matches are
+certain, the skill checks two independent signals — validated against all 13
+Tier C/D matches from the 2025-2026 backlog:
+
+1. **Gender agreement (hard gate).** Compare `gender` on `stg_collegeboard__ap`
+   against `gender` on
+   `kipptaf_powerschool.base_powerschool__student_enrollments` for the matched
+   `student_number` + academic_year. Gender has no legitimate reason to differ
+   between the two systems, so a mismatch moves that row from `resolved` to
+   `flagged_for_review` instead of including it in the copy-paste batch. All 13
+   Tier C/D matches agreed on gender in the 2025-2026 validation — 0 flagged.
+2. **AP course enrollment (informational, not a gate).** For Tier C/D matches
+   only, check whether the matched student was enrolled in the course
+   corresponding to the exam's `ps_ap_course_subject_code` (from
+   `int_collegeboard__ap_unpivot`, already joined via
+   `stg_google_sheets__collegeboard__ap_course_crosswalk`) in
+   `kipptaf_powerschool.base_powerschool__course_enrollments` for the same
+   academic_year. **ID-space note:** everything else in this skill matches to
+   PowerSchool's human-facing `student_number` (the column the crosswalk sheet
+   itself uses) — `base_powerschool__course_enrollments` keys enrollments by
+   `cc_studentid`, PowerSchool's internal numeric ID, which is a _different_
+   value from `student_number`. The join has to go through
+   `base_powerschool__student_enrollments` (same academic_year), which carries
+   both `student_number` and `studentid` (matching `cc_studentid`), to bridge
+   the two ID spaces — don't compare `student_number` to `cc_studentid`
+   directly. Presence is corroborating evidence; absence is _not_ evidence
+   against the match — testing without taking the class (and vice versa) is
+   normal, since College Board doesn't require enrollment in the course to sit
+   the exam. Surfaced as an annotation on the Tier C/D rows, not used to
+   include/exclude anything.
+
+Tier A/B rows skip both checks — the match is already tight enough that this
+would just be noise.
 
 ## Continuous Improvement — No-Match Root Cause Review
 
@@ -176,19 +214,29 @@ evidence-based rather than speculative.
 
 ## Output Format
 
-No files. Results are presented as markdown tables directly in chat, delivered
-progressively rather than all at once (see Workflow) so the user doesn't lose
-track of where they are:
+No files. Results are delivered progressively in chat (see Workflow) so the user
+doesn't lose track of where they are, in two different shapes depending on
+purpose:
 
 - A one-line **pre-audit summary** (raw student count, exam-score count, gap
-  count) before running the match.
-- A **tier breakdown** (counts per Tier A/B/C/D + tiebreak + residual
-  `no_match`) after running the match, before showing any data.
-- `resolved`: one batch of 20 rows at a time (`College_Board_ID`,
-  `PowerSchool_Student_Number`) — ready to copy straight into the Google Sheet.
-  The skill waits for the user to confirm before showing the next batch.
-- residual `no_match` (if any): a single table with CB first/last name and DOB
-  so the user can investigate — small enough (single digits to low teens
+  count) before running the match — plain text.
+- A **tier breakdown** (counts per Tier A/B/C/D + tiebreak +
+  `flagged_for_review` + residual `no_match`) after running the match, before
+  showing any data — plain text.
+- If a batch contains any Tier C/D rows, a small **markdown review table**
+  immediately above the paste block for just those rows (tier tag,
+  course-enrollment note) — for eyeballing, not pasting.
+- `resolved`: one batch of 20 rows at a time as a **plain delimited block**
+  (`College_Board_ID<tab>PowerSchool_Student_Number`, one pair per line, in a
+  fenced code block) — not a markdown table, so it pastes cleanly into two Sheet
+  columns without carrying pipe/dash formatting characters along. The skill
+  waits for the user to confirm before showing the next batch.
+- `flagged_for_review` (if any): rows where Tier C/D matched but gender
+  disagreed — held out of the copy-paste batches entirely, shown as a markdown
+  table (CB first/last/gender vs. PS first/last/gender) for the user to decide
+  on individually, not a paste block.
+- residual `no_match` (if any): a single markdown table with CB first/last name
+  and DOB so the user can investigate — small enough (single digits to low teens
   historically) not to need batching.
 
 ## PII Handling
@@ -214,15 +262,22 @@ constraint explicitly since it's meant to be picked up by future sessions.
    matching audit against PowerSchool?" Don't proceed until the user confirms.
 3. **Run the tiered match** (Tiers A-D + tiebreak) against
    `kipptaf_powerschool.base_powerschool__student_enrollments` once approved.
-4. **Tier breakdown.** Present counts per tier (how many resolved at Tier A, B,
-   C, D, via tiebreak, and how many remain `no_match`). Ask: "Ready to start
-   copy-pasting matches into the sheet?" Don't proceed until confirmed.
-5. **Batch-by-batch delivery.** Present `resolved` one batch of 20 at a time.
-   After each batch, ask "Ready for the next batch?" and wait for confirmation
-   before showing the next one — never dump all batches in a single message.
-6. User manually pastes each batch's rows into the Google Sheet as they go (or
+4. **Corroborate Tier C/D matches.** For every Tier C/D match, check gender
+   agreement (hard gate — mismatch moves the row to `flagged_for_review`) and AP
+   course enrollment (informational annotation only) as described above.
+5. **Tier breakdown.** Present counts per tier (how many resolved at Tier A, B,
+   C, D, via tiebreak, how many `flagged_for_review`, and how many remain
+   `no_match`). Ask: "Ready to start copy-pasting matches into the sheet?" Don't
+   proceed until confirmed.
+6. **Batch-by-batch delivery.** Present `resolved` one batch of 20 at a time
+   (Tier C/D rows tagged with their tier and course-enrollment note). After each
+   batch, ask "Ready for the next batch?" and wait for confirmation before
+   showing the next one — never dump all batches in a single message. Present
+   `flagged_for_review` separately, after the `resolved` batches, for the user
+   to decide on individually.
+7. User manually pastes each batch's rows into the Google Sheet as they go (or
    after the last batch — whichever the user prefers).
-7. **Post-paste reconciliation.** Once the last batch has been delivered,
+8. **Post-paste reconciliation.** Once the last batch has been delivered,
    monitor for the Google Sheet's sync to land: watch
    `stg_google_sheets__collegeboard__ap_id_crosswalk`'s row count (via Dagster
    asset health / BigQuery) until it increases by the number of resolved rows
@@ -235,11 +290,11 @@ constraint explicitly since it's meant to be picked up by future sessions.
      possibly mapped to different student numbers
    - **incorrect rows** — a `College_Board_ID` present but with a different
      `student_number` than generated (transcription/copy-paste error)
-8. User (or the agent, on request) re-runs the audit query to confirm the gap
+9. User (or the agent, on request) re-runs the audit query to confirm the gap
    count dropped to the expected residual (0 for a fully-resolved run, or the
    remaining `no_match` count otherwise).
-9. **No-match root-cause review** (if any remain) — see "Continuous Improvement"
-   above.
+10. **No-match root-cause review** (if any remain) — see "Continuous
+    Improvement" above.
 
 ## Skill Packaging
 
@@ -252,9 +307,13 @@ New skill: `.claude/skills/collegeboard-ap-crosswalk-gaps/SKILL.md`.
 - **Contents**: the raw-vs-staging staleness check and approval-gated
   `stg_collegeboard__ap` run steps; the pre-audit-summary and tier-breakdown
   confirmation gates; the Tier A-D + tiebreak SQL (parameter-free, self-scoping
-  by year); the "why crosswalk gaps happen" explanation to surface alongside
-  results; the one-batch-at-a-time chat-table delivery (batches of 20, confirm
-  between each); the post-paste reconciliation check against
+  by year); the Tier C/D corroboration checks (gender hard-gate,
+  course-enrollment annotation, including the `student_number` vs.
+  `cc_studentid` ID-space note); the "why crosswalk gaps happen" explanation to
+  surface alongside results; the one-batch-at-a-time chat-table delivery
+  (batches of 20, confirm between each, plain delimited copy/paste format — not
+  a markdown table — so rows paste cleanly into Sheet columns); the post-paste
+  reconciliation check against
   `stg_google_sheets__collegeboard__ap_id_crosswalk`
   (missing/duplicate/incorrect rows); the no-match root-cause review process;
   and the PII-stays-local reminder (including: never write real student
