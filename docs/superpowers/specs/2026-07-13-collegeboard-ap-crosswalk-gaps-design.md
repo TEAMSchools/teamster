@@ -1,7 +1,8 @@
 # College Board AP ID Crosswalk Gap Resolution — Design Spec
 
-**Date:** 2026-07-13 **Issue:** none (direct branch, user declined an issue)
-**Status:** Approved
+**Date:** 2026-07-13 **Issue:**
+[#4390](https://github.com/TEAMSchools/teamster/issues/4390) **Status:**
+Approved
 
 ## Problem
 
