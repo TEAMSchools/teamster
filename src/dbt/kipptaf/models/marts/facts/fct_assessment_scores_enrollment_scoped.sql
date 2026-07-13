@@ -165,6 +165,170 @@ with
                 cast(sa.student_number as string), sa.state_student_id
             ) as student_identifier,
         from state_all as sa
+    ),
+
+    iready_scores_raw as (
+        select
+            student_id as student_number,
+            academic_year_int as academic_year,
+            subject as module_code,
+            illuminate_subject,
+            test_round as administration_period,
+            completion_date as test_date,
+            `start_date`,
+            _dbt_source_project,
+
+            overall_relative_placement as proficiency_level,
+
+            'iready' as score_source,
+
+            cast(overall_scale_score as numeric) as scale_score,
+            cast(percentile as numeric) as growth_percentile,
+
+            overall_relative_placement_int >= 4 as is_mastery,
+        from {{ ref("int_iready__diagnostic_results") }}
+        where overall_scale_score is not null
+    ),
+
+    -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
+    -- same-day retests and duplicate rows exist upstream. Remove this dedupe
+    -- when staging is fixed.
+    iready_scores as (
+        {{
+            dbt_utils.deduplicate(
+                relation="iready_scores_raw",
+                partition_by="""
+                    _dbt_source_project,
+                    student_number,
+                    academic_year,
+                    administration_period,
+                    module_code,
+                    test_date
+                """,
+                order_by="start_date desc, scale_score desc",
+            )
+        }}
+    ),
+
+    star_scores_raw as (
+        select
+            student_display_id as student_number,
+            academic_year,
+            star_subject as module_code,
+            illuminate_subject,
+            screening_period_window_name as administration_period,
+            completed_date_value as test_date,
+            assessment_id,
+            _dbt_source_project,
+
+            state_benchmark_category_name as proficiency_level,
+
+            'star' as score_source,
+
+            cast(unified_score as numeric) as scale_score,
+            cast(percentile_rank as numeric) as growth_percentile,
+
+            state_benchmark_proficient = 'Yes' as is_mastery,
+        from {{ ref("stg_renlearn__star") }}
+        where
+            completed_date_value is not null
+            and unified_score is not null
+            and _dbt_source_project is not null
+    ),
+
+    -- TODO(#4388): stg_renlearn__star holds fiscal-year re-pull duplicates
+    -- (same assessment_id in two partitions) and same-day retests. Remove
+    -- this dedupe when staging is fixed.
+    star_scores as (
+        {{
+            dbt_utils.deduplicate(
+                relation="star_scores_raw",
+                partition_by="""
+                    _dbt_source_project,
+                    student_number,
+                    academic_year,
+                    administration_period,
+                    module_code,
+                    test_date
+                """,
+                order_by="scale_score desc, assessment_id desc",
+            )
+        }}
+    ),
+
+    -- DIBELS benchmark composites are unique at this grain upstream
+    -- (verified); no dedupe needed.
+    dibels_scores as (
+        select
+            student_number,
+            academic_year,
+            measure_standard as module_code,
+            illuminate_subject,
+            `period` as administration_period,
+            client_date as test_date,
+            _dbt_source_project,
+
+            measure_standard_level as proficiency_level,
+
+            'dibels' as score_source,
+
+            cast(measure_standard_score as numeric) as scale_score,
+            cast(measure_percentile as numeric) as growth_percentile,
+
+            measure_standard_level_int >= 3 as is_mastery,
+        from {{ ref("int_amplify__all_assessments") }}
+        where assessment_type = 'Benchmark' and measure_standard = 'Composite'
+    ),
+
+    vendor_all as (
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            growth_percentile,
+            is_mastery,
+        from iready_scores
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            growth_percentile,
+            is_mastery,
+        from star_scores
+
+        union all
+
+        select
+            student_number,
+            academic_year,
+            module_code,
+            illuminate_subject,
+            administration_period,
+            test_date,
+            _dbt_source_project,
+            proficiency_level,
+            score_source,
+            scale_score,
+            growth_percentile,
+            is_mastery,
+        from dibels_scores
     )
 
 /* internal assessments */
@@ -203,6 +367,9 @@ select
 
     ia.scale_score,
     ia.percent_correct,
+
+    cast(null as numeric) as growth_percentile,
+
     ia.proficiency_level,
     ia.is_mastery,
     ia.response_type,
@@ -262,6 +429,9 @@ select
 
     su.scale_score,
     su.percent_correct,
+
+    cast(null as numeric) as growth_percentile,
+
     su.performance_band as proficiency_level,
     su.is_proficient as is_mastery,
 
@@ -286,3 +456,69 @@ inner join
     and su.illuminate_subject = sr.subject_area
     and su._dbt_source_project = sr._dbt_source_project
     and sr.source_type in ('state_nj', 'state_fl')
+
+union all
+
+/* vendor assessments (iReady, STAR, DIBELS) */
+select
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "va.score_source",
+                "va._dbt_source_project",
+                "va.student_number",
+                "va.academic_year",
+                "va.administration_period",
+                "va.module_code",
+                "va.test_date",
+            ]
+        )
+    }} as assessment_score_key,
+
+    {{
+        dbt_utils.generate_surrogate_key(
+            [
+                "va.score_source",
+                "va.module_code",
+                "null",
+                "va.academic_year",
+                "va._dbt_source_project",
+                "va.administration_period",
+                "null",
+                "null",
+            ]
+        )
+    }} as assessment_administration_key,
+
+    sr.student_section_enrollment_key,
+
+    va.test_date as test_date_key,
+
+    va.scale_score,
+
+    cast(null as numeric) as percent_correct,
+
+    va.growth_percentile,
+    va.proficiency_level,
+    va.is_mastery,
+
+    cast(null as string) as response_type,
+    cast(null as string) as response_type_code,
+    cast(null as string) as response_type_description,
+    cast(null as string) as response_type_root_description,
+    cast(null as bool) as is_replacement,
+    cast(null as numeric) as performance_band_label_number,
+
+    sr.resolution_type as enrollment_resolution,
+from vendor_all as va
+-- the resolver keys vendor scores on illuminate_subject (the vendor->course
+-- subject mapping), not the raw vendor subject the assessment_score_key
+-- hashes. INNER scopes the fact to vendor scores with a resolved section.
+inner join
+    {{ ref("int_assessments__resolved_section_enrollments") }} as sr
+    on va.student_number = sr.powerschool_student_number
+    and va.academic_year = sr.academic_year
+    and va.administration_period = sr.administration_period
+    and va.illuminate_subject = sr.subject_area
+    and va._dbt_source_project = sr._dbt_source_project
+    and va.score_source = sr.source_type
