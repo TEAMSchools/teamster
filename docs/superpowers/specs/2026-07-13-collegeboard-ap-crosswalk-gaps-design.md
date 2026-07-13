@@ -17,8 +17,21 @@ lists the unresolved `ap_number_ap_id` values), but resolving each one has been
 a manual, one-student-at-a-time BigQuery lookup (plug in first name, last name,
 and DOB, rerun, repeat) — 173 times for the 2025-2026 admin.
 
+There's also an ingestion-side gap upstream of the crosswalk. Raw AP files
+dropped to the Couchdrop/Google Drive folder land in the partitioned
+`kipptaf/collegeboard/ap` asset, but `stg_collegeboard__ap`'s automation
+condition currently includes a `school_year = N+1` partition in its range
+(extending to `CURRENT_FISCAL_YEAR.fiscal_year + 1`), which is always
+unmaterialized — that trips the condition's `not (any_deps_missing)` gate and
+blocks `stg_collegeboard__ap` from auto-rebuilding after a new file lands. This
+will recur every year until the automation condition itself is fixed (tracked
+separately), so until then, someone has to notice new raw data sitting
+unpicked-up and manually trigger the `stg_collegeboard__ap` materialization.
+
 ## Goals
 
+- Detect when raw AP data has landed but `stg_collegeboard__ap` hasn't picked it
+  up yet, and — with the user's explicit approval — trigger the materialization.
 - Replace the one-at-a-time lookup with a single bulk query that matches most
   gaps automatically.
 - Surface results as chat tables (batched, easy to copy/paste in the VS Code
@@ -34,6 +47,32 @@ and DOB, rerun, repeat) — 173 times for the 2025-2026 admin.
   diacritic-strip) are used.
 - Resolving the `no_match` bucket automatically — those need a human to
   investigate (DOB typo, name mismatch beyond diacritics, student not in PS).
+
+## Ingestion Refresh Design
+
+Before touching the crosswalk at all, the skill checks whether
+`stg_collegeboard__ap` actually reflects the latest raw drop:
+
+1. Compare materialization timestamps: `get_asset_health` /
+   `get_asset_materializations` on the raw `kipptaf/collegeboard/ap` partitions
+   (per school × school_year) vs. the staging asset
+   `kipptaf/collegeboard/stg_collegeboard__ap`.
+2. If a raw partition materialized more recently than `stg_collegeboard__ap`'s
+   last materialization, staging is stale — most likely blocked by the
+   future-partition automation-condition gap described above.
+3. **Always ask before launching anything.** Preview the run (`launch_run` with
+   `confirm=False`) and explain to the user why it's needed (which partitions
+   are newer, and that the automation condition is blocked by the unmaterialized
+   future-year partitions) before firing it with `confirm=True`. Never trigger a
+   production materialization without that explicit go-ahead, even though this
+   is expected to recur annually.
+4. After the run succeeds, re-check asset health to confirm
+   `stg_collegeboard__ap` picked up the new data. `int_collegeboard__ap_unpivot`
+   does not need a separate manual trigger — it rematerializes on its own via
+   the automation condition once `stg_collegeboard__ap` succeeds (observed
+   behavior from the 2025-2026 fix).
+5. Only once staging is confirmed fresh does the skill move on to the
+   crosswalk-gap matching below.
 
 ## Matching Design
 
@@ -80,26 +119,31 @@ constraint explicitly since it's meant to be picked up by future sessions.
 
 ## Workflow
 
-1. Query
+1. Check whether raw `kipptaf/collegeboard/ap` partitions materialized more
+   recently than `stg_collegeboard__ap`. If so, explain why to the user and ask
+   approval to launch a `stg_collegeboard__ap` run; only proceed once approved
+   and the run succeeds.
+2. Query
    `kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves`
    joined to `stg_collegeboard__ap` to get the current gap list.
-2. Run the tiered match against
+3. Run the tiered match against
    `kipptaf_powerschool.base_powerschool__student_enrollments`.
-3. Present `resolved` in batches of 20, then `multi_match`, then `no_match`.
-4. User manually pastes `resolved` rows (and any manually-confirmed
+4. Present `resolved` in batches of 20, then `multi_match`, then `no_match`.
+5. User manually pastes `resolved` rows (and any manually-confirmed
    `multi_match` / `no_match` resolutions) into the Google Sheet.
-5. User (or the agent, on request) re-runs the audit query to confirm the gap
-   count dropped, and re-triggers `stg_collegeboard__ap` /
-   `int_collegeboard__ap_unpivot` if the underlying data needs a rebuild.
+6. User (or the agent, on request) re-runs the audit query to confirm the gap
+   count dropped.
 
 ## Skill Packaging
 
 New skill: `.claude/skills/collegeboard-ap-crosswalk-gaps/SKILL.md`.
 
 - **Triggers**: "resolve CB AP ID crosswalk gaps," "unmatched college board
-  ids," "ap_id_crosswalk missing students," or any question about students
-  missing from the AP score dashboard due to crosswalk gaps.
-- **Contents**: the tiered SQL query (parameter-free, self-scoping by year), the
-  bucket definitions, the chat-table output format (batches of 20 for
-  `resolved`), the PII-stays-local reminder, and the paste-then-reverify
-  workflow steps above.
+  ids," "ap_id_crosswalk missing students," "new AP scores aren't showing up on
+  the dashboard," "push the AP file to Dagster," or any question about students
+  missing from the AP score dashboard due to crosswalk or ingestion gaps.
+- **Contents**: the raw-vs-staging staleness check and approval-gated
+  `stg_collegeboard__ap` run steps, the tiered SQL query (parameter-free,
+  self-scoping by year), the bucket definitions, the chat-table output format
+  (batches of 20 for `resolved`), the PII-stays-local reminder, and the
+  paste-then-reverify workflow steps above.
