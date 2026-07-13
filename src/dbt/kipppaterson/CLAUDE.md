@@ -21,9 +21,11 @@ This is the only NJ district using SFTP instead of ODBC for PowerSchool. Many
 gradebook-related models (GPA, category grades, assignments) are explicitly
 disabled.
 
-## Active Source Packages
+## Source Packages
 
-- `powerschool` (SFTP)
+Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`).
+Endpoint-level notes:
+
 - `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
   `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
   disabled in `dbt_project.yml`
