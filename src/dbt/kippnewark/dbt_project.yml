@@ -45,7 +45,7 @@ models:
             enforced: true
   finalsite:
     api:
-      +enabled: false
+      +enabled: true
   amplify:
     dds:
       +enabled: false
@@ -79,6 +79,11 @@ models:
   powerschool:
     +materialized: table
     sis:
+      intermediate:
+        int_powerschool__contacts:
+          +enabled: false
+        int_powerschool__person_contacts:
+          +enabled: false
       staging:
         sftp:
           +enabled: false
@@ -114,6 +119,28 @@ models:
             +enabled: false
           stg_powerschool__u_def_ext_students:
             +enabled: false
+          stg_powerschool__codeset:
+            +enabled: false
+          stg_powerschool__emailaddress:
+            +enabled: false
+          stg_powerschool__originalcontactmap:
+            +enabled: false
+          stg_powerschool__person:
+            +enabled: false
+          stg_powerschool__personaddress:
+            +enabled: false
+          stg_powerschool__personaddressassoc:
+            +enabled: false
+          stg_powerschool__personemailaddressassoc:
+            +enabled: false
+          stg_powerschool__personphonenumberassoc:
+            +enabled: false
+          stg_powerschool__phonenumber:
+            +enabled: false
+          stg_powerschool__studentcontactassoc:
+            +enabled: false
+          stg_powerschool__studentcontactdetail:
+            +enabled: false
   renlearn:
     +materialized: table
     staging:
@@ -143,7 +170,7 @@ sources:
   finalsite:
     finalsite:
       contacts:
-        +enabled: false
+        +enabled: true
   powerschool:
     sis:
       staging:
@@ -180,6 +207,28 @@ sources:
             src_powerschool__sced_code_mapping:
               +enabled: false
             src_powerschool__u_def_ext_students:
+              +enabled: false
+            src_powerschool__codeset:
+              +enabled: false
+            src_powerschool__emailaddress:
+              +enabled: false
+            src_powerschool__originalcontactmap:
+              +enabled: false
+            src_powerschool__person:
+              +enabled: false
+            src_powerschool__personaddress:
+              +enabled: false
+            src_powerschool__personaddressassoc:
+              +enabled: false
+            src_powerschool__personemailaddressassoc:
+              +enabled: false
+            src_powerschool__personphonenumberassoc:
+              +enabled: false
+            src_powerschool__phonenumber:
+              +enabled: false
+            src_powerschool__studentcontactassoc:
+              +enabled: false
+            src_powerschool__studentcontactdetail:
               +enabled: false
   renlearn:
     renlearn:

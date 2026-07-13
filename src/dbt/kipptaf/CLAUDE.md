@@ -88,6 +88,24 @@ are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
 
+### Finalsite contact unions
+
+`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` are
+kipptaf `union_relations` views over per-region finalsite sources.
+
+- **Union CUTOVER regions, not merely api-enabled ones.** Miami has the
+  finalsite api enabled with contacts data AND `powerschool_student_number`s, so
+  unioning it into `int_finalsite__student_contacts` double-counts against the
+  PowerSchool branch of `int_students__contacts` (the grain test catches it).
+  `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
+  and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
+  Newark rows (null prefix) never reach the Focus feeds.
+- **Asymmetric source schema**: `sources-kippmiami.yml` finalsite carries a
+  `staging`→`zz_stg_` branch (single-PR pattern, needs a staged copy for CI),
+  while `sources-kippnewark.yml` is dev-only (staging→prod). A cross-region
+  finalsite union pulls a `zz_stg` seeding dependency from Miami but reads prod
+  for Newark — a Newark-only union is CI-safe without staging.
+
 ### `extracts/powerschool/` special case
 
 `rpt_powerschool__autocomm_*` models define a shared export format but are
@@ -102,6 +120,15 @@ contract-columns-only — NO data tests or descriptions (those live on the kippt
 view). A new kipptaf region source (`sources-kipp*.yml`) needs the
 `dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
 can't read it.
+
+**finalsite→focus exception**: the kippmiami `rpt_focus__*` are NOT thin
+pass-throughs — they are the reconciliation layer (import-once / diff against
+current Focus via the `focus` package, which only kippmiami has). kipptaf
+`rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
+actual SFTP feed. Per feed: addresses/contacts/demographics import-once
+(presence anti-join, with a null/completeness gate #4320); enrollment diffs and
+additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
+`docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 
 ## `dbt_project.yml` Inherited Defaults
 
@@ -313,6 +340,16 @@ from there. Seed EVERY district that unions into the kipptaf model (e.g.
 `int_pearson__*`, not the package `stg_*`).
 
 Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
+
+## Stale-wide `zz_stg` union defer copy
+
+When a kipptaf `union_relations` wrapper's `zz_stg` defer copy is wider than
+current (e.g. a district lags a column-drop rollout, so the prod-cloned copy
+still carries the dropped column), rebuild the wrapper `--target staging`:
+`union_relations` recomputes the column intersection from the CURRENT district
+`zz_stg` sources, yielding a corrected (narrow) copy — no prod rematerialization
+and no waiting on the lagging district. Used to unblock CI on a downstream
+consumer that fails on the stale wide column.
 
 ## Verifying a coalesce/override layer is vestigial
 

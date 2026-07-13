@@ -14,7 +14,11 @@ with
             home_department_name,
             job_title,
         from {{ ref("int_people__staff_roster") }}
-        where not is_prestart and worker_status_code != 'Terminated'
+        where
+            not is_prestart
+            and worker_status_code != 'Terminated'
+            -- Paterson gated from Clever until #4193; drop with the sibling feeds
+            and home_work_location_dagster_code_location != 'kipppaterson'
 
         union all
 
@@ -33,6 +37,7 @@ with
             department as home_department_name,
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
+        where dagster_code_location != 'kipppaterson'
     ),
 
     schools as (

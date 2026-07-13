@@ -634,15 +634,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__spenrollments
-      - name: int_powerschool__student_contacts
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__student_contacts
       - name: int_powerschool__student_enrollment_union
         config:
           meta:
@@ -652,15 +643,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__student_enrollment_union
-      - name: int_powerschool__student_contacts_pivot
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__student_contacts_pivot
       - name: int_powerschool__teachers
         config:
           meta:
@@ -724,6 +706,15 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__gpa_cumulative
+      - name: int_powerschool__gpa_cumulative_year
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - int_powerschool__gpa_cumulative_year
       - name: int_powerschool__gradebook_assignments
         config:
           meta:

@@ -1,26 +1,56 @@
 with
-    students_union as (
-        select _dbt_source_relation, dcid, student_number,
-        from {{ ref("stg_powerschool__students") }}
+    contacts as (
+        select
+            student_number,
+            contact_slot,
+            relationship,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+            _dbt_source_project,
+
+            coalesce(finalsite_contact_id, personid) as person_identity,
+        from {{ ref("int_students__contacts") }}
+    ),
+
+    keyed as (
+        select
+            student_number,
+            contact_slot,
+            relationship,
+            is_emergency,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+
+            {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
+
+            -- keyed identically to dim_student_contact_persons: contact_1 by the
+            -- person's real identity, emergency by student + contact slot
+            if(
+                contact_slot = 'contact_1',
+                {{
+                    dbt_utils.generate_surrogate_key(
+                        ["_dbt_source_project", "person_identity"]
+                    )
+                }},
+                {{
+                    dbt_utils.generate_surrogate_key(
+                        ["_dbt_source_project", "student_number", "contact_slot"]
+                    )
+                }}
+            ) as student_contact_person_key,
+        from contacts
     )
 
 select
-    {{ dbt_utils.generate_surrogate_key(["s.student_number"]) }} as student_key,
-
-    {{ dbt_utils.generate_surrogate_key(["c._dbt_source_project", "c.personid"]) }}
-    as student_contact_person_key,
-
-    c.relationship_type,
-    c.contactpriorityorder as priority,
-
-    c.isemergency = 1 as is_emergency,
-    c.schoolpickupflg = 1 as is_pickup,
-    c.iscustodial = 1 as is_custodial,
-    c.liveswithflg = 1 as is_household_member,
-
-from {{ ref("int_powerschool__contacts") }} as c
-inner join
-    students_union as s
-    on c.studentdcid = s.dcid
-    and {{ union_dataset_join_clause(left_alias="c", right_alias="s") }}
-where c.person_type != 'self'
+    student_key,
+    student_contact_person_key,
+    relationship,
+    contact_slot,
+    is_emergency,
+    is_pickup,
+    is_custodial,
+    is_household_member,
+from keyed

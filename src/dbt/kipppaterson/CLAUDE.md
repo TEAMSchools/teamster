@@ -29,6 +29,12 @@ disabled.
   disabled in `dbt_project.yml`
 - `amplify` — both `dds` and `mclass/api` disabled
 - `finalsite`
+- `deanslist` — `behavior`, `comm_log`, `incidents`, `roster_assignments`,
+  `rosters`, `students`, `terms`, and `users` endpoints pulled. The
+  `stg_deanslist__dff_stats`, `stg_deanslist__followups`,
+  `stg_deanslist__homework`, and `stg_deanslist__lists` staging models (and
+  their `src_deanslist__*` sources) are disabled in `dbt_project.yml` — Paterson
+  does not pull those endpoints, so no Avro exists for them
 
 ## Models in package-named directories
 

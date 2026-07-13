@@ -282,10 +282,34 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-deanslist-api
+  name: op-deanslist-api-kippnewark
   namespace: dagster-cloud
 spec:
-  itemPath: vaults/Data Team/items/DeansList API
+  itemPath: vaults/Data Team/items/DeansList API - Newark
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-deanslist-api-kippcamden
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/DeansList API - Camden
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-deanslist-api-kippmiami
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/DeansList API - Miami
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-deanslist-api-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/DeansList API - Paterson
 ---
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
@@ -390,3 +414,27 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Finalsite API - Miami
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-finalsite-api-kippnewark
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Finalsite API - Newark
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-finalsite-api-kippcamden
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Finalsite API - Camden
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-finalsite-api-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Finalsite API - Paterson

@@ -4,8 +4,12 @@ cubes:
     sql_table: kipptaf_marts.fct_student_attendance_daily
 
     joins:
+      # Join on the raw DATE key, not the date_day time dimension — Cube wraps
+      # time dimensions in the query-timezone conversion (convertTz) inside
+      # join predicates, which breaks the equality against the unconverted
+      # fact-side date under any non-UTC timezone (#4298).
       - name: dates
-        sql: "{dates.date_day} = CAST({CUBE}.date_key AS TIMESTAMP)"
+        sql: "{dates.date_key} = {CUBE}.date_key"
         relationship: many_to_one
 
       - name: student_school_enrollments

@@ -12,20 +12,23 @@ locations:
           - name: secret-volume
             readOnly: true
             mountPath: /etc/secret-volume
+          - name: deanslist-keys
+            readOnly: true
+            mountPath: /etc/deanslist
         volumes:
           - name: secret-volume
             projected:
               sources:
                 - secret:
-                    name: op-deanslist-api
-                    items:
-                      - key: deanslist_api_key_map.yaml
-                        path: deanslist_api_key_map_yaml
-                - secret:
                     name: op-ps-ssh-kippcamden
                     items:
                       - key: password
                         path: powerschool_ssh_password.txt
+          - name: deanslist-keys
+            projected:
+              sources:
+                - secret:
+                    name: op-deanslist-api-kippcamden
         server_k8s_config:
           pod_spec_config:
             affinity:
@@ -130,16 +133,21 @@ locations:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
                     key: host
-              - name: DEANSLIST_SUBDOMAIN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-deanslist-api
-                    key: subdomain
               - name: OVERGRAD_API_KEY
                 valueFrom:
                   secretKeyRef:
                     name: op-overgrad-api-kippcamden
                     key: credential
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippcamden
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippcamden
+                    key: password
         run_k8s_config:
           container_config:
             env:
@@ -238,13 +246,18 @@ locations:
                   secretKeyRef:
                     name: op-titan-sftp-kippcamden
                     key: host
-              - name: DEANSLIST_SUBDOMAIN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-deanslist-api
-                    key: subdomain
               - name: OVERGRAD_API_KEY
                 valueFrom:
                   secretKeyRef:
                     name: op-overgrad-api-kippcamden
                     key: credential
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippcamden
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kippcamden
+                    key: password
