@@ -93,17 +93,26 @@ region. No write access to PowerSchool here.
 
 ## Phase 4: Pre-audit summary
 
-Get cheap counts before running anything expensive:
+Get cheap counts before running anything expensive. "The relevant admin year" is
+the `enrollment_school_year` of whatever raw file Phase 1 just confirmed is
+fresh — if you didn't just ingest a specific file this run (e.g. you're
+re-running the audit later), use the most recent `enrollment_school_year`
+present in `stg_collegeboard__ap`. Don't guess a year from ambient context
+without checking one of these two sources first.
 
-- Total raw students: `stg_collegeboard__ap` row count for the relevant admin
-  year.
+- Total raw students: `stg_collegeboard__ap` row count for that admin year.
 - Total exam scores: `int_collegeboard__ap_unpivot` row count for the same year.
 - Gap count:
   `select count(*) from kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves`.
+  **This count has no year filter** — the underlying audit table carries no year
+  column, so it's a global count of every currently-unresolved gap across all
+  admin years, not scoped to the year above. Say so explicitly rather than
+  implying it's year-scoped like the other two counts.
 
-Present as: "The raw AP file has _N_ students resolving to _M_ exam scores. Of
-those, _G_ aren't in the crosswalk yet." Then ask: "Ready for me to run the
-matching audit against PowerSchool?" **Don't proceed without confirmation.**
+Present as: "The raw AP file has _N_ students resolving to _M_ exam scores for
+[year]. Separately, _G_ College Board IDs are unresolved in the crosswalk across
+all years." Then ask: "Ready for me to run the matching audit against
+PowerSchool?" **Don't proceed without confirmation.**
 
 ## Phase 5: Run the tiered match
 
