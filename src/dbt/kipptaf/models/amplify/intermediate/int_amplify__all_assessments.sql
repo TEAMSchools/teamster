@@ -243,6 +243,10 @@ select
     p.moy as moy_composite,
     p.eoy as eoy_composite,
 
+    'Text Study' as illuminate_subject,
+
+    concat('kipp', lower(s.region)) as _dbt_source_project,
+
     case
         s.period when 'BOY' then 'MOY' when 'MOY' then 'EOY'
     end as benchmark_goal_season,
@@ -323,6 +327,10 @@ select
     p.boy as boy_composite,
     p.moy as moy_composite,
     p.eoy as eoy_composite,
+
+    'Text Study' as illuminate_subject,
+
+    concat('kipp', lower(s.region)) as _dbt_source_project,
 
     'NA' as benchmark_goal_season,
 
