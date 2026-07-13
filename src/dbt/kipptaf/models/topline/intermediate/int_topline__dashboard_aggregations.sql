@@ -731,8 +731,12 @@ with
             rollup_config as rc
             on f.layer = rc.layer
             and f.indicator = rc.topline_indicator
+        /* only elapsed weeks are as-of candidates: weekly sources are
+           calendar-spine-filled through year end, so an unbounded max(term)
+           binds in-progress periods (ytd all year) to future zero/null weeks */
         where
             f.period_type = 'week'
+            and f.term <= current_date('{{ var("local_timezone") }}')
             and (rc.period_rollup = 'as_of' or rc.period_rollup is null)
     ),
 
