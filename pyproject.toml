@@ -20,7 +20,7 @@ dependencies = [
   "dbt-core",
   "beautifulsoup4>=4.12.2",
   "cramjam>=2.7",
-  "dlt>=1.10",
+  "dlt>=1.29.0",
   "fastavro>=1.9",
   "ldap3>=2.9",
   "oracledb>=1.4",
