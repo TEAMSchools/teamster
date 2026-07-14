@@ -49,6 +49,11 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `build_resources()` context manager to instantiate, then call methods on
   `resources.<name>`. `PrivateAttr` fields (`_log`, `_service`) accept direct
   assignment; use `object.__setattr__` to monkey-patch methods.
+- **Testing env-var resolution offline**:
+  `resource.process_config_and_initialize()` returns an initialized copy with
+  `EnvVar` / `EnvVar.int` fields resolved but WITHOUT running
+  `setup_for_execution` — no live connection or secret file needed. Ideal for
+  asserting a config field resolves to the right value/type.
 - **Testing resource retry offline**: monkeypatch
   `<Resource>._request.retry.wait = wait_none()` (tenacity) to kill backoff,
   inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`

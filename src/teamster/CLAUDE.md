@@ -60,6 +60,13 @@ default "one short line max" rule.
 `check.not_none()` from `dagster_shared` — never `assert isinstance(...)`
 (`assert` is stripped by `-O`).
 
+**Int env-var config**: use `EnvVar.int("NAME")` for `int`-typed resource fields
+(e.g. ports) — it stays lazy and resolves at resource init like a string
+`EnvVar`. Never `int(EnvVar("NAME").get_value())`: `.get_value()` reads eagerly
+at construction and crashes module-load resource wiring when the var is unset
+(e.g. a codespace). `IntEnvVar` is not exported from `dagster` — reach it via
+`EnvVar.int`.
+
 ## Library Categories
 
 Libraries fall into four patterns based on how they ingest data:
