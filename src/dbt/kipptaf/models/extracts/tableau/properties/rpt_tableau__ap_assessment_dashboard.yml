@@ -147,3 +147,268 @@ models:
         description: >
           'Official' if student is enrolled in an AP course, 'Not applicable'
           otherwise.
+
+unit_tests:
+  - name: test_course_enrollment_no_exam
+    description: >-
+      A student enrolled in an AP course who did not take the exam shows 'Took
+      course, but not AP exam.' and resolves ap_course_name from the course-side
+      crosswalk. Regression check: this branch existed before the fix and must
+      keep working.
+    model: rpt_tableau__ap_assessment_dashboard
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 101,
+              student_number: 1001,
+              academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__students,
+              rn_year: 1,
+              school_level: HS,
+              entrydate: 2024-08-01,
+              exitdate: 2025-06-15,
+              iep_status: No IEP,
+            }
+      - input: ref('base_powerschool__course_enrollments')
+        rows:
+          - {
+              cc_studentid: 101,
+              cc_academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__cc,
+              ap_course_subject: ENGLANG,
+              is_dropped_section: false,
+              rn_course_number_year: 1,
+              courses_course_name: AP English Language,
+              cc_dateenrolled: 2024-09-01,
+              cc_dateleft: 2025-06-15,
+              sections_external_expression: P3,
+              teacher_lastfirst: "Smith, Jane",
+            }
+      - input: ref('stg_google_sheets__collegeboard__ap_course_crosswalk')
+        rows:
+          - {
+              PS_AP_Course_Subject_Code: ENGLANG,
+              AP_Course_Name: AP English Language and Composition,
+              Data_Source: CB File,
+            }
+      - input: ref('int_assessments__ap_assessments')
+        rows: []
+    expect:
+      rows:
+        - {
+            subject_code: ENGLANG,
+            course_name: AP English Language,
+            ap_course_name: AP English Language and Composition,
+            test_subject_area: "Took course, but not AP exam.",
+            expected_scope: AP,
+            expected_test_type: Official,
+          }
+
+  - name: test_course_enrollment_and_matching_exam
+    description: >-
+      A student enrolled in an AP course who also has a matching exam score
+      shows the exam's course name as test_subject_area. Regression check for
+      the pre-existing matched case.
+    model: rpt_tableau__ap_assessment_dashboard
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 102,
+              student_number: 1002,
+              academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__students,
+              rn_year: 1,
+              school_level: HS,
+              entrydate: 2024-08-01,
+              exitdate: 2025-06-15,
+              iep_status: No IEP,
+            }
+      - input: ref('base_powerschool__course_enrollments')
+        rows:
+          - {
+              cc_studentid: 102,
+              cc_academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__cc,
+              ap_course_subject: BIOLOGY,
+              is_dropped_section: false,
+              rn_course_number_year: 1,
+              courses_course_name: AP Biology,
+              cc_dateenrolled: 2024-09-01,
+              cc_dateleft: 2025-06-15,
+              sections_external_expression: P4,
+              teacher_lastfirst: "Doe, John",
+            }
+      - input: ref('stg_google_sheets__collegeboard__ap_course_crosswalk')
+        rows:
+          - {
+              PS_AP_Course_Subject_Code: BIOLOGY,
+              AP_Course_Name: AP Biology,
+              Data_Source: CB File,
+            }
+      - input: ref('int_assessments__ap_assessments')
+        rows:
+          - {
+              academic_year: 2024,
+              powerschool_student_number: 1002,
+              test_name: AP Biology,
+              test_subject: Biology,
+              exam_score: 4,
+              ps_ap_course_subject_code: BIOLOGY,
+              ap_course_name: AP Biology,
+              data_source: CB File,
+            }
+    expect:
+      rows:
+        - {
+            subject_code: BIOLOGY,
+            course_name: AP Biology,
+            ap_course_name: AP Biology,
+            test_subject_area: AP Biology,
+            expected_scope: AP,
+            expected_test_type: Official,
+          }
+
+  - name: test_exam_only_no_course_enrollment
+    description: >-
+      Fix for #4391: a student with an AP exam score but no matching AP course
+      enrollment now surfaces as its own row with 'Took AP exam, not enrolled in
+      course.' instead of disappearing. ap_course_name falls back to the exam's
+      own crosswalk-resolved name since there is no course-side match.
+    model: rpt_tableau__ap_assessment_dashboard
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 103,
+              student_number: 1003,
+              academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__students,
+              rn_year: 1,
+              school_level: HS,
+              entrydate: 2024-08-01,
+              exitdate: 2025-06-15,
+              iep_status: No IEP,
+            }
+      - input: ref('base_powerschool__course_enrollments')
+        rows: []
+      - input: ref('stg_google_sheets__collegeboard__ap_course_crosswalk')
+        rows: []
+      - input: ref('int_assessments__ap_assessments')
+        rows:
+          - {
+              academic_year: 2024,
+              powerschool_student_number: 1003,
+              test_name: AP Chemistry,
+              test_subject: Chemistry,
+              exam_score: 3,
+              ps_ap_course_subject_code: CHEM,
+              ap_course_name: AP Chemistry,
+              data_source: CB File,
+            }
+    expect:
+      rows:
+        - {
+            subject_code: CHEM,
+            ap_course_subject: null,
+            course_name: Not an AP course,
+            ap_course_name: AP Chemistry,
+            test_subject_area: "Took AP exam, not enrolled in course.",
+            expected_scope: Not applicable,
+            expected_test_type: Not applicable,
+          }
+
+  - name: test_no_course_no_exam
+    description: >-
+      A non-participating HS student (no AP course, no AP exam) still gets
+      exactly one row, unchanged from pre-fix behavior.
+    model: rpt_tableau__ap_assessment_dashboard
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 104,
+              student_number: 1004,
+              academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__students,
+              rn_year: 1,
+              school_level: HS,
+              entrydate: 2024-08-01,
+              exitdate: 2025-06-15,
+              iep_status: No IEP,
+            }
+      - input: ref('base_powerschool__course_enrollments')
+        rows: []
+      - input: ref('stg_google_sheets__collegeboard__ap_course_crosswalk')
+        rows: []
+      - input: ref('int_assessments__ap_assessments')
+        rows: []
+    expect:
+      rows:
+        - {
+            subject_code: null,
+            course_name: Not an AP course,
+            ap_course_name: Not an AP course,
+            test_subject_area: Not applicable,
+            expected_scope: Not applicable,
+            expected_test_type: Not applicable,
+          }
+
+  - name: test_two_exam_only_subjects_produce_two_distinct_rows
+    description: >-
+      A student with exam scores in two different subjects and no course
+      enrollment in either gets two distinct rows keyed by subject_code, proving
+      the new grain key prevents the collision that ap_course_subject (always
+      NULL for both rows) would cause.
+    model: rpt_tableau__ap_assessment_dashboard
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 105,
+              student_number: 1005,
+              academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__students,
+              rn_year: 1,
+              school_level: HS,
+              entrydate: 2024-08-01,
+              exitdate: 2025-06-15,
+              iep_status: No IEP,
+            }
+      - input: ref('base_powerschool__course_enrollments')
+        rows: []
+      - input: ref('stg_google_sheets__collegeboard__ap_course_crosswalk')
+        rows: []
+      - input: ref('int_assessments__ap_assessments')
+        rows:
+          - {
+              academic_year: 2024,
+              powerschool_student_number: 1005,
+              test_name: AP Chemistry,
+              test_subject: Chemistry,
+              exam_score: 3,
+              ps_ap_course_subject_code: CHEM,
+              ap_course_name: AP Chemistry,
+              data_source: CB File,
+            }
+          - {
+              academic_year: 2024,
+              powerschool_student_number: 1005,
+              test_name: AP Physics 1,
+              test_subject: Physics 1,
+              exam_score: 5,
+              ps_ap_course_subject_code: PHYS1,
+              ap_course_name: AP Physics 1,
+              data_source: CB File,
+            }
+    expect:
+      rows:
+        - {
+            subject_code: CHEM,
+            test_subject_area: "Took AP exam, not enrolled in course.",
+          }
+        - {
+            subject_code: PHYS1,
+            test_subject_area: "Took AP exam, not enrolled in course.",
+          }
