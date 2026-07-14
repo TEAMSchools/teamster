@@ -224,6 +224,21 @@ models:
         data_type: int64
         description:
           Failing Y1 grade count 28 days ago (current-year rows only).
+      - name: gpa_y1_prior_quarter
+        data_type: float64
+        description: >-
+          Weighted Y1 GPA as of the previous quarter (a Q3 row shows the Q2
+          value). Current-year quarter rows only — NULL on Q1, Y1, and
+          prior-year rows.
+      - name: gpa_y1_prior_year
+        data_type: float64
+        description: >-
+          The student's final weighted Y1 GPA from the prior academic year,
+          repeated on every current-year row (PowerSchool stores only
+          end-of-year Y1 grades, so no as-of-quarter prior-year value exists).
+          Credit-hour weighted across schools when the student attended more
+          than one school that year. NULL on prior-year rows and for students
+          without a prior-year record.
       - name: cumulative_y1_gpa
         data_type: float64
         description: Cumulative weighted Y1 GPA (current-year rows only).
