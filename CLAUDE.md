@@ -55,6 +55,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   user explicitly declined an issue, skip `gh issue develop` and create the
   branch directly: `git worktree add -b <branch> .worktrees/<branch>`.
 
+- **Stacked branch** (build on an unmerged branch):
+  `gh issue develop <num> --name <branch> --base <parent-branch>` links a branch
+  off a non-`main` base; then `git worktree add`. Gives a clean diff + enforced
+  merge-after-parent — but base ≠ main skips `claude-review` (dbt Cloud CI still
+  runs; it is not base-gated — see `.github/CLAUDE.md`).
+
 - **Linking an existing remote branch to an issue**:
   `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
   the branch already exists. Delete the remote branch, then
@@ -81,6 +87,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
   unchanged and dirties `main` (the worktree commit then reports "nothing to
   commit").
+
+- **IDE Pyright diagnostics on worktree files are false-positive-prone** — it
+  resolves imports against the MAIN checkout, so worktree-only signature/symbol
+  changes surface phantom `unknown import` / `no parameter named X` errors.
+  Trust `uv run` executed inside the worktree, not the IDE.
 
 - **Branch switch**: with an issue,
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
@@ -332,7 +343,8 @@ tagging.
 - **`trunk check` the spec/plan `.md` you write before pushing** — markdownlint
   (MD040 fenced-block language, MD036) fires only at pre-push/CI, not the
   pre-commit `fmt` hook; checking only the code files misses a doc-only Trunk
-  failure.
+  failure. Run it non-interactively (`--no-fix </dev/null`) — `--force` on a
+  large `.md` can hang on the interactive "Apply formatting?" prompt.
 
 - **`finishing-a-development-branch` / `using-git-worktrees` tests & setup**:
   this repo uses `uv`, not `poetry`/`pip`, and

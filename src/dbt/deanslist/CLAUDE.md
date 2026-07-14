@@ -1,20 +1,10 @@
 # CLAUDE.md — `dbt/deanslist/`
 
 Source-system staging project for **Deanslist** (behavior management, homework
-tracking, and student support platform). Produces staging and intermediate
-models consumed by district projects and `kipptaf`.
+tracking, and student support platform). Staging is contract-enforced, one model
+per Deanslist API endpoint. Consumers:
+`grep -l 'local: ../deanslist' src/dbt/*/packages.yml`.
 
-## Model Structure
-
-```text
-models/
-  staging/     # contract-enforced, one model per Deanslist API endpoint
-  intermediate/
-```
-
-## Cross-Project Usage
-
-Referenced as a dbt package by `kippnewark`, `kippcamden`, and `kippmiami`;
-`kipptaf` consumes the resulting tables via `source()`. Consuming district
-projects may disable specific models (e.g., `stg_deanslist__followups`) in their
-own `dbt_project.yml`.
+Districts disable the staging models (and `src_deanslist__*` sources) for
+endpoints they never pull — see `dbt/kipppaterson/CLAUDE.md` for the worked
+example and rationale.

@@ -26,8 +26,13 @@ with
         -- enrolled-only: pre-enrollment statuses (enrollment_in_progress,
         -- assigned_school) carry no enrolled_date; Focus enrollment records
         -- require an entry date, so defer these students until Finalsite mints
-        -- enrollment_start_date. See #4291.
-        where l.enrollment_start_date is not null
+        -- enrollment_start_date. See #4291. A freshly enrolled student can also
+        -- carry an enrollment_start_date before Finalsite assigns a school
+        -- (assigned_school null, in the gap between enrollment and school
+        -- assignment); Focus needs a school id, so likewise defer until
+        -- assigned_school is populated (else school_id is null and the not_null
+        -- test fails).
+        where l.enrollment_start_date is not null and l.assigned_school is not null
     ),
 
     -- Enrollments already loaded into Focus, deduped to one row per

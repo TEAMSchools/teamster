@@ -149,12 +149,22 @@ run only the project you need.
 
 A source-system package's staging models build in **every** district that
 imports it, but only carry data where that source's Dagster ingestion is wired
-per code location — e.g. `stg_finalsite__contacts` builds in all four districts
-(all import the `finalsite` package) but only `kippmiami` materializes the
-contacts asset; the other three build it empty. Before promoting a district
-model to a shared source package, confirm the source ingestion exists in every
-consuming district, or the promoted model builds empty there (or fails on a
-missing external).
+per code location — e.g. while finalsite `contacts` ingestion was Miami-only,
+`stg_finalsite__contacts` still built in all four districts (all import the
+`finalsite` package) but carried rows only in `kippmiami`; the contacts asset is
+now wired in all four regions. Before promoting a district model to a shared
+source package, confirm the source ingestion exists in every consuming district,
+or the promoted model builds empty there (or fails on a missing external).
+
+**Partial-endpoint onboarding**: when a district ingests only a subset of a
+source package's endpoints, disable BOTH the unused `stg_*` models AND their
+`src_*` sources in the district `dbt_project.yml`. An enabled staging model over
+a disabled source is a parse error, and `stage_external_sources` fails creating
+an AVRO external over an empty GCS prefix (autodetect needs >=1 file). Don't
+copy a peer district's disable list blindly — a district that _once_ pulled an
+endpoint keeps stale Avro so its source still stages (e.g. Newark deanslist
+leaves `homework`/`lists`/`dff_stats` enabled), but a never-pulled district must
+disable them.
 
 To gate an _optional_ package layer per region, split the package into
 method/source subfolders (`api/`, `sftp/` — the amplify convention) and set
@@ -728,6 +738,13 @@ here enforce reviewability. Common remedy for the restructure prohibitions:
 derive the expression as a **named column in an upstream CTE**, then reference
 the plain column.
 
+The `dbt:using-dbt-for-analytics-engineering` skill's process guidance (plan
+backwards, validate results) applies here, but where it conflicts, this file
+wins: its test-tiering advice ("avoid liberal `not_null` /
+`expression_is_true`") must not remove this repo's intentional
+`config.where`-scoped warn tests, its example SQL is non-BigQuery dialect, and
+validation/profiling goes through BigQuery MCP, not `dbt show`.
+
 - **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
   the limit; anything deeper gets split into a CTE. Aggregates as direct
   function arguments don't count toward depth —
@@ -778,9 +795,16 @@ the plain column.
   not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
   Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
   them to `WHERE` collapses the join to an inner.
+- **No pass-through "import" CTEs.** Don't open a model with
+  `orders as (select * from {{ ref("...") }})` aliases — reference the
+  ref/source directly in `FROM`/`JOIN`. Every CTE must do real work (filter,
+  derive, aggregate, shape a `dbt_utils.deduplicate` input). Exception: the
+  same-name whole-row-STRUCT collision below, which _requires_ reading through a
+  `source` CTE. Existing models with import CTEs don't need a sweep — drop them
+  opportunistically when editing the model anyway.
 - **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
-  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
-  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+  explicitly. Get the authoritative column list via
+  `INFORMATION_SCHEMA.COLUMNS`:
 
   ```sql
   select column_name
@@ -853,7 +877,9 @@ the plain column.
   — then project the typed column per field (`s_x as x` / `b_x as x`). Output
   columns are `{agg_alias}_{value}`; a SINGLE-aggregate pivot names them by the
   bare value (`'x'` → column `x`). `max()` can't aggregate ARRAY — use
-  `any_value()` for array fields.
+  `any_value()` for array fields. A reserved-word aggregate alias (e.g. `name`)
+  must be backticked (sqlfluff RF04); the backtick doesn't change the produced
+  column name (`name_<value>`).
 - **BigQuery `UNPIVOT` excludes null rows** — an entity whose unpivoted columns
   are all null drops out of the result. Harmless for a pure decode companion (a
   left join from staging yields null labels anyway), but when the model also

@@ -1,13 +1,48 @@
 with
+    contact_1_candidates as (
+        -- contact_1 is the student's ONE reportable parent contact. Finalsite
+        -- has no explicit contact rank, so we take the relationship it flags
+        -- `primary` (its parent1 designation) and fall back to the one flagged
+        -- `financial` when no primary is set — the two flags Ops maintains to
+        -- mark the responsible caregiver. A record with neither flag gets no
+        -- contact_1 (a Finalsite data-entry gap for Ops to resolve).
+        -- `primary`/`financial` are NULL (not false) when unset, so normalize
+        -- to false here to keep the downstream rank ordering deterministic. No
+        -- SIS scoping — downstream receivers filter to enrolled students by
+        -- joining on the student id.
+        select
+            finalsite_enrollment_id,
+            relationship_id,
+            rel_id,
+            rel_name,
+            rel_type,
+
+            coalesce(is_primary, false) as is_primary,
+            coalesce(is_financial, false) as is_financial,
+        from {{ ref("stg_finalsite__contact_relationships") }}
+        where is_primary or is_financial
+    ),
+
+    contact_1_ranked as (
+        -- Rank primary above financial; within a tier break on relationship_id.
+        -- Ties occur only among multiple `financial` relationships (a student
+        -- never has two `primary`); relationship_id is an arbitrary but stable
+        -- tiebreak — every candidate in a tier is a valid contact, and
+        -- Finalsite exposes no field that reproduces a caregiver ordering.
+        select
+            finalsite_enrollment_id,
+            rel_id,
+            rel_name,
+            rel_type,
+
+            row_number() over (
+                partition by finalsite_enrollment_id
+                order by is_primary desc, is_financial desc, relationship_id asc
+            ) as rn,
+        from contact_1_candidates
+    ),
+
     contact_1_typed as (
-        -- contact_1 is EXCLUSIVELY the relationship Finalsite flags `primary`
-        -- (its parent1 designation), resolved to the related person's own
-        -- contact record. No fallback: a record with no primary flag (a
-        -- Finalsite data-entry gap) gets no contact_1. `primary` is a
-        -- per-record singleton, so the filter alone is a deterministic pick
-        -- (the grain uniqueness test guards any future multi-primary anomaly).
-        -- No SIS scoping here — downstream receivers filter to enrolled
-        -- students by joining on the student id.
         select
             r.finalsite_enrollment_id,
             r.rel_name,
@@ -38,11 +73,11 @@ with
                 ),
                 ''
             ) as home_address,
-        from {{ ref("stg_finalsite__contact_relationships") }} as r
+        from contact_1_ranked as r
         inner join
             {{ ref("stg_finalsite__contacts") }} as cp
             on r.rel_id = cp.finalsite_enrollment_id
-        where r.is_primary
+        where r.rn = 1
     ),
 
     contact_1 as (
