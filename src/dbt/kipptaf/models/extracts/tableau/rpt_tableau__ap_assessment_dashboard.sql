@@ -1,3 +1,67 @@
+with
+    course_enrollments as (
+        select
+            _dbt_source_relation,
+            cc_studentid,
+            cc_academic_year,
+            ap_course_subject,
+            cc_dateenrolled,
+            cc_dateleft,
+            sections_external_expression,
+            teacher_lastfirst,
+            courses_course_name,
+        from {{ ref("base_powerschool__course_enrollments") }}
+        where
+            rn_course_number_year = 1
+            and ap_course_subject is not null
+            and not is_dropped_section
+    ),
+
+    ap_assessments as (
+        select
+            academic_year,
+            powerschool_student_number,
+            test_name,
+            test_subject,
+            exam_score,
+            irregularity_code_1,
+            irregularity_code_2,
+            data_source,
+            ps_ap_course_subject_code,
+            ap_course_name,
+        from {{ ref("int_assessments__ap_assessments") }}
+        where test_subject != 'Calculus BC: AB Subscore'
+    ),
+
+    subjects as (
+        select distinct
+            e.studentid,
+            e.student_number,
+            e.academic_year,
+            e._dbt_source_relation,
+            c.ap_course_subject as subject_code,
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            course_enrollments as c
+            on e.studentid = c.cc_studentid
+            and e.academic_year = c.cc_academic_year
+            and {{ union_dataset_join_clause(left_alias="e", right_alias="c") }}
+
+        union distinct
+
+        select distinct
+            e.studentid,
+            e.student_number,
+            e.academic_year,
+            e._dbt_source_relation,
+            ap.ps_ap_course_subject_code as subject_code,
+        from {{ ref("int_extracts__student_enrollments") }} as e
+        inner join
+            ap_assessments as ap
+            on e.academic_year = ap.academic_year
+            and e.student_number = ap.powerschool_student_number
+    )
+
 select
     e.academic_year,
     e.academic_year_display,
@@ -21,6 +85,8 @@ select
     e.ktc_cohort,
     e.graduation_year,
 
+    sub.subject_code,
+
     s.cc_dateenrolled as ap_date_enrolled,
     s.cc_dateleft as ap_date_left,
     s.sections_external_expression as ap_course_section,
@@ -35,15 +101,17 @@ select
     a.data_source,
     a.ps_ap_course_subject_code,
 
-    coalesce(x.ap_course_name, 'Not an AP course') as ap_course_name,
+    coalesce(x.ap_course_name, a.ap_course_name, 'Not an AP course') as ap_course_name,
 
     coalesce(s.courses_course_name, 'Not an AP course') as course_name,
 
     case
-        when s.courses_course_name is null
+        when s.courses_course_name is null and a.test_name is null
         then 'Not applicable'
         when s.courses_course_name is not null and a.test_name is null
         then 'Took course, but not AP exam.'
+        when s.courses_course_name is null and a.test_name is not null
+        then 'Took AP exam, not enrolled in course.'
         else a.ap_course_name
     end as test_subject_area,
 
@@ -57,23 +125,25 @@ select
 
 from {{ ref("int_extracts__student_enrollments") }} as e
 left join
-    {{ ref("base_powerschool__course_enrollments") }} as s
-    on e.studentid = s.cc_studentid
-    and e.academic_year = s.cc_academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
-    and s.rn_course_number_year = 1
-    and s.ap_course_subject is not null
-    and not s.is_dropped_section
+    subjects as sub
+    on e.studentid = sub.studentid
+    and e.academic_year = sub.academic_year
+    and {{ union_dataset_join_clause(left_alias="e", right_alias="sub") }}
+left join
+    course_enrollments as s
+    on sub.studentid = s.cc_studentid
+    and sub.academic_year = s.cc_academic_year
+    and sub.subject_code = s.ap_course_subject
+    and {{ union_dataset_join_clause(left_alias="sub", right_alias="s") }}
+left join
+    ap_assessments as a
+    on sub.student_number = a.powerschool_student_number
+    and sub.academic_year = a.academic_year
+    and sub.subject_code = a.ps_ap_course_subject_code
 left join
     {{ ref("stg_google_sheets__collegeboard__ap_course_crosswalk") }} as x
-    on s.ap_course_subject = x.ps_ap_course_subject_code
+    on sub.subject_code = x.ps_ap_course_subject_code
     and x.data_source = 'CB File'
-left join
-    {{ ref("int_assessments__ap_assessments") }} as a
-    on e.academic_year = a.academic_year
-    and e.student_number = a.powerschool_student_number
-    and s.ap_course_subject = a.ps_ap_course_subject_code
-    and a.test_subject != 'Calculus BC: AB Subscore'
 where
     e.rn_year = 1
     and e.school_level = 'HS'

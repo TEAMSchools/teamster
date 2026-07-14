@@ -3,14 +3,15 @@ models:
     description: >
       AP assessment scores joined to student enrollment and course schedules for
       Tableau reporting. One row per student per AP course subject, including
-      students enrolled in AP courses who did not take the exam.
+      students enrolled in AP courses who did not take the exam and students who
+      took an exam with no matching AP course enrollment.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - academic_year
               - student_number
-              - ap_course_subject
+              - subject_code
     columns:
       - name: academic_year
         data_type: int64
@@ -81,6 +82,13 @@ models:
       - name: graduation_year
         data_type: int64
         description: Student graduation year.
+      - name: subject_code
+        data_type: string
+        description: >
+          AP subject code bridging course enrollment and exam records for the
+          report grain — the course-enrollment subject code when the student is
+          enrolled in an AP course, otherwise the exam's own College Board
+          subject code. NULL only when the student has neither.
       - name: ap_date_enrolled
         data_type: date
         description: Date the student enrolled in the AP course section.
@@ -121,8 +129,10 @@ models:
       - name: ap_course_name
         data_type: string
         description: >
-          AP course name from the College Board crosswalk; 'Not an AP course' if
-          no match found.
+          AP course name from the College Board crosswalk when the student has
+          an AP course enrollment; otherwise the exam's own crosswalk-resolved
+          name when the student took the exam with no matching course; 'Not an
+          AP course' if neither resolves.
       - name: course_name
         data_type: string
         description: >
@@ -132,8 +142,10 @@ models:
         data_type: string
         description: >
           Derived field indicating exam relationship to course: 'Not applicable'
-          if no AP course, 'Took course, but not AP exam.' if enrolled but did
-          not test, otherwise the College Board AP course name.
+          if no AP course and no exam, 'Took course, but not AP exam.' if
+          enrolled but did not test, 'Took AP exam, not enrolled in course.' if
+          tested with no matching course enrollment, otherwise the College Board
+          AP course name.
       - name: sped
         data_type: int64
         description: Special education indicator (1 = has IEP, 0 = no IEP).
