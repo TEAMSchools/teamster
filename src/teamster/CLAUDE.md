@@ -213,9 +213,12 @@ codespace cause false errors unrelated to production failures. Fall back to
 `uv run python -c "import <module>"` for syntactic checks when validate fails on
 missing manifest or env vars.
 
-A district `definitions.py` itself won't import in the codespace —
-`get_powerschool_ssh_resource()` reads unset `PS_SSH_PORT` at module load, so
-the `import <module>` fallback fails for `.definitions`. Validate a
-per-integration change by importing that integration submodule alone (e.g.
-`import teamster.code_locations.kippnewark.finalsite`), not the `definitions`
+In the codespace, importing a district `definitions.py` first needs the dbt
+manifest (`dagster-dbt project prepare-and-package`, above). With the manifest,
+the powerschool districts (`kippnewark`, `kippcamden`, `kippmiami`) import
+cleanly. `kipptaf.definitions` still fails at module load because the
+Illuminate/Zendesk dlt credential specs call `EnvVar("...").get_value()` eagerly
+(unset in the codespace). For a `kipptaf` per-integration change, import that
+integration submodule alone (e.g.
+`import teamster.code_locations.kipptaf.finalsite`), not the `definitions`
 module.

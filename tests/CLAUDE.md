@@ -33,10 +33,14 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
-- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields inside
-  `build_resources()`. For non-`str` fields (e.g. `int` ports), use
-  `int(check.not_none(EnvVar("X").get_value()))` — `EnvVar` resolves lazily, so
-  `int(EnvVar("X"))` casts the marker object, not the value.
+- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields and
+  `EnvVar.int("X")` for `int` fields (e.g. ports) inside `build_resources()` —
+  both resolve lazily at resource init and never read the environment at
+  construction. Prefer these over `int(EnvVar("X").get_value())`: `.get_value()`
+  reads eagerly, which is harmless when a test always sets the var but crashes
+  module-load construction in production `resources.py` when it is unset (e.g. a
+  codespace) — so never copy that idiom there. Plain `int(EnvVar("X"))` casts
+  the marker object, not the value.
 - **Worktree tests**: VS Code doesn't discover tests in worktrees. Run manually
   ensuring `OP_SERVICE_ACCOUNT_TOKEN` is set, then
   `cd .worktrees/<branch> && uv run pytest ...`.

@@ -67,8 +67,9 @@ not appear in site navigation.
 adding, removing, or renaming schedules or sensors.
 
 The script imports every code location's `definitions` and silently SKIPS any
-that fail to import — so running it in the codespace (district `definitions`
-fail on unset `PS_SSH_PORT`, etc.) drops those locations from the catalog.
+that fail to import — so running it in the codespace (locations fail to import
+without their dbt manifests, and `kipptaf` additionally on unset
+Illuminate/Zendesk dlt credentials) drops those locations from the catalog.
 Regenerate only in a full environment where all locations load.
 
 ## `superpowers/` Directory
