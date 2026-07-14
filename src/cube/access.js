@@ -44,11 +44,19 @@ const STAFF_SENSITIVE_TIERS = [
   { scope: "staff_benefits_scope", group: "staff-benefits" },
 ];
 
-// Column-visibility tiers the views gate on. The staff directory + summary are
-// open to every staff viewer (any resolved row), so a single staff-directory
-// tier covers both staff views; a sensitive tier is added per *_scope != none.
-function buildGroups(row) {
-  if (!row) return [];
+// Column-visibility tiers the views gate on. The staff directory is open to
+// every resolved staff identity, so a single staff-directory tier covers it; a
+// sensitive tier is added per *_scope != none.
+function buildGroups(
+  row,
+  allowedAbbreviations = [],
+  allowedDepartmentGroups = [],
+  reporteeStaffKeys = [],
+) {
+  // Gate on a real identity: a row with no staff_key (a stray {} or an
+  // object-shaped lookup miss) is not a resolved viewer and must get no groups
+  // — default-deny. staff_key is the not-null PK, so every genuine row has one.
+  if (!row?.staff_key) return [];
   const groups = [];
 
   // Student: one scope-specific group per non-none location scope
@@ -62,10 +70,39 @@ function buildGroups(row) {
   // Open staff directory for every resolved staff viewer.
   groups.push("staff-directory");
 
-  // Staff PII: one scope-specific group per non-none pii scope, each carrying
-  // its own row_level remit in staff_pii.yml.
-  if (row.staff_pii_scope && row.staff_pii_scope !== "none") {
-    groups.push(`staff-pii-${row.staff_pii_scope}`);
+  // Staff PII: emit the scope-specific group ONLY when the securityContext
+  // arrays its staff_pii.yml access_policy interpolates are non-empty. Cube
+  // (Tesseract) throws "Values required for filter" on an `equals []` row_level
+  // filter — it does NOT compile it to IN () / zero rows (verified empirically,
+  // #4269). So a scope whose remit/chain resolved empty must not emit its group;
+  // the viewer then takes the clean no-group → default-deny path instead of
+  // hitting a hard query error. Empty remit is a resolution bug (a dbt test
+  // guards it), so this is defense-in-depth, not expected state.
+  const hasRemit =
+    allowedAbbreviations.length > 0 && allowedDepartmentGroups.length > 0;
+  const hasChain = reporteeStaffKeys.length > 0;
+  switch (row.staff_pii_scope) {
+    case "all_in_scope":
+    case "teaching_staff":
+      // Policies AND both remit axes with no fallback.
+      if (hasRemit) groups.push(`staff-pii-${row.staff_pii_scope}`);
+      break;
+    case "reporting_chain":
+      // Policy filters staff_key IN reportee_staff_keys — empty chain errors.
+      if (hasChain) groups.push("staff-pii-reporting_chain");
+      break;
+    case "reporting_chain_or_below_rank":
+      // OR of (remit + rank) and the staff_key chain — emit if either side is
+      // satisfiable. TODO(#4403): a non-empty chain with an empty remit still
+      // injects an empty `equals []` into the OR's nested AND-branch, which may
+      // itself error; nested empty-array behavior is unverified. Revisit if that
+      // mixed state becomes reachable (no such viewer in current data).
+      if (hasRemit || hasChain) {
+        groups.push("staff-pii-reporting_chain_or_below_rank");
+      }
+      break;
+    default:
+      break; // none / unrecognized → no staff-pii group (default-deny)
   }
 
   // Forward-compat sensitive tiers (no view consumes these yet) stay flat.
@@ -90,9 +127,13 @@ function computeAllowedAbbreviations(
     case "network":
       return all.map((l) => l.abbreviation);
     case "region":
-      return all
-        .filter((l) => l.region_key === regionKey)
-        .map((l) => l.abbreviation);
+      // A null regionKey must not match locations whose region_key is also null
+      // (=== would treat null === null as a match). No region → no abbreviations.
+      return regionKey == null
+        ? []
+        : all
+            .filter((l) => l.region_key === regionKey)
+            .map((l) => l.abbreviation);
     case "school":
       return locationAbbreviation ? [locationAbbreviation] : [];
     default:
@@ -120,8 +161,10 @@ function computeAllowedDepartmentGroups(
 
 // Flattens the cached access row + reporting chain into the shape the
 // policies interpolate. Pure and null-safe: an unresolved viewer (no cached
-// row) gets empty groups/chain, not a thrown error. `email` is not a column on
-// the access row — the caller (resolveAccess) adds it to the context.
+// row) gets empty groups/chain, not a thrown error. Identity is resolved from
+// the connecting user / email claim in cube.js; `email` is intentionally NOT
+// stored on the returned context (no access_policy interpolates it — do not add
+// a policy referencing securityContext.email without first setting it here).
 // `allowedAbbreviations` / `allowedDepartmentGroups` are precomputed by the
 // caller (resolveAccess) via computeAllowedAbbreviations /
 // computeAllowedDepartmentGroups — domain-agnostic allow-lists later
@@ -133,7 +176,12 @@ function buildSecurityContext(
   allowedDepartmentGroups,
 ) {
   return {
-    groups: buildGroups(row),
+    groups: buildGroups(
+      row,
+      allowedAbbreviations,
+      allowedDepartmentGroups,
+      reporteeStaffKeys,
+    ),
     student_location_scope: row?.student_location_scope ?? "none",
     staff_pii_scope: row?.staff_pii_scope ?? "none",
     region_key: row?.region_key ?? null,

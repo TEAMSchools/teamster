@@ -12,14 +12,12 @@
   resolveAccess precomputes the location/department allow-lists from the scope
   level. Rows that resolve to no role emit 'none' (deny) rather than NULL.
 
-  Role crosswalk fan-out invariant: the cube_access_role sheet must never carry
-  both a wildcard row (entity='any') and a specific row for the same
-  job_function_code — the matched CTE's LEFT JOIN would produce two rows per
-  affected staff member and the unique test on staff_key would fail CI. The
-  sheet-level unique_combination_of_columns(job_function_code, entity) test
-  guards exact-duplicate rows but does not prevent the wildcard+specific overlap.
-  Keep wildcard rows as the fallback only; specific rows should fully replace the
-  wildcard for that code, not supplement it.
+  Role crosswalk precedence: when the cube_access_role sheet carries both a
+  wildcard row (entity='any') and a specific row (entity=KTAF/Region) for the
+  same job_function_code, the specific row wins — role_picked ranks a specific
+  entity match ahead of the wildcard and keeps one row per staff, so the overlap
+  cannot fan out staff_key (previously it would have, caught only by the unique
+  test). Wildcard rows remain the entity-agnostic fallback.
 -#}
 with
     -- one current primary work assignment per staff (dedup'd below)
@@ -68,11 +66,25 @@ with
             loc.region_key,
             loc.abbreviation as location_abbreviation,
 
-            if(
-                o.business_unit_name = 'KIPP TEAM and Family Schools Inc.',
-                'KTAF',
-                'Region'
-            ) as entity,
+            -- Explicit allow-list. An unrecognized or NULL business unit resolves
+            -- to 'unknown' (a deny sentinel) rather than 'Region': 'unknown'
+            -- matches only entity-agnostic 'any' role rows in the crosswalk, never
+            -- the entity-specific KTAF/Region grants (e.g. Region's region-wide
+            -- student scope). Prevents fail-toward-grant on an unresolved org unit.
+            case
+                o.business_unit_name
+                when 'KIPP TEAM and Family Schools Inc.'
+                then 'KTAF'
+                when 'TEAM Academy Charter School'
+                then 'Region'
+                when 'KIPP Cooper Norcross Academy'
+                then 'Region'
+                when 'KIPP Miami'
+                then 'Region'
+                when 'KIPP Paterson'
+                then 'Region'
+                else 'unknown'
+            end as entity,
         from primary_deduped as pd
         inner join {{ ref("dim_staff") }} as s on pd.staff_key = s.staff_key
         left join
@@ -109,6 +121,37 @@ with
             on ca.department_name = dr.department_name
     ),
 
+    -- Rank the crosswalk role rows so a specific-entity match beats the 'any'
+    -- wildcard, then keep one per staff (role_picked). Prevents the fan-out when
+    -- the sheet carries both a wildcard and a specific row for one
+    -- job_function_code. Window rank as a named column, filtered in the next CTE
+    -- (no QUALIFY, per the SQL guide). A LEFT-join miss yields one null-role row
+    -- (role_rank 1) that coalesces to 'none' downstream.
+    role_ranked as (
+        select
+            e.staff_key,
+
+            rl.job_function_level,
+            rl.student_location_scope,
+            rl.staff_location_scope,
+            rl.staff_department_scope,
+            rl.staff_pii_scope,
+            rl.staff_compensation_scope,
+            rl.staff_observations_scope,
+            rl.staff_benefits_scope,
+
+            row_number() over (
+                partition by e.staff_key order by if(rl.entity = e.entity, 0, 1)
+            ) as role_rank,
+        from enriched as e
+        left join
+            {{ ref("stg_google_sheets__people__cube_access_role") }} as rl
+            on e.job_function_code = rl.job_function_code
+            and rl.entity in ('any', e.entity)
+    ),
+
+    role_picked as (select *, from role_ranked where role_rank = 1),
+
     matched as (
         select
             e.staff_key,
@@ -119,39 +162,36 @@ with
             e.entity,
             e.job_function_code,
 
-            rl.job_function_level,
+            rp.job_function_level,
 
             coalesce(
-                ovr.student_location_scope, rl.student_location_scope, 'none'
+                ovr.student_location_scope, rp.student_location_scope, 'none'
             ) as student_location_scope,
 
             coalesce(
-                ovr.staff_location_scope, rl.staff_location_scope, 'none'
+                ovr.staff_location_scope, rp.staff_location_scope, 'none'
             ) as staff_location_scope,
             coalesce(
-                ovr.staff_department_scope, rl.staff_department_scope, 'none'
+                ovr.staff_department_scope, rp.staff_department_scope, 'none'
             ) as staff_department_scope,
             coalesce(
-                ovr.staff_pii_scope, rl.staff_pii_scope, 'none'
+                ovr.staff_pii_scope, rp.staff_pii_scope, 'none'
             ) as staff_pii_scope,
             coalesce(
-                ovr.staff_compensation_scope, rl.staff_compensation_scope, 'none'
+                ovr.staff_compensation_scope, rp.staff_compensation_scope, 'none'
             ) as staff_compensation_scope,
             coalesce(
-                ovr.staff_observations_scope, rl.staff_observations_scope, 'none'
+                ovr.staff_observations_scope, rp.staff_observations_scope, 'none'
             ) as staff_observations_scope,
             coalesce(
-                ovr.staff_benefits_scope, rl.staff_benefits_scope, 'none'
+                ovr.staff_benefits_scope, rp.staff_benefits_scope, 'none'
             ) as staff_benefits_scope,
         from enriched as e
         left join
             {{ ref("stg_google_sheets__people__cube_access_department_override") }}
             as ovr
             on e.department_name = ovr.department
-        left join
-            {{ ref("stg_google_sheets__people__cube_access_role") }} as rl
-            on e.job_function_code = rl.job_function_code
-            and rl.entity in ('any', e.entity)
+        left join role_picked as rp on e.staff_key = rp.staff_key
     )
 
 select

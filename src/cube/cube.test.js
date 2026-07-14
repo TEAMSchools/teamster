@@ -18,7 +18,12 @@ test.beforeEach(() => {
   process.env.CUBEJS_API_SECRET = SECRET;
   delete process.env.CUBE_GROUP_MAP;
   delete process.env.NODE_ENV; // dev bypass in resolveAccess requires !== "production"
+  delete process.env.CUBEJS_SQL_PASSWORD;
 });
+
+// resolveAccess caches per-email at module scope (until midnight ET) and the
+// cache isn't exported, so tests that assert on the resolved context use a
+// UNIQUE email each to avoid a cross-test cache hit.
 
 test("checkAuth: a fresh token resolves via the CUBE_GROUP_MAP dev bypass", async () => {
   process.env.CUBE_GROUP_MAP = JSON.stringify({
@@ -124,4 +129,135 @@ test("checkAuth: a valid token within maxAge resolves normally", async () => {
     "staff-directory",
     "student-network",
   ]);
+});
+
+test("checkAuth: a token expired within clockTolerance still resolves (clock skew)", async () => {
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "skew@apps.teamschools.org": ["staff-directory"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "skew@apps.teamschools.org",
+    iat: now - 60,
+    exp: now - 10, // expired 10s ago — within the 30s clockTolerance
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  assert.deepEqual(req.securityContext.groups, ["staff-directory"]);
+});
+
+test("checkAuth: an alg:none (unsigned) token is rejected", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  // An attacker strips the signature and sets alg:none. jwt.verify pins HS256,
+  // so this must be rejected — never treated as a valid identity.
+  const token = jwt.sign(
+    { email: "attacker@apps.teamschools.org", iat: now, exp: now + 300 },
+    "",
+    { algorithm: "none" },
+  );
+
+  const req = {};
+  await assert.rejects(
+    () => cube.checkAuth(req, token),
+    (err) => {
+      assert.equal(err.status, 403);
+      return true;
+    },
+  );
+});
+
+test("checkAuth: a token signed with the wrong secret is rejected", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const token = jwt.sign(
+    { email: "attacker@apps.teamschools.org", iat: now, exp: now + 300 },
+    "not-the-real-secret",
+    { algorithm: "HS256" },
+  );
+
+  const req = {};
+  await assert.rejects(
+    () => cube.checkAuth(req, token),
+    (err) => {
+      assert.equal(err.status, 403);
+      return true;
+    },
+  );
+});
+
+test("checkAuth: forged groups/securityContext claims are ignored (only email is trusted)", async () => {
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "forged@apps.teamschools.org": ["staff-directory"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  // A validly-signed token that also smuggles attacker-controlled group claims.
+  const token = sign({
+    email: "forged@apps.teamschools.org",
+    groups: ["staff-pii-all_in_scope", "student-network"],
+    securityContext: { groups: ["staff-pii-all_in_scope"] },
+    iat: now,
+    exp: now + 300,
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  // Resolved from the email claim only — the forged group claims never reach
+  // the security context.
+  assert.deepEqual(req.securityContext.groups, ["staff-directory"]);
+});
+
+test("checkSqlAuth: an unset SQL password rejects the connection (fail-closed)", async () => {
+  delete process.env.CUBEJS_SQL_PASSWORD;
+  const res = await cube.checkSqlAuth({}, "sqlnopw@apps.teamschools.org", "x");
+  // password: null makes Cube reject every connection; context is default-deny.
+  assert.equal(res.password, null);
+  assert.deepEqual(res.securityContext.groups, []);
+});
+
+test("checkSqlAuth: a set SQL password is returned and identity resolves from the connecting user", async () => {
+  process.env.CUBEJS_SQL_PASSWORD = "server-known-pw";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "sqlviewer@apps.teamschools.org": ["staff-directory"],
+  });
+  const res = await cube.checkSqlAuth(
+    {},
+    "sqlviewer@apps.teamschools.org",
+    "presented-value-ignored",
+  );
+  assert.equal(res.password, "server-known-pw");
+  assert.deepEqual(res.securityContext.groups, ["staff-directory"]);
+});
+
+test("resolveAccess (production path) fails closed to default-deny when BigQuery errors", async () => {
+  process.env.NODE_ENV = "production"; // skip the CUBE_GROUP_MAP dev bypass
+  process.env.CUBEJS_SQL_PASSWORD = "server-known-pw";
+  // @google-cloud/bigquery exposes BigQuery as a getter-only property, so swap
+  // the whole cached module exports (resolveAccess does a lazy require).
+  const bqPath = require.resolve("@google-cloud/bigquery");
+  require("@google-cloud/bigquery"); // ensure it is in the require cache
+  const cached = require.cache[bqPath];
+  const origExports = cached.exports;
+  cached.exports = {
+    BigQuery: class {
+      async query() {
+        throw new Error("simulated BigQuery failure");
+      }
+    },
+  };
+  try {
+    const res = await cube.checkSqlAuth(
+      {},
+      "prodfail@apps.teamschools.org",
+      "server-known-pw",
+    );
+    // The production path hits BigQuery, which throws -> the try/catch in
+    // resolveAccess returns an empty default-deny context (never throws, stays
+    // available) rather than granting anything.
+    assert.deepEqual(res.securityContext.groups, []);
+    assert.equal(res.password, "server-known-pw");
+  } finally {
+    cached.exports = origExports;
+  }
 });

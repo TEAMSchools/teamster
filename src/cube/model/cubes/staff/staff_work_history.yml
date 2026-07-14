@@ -116,6 +116,18 @@ cubes:
         sql: "{staff.staff_key} = {CUBE}.staff_key"
         relationship: many_to_one
 
+      # Current-role access attributes (job_function_level/code, department_group)
+      # from dim_staff_cube_access, surfaced to staff_directory / staff_pii. Joined
+      # HERE rather than on `staff` because the manager alias staff_manager extends
+      # staff and would inherit a staff-level join, creating an ambiguous second
+      # path to staff_cube_access in staff_directory (which joins both). Attaching
+      # via staff_key on the period rows gives each period the person's CURRENT
+      # role (not period-accurate), which is what the remit gate needs. Not every
+      # staff has an access row, so this LEFT-joins (attrs NULL when absent).
+      - name: staff_cube_access
+        sql: "{staff_cube_access.staff_key} = {CUBE}.staff_key"
+        relationship: many_to_one
+
       - name: locations
         sql: "{locations.location_key} = {CUBE}.work_location_key"
         relationship: many_to_one

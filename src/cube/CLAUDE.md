@@ -29,10 +29,20 @@ school_calendars) go in `cubes/conformed/`.
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
 - **Transformation lives in dbt, not cube.** Multi-table joins, window
-  functions, and derived grains (SCD2 period-intersection / status spines)
-  belong in a dbt mart read via `sql_table` — not inline cube `sql:`, which is
-  for thin column/expression shaping only. (Cube's own dbt guidance and the
-  `original_sql` pre-agg confirm this.)
+  functions, and derived grains belong in a dbt mart read via `sql_table` — not
+  inline cube `sql:`, which is for thin column/expression shaping only. (Cube's
+  own dbt guidance and the `original_sql` pre-agg confirm this.) **Exception —
+  SCD2 period intersection** (`staff_work_history`,
+  `staff_reporting_relationships`): a cube-body `sql:` may carry multi-table
+  joins when it collapses several independently-effective-dated child dims into
+  one contiguous-window grain via `greatest(...)` / `least(...)` over
+  overlapping validity ranges. Cube's join graph can't express this — joins are
+  only `one_to_one` / `many_to_one` / `one_to_many` (many-to-many needs an
+  associative cube) and only ADD columns along the graph; they can't synthesize
+  the intersected grain — so it must be materialized in one query (dbt mart
+  preferred; cube `sql:` acceptable when every input is already a published
+  dim). A plain equi-join (e.g. on `staff_key`) is NOT this exception — model it
+  as a Cube join.
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
@@ -149,8 +159,12 @@ assessment views, which join `locations` unprefixed — bare
 **Interpolation forms.** An array value (`IN`) uses the UNBRACKETED string form:
 `values: "{ securityContext.allowed_abbreviations }"`. A single scalar uses the
 bracketed form: `values: ["{ securityContext.region_key }"]`.
-`operator: equals` + array value compiles to SQL `IN`; an empty array (e.g. an
-allow-list computed to nothing) compiles to `IN ()` — zero rows, fail-closed.
+`operator: equals` + array value compiles to SQL `IN`. An **empty** array does
+NOT compile to `IN ()`/zero rows — Cube (Tesseract) throws "Values required for
+filter" and fails the query (fail-closed, but a hard error, not a clean deny;
+verified empirically, #4269). `access.buildGroups` therefore does not emit a
+staff-pii group whose remit/chain array resolved empty, so such a viewer takes
+the no-group default-deny path instead of hitting that error.
 
 **Scope selection is group-based, not `conditions.if`-based.** `conditions.if`
 only compiles a bare truthy reference (`if: "{ userAttributes.x }"`) — a `==`

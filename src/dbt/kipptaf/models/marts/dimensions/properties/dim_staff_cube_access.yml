@@ -13,13 +13,14 @@ models:
       aggregate summary are open — these scopes only constrain sensitive fields.
       Unresolved roles emit 'none' (deny), never NULL.
     data_tests:
-      # The all_in_scope and teaching_staff PII policies AND both remit axes
-      # (allowed_abbreviations from staff_location_scope, allowed_department_groups
-      # from staff_department_scope) with no fallback, so a none on EITHER axis
-      # empties the remit → IN () → zero PII rows, silently. reporting_chain
-      # ignores the remit and reporting_chain_or_below_rank falls back to the
-      # staff_key chain, so neither is guarded here. A remit-scoped viewer missing
-      # an axis is a resolution bug, not intended state.
+      # A remit-scoped PII scope (all_in_scope / teaching_staff) with a none
+      # location or department axis is a resolution bug: the remit resolves empty,
+      # and Cube (Tesseract) throws "Values required for filter" on the empty
+      # `equals []` row_level filter rather than returning zero rows (verified
+      # #4269). access.buildGroups now suppresses the group in that state so the
+      # viewer default-denies cleanly, but the state is still a misconfiguration —
+      # error (not warn) so it can't ship. reporting_chain scopes key on the
+      # staff_key chain, not this remit, so they are not covered here.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
@@ -29,7 +30,7 @@ models:
                 and staff_department_scope != 'none'
               )
           config:
-            severity: warn
+            severity: error
     columns:
       - name: staff_key
         data_type: string
@@ -81,8 +82,15 @@ models:
       - name: entity
         data_type: string
         description: >-
-          KTAF or Region, derived from business_unit_name (KIPP TEAM and Family
-          Schools Inc. = KTAF, all others = Region).
+          KTAF, Region, or unknown, derived from business_unit_name via an
+          explicit allow-list. Unrecognized or NULL business units resolve to
+          unknown — a deny sentinel that matches only entity-agnostic 'any' role
+          rows, never the KTAF/Region-specific grants.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [KTAF, Region, unknown]
 
       - name: job_function_code
         data_type: string
@@ -102,6 +110,7 @@ models:
           only gating on student data: a viewer with a non-none scope sees every
           student view and all fields, including PII.
         data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values: [network, region, school, none]
@@ -113,6 +122,7 @@ models:
           school, or none. Constrains rows only when a sensitive field is
           queried.
         data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values: [network, region, school, none]
@@ -123,6 +133,7 @@ models:
           Department remit bounding the staff sensitive fields — all, own_group,
           or none.
         data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values: [all, own_group, none]
@@ -134,6 +145,7 @@ models:
           all_in_scope, reporting_chain_or_below_rank, reporting_chain,
           teaching_staff).
         data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values:
@@ -147,6 +159,7 @@ models:
         data_type: string
         description: Staff compensation field visibility (same vocabulary).
         data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values:
@@ -160,6 +173,7 @@ models:
         data_type: string
         description: Staff observation field visibility (same vocabulary).
         data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values:
@@ -173,6 +187,7 @@ models:
         data_type: string
         description: Staff benefits field visibility (same vocabulary).
         data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values:
