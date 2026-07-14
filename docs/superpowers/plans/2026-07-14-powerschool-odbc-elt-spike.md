@@ -61,6 +61,19 @@ BigQuery, GKE branch deployment.
   (keys: `host`, `port`, `username`, `remote-bind-host`, `password`) in the
   `dagster-cloud` namespace — the exact shape `op-ps-db-kippnewark` /
   `op-ps-ssh-kippnewark` have today.
+- **Value convention matters, not just the keys** (whole-branch review finding):
+  mirror kippnewark's VALUES too —
+  - `op-ps-db-kipppaterson.server` = `localhost` (or `127.0.0.1`) and `.port` =
+    `1521`. The dlt path connects through the sshpass tunnel, which binds
+    `localhost:1521` (`ssh -L1521:<remote-bind-host>:1521`). If `server` holds
+    the real Oracle host instead, dlt connects directly and fails (no route).
+    kippnewark's ODBC path already relies on this, so its `server` is already
+    localhost — copy that.
+  - `op-ps-ssh-kipppaterson.remote-bind-host` = the REAL Oracle host behind the
+    bastion (used as Sling's Oracle `host` and as dlt's tunnel forward target).
+  - `op-ps-ssh-kipppaterson.password` must be present — it serves BOTH the
+    mounted file `/etc/secret-volume/powerschool_ssh_password.txt` (dlt tunnel)
+    and the `PS_SSH_PASSWORD` env var (Sling tunnel URL).
 
 - [ ] **Step 1: Ask the user to confirm/create the secrets**
 
