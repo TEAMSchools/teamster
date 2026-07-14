@@ -251,6 +251,14 @@ short canonical names (`Newark` / `Camden` / `Miami` / `Paterson`). For region
 lookups by short name, use `city`. For mapping `_dbt_source_project` to region,
 use `dim_regions.dagster_code_location`.
 
+**`stg_renlearn__star` is the consolidated STAR model** — the Nov-2025
+"consolidate star calcs" refactor disabled `int_renlearn__star_rollup`
+(`config: enabled: false`; leave it) and folded the derived columns
+(`academic_year`, `star_subject`/`star_discipline`, `administration_window`
+Fall/Winter/Spring→BOY/MOY/EOY, benchmark int-flags, `rn_subject_*`) into this
+kipptaf-level `union_relations` view (materialized table). All STAR consumers
+read it. Edit/consume STAR here, not the rollup.
+
 ## Exposures
 
 Every external consumer **must** have a dbt exposure in `models/exposures/`.
