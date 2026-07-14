@@ -77,9 +77,9 @@ code location using the generic SFTP factory.
 
 ## Code Location Structure
 
-`kippnewark` is the most complete district code location — it uses every
-available integration. Use it as the reference implementation when adding new
-integrations to other districts.
+`kippnewark` has the widest set of district-level integrations (many
+integrations — adp, google, ldap, tableau, etc. — are kipptaf-only). Use it as
+the reference implementation when adding new integrations to other districts.
 
 Each code location follows the same layout:
 

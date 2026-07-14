@@ -1,0 +1,6 @@
+endpoints:
+  - endpoint: incidents
+    params:
+      IncludeDeleted: Y
+      cf: Y
+      attachments: Y
