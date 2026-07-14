@@ -28,11 +28,18 @@ school_calendars) go in `cubes/conformed/`.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
-- **Transformation lives in dbt, not cube.** Multi-table joins, window
-  functions, and derived grains (SCD2 period-intersection / status spines)
-  belong in a dbt mart read via `sql_table` — not inline cube `sql:`, which is
-  for thin column/expression shaping only. (Cube's own dbt guidance and the
-  `original_sql` pre-agg confirm this.)
+- **Transformation lives in dbt, not cube. A cube's `sql:` / `sql_table:` reads
+  exactly ONE dbt model — never a `JOIN`, subquery, CTE, or `SELECT t.*`.**
+  Multi-table joins, window functions, and derived grains (SCD2
+  period-intersection / status spines) belong in a dbt mart. To surface columns
+  from a second table on a view, give that table its own cube (`public: false`,
+  exposing only the needed dimensions) and bring them in with a **Cube join**
+  keyed on the shared grain — never inline the join in a cube `sql:`.
+  `SELECT t.*` is separately forbidden: it silently breaks the moment the base
+  model gains a same-named column. The Cube custom-calendar **range-join
+  recipe** (`BETWEEN` / `>=`) applies only to a _join's_ `sql:` predicate — it
+  is NOT a license for a `JOIN` inside a cube-body `sql:`. (Cube's own dbt
+  guidance and the `original_sql` pre-agg confirm the one-model rule.)
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
