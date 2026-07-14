@@ -31,7 +31,10 @@ Template: Family Contacts tab of the
 
 ## Design
 
-### 1. finalsite package — split contact names (PR 1)
+All changes ship in a **single PR** using the repo's single-PR cross-project
+workflow (see Rollout).
+
+### 1. finalsite package — split contact names
 
 `src/dbt/finalsite/models/api/intermediate/int_finalsite__student_contacts.sql`
 gains two columns in every branch:
@@ -50,18 +53,24 @@ The model builds in all four district projects (all import the finalsite package
 with the `api` layer enabled); district prods rebuild via Dagster automation
 after merge.
 
-### 2. kipptaf consumer (PR 2)
+### 2. kipptaf consumer
 
+- `sources-kippnewark.yml` / `sources-kippcamden.yml` /
+  `sources-kipppaterson.yml` (kipptaf `models/finalsite/`) gain the
+  `target.name == 'staging'` → `zz_stg_` schema branch (matching
+  `sources-kippmiami.yml`), so dbt Cloud CI reads staged district copies that
+  carry the new columns instead of stale prod. Note: this marks the whole source
+  `state:modified` — CI rebuilds every kipptaf model reading NJ finalsite
+  sources.
 - `src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__student_contacts.sql`
-  (the `union_relations` wrapper over the NJ district models) picks up the new
-  columns automatically once district prods rebuild. It gets a doc-comment edit
-  in this PR to force `state:modified` so dbt Cloud CI recompiles it against the
-  refreshed `zz_stg_*` district copies.
+  (the `union_relations` wrapper over the NJ district models) recompiles its
+  column intersection from the staged district copies during CI, and from
+  district prod after the post-merge rebuilds.
 - No change to `int_students__contacts` — the extract deliberately reads the
   Finalsite intermediates directly so the feed is structurally pinned to
   Finalsite as its source system.
 
-### 3. New model — `rpt_deanslist__family_contacts` (PR 2)
+### 3. New model — `rpt_deanslist__family_contacts`
 
 `src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql`
 (view; contract enforced by directory default):
@@ -96,7 +105,7 @@ after merge.
   prod during implementation; add warn-level `not_null` tests only if the data
   supports them.
 
-### 4. Dagster extract asset (PR 2)
+### 4. Dagster extract asset
 
 New entry in
 `src/teamster/code_locations/kipptaf/extracts/config/deanslist-annual.yaml`:
@@ -120,23 +129,33 @@ changes.
 
 ## Rollout
 
-Standard two-PR cross-project column add:
+Single PR, using the single-PR cross-project workflow
+(`src/dbt/kipptaf/CLAUDE.md`). Before dbt Cloud CI can pass, seed the staging
+schemas (these recreate shared `zz_stg_*` tables — require user authorization):
 
-1. **PR 1** — finalsite package column add. Merge; wait for district prod
-   rebuilds (verify via Dagster materializations).
-2. **PR 2** — kipptaf: union-wrapper comment edit, `rpt` model + yml, extract
-   YAML entry. Before CI: refresh district `zz_stg_*` copies of
-   `int_finalsite__student_contacts` from prod (`dbt clone` per district —
-   requires user authorization) so the wrapper recompile sees the new columns.
+1. Per NJ district: `stage_external_sources --target staging` for the finalsite
+   externals (if not already staged), then
+   `dbt build --select int_finalsite__student_contacts --target staging` from
+   the district project-dir so `zz_stg_<district>_finalsite` carries the new
+   name columns.
+2. Per NJ district: broad `dbt clone --target staging --state target/prod` to
+   seed unchanged upstream models CI defers to.
+3. Clone/build `zz_stg_kipptaf` as needed — under `target=staging`, kipptaf
+   reads its own models from there.
+
+Post-merge: district prods rebuild via Dagster automation; the kipptaf union
+wrapper recompiles against them (`dbt_union_relations_automation_condition`);
+the `rpt` view and the new extract asset follow. A brief window where the
+extract waits on district rebuilds is expected and self-heals.
 
 ## Validation
 
-- PR 1: build `int_finalsite__student_contacts` locally via a consuming district
+- Build `int_finalsite__student_contacts` locally via a consuming district
   project-dir with `--defer`; verify name columns populate and row counts are
   unchanged.
-- PR 2: build the `rpt` model locally with `--defer`; check row count ≈
-  currently enrolled NJ student count, `StudentID` uniqueness, and spot-check a
-  few rows against Finalsite values locally (PII stays out of the PR).
+- Build the `rpt` model locally with `--defer`; check row count ≈ currently
+  enrolled NJ student count, `StudentID` uniqueness, and spot-check a few rows
+  against Finalsite values locally (PII stays out of the PR).
 - Post-deploy: confirm the new extract asset materializes and `contacts.txt`
   lands on the DeansList SFTP.
 
