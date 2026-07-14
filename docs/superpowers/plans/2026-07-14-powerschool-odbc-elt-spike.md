@@ -109,8 +109,10 @@ No commit; this is a checkpoint.
 
 - Produces: importable `dagster_sling` package (provides `sling_assets`,
   `SlingResource`, `SlingConnectionResource`, `DagsterSlingTranslator`) and the
-  `sling` Python package, which vendors the platform Sling binary into the
-  Docker image (hermetic — no runtime binary download).
+  `sling` Python package. NOTE (verified in Task 2): the linux/amd64 `sling`
+  wheel is a thin (~36KB) wrapper that lazy-DOWNLOADS its binary on first import
+  — it is NOT vendored/hermetic. Task 6 must warm the binary at image build time
+  or the first run pod fetches it over the network (see Task 6).
 
 - [ ] **Step 1: Add the dependency**
 
@@ -802,7 +804,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 ### Task 6: Draft PR and branch deployment
 
-**Files:** none (GitHub/Dagster Cloud operations)
+**Files:** possibly `Dockerfile` (Sling binary warm-up — see Step 0)
 
 **Interfaces:**
 
@@ -810,6 +812,25 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
   `cbini/research/claude-powerschool-odbc-elt-spike`.
 - Produces: a kipppaterson **branch deployment** in Dagster Cloud with the six
   spike assets visible; draft PR number recorded for Task 11.
+
+**PREREQUISITE (hard gate):** the two k8s secrets from Task 1 MUST exist before
+opening the PR. Opening the PR triggers the kipppaterson branch deployment (the
+`pull_request` trigger in `deploy-prod-kipppaterson.yaml`); if the secrets are
+absent, every kipppaterson pod fails to start (`CreateContainerConfigError` on
+the missing `secretKeyRef`) — this breaks the whole location's branch
+deployment, not just the spike assets. Do not open the PR until Ops confirms
+`op-ps-db-kipppaterson` / `op-ps-ssh-kipppaterson` are synced.
+
+- [ ] **Step 0: Warm the Sling binary in the image (verified necessary in
+      Task 2)**
+
+The linux/amd64 `sling` wheel lazy-downloads its binary on first import; a run
+pod with no network egress (or a slow one) would fail or stall on first
+materialization. Add a build-time warm-up so the binary ships in the image —
+e.g. a `RUN uv run python -c "import sling"` (or the documented `SLING_BINARY`
+pin) in the `Dockerfile` after deps install. Verify the built image contains the
+binary before relying on a run. (If the Dockerfile is a protected/shared path,
+draft the change and hand it to the user per repo convention.)
 
 - [ ] **Step 1: Push and open a DRAFT PR**
 
