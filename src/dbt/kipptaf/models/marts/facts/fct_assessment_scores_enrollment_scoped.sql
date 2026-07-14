@@ -183,11 +183,14 @@ with
             'iready' as score_source,
 
             cast(overall_scale_score as numeric) as scale_score,
-            cast(percentile as numeric) as growth_percentile,
+            cast(percentile as numeric) as national_percentile,
 
             overall_relative_placement_int >= 4 as is_mastery,
         from {{ ref("int_iready__diagnostic_results") }}
-        where overall_scale_score is not null and _dbt_source_project is not null
+        where
+            overall_scale_score is not null
+            and _dbt_source_project is not null
+            and completion_date is not null
     ),
 
     -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
@@ -226,7 +229,7 @@ with
             'star' as score_source,
 
             cast(unified_score as numeric) as scale_score,
-            cast(percentile_rank as numeric) as growth_percentile,
+            cast(percentile_rank as numeric) as national_percentile,
 
             state_benchmark_proficient = 'Yes' as is_mastery,
         from {{ ref("stg_renlearn__star") }}
@@ -273,11 +276,14 @@ with
             'dibels' as score_source,
 
             cast(measure_standard_score as numeric) as scale_score,
-            cast(measure_percentile as numeric) as growth_percentile,
+            cast(measure_percentile as numeric) as national_percentile,
 
             measure_standard_level_int >= 3 as is_mastery,
         from {{ ref("int_amplify__all_assessments") }}
-        where assessment_type = 'Benchmark' and measure_standard = 'Composite'
+        where
+            assessment_type = 'Benchmark'
+            and measure_standard = 'Composite'
+            and client_date is not null
     ),
 
     vendor_all as (
@@ -292,7 +298,7 @@ with
             proficiency_level,
             score_source,
             scale_score,
-            growth_percentile,
+            national_percentile,
             is_mastery,
         from iready_scores
 
@@ -309,7 +315,7 @@ with
             proficiency_level,
             score_source,
             scale_score,
-            growth_percentile,
+            national_percentile,
             is_mastery,
         from star_scores
 
@@ -326,7 +332,7 @@ with
             proficiency_level,
             score_source,
             scale_score,
-            growth_percentile,
+            national_percentile,
             is_mastery,
         from dibels_scores
     )
@@ -368,7 +374,7 @@ select
     ia.scale_score,
     ia.percent_correct,
 
-    cast(null as numeric) as growth_percentile,
+    cast(null as numeric) as national_percentile,
 
     ia.proficiency_level,
     ia.is_mastery,
@@ -430,7 +436,7 @@ select
     su.scale_score,
     su.percent_correct,
 
-    cast(null as numeric) as growth_percentile,
+    cast(null as numeric) as national_percentile,
 
     su.performance_band as proficiency_level,
     su.is_proficient as is_mastery,
@@ -498,7 +504,7 @@ select
 
     cast(null as numeric) as percent_correct,
 
-    va.growth_percentile,
+    va.national_percentile,
     va.proficiency_level,
     va.is_mastery,
 

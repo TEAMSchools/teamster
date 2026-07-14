@@ -25,7 +25,7 @@ Models touched:
 2. `dim_assessment_administrations` — administration grain-projection CTEs
 3. `dim_assessments` — assessment grain-projection CTEs
 4. `fct_assessment_scores_enrollment_scoped` — union branches + new
-   `growth_percentile` contract column
+   `national_percentile` contract column
 5. Vendor source models — additive columns (`_dbt_source_project`,
    `illuminate_subject`): `int_iready__diagnostic_results` (iReady),
    `int_amplify__all_assessments` (DIBELS), and `stg_renlearn__star` (STAR — the
@@ -41,8 +41,14 @@ Models touched:
   `measure_standard` row per benchmark window only (no subskill measures).
   Day-grain dedup was adopted during planning after data validation found
   same-day retests and upstream duplicate rows (see _Duplicate findings_).
-- **Contract**: add one nullable numeric column, `growth_percentile`. Existing
-  sources carry NULL. No other new columns.
+- **Contract**: add one nullable numeric column, `national_percentile`. Existing
+  sources carry NULL. No other new columns. (Named `national_percentile`, not
+  `growth_percentile` as the issue proposed — the mapped values are all
+  norm-referenced achievement percentiles, not growth; the codebase already uses
+  `*growth_percentile*` for genuine growth fields, e.g. STAR SGP and DIBELS
+  composite growth, and a prior column-naming audit flagged the old
+  `growth_percentile` on this fact for removal as dead plumbing. Renamed during
+  PR review per the `claude-review` finding.)
 - **STAR proficiency**: state benchmark family (`state_benchmark_category_name`
   / `state_benchmark_proficient`), not district benchmarks — consistent with the
   fact's state-anchored proficiency semantics.
@@ -58,7 +64,7 @@ Models touched:
 | `administration_period`            | `test_round`                                 | `screening_period_window_name`                          | `period` (BOY/MOY/EOY)                                               |
 | test/anchor date                   | `completion_date`                            | `completed_date_value` (new DATE on staging)            | `client_date`                                                        |
 | `scale_score`                      | `overall_scale_score`                        | `unified_score`                                         | `measure_standard_score`                                             |
-| `growth_percentile`                | `percentile`                                 | `percentile_rank` (upstream edit)                       | `measure_percentile`                                                 |
+| `national_percentile`              | `percentile`                                 | `percentile_rank` (upstream edit)                       | `measure_percentile`                                                 |
 | `proficiency_level`                | `overall_relative_placement`                 | `state_benchmark_category_name`                         | `measure_standard_level`                                             |
 | `is_mastery`                       | `overall_relative_placement_int >= 4`        | `state_benchmark_proficient = 'Yes'`                    | `measure_standard_level_int >= 3`                                    |
 | `_dbt_source_project`              | from its rewritten `_dbt_source_relation`    | via location crosswalk on `school_name` (upstream edit) | `'kipp' \|\| lower(region)`                                          |
@@ -157,9 +163,10 @@ resolver on
   `test_date` is a required hash input here (unlike the state branch) because
   iReady and STAR keep every attempt within a window.
 - `assessment_administration_key` = the dim's composition above.
-- New contract column `growth_percentile` (numeric, nullable): vendor percentile
-  per the mapping table; NULL on the internal and state branches. Added to the
-  fact SQL and `properties/fct_assessment_scores_enrollment_scoped.yml`.
+- New contract column `national_percentile` (numeric, nullable): vendor
+  percentile per the mapping table; NULL on the internal and state branches.
+  Added to the fact SQL and
+  `properties/fct_assessment_scores_enrollment_scoped.yml`.
 
 ## Testing and validation
 
@@ -169,7 +176,7 @@ resolver on
   `dim_assessments` must stay green — guaranteed by identical hash inputs.
 - Post-build checks (BigQuery, PR-branch schema): per-source row counts vs the
   source intermediates; resolver hit-rate per source (share of scores that
-  resolved to a section); `growth_percentile` population per source.
+  resolved to a section); `national_percentile` population per source.
 - Local `dbt build --select <touched models>+ --defer` before push; dbt Cloud CI
   (`state:modified+`) as the gate.
 - File follow-up issues (with user approval) for the two upstream duplicate

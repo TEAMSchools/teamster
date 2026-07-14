@@ -97,12 +97,13 @@ models:
         description: >-
           Percent of questions answered correctly. Null for state assessments.
 
-      - name: growth_percentile
+      - name: national_percentile
         data_type: numeric
         description: >-
-          National percentile for the attempt where the vendor provides one
-          (i-Ready percentile, STAR percentile rank, DIBELS measure percentile).
-          Null for internal and state assessments.
+          National norm-referenced percentile rank for the attempt where the
+          vendor provides one (i-Ready percentile, STAR percentile rank, DIBELS
+          measure percentile). This is an achievement percentile, not a growth
+          percentile. Null for internal and state assessments.
 
       - name: proficiency_level
         data_type: string
