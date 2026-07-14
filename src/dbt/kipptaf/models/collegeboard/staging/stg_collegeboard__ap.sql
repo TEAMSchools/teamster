@@ -1,5 +1,7 @@
 select
-    * except (_dagster_partition_school_year, date_of_birth, grade_level),
+    * except (
+        _dagster_partition_school_year, date_of_birth, grade_level, source_file_name
+    ),
 
     _dagster_partition_school_year as enrollment_school_year,
 

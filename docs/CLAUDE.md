@@ -100,8 +100,6 @@ documentation mechanism for that work.
   subsection heading repeated across sections is fine). `mkdocs build` does NOT
   run markdownlint, so `trunk check` the generated/edited `.md` before pushing —
   MD036 / MD001 fire only at pre-push / CI, not in the mkdocs build.
-- Always specify a language on fenced code blocks (` ```python `, ` ```sql `,
-  ` ```yaml `, ` ```bash `, ` ```text ` for plain output)
 - SQL examples must follow `.trunk/config/.sqlfluff` rules (BigQuery dialect,
   trailing commas, single quotes, max line length 88)
 - Use admonitions for warnings and notes:
