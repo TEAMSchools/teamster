@@ -1,6 +1,7 @@
 from dagster import EnvVar, build_init_resource_context
 from dagster_shared import check
 
+from teamster.code_locations.kipptaf.resources import SSH_RESOURCE_LITTLESIS
 from teamster.core.resources import get_powerschool_ssh_resource
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -19,6 +20,9 @@ def test_get_powerschool_ssh_resource_port_is_lazy(monkeypatch):
     resource = get_powerschool_ssh_resource()
 
     # At resource-init time the port resolves to a real int.
+    # `process_config_and_initialize()` resolves config/env vars only; it does
+    # NOT run `setup_for_execution`, so the absent SSH secret file / password
+    # never blocks this test.
     monkeypatch.setenv("PS_SSH_HOST", "ps.example.org")
     monkeypatch.setenv("PS_SSH_PORT", "1521")
     monkeypatch.setenv("PS_SSH_USERNAME", "svc_ps")
@@ -27,6 +31,29 @@ def test_get_powerschool_ssh_resource_port_is_lazy(monkeypatch):
     initialized = resource.process_config_and_initialize()
 
     assert initialized.remote_port == 1521
+    assert isinstance(initialized.remote_port, int)
+
+
+def test_ssh_resource_littlesis_port_is_lazy(monkeypatch):
+    """`LITTLESIS_SFTP_PORT` resolves lazily for the module-level singleton.
+
+    ``SSH_RESOURCE_LITTLESIS`` is constructed at import of
+    ``kipptaf.resources`` (not lazily via a factory), so an eager port read
+    would crash that import when the variable is unset. Guard the singleton
+    directly: its ``remote_port`` stays an unresolved ``EnvVar.int`` marker
+    until resource init, then resolves to a real int.
+    """
+    # The imported singleton holds an unresolved lazy marker — no eager read.
+    assert isinstance(SSH_RESOURCE_LITTLESIS.remote_port, type(EnvVar.int("_probe")))
+
+    monkeypatch.setenv("LITTLESIS_SFTP_HOST", "sftp.example.org")
+    monkeypatch.setenv("LITTLESIS_SFTP_PORT", "22")
+    monkeypatch.setenv("LITTLESIS_SFTP_USERNAME", "svc")
+    monkeypatch.setenv("LITTLESIS_SFTP_PASSWORD", "pw")
+
+    initialized = SSH_RESOURCE_LITTLESIS.process_config_and_initialize()
+
+    assert initialized.remote_port == 22
     assert isinstance(initialized.remote_port, int)
 
 
