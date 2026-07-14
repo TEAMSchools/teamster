@@ -1,7 +1,9 @@
 with
-    course_enrollments as (
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    course_enrollments_raw as (
         select
             _dbt_source_relation,
+            cc_dcid,
             cc_studentid,
             cc_academic_year,
             ap_course_subject,
@@ -15,6 +17,16 @@ with
             rn_course_number_year = 1
             and ap_course_subject is not null
             and not is_dropped_section
+    ),
+
+    course_enrollments as (
+        {{
+            dbt_utils.deduplicate(
+                relation="course_enrollments_raw",
+                partition_by="cc_studentid, cc_academic_year, ap_course_subject, _dbt_source_relation",
+                order_by="cc_dcid asc",
+            )
+        }}
     ),
 
     ap_assessments as (

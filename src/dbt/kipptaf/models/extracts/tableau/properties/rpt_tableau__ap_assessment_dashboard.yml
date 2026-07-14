@@ -423,3 +423,84 @@ unit_tests:
             subject_code: PHYS1,
             test_subject_area: "Took AP exam, not enrolled in course.",
           }
+
+  - name: test_companion_section_collapses_to_one_row
+    description: >-
+      A student enrolled in both the real AP course and a companion (e.g.
+      recitation) section that PowerSchool tags with the same ap_course_subject
+      but a distinct course record collapses to a single row per subject, rather
+      than fanning out one row per section at the course join. The surviving row
+      is chosen deterministically by cc_dcid (lowest wins).
+    model: rpt_tableau__ap_assessment_dashboard
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        rows:
+          - {
+              studentid: 106,
+              student_number: 1006,
+              academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__students,
+              rn_year: 1,
+              school_level: HS,
+              entrydate: 2024-08-01,
+              exitdate: 2025-06-15,
+              iep_status: No IEP,
+            }
+      - input: ref('base_powerschool__course_enrollments')
+        rows:
+          - {
+              cc_dcid: 5001,
+              cc_studentid: 106,
+              cc_academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__cc,
+              ap_course_subject: CALCBC,
+              is_dropped_section: false,
+              rn_course_number_year: 1,
+              courses_course_name: AP Calculus BC,
+              cc_dateenrolled: 2024-09-01,
+              cc_dateleft: 2025-06-15,
+              sections_external_expression: P3,
+              teacher_lastfirst: "Nguyen, Kim",
+            }
+          - {
+              cc_dcid: 5002,
+              cc_studentid: 106,
+              cc_academic_year: 2024,
+              _dbt_source_relation: kippnewark_powerschool.stg_powerschool__cc,
+              ap_course_subject: CALCBC,
+              is_dropped_section: false,
+              rn_course_number_year: 1,
+              courses_course_name: Math IV Calculus AP BC Recitation,
+              cc_dateenrolled: 2024-08-19,
+              cc_dateleft: 2025-06-15,
+              sections_external_expression: P1,
+              teacher_lastfirst: "Nguyen, Kim",
+            }
+      - input: ref('stg_google_sheets__collegeboard__ap_course_crosswalk')
+        rows:
+          - {
+              PS_AP_Course_Subject_Code: CALCBC,
+              AP_Course_Name: AP Calculus BC,
+              Data_Source: CB File,
+            }
+      - input: ref('int_assessments__ap_assessments')
+        rows:
+          - {
+              academic_year: 2024,
+              powerschool_student_number: 1006,
+              test_name: Calculus BC,
+              test_subject: Calculus BC,
+              exam_score: 4,
+              ps_ap_course_subject_code: CALCBC,
+              ap_course_name: AP Calculus BC,
+              data_source: CB File,
+            }
+    expect:
+      rows:
+        - {
+            subject_code: CALCBC,
+            course_name: AP Calculus BC,
+            test_subject_area: AP Calculus BC,
+            expected_scope: AP,
+            expected_test_type: Official,
+          }
