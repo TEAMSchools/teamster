@@ -1,7 +1,14 @@
 with
+    -- A student can have two course_enrollments rows tagged with the same
+    -- ap_course_subject (e.g. a main AP course plus a companion recitation
+    -- section) -- both are legitimate, distinct course offerings, not a data
+    -- error, so they're intentionally left undeduped here and surface as
+    -- separate rows below. Distinct from the PowerSchool double-write corpus
+    -- (#3900/#3915), which is literal duplicate records for the same
+    -- enrollment.
     course_enrollments as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             cc_studentid,
             cc_academic_year,
             ap_course_subject,
@@ -10,6 +17,7 @@ with
             sections_external_expression,
             teacher_lastfirst,
             courses_course_name,
+
         from {{ ref("base_powerschool__course_enrollments") }}
         where
             rn_course_number_year = 1
@@ -26,9 +34,10 @@ with
             exam_score,
             irregularity_code_1,
             irregularity_code_2,
-            data_source,
+            `data_source`,
             ps_ap_course_subject_code,
             ap_course_name,
+
         from {{ ref("int_assessments__ap_assessments") }}
         where test_subject != 'Calculus BC: AB Subscore'
     ),
@@ -38,14 +47,15 @@ with
             e.studentid,
             e.student_number,
             e.academic_year,
-            e._dbt_source_relation,
+            e._dbt_source_project,
             c.ap_course_subject as subject_code,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             course_enrollments as c
             on e.studentid = c.cc_studentid
             and e.academic_year = c.cc_academic_year
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="c") }}
+            and e._dbt_source_project = c._dbt_source_project
 
         union distinct
 
@@ -53,8 +63,9 @@ with
             e.studentid,
             e.student_number,
             e.academic_year,
-            e._dbt_source_relation,
+            e._dbt_source_project,
             ap.ps_ap_course_subject_code as subject_code,
+
         from {{ ref("int_extracts__student_enrollments") }} as e
         inner join
             ap_assessments as ap
@@ -129,13 +140,13 @@ left join
     subjects as sub
     on e.studentid = sub.studentid
     and e.academic_year = sub.academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="sub") }}
+    and e._dbt_source_project = sub._dbt_source_project
 left join
     course_enrollments as s
     on sub.studentid = s.cc_studentid
     and sub.academic_year = s.cc_academic_year
     and sub.subject_code = s.ap_course_subject
-    and {{ union_dataset_join_clause(left_alias="sub", right_alias="s") }}
+    and sub._dbt_source_project = s._dbt_source_project
 left join
     ap_assessments as a
     on sub.student_number = a.powerschool_student_number
