@@ -142,16 +142,25 @@ exam status, since those fields describe course-side expectations.
 3. **Prod vs. new-build row diff** — run via BigQuery MCP, comparing the dev
    build against the prod table. Prod's `ap_course_subject` stands in for the
    old grain key (pre-fix, that column _was_ the full grain), so this is
-   apples-to-apples:
+   apples-to-apples. **`subject_code`/`ap_course_subject` is NULL for every
+   non-participating student, and SQL `NULL = NULL` never matches** — a plain
+   equality join on the raw column makes every non-participant look like both an
+   add and a delete. Coalesce both sides to a sentinel before joining:
 
    ```sql
    with
        prod as (
-           select academic_year, student_number, ap_course_subject as subject_code
+           select
+               academic_year, student_number,
+               ifnull(ap_course_subject, '__none__') as subject_code_key,
+               test_subject_area
            from `teamster-332318`.kipptaf_tableau.rpt_tableau__ap_assessment_dashboard
        ),
        dev as (
-           select academic_year, student_number, subject_code
+           select
+               academic_year, student_number,
+               ifnull(subject_code, '__none__') as subject_code_key,
+               test_subject_area
            from `teamster-332318`.<dev_schema>.rpt_tableau__ap_assessment_dashboard
        ),
        added as (
@@ -160,7 +169,7 @@ exam status, since those fields describe course-side expectations.
            left join prod
                on dev.academic_year = prod.academic_year
                and dev.student_number = prod.student_number
-               and dev.subject_code = prod.subject_code
+               and dev.subject_code_key = prod.subject_code_key
            where prod.student_number is null
        ),
        deleted as (
@@ -169,23 +178,51 @@ exam status, since those fields describe course-side expectations.
            left join dev
                on prod.academic_year = dev.academic_year
                and prod.student_number = dev.student_number
-               and prod.subject_code = dev.subject_code
+               and prod.subject_code_key = dev.subject_code_key
            where dev.student_number is null
        )
-   select 'added' as change_type, count(*) as row_count
+   select 'added' as change_type, test_subject_area, count(*) as row_count
    from added
+   group by test_subject_area
    union all
-   select 'deleted' as change_type, count(*) as row_count
+   select 'deleted' as change_type, test_subject_area, count(*) as row_count
    from deleted
+   group by test_subject_area
+   order by change_type
+   ```
+
+   Dry-run validated against current prod data (2026-07-14): `added` = 245,
+   entirely `'Took AP exam, not enrolled in course.'` rows, spanning many
+   historical academic years, not just the 3 cases cited in #4391 — the bug has
+   been silently dropping exam-only scores since before 2018, the fix isn't
+   year-scoped. `deleted` = 119, entirely `'Not applicable'` rows.
+
+   **A `deleted` row is not automatically a regression.** A student who was
+   previously a total non-participant (`'Not applicable'`, one placeholder row)
+   and turns out to have an exam-only score gets their placeholder row
+   _replaced_ by a real subject row — that shows up as one `deleted` + one
+   `added` for the same `(academic_year, student_number)`, not a net loss. Run
+   this reconciliation before trusting the `deleted` count:
+
+   ```sql
+   select
+       count(*) as deleted_rows,
+       countif(a.student_number is not null) as accounted_for_by_an_added_row,
+       countif(a.student_number is null) as true_regressions
+   from deleted as d
+   left join (select distinct academic_year, student_number from added) as a
+       on d.academic_year = a.academic_year and d.student_number = a.student_number
    ```
 
    Expected outcome and follow-up:
    - `added` should be > 0 and, when grouped by `test_subject_area`, should
      consist entirely of `'Took AP exam, not enrolled in course.'` rows —
      anything else in that bucket needs a look before merging.
-   - `deleted` should be **0**. Any deleted row means the restructured joins
-     lost a row that used to show up — a regression, not an improvement — and
-     blocks the fix until explained.
+   - `true_regressions` (from the reconciliation query) must be **0**. Any row
+     there means the restructured joins lost a row that used to show up for a
+     student with no offsetting new row — a real regression, not an improvement
+     — and blocks the fix until explained. (Validated 0/119 on current prod
+     data.)
    - Cross-check: `count(dev) = count(prod) + added - deleted`.
 
 ## Scope
