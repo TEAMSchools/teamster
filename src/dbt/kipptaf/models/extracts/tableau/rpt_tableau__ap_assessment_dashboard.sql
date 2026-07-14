@@ -60,6 +60,7 @@ with
             ap_assessments as ap
             on e.academic_year = ap.academic_year
             and e.student_number = ap.powerschool_student_number
+            and ap.ps_ap_course_subject_code is not null
     )
 
 select

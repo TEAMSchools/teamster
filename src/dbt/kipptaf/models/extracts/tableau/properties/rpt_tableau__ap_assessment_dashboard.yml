@@ -129,10 +129,9 @@ models:
       - name: ap_course_name
         data_type: string
         description: >
-          AP course name from the College Board crosswalk when the student has
-          an AP course enrollment; otherwise the exam's own crosswalk-resolved
-          name when the student took the exam with no matching course; 'Not an
-          AP course' if neither resolves.
+          AP course name resolved by subject code, in priority order — the
+          course-side College Board crosswalk first, then the exam's own
+          crosswalk-resolved name, then 'Not an AP course' if neither resolves.
       - name: course_name
         data_type: string
         description: >
