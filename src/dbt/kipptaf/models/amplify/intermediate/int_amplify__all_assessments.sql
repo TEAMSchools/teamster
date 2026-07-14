@@ -1,4 +1,9 @@
 with
+    data_farming as (
+        select *, concat('kipp', lower(region)) as _dbt_source_project,
+        from {{ source("amplify", "int_amplify__dds__data_farming_unpivot") }}
+    ),
+
     assessments_scores as (
         -- benchmark scores
         select
@@ -10,6 +15,7 @@ with
             bss.benchmark_period as `period`,
             bss.client_date,
             bss.sync_date,
+            bss._dbt_source_project,
 
             u.surrogate_key,
             u.measure_name,
@@ -63,6 +69,7 @@ with
             df.period,
             df.`date` as client_date,
             df.`date` as sync_date,
+            df._dbt_source_project,
 
             df.surrogate_key,
             df.measure_name,
@@ -86,7 +93,7 @@ with
             e.end_date,
             e.matching_pm_season as matching_season,
 
-        from {{ source("amplify", "int_amplify__dds__data_farming_unpivot") }} as df
+        from data_farming as df
         inner join
             {{ ref("int_google_sheets__dibels_expected_assessments") }} as e
             on df.academic_year = e.academic_year
@@ -109,6 +116,7 @@ with
             p.pm_period as `period`,
             p.client_date,
             p.sync_date,
+            p._dbt_source_project,
             p.surrogate_key,
             p.measure_name,
             p.measure_name_code,
@@ -224,6 +232,7 @@ select
     s.matching_season,
     s.client_date,
     s.sync_date,
+    s._dbt_source_project,
     s.measure_name,
     s.measure_name_code,
     s.measure_standard,
@@ -244,8 +253,6 @@ select
     p.eoy as eoy_composite,
 
     'Text Study' as illuminate_subject,
-
-    concat('kipp', lower(s.region)) as _dbt_source_project,
 
     case
         s.period when 'BOY' then 'MOY' when 'MOY' then 'EOY'
@@ -309,6 +316,7 @@ select
     s.matching_season,
     s.client_date,
     s.sync_date,
+    s._dbt_source_project,
     s.measure_name,
     s.measure_name_code,
     s.measure_standard,
@@ -329,8 +337,6 @@ select
     p.eoy as eoy_composite,
 
     'Text Study' as illuminate_subject,
-
-    concat('kipp', lower(s.region)) as _dbt_source_project,
 
     'NA' as benchmark_goal_season,
 
