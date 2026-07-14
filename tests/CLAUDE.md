@@ -33,10 +33,14 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
-- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields inside
-  `build_resources()`. For non-`str` fields (e.g. `int` ports), use
-  `int(check.not_none(EnvVar("X").get_value()))` — `EnvVar` resolves lazily, so
-  `int(EnvVar("X"))` casts the marker object, not the value.
+- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields and
+  `EnvVar.int("X")` for `int` fields (e.g. ports) inside `build_resources()` —
+  both resolve lazily at resource init and never read the environment at
+  construction. Prefer these over `int(EnvVar("X").get_value())`: `.get_value()`
+  reads eagerly, which is harmless when a test always sets the var but crashes
+  module-load construction in production `resources.py` when it is unset (e.g. a
+  codespace) — so never copy that idiom there. Plain `int(EnvVar("X"))` casts
+  the marker object, not the value.
 - **Worktree tests**: VS Code doesn't discover tests in worktrees. Run manually
   ensuring `OP_SERVICE_ACCOUNT_TOKEN` is set, then
   `cd .worktrees/<branch> && uv run pytest ...`.
@@ -45,6 +49,11 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `build_resources()` context manager to instantiate, then call methods on
   `resources.<name>`. `PrivateAttr` fields (`_log`, `_service`) accept direct
   assignment; use `object.__setattr__` to monkey-patch methods.
+- **Testing env-var resolution offline**:
+  `resource.process_config_and_initialize()` returns an initialized copy with
+  `EnvVar` / `EnvVar.int` fields resolved but WITHOUT running
+  `setup_for_execution` — no live connection or secret file needed. Ideal for
+  asserting a config field resolves to the right value/type.
 - **Testing resource retry offline**: monkeypatch
   `<Resource>._request.retry.wait = wait_none()` (tenacity) to kill backoff,
   inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`

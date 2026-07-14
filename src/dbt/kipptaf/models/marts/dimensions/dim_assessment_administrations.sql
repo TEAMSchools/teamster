@@ -214,6 +214,83 @@ with
         where scale_score is not null
     ),
 
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- iReady: one administration per (subject, test_round, academic_year,
+    -- _dbt_source_project).
+    iready_administrations as (
+        select distinct
+            subject as subject_area,
+            subject as module_code,
+            academic_year_int as academic_year,
+            test_round as administration_period,
+            _dbt_source_project,
+
+            'iready' as assessment_type,
+            'i-Ready Diagnostic' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as grade_level,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+
+            if(subject = 'Math', 'Math', 'ELA') as scope,
+        from {{ ref("int_iready__diagnostic_results") }}
+        where overall_scale_score is not null and _dbt_source_project is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- STAR: one administration per (star_subject, screening window,
+    -- academic_year, _dbt_source_project).
+    star_administrations as (
+        select distinct
+            star_subject as subject_area,
+            star_subject as module_code,
+            academic_year,
+            screening_period_window_name as administration_period,
+            _dbt_source_project,
+
+            'star' as assessment_type,
+            'STAR' as title,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as grade_level,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+
+            if(star_subject = 'Math', 'Math', 'ELA') as scope,
+        from {{ ref("stg_renlearn__star") }}
+        where
+            completed_date_value is not null
+            and unified_score is not null
+            and _dbt_source_project is not null
+    ),
+
+    -- grain projection: every selected column is functionally determined
+    -- by the partition key; not a mask for upstream duplicates
+    -- DIBELS: one administration per (benchmark window, academic_year,
+    -- _dbt_source_project); module_code is the Composite measure.
+    dibels_administrations as (
+        select distinct
+            measure_standard as module_code,
+            academic_year,
+            `period` as administration_period,
+            _dbt_source_project,
+
+            'Reading' as subject_area,
+            'dibels' as assessment_type,
+            'DIBELS' as title,
+            'ELA' as scope,
+
+            cast(null as date) as administered_date,
+            cast(null as int64) as grade_level,
+            cast(null as int64) as source_assessment_id,
+            cast(null as string) as test_type,
+        from {{ ref("int_amplify__all_assessments") }}
+        where assessment_type = 'Benchmark' and measure_standard = 'Composite'
+    ),
+
     -- College Official: one administration per (score_type, test_date,
     -- administration_round). _dbt_source_project is null because college tests
     -- are region-agnostic.
@@ -322,6 +399,15 @@ with
         union all
         select {{ union_cols }},
         from state_fl_science_administrations
+        union all
+        select {{ union_cols }},
+        from iready_administrations
+        union all
+        select {{ union_cols }},
+        from star_administrations
+        union all
+        select {{ union_cols }},
+        from dibels_administrations
         union all
         select {{ union_cols }},
         from college_administrations
