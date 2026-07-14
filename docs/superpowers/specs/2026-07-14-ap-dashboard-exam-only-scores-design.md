@@ -4,6 +4,22 @@
 - **Status:** Design
 - **Date:** 2026-07-14
 
+> **Amendment (pre-existing uniqueness warning):** a full dev build of the fixed
+> model surfaced a WARN on the `subject_code` uniqueness test for 3 rows
+> (academic_year 2021, three Newark students, `subject_code = '4'` / Calculus
+> BC). Verified this is **pre-existing, not caused by this fix**: the current
+> prod table already has the identical 3-row duplicate keyed on
+> `(academic_year, student_number, ap_course_subject)` — each of these students
+> has two separate PowerSchool course-enrollment rows both tagged
+> `ap_course_subject = '4'` (a main "AP Calculus BC" section plus a companion
+> "Math IV Calculus AP BC Recitation" section, distinct `course_number`s so
+> `rn_course_number_year = 1` doesn't collapse them). The fix's
+> `course_enrollments` CTE filters identically to the original model's `s` join,
+> so this data-quality quirk carries forward unchanged. No action item for this
+> fix; do not add defensive dedupe for it (matches this repo's standing
+> convention for the similar `base_powerschool__course_enrollments` double-write
+> issue, #3900/#3915 — downgrade/track, don't dedupe).
+
 ## Summary
 
 `rpt_tableau__ap_assessment_dashboard`
