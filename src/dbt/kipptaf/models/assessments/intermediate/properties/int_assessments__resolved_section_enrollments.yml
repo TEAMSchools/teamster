@@ -306,3 +306,71 @@ unit_tests:
             source_type: state_nj,
             resolution_type: subject_section,
           }
+
+  - name: test_iready_dibels_source_type_prevents_grain_collision
+    description: >-
+      Regression test for #3625 (fixed in a743b7d6c). An iReady Reading score
+      and a DIBELS Composite score for the same student/project/academic
+      year/administration_period/subject_area (Text Study) agree on every
+      score_grain_key input except source_type. Both must resolve to the subject
+      section and survive as distinct output rows -- if source_type were dropped
+      from score_grain_key the two would hash identically and the resolved-tier
+      dedupe would silently collapse them into one.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows: []
+      - input: ref('int_assessments__assessments_canonical')
+        rows: []
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 5,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: Text Study,
+              courses_credittype: ELA,
+              cc_dateenrolled: 2024-09-01,
+              cc_dateleft: 2025-06-15,
+              cc_dcid: 555,
+            }
+      - input: ref('int_pearson__all_assessments')
+        rows: []
+      - input: ref('int_fldoe__all_assessments')
+        rows: []
+      - input: ref('int_iready__diagnostic_results')
+        format: sql
+        rows: |
+          select
+              5 as student_id,
+              2024 as academic_year_int,
+              'BOY' as test_round,
+              'Text Study' as illuminate_subject,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-15') as completion_date,
+              650 as overall_scale_score
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
+        format: sql
+        rows: |
+          select
+              5 as student_number,
+              2024 as academic_year,
+              'BOY' as `period`,
+              'Text Study' as illuminate_subject,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-20') as client_date,
+              'Benchmark' as assessment_type,
+              'Composite' as measure_standard
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 5,
+            source_type: iready,
+            student_section_enrollment_key: 862d5edd93004a2ab12782487a3292a7,
+          }
+        - {
+            powerschool_student_number: 5,
+            source_type: dibels,
+            student_section_enrollment_key: 862d5edd93004a2ab12782487a3292a7,
+          }
