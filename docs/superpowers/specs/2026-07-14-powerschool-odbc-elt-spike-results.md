@@ -71,9 +71,33 @@ Legend: ✅ pass · ⚠️ caveat · ❌ fail · _(pending)_ not yet measured.
 
 ## Runtime errors and config adjustments
 
-_(Record here: Oracle schema qualification discovered (unqualified vs `ps`),
-Sling `sid` vs `url` connection form, Sling binary download on first run, any
-tunnel disconnects, type-cast adapters needed.)_
+Known items to watch / adjustments made (pre-run):
+
+- **Sling Oracle connect key (fixed pre-run):** initial code used `sid=` for
+  `PS_DB_DATABASE`, but that value is a **service name** (the prod ODBC resource
+  passes it as `service_name`). Changed to `service_name=` — Sling's Oracle
+  connector accepts it as a distinct property
+  ([docs](https://docs.slingdata.io/connections/database-connections/oracle)).
+  Using `sid=` would have failed with ORA-12514 and made Sling look broken.
+  (Caught by the PR `claude-review` bot.)
+- **SSH host-key algorithm asymmetry (watch at run):** the dlt path uses the
+  repo's `sshpass` wrapper, which sets `-oHostKeyAlgorithms=+ssh-rsa` /
+  `accept-new` for legacy PowerSchool SSH hosts. Sling's native `ssh_tunnel`
+  uses Go's `crypto/ssh` with `InsecureIgnoreHostKey()` — it skips host-key
+  _verification_ entirely, so it should sidestep a legacy `ssh-rsa` host key,
+  BUT if the server only offers `ssh-rsa` as a host-key _algorithm_ and Go's
+  client has dropped it from negotiation, the Sling tunnel could fail at KEX
+  where dlt succeeds. If the Sling side fails to connect, record it as a
+  tunnel-stack artifact (not a Sling ingestion deficiency) — though "can't
+  tunnel to our host out of the box" is itself a decision-relevant finding.
+- **Oracle schema qualification (watch at run):** dlt uses the unqualified table
+  name; Sling streams are qualified `ps.<table>`. If dlt reflection fails "table
+  not found," add `schema="ps"` to `sql_table(...)`.
+- **Sling binary (watch at first run):** the linux/amd64 `sling` wheel
+  lazy-downloads its binary on first import; the first Sling materialization may
+  include one-time download overhead — exclude it from the throughput figure or
+  re-run for a clean number.
+- _(add: any tunnel disconnects, type-cast adapters needed.)_
 
 ## Decision
 
