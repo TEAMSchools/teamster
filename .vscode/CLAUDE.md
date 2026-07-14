@@ -5,7 +5,8 @@ setup docs are in `docs/guides/codespaces.md`.
 
 ## Environment Quirks
 
-- `lib/` is globally gitignored — use `shared/` for shell helper libraries
+- `lib/` is globally gitignored — name shell helper-library dirs `shared/`
+  instead (none exists yet; create it rather than `lib/`)
 - `task.allowAutomaticTasks` has application scope — cannot be set in workspace
   settings or `devcontainer.json` customizations; must go in the user's local VS
   Code User Settings

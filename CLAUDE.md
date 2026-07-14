@@ -55,6 +55,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   user explicitly declined an issue, skip `gh issue develop` and create the
   branch directly: `git worktree add -b <branch> .worktrees/<branch>`.
 
+- **Stacked branch** (build on an unmerged branch):
+  `gh issue develop <num> --name <branch> --base <parent-branch>` links a branch
+  off a non-`main` base; then `git worktree add`. Gives a clean diff + enforced
+  merge-after-parent — but base ≠ main skips `claude-review` (dbt Cloud CI still
+  runs; it is not base-gated — see `.github/CLAUDE.md`).
+
 - **Linking an existing remote branch to an issue**:
   `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
   the branch already exists. Delete the remote branch, then
@@ -81,6 +87,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
   unchanged and dirties `main` (the worktree commit then reports "nothing to
   commit").
+
+- **IDE Pyright diagnostics on worktree files are false-positive-prone** — it
+  resolves imports against the MAIN checkout, so worktree-only signature/symbol
+  changes surface phantom `unknown import` / `no parameter named X` errors.
+  Trust `uv run` executed inside the worktree, not the IDE.
 
 - **Branch switch**: with an issue,
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
@@ -197,7 +208,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `commits/<sha>/check-runs`). Check both before calling a PR green.
   `claude-review` triggers only on PR `opened` / `ready_for_review` (not
   `synchronize`) — it does NOT re-run when you push fixes, so don't wait or
-  monitor for a re-review after a fix push.
+  monitor for a re-review after a fix push. A PR with all checks green but
+  `mergeable_state: blocked` (from `gh api repos/<owner>/<repo>/pulls/<n>`) is
+  awaiting a required review approval (CODEOWNERS `src/dbt/` =
+  analytics-engineers), not a CI failure.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -329,7 +343,8 @@ tagging.
 - **`trunk check` the spec/plan `.md` you write before pushing** — markdownlint
   (MD040 fenced-block language, MD036) fires only at pre-push/CI, not the
   pre-commit `fmt` hook; checking only the code files misses a doc-only Trunk
-  failure.
+  failure. Run it non-interactively (`--no-fix </dev/null`) — `--force` on a
+  large `.md` can hang on the interactive "Apply formatting?" prompt.
 
 - **`finishing-a-development-branch` / `using-git-worktrees` tests & setup**:
   this repo uses `uv`, not `poetry`/`pip`, and
@@ -650,7 +665,11 @@ SELECT-only constraints apply. `bq query` with the SQL passed as a positional
 arg crashes its flag parser when the query text starts with a `--` comment
 ("Unknown command line flag ..." / RecursionError) — the `--` end-of-flags
 separator does NOT help. Start the query with `WITH`/`SELECT` (strip leading
-comment lines).
+comment lines). Pass backtick/quote-heavy SQL via `"$(cat file.sql)"` to dodge
+shell-quoting. `--max_rows` defaults to 100 — raise it for full dumps. To hand
+PII to Ops, redirect to a local `.claude/scratch/*.csv`
+(`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
+verify with `wc -l`, and reference the FILE (never the values) in any tracker.
 
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is

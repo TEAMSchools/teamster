@@ -4,6 +4,7 @@
             source("kippnewark_deanslist", "stg_deanslist__behavior"),
             source("kippcamden_deanslist", "stg_deanslist__behavior"),
             source("kippmiami_deanslist", "stg_deanslist__behavior"),
+            source("kipppaterson_deanslist", "stg_deanslist__behavior"),
         ]
     )
 }}

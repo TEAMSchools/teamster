@@ -4,6 +4,7 @@
             source("kippnewark_deanslist", "int_deanslist__incidents__attachments"),
             source("kippcamden_deanslist", "int_deanslist__incidents__attachments"),
             source("kippmiami_deanslist", "int_deanslist__incidents__attachments"),
+            source("kipppaterson_deanslist", "int_deanslist__incidents__attachments"),
         ]
     )
 }}

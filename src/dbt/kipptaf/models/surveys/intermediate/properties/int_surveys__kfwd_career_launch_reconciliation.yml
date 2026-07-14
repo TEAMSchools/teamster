@@ -9,3 +9,5 @@ models:
           - unique
       - name: sf_contact_id
         data_type: string
+      - name: reconcile_or_exclude
+        data_type: string

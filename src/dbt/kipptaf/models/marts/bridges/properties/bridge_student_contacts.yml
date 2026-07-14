@@ -1,23 +1,33 @@
 models:
   - name: bridge_student_contacts
     description: >-
-      Bridge table resolving the many-to-many between students and contact
-      persons. One row per student x contact person pair. Relationship
-      attributes that vary per pair (relationship type, priority, emergency
-      flag, etc.) live here rather than on dim_student_contact_persons. Foreign
-      keys to dim_students via student_key and to dim_student_contact_persons
-      via student_contact_person_key.
+      Bridge resolving the many-to-many between students and their contact
+      persons under the Finalsite 1+4 contact shape. One row per (student,
+      contact person, contact slot). The relationship and the emergency flags
+      that vary per student-contact pair live here; stable person attributes
+      (name, email, phones, address) live on dim_student_contact_persons.
+      Foreign keys to dim_students via student_key and to
+      dim_student_contact_persons via student_contact_person_key.
 
     constraints:
       - type: primary_key
-        columns: [student_key, student_contact_person_key]
+        columns: [student_key, student_contact_person_key, contact_slot]
         warn_unsupported: false
+
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_key
+              - student_contact_person_key
+              - contact_slot
+
     columns:
       - name: student_key
         data_type: string
         description: >-
           Surrogate key for the student. Foreign key to dim_students. Derived
-          from student_number via generate_surrogate_key.
+          from the student number.
         constraints:
           - type: foreign_key
             to: ref('dim_students')
@@ -30,12 +40,12 @@ models:
               arguments:
                 to: ref('dim_students')
                 field: student_key
+
       - name: student_contact_person_key
         data_type: string
         description: >-
           Surrogate key for the contact person. Foreign key to
-          dim_student_contact_persons. Derived from _dbt_source_project and
-          powerschool_person_id.
+          dim_student_contact_persons.
         constraints:
           - type: foreign_key
             to: ref('dim_student_contact_persons')
@@ -48,48 +58,35 @@ models:
               arguments:
                 to: ref('dim_student_contact_persons')
                 field: student_contact_person_key
-      - name: relationship_type
+
+      - name: relationship
+        data_type: string
+        description: The contact's relationship to the student.
+
+      - name: contact_slot
         data_type: string
         description: >-
-          Relationship between the contact person and the student (e.g., Mother,
-          Father, Grandparent) as coded in PowerSchool.
+          Which contact this pairing represents — contact_1 or emergency_1
+          through emergency_4.
 
-      - name: priority
-        data_type: int64
-        description: >-
-          Indicates the preferred order in which the student's contacts will be
-          selected.Valid values: 1-n. Defaults to 1. Indexed with Student DCID.
-          Required.
-
-        config:
-          meta:
-            source_system: PowerSchool
-            source_model: stg_powerschool__studentcontactassoc
-            source_column: contactpriorityorder
       - name: is_emergency
         data_type: boolean
-        description: >-
-          TRUE if this contact is designated as an emergency contact for this
-          student.
+        description: True for every emergency slot; false for contact_1.
 
       - name: is_pickup
         data_type: boolean
         description: >-
-          TRUE if this contact is authorized for school pickup for this student.
+          Whether the contact is authorized to pick the student up. Null for
+          Finalsite contact_1 rows.
 
       - name: is_custodial
         data_type: boolean
         description: >-
-          TRUE if this contact has custodial rights for this student.
+          Whether the contact has custody of the student. Null for Finalsite
+          contact_1 rows.
 
       - name: is_household_member
         data_type: boolean
         description: >-
-          TRUE if the student lives with this contact person (household member).
-
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - student_key
-              - student_contact_person_key
+          Whether the student lives with the contact. Null for Finalsite
+          contact_1 rows.

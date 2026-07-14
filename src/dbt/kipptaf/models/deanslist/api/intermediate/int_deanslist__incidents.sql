@@ -6,6 +6,7 @@ with
                     source("kippnewark_deanslist", "int_deanslist__incidents"),
                     source("kippcamden_deanslist", "int_deanslist__incidents"),
                     source("kippmiami_deanslist", "int_deanslist__incidents"),
+                    source("kipppaterson_deanslist", "int_deanslist__incidents"),
                 ]
             )
         }}

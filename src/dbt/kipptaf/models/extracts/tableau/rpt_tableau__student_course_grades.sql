@@ -13,6 +13,10 @@ with
             is_current_term as is_current_quarter,
             semester,
 
+            case
+                term when 'Q2' then 'Q1' when 'Q3' then 'Q2' when 'Q4' then 'Q3'
+            end as prior_quarter,
+
         from {{ ref("int_powerschool__terms") }}
 
         union all
@@ -30,8 +34,43 @@ with
             false as is_current_quarter,
             'S#' as semester,
 
+            cast(null as string) as prior_quarter,
+
         from {{ ref("stg_powerschool__terms") }}
         where isyearrec = 1
+    ),
+
+    prior_year_gpa_rollup as (
+        /* prior-year FINAL Y1 GPA — PowerSchool stores only end-of-year Y1
+           grades, so a true as-of-same-quarter value does not exist (#4382).
+           is_current picks the single Q4 row per school; the credit-hour
+           weighted sum blends multi-school years down to student grain */
+        select
+            studentid,
+            _dbt_source_project,
+
+            count(*) as n_school_rows,
+            max(gpa_y1) as gpa_y1_single_school,
+
+            round(
+                safe_divide(sum(weighted_gpa_points_y1), sum(total_credit_hours_y1)), 2
+            ) as gpa_y1_blended,
+        from {{ ref("int_powerschool__gpa_term") }}
+        where yearid = {{ var("current_academic_year") - 1991 }} and is_current
+        group by studentid, _dbt_source_project
+    ),
+
+    prior_year_gpa as (
+        /* single-school years use the stored gpa_y1 verbatim — the blend's
+           pre-rounded inputs drift +/-0.01 vs the exact value */
+        select
+            studentid,
+            _dbt_source_project,
+
+            if(
+                n_school_rows = 1, gpa_y1_single_school, gpa_y1_blended
+            ) as gpa_y1_prior_year,
+        from prior_year_gpa_rollup
     ),
 
     student_roster as (
@@ -109,6 +148,10 @@ with
             lb.n_failing_y1_2_week_prior,
             lb.n_failing_y1_4_week_prior,
 
+            gpq.gpa_y1 as gpa_y1_prior_quarter,
+
+            pyg.gpa_y1_prior_year,
+
             enr.academic_year
             = {{ var("current_academic_year") }} as is_current_academic_year,
 
@@ -157,6 +200,21 @@ with
             and enr.schoolid = lb.schoolid
             and enr.yearid = lb.yearid
             and {{ union_dataset_join_clause(left_alias="enr", right_alias="lb") }}
+        /* both comparison joins are current-year-only (as-of columns), gated
+           in ON so prior-year rows keep NULLs */
+        left join
+            {{ ref("int_powerschool__gpa_term") }} as gpq
+            on enr.studentid = gpq.studentid
+            and enr.yearid = gpq.yearid
+            and enr.schoolid = gpq.schoolid
+            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gpq") }}
+            and term.prior_quarter = gpq.term_name
+            and enr.academic_year = {{ var("current_academic_year") }}
+        left join
+            prior_year_gpa as pyg
+            on enr.studentid = pyg.studentid
+            and enr._dbt_source_project = pyg._dbt_source_project
+            and enr.academic_year = {{ var("current_academic_year") }}
         where
             enr.rn_year = 1
             and not enr.is_out_of_district
@@ -438,6 +496,9 @@ select
     s.n_failing_y1_1_week_prior,
     s.n_failing_y1_2_week_prior,
     s.n_failing_y1_4_week_prior,
+
+    s.gpa_y1_prior_quarter,
+    s.gpa_y1_prior_year,
 
     s.cumulative_y1_gpa,
     s.cumulative_y1_gpa_unweighted,

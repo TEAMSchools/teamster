@@ -28,21 +28,28 @@ school_calendars) go in `cubes/conformed/`.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
-- **Transformation lives in dbt, not cube.** Multi-table joins, window
-  functions, and derived grains belong in a dbt mart read via `sql_table` — not
-  inline cube `sql:`, which is for thin column/expression shaping only. (Cube's
-  own dbt guidance and the `original_sql` pre-agg confirm this.) **Exception —
-  SCD2 period intersection** (`staff_work_history`,
-  `staff_reporting_relationships`): a cube-body `sql:` may carry multi-table
-  joins when it collapses several independently-effective-dated child dims into
-  one contiguous-window grain via `greatest(...)` / `least(...)` over
-  overlapping validity ranges. Cube's join graph can't express this — joins are
-  only `one_to_one` / `many_to_one` / `one_to_many` (many-to-many needs an
-  associative cube) and only ADD columns along the graph; they can't synthesize
-  the intersected grain — so it must be materialized in one query (dbt mart
-  preferred; cube `sql:` acceptable when every input is already a published
-  dim). A plain equi-join (e.g. on `staff_key`) is NOT this exception — model it
-  as a Cube join.
+- **Transformation lives in dbt, not cube. A cube's `sql:` / `sql_table:` reads
+  exactly ONE dbt model — never a `JOIN`, subquery, CTE, or `SELECT t.*`.**
+  Multi-table joins, window functions, and derived grains (status spines and
+  most SCD2 work) belong in a dbt mart. To surface columns from a second table
+  on a view, give that table its own cube (`public: false`, exposing only the
+  needed dimensions) and bring them in with a **Cube join** keyed on the shared
+  grain — never inline the join in a cube `sql:`. `SELECT t.*` is separately
+  forbidden: it silently breaks the moment the base model gains a same-named
+  column. The Cube custom-calendar **range-join recipe** (`BETWEEN` / `>=`)
+  applies only to a _join's_ `sql:` predicate — it is NOT a license for a `JOIN`
+  inside a cube-body `sql:`. (Cube's own dbt guidance and the `original_sql`
+  pre-agg confirm the one-model rule.) **Exception — SCD2 period intersection**
+  (`staff_work_history`, `staff_reporting_relationships`): a cube-body `sql:`
+  MAY carry multi-table joins when it collapses several
+  independently-effective-dated child dims into one contiguous-window grain via
+  `greatest(...)` / `least(...)` over overlapping validity ranges. Cube can't
+  express that intersection as a cube-to-cube join — it is many-to-many and
+  row-synthesizing, which a Cube join (which only adds columns along the graph)
+  cannot produce — so it is materialized in one query. A dbt mart is still
+  preferred; the cube-body `sql:` is acceptable when every input is already a
+  published dim. This is the ONLY sanctioned multi-table join in a cube `sql:`;
+  a plain equi-join (e.g. on `staff_key`) is NOT it — model that as a Cube join.
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
