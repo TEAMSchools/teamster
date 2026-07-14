@@ -51,7 +51,10 @@ SLING_SPIKE_RESOURCE = SlingResource(
             port=1521,
             user=os.getenv("PS_DB_USERNAME", ""),
             password=os.getenv("PS_DB_PASSWORD", ""),
-            sid=os.getenv("PS_DB_DATABASE", ""),
+            # PS_DB_DATABASE is a service name (the prod ODBC resource passes it
+            # as service_name, not SID); Sling accepts service_name as a
+            # distinct property. Using sid= here would fail with ORA-12514.
+            service_name=os.getenv("PS_DB_DATABASE", ""),
             ssh_tunnel=_ssh_tunnel_url(),
         ),
         SlingConnectionResource(
