@@ -63,6 +63,22 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: contact_first_name
+        data_type: string
+        description:
+          Contact's first name — the related person's Finalsite `first_name` for
+          `contact_1`, or `emrg_N_name_first_name` for an emergency slot.
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_last_name
+        data_type: string
+        description:
+          Contact's last name — the related person's Finalsite `last_name` for
+          `contact_1`, or `emrg_N_name_last_name` for an emergency slot.
+        config:
+          meta:
+            contains_pii: true
       - name: relationship
         data_type: string
         description:
