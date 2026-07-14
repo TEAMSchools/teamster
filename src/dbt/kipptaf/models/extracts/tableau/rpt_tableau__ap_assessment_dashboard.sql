@@ -34,7 +34,7 @@ with
     ),
 
     subjects as (
-        select distinct
+        select
             e.studentid,
             e.student_number,
             e.academic_year,
@@ -49,7 +49,7 @@ with
 
         union distinct
 
-        select distinct
+        select
             e.studentid,
             e.student_number,
             e.academic_year,
