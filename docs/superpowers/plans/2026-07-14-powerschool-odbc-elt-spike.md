@@ -420,17 +420,24 @@ class SpikeDltTranslator(DagsterDltTranslator):
 
 
 def build_dlt_spike_asset(table_name: str, primary_key: str):
-    dlt_source = sql_table(
+    # dagster-dlt's @dlt_assets requires a DltSource (it reads
+    # .selected_resources); sql_table() alone returns a bare DltResource. Wrap
+    # it in a @dlt.source generator — the same shape dlt's own sql_database()
+    # and this repo's libraries/dlt/illuminate/assets.py use.
+    @dlt.source(name=f"powerschool_spike_{table_name}")
+    def dlt_source():
         # placeholder credentials at import time; real values resolve in the
         # run pod because sql_table defers connection until extraction
-        credentials=_oracle_connection_url(),
-        table=table_name,
-        backend="pyarrow",
-        reflection_level="full_with_precision",
-        defer_table_reflect=True,
-        incremental=dlt.sources.incremental(CURSOR_COLUMN),
-    )
-    dlt_source.apply_hints(primary_key=primary_key)
+        resource = sql_table(
+            credentials=_oracle_connection_url(),
+            table=table_name,
+            backend="pyarrow",
+            reflection_level="full_with_precision",
+            defer_table_reflect=True,
+            incremental=dlt.sources.incremental(CURSOR_COLUMN),
+        )
+        resource.apply_hints(primary_key=primary_key)
+        yield resource
 
     dlt_pipeline = dlt.pipeline(
         pipeline_name=f"powerschool_spike_{table_name}",
@@ -440,7 +447,7 @@ def build_dlt_spike_asset(table_name: str, primary_key: str):
     )
 
     @dlt_assets(
-        dlt_source=dlt_source,
+        dlt_source=dlt_source(),
         dlt_pipeline=dlt_pipeline,
         name=f"{CODE_LOCATION}__powerschool__spike__dlt__{table_name}",
         dagster_dlt_translator=SpikeDltTranslator(),
