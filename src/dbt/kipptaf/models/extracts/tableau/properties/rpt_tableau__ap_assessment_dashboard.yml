@@ -10,13 +10,12 @@ models:
           description: >-
             Expected to warn (not error) when a student is enrolled in both a
             main AP course and a companion section (e.g. a recitation period)
-            that PowerSchool tags with the same ap_course_subject -- both are
+            that PowerSchool tags with the same ap_course_subject — both are
             legitimately separate course offerings, not a data error, so this is
             intentionally left undeduped rather than collapsed by an arbitrary
             tiebreak (course name, course number, and the enrollment record's
             own surrogate ID were all considered and rejected as equally
-            meaningless for picking one section over the other). Distinct from
-            the PowerSchool double-write corpus (#3900/#3915) -- no upstream
+            meaningless for picking one section over the other). No upstream
             cleanup is expected to resolve this, so don't widen the
             combination_of_columns to silence it.
           arguments:

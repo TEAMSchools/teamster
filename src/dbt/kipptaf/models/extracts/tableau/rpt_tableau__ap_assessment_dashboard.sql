@@ -1,4 +1,11 @@
 with
+    -- A student can have two course_enrollments rows tagged with the same
+    -- ap_course_subject (e.g. a main AP course plus a companion recitation
+    -- section) -- both are legitimate, distinct course offerings, not a data
+    -- error, so they're intentionally left undeduped here and surface as
+    -- separate rows below. Distinct from the PowerSchool double-write corpus
+    -- (#3900/#3915), which is literal duplicate records for the same
+    -- enrollment.
     course_enrollments as (
         select
             _dbt_source_project,
