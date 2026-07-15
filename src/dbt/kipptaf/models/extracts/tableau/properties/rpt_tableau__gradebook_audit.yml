@@ -4,10 +4,13 @@ models:
       Three-branch UNION ALL Tableau extract for the gradebook audit dashboard.
       Branch 1 (sections_teacher): one anchor row per section x quarter for
       healthy teachers (is_healthy_gradebook = true, audit_flag_name = 'No
-      Flags'). Branch 2 (assignment_teacher): one row per assignment where
-      expected_assign_count_not_met fired for an unhealthy teacher. Branch 3
-      (student_course): one row per student x section x quarter x fired flag
-      (qt_percent_grade_greater_100, qt_grade_70_comment_missing).
+      Flags'). Branch 2 (assignment_teacher): rows for categories short on valid
+      assignments (expected_assign_count_not_met, i.e. count of unflagged
+      assignments below the weekly expectation) — one row per assignment in a
+      short category, or a single null-assignmentid row when zero assignments
+      were entered. Branch 3 (student_course): one row per student x section x
+      quarter x fired flag (qt_percent_grade_greater_100,
+      qt_grade_70_comment_missing).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -19,6 +22,7 @@ models:
               - audit_flag_name
               - cte_grouping
               - assignmentid
+              - assignment_category_code
     columns:
       - name: _dbt_source_project
         data_type: string

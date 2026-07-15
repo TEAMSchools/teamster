@@ -3,9 +3,10 @@ with
         select
             *,
 
+            -- short on valid assignments: flagged assignments don't count as
+            -- valid, so fewer valid than expected (incl. zero entered) fires
             if(
-                total_assign_count_qtd_by_cat_section_actual
-                != total_assign_count_qtd_by_cat_section_no_flags,
+                total_assign_count_qtd_by_cat_section_no_flags < expectation,
                 true,
                 false
             ) as expected_assign_count_not_met,
