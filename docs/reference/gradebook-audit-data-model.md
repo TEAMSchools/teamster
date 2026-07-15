@@ -144,25 +144,34 @@ base_powerschool__final_grades / stg_powerschool__storedgrades ──┘
 
 | Branch | `cte_grouping`       | Source                                     | Flags produced                                                                                                           |
 | ------ | -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| 1      | `sections_teacher`   | `int_extracts__course_schedule_by_term`    | None — anchor rows with all flag columns hardcoded `false`/`null`; feeds `v4`'s "No Flags" anchor row                    |
-| 2      | `student_course`     | `int_extracts__course_enrollments_by_term` | `qt_percent_grade_greater_100`, `qt_grade_70_comment_missing`                                                            |
-| 3      | `assignment_teacher` | `int_extracts__course_schedule_by_term`    | `assignment_has_flags`, `total_assign_count_qtd_by_cat_section_actual`, `total_assign_count_qtd_by_cat_section_no_flags` |
+| 1      | `sections_teacher`   | `int_extracts__course_schedule_by_term`    | None — anchor rows with all flag columns hardcoded `false`/`null`; feeds the report's "No Flags" anchor row              |
+| 2      | `assignment_teacher` | `int_extracts__course_schedule_by_term`    | `assignment_has_flags`, `total_assign_count_qtd_by_cat_section_actual`, `total_assign_count_qtd_by_cat_section_no_flags` |
+| 3      | `student_course`     | `int_extracts__course_enrollments_by_term` | `qt_percent_grade_greater_100`, `qt_grade_70_comment_missing`                                                            |
 
-Both branches filter `school_level_alt != 'ES'` and
+All three branches filter `school_level_alt != 'ES'` and
 `_dbt_source_project != 'kippmiami'`.
+
+Sections whose PowerSchool term overlaps only a single quarter are excluded
+upstream by `int_extracts__course_schedule_by_term`
+(`section_quarter_count >= 2` — only year and semester terms fan out to
+quarters). In AY 2025-2026 data this drops a handful of trimester-term specials
+(Paterson MS Music/Spanish) and short-term Newark sections; those teachers'
+gradebooks are not audited.
 
 ### Expectations source: `int_powerschool__u_expectations_qtd_unpivot`
 
 Replaces `stg_google_sheets__gradebook_expectations_assignments`. Reads the
-PowerSchool `U_EXPECTATIONS` plugin table, which stores teacher-entered
-assignment count expectations per category per week. One row per
-`region × school_level × academic_year × quarter × week_start_monday`.
+PowerSchool `U_EXPECTATIONS` plugin table, which stores assignment count
+expectations per category per week, and collapses it to the most recently
+completed week per quarter. One row per
+`region × school_level × quarter × assignment_category_code` (uniqueness-tested;
+`academic_year` is injected as `current_academic_year`).
 
-`week_end_sunday` is derived as the Sunday ending the most recently completed
-school week (i.e.,
-`week_start_monday < date_trunc(current_date, week(monday))`). It is used
-internally in `int_tableau__gradebook_audit_flags_calculations` as the QTD
-assignment count cutoff — it does not appear in the model's output columns.
+`week_end_sunday` — an output column consumed by
+`int_tableau__gradebook_audit_flags_calculations` as the QTD assignment count
+cutoff — is the Sunday ending the most recently completed school week (the
+latest calendar week with
+`week_start_monday < date_trunc(current_date, isoweek)`).
 
 ### Assignment and category rollup layer
 
@@ -170,11 +179,12 @@ assignment count cutoff — it does not appear in the model's output columns.
 
 One row per student × assignment. Same grain and key business logic as AY
 2025-2026 — the model was not renamed. The INNER JOIN to
-`base_powerschool__course_enrollments` on
-`duedate between cc_dateenrolled and cc_dateleft` scopes each assignment to
-students whose enrollment was active when the assignment was due. The LEFT JOIN
-to `stg_powerschool__assignmentscore` means a student row exists even when no
-score has been entered — `score_entered` is null in that case.
+`base_powerschool__course_enrollments` on the half-open range
+`duedate >= cc_dateenrolled and duedate < cc_dateleft` scopes each assignment to
+students whose enrollment was active when the assignment was due (half-open so
+back-to-back enrollment stints sharing a boundary date match once). The LEFT
+JOIN to `stg_powerschool__assignmentscore` means a student row exists even when
+no score has been entered — `score_entered` is null in that case.
 
 **What changed in AY 2026-2027**: the 12 per-category per-school-level boolean
 flag columns were consolidated to 5 merged flags using `category_code in (...)`
@@ -218,9 +228,12 @@ unchanged.
 | `assign_s_hs_score_less_50p`                                                                                                   | `assign_hs_s_score_less_50p`         |
 
 !!! note "KIPP Sumner G5 school_level override" Grade 5 sections at KIPP Sumner
-Elementary (school 179905) are treated as MS (`school_level_alt = 'MS'`) for AY
-2025+. This override is hardcoded in the `scores` CTE and is what ensures
-HS-vs-non-HS flag conditions apply consistently to those students.
+Academy (formerly KIPP Sumner Elementary; school 179905) are treated as MS
+(`school_level_alt = 'MS'`) for AY 2025+. The override is hardcoded — always by
+`schoolid = 179905`, never by school name, which PowerSchool has renamed once
+already — in the `scores` CTE here and in
+`int_extracts__course_schedule_by_term` / `int_extracts__student_enrollments`.
+It ensures HS-vs-non-HS flag conditions apply consistently to those students.
 
 Feeds `int_powerschool__gradebook_assignment_scores_rollup`.
 
@@ -293,11 +306,11 @@ A `UNION ALL` of three branches, all filtering `school_level_alt != 'ES'`,
 
 | Branch | `cte_grouping`       | Source                                     | Flags produced                                                                                                           |
 | ------ | -------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| 1      | `sections_teacher`   | `int_extracts__course_schedule_by_term`    | None — anchor rows with all flag columns hardcoded `false`/`null`; feeds `v4`'s "No Flags" anchor row                    |
-| 2      | `student_course`     | `int_extracts__course_enrollments_by_term` | `qt_percent_grade_greater_100`, `qt_grade_70_comment_missing`                                                            |
-| 3      | `assignment_teacher` | `int_extracts__course_schedule_by_term`    | `assignment_has_flags`, `total_assign_count_qtd_by_cat_section_actual`, `total_assign_count_qtd_by_cat_section_no_flags` |
+| 1      | `sections_teacher`   | `int_extracts__course_schedule_by_term`    | None — anchor rows with all flag columns hardcoded `false`/`null`; feeds the report's "No Flags" anchor row              |
+| 2      | `assignment_teacher` | `int_extracts__course_schedule_by_term`    | `assignment_has_flags`, `total_assign_count_qtd_by_cat_section_actual`, `total_assign_count_qtd_by_cat_section_no_flags` |
+| 3      | `student_course`     | `int_extracts__course_enrollments_by_term` | `qt_percent_grade_greater_100`, `qt_grade_70_comment_missing`                                                            |
 
-Branch 3 inner-joins `int_powerschool__u_expectations_qtd_unpivot` (on
+Branch 2 inner-joins `int_powerschool__u_expectations_qtd_unpivot` (on
 `region × school_level × academic_year × quarter`) and left-joins
 `int_powerschool__gradebook_assignment_scores_rollup` for per-assignment rollup
 counts. Sections with no matching expectations row produce no
@@ -1005,13 +1018,14 @@ If the summer toggle was applied to
 
 ---
 
-## Recent change: Q1/Q2 removal (May 2026)
+## Historical: Q1/Q2 removal (May 2026, superseded)
 
-Q1 and Q2 were removed from `int_tableau__gradebook_audit_teacher_scaffold` by
-adding `t.term not in ('Q1', 'Q2')` to the `term_weeks` CTE. This was not a
-policy change — the audit policy for Q1 and Q2 was unchanged — but a volume
-reduction to address Tableau Server refresh failures. The audit now covers Q3
-and Q4 only for the current academic year.
+In May 2026, Q1 and Q2 were removed from the (now disabled)
+`int_tableau__gradebook_audit_teacher_scaffold` by adding
+`t.term not in ('Q1', 'Q2')` to its `term_weeks` CTE. This was not a policy
+change — the audit policy for Q1 and Q2 was unchanged — but a volume reduction
+to address Tableau Server refresh failures. The AY 2026-2027 quarter-grain
+pipeline restored full Q1-Q4 coverage, superseding this workaround.
 
 Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
@@ -1019,9 +1033,13 @@ Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ## Open questions and future work
 
-- **Task 9 — assignment validity filter**: A pre-filter that marks an assignment
-  as "valid" (`assignment_has_flags = false`) before counting it toward QTD.
-  Design documented in the
+- **Task 9 — assignment validity filter**: delivered (July 2026). Flagged
+  assignments (`assignment_has_flags = true`) do not count toward the QTD valid
+  total, and `expected_assign_count_not_met` fires when
+  `total_assign_count_qtd_by_cat_section_no_flags < expectation`. Still open
+  from the original ask: whether to keep or consolidate the individual
+  per-student score flags (plan Step 9.4 — a T&L/Tableau-layout decision). See
+  Task 9 in the
   [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md).
 - **Paterson expectations**: Paterson is excluded from category-level audit rows
   (`assignment_teacher` branch) because the KIPP NJ Gradebook Audit plugin

@@ -169,11 +169,12 @@ Camden ES and Newark ES.
 in the `student_roster` CTE of that model is removed so Paterson students appear
 in the GPA view.
 
-**How to generate the flag rows for the sheet:** see the query in the
-[Start-of-year procedure](../reference/gradebook-audit-data-model.md) section of
-the reference doc. It copies prior-year rows for all active regions, bumps
-`academic_year`, excludes deprecated flags, and derives Paterson rows from the
-Newark template.
+**Flag rows for the sheet:** moot — the flags sheet
+(`stg_google_sheets__gradebook_flags`) and its source were disabled during
+implementation; the three active flags are hardcoded in
+`rpt_tableau__gradebook_audit` and no sheet rollover exists anymore (see the
+[Start-of-year procedure](../reference/gradebook-audit-data-model.md) in the
+reference doc).
 
 ### Remove FYI flags
 
@@ -234,17 +235,23 @@ five intermediate models are removed. The model is **disabled**
 (`config: enabled: false`) rather than deleted, pending operational decisions
 after July 1, 2026.
 
-### 7-day grace period for percent-graded flags
+### ~~7-day grace period for percent-graded flags~~ (deferred — not implemented)
 
-`w/h/f/s_percent_graded_min_not_met` should only fire for assignments that have
-been due for at least 7 days. At quarter grain this becomes a per-assignment
-check: for each assignment where `current_date >= duedate + 7`, check whether
-the teacher has scored it for the required percentage of students.
+**Deferred.** The AY 2026-2027 pipeline shipped without a due-date grace period:
+`is_expected` in `int_powerschool__gradebook_assignments_scores` has no due-date
+condition (its code comment points here). An assignment counts as expected the
+moment it is due. Revisit in a future year if T&L asks for it.
 
-**Pending decision:** whether `percent_graded_min_not_met` moves from
-`int_tableau__gradebook_audit_categories_teacher` (class-category grain) to
-`int_tableau__gradebook_audit_assignments_teacher` (per-assignment grain). To be
-resolved when reviewing those models.
+The original design, kept for history: `percent_graded_min_not_met` should only
+fire for assignments that have been due for at least 7 days. At quarter grain
+this becomes a per-assignment check: for each assignment where
+`current_date >= duedate + 7`, check whether the teacher has scored it for the
+required percentage of students.
+
+**Grain decision (resolved):** `percent_graded_min_not_met` shipped at
+per-assignment grain in `int_powerschool__gradebook_assignment_scores_rollup`
+(threshold 0.90), as one input to `assignment_has_flags` — without the grace
+condition.
 
 ## Out of scope for this implementation
 
@@ -256,10 +263,11 @@ Originally deferred, this was implemented as a three-branch UNION in
 - **Branch 1** (`sections_teacher`, `and h.is_healthy_gradebook`): one
   `audit_flag_name = 'No Flags'` anchor row per section × quarter for teachers
   where **no** flag fired
-- **Branch 2** (`assignment_teacher`,
-  `and not h.is_healthy_gradebook and s.expected_assign_count_not_met`): one
-  `expected_assign_count_not_met` row per flagged assignment for teachers where
-  at least one flag fired
+- **Branch 2** (`assignment_teacher`, `and s.expected_assign_count_not_met`):
+  one `expected_assign_count_not_met` row per assignment in a short category (or
+  a single null-`assignmentid` row when zero assignments were entered). A
+  `not h.is_healthy_gradebook` predicate would be redundant — any row with the
+  count flag true is necessarily in an unhealthy partition — and was dropped
 - **Branch 3** (`student_course`, `flags_unpivot`): the two unpivoted
   student-course flag rows
 
@@ -279,9 +287,8 @@ the inverse of a bare `max()`.
 
 **For implementation:**
 
-- **Percent-graded flag grain** — does `w/h/f/s_percent_graded_min_not_met` move
-  to per-assignment grain at quarter-grain (flag fires per assignment that's
-  been due 7+ days with too few students scored), or stay at category grain
-  (flag fires per category if the category-wide percent-scored is below 70%)?
-  Decision deferred to the `int_tableau__gradebook_audit_categories_teacher`
-  review.
+- ~~**Percent-graded flag grain**~~ — resolved: shipped at per-assignment grain
+  (`percent_graded_min_not_met` in
+  `int_powerschool__gradebook_assignment_scores_rollup`, threshold 0.90, one
+  input to `assignment_has_flags`), without the 7-day grace condition (see the
+  deferred grace-period section above).

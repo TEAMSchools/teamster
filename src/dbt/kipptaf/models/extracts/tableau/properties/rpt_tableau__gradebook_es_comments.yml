@@ -6,7 +6,9 @@ models:
       homeroom/math/ELA course. ES schools do not enter PS gradebook
       assignments, so this is the only audit signal for ES — it is not part of
       the `rpt_tableau__gradebook_audit` pipeline. One row per student x section
-      x quarter.
+      x quarter. Quarters that have not started yet are excluded, and school
+      level uses the Sumner G5 override — those students appear in the MS audit,
+      not here.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

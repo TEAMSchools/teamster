@@ -54,7 +54,9 @@ left join
     and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
 where
     s.academic_year = {{ var("current_academic_year") }}
-    and s.region_school_level in ('CamdenES', 'NewarkES', 'PatersonES')
+    /* alt so Sumner G5 (treated as MS) stays in the audit, not the ES view */
+    and s.region_school_level_alt in ('CamdenES', 'NewarkES', 'PatersonES')
     and s.credit_type in ('HR', 'MATH', 'ENG')
     and s.enroll_status = 0
     and not s.is_out_of_district
+    and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')

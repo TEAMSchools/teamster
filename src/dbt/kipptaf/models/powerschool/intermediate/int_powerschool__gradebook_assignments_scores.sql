@@ -24,7 +24,7 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
-            initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
+            initcap(regexp_extract(a._dbt_source_project, r'kipp(\w+)')) as region,
 
             -- no due-date grace period yet; a 7-day grace was scoped for
             -- AY 2026-2027 but deferred, see design spec "7-day grace period"
@@ -88,7 +88,6 @@ with
             on a.assignmentsectionid = s.assignmentsectionid
             and a._dbt_source_project = s._dbt_source_project
             and e.students_dcid = s.studentsdcid
-            and e._dbt_source_project = s._dbt_source_project
     ),
 
     assignment_coding as (

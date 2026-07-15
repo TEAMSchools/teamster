@@ -95,9 +95,11 @@ with
                 cast(s.terms_academic_year + 1 as string), 2
             ) as academic_year_display,
 
+            /* schoolid, not school_name — PS renamed the school (Elementary ->
+               Academy) and a name predicate silently stops matching */
             if(
                 s.terms_academic_year >= 2025
-                and s.school_name = 'KIPP Sumner Elementary'
+                and s.sections_schoolid = 179905
                 and s.sections_grade_level = 5,
                 'MS',
                 d.school_level

@@ -3935,10 +3935,11 @@ assignment existed) and never read the expectation value at all — so a teacher
 who entered zero assignments, or too few clean ones, passed silently. Corrected
 to `..._no_flags < expectation`: a flagged assignment no longer counts toward
 the valid total, so falling short of expectation (including entering nothing)
-fires the flag. One flag (`expected_assign_count_not_met`), fired once per short
-category, using the existing `assignment_has_flags` validity signal — matching
-the "one flag, actionable checklist" goal below without a new column or a new
-flags-sheet entry.
+fires the flag. One flag (`expected_assign_count_not_met`), fired per short
+category (emitted on each of that category's assignment rows, or on a single
+null-`assignmentid` row when zero were entered), using the existing
+`assignment_has_flags` validity signal — matching the "one flag, actionable
+checklist" goal below without a new column or a new flags-sheet entry.
 
 Remaining from the original ask: **Step 9.4** (whether to keep/consolidate the
 individual per-student score flags now that the assignment-level flag exists) is
