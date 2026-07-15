@@ -26,8 +26,14 @@ with
         group by user_id
     ),
 
-    all_users as (
-        /* existing users */
+    staff_coupa_match as (
+        /* Resolve each staffer to one Coupa account, login first then
+           employee_number — mirroring Coupa's own load precedence
+           (user id, then login, then employee number). login and
+           employee_number are each unique in Coupa, so this returns at most one
+           account and cannot fan out. If the two keys ever point at different
+           accounts, login wins — the account Coupa itself will update — so we
+           read values from the same account Coupa writes to. */
         select
             sr.employee_number,
             sr.legal_given_name,
@@ -42,8 +48,41 @@ with
             sr.sam_account_name,
             sr.user_principal_name,
             sr.mail,
+            sr.is_prestart,
+            sr.worker_termination_date,
+            sr.worker_type_code,
 
-            cu.active,
+            coalesce(cul.id, cue.id) as coupa_user_id,
+
+            if(cul.id is not null, cul.active, cue.active) as active,
+            if(
+                cul.id is not null, cul.purchasing_user, cue.purchasing_user
+            ) as purchasing_user,
+        from {{ ref("int_people__staff_roster") }} as sr
+        left join
+            {{ ref("stg_coupa__users") }} as cul on sr.sam_account_name = cul.login
+        left join
+            {{ ref("stg_coupa__users") }} as cue
+            on sr.employee_number = cue.employee_number
+    ),
+
+    all_users as (
+        /* existing users */
+        select
+            scm.employee_number,
+            scm.legal_given_name,
+            scm.legal_family_name,
+            scm.assignment_status,
+            scm.home_business_unit_code,
+            scm.home_department_name,
+            scm.job_title,
+            scm.home_work_location_name,
+            scm.uac_account_disable,
+            scm.physical_delivery_office_name,
+            scm.sam_account_name,
+            scm.user_principal_name,
+            scm.mail,
+            scm.active,
 
             r.roles,
 
@@ -51,65 +90,51 @@ with
 
             date_diff(
                 current_date('{{ var("local_timezone") }}'),
-                sr.worker_termination_date,
+                scm.worker_termination_date,
                 day
             ) as days_terminated,
 
-            if(cu.purchasing_user, 'Yes', 'No') as purchasing_user,
-        from {{ ref("int_people__staff_roster") }} as sr
-        /* match on login as well as employee_number: a Coupa account created
-           directly (blank employee_number) or an entity-switcher whose number
-           changed won't match on number, so it must resolve by login or Coupa
-           duplicates it on the next load */
-        inner join
-            {{ ref("stg_coupa__users") }} as cu
-            on sr.employee_number = cu.employee_number
-            or sr.sam_account_name = cu.login
-        inner join roles as r on cu.id = r.user_id
-        left join business_groups as bg on cu.id = bg.user_id
+            if(scm.purchasing_user, 'Yes', 'No') as purchasing_user,
+        from staff_coupa_match as scm
+        inner join roles as r on scm.coupa_user_id = r.user_id
+        left join business_groups as bg on scm.coupa_user_id = bg.user_id
         where
-            not sr.is_prestart
+            not scm.is_prestart
             and coalesce(
-                sr.worker_termination_date, current_date('{{ var("local_timezone") }}')
+                scm.worker_termination_date, current_date('{{ var("local_timezone") }}')
             )
             >= '{{ var("current_academic_year") - 1 }}-07-01'
-            and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
+            and not regexp_contains(scm.worker_type_code, r'Part Time|Intern')
 
         union all
 
-        /* new users */
+        /* new users — matched by neither login nor employee_number */
         select
-            sr.employee_number,
-            sr.legal_given_name,
-            sr.legal_family_name,
-            sr.assignment_status,
-            sr.home_business_unit_code,
-            sr.home_department_name,
-            sr.job_title,
-            sr.home_work_location_reporting_name as home_work_location_name,
-            sr.uac_account_disable,
-            sr.physical_delivery_office_name,
-            sr.sam_account_name,
-            sr.user_principal_name,
-            sr.mail,
+            scm.employee_number,
+            scm.legal_given_name,
+            scm.legal_family_name,
+            scm.assignment_status,
+            scm.home_business_unit_code,
+            scm.home_department_name,
+            scm.job_title,
+            scm.home_work_location_name,
+            scm.uac_account_disable,
+            scm.physical_delivery_office_name,
+            scm.sam_account_name,
+            scm.user_principal_name,
+            scm.mail,
 
             true as active,
             'Expense User' as roles,
             null as content_groups,
             null as days_terminated,
             'No' as purchasing_user,
-        from {{ ref("int_people__staff_roster") }} as sr
-        left join
-            {{ ref("stg_coupa__users") }} as cu
-            on sr.employee_number = cu.employee_number
-            or sr.sam_account_name = cu.login
+        from staff_coupa_match as scm
         where
-            not sr.is_prestart
-            and sr.assignment_status not in ('Terminated', 'Deceased')
-            and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
-            /* cu.id (not cu.employee_number): a login-matched account can have a
-               blank employee_number but is still an existing user, not new */
-            and cu.id is null
+            not scm.is_prestart
+            and scm.assignment_status not in ('Terminated', 'Deceased')
+            and not regexp_contains(scm.worker_type_code, r'Part Time|Intern')
+            and scm.coupa_user_id is null
     ),
 
     sub as (
