@@ -51,6 +51,8 @@ with
             cp.finalsite_enrollment_id as finalsite_contact_id,
             cp.email,
             cp.phone_1_number,
+            cp.first_name,
+            cp.last_name,
 
             coalesce(
                 if(cp.phone_1_type = 'Cell', cp.phone_1_number, null),
@@ -89,6 +91,8 @@ with
             phone_home,
             phone_work,
             home_address,
+            first_name as contact_first_name,
+            last_name as contact_last_name,
             rel_name as contact_name,
             rel_type as relationship,
             phone_1_number as phone_primary,
@@ -111,6 +115,8 @@ with
             emrg_1_pickup_yn as is_pickup,
             emrg_1_custody_yn as is_custodial,
             emrg_1_lives_with_yn as is_household_member,
+            emrg_1_name_first_name as contact_first_name,
+            emrg_1_name_last_name as contact_last_name,
 
             'emergency_1' as contact_slot,
 
@@ -146,6 +152,8 @@ with
             emrg_2_pickup_yn as is_pickup,
             emrg_2_custody_yn as is_custodial,
             emrg_2_lives_with_yn as is_household_member,
+            emrg_2_name_first_name as contact_first_name,
+            emrg_2_name_last_name as contact_last_name,
 
             'emergency_2' as contact_slot,
 
@@ -181,6 +189,8 @@ with
             emrg_3_pickup_yn as is_pickup,
             emrg_3_custody_yn as is_custodial,
             emrg_3_lives_with_yn as is_household_member,
+            emrg_3_name_first_name as contact_first_name,
+            emrg_3_name_last_name as contact_last_name,
 
             'emergency_3' as contact_slot,
 
@@ -216,6 +226,8 @@ with
             emrg_4_pickup_yn as is_pickup,
             emrg_4_custody_yn as is_custodial,
             emrg_4_lives_with_yn as is_household_member,
+            emrg_4_name_first_name as contact_first_name,
+            emrg_4_name_last_name as contact_last_name,
 
             'emergency_4' as contact_slot,
 
@@ -251,6 +263,8 @@ with
             finalsite_enrollment_id,
             contact_slot,
             contact_name,
+            contact_first_name,
+            contact_last_name,
             relationship,
             email,
             phone_mobile,
@@ -274,6 +288,8 @@ select
     contact_slot,
     finalsite_contact_id,
     contact_name,
+    contact_first_name,
+    contact_last_name,
     relationship,
     email,
     phone_mobile,
@@ -295,6 +311,8 @@ select
     contact_slot,
     finalsite_contact_id,
     contact_name,
+    contact_first_name,
+    contact_last_name,
     relationship,
     email,
     phone_mobile,
