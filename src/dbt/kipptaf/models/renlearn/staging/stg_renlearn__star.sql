@@ -8,85 +8,99 @@ with
                 ]
             )
         }}
+    ),
+
+    derived as (
+        -- trunk-ignore(sqlfluff/AM04)
+        select
+            *,
+
+            cast(left(completed_date_local, 10) as date) as completed_date_value,
+
+            _dagster_partition_fiscal_year - 1 as academic_year,
+
+            safe_cast(if(grade = 'K', '0', grade) as int) as grade_level,
+
+            if(
+                _dagster_partition_subject = 'SM', 'Mathematics', 'Text Study'
+            ) as illuminate_subject,
+
+            case
+                when _dagster_partition_subject = 'SM'
+                then 'Math'
+                when _dagster_partition_subject = 'SR'
+                then 'Reading'
+                when _dagster_partition_subject = 'SEL'
+                then 'Early Literacy'
+            end as star_subject,
+
+            case
+                when _dagster_partition_subject = 'SM'
+                then 'Math'
+                when grade = 'K' and _dagster_partition_subject = 'SEL'
+                then 'ELA'
+                when _dagster_partition_subject = 'SR'
+                then 'ELA'
+            end as star_discipline,
+
+            case
+                _dagster_partition_subject
+                when 'SR'
+                then 'Reading'
+                when 'SM'
+                then 'Math'
+                when 'SEL'
+                then 'Reading'
+            end as `subject`,
+
+            case
+                screening_period_window_name
+                when 'Fall'
+                then 'BOY'
+                when 'Winter'
+                then 'MOY'
+                when 'Spring'
+                then 'EOY'
+            end as administration_window,
+
+            case
+                when district_benchmark_proficient = 'Yes'
+                then 1
+                when district_benchmark_proficient = 'No'
+                then 0
+            end as is_district_benchmark_proficient_int,
+
+            case
+                when state_benchmark_proficient = 'Yes'
+                then 1
+                when state_benchmark_proficient = 'No'
+                then 0
+            end as is_state_benchmark_proficient_int,
+
+            row_number() over (
+                partition by
+                    _dbt_source_relation,
+                    _dagster_partition_subject,
+                    _dagster_partition_fiscal_year,
+                    student_identifier,
+                    screening_period_window_name
+                order by completed_date desc
+            ) as rn_subject_round,
+
+            row_number() over (
+                partition by
+                    _dbt_source_relation,
+                    _dagster_partition_subject,
+                    _dagster_partition_fiscal_year,
+                    student_identifier
+                order by completed_date desc
+            ) as rn_subject_year,
+        from union_relations
+        where deactivation_reason is null
     )
 
--- trunk-ignore(sqlfluff/AM04)
-select
-    *,
-
-    _dagster_partition_fiscal_year - 1 as academic_year,
-
-    safe_cast(if(grade = 'K', '0', grade) as int) as grade_level,
-
-    case
-        when _dagster_partition_subject = 'SM'
-        then 'Math'
-        when _dagster_partition_subject = 'SR'
-        then 'Reading'
-        when _dagster_partition_subject = 'SEL'
-        then 'Early Literacy'
-    end as star_subject,
-
-    case
-        when _dagster_partition_subject = 'SM'
-        then 'Math'
-        when grade = 'K' and _dagster_partition_subject = 'SEL'
-        then 'ELA'
-        when _dagster_partition_subject = 'SR'
-        then 'ELA'
-    end as star_discipline,
-
-    case
-        _dagster_partition_subject
-        when 'SR'
-        then 'Reading'
-        when 'SM'
-        then 'Math'
-        when 'SEL'
-        then 'Reading'
-    end as `subject`,
-
-    case
-        screening_period_window_name
-        when 'Fall'
-        then 'BOY'
-        when 'Winter'
-        then 'MOY'
-        when 'Spring'
-        then 'EOY'
-    end as administration_window,
-
-    case
-        when district_benchmark_proficient = 'Yes'
-        then 1
-        when district_benchmark_proficient = 'No'
-        then 0
-    end as is_district_benchmark_proficient_int,
-
-    case
-        when state_benchmark_proficient = 'Yes'
-        then 1
-        when state_benchmark_proficient = 'No'
-        then 0
-    end as is_state_benchmark_proficient_int,
-
-    row_number() over (
-        partition by
-            _dbt_source_relation,
-            _dagster_partition_subject,
-            _dagster_partition_fiscal_year,
-            student_identifier,
-            screening_period_window_name
-        order by completed_date desc
-    ) as rn_subject_round,
-
-    row_number() over (
-        partition by
-            _dbt_source_relation,
-            _dagster_partition_subject,
-            _dagster_partition_fiscal_year,
-            student_identifier
-        order by completed_date desc
-    ) as rn_subject_year,
-from union_relations
-where deactivation_reason is null
+select d.*, lc.location_dagster_code_location as _dbt_source_project,
+from derived as d
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on d.school_name = lc.location_name

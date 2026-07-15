@@ -168,8 +168,8 @@ models:
       - name: advisor
         data_type: string
         description:
-          Effective advisor for the alumnus — the postsecondary advisor when the
-          advising provider is KIPP NYC, otherwise the Salesforce contact owner.
+          Effective advisor for the alumnus — 'Collab' when the advising
+          provider is KIPP NYC, otherwise the Salesforce contact owner.
       - name: high_school_graduated_from
         data_type: string
         description:
@@ -190,3 +190,64 @@ models:
         description:
           Date of the alumnus's most recent IEP on their Salesforce contact
           record.
+      - name: ktc_cohort
+        data_type: int64
+        description:
+          KIPP-to-college cohort year for the alumnus, from their Salesforce
+          contact record.
+      - name: currently_enrolled_school
+        data_type: string
+        description:
+          School the alumnus is currently enrolled in, from their Salesforce
+          contact record.
+      - name: current_college_cumulative_gpa
+        data_type: numeric
+        description:
+          Current cumulative college GPA, from the alumnus's Salesforce contact
+          record.
+      - name: primary_phone
+        data_type: string
+        description: Mobile phone from the alumnus's Salesforce contact record.
+      - name: secondary_phone
+        data_type: string
+        description: Home phone from the alumnus's Salesforce contact record.
+      - name: career_conversation_notes
+        data_type: string
+        description:
+          Free-text notes from the alumnus's KFWD career conversation, logged in
+          the KFWD AppSheet app. NULL when no conversation is recorded.
+      - name: is_resume_score
+        data_type: boolean
+        description:
+          Whether a resume was scored during the KFWD career conversation. False
+          when no conversation is recorded.
+      - name: is_linkedin
+        data_type: boolean
+        description:
+          Whether the alumnus's LinkedIn profile was discussed during the KFWD
+          career conversation. False when no conversation is recorded.
+      - name: is_mock_interview_or_prep
+        data_type: boolean
+        description:
+          Whether mock interview or interview preparation was discussed during
+          the KFWD career conversation. False when no conversation is recorded.
+      - name: is_professional_references_list
+        data_type: boolean
+        description:
+          Whether the professional references list was discussed during the KFWD
+          career conversation. False when no conversation is recorded.
+      - name: is_job_search_template
+        data_type: boolean
+        description:
+          Whether the job search template was discussed during the KFWD career
+          conversation. False when no conversation is recorded.
+      - name: is_cover_letter_template
+        data_type: boolean
+        description:
+          Whether the cover letter template was discussed during the KFWD career
+          conversation. False when no conversation is recorded.
+      - name: is_work_samples
+        data_type: boolean
+        description:
+          Whether work samples were discussed during the KFWD career
+          conversation. False when no conversation is recorded.

@@ -61,6 +61,11 @@ with
             r.contact_most_recent_iep_date as most_recent_iep_date,
             r.contact_middle_school_attended as middle_school_attended,
             r.contact_high_school_graduated_from as high_school_graduated_from,
+            r.ktc_cohort,
+            r.contact_currently_enrolled_school as currently_enrolled_school,
+            r.contact_current_college_cumulative_gpa as current_college_cumulative_gpa,
+            r.contact_mobile_phone as primary_phone,
+            r.contact_home_phone as secondary_phone,
 
             e.pursuing_degree_type,
             e.type,
@@ -76,6 +81,8 @@ with
 
             p.college_programs,
 
+            cc.notes as career_conversation_notes,
+
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
 
@@ -83,6 +90,15 @@ with
             coalesce(p.is_braven, false) as is_braven,
             coalesce(p.is_backrs, false) as is_backrs,
             coalesce(p.is_kippnj_internship, false) as is_kippnj_internship,
+            coalesce(cc.is_resume_score, false) as is_resume_score,
+            coalesce(cc.is_linkedin, false) as is_linkedin,
+            coalesce(cc.is_mock_interview_or_prep, false) as is_mock_interview_or_prep,
+            coalesce(
+                cc.is_professional_references_list, false
+            ) as is_professional_references_list,
+            coalesce(cc.is_job_search_template, false) as is_job_search_template,
+            coalesce(cc.is_cover_letter_template, false) as is_cover_letter_template,
+            coalesce(cc.is_work_samples, false) as is_work_samples,
 
             extract(
                 month from r.contact_expected_college_graduation
@@ -125,6 +141,9 @@ with
             {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
             on r.contact_id = sr.sf_contact_id
         left join programs as p on r.contact_id = p.student
+        left join
+            {{ ref("stg_google_appsheet__kfwd_career_conversations__output") }} as cc
+            on r.contact_id = cc.contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
@@ -265,6 +284,19 @@ select
     r.most_recent_iep_date,
     r.middle_school_attended,
     r.high_school_graduated_from,
+    r.ktc_cohort,
+    r.currently_enrolled_school,
+    r.current_college_cumulative_gpa,
+    r.primary_phone,
+    r.secondary_phone,
+    r.career_conversation_notes,
+    r.is_resume_score,
+    r.is_linkedin,
+    r.is_mock_interview_or_prep,
+    r.is_professional_references_list,
+    r.is_job_search_template,
+    r.is_cover_letter_template,
+    r.is_work_samples,
 
     sp.survey_id,
     sp.survey_title,
@@ -313,9 +345,7 @@ select
 
     if(r.most_recent_iep_date is not null, true, false) as is_special_education,
 
-    if(
-        r.advising_provider = 'KIPP NYC', r.postsec_advisor, r.contact_owner_name
-    ) as advisor,
+    if(r.advising_provider = 'KIPP NYC', 'Collab', r.contact_owner_name) as advisor,
 
     if(
         r.contact_id is not null,

@@ -11,14 +11,16 @@ GCS bucket: `teamster-kipppaterson`
 
 ## Active Integrations
 
-| Module                   | Type                      | Trigger                                     |
-| ------------------------ | ------------------------- | ------------------------------------------- |
-| `dbt`                    | dbt assets                | `AutomationConditionSensor`                 |
-| `powerschool` (sis/sftp) | SFTP assets via Couchdrop | sensor (`couchdrop_sftp_sensor`)            |
-| `amplify` (mclass sftp)  | SFTP assets               | sensor (`build_amplify_mclass_sftp_sensor`) |
-| `finalsite`              | API assets                | `AutomationConditionSensor`                 |
-| `pearson`                | SFTP assets               | `AutomationConditionSensor`                 |
-| `couchdrop`              | sensor only               | sensor (Google Drive watcher)               |
+| Module                   | Type                      | Trigger                                               |
+| ------------------------ | ------------------------- | ----------------------------------------------------- |
+| `dbt`                    | dbt assets                | `AutomationConditionSensor`                           |
+| `powerschool` (sis/sftp) | SFTP assets via Couchdrop | sensor (`couchdrop_sftp_sensor`)                      |
+| `amplify` (mclass sftp)  | SFTP assets               | sensor (`build_amplify_mclass_sftp_sensor`)           |
+| `deanslist`              | API assets                | schedule (nightly)                                    |
+| `finalsite`              | API + SFTP assets         | schedule (`contacts`, 4am) + sensor (`status_report`) |
+| `pearson`                | SFTP assets               | `AutomationConditionSensor`                           |
+| `extracts`               | BigQuery→SFTP             | schedule (3am)                                        |
+| `couchdrop`              | sensor only               | sensor (Google Drive watcher)                         |
 
 ## Critical Difference: PowerSchool via SFTP
 
@@ -30,15 +32,15 @@ drops on Couchdrop (Google Drive-backed SFTP). Assets are defined in
 Consequences:
 
 - No `db_powerschool` or `ssh_powerschool` resources in `definitions.py`
-- No `db_bigquery` resource (no BigQuery writes from this location)
-- No `io_manager_gcs_file` resource (no file-based IO manager needed)
-- No extracts module (no BigQuery to query)
-- No `deanslist`, `edplan`, `iready`, `overgrad`, `renlearn`, or `titan`
+- `db_bigquery` exists only for the `extracts` module (PowerSchool autocomm);
+  ingestion still writes no BigQuery data from this location
+- No `edplan`, `iready`, `overgrad`, `renlearn`, or `titan`
 
-## No Asset Checks, No Schedules
+## Schedules
 
-Paterson has no freshness checks and no data-pull schedules. All ingestion is
-sensor-driven (`couchdrop_sftp_sensor` for PowerSchool,
-`build_amplify_mclass_sftp_sensor` for Amplify). `AutomationConditionSensor`
-handles any assets with an automation condition defined (e.g. `finalsite`,
-`pearson`).
+Paterson has no freshness checks. DeansList, Finalsite `contacts`, and the
+PowerSchool autocomm `extracts` job add nightly schedules; all other ingestion
+is sensor-driven (`couchdrop_sftp_sensor` for PowerSchool and Finalsite
+`status_report`, `build_amplify_mclass_sftp_sensor` for Amplify).
+`AutomationConditionSensor` handles any assets with an automation condition
+defined (e.g. `pearson`).

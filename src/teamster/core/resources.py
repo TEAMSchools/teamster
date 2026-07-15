@@ -4,7 +4,6 @@ from dagster import EnvVar
 from dagster_dbt import DbtCliResource, DbtProject
 from dagster_dlt import DagsterDltResource
 from dagster_gcp import BigQueryResource, GCSResource
-from dagster_shared import check
 
 from teamster import GCS_PROJECT_NAME
 from teamster.core.io_managers.gcs import GCSIOManager
@@ -67,7 +66,7 @@ def get_dbt_cli_resource(dbt_project: DbtProject) -> DbtCliResource:
 def get_powerschool_ssh_resource() -> SSHResource:
     return SSHResource(
         remote_host=EnvVar("PS_SSH_HOST"),
-        remote_port=int(check.not_none(value=EnvVar("PS_SSH_PORT").get_value())),
+        remote_port=EnvVar.int("PS_SSH_PORT"),
         username=EnvVar("PS_SSH_USERNAME"),
         tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
     )
@@ -84,8 +83,7 @@ DB_POWERSCHOOL = PowerSchoolODBCResource(
 )
 
 DEANSLIST_RESOURCE = DeansListResource(
-    subdomain=EnvVar("DEANSLIST_SUBDOMAIN"),
-    api_key_map="/etc/secret-volume/deanslist_api_key_map_yaml",
+    api_key_dir="/etc/deanslist",
     request_timeout=90.0,
 )
 

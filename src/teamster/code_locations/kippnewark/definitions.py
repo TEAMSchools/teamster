@@ -24,6 +24,7 @@ from teamster.code_locations.kippnewark import (
     renlearn,
     titan,
 )
+from teamster.code_locations.kippnewark.resources import FINALSITE_RESOURCE
 from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
@@ -69,6 +70,7 @@ defs = Definitions(
     schedules=[
         *extracts.schedules,
         *deanslist.schedules,
+        *finalsite.schedules,
         *overgrad.schedules,
         *powerschool.schedules,
     ],
@@ -90,6 +92,7 @@ defs = Definitions(
         "db_powerschool": DB_POWERSCHOOL,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
+        "finalsite": FINALSITE_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
         "io_manager_gcs_avro": get_io_manager_gcs_avro(CODE_LOCATION),
