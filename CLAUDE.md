@@ -528,6 +528,16 @@ or mart `facts`/`dimensions`/`bridges`) —
 `cursor=<evaluationId of the oldest record returned>` — not a timestamp or
 opaque token.
 
+- **The dagster MCP targets a branch deployment via a `deployment` arg.**
+  `launch_run`, `launch_multiple_runs`, `get_run`, `get_run_logs`,
+  `get_run_compute_logs`, and `terminate_runs` all accept `deployment=<name>`
+  (omit for prod). `list_deployments` may return only `prod` — recover a PR's
+  branch-deployment name (an opaque hash) from its `deploy` job log line
+  `Deploying to branch deployment <hash>`. A dormant branch deployment throws
+  `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on the first call —
+  retry after ~90s to let the code location warm. BigQuery/GCS reads are
+  deployment-agnostic, so downstream data validation via the BigQuery MCP works
+  regardless of which deployment wrote the data.
 - **Prod dbt models are materialized by `<loc>__automation_condition_sensor`
   runs** (job `__ASSET_JOB`, tag `dagster/from_automation_condition`), NOT dbt
   Cloud (CI-only) or crons. A merged model SQL change goes stale on CODE and is
