@@ -57,9 +57,14 @@ with
 
             if(cu.purchasing_user, 'Yes', 'No') as purchasing_user,
         from {{ ref("int_people__staff_roster") }} as sr
+        /* match on login as well as employee_number: a Coupa account created
+           directly (blank employee_number) or an entity-switcher whose number
+           changed won't match on number, so it must resolve by login or Coupa
+           duplicates it on the next load */
         inner join
             {{ ref("stg_coupa__users") }} as cu
             on sr.employee_number = cu.employee_number
+            or sr.sam_account_name = cu.login
         inner join roles as r on cu.id = r.user_id
         left join business_groups as bg on cu.id = bg.user_id
         where
@@ -97,11 +102,14 @@ with
         left join
             {{ ref("stg_coupa__users") }} as cu
             on sr.employee_number = cu.employee_number
+            or sr.sam_account_name = cu.login
         where
             not sr.is_prestart
             and sr.assignment_status not in ('Terminated', 'Deceased')
             and not regexp_contains(sr.worker_type_code, r'Part Time|Intern')
-            and cu.employee_number is null
+            /* cu.id (not cu.employee_number): a login-matched account can have a
+               blank employee_number but is still an existing user, not new */
+            and cu.id is null
     ),
 
     sub as (
@@ -323,3 +331,7 @@ left join
     on sub.home_business_unit_code = ill3.adp_business_unit_home_code
     and ill3.adp_department_home_name = 'Default'
     and ill3.adp_job_title = 'Default'
+/* Coupa rejects rows with a blank Login or Email as required-field errors;
+   drop deprovisioned identities (e.g. terminated staff still in the window)
+   that cannot be represented in the feed */
+where sub.sam_account_name is not null and sub.mail is not null
