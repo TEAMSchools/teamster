@@ -145,6 +145,40 @@ Decision-relevant takeaways regardless of the workaround:
   fallback works but forfeits the bulk-load throughput advantage — the exact
   axis a "template for all regions" decision turns on.
 
+### Third run (all 3 Sling streams) — gc_bucket fix worked; CSV staging broke on text
+
+Omitting `gc_bucket` **resolved** the credential conflict: Sling loaded via
+`importing into bigquery via local storage` (no GCS client). Two of three
+streams succeeded; the third exposed a **fourth** Sling-specific issue.
+
+| Stream            | Result | Rows    | Sling wall-clock      |
+| ----------------- | ------ | ------- | --------------------- |
+| `students`        | ✅     | 1,039   | 61s (17 r/s, 1.3 MB)  |
+| `storedgrades`    | ❌     | —       | CSV parse failure     |
+| `assignmentscore` | ✅     | 270,434 | 316s (855 r/s, 71 MB) |
+
+- **Row-count agreement (positive):** Sling `students` = 1,039, identical to
+  dlt's 1,039 — first head-to-head row-fidelity data point.
+- **CSV staging failure (Sling issue #3, `storedgrades`):** Sling's keyless
+  BigQuery load stages through **CSV**, which failed
+  `CSV processing encountered too many errors ... Rows: 11492; errors: 6; max bad: 0`.
+  PowerSchool `storedgrades` free-text columns (course names, comments) carry
+  embedded newlines/quotes/delimiters that break CSV; `maxBadRecords=0` fails
+  the whole load on any glitch. Fix (Sling's own recommendation):
+  `target_options.format=parquet`. dlt avoids this entirely via its native
+  pyarrow backend.
+- **Table-name casing (note, not a blocker):** Sling created `STUDENTS` /
+  `ASSIGNMENTSCORE` (uppercase, from the Oracle identifier) whereas dlt created
+  lowercase `students`. Real implementation would need explicit lowercasing of
+  the `object` name to match our snake_case convention; recorded here, not fixed
+  in the spike.
+
+Running tally of tool friction: dlt required **1** adjustment (`schema="ps"`);
+Sling required **4** (per-table `update_key`, `service_name` vs `sid`, omit
+`gc_bucket`, `format=parquet`). Each Sling item was legitimately fixable, but
+the accumulation is itself the signal — dlt fit our keyless/pyarrow stack out of
+the box; Sling needed a workaround at nearly every layer.
+
 ### Known items to watch / adjustments made (pre-run)
 
 - **Sling Oracle connect key (fixed pre-run):** initial code used `sid=` for

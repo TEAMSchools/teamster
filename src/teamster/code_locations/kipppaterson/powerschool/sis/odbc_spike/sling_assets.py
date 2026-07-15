@@ -78,7 +78,13 @@ REPLICATION_CONFIG = {
     "defaults": {
         "mode": "incremental",
         "object": "zz_spike_powerschool_sling.{stream_table}",
-        "target_options": {"column_casing": "snake"},
+        # format=parquet: Sling's default keyless BigQuery load stages through
+        # CSV, which chokes on PowerSchool free-text columns (embedded newlines /
+        # quotes / delimiters in course names + comments) — storedgrades failed
+        # "CSV processing encountered too many errors ... max bad: 0". Parquet is
+        # typed/binary and immune to this (Sling's own error log recommends it).
+        # dlt sidesteps it entirely via its native pyarrow backend.
+        "target_options": {"column_casing": "snake", "format": "parquet"},
     },
     "streams": {
         f"{ORACLE_SCHEMA}.{table}": {
