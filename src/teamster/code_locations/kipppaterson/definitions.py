@@ -16,6 +16,7 @@ from teamster.code_locations.kipppaterson import (
     couchdrop,
     dbt,
     deanslist,
+    extracts,
     finalsite,
     pearson,
     powerschool,
@@ -29,6 +30,7 @@ from teamster.code_locations.kipppaterson.powerschool.sis.odbc_spike.sling_asset
 )
 from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
 from teamster.core.resources import (
+    BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
@@ -49,6 +51,7 @@ defs = Definitions(
                 dbt,
                 amplify,
                 deanslist,
+                extracts,
                 finalsite,
                 pearson,
                 powerschool,
@@ -59,6 +62,7 @@ defs = Definitions(
     ],
     schedules=[
         *deanslist.schedules,
+        *extracts.schedules,
         *finalsite.schedules,
     ],
     sensors=[
@@ -70,6 +74,7 @@ defs = Definitions(
         ),
     ],
     resources={
+        "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
         "dlt": DagsterDltResource(),

@@ -30,6 +30,10 @@ vars:
 
 models:
   kipppaterson:
+    extracts:
+      +schema: extracts
+      +contract:
+        enforced: true
     powerschool:
       +materialized: table
       +schema: powerschool

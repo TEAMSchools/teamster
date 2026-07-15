@@ -127,6 +127,10 @@ Resources are defined in two places:
 `[code_location, integration, ...]` — e.g., `kippnewark/powerschool/students`,
 `kipptaf/extracts/tableau/attendance_dashboard`.
 
+In Python, get this slash form with `key.to_user_string()` —
+`str(AssetKey([...]))` returns the `AssetKey([...])` repr, not
+`code_location/integration/name` (bites asset-key assertions in import checks).
+
 ## Automation Conditions
 
 See `core/CLAUDE.md` for automation condition builders
