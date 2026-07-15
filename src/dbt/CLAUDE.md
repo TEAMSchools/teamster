@@ -516,6 +516,12 @@ without it being real drift — normalize before comparing.
 1. Have `contract: enforced: true`
 2. Have a uniqueness test
 
+**Exception** — thin cross-project wrapper `rpt_` models (a district
+`rpt_powerschool__autocomm_*` or other `extracts/` wrapper sourcing
+`kipptaf_extracts`) are contract-columns-only: NO uniqueness test or
+descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
+`extracts/powerschool/` special case before adding either.
+
 ### Uniqueness test examples
 
 ```yaml
