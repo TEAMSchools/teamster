@@ -366,6 +366,22 @@ Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
 date-range join. Query prod before filing upstream bugs or adding defensive
 dedupe from a dev mart-test failure.
 
+Also manifests as false row-count / row-presence deltas (not just
+`relationships`/PK tests): a stale dev `int_people__staff_roster` missing recent
+hires makes a dev-built rpt look like it dropped rows. Confirm which upstreams
+resolved to dev by grepping the compiled SQL (`target/compiled/.../<model>.sql`)
+for `zz_<user>_` refs — dev-schema refs mean `--defer` was shadowed; validate
+against prod (or an ad-hoc prod query) instead.
+
+To validate a MODIFIED `rpt_`/view against prod (the deployed view is still the
+OLD code, and a dev build is stale-shadowed), rewrite its compiled SQL
+(`target/compiled/.../<model>.sql`): `zz_<user>_` refs → prod schemas, and
+inline any `stg_` you changed from its `source()` (prod lacks the new column);
+run via `bq`. Tell live drift from a real logic change with distinct-key counts
+(`total - dup`) vs a FRESH same-moment prod baseline — an unchanged distinct set
+means the row delta is fan-out/drift (warehouse tables rematerialize
+mid-session), not your change.
+
 ## Column-rename refactors strand dependent prod views
 
 When a staging column is dropped or renamed and a downstream view's SQL is
