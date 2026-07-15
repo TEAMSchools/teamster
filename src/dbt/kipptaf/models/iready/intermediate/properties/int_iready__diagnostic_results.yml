@@ -305,3 +305,17 @@ models:
       - name: test_round
         data_type: string
         description: First non-null of name.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code location (kippnewark, kippcamden, kippmiami, ...)
+          extracted from the crosswalk-rewritten _dbt_source_relation. Promoted
+          here per the marts _dbt_source_project pattern so consumers join and
+          hash a materialized column.
+      - name: illuminate_subject
+        data_type: string
+        description: >-
+          Course-subject mapping used by the section-enrollment resolver —
+          Reading maps to Text Study, Math to Mathematics. Matches the
+          illuminate_subject convention in int_pearson__all_assessments and
+          int_fldoe__all_assessments.

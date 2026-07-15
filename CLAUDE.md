@@ -58,8 +58,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Stacked branch** (build on an unmerged branch):
   `gh issue develop <num> --name <branch> --base <parent-branch>` links a branch
   off a non-`main` base; then `git worktree add`. Gives a clean diff + enforced
-  merge-after-parent — but base ≠ main skips `claude-review` and dbt Cloud CI
-  (see `.github/CLAUDE.md`).
+  merge-after-parent — but base ≠ main skips `claude-review` (dbt Cloud CI still
+  runs; it is not base-gated — see `.github/CLAUDE.md`).
 
 - **Linking an existing remote branch to an issue**:
   `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
