@@ -3,7 +3,8 @@ import types
 
 import pytest
 from dagster import EnvVar, build_resources
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import HTTPError, Timeout
 from tenacity import wait_none
 
 from teamster.libraries.finalsite.api.resources import FinalsiteResource
@@ -32,12 +33,17 @@ def test_finalsite_resource():
 
 class _FakeResponse:
     def __init__(
-        self, status_code: int, json_body: dict | None = None, *, text: str = ""
+        self,
+        status_code: int,
+        json_body: dict | None = None,
+        *,
+        text: str = "",
+        headers: dict[str, str] | None = None,
     ) -> None:
         self.status_code = status_code
         self._json_body = json_body or {}
         self.text = text
-        self.headers: dict[str, str] = {}
+        self.headers: dict[str, str] = headers or {}
 
     def json(self) -> dict:
         return self._json_body
@@ -123,3 +129,55 @@ def test_request_exhausts_on_persistent_403(monkeypatch: pytest.MonkeyPatch):
         finalsite._request(method="GET", path="contacts", id=None)
 
     assert calls["n"] == 5
+
+
+def test_request_retries_on_network_faults(monkeypatch: pytest.MonkeyPatch):
+    """A connect/read timeout or connection error is retried.
+
+    A full pull makes hundreds of sequential requests, so a single network blip
+    must not fail the whole run. Raising max_runtime makes a hung socket costly,
+    so requests carry a timeout; the resulting ``Timeout`` is retried like any
+    transient network fault.
+    """
+    monkeypatch.setattr(FinalsiteResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise Timeout("read timed out")
+        if calls["n"] == 2:
+            raise RequestsConnectionError("connection reset")
+        return _FakeResponse(200, {"ok": True})
+
+    finalsite = _build_offline_resource(request_fn)
+
+    response = finalsite._request(method="GET", path="contacts", id=None)
+
+    assert response.status_code == 200
+    assert calls["n"] == 3
+
+
+def test_request_handles_429_retry_after(monkeypatch: pytest.MonkeyPatch):
+    """A 429 is handled in-band via ``Retry-After`` (not the tenacity backoff).
+
+    Guards that the new 403/network retry decorator did not break the existing
+    sleep-then-retry behavior for rate limits.
+    """
+    monkeypatch.setattr(FinalsiteResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        if calls["n"] < 2:
+            return _FakeResponse(429, text="rate limited", headers={"Retry-After": "0"})
+        return _FakeResponse(200, {"ok": True})
+
+    finalsite = _build_offline_resource(request_fn)
+
+    response = finalsite._request(method="GET", path="contacts", id=None)
+
+    assert response.status_code == 200
+    assert calls["n"] == 2
