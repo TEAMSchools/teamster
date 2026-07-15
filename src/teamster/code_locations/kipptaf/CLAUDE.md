@@ -34,6 +34,11 @@ GCS bucket: `teamster-kipptaf`
 | `zendesk`                | assets                                                    | schedule         | —                       |
 | `couchdrop`              | sensor only                                               | —                | sensor                  |
 
+**Coupa Dagster code is aliased `l`** — resource `lResource`, env vars `l_*`
+(`l_SFTP_*`, `l_API_*`), asset group `l`, and `libraries/l/` + `kipptaf/l/`
+modules that the `coupa` submodule wires from. Grep `l` as well as `coupa`. The
+dbt side is cleanly named `coupa`.
+
 ## dbt Asset Groups (`dbt/assets.py`)
 
 Kipptaf splits dbt into **three separate asset groups** with different resource
