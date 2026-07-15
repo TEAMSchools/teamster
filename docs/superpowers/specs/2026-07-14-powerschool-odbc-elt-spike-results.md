@@ -6,7 +6,7 @@ PR [#4402](https://github.com/TEAMSchools/teamster/pull/4402). Design:
 Plan:
 [2026-07-14-powerschool-odbc-elt-spike.md](../plans/2026-07-14-powerschool-odbc-elt-spike.md).
 
-> Status: IN PROGRESS. Cells marked _(pending)_ are not yet measured.
+> Status: COMPLETE. Recommendation: **pilot dlt** (see _Decision_).
 
 ## Environment
 
@@ -23,54 +23,47 @@ Plan:
 
 ## Rubric
 
-Legend: ✅ pass · ⚠️ caveat · ❌ fail · _(pending)_ not yet measured.
+Legend: ✅ pass · ⚠️ caveat · ❌ fail. Verdicts are consistent across the three
+test tables except where noted. Dimensions were measured on the table best
+suited to each (row/value fidelity on all three; timezone, incremental, and cost
+on `assignmentscore`). Details for each row are in _Additional findings_ below.
 
-### `students`
+### Data fidelity
 
-| Dimension               | dlt         | Sling       |
-| ----------------------- | ----------- | ----------- |
-| Row fidelity            | _(pending)_ | _(pending)_ |
-| Type fidelity           | _(pending)_ | _(pending)_ |
-| Value fidelity          | _(pending)_ | _(pending)_ |
-| Throughput (full load)  | _(pending)_ | _(pending)_ |
-| Incremental correctness | _(pending)_ | _(pending)_ |
-| Tunnel stability        | _(pending)_ | _(pending)_ |
+| Dimension                      | dlt | Sling | Notes                                                                                                                                                                                                                                                                                       |
+| ------------------------------ | --- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Row fidelity                   | ✅  | ✅    | Exact, all 3 tables: 1,039 / 11,498 / 270,434 (dlt = Sling)                                                                                                                                                                                                                                 |
+| Column set                     | ✅  | ✅    | 155 cols on `students`, identical names; neither injects metadata columns                                                                                                                                                                                                                   |
+| Value fidelity (non-timestamp) | ✅  | ✅    | 0 mismatches, incl. 612 newline-laden `storedgrades` free-text comments                                                                                                                                                                                                                     |
+| Value fidelity (timestamp)     | ✅  | ❌    | **Sling shifts every `TIMESTAMP` +4h** (fixed offset, not DST-aware); dlt preserves the source wall-clock and matches the incumbent                                                                                                                                                         |
+| Type fidelity                  | ⚠️  | ⚠️    | Both flatten the incumbent numeric `STRUCT`-union to scalars (a simplification). dlt preserves precision/length (`NUMERIC(10)`, `FLOAT64` decimals — latent float risk); Sling emits idiomatic `INT64`/`NUMERIC`. Neither matches incumbent types exactly — `stg_` rework needed either way |
 
-### `storedgrades`
+### Throughput / incremental / operational
 
-| Dimension               | dlt         | Sling       |
-| ----------------------- | ----------- | ----------- |
-| Row fidelity            | _(pending)_ | _(pending)_ |
-| Type fidelity           | _(pending)_ | _(pending)_ |
-| Value fidelity          | _(pending)_ | _(pending)_ |
-| Throughput (full load)  | _(pending)_ | _(pending)_ |
-| Incremental correctness | _(pending)_ | _(pending)_ |
-| Tunnel stability        | _(pending)_ | _(pending)_ |
-
-### `assignmentscore`
-
-| Dimension               | dlt         | Sling       |
-| ----------------------- | ----------- | ----------- |
-| Row fidelity            | _(pending)_ | _(pending)_ |
-| Type fidelity           | _(pending)_ | _(pending)_ |
-| Value fidelity          | _(pending)_ | _(pending)_ |
-| Throughput (full load)  | _(pending)_ | _(pending)_ |
-| Incremental correctness | _(pending)_ | _(pending)_ |
-| Tunnel stability        | _(pending)_ | _(pending)_ |
-
-### Operational feel (cross-table)
-
-| Aspect                         | dlt         | Sling       |
-| ------------------------------ | ----------- | ----------- |
-| Config size / shape            | _(pending)_ | _(pending)_ |
-| Failure-mode legibility (logs) | _(pending)_ | _(pending)_ |
-| Fit with existing patterns     | _(pending)_ | _(pending)_ |
+| Dimension               | dlt      | Sling    | Notes                                                                                                                                                      |
+| ----------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Throughput (full load)  | ✅       | ⚠️       | Low signal at spike volumes. Sling re-downloads its Go binary per pod (~40s) every run; dlt has no such step                                               |
+| Incremental correctness | ✅       | ✅       | Both no-dupe on re-run. dlt `>=` + boundary dedup (state watermark); Sling strict `>` (target-derived watermark, boundary-tie miss risk on coarse cursors) |
+| Tunnel stability        | ✅       | ✅       | Both connected first try; Sling's native tunnel reached the legacy host                                                                                    |
+| SSH tunnel capability   | ⚠️       | ✅       | Sling has a first-class in-process tunnel; dlt has none (needs external — we already run the `sshpass` wrapper it would reuse)                             |
+| Failure-mode legibility | ✅       | ✅       | Both surfaced clear errors in run logs                                                                                                                     |
+| Fit with existing repo  | ✅       | ⚠️       | dlt extends the `illuminate` dlt pattern (keyless ADC, pyarrow, per-table partitioned assets); Sling is a new tool/dependency                              |
+| Adjustments to run      | ✅ **1** | ⚠️ **4** | dlt: `schema="ps"`. Sling: per-table `update_key`, `service_name` vs `sid`, omit `gc_bucket`, `format=parquet`                                             |
 
 ## Run log
 
-| Run         | Tool | Table | Kind | Run ID | Wall-clock | Rows | Notes |
-| ----------- | ---- | ----- | ---- | ------ | ---------- | ---- | ----- |
-| _(pending)_ |      |       |      |        |            |      |       |
+| Tool  | Table             | Kind           | Rows      | Wall-clock     | Notes                                            |
+| ----- | ----------------- | -------------- | --------- | -------------- | ------------------------------------------------ |
+| dlt   | `students`        | full           | 1,039     | —              | keyless load-job, no GCS                         |
+| dlt   | `storedgrades`    | full           | 11,498    | 76s            | ran concurrently (throughput not isolated)       |
+| dlt   | `assignmentscore` | full           | 270,434   | 147s           | ran concurrently                                 |
+| dlt   | `assignmentscore` | incremental    | 0 extract | 6.4s           | cursor no-op; **no full re-read** of 270k        |
+| Sling | `students`        | full           | 1,039     | 61s            | incl. binary download                            |
+| Sling | `assignmentscore` | full           | 270,434   | 316s (855 r/s) | ran ~isolated                                    |
+| Sling | `storedgrades`    | full (parquet) | 11,498    | —              | after CSV→parquet fix; value-clean               |
+| Sling | `students`        | incremental    | 0         | ~46s           | strict `>` no-op                                 |
+| Sling | `assignmentscore` | incremental    | 0         | ~46s           | strict `>` no-op                                 |
+| Sling | `assignmentscore` | forced delta   | 17,850    | 67s (266 r/s)  | watermark-from-target re-pull → restored 270,434 |
 
 ## Runtime errors and config adjustments
 
@@ -207,8 +200,151 @@ the box; Sling needed a workaround at nearly every layer.
   re-run for a clean number.
 - _(add: any tunnel disconnects, type-cast adapters needed.)_
 
+## Additional findings
+
+### Timezone: Sling shifts every timestamp +4h (correctness)
+
+The same Oracle source lands `whenmodified` **4h apart** between the tools:
+Sling `2026-06-18 14:31` UTC vs dlt `10:31` UTC. Characterized on
+`assignmentscore` (270,434 rows joined on `assignmentscoreid`):
+
+- The offset is a **uniform +240 min on every row**, spanning 2023-09 → 2026-06
+  — including winter (EST) rows. A real `America/New_York` conversion would be
+  +300 min (5h) in winter, so this is a **fixed offset, not a DST-aware tz
+  conversion**.
+- Hour-of-day clustering vs the incumbent (Newark
+  `src_powerschool__assignmentscore`, 31.5M rows, avg hour 13.9, 72% in
+  ET-daytime 6–17h): dlt (avg 14.5, 58% in 6–17h) clusters with the incumbent;
+  Sling (shifted later, wraps past midnight) does not.
+- **dlt preserves the Oracle wall-clock (naive-stored-as-UTC) and matches the
+  incumbent convention; Sling silently shifts all timestamps +4h.** The load
+  reports success while doing it — this would corrupt time-of-day analytics,
+  freshness checks, and any cursor/join/filter on time. Fixable in Sling
+  (session tz / source options), but silent-by-default and another thing to hunt
+  for.
+
+### Incremental: correct on both, different watermark semantics
+
+Neither tool re-reads the full table on an incremental run (dlt
+`assignmentscore` re-run: **6.4s, 0 rows extracted**; the cursor filter is
+pushed server-side to Oracle). Both are no-dupe. The mechanics differ:
+
+- **dlt** stores the watermark as `last_value` in pipeline state and filters
+  `cursor >= last_value` (inclusive, `range_start="closed"`), then dedups the
+  boundary rows by `primary_key` — so a late row sharing the exact watermark is
+  still caught.
+- **Sling** recomputes the watermark as `MAX(update_key)` from the **target**
+  each run and filters `update_key > watermark` (strict). A row stamped with
+  exactly the watermark that wasn't already loaded is **silently skipped**.
+
+For our fine-grained cursors (`transaction_date` on `students` is all-distinct)
+the tie risk is negligible; for a coarse cursor it is real. dlt's
+inclusive+dedup is the more defensive default.
+
+### SSH tunnel: Sling has a native one, dlt doesn't
+
+dlt (`sql_database`) has **no** SSH-tunnel feature — you tunnel externally and
+point it at localhost, which the spike does via the repo's
+`SSHResource.open_ssh_tunnel()` (the `sshpass` wrapper the incumbent ODBC
+resource already uses). Sling has a first-class in-process `ssh_tunnel` (Go
+`crypto/ssh`), which reached the legacy host on the first try. So **Sling wins
+the tunnel dimension** — neutralized for us only because we already run that
+wrapper.
+
+Learning worth acting on regardless of tool: the `sshpass` subprocess (+ mounted
+password file + readiness race) is legacy friction. `SSHResource` already uses
+`paramiko` (with legacy `ssh-rsa` re-enabled) for its SFTP methods; the tunnel
+could move to an in-process paramiko forward reading the password from an env
+var — Sling's model, but keeping host-key verification (better than Sling's
+`InsecureIgnoreHostKey`). Filed as a follow-up.
+
+### Parallelism: same capability, different idiom
+
+Both `@dlt_assets` and `@sling_assets` are `multi_asset(can_subset=True)` — one
+op per decorator. Dagster-level parallelism comes from how many ops you split
+into, identical for both. The spike's dlt-parallel / Sling-serial split was a
+structuring choice (3 per-table dlt pipelines vs 1 Sling replication with 3
+streams), not a capability gap. In-op, Sling parallelizes streams with
+`SLING_THREADS`; dlt with its extract/load worker pools. dlt's per-table
+pipeline idiom maps onto Dagster partitions more naturally than Sling's
+single-config model.
+
+### Ingestion cost + strategy (BigQuery cost is real; Oracle reads are free)
+
+Measured from the spike's own BigQuery job history (on-demand pricing — the 10
+MB per-query floor is visible):
+
+- **Sling's incremental upsert = `DELETE` + `INSERT` + heavy introspection.**
+  Per run on the 67 MB `assignmentscore`: `LOAD` delta→tmp (**free**),
+  `DELETE FROM target WHERE EXISTS(...)` (**~63 MB — scans the whole target**),
+  `INSERT` (~20 MB), plus ~7 `INFORMATION_SCHEMA` queries at the 10 MB floor
+  (~80 MB). The `DELETE` is **delta-size-independent** — it bills ~target-size
+  every run, so it scales badly to multi-GB tables.
+- **`LOAD` jobs bill 0.** Full refresh (truncate + load) and partition overwrite
+  are near-free on BigQuery.
+- **Clustering does NOT rescue the merge** (measured): identical `DELETE`
+  copies, clustered vs unclustered on `assignmentscoreid`, both billed **68 MB**
+  — no pruning. BigQuery does not prune a dynamic-join `DELETE … WHERE EXISTS`
+  by the staging key range without a **static** predicate; the tools emit
+  generic dynamic-join DML, so clustering is inert here.
+- **Partitioning + a static windowed predicate DOES prune** (measured, dry-run):
+  on a `PARTITION BY DATE(whenmodified)` copy,
+  `WHERE DATE(whenmodified) >= '2026-06-01'` scanned **4.3 MB vs 67 MB**
+  unpartitioned (~15×).
+
+Cost ranking, given free Oracle reads: **full refresh (free `LOAD`) ≈
+partitioned windowed replace (free `LOAD`, ~15× pruned reads) ≪ row-level merge
+(bills ≥ target-size every run)**.
+
+Caveat: **neither dlt nor Sling does partition-scoped replace natively** — dlt
+`replace` is whole-table; the incumbent's windowed replace is its
+GCS-external-table + Dagster-partition architecture. Realizing it with a native
+BQ table is pilot design work (partition-decorator `LOAD`s / Dagster-partitioned
+assets), and it fits dlt's per-table partitioned-asset idiom better than
+Sling's.
+
+Recommended pilot ingestion strategy (per-table): **full refresh** small/medium
+tables (free, and dodges the cursor edge cases); **partitioned windowed
+replace** for large tables; **row-level merge** only where genuinely
+unavoidable. All three avoid the merge scan that dominates BigQuery cost.
+
 ## Decision
 
-_(Filled in Task 10 after the rubric is complete. Names the pilot tool, the 2-3
-rubric rows that decided it, the losing tool's findings, and caveats to carry
-into the pilot.)_
+**Pilot dlt.**
+
+The two tools tie on the fidelity that matters most — **row and non-timestamp
+value fidelity are exact** — and Sling is a more capable tool than its rocky
+start suggested (native SSH tunnel, more idiomatic scalar types). But the
+decision for a _template for all regions_ turns on correctness-of-defaults and
+operational fit, and dlt leads decisively on both:
+
+1. **Timestamp correctness.** Sling silently shifts every `TIMESTAMP` +4h; dlt
+   preserves the wall-clock and matches the incumbent. This alone is a strong
+   mark against adopting Sling as a drop-in.
+2. **Robust defaults on real data.** Sling's default CSV staging corrupted-then-
+   failed on PowerSchool free-text (needed `parquet`); its recommended GCS
+   fast-path is broken on our keyless Workload Identity (needed a workaround);
+   its strict-`>` cursor risks boundary-tie misses. dlt's pyarrow / keyless-ADC
+   / inclusive-cursor defaults handled all of this out of the box.
+3. **Fit + friction.** dlt needed **1** adjustment and extends the existing
+   `illuminate` dlt pattern; Sling needed **4** and is a new dependency. dlt's
+   per-table pipeline idiom also maps onto the partitioned ingestion strategy
+   the cost analysis recommends.
+
+Sling's genuine wins (native tunnel, idiomatic types) don't offset these: the
+tunnel is neutralized because we already run the wrapper dlt reuses, and the
+type edge is closable via dlt reflection config while Sling's timestamp shift is
+a silent correctness bug.
+
+### Caveats to carry into the dlt pilot
+
+- Regenerate the `stg_` layer to read scalar numerics (the incumbent's
+  `STRUCT`-union unpacking goes away) — required for either tool.
+- Configure dlt reflection so decimals land as `NUMERIC`, not `FLOAT64` (avoid
+  float drift on GPA/balance columns).
+- dlt lands dates as `TIMESTAMP` vs incumbent `DATE` — add the cast in staging.
+- Adopt the ingestion strategy above (full refresh / partitioned replace; avoid
+  row-merge); partition-scoped replace is dlt-pilot design work, not a native
+  flag.
+- Retire the `sshpass` tunnel for an in-process paramiko forward (separate
+  follow-up).
