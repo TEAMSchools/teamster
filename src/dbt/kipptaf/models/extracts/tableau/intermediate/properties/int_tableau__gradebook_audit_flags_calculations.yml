@@ -2,7 +2,7 @@ models:
   - name: int_tableau__gradebook_audit_flags_calculations
     description: >
       Three-branch UNION ALL intermediate for the gradebook audit pipeline.
-      Feeds rpt_tableau__gradebook_audit_v4. Branch sections_teacher: one anchor
+      Feeds rpt_tableau__gradebook_audit. Branch sections_teacher: one anchor
       row per section x quarter (no student data, flag columns false). Branch
       assignment_teacher: one row per section x quarter x category x assignment
       with QTD assignment count aggregates. Branch student_course: one row per

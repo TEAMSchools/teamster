@@ -3898,6 +3898,21 @@ development-time references that are no longer current.
 
 ---
 
+## Note: disabled v3 models retain dead refs
+
+`int_tableau__gradebook_audit_teacher_scaffold`, `_student_scaffold`,
+`_assignments_teacher`, `_assignments_student`, `_categories_teacher`, and
+`_flags` are disabled (`config: enabled: false`), not deleted. Their SQL still
+references columns removed elsewhere in the AY 2026-2027 revamp (e.g.
+`_dbt_source_relation` → `_dbt_source_project`, `school_level` →
+`school_level_alt`). Re-enabling any of them without first reconciling those
+refs will fail to build. `rpt_tableau__gradebook_audit` itself was fully
+replaced by the former `_v4` pipeline (this doc's Task 6g/6i), not left disabled
+— MS signed off on the same model as HS, so there is no parallel v3 report model
+left to retire.
+
+---
+
 ## Task 9: Assignment validity filter for QTD count
 
 ### Post-merge — design and implementation TBD

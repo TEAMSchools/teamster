@@ -1,5 +1,16 @@
 models:
   - name: rpt_tableau__gradebook_gpa
+    # TODO(#3900): residual warn-level violations trace to the known
+    # base_powerschool__course_enrollments double-write duplicates.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - studentid
+              - sectionid
+              - quarter
+              - category_name_code
     columns:
       - name: _dbt_source_relation
         data_type: string

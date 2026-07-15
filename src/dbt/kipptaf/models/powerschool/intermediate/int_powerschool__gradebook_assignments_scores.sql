@@ -26,6 +26,8 @@ with
 
             initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
 
+            -- no due-date grace period yet; a 7-day grace was scoped for
+            -- AY 2026-2027 but deferred, see design spec "7-day grace period"
             case
                 when coalesce(s.isexempt, 0) = 1
                 then false
@@ -73,7 +75,8 @@ with
         inner join
             {{ ref("base_powerschool__course_enrollments") }} as e
             on a.sectionsdcid = e.sections_dcid
-            and a.duedate between e.cc_dateenrolled and e.cc_dateleft
+            and a.duedate >= e.cc_dateenrolled
+            and a.duedate < e.cc_dateleft
             and a._dbt_source_project = e._dbt_source_project
             and not e.is_dropped_section
         left join

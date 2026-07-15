@@ -17,11 +17,11 @@ is the authoritative source for lineage, flag definitions, scaffold structure,
 and configuration behavior. The spec covers AY 2026-2027 design decisions.
 
 - Reference doc:
-  [`docs/reference/gradebook-audit-data-model.md`](../../docs/reference/gradebook-audit-data-model.md)
+  [`docs/reference/gradebook-audit-data-model.md`](../../../docs/reference/gradebook-audit-data-model.md)
 - Design spec:
-  [`docs/superpowers/specs/2026-05-14-gradebook-audit-ay2627-design.md`](../../docs/superpowers/specs/2026-05-14-gradebook-audit-ay2627-design.md)
+  [`docs/superpowers/specs/2026-05-14-gradebook-audit-ay2627-design.md`](../../../docs/superpowers/specs/2026-05-14-gradebook-audit-ay2627-design.md)
 - Implementation plan:
-  [`docs/superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md`](../../docs/superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md)
+  [`docs/superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md`](../../../docs/superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md)
 
 **Key gotcha:** `academic_year` stores the STARTING year. AY 2026-2027 =
 `academic_year = 2026`. Confirm this with the user before generating any data.
@@ -54,7 +54,7 @@ back to `gradebook_and_gpa_dashboard` and note the rename is pending.
 
 Current `depends_on` list (update if the exposure changes):
 
-- `rpt_tableau__gradebook_audit_v4`
+- `rpt_tableau__gradebook_audit`
 
 There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
 only if the user asks about disabled or archived workbooks.
@@ -71,15 +71,24 @@ the spec doc.
 ## Procedure: Add a new flag
 
 `stg_google_sheets__gradebook_flags` is disabled — no sheet step needed.
+`rpt_tableau__gradebook_audit.sql` has two UNPIVOT lists that both need updating
+for a `student_course`-grain flag — `health_calc` (3 flags, drives
+`is_healthy_gradebook`) and `flags_unpivot` (2 flags, drives the Branch 3 output
+rows). A non-`student_course` flag (teacher/assignment grain, like
+`expected_assign_count_not_met`) only goes in `health_calc`'s list and is
+emitted as a literal `audit_flag_name`/`audit_flag_value` pair in its own Branch
+(see Branch 2's pattern).
 
 1. Add the boolean column to the source model that computes the flag (see
    reference doc flag inventory for which model owns each flag type).
-2. Add the flag name to the UNPIVOT list in the `flags_unpivot` CTE of
-   `rpt_tableau__gradebook_audit_v4.sql`.
+2. Student-course flag: add the flag name to BOTH the `health_calc` and
+   `flags_unpivot` UNPIVOT lists in `rpt_tableau__gradebook_audit.sql`.
+   Teacher/assignment-grain flag: add it only to `health_calc`'s list and add a
+   branch emitting it as a literal, following Branch 2's pattern.
 3. Update the properties YAML for the source model and
-   `rpt_tableau__gradebook_audit_v4`.
+   `rpt_tableau__gradebook_audit`.
 4. Build the modified models. Verify the flag appears in
-   `rpt_tableau__gradebook_audit_v4`.
+   `rpt_tableau__gradebook_audit`.
 
 ---
 
@@ -88,10 +97,11 @@ the spec doc.
 `stg_google_sheets__gradebook_flags` is disabled — no sheet step needed.
 
 1. Remove the boolean column from the source model that computes the flag.
-2. Remove the flag name from the UNPIVOT list in the `flags_unpivot` CTE of
-   `rpt_tableau__gradebook_audit_v4.sql`.
+2. Remove the flag name from the `health_calc` UNPIVOT list, and from
+   `flags_unpivot`'s UNPIVOT list if it was a `student_course` flag, in
+   `rpt_tableau__gradebook_audit.sql`.
 3. Update the properties YAML for the source model and
-   `rpt_tableau__gradebook_audit_v4`.
+   `rpt_tableau__gradebook_audit`.
 4. Build the modified models.
 
 ---
@@ -104,11 +114,12 @@ the spec doc.
    [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
 2. Verify `int_powerschool__u_expectations_qtd_unpivot` returns rows for the new
    region.
-3. No flag sheet changes needed — the UNPIVOT in
-   `rpt_tableau__gradebook_audit_v4`'s `flags_unpivot` CTE applies to all
-   regions. The only exclusions are `_dbt_source_project != 'kippmiami'` and
-   `school_level_alt != 'ES'` (MS/HS only for teacher/assignment branches).
-   Confirm sections for the new region appear in
+3. No flag sheet changes needed — the UNPIVOT lists in
+   `rpt_tableau__gradebook_audit` apply to all regions. The only exclusions,
+   applied uniformly across all three branches in
+   `int_tableau__gradebook_audit_flags_calculations`, are
+   `_dbt_source_project != 'kippmiami'` and `school_level_alt != 'ES'` (MS/HS
+   only). Confirm sections for the new region appear in
    `int_tableau__gradebook_audit_flags_calculations`.
 
 ---
@@ -137,7 +148,7 @@ the `grades_type` will still produce no data.
 **Files to edit:**
 
 - `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags_calculations.sql`
-- `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit_v4.sql`
+- `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 
 **Two changes to make:**
 
@@ -165,7 +176,7 @@ the `grades_type` will still produce no data.
    archived quarter grades) instead of `base_powerschool__final_grades` (empty
    until teachers start entering grades for the new year).
 
-2. In `rpt_tableau__gradebook_audit_v4` — change the year filter in both UNION
+2. In `rpt_tableau__gradebook_audit` — change the year filter in both UNION
    branches (appears twice in WHERE clauses, marked with
    `/* summer toggle: see skill */`):
 
@@ -180,7 +191,7 @@ Build and verify after both changes:
 
 ```bash
 uv run dbt build \
-  --select int_tableau__gradebook_audit_flags_calculations rpt_tableau__gradebook_audit_v4 \
+  --select int_tableau__gradebook_audit_flags_calculations rpt_tableau__gradebook_audit \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state target/prod
@@ -203,15 +214,20 @@ Check in order:
    (reference doc flag inventory) and query it directly.
 2. **Section in the scaffold?** Check
    `int_tableau__gradebook_audit_flags_calculations` for the section/quarter
-   combination. Two silent exclusion rules apply:
+   combination. Two silent exclusion rules apply uniformly across all three
+   branches (`sections_teacher`, `assignment_teacher`, `student_course`):
    - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source (AY
      2026-2027 onward)
-   - ES sections are excluded from teacher/assignment branches (but ES students
-     appear in student branches for EOQ flags)
-3. **Flag in the UNPIVOT list?** Confirm the flag name appears in the
-   `flags_unpivot` CTE of `rpt_tableau__gradebook_audit_v4.sql`. The active list
-   is `qt_percent_grade_greater_100`, `qt_grade_70_comment_missing`,
-   `expected_assign_count_not_met`.
+   - `school_level_alt != 'ES'` — ES is excluded everywhere, including the
+     `student_course` branch; ES is handled separately by
+     `rpt_tableau__gradebook_es_comments`
+3. **Flag in the UNPIVOT list?** Two lists in `rpt_tableau__gradebook_audit.sql`
+   matter: `health_calc`'s 3-flag list (`qt_percent_grade_greater_100`,
+   `qt_grade_70_comment_missing`, `expected_assign_count_not_met`) drives
+   `is_healthy_gradebook`; `flags_unpivot`'s 2-flag list (the same two
+   `student_course` flags) drives the Branch 3 output rows.
+   `expected_assign_count_not_met` is emitted as a hardcoded literal in Branch
+   2, not unpivoted.
 
 `stg_google_sheets__gradebook_flags` is disabled — do not check the allowlist
 sheet. `stg_google_sheets__gradebook_exceptions` is also disabled — do not check

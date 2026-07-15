@@ -250,17 +250,23 @@ resolved when reviewing those models.
 
 ### ~~Anchor-row / "in the clear" redesign~~ (implemented)
 
-Originally deferred, this was implemented as a two-branch UNION in
-`rpt_tableau__gradebook_audit_v4`:
+Originally deferred, this was implemented as a three-branch UNION in
+`rpt_tableau__gradebook_audit`:
 
-- **Branch 1** (`and f.is_healthy_gradebook`): one
+- **Branch 1** (`sections_teacher`, `and h.is_healthy_gradebook`): one
   `audit_flag_name = 'No Flags'` anchor row per section × quarter for teachers
-  where at least one flag fired
-- **Branch 2** (`and not f.is_healthy_gradebook`): full `flags_unpivot` rows for
-  teachers where no flags fired
+  where **no** flag fired
+- **Branch 2** (`assignment_teacher`,
+  `and not h.is_healthy_gradebook and s.expected_assign_count_not_met`): one
+  `expected_assign_count_not_met` row per flagged assignment for teachers where
+  at least one flag fired
+- **Branch 3** (`student_course`, `flags_unpivot`): the two unpivoted
+  student-course flag rows
 
-`is_healthy_gradebook = max(audit_flag_value) over (partition by teacher × school × quarter)`
-— `true` when at least one of the three audit flags fired that quarter.
+`is_healthy_gradebook` is a `health_calc` `GROUP BY` aggregate (not a window
+function), partitioned by teacher × school × quarter:
+`not max(audit_flag_value)` — so `true` means **no** flag fired that quarter,
+the inverse of a bare `max()`.
 
 ## Open questions
 

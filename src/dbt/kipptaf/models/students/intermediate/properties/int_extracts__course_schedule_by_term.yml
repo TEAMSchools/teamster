@@ -307,7 +307,7 @@ models:
         data_type: string
         description: >
           Alternate school level override. Set to 'MS' for KIPP Sumner
-          Elementary grade 5 sections; null otherwise.
+          Elementary grade 5 sections; otherwise equal to `school_level`.
         config:
           meta:
             source_system: PowerSchool

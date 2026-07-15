@@ -358,7 +358,7 @@ exposures:
     owner:
       name: Data Team - grangel
     depends_on:
-      - ref("rpt_tableau__gradebook_audit_v4")
+      - ref("rpt_tableau__gradebook_audit")
     config:
       meta:
         dagster:

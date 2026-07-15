@@ -1,9 +1,9 @@
 models:
   - name: int_extracts__course_enrollments_by_term
     description: >
-      One row per student per course per quarter based on course enrollment
-      overlap with term dates. Students who re-enrolled in the same course
-      within a quarter are deduped to the most recent stint.
+      One row per student per academic year per course per quarter based on
+      course enrollment overlap with term dates. Students who re-enrolled in the
+      same course within a quarter are deduped to the most recent stint.
     config:
       schema: extracts
       materialized: table
@@ -12,6 +12,7 @@ models:
           arguments:
             combination_of_columns:
               - _dbt_source_project
+              - academic_year
               - studentid
               - course_number
               - quarter
@@ -1217,6 +1218,7 @@ models:
       - name: rn
         data_type: int64
         description: >
-          Row number within (project, studentid, course_number, quarter),
-          ordered by school exitdate desc then CC dateleft desc. Always 1 after
-          qualify deduplication — retained for downstream reference.
+          Row number within (project, academic_year, studentid, course_number,
+          quarter), ordered by school exitdate desc then CC dateleft desc.
+          Always 1 in this model's output — filtered by a WHERE clause after
+          computing the window, not QUALIFY. Retained for downstream reference.

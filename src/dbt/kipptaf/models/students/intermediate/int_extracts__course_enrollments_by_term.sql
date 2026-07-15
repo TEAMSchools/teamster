@@ -180,7 +180,11 @@ with
 
             row_number() over (
                 partition by
-                    s._dbt_source_project, s.cc_studentid, s.course_number, s.`quarter`
+                    s._dbt_source_project,
+                    s.cc_academic_year,
+                    s.cc_studentid,
+                    s.course_number,
+                    s.`quarter`
                 order by e.exitdate desc, s.dateleft desc
             ) as rn,
 
