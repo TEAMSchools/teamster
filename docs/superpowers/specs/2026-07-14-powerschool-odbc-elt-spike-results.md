@@ -100,6 +100,51 @@ for Sling. Both then failed at table/column resolution, from a spike-config bug
   noting — Sling's stream qualification made the owner schema explicit up front;
   dlt's reflection needed it added.
 
+### Second run (`students`) — dlt loaded; Sling blocked on GCS-staging auth
+
+After the per-table cursor + `schema="ps"` fixes, the second run split the two
+tools cleanly — a **genuine, decision-relevant tool difference**, not a
+spike-config bug:
+
+- **dlt: PASS.** `dlt/students` loaded 1,039 rows into
+  `zz_spike_powerschool_dlt.students` with zero credential config. dlt's
+  BigQuery destination uploads files directly through the BigQuery load-job API
+  — it **never touches GCS** — so pure ADC (our keyless GKE Workload Identity)
+  was sufficient. The residual `transaction_date` case-sensitivity concern did
+  **not** materialize: Sling accepted the lowercase `update_key` (it got past
+  `getting checkpoint value (transaction_date)` and
+  `created table students_tmp`).
+- **Sling: FAIL** at GCS staging —
+  `Could not connect to GS Storage: dialing: multiple credential options provided`.
+
+Root cause (traced, not our config): Sling loads to BigQuery by staging through
+a GCS bucket (`gc_bucket`), which needs a **separate** GCS client. On our
+keyless Workload Identity env (no key file, no `GOOGLE_APPLICATION_CREDENTIALS`
+— confirmed: `BIGQUERY_RESOURCE`/`GCS_RESOURCE` use bare `project=`, cluster is
+Autopilot with `serviceAccountName: ~`), Sling's `fs_google.go` ADC branch does
+`google.FindDefaultCredentials()` + `option.WithCredentials(creds)` while the
+bundled google-cloud-go storage client **also** auto-detects ADC —
+`google.golang.org/api >= v0.258.0` rejects the pair. The `WithHTTPClient`
+workaround that avoids this exists **only** on the explicit-key branch; both the
+deployed `sling==1.5.20` and current `main` still use the single-option ADC path
+(latest release is only 1.5.21), so no version bump helps. Fixing it "properly"
+would mean mounting a long-lived GCP SA key — against the keyless posture the
+rest of the stack (dbt, dagster, dlt) runs on.
+
+Fix applied (keeps the comparison fair without a key): **omit `gc_bucket`**.
+`gc_bucket` is documented as optional/recommended; without it Sling loads
+through the BigQuery client directly (the same keyless load-job path dlt uses),
+bypassing the GCS filesys entirely. Slower than GCS bulk staging, irrelevant at
+spike volumes.
+
+Decision-relevant takeaways regardless of the workaround:
+
+- dlt inherits our keyless ADC model with no config and no GCS dependency.
+- Sling's **recommended** BigQuery fast path (GCS staging) is broken on keyless
+  Workload Identity and would require introducing an SA key; its keyless
+  fallback works but forfeits the bulk-load throughput advantage — the exact
+  axis a "template for all regions" decision turns on.
+
 ### Known items to watch / adjustments made (pre-run)
 
 - **Sling Oracle connect key (fixed pre-run):** initial code used `sid=` for

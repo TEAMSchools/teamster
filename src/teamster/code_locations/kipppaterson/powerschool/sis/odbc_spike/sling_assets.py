@@ -56,7 +56,17 @@ SLING_SPIKE_RESOURCE = SlingResource(
             type="bigquery",
             project=GCS_PROJECT_NAME,
             dataset="zz_spike_powerschool_sling",
-            gc_bucket="teamster-test",
+            # No gc_bucket on purpose. Sling's GCS-staging fast path fails on our
+            # keyless GKE Workload Identity environment with "Could not connect
+            # to GS Storage: dialing: multiple credential options provided": its
+            # fs_google.go ADC branch passes option.WithCredentials(creds) while
+            # the bundled google-cloud-go storage client also auto-detects ADC,
+            # which google.golang.org/api >= v0.258.0 rejects. The WithHTTPClient
+            # workaround exists only on the explicit-key branch (both 1.5.20 and
+            # main still use the single-option ADC path), so no version bump
+            # helps. Omitting the bucket routes the load through the BigQuery
+            # client directly (which authenticates fine), matching dlt's keyless
+            # load path — slower than GCS bulk staging, fine for spike volumes.
             location="US",
         ),
     ]
