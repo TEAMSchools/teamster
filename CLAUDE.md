@@ -582,6 +582,14 @@ wait — no `step_execution_timeout` knob exists. When a run hits `max_runtime`
 having done little work, suspect step-pod `FailedScheduling`, not slow code or
 upstream APIs.
 
+Concurrency-**pool**-blocked runs stay QUEUED, not STARTED (run blocking is the
+Dagster >=1.10 default; repo is 1.13), so pool queue-wait does NOT burn
+`dagster/max_runtime` (it counts from STARTED). With `k8s_job_executor` (all
+locations) each step runs in its own pod (compute is `pid 1`) and a resource's
+`setup_for_execution` runs there only after the op's pool slot is claimed — so a
+pooled resource's short-lived token/session is not aged by queue-wait. Size a
+pooled asset's `max_runtime` for its own run, not for waiting behind siblings.
+
 GKE Autopilot top-of-hour fan-out is the dominant cause of step-pod scheduling
 latency. `FailedScheduling` events trace to "Insufficient cpu/memory" (3-9 min
 waits) while nodes provision. Image pull is ~2s on cached nodes — don't chase
@@ -601,6 +609,12 @@ position expecting type 'String'".
 Authenticates as impersonated service account
 `codespaces@teamster-332318.iam.gserviceaccount.com`. If `PermissionDenied`,
 check the `CodespacesRole` custom IAM role, not user IAM bindings.
+
+`gcloud` via Bash is denied by a `Bash(gcloud *)` deny rule (full-path or
+variable-aliased invocations are classifier-flagged as evasion — don't). Prefer
+the GKE MCP (`list_clusters`/`get_cluster`) and gcp-observability MCP; for
+Compute resources with no MCP coverage (Cloud NAT, routers) or the gcloud
+commands noted elsewhere in this file, hand them to the user to run.
 
 `mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
 `end_time`), not camelCase. Results cap at 100 — paginate by using the last
