@@ -2,7 +2,7 @@ sources:
   - name: kippnewark_finalsite
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      endif -%}kippnewark_finalsite"
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippnewark_finalsite"
     tables:
       - name: stg_finalsite__status_report
         config:
