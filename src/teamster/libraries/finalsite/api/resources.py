@@ -6,6 +6,28 @@ from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import HTTPError, Response, Session
+from tenacity import (
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
+
+
+def _is_retryable_forbidden(exception: BaseException) -> bool:
+    """Return True for a bare gateway 403 that a short backoff may clear.
+
+    All four districts' contacts pulls fire simultaneously from one shared
+    egress IP, so the Finalsite gateway returns a 403 (not a 429) once the
+    concurrent load trips its per-source ceiling. The ``finalsite_api``
+    concurrency pool is the root-cause fix; this predicate backs a bounded retry
+    as defense-in-depth for a transient 403.
+    """
+    return (
+        isinstance(exception, HTTPError)
+        and exception.response is not None
+        and exception.response.status_code == 403
+    )
 
 
 class FinalsiteResource(ConfigurableResource):
@@ -40,6 +62,12 @@ class FinalsiteResource(ConfigurableResource):
     def _get_url(self, path: str, id: str | None) -> str:
         return f"{self._service_root}/{path}" + (f"/{id}" if id else "")
 
+    @retry(
+        retry=retry_if_exception(_is_retryable_forbidden),
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=2, max=60),
+        reraise=True,
+    )
     def _request(self, method: str, path: str, id: str | None, **kwargs) -> Response:
         url = self._get_url(path=path, id=id)
 
@@ -49,7 +77,7 @@ class FinalsiteResource(ConfigurableResource):
         try:
             response.raise_for_status()
             return response
-        except HTTPError as e:
+        except HTTPError:
             if response.status_code == 429:
                 retry_after = float(response.headers["Retry-After"])
 
@@ -60,9 +88,15 @@ class FinalsiteResource(ConfigurableResource):
                 time.sleep(retry_after)
 
                 return self._request(method=method, path=path, id=id, **kwargs)
-            else:
-                self._log.error(response.text)
-                raise e
+
+            if response.status_code == 403:
+                self._log.warning(
+                    f"Forbidden (403) on {method} {path}; retrying with backoff"
+                )
+                raise
+
+            self._log.error(response.text)
+            raise
 
     def get(self, path: str, id: str | None = None, **kwargs) -> Response:
         return self._request(method="GET", path=path, id=id, **kwargs)

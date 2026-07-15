@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition
+from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
 
 from teamster.code_locations.kippnewark import CODE_LOCATION, LOCAL_TIMEZONE
 
@@ -7,6 +7,11 @@ finalsite_contacts_daily_asset_job_schedule = ScheduleDefinition(
     cron_schedule="0 4 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
     target=[f"{CODE_LOCATION}/finalsite/contacts"],
+    # The pull is strictly sequential cursor pagination (~1 req/s); kippnewark
+    # is the largest district and runs past the ~30 min default. The finalsite_api
+    # pool (limit 1) also serializes districts, so a run can wait behind the
+    # others — size the ceiling to cover a full pull plus that queue wait. See #4408.
+    tags={MAX_RUNTIME_SECONDS_TAG: str(7200)},
 )
 
 schedules = [
