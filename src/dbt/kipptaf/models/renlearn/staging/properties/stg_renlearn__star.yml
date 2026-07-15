@@ -269,3 +269,22 @@ models:
         data_type: int64
       - name: teacher_state_id
         data_type: int64
+      - name: completed_date_value
+        data_type: date
+        description: >-
+          Local-time completion calendar date of the attempt, cast from the
+          completed_date_local datetime string. Distinct from the raw string
+          completed_date column.
+      - name: illuminate_subject
+        data_type: string
+        description: >-
+          Course-subject mapping used by the assessment section-enrollment
+          resolver — Math partitions map to Mathematics; Reading and Early
+          Literacy map to Text Study.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code location resolved via int_people__location_crosswalk on
+          school_name. Required because NJ districts share one Renaissance
+          instance (kippnj), so the source relation cannot identify the
+          district. NULL when the school name has no crosswalk alias.

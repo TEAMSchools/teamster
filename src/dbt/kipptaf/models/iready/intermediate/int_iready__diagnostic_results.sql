@@ -127,6 +127,8 @@ select
 
     right(rt.code, 1) as round_number,
 
+    {{ extract_code_location("wc") }} as _dbt_source_project,
+
     case
         when wc.overall_relative_placement_int <= 2
         then 'Below/Far Below'
@@ -135,6 +137,10 @@ select
         when wc.overall_relative_placement_int >= 4
         then 'At/Above'
     end as iready_proficiency,
+
+    case
+        wc.subject when 'Reading' then 'Text Study' when 'Math' then 'Mathematics'
+    end as illuminate_subject,
 
     if(
         cwp.scale_low - wc.most_recent_overall_scale_score <= 0,
