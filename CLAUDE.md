@@ -146,6 +146,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
+- **Reverting experimental code to a docs-only PR**:
+  `git checkout origin/main -- <file>` restores main's CURRENT blob, which can
+  differ from the branch's merge-base and leak main's advancement into the
+  three-dot PR diff. Restore to the merge-base instead —
+  `git checkout $(git merge-base origin/main HEAD) -- <file>` — then verify with
+  `git diff --stat origin/main...HEAD`.
+
 - **Auto-classifier doesn't see verbal approval or `AskUserQuestion` answers** —
   only the assistant message immediately preceding the tool call. After
   out-of-band consent, re-confirm in plain text the same turn or the write will
@@ -158,6 +165,14 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the classifier (which can't see `AskUserQuestion` answers) allows it.
   `gh issue develop --name <branch>` also fails when the branch contains trigger
   words like `log`, `auth`, `secret` — rename and retry.
+
+- **Destructive SQL / shared-resource mutations need _named_ consent.** The
+  auto-classifier ("Cloud Storage Mass Delete", "Shared Cluster Mutation")
+  rejects a warehouse `DELETE`/`DROP` or a bulk `launch_multiple_runs` even
+  after "yes"/"resume" and an agent plain-text re-confirm — the USER's message
+  must name the specific operation + target ("delete rows where X from
+  `dataset.table`"). Draft the exact statement and have them restate it, or hand
+  it to their terminal.
 
 - **`git push origin main` is hard-blocked by the classifier** regardless of
   in-conversation consent (AskUserQuestion answers or plain-text
@@ -707,6 +722,18 @@ shell-quoting. `--max_rows` defaults to 100 — raise it for full dumps. To hand
 PII to Ops, redirect to a local `.claude/scratch/*.csv`
 (`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
 verify with `wc -l`, and reference the FILE (never the values) in any tracker.
+
+**`bq` CLI auth expires mid-session** — it uses gcloud USER creds (not the MCP's
+SA), so SELECTs that worked early fail later with "Reauthentication failed"
+(non-interactive can't `gcloud auth login`). The BQ MCP keeps working but is
+SELECT-only, so **DML/DDL (`DELETE`/`CREATE`/`DROP`) must be handed to the
+user's terminal**.
+
+**BQ merge/upsert cost**: clustering the target does NOT prune a dynamic-join
+`MERGE` / `DELETE ... WHERE EXISTS` (only partitioning + a _static_ predicate
+prunes). `--dry_run` reflects partition pruning but NOT clustering pruning —
+measure clustering via actual `total_bytes_billed` in
+`INFORMATION_SCHEMA.JOBS_BY_PROJECT`.
 
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is
