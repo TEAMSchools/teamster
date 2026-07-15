@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
@@ -63,7 +63,7 @@ class FinalsiteResource(ConfigurableResource):
             "name": "Dagster",
             # Finalsite rejects any exp more than 60 minutes out; 55 leaves a
             # clock-skew margin while maximizing the pagination window.
-            "exp": datetime.now() + timedelta(minutes=55),
+            "exp": datetime.now(tz=UTC) + timedelta(minutes=55),
         }
 
         token = jwt.encode(payload=payload, key=self.secret)
