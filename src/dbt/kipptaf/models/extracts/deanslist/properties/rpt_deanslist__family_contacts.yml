@@ -1,0 +1,75 @@
+models:
+  - name: rpt_deanslist__family_contacts
+    description:
+      DeansList nightly Family Contacts import (`contacts.txt`) for the NJ
+      regions — one row per currently enrolled student carrying their single
+      Finalsite parent contact (`contact_1` — the relationship flagged primary,
+      falling back to financial). Emergency contacts are excluded. Column names
+      match the DeansList import template headers exactly. Delivered by the
+      Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
+    columns:
+      - name: StudentID
+        data_type: int64
+        description:
+          PowerSchool student number, from the Finalsite contact's
+          `powerschool_student_number` id attribute.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: ParentFirstName
+        data_type: string
+        description: Parent contact's first name.
+        data_tests:
+          - not_null
+        config:
+          meta:
+            contains_pii: true
+      - name: ParentLastName
+        data_type: string
+        description: Parent contact's last name.
+        data_tests:
+          - not_null
+        config:
+          meta:
+            contains_pii: true
+      - name: Relationship
+        data_type: string
+        description:
+          Relationship to the student (`parent`, `stepparent`, `guardian`,
+          `grandparent`, etc.) — Finalsite `rel_type`.
+        data_tests:
+          - not_null
+      - name: HomePhone
+        data_type: string
+        description: Parent contact's phone number typed `Home`, if any.
+        config:
+          meta:
+            contains_pii: true
+      - name: WorkPhone
+        data_type: string
+        description: Parent contact's phone number typed `Work`, if any.
+        config:
+          meta:
+            contains_pii: true
+      - name: CellPhone
+        data_type: string
+        description: Parent contact's phone number typed `Cell`, if any.
+        config:
+          meta:
+            contains_pii: true
+      - name: Email
+        data_type: string
+        description: Parent contact's email address.
+        config:
+          meta:
+            contains_pii: true
+      - name: Language
+        data_type: string
+        description:
+          Always null — the header is required by the DeansList template, but
+          Finalsite parent-language data is not maintained reliably enough to
+          send.
