@@ -263,6 +263,24 @@ Fall/Winter/Spring→BOY/MOY/EOY, benchmark int-flags, `rn_subject_*`) into this
 kipptaf-level `union_relations` view (materialized table). All STAR consumers
 read it. Edit/consume STAR here, not the rollup.
 
+**`stg_adp_workforce_now__workers` has no SCD2 tombstone for disappearance.** A
+worker hard-deleted or merged in ADP (vanishes from the daily `asOfDate`
+snapshots with no `Terminated` status row) keeps its final row open at
+`9999-12-31` / `is_current_record = true` indefinitely — a ghost that flows into
+`stg_people__employee_numbers` (`is_active`), `int_people__staff_roster`, and
+the `rpt_idauto__staff_roster` (RapidIdentity login) feed, causing
+phantom-identity login issues. Fix by rematerializing the ADP `workers`
+partitions spanning the record's active dates (the `asOfDate` re-pull drops it);
+downstream tables rebuild via automation. Detection check tracked in
+[#4407](https://github.com/TEAMSchools/teamster/issues/4407).
+
+**`stg_people__employee_numbers` assigns one number per ADP `associate_id` in
+first-appearance order** (`max(employee_number) + row_number`). A lower number
+means the associate was seen in ADP earlier, NOT an earlier hire date
+(`worker_original_hire_date` is editable). One person with duplicate ADP worker
+records gets multiple active employee numbers, and the LDAP UPN attaches only to
+whichever `employee_number` the account was provisioned under.
+
 ## Exposures
 
 Every external consumer **must** have a dbt exposure in `models/exposures/`.
