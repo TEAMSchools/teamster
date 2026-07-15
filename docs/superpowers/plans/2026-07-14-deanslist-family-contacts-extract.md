@@ -76,14 +76,14 @@ Six edits to `int_finalsite__student_contacts.sql` (line refs are pre-edit):
             cp.last_name,
 ```
 
-2. `contact_1` CTE (~line 83): after `home_address,` add:
+1. `contact_1` CTE (~line 83): after `home_address,` add:
 
 ```sql
             first_name as contact_first_name,
             last_name as contact_last_name,
 ```
 
-3. `emergency_long` CTE, all FOUR union branches (N = 1–4): in each branch,
+1. `emergency_long` CTE, all FOUR union branches (N = 1–4): in each branch,
    after `emrg_N_lives_with_yn as is_household_member,` add (substituting N):
 
 ```sql
@@ -91,21 +91,21 @@ Six edits to `int_finalsite__student_contacts.sql` (line refs are pre-edit):
             emrg_N_name_last_name as contact_last_name,
 ```
 
-4. `emergency` CTE (~line 246): after `contact_name,` add:
+1. `emergency` CTE (~line 246): after `contact_name,` add:
 
 ```sql
             contact_first_name,
             contact_last_name,
 ```
 
-5. Final select, `contact_1` branch (~line 272): after `contact_name,` add:
+1. Final select, `contact_1` branch (~line 272): after `contact_name,` add:
 
 ```sql
     contact_first_name,
     contact_last_name,
 ```
 
-6. Final select, `emergency` branch (~line 293): same two lines after
+1. Final select, `emergency` branch (~line 293): same two lines after
    `contact_name,`.
 
 `contact_name` itself is untouched.
