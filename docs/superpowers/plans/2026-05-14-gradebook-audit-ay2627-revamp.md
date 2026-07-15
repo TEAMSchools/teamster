@@ -3915,7 +3915,36 @@ left to retire.
 
 ## Task 9: Assignment validity filter for QTD count
 
-### Post-merge — design and implementation TBD
+### Delivered — via the `expected_assign_count_not_met` fix (2026-07-15)
+
+This requirement is now met, though not through the `is_valid_assignment` /
+`assign_invalid_for_qtd_count` design sketched below — that sketch predates the
+quarter-grain rewrite and references pre-refactor models
+(`int_tableau__gradebook_audit_flags`, `stg_google_sheets__gradebook_flags`)
+that no longer participate in the pipeline.
+
+What actually shipped: `int_powerschool__gradebook_assignment_scores_rollup`
+already computed `assignment_has_flags` — a boolean covering every validity
+condition listed below — and `int_tableau__gradebook_audit_flags_calculations`
+already rolled that up into `total_assign_count_qtd_by_cat_section_no_flags`
+(the count of assignments **without** flags) alongside `..._actual` (all
+assignments). What was missing was the comparison against the expectation:
+`rpt_tableau__gradebook_audit`'s `expected_assign_count_not_met` originally
+fired on `..._actual != ..._no_flags` (true only when at least one flagged
+assignment existed) and never read the expectation value at all — so a teacher
+who entered zero assignments, or too few clean ones, passed silently. Corrected
+to `..._no_flags < expectation`: a flagged assignment no longer counts toward
+the valid total, so falling short of expectation (including entering nothing)
+fires the flag. One flag (`expected_assign_count_not_met`), fired once per short
+category, using the existing `assignment_has_flags` validity signal — matching
+the "one flag, actionable checklist" goal below without a new column or a new
+flags-sheet entry.
+
+Remaining from the original ask: **Step 9.4** (whether to keep/consolidate the
+individual per-student score flags now that the assignment-level flag exists) is
+still an open decision — see that step below.
+
+### Original ask (superseded by the above; kept for history)
 
 Stakeholders raised this requirement in the June 2026 HS all-hands. Currently
 `teacher_running_total_assign_by_cat` counts all entered assignments regardless
@@ -3955,8 +3984,10 @@ new model:
 
 ### Implementation sketch
 
-- [ ] **Step 9.1: Add `is_valid_assignment` to
-      `int_powerschool__gradebook_assignments`**
+- [x] **Step 9.1: Add `is_valid_assignment` to
+      `int_powerschool__gradebook_assignments`** — superseded: the equivalent
+      already existed as `assignment_has_flags` in
+      `int_powerschool__gradebook_assignment_scores_rollup`
 
   Aggregate validity conditions from
   `int_powerschool__gradebook_assignments_scores` into a single boolean per
@@ -3973,8 +4004,10 @@ new model:
 
   Update the YAML to document the column and its derivation.
 
-- [ ] **Step 9.2: Update QTD `countif` in
-      `int_tableau__gradebook_audit_flags_calculations`**
+- [x] **Step 9.2: Update QTD `countif` in
+      `int_tableau__gradebook_audit_flags_calculations`** — superseded: the
+      `total_assign_count_qtd_by_cat_section_no_flags` countif already excluded
+      flagged assignments; this PR's fix compares it against `expectation`
 
   In the `teacher_scaffold_assignment` branch:
 
@@ -3984,7 +4017,9 @@ new model:
   ) as teacher_running_total_assign_by_cat,
   ```
 
-- [ ] **Step 9.3: Add `assign_invalid_for_qtd_count` flag**
+- [x] **Step 9.3: Add `assign_invalid_for_qtd_count` flag** — superseded: no new
+      flag needed; `expected_assign_count_not_met` now fires on the corrected
+      `no_flags < expectation` comparison
 
   In the `teacher_scaffold_assignment` branch of
   `int_tableau__gradebook_audit_flags_calculations`, compute:
@@ -4004,18 +4039,10 @@ new model:
   assignment-level flag, be consolidated, or be removed. Decision depends on
   Tableau dashboard layout — coordinate with T&L stakeholders.
 
-- [ ] **Step 9.5: Build and verify**
-
-  ```bash
-  uv run dbt build \
-    --select \
-      int_powerschool__gradebook_assignments \
-      int_tableau__gradebook_audit_flags_calculations \
-      "int_tableau__gradebook_audit_flags+" \
-    --project-dir src/dbt/kipptaf \
-    --defer \
-    --state src/dbt/kipptaf/target/prod
-  ```
+- [ ] **Step 9.5: Build and verify** — moot as written (references disabled
+      pre-refactor models); the actual fix was built and verified against
+      `rpt_tableau__gradebook_audit` and
+      `int_tableau__gradebook_audit_flags_calculations` (current model names)
 
 - [ ] **Step 9.6: Commit**
 
