@@ -313,3 +313,54 @@ unit_tests:
             academic_status: On-Track,
             overall_status: On-Track,
           }
+  - name: test_promo_status_invalid_comparator_fails_closed
+    description: >-
+      Verifies a rule group fails closed when one of its conditions is
+      unevaluable. Student 1's group 1 has two conditions that AND together:
+      n_failing_core >= 2 (met) and an ada_term_running condition whose
+      comparator is not a recognized token, so is_met is NULL. The group must
+      NOT fire (academic_status On-Track) — a NULL condition cannot satisfy an
+      AND. Locks in coalesce(is_met, false) against logical_and silently
+      ignoring the NULL and firing the group, which would loosen the AND
+      whenever a bad comparator lands in the policy sheet.
+    model: int_students__promotional_status
+    given:
+      - input: ref('int_students__promotional_status_metrics')
+        format: sql
+        rows: |
+          select 1 as student_number, 2025 as academic_year,
+            'Q1' as term_name, true as is_current, 'Newark' as region,
+            5 as grade_level, 0.50 as ada_term_running,
+            0.0 as n_absences_y1_running,
+            0.0 as n_absences_y1_running_non_susp,
+            0.0 as n_absences_y1_running_non_susp_no_tardy,
+            0 as iready_reading_levels_below,
+            0 as iready_math_levels_below,
+            cast(null as int64) as dibels_composite_level,
+            cast(null as int64) as star_ela_level,
+            cast(null as int64) as star_math_level,
+            cast(null as int64) as fast_ela_level,
+            cast(null as int64) as fast_math_level,
+            0 as n_failing, 2 as n_failing_core,
+            cast(null as float64) as projected_credits_y1_term,
+            cast(null as float64) as projected_credits_cum,
+            cast(null as string) as iready_reading_recent,
+            cast(null as string) as iready_math_recent,
+            cast(null as string) as dibels_composite_level_recent_str,
+            cast(null as string) as exemption,
+            cast(null as string) as manual_retention
+      - input: ref('stg_google_sheets__reporting__promo_status_policies')
+        format: sql
+        rows: |
+          select 2025 as academic_year, 'Newark' as region,
+            5 as grade_min, 8 as grade_max, 'All' as term_name,
+            'academic' as domain, 1 as rule_group,
+            'n_failing_core' as metric, 'greater_than_or_equal' as comparator,
+            2.0 as `value`, 'not_met' as if_missing,
+            cast(null as string) as detail_label
+          union all
+          select 2025, 'Newark', 5, 8, 'All', 'academic', 1,
+            'ada_term_running', 'invalid_comparator', 0.85, 'not_met', null
+    expect:
+      rows:
+        - { student_number: 1, academic_status: On-Track }

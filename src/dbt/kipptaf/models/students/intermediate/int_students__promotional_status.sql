@@ -89,7 +89,7 @@ with
             policy_term_name,
             rule_group,
 
-            logical_and(is_met) as is_fired,
+            logical_and(coalesce(is_met, false)) as is_fired,
             max(detail_label) as detail_label,
         from conditions
         group by
@@ -234,7 +234,7 @@ with
             policy_term_name,
             rule_group,
 
-            logical_and(is_met) as is_fired,
+            logical_and(coalesce(is_met, false)) as is_fired,
         from overall_conditions
         group by
             student_number,
