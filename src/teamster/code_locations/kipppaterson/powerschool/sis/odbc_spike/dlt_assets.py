@@ -2,9 +2,8 @@
 
 Loads three PowerSchool tables from Oracle (via the existing sshpass tunnel)
 into BigQuery dataset zz_spike_powerschool_dlt using dlt's sql_table source
-with the oracledb thin dialect and pyarrow backend. Incremental on
-whenmodified with merge write disposition; the first run of an empty dataset
-is effectively a full load.
+with the oracledb thin dialect and pyarrow backend. mode: incremental (merge)
+on a per-table cursor column; the first run of an empty dataset is a full load.
 """
 
 import os
@@ -21,14 +20,26 @@ from dlt.sources.sql_database import sql_table
 from teamster.code_locations.kipppaterson import CODE_LOCATION
 from teamster.libraries.ssh.resources import SSHResource
 
-# table name -> primary key column (PowerSchool dcid is the stable unique id)
-SPIKE_TABLES: dict[str, str] = {
-    "students": "dcid",
-    "storedgrades": "dcid",
-    "assignmentscore": "dcid",
-}
+# PowerSchool tables are owned by the `ps` schema. The ODBC pipeline reaches
+# them via unqualified raw SQL (Oracle synonym/default-schema resolution), but
+# SQLAlchemy reflection needs the owner schema explicitly or it raises
+# NoSuchTableError.
+ORACLE_SCHEMA = "ps"
 
-CURSOR_COLUMN = "whenmodified"
+# table -> {primary_key (merge/upsert key), cursor (incremental column)}.
+# Sourced from the working ODBC pipeline
+# (code_locations/kippnewark/powerschool/assets.py) and verified against
+# INFORMATION_SCHEMA: students/storedgrades have transaction_date but NOT
+# whenmodified; assignmentscore has whenmodified and keys on assignmentscoreid
+# (it has no dcid). A single shared whenmodified/dcid does not work.
+SPIKE_TABLES: dict[str, dict[str, str]] = {
+    "students": {"primary_key": "dcid", "cursor": "transaction_date"},
+    "storedgrades": {"primary_key": "dcid", "cursor": "transaction_date"},
+    "assignmentscore": {
+        "primary_key": "assignmentscoreid",
+        "cursor": "whenmodified",
+    },
+}
 
 
 def _oracle_connection_url() -> str:
@@ -68,7 +79,7 @@ class SpikeDltTranslator(DagsterDltTranslator):
         )
 
 
-def build_dlt_spike_asset(table_name: str, primary_key: str):
+def build_dlt_spike_asset(table_name: str, primary_key: str, cursor: str):
     # dagster-dlt's @dlt_assets requires a DltSource (it reads
     # .selected_resources); sql_table() alone returns a bare DltResource. Wrap
     # it in a @dlt.source generator — the same shape dlt's own sql_database()
@@ -79,11 +90,12 @@ def build_dlt_spike_asset(table_name: str, primary_key: str):
         # run pod because sql_table defers connection until extraction
         resource = sql_table(
             credentials=_oracle_connection_url(),
+            schema=ORACLE_SCHEMA,
             table=table_name,
             backend="pyarrow",
             reflection_level="full_with_precision",
             defer_table_reflect=True,
-            incremental=dlt.sources.incremental(CURSOR_COLUMN),
+            incremental=dlt.sources.incremental(cursor),
         )
         resource.apply_hints(primary_key=primary_key)
         yield resource
@@ -118,6 +130,8 @@ def build_dlt_spike_asset(table_name: str, primary_key: str):
 
 
 DLT_SPIKE_ASSETS = [
-    build_dlt_spike_asset(table_name=t, primary_key=pk)
-    for t, pk in SPIKE_TABLES.items()
+    build_dlt_spike_asset(
+        table_name=t, primary_key=cfg["primary_key"], cursor=cfg["cursor"]
+    )
+    for t, cfg in SPIKE_TABLES.items()
 ]

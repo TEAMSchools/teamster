@@ -23,6 +23,34 @@ def test_dlt_spike_asset_keys():
     }
 
 
+def test_spike_cursor_and_key_mapping():
+    """Per-table cursor + merge key, verified against the working ODBC pipeline
+    and INFORMATION_SCHEMA.
+
+    students / storedgrades cursor on ``transaction_date`` (neither has a
+    ``whenmodified`` column); assignmentscore cursors on ``whenmodified`` and
+    keys on ``assignmentscoreid`` (it has no ``dcid``). A single shared
+    ``whenmodified`` / ``dcid`` (the original spike) fails on all but
+    assignmentscore's cursor.
+    """
+    from teamster.code_locations.kipppaterson.powerschool.sis.odbc_spike.dlt_assets import (
+        SPIKE_TABLES,
+    )
+
+    assert SPIKE_TABLES["students"] == {
+        "primary_key": "dcid",
+        "cursor": "transaction_date",
+    }
+    assert SPIKE_TABLES["storedgrades"] == {
+        "primary_key": "dcid",
+        "cursor": "transaction_date",
+    }
+    assert SPIKE_TABLES["assignmentscore"] == {
+        "primary_key": "assignmentscoreid",
+        "cursor": "whenmodified",
+    }
+
+
 def test_sling_spike_asset_keys():
     from teamster.code_locations.kipppaterson.powerschool.sis.odbc_spike.dlt_assets import (
         SPIKE_TABLES,

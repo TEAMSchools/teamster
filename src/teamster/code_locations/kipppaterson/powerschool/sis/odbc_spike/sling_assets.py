@@ -1,9 +1,9 @@
 """Sling side of the PowerSchool ODBC spike (#4398). Throwaway — never merge.
 
 Replicates the same three tables through Sling's native SSH tunnel into
-BigQuery dataset zz_spike_powerschool_sling. mode: incremental with
-update_key whenmodified — on an empty target this performs the initial full
-load; subsequent runs are incremental from max(whenmodified) in the target.
+BigQuery dataset zz_spike_powerschool_sling. mode: incremental with a per-table
+update_key (see SPIKE_TABLES) — on an empty target this performs the initial
+full load; subsequent runs are incremental from max(update_key) in the target.
 """
 
 import os
@@ -21,15 +21,9 @@ from dagster_sling import (
 from teamster import GCS_PROJECT_NAME
 from teamster.code_locations.kipppaterson import CODE_LOCATION
 from teamster.code_locations.kipppaterson.powerschool.sis.odbc_spike.dlt_assets import (
-    CURSOR_COLUMN,
+    ORACLE_SCHEMA,
     SPIKE_TABLES,
 )
-
-# Oracle table qualification: the ODBC user's default schema resolves
-# unqualified names today; Sling streams are qualified explicitly. If runtime
-# errors show "table not found", change to the owner schema discovered in
-# Task 4 (expected: ps).
-ORACLE_SCHEMA = "ps"
 
 
 def _ssh_tunnel_url() -> str:
@@ -73,13 +67,15 @@ REPLICATION_CONFIG = {
     "target": "BIGQUERY_SPIKE",
     "defaults": {
         "mode": "incremental",
-        "update_key": CURSOR_COLUMN,
         "object": "zz_spike_powerschool_sling.{stream_table}",
         "target_options": {"column_casing": "snake"},
     },
     "streams": {
-        f"{ORACLE_SCHEMA}.{table}": {"primary_key": [pk]}
-        for table, pk in SPIKE_TABLES.items()
+        f"{ORACLE_SCHEMA}.{table}": {
+            "primary_key": [cfg["primary_key"]],
+            "update_key": cfg["cursor"],
+        }
+        for table, cfg in SPIKE_TABLES.items()
     },
 }
 
