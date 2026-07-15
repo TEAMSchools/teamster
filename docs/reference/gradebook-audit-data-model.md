@@ -935,6 +935,13 @@ not unpivoted.
     `audit_category` and `code_type` columns it provided were dropped from
     `rpt_tableau__gradebook_audit`.
 
+    The `src_google_sheets__gradebook_flags` source is also disabled
+    (`config: enabled: false` in `sources-external.yml`) as of AY 2026-2027 —
+    MS signed off on the same audit model as HS, so the sheet has no remaining
+    consumer in any region. Dagster no longer pulls the sheet into BigQuery.
+    Re-enable the source before re-enabling the staging model if this is ever
+    restored.
+
 Previously, this was the flag allowlist. A flag only appeared in the dashboard
 if a matching row existed in this table, making it the primary on/off switch for
 every audit check.

@@ -267,6 +267,7 @@ sources:
             sheet_range: src_google_sheets__gradebook_flags
             skip_leading_rows: 1
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
