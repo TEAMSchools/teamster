@@ -797,20 +797,6 @@ wheels = [
 ]
 
 [[package]]
-name = "dagster-sling"
-version = "0.29.13"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "dagster" },
-    { name = "sling" },
-    { name = "sling-mac-arm64", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/65/540d7c85a1f4e416c77e8ba50c25c6685339b095ebb0ed0e36686e9a9c5b/dagster_sling-0.29.13.tar.gz", hash = "sha256:182f15a8682e29cca159c479df863de5a0e9390025a647661278614894e19bb4", size = 233081, upload-time = "2026-07-09T16:51:07.101Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/b2/0d7581e948ce8d93938fe47131f12c29390b5f17b24b23ccbb9b554d349c/dagster_sling-0.29.13-py3-none-any.whl", hash = "sha256:b2132e43294cd0248d04bc2b3fb7f932a5065f6b7358ce8868c90ae3d6dff829", size = 25390, upload-time = "2026-07-09T16:51:06.003Z" },
-]
-
-[[package]]
 name = "dagster-ssh"
 version = "0.29.13"
 source = { registry = "https://pypi.org/simple" }
@@ -3675,24 +3661,6 @@ wheels = [
 ]
 
 [[package]]
-name = "sling"
-version = "1.5.20"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/11/ad/c3826ddfc5ccd5ac9ef41a65ac02ee56cb452ae501187a26504994cea5e7/sling-1.5.20.tar.gz", hash = "sha256:6d62d23f806840b60e45849f705bb0464fc181736717fa4eca9caf54bb6133cd", size = 69599, upload-time = "2026-06-07T10:56:58.452Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/64/2bb3845d2014edc0190c0812251743ef724536a7e3555773fd879f030f81/sling-1.5.20-py3-none-any.whl", hash = "sha256:b768908d8166b835de0c2fd1ccd38d1f109597f330f59becede91028641b177a", size = 36822, upload-time = "2026-06-07T10:56:57.382Z" },
-]
-
-[[package]]
-name = "sling-mac-arm64"
-version = "1.4.10.post2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c5/48/153f94bbb1fd6eb5812fbc2269ef89d93fdea15802b626e88c20b2f1edc4/sling_mac_arm64-1.4.10.post2.tar.gz", hash = "sha256:52cbfa689b621fff1a7d1c9a8b8ab0c6b89c5a5bd86921a725496160d38849a8", size = 92866186, upload-time = "2025-06-19T21:45:04.595Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/1f/12ac71c65e45a34181cf5916a43b37dcac8712d9105971e4c04bdf74999c/sling_mac_arm64-1.4.10.post2-py3-none-any.whl", hash = "sha256:d66b2d2119a01c8d38c25725c04044ee477762c6993dc13debcbd605c0429891", size = 93154303, upload-time = "2025-06-19T21:44:59.917Z" },
-]
-
-[[package]]
 name = "smmap"
 version = "5.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -3902,7 +3870,6 @@ dependencies = [
     { name = "dagster-dlt" },
     { name = "dagster-gcp" },
     { name = "dagster-k8s" },
-    { name = "dagster-sling" },
     { name = "dagster-ssh" },
     { name = "dbt-bigquery" },
     { name = "dbt-core" },
@@ -3944,7 +3911,6 @@ requires-dist = [
     { name = "dagster-dlt" },
     { name = "dagster-gcp" },
     { name = "dagster-k8s" },
-    { name = "dagster-sling", specifier = ">=0.29.13" },
     { name = "dagster-ssh" },
     { name = "dbt-bigquery", specifier = ">=1.11,<1.12" },
     { name = "dbt-core" },
