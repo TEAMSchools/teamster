@@ -541,6 +541,9 @@ not unpivoted.
     ### Configuration: `stg_google_sheets__gradebook_exceptions`
 
     Deprecated in AY 2026-2027. All exception joins removed from the pipeline.
+    The `src_google_sheets__gradebook_exceptions` source is also disabled
+    (`config: enabled: false` in `sources-external.yml`) — Dagster no longer
+    pulls the sheet into BigQuery.
 
     Was the suppression table. Used in 15+ LEFT JOINs across five intermediate
     models to permanently or temporarily exclude specific rows from the audit output.
