@@ -15,8 +15,11 @@ Plan:
   `dagster-cloud` namespace (Ops, 2026-07-14).
 - Scratch datasets: `zz_spike_powerschool_dlt`, `zz_spike_powerschool_sling`
   (project `teamster-332318`).
-- Test tables: `students`, `storedgrades`, `assignmentscore`.
-- Cursor column: `whenmodified` (merge/upsert on `dcid`).
+- Test tables + per-table cursor / merge key (from the working ODBC pipeline,
+  verified against `INFORMATION_SCHEMA`):
+  - `students` — cursor `transaction_date`, key `dcid`
+  - `storedgrades` — cursor `transaction_date`, key `dcid`
+  - `assignmentscore` — cursor `whenmodified`, key `assignmentscoreid`
 
 ## Rubric
 
@@ -71,7 +74,33 @@ Legend: ✅ pass · ⚠️ caveat · ❌ fail · _(pending)_ not yet measured.
 
 ## Runtime errors and config adjustments
 
-Known items to watch / adjustments made (pre-run):
+### First run (both tools, `students`) — connection worked, table/cursor wrong
+
+Both tools **connected successfully** — tunnel + Oracle auth + BigQuery all
+worked on the first attempt. Notably, **Sling's native `ssh_tunnel` reached the
+PowerSchool host** ("connecting to source database (oracle)" ✓), so the
+`ssh-rsa` host-key concern (below) did NOT materialize — a positive data point
+for Sling. Both then failed at table/column resolution, from a spike-config bug
+(shared here, not a tool differentiator):
+
+- **Wrong cursor column (both tools).** The spike hardcoded one cursor
+  (`whenmodified`) for all three tables. Verified against the working ODBC
+  pipeline + `INFORMATION_SCHEMA`: `students` and `storedgrades` have
+  `transaction_date` but **no** `whenmodified`; `assignmentscore` has
+  `whenmodified` and keys on `assignmentscoreid` (no `dcid`). Sling failed "did
+  not find update_key: whenmodified" on `students`. Fixed: per-table
+  `SPIKE_TABLES` mapping (students/storedgrades → transaction_date/dcid,
+  assignmentscore → whenmodified/assignmentscoreid).
+- **dlt needed explicit schema (dlt only).** dlt raised
+  `sqlalchemy.exc.NoSuchTableError: students` — SQLAlchemy reflection looks in
+  the login user's own schema, and the tables are owned by `ps`. (The ODBC
+  pipeline dodges this with unqualified raw SQL via Oracle synonym resolution;
+  Sling already reached `ps.students` because its streams were qualified.)
+  Fixed: `sql_table(..., schema="ps")`. This is a genuine tool difference worth
+  noting — Sling's stream qualification made the owner schema explicit up front;
+  dlt's reflection needed it added.
+
+### Known items to watch / adjustments made (pre-run)
 
 - **Sling Oracle connect key (fixed pre-run):** initial code used `sid=` for
   `PS_DB_DATABASE`, but that value is a **service name** (the prod ODBC resource
