@@ -100,11 +100,15 @@ kipptaf `union_relations` views over per-region finalsite sources.
   `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
   and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
   Newark rows (null prefix) never reach the Focus feeds.
-- **Asymmetric source schema**: `sources-kippmiami.yml` finalsite carries a
-  `staging`→`zz_stg_` branch (single-PR pattern, needs a staged copy for CI),
-  while `sources-kippnewark.yml` is dev-only (staging→prod). A cross-region
-  finalsite union pulls a `zz_stg` seeding dependency from Miami but reads prod
-  for Newark — a Newark-only union is CI-safe without staging.
+- **Source schema staging branch**: all four regions' finalsite sources
+  (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
+  `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
+  pattern — a cross-region finalsite union needs the staged copies for CI).
+  Newark gained it in #4400 (DeansList contacts) alongside a column add to
+  `int_finalsite__student_contacts`; before pushing any finalsite column-adding
+  PR, seed the staged copies per district (`dbt clone --target staging` +
+  `dbt build --select <model> --target staging`) so CI's union-wrapper rebuild
+  sees the new columns.
 
 ### `extracts/powerschool/` special case
 
