@@ -8,7 +8,6 @@ with
             storecode,
             termbin_start_date,
             term_percent_grade_adjusted as quarter_course_percent_grade,
-            term_grade_points as quarter_course_grade_points,
             comment_value as quarter_comment_value,
 
             'current_year' as grades_type,
@@ -25,7 +24,6 @@ with
             storecode,
             null as termbin_start_date,
             `percent` as quarter_course_percent_grade,
-            gpa_points as quarter_course_grade_points,
             comment_value as quarter_comment_value,
 
             'last_year' as grades_type,
@@ -112,7 +110,6 @@ select
     'No Notes' as notes,
 
     0.0 as quarter_course_percent_grade,
-    0.0 as quarter_course_grade_points,
     cast(null as string) as quarter_comment_value,
 
     'sections_teacher' as cte_grouping,
@@ -215,7 +212,6 @@ select
     ge.notes,
 
     0.0 as quarter_course_percent_grade,
-    0.0 as quarter_course_grade_points,
     cast(null as string) as quarter_comment_value,
 
     'assignment_teacher' as cte_grouping,
@@ -336,7 +332,6 @@ select
     'No Notes' as notes,
 
     qg.quarter_course_percent_grade,
-    qg.quarter_course_grade_points,
     qg.quarter_comment_value,
 
     'student_course' as cte_grouping,

@@ -122,7 +122,6 @@ select
     s.notes,
 
     s.quarter_course_percent_grade,
-    s.quarter_course_grade_points,
     s.quarter_comment_value,
 
     s.cte_grouping,
@@ -236,7 +235,6 @@ select
     s.notes,
 
     s.quarter_course_percent_grade,
-    s.quarter_course_grade_points,
     s.quarter_comment_value,
 
     s.cte_grouping,
@@ -350,7 +348,6 @@ select
     notes,
 
     quarter_course_percent_grade,
-    quarter_course_grade_points,
     quarter_comment_value,
     cte_grouping,
     audit_category,

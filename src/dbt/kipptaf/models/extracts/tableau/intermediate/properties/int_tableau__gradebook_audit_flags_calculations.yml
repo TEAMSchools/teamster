@@ -267,11 +267,6 @@ models:
         description:
           Quarter course percent grade. Populated for student_course rows; 0.0
           for others.
-      - name: quarter_course_grade_points
-        data_type: float64
-        description:
-          Quarter course grade points. Populated for student_course rows; 0.0
-          for others.
       - name: quarter_comment_value
         data_type: string
         description:
