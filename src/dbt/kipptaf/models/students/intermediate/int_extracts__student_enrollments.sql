@@ -357,6 +357,16 @@ select
         e.gender when 'F' then 'Female' when 'M' then 'Male' when 'X' then 'Non-Binary'
     end as aligned_gender,
 
+    -- TODO: figure out a better way to track these
+    case
+        when
+            e.academic_year >= 2025
+            and e.school_abbreviation = 'Sumner'
+            and e.grade_level >= 5
+        then concat(e.region, 'MS')
+        else concat(e.region, e.school_level)
+    end as region_school_level_alt,
+
     case
         e.enroll_status
         when -2

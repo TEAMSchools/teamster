@@ -246,6 +246,7 @@ select
     co.next_year_schoolid,
     co.district,
     co.region_school_level,
+    co.region_school_level_alt,
     co.guardian_email,
     co.academic_year_display,
     co.next_year_enrollment_history,

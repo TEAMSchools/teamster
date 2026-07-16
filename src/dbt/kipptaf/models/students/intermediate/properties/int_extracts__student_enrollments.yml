@@ -899,6 +899,11 @@ models:
         description: >
           Full-word gender label derived from gender: 'F' = 'Female', 'M' =
           'Male', 'X' = 'Non-Binary'.
+      - name: region_school_level_alt
+        data_type: string
+        description:
+          Derived from region, school_level_alt. Same Sumner grade 5/6 Middle
+          School override as school_level_alt, concatenated with region.
       - name: enroll_status_string
         data_type: string
         description:
