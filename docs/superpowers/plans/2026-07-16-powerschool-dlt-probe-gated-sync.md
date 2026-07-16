@@ -359,10 +359,12 @@ Expected: FAIL — `TypeError` (old signature takes `table_name`, not `tables`).
 - [ ] **Step 3: Replace the factory**
 
 In `src/teamster/libraries/dlt/powerschool/assets.py`: delete `LOAD_STRATEGIES`
-and the entire existing `build_powerschool_dlt_assets`; add
-`from dagster import MaterializeResult` alongside the existing dagster imports
-(keep `AssetExecutionContext`, `AssetKey`, `AssetSpec`) and
-`from sqlalchemy.engine import Engine` if annotating; then add:
+and the entire existing `build_powerschool_dlt_assets`; keep `ORACLE_SCHEMA`,
+`oracle_number_adapter`, `_oracle_connection_url`,
+`PowerSchoolDagsterDltTranslator`, and Task 2's additions (`PowerSchoolTable`,
+`probe_signature`, `import sqlalchemy as sa`). `AssetExecutionContext` and
+`AssetKey` are already imported; no `MaterializeResult` needed. Then add the
+op-gate factory plus the `_stored_signatures` helper:
 
 ```python
 def build_powerschool_dlt_assets(
@@ -372,43 +374,24 @@ def build_powerschool_dlt_assets(
 ):
     """Build ONE probe-gated @dlt_assets over all PowerSchool tables.
 
-    Each table is a custom dlt resource: tables with a cursor_column probe
-    COUNT(*)/MAX(cursor) and full-replace only on signature drift (signature
-    stored in dlt resource state, restored from the destination); tables
-    without a cursor always full-replace when selected. Schedules subset the
-    multi-asset per tier. See
+    The op opens the SSH tunnel, restores prior per-table signatures from dlt
+    resource_state (persisted in the destination), probes each selected table's
+    COUNT(*)/MAX(cursor), and runs the pipeline over only the changed resources
+    via source.with_resources(*changed) — a full `replace` load per changed
+    table. Tables without a cursor_column are always loaded when selected.
+    Unselected / unchanged tables are never in the run, so their destination
+    tables are untouched. Schedules subset the multi-asset per tier. See
     docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md.
     """
-    # Per-run report written by resources during extract, read by the op after
-    # dlt.run() completes (same process; each Dagster run is a fresh pod).
-    loaded_tables: set[str] = set()
-    emptied_tables: set[str] = set()
-    engine_holder: dict[str, object] = {}
+    source_name = "powerschool"
 
-    def _get_engine():
-        # Lazy singleton: env vars exist only in the run pod, and the probe
-        # engine is shared by all gated resources over the one SSH tunnel.
-        if "engine" not in engine_holder:
-            engine_holder["engine"] = sa.create_engine(_oracle_connection_url())
-        return engine_holder["engine"]
-
-    def _build_resource(table: PowerSchoolTable):
+    def _build_resource(table: PowerSchoolTable, signature: dict | None):
         @dlt.resource(name=table.name, write_disposition="replace")
         def _table_rows() -> Iterator:
-            if table.cursor_column is not None:
-                state = dlt.current.resource_state()
-                with _get_engine().connect() as connection:
-                    signature = probe_signature(
-                        connection, table.name, table.cursor_column
-                    )
-                if signature == state.get("signature"):
-                    return  # unchanged: no rows -> no load job -> table untouched
-                state["signature"] = signature
-                if signature["count"] == 0:
-                    # replace can't land zero rows; op truncates explicitly
-                    emptied_tables.add(table.name)
-                    return
-            loaded_tables.add(table.name)
+            # Persist the just-probed signature with this load package so the
+            # next run detects drift. No-cursor tables carry no signature.
+            if signature is not None:
+                dlt.current.resource_state()["signature"] = signature
             yield from sql_table(
                 credentials=_oracle_connection_url(),
                 schema=ORACLE_SCHEMA,
@@ -422,13 +405,16 @@ def build_powerschool_dlt_assets(
 
         return _table_rows
 
-    @dlt.source(name="powerschool")
-    def dlt_source():
-        for table in tables:
-            yield _build_resource(table)
+    def _build_source(selected: list[PowerSchoolTable], signatures: dict[str, dict]):
+        @dlt.source(name=source_name)
+        def _src():
+            for table in selected:
+                yield _build_resource(table, signatures.get(table.name))
+
+        return _src()
 
     dlt_pipeline = dlt.pipeline(
-        pipeline_name="powerschool",
+        pipeline_name=source_name,
         # No `autodetect_schema=True`: oracle_number_adapter +
         # full_with_precision reflection are the authoritative decimal schema
         # (see oracle_number_adapter docstring).
@@ -437,11 +423,17 @@ def build_powerschool_dlt_assets(
         progress=LogCollector(dump_system_stats=False),
     )
 
+    translator = PowerSchoolDagsterDltTranslator(code_location)
+    tables_by_key = {
+        AssetKey([code_location, "powerschool", t.name]): t for t in tables
+    }
+
     @dlt_assets(
-        dlt_source=dlt_source(),
+        # Full source only defines the asset specs; the op runs a narrowed one.
+        dlt_source=_build_source(tables, {}),
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__powerschool",
-        dagster_dlt_translator=PowerSchoolDagsterDltTranslator(code_location),
+        dagster_dlt_translator=translator,
         group_name="powerschool",
         pool=f"dlt_powerschool_{code_location}",
         op_tags=op_tags,
@@ -451,45 +443,93 @@ def build_powerschool_dlt_assets(
         dlt: DagsterDltResource,
         ssh_powerschool: SSHResource,
     ) -> Iterator:
-        loaded_tables.clear()
-        emptied_tables.clear()
+        selected = [
+            tables_by_key[key]
+            for key in context.selected_asset_keys
+            if key in tables_by_key
+        ]
 
         with ssh_powerschool.open_ssh_tunnel_paramiko():
+            # Restore prior signatures from the destination state table. On a
+            # truly first run (no dataset) this raises; treat as no prior state.
             try:
-                # dlt.run() executes the full pipeline before yielding events,
-                # so loaded_tables/emptied_tables are complete by iteration.
-                for event in dlt.run(context=context):
-                    table_name = check_asset_key(event).path[-1]
+                dlt_pipeline.sync_destination()
+            except Exception:
+                context.log.info("no prior dlt state; all selected are changed")
 
-                    if table_name in loaded_tables:
-                        yield event
-                    elif table_name in emptied_tables:
-                        with dlt_pipeline.sql_client() as client:
-                            qualified = client.make_qualified_table_name(table_name)
-                            client.execute_sql(f"TRUNCATE TABLE {qualified}")
-                        context.log.info(f"{table_name}: emptied at source, truncated")
-                        yield event
-                    else:
-                        context.log.info(f"{table_name}: unchanged, skipped")
+            stored = _stored_signatures(dlt_pipeline, source_name)
+
+            # Probe every selected table that has a cursor column (one shared
+            # engine over the single tunnel).
+            current: dict[str, dict] = {}
+            engine = sa.create_engine(_oracle_connection_url())
+            try:
+                with engine.connect() as connection:
+                    for table in selected:
+                        if table.cursor_column is not None:
+                            current[table.name] = probe_signature(
+                                connection, table.name, table.cursor_column
+                            )
             finally:
-                if "engine" in engine_holder:
-                    engine_holder.pop("engine").dispose()
+                engine.dispose()
+
+            changed = [
+                table
+                for table in selected
+                if table.cursor_column is None
+                or current.get(table.name) != stored.get(table.name)
+            ]
+
+            context.log.info(
+                f"powerschool probe: {len(changed)}/{len(selected)} changed; "
+                f"changed={sorted(t.name for t in changed)}"
+            )
+
+            if not changed:
+                return  # idle tick: nothing to load
+
+            yield from dlt.run(
+                context=context,
+                dlt_source=_build_source(changed, current),
+                dlt_pipeline=dlt_pipeline,
+                dagster_dlt_translator=translator,
+                write_disposition="replace",
+            )
 
     return _assets
 
 
-def check_asset_key(event) -> AssetKey:
-    """Narrow a dlt event's asset key (MaterializeResult.asset_key is optional)."""
-    from dagster_shared import check
-
-    return check.not_none(event.asset_key)
+def _stored_signatures(dlt_pipeline, source_name: str) -> dict[str, dict]:
+    """Read last-run per-resource signatures from dlt pipeline state."""
+    resources = (
+        dlt_pipeline.state.get("sources", {})
+        .get(source_name, {})
+        .get("resources", {})
+    )
+    return {
+        name: res_state["signature"]
+        for name, res_state in resources.items()
+        if isinstance(res_state, dict) and "signature" in res_state
+    }
 ```
 
-Module-level import note: move `from dagster_shared import check` to the top
-imports and drop the local import; `Iterator` is already imported from
-`collections.abc`. The `dlt` op parameter shadows the module import inside
-`_assets` — same pattern as the previous implementation; the op body only needs
-`dlt.run` (the resource) and closures.
+Notes for the implementer:
+
+- `_build_source` / `_build_resource` are defined at factory scope, so the `dlt`
+  they reference is the module import (`@dlt.resource`,
+  `dlt.current.resource_state`). Inside `_assets`, the `dlt` parameter (the
+  `DagsterDltResource`) shadows the module — but `_assets` only calls
+  `dlt.run(...)`, so that is correct.
+- `sql_table(...)` / `_oracle_connection_url()` are called only when a resource
+  is iterated at run time, so building the full source at definition does not
+  read env vars (the definition-time test in Step 1 passes offline).
+- Passing an explicit narrowed `dlt_source` to `dlt.run()` works with
+  dagster-dlt 0.29.13: its `is_subset` filter intersects with
+  `context.selected_asset_keys`, and `changed ⊆ selected`, so all changed
+  resources pass through and only they yield `MaterializeResult`s.
+- State preservation across selective runs (unchanged tables keep their stored
+  signature even though they are not in this run) is an assumption the Task 6
+  branch-deployment E2E verifies via the idle-second-run check.
 
 - [ ] **Step 4: Run the test suite**
 
@@ -1012,13 +1052,16 @@ in a PR #4415 comment (no PII — counts and durations only).
 
 ## Self-review notes
 
-- Spec coverage: gating/state (Task 3), event filtering incl. emptied-table
-  truncate (Task 3), config/cursor map (Task 4), schedules subsetting + tiers
-  (Task 4), pool limit 1 + max_runtime (Task 4 tags + CLAUDE.md, pool limit is a
-  UI setting that already exists), ODBC resource elimination (Paterson never
-  wired `db_powerschool` for dlt — no change needed), spike items 1-2 (Task 1),
-  spike item 3 + E2E (Task 6), migration first-run full load (Task 6 step 3),
-  docs (Task 5).
+- Spec coverage: op-gate probe + changed-set selection + resource_state
+  signature write (Task 3), empty-at-source handled automatically by
+  truncate-on-zero-yield — no special case (Task 3 / spec Edge cases),
+  config/cursor map (Task 4), schedules subsetting + tiers (Task 4), pool limit
+  1 + max_runtime (Task 4 tags + CLAUDE.md, pool limit is a UI setting that
+  already exists), ODBC resource elimination (Paterson never wired
+  `db_powerschool` for dlt — no change needed), spike executed → in-resource
+  gate rejected, pivoted to op-gate (Task 1, recorded in spec Spike section),
+  collapsed-run timing + state-preservation E2E (Task 6), migration first-run
+  full load (Task 6 step 3), docs (Task 5).
 - `select_columns` parity (`cc`, `u_studentsuserfields`, `log`) is explicitly
   out of scope per spec.
 - Types consistent: `PowerSchoolTable` / `probe_signature` signatures match

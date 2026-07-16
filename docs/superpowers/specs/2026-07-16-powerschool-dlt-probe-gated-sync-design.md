@@ -23,7 +23,7 @@ enough (37/37 tables in ~202s wall-clock, unthrottled) — the redesign case is
 
 ## Design
 
-### One multi-asset, gate inside each dlt resource
+### One multi-asset, gate in the op via `with_resources`
 
 One factory builds **one `@dlt_assets`** over one `@dlt.source` containing all
 48 table resources, one `dlt.pipeline`, one dlt state, landing in the existing
@@ -32,47 +32,56 @@ One factory builds **one `@dlt_assets`** over one `@dlt.source` containing all
 `staging/dlt` variant are unchanged. `PowerSchoolODBCResource` is eliminated for
 Paterson.
 
-Each table is a custom `@dlt.resource` we author (replacing bare `sql_table()`
-wrapping), so `dlt.current.resource_state()` is writable:
+The change gate lives in the **op body**, not inside each resource. A spike
+(2026-07-16, see Spike section) established that a `write_disposition="replace"`
+resource which yields zero rows still **truncates** its destination table — so
+an "unchanged" table cannot be skipped by returning early from inside the run.
+Instead the op probes, computes the changed set, and passes only the changed
+resources to `pipeline.run(...)` via `source.with_resources(*changed)`;
+unselected resources are never in the run, so their tables are left untouched
+(spike-verified). This is one Dagster run, one pod, one tunnel per tick — no
+sensor, no second run:
 
 ```python
-def table_resource(t):
-    @dlt.resource(name=t.name, write_disposition="replace")
-    def _resource():
-        if t.cursor_column is not None:                  # gated path
-            state = dlt.current.resource_state()
-            sig = probe(t)                               # COUNT(*) + MAX(cursor)
-            if sig == state.get("signature"):
-                return                                   # unchanged: no rows, no load job
-            state["signature"] = sig
-        yield from sql_table(...)                        # full pull, replace
-    return _resource
+def _assets(context, dlt, ssh_powerschool):
+    with ssh_powerschool.open_ssh_tunnel_paramiko():
+        dlt_pipeline.sync_destination()                  # restore stored sigs (metadata read, not a load)
+        stored = _stored_signatures(dlt_pipeline)        # per-resource resource_state from last run
+        engine = sa.create_engine(_oracle_connection_url())
+        current = {t: probe_signature(conn, t.name, t.cursor_column) for t in selected if t.cursor_column}
+        changed = [t for t in selected
+                   if t.cursor_column is None             # no cursor -> always load when selected
+                   or current[t.name] != stored.get(t.name)]  # drift or first run
+        if not changed:
+            return                                        # op yields nothing; no load this tick
+        yield from dlt.run(
+            context=context,
+            dlt_source=source_for(changed, current),      # each resource writes its sig to resource_state
+            write_disposition="replace",
+        )
 ```
 
 - **Probe**: `SELECT COUNT(*), MAX({cursor_column}) FROM {table}` — one shared
   SQLAlchemy engine over the single paramiko tunnel; sub-second per table.
-- **Compare**: equality against the stored signature in dlt resource state
-  (restored from BigQuery `_dlt_pipeline_state` automatically;
-  `restore_from_destination` is the default, and dagster-dlt's
-  `drop()`-then-sync handles fresh pods). Equality (not `>`) also catches cursor
-  regressions (newest row deleted).
-- **Drift or no stored signature** → write new signature to state, full
-  `SELECT *` pull via dlt's built-in `sql_table()` (pyarrow backend,
+- **Compare**: equality against the stored signature read from dlt
+  `resource_state` (persisted in BigQuery `_dlt_pipeline_state`; restored by
+  `sync_destination()`, spike-verified round-trip). Equality (not `>`) also
+  catches cursor regressions (newest row deleted).
+- **Signature store (`resource_state`)**: each selected resource writes its
+  just-probed signature into `dlt.current.resource_state()["signature"]` (the op
+  passes the probed value in) and then `yield from sql_table(...)` (pyarrow,
   `full_with_precision`, existing `oracle_number_adapter` +
-  `remove_nullability_adapter`), `replace` truncate+load (free in BigQuery).
-- **No drift** → yield nothing: no extraction, no load job, table untouched.
-  State needs no write (already equal).
-- **`cursor_column: null`** (14 tables) → probe skipped, always full replace.
-  These are only ever scheduled nightly.
+  `remove_nullability_adapter`), `replace` truncate+load (free in BigQuery). The
+  state write rides with the load package, so signature and data commit
+  atomically — a run that fails before load re-detects the change next tick.
+- **`cursor_column: null`** (14 tables) → probe skipped, table is always in the
+  changed set when selected. These are only ever scheduled nightly.
 
 Why the two comparisons: `MAX(cursor)` catches inserts/updates (PowerSchool
 stamps `transaction_date`/`whenmodified` on modify); `COUNT(*)` catches deletes.
 This mirrors Newark's proven `evaluate_asset_staleness` semantics
 (`src/teamster/libraries/powerschool/sis/odbc/utils.py`) with a strictly safer
 compare.
-
-State atomicity falls out of dlt semantics: resource state commits with the load
-package, so a run that fails before load re-detects the change next tick.
 
 ### Not using `dlt.sources.incremental`
 
@@ -84,18 +93,20 @@ is a free truncate+load.
 
 ### Dagster surface
 
-- The op body opens the tunnel once and iterates
-  `dlt.run(context=context, write_disposition="replace")`, **yielding only
-  events for tables that actually loaded** (presence in
-  `load_info`/`rows_loaded`). Unchanged tables produce no materialization — no
-  spurious downstream dbt automation triggering. `@dlt_assets` is
-  `multi_asset(can_subset=True)` (dagster-dlt 0.29.13), so partial yield is
-  legal.
+- The op probes and loads in one pod (see op body above). Because only the
+  changed resources are in the `pipeline.run`, dagster-dlt emits a
+  `MaterializeResult` only for the changed set — unchanged tables produce no
+  materialization, so no spurious downstream dbt automation triggering, with no
+  event-filtering needed. `@dlt_assets` is `multi_asset(can_subset=True)`
+  (dagster-dlt 0.29.13), so the runtime-narrowed run is legal.
 - Per-table probe outcomes are logged (`context.log.info`) so each tick's
   changed-set is auditable.
-- **Schedules subset the multi-asset** (cadence is pure schedule config;
-  `dagster-dlt` maps `context.selected_asset_keys` →
-  `source.with_resources(...)`):
+- **Schedules subset the multi-asset by tier** (cadence is pure schedule
+  config). The schedule fires the op with `selected_asset_keys` = its tier; the
+  op probes those and narrows further at runtime to the changed subset via
+  `source.with_resources(*changed)`. dagster-dlt's own `is_subset` filter
+  intersects the explicit source with `selected_asset_keys` — changed ⊆
+  selected, so it passes through unchanged:
   - intraday `*/15 * * * *` → the 23 cursor tables listed below
   - nightly `0 2 * * *` → 11 gradebook tables + 14 no-cursor tables
 - Retiering a table = editing the `schedule_tier` value read by `schedules.py`;
@@ -149,10 +160,11 @@ tables.
 
 ## Edge cases
 
-- **Table emptied at source** (count → 0): drift is detected but zero rows yield
-  — `replace` won't truncate. Handle explicitly: truncate the BigQuery table via
-  the pipeline's `sql_client` (BigQuery `TRUNCATE TABLE` is free) and persist
-  the new signature.
+- **Table emptied at source** (count → 0): `COUNT(*)` drift puts the table in
+  the changed set; it runs, yields zero rows, and `replace` truncates it to
+  empty — the correct result, automatically. No special handling. (This is the
+  same truncate-on-zero-yield behavior that ruled out the in-resource gate;
+  under op-gate it is exactly what we want.)
 - **Probe blind spot**: a modification that changes neither `COUNT(*)` nor the
   cursor column (e.g. direct DBA edits suppressing `whenmodified`) is missed.
   Accepted — Newark's prod probe has had the same blind spot for years.
@@ -177,18 +189,24 @@ success, ~202s wall-clock):
 
 These estimates are derived, not measured — the spike times the real thing.
 
-## Spike (before implementation, on the branch deployment)
+## Spike (executed 2026-07-16, local duckdb)
 
-1. Confirm a `replace` resource yielding zero rows produces no load job and does
-   not truncate the destination table.
-1. Confirm a state-only change (empty-table edge) still commits a state update
-   to `_dlt_pipeline_state`.
-1. Time the collapsed all-tables single-pipeline run.
+1. A `replace` resource yielding zero rows **truncates** its destination table
+   (3 rows → 0). This **REJECTED the in-resource gate** and drove the pivot to
+   the op-gate design above.
+1. `source.with_resources(<subset>)` leaves unselected tables untouched (an
+   unselected table's 3 rows were preserved while another resource loaded) —
+   confirms the op-gate mechanism.
+1. `resource_state` round-trips through a fresh pipeline instance via
+   `sync_destination()` (the stored signature was restored) — confirms the
+   signature store survives a new pod.
+1. Timing of the collapsed all-tables run: deferred to the branch-deployment E2E
+   (Task 6); local duckdb timing is not representative of Oracle + BigQuery.
 
 ## Testing
 
-- pytest: gating logic (signature compare, no-cursor bypass, empty-table
-  truncate path, first-run seeding) against a mocked engine/state.
+- pytest: gating logic (signature compare, changed-set selection, no-cursor
+  always-selected, first-run all-changed) against a mocked engine/state.
 - `uv run dagster definitions validate` for
   `teamster.code_locations.kipppaterson.definitions`.
 - Branch-deployment end-to-end: (a) only changed tables materialize, (b) BQ row
