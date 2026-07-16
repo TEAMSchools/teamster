@@ -1,13 +1,43 @@
 models:
   - name: stg_coupa__users
+    description: >-
+      One row per Coupa user account, from the Coupa REST API users endpoint. id
+      is the account primary key; login (first) then employee_number are the
+      keys rpt_coupa__users matches a staff member to their Coupa account on.
     columns:
       - name: id
         data_type: int64
-      - name: active
-        data_type: boolean
-      - name: purchasing_user
-        data_type: boolean
+        description: Coupa internal user id; the account primary key.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - unique:
+              config:
+                severity: error
       - name: login
         data_type: string
+        description: >-
+          Coupa login, equal to the staff member Active Directory
+          sam_account_name. Unique per account and the primary key
+          rpt_coupa__users matches on (login first).
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: employee_number
         data_type: int64
+        description: >-
+          ADP employee number cast from the Coupa custom field; blank on
+          accounts created outside the nightly feed. The fallback key
+          rpt_coupa__users matches on when login does not.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: active
+        data_type: boolean
+        description: Whether the Coupa account is active.
+      - name: purchasing_user
+        data_type: boolean
+        description: Whether the account holds a Coupa purchasing license.
