@@ -19,6 +19,13 @@
   `deploy-prod-*.yaml` workflows. Uses `cancel-in-progress: true` grouped by
   workflow + ref + event — rapid pushes to the same branch cancel prior deploys.
   Does not prevent multiple locations deploying simultaneously from one commit.
+- **Branch deployments build only on a NON-draft PR** —
+  `deploy-prod-<location>.yaml` gates the deploy job
+  `if: ${{ !github.event.pull_request.draft }}`. To get a branch deployment
+  (e.g. to test a change before merge), open the PR ready-for-review, not draft.
+  A change to a shared `pull_request`-path file (`uv.lock`, `Dockerfile`,
+  `src/teamster/core/**`) fans a branch-deploy build out to ALL five locations,
+  not just the one you touched.
 - **Each `deploy-prod-<location>.yaml` push-`paths` must list every dbt package
   in that district's `src/dbt/<district>/packages.yml`** (`src/dbt/pearson/**`,
   etc.). Drift silently skips that district's prod deploy on a shared

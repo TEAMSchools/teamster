@@ -44,7 +44,8 @@ with
                         sr.home_department_name in (
                             'Teaching and Learning',
                             'School Support',
-                            'New Teacher Development'
+                            'New Teacher Development',
+                            'Special Projects'
                         )
                         and (
                             contains_substr(sr.job_title, 'Chief')
