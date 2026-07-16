@@ -429,13 +429,15 @@ task creates that model for Newark (the only region with PS plugin data today)
 and updates both scaffolds to join it instead of the Google Sheet.
 
 **Newark only for now.** Camden is blocked on PR #4077 (Bini's integration work)
-landing in prod. Paterson is blocked on PS instance access — deploy the plugin
-from [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins) once
-access is available. Until each region's PS data is available, the INNER JOIN in
-the teacher scaffold will find no matching rows for that region — category-level
-audit rows (assignment count flags, percent-graded flags) will be silent for
-Camden and Paterson until their data lands. EOQ and student-level flags in Task
-1 are unaffected.
+landing in prod — resolved, Camden's own U_EXPECTATIONS data now lands via its
+own region source. Paterson is blocked on PS instance access — the plugin cannot
+be installed on Paterson's PowerSchool instance at all (not a pending deploy);
+resolved instead by spoofing Paterson's MS expectations from Newark's real data
+(see the reference doc's "Paterson GradeBook plugin" note). Until each region's
+PS data is available, the INNER JOIN in the teacher scaffold will find no
+matching rows for that region — category-level audit rows (assignment count
+flags, percent-graded flags) will be silent for that region until its data
+lands. EOQ and student-level flags in Task 1 are unaffected.
 
 **Naming convention note:** If the INT model unpivots the wide-format category
 counts (`cnt_w/h/f/s`) to long format inside the model itself, it must be named

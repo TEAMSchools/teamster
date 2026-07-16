@@ -158,7 +158,12 @@ from `stg_google_sheets__gradebook_flags`. All Miami-specific SQL branches
 
 Paterson joins the dashboard for AY 2026-2027.
 
-**Paterson MS:** same flags and expectations as Newark MS.
+**Paterson MS:** same flags and expectations as Newark MS. Delivered:
+`kipppaterson`'s own `stg_powerschool__u_expectations` model (overriding the
+disabled `powerschool` package version) reads Newark's real U_EXPECTATIONS data
+cross-project via a `source()` on `kippnewark_powerschool`, filtered to
+`school_level = 'MS'` — Paterson's PS instance still can't run the plugin
+natively.
 
 **Paterson ES:** `qt_es_comment_missing` only (Q3 and Q4). Same pattern as
 Camden ES and Newark ES.

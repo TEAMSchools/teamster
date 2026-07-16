@@ -1,0 +1,16 @@
+sources:
+  - name: kippnewark_powerschool
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      elif target.name == 'staging' -%}zz_stg_{%- endif
+      -%}kippnewark_powerschool"
+    tables:
+      - name: stg_powerschool__u_expectations
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - stg_powerschool__u_expectations

@@ -9,6 +9,9 @@ with
                     source(
                         "kippnewark_powerschool", "stg_powerschool__u_expectations"
                     ),
+                    source(
+                        "kipppaterson_powerschool", "stg_powerschool__u_expectations"
+                    ),
                 ]
             )
         }}

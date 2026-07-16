@@ -31,23 +31,26 @@ The audit operates at multiple grains simultaneously:
 
 ### Dashboard coverage (AY 2026-2027)
 
-| Region   | School level | Coverage depth                                                                      | Notes                                                                                                |
-| -------- | ------------ | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Camden   | MS, HS       | Full audit (all applicable flags)                                                   |                                                                                                      |
-| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`)                                         | ES schools do not enter assignments in PS gradebook                                                  |
-| Newark   | MS, HS       | Full audit (all applicable flags)                                                   |                                                                                                      |
-| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`)                                         | ES schools do not enter assignments in PS gradebook                                                  |
-| Paterson | MS           | Student flags only (grade greater than 100, grade less than 70 and comment missing) | Added AY 2026-2027; no assignment-count flag — plugin cannot be installed, expectations spoofing TBD |
-| Paterson | ES           | EOQ comments only (`qt_es_comment_missing`)                                         | Added AY 2026-2027                                                                                   |
-| Miami    | n/a          | Removed                                                                             | Moved to Focus gradebook; excluded at scaffold level                                                 |
+| Region   | School level | Coverage depth                              | Notes                                                          |
+| -------- | ------------ | ------------------------------------------- | -------------------------------------------------------------- |
+| Camden   | MS, HS       | Full audit (all applicable flags)           |                                                                |
+| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
+| Newark   | MS, HS       | Full audit (all applicable flags)           |                                                                |
+| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
+| Paterson | MS           | Full audit (all applicable flags)           | Added AY 2026-2027; expectations spoofed from Newark's MS data |
+| Paterson | ES           | EOQ comments only (`qt_es_comment_missing`) | Added AY 2026-2027                                             |
+| Miami    | n/a          | Removed                                     | Moved to Focus gradebook; excluded at scaffold level           |
 
 !!! note "Paterson GradeBook plugin" The **KIPP NJ Gradebook Audit** plugin
 cannot be installed on Paterson's PowerSchool instance, so `U_EXPECTATIONS` is
-never populated there and Paterson produces no `assignment_teacher` rows (the
-inner join to `int_powerschool__u_expectations_qtd_unpivot` yields nothing). The
-plan is to spoof Paterson's expectations from Newark's data; the approach is not
-yet decided or implemented. Until then, Paterson has EOQ/student coverage only,
-not assignment-count coverage. Tracked:
+never populated there natively. Instead, `kipppaterson`'s own
+`stg_powerschool__u_expectations` model (overriding the disabled `powerschool`
+package version) reads Newark's real U_EXPECTATIONS data cross-project via a
+`source()` on `kippnewark_powerschool`, filtered to `school_level = 'MS'` (see
+`src/dbt/kipppaterson/models/powerschool/sis/staging/stg_powerschool__u_expectations.sql`).
+`int_powerschool__u_expectations_qtd_unpivot`'s kipptaf-level union picks this
+up as a third region alongside Camden and Newark — no different from a real
+region's data at that point. Tracked:
 [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
 ### Dashboard coverage (AY 2025-2026)
@@ -316,10 +319,10 @@ A `UNION ALL` of three branches, all filtering `school_level_alt != 'ES'`,
 Branch 2 inner-joins `int_powerschool__u_expectations_qtd_unpivot` (on
 `region × school_level × academic_year × quarter`) and left-joins
 `int_powerschool__gradebook_assignment_scores_rollup` for per-assignment rollup
-counts. Sections with no matching expectations row produce no
-`assignment_teacher` rows for that region — Paterson is in this state because
-its PowerSchool instance cannot run the plugin (spoofing from Newark is planned
-but undecided; see the Paterson note above).
+counts. A region with no matching expectations row produces no
+`assignment_teacher` rows for that region — this no longer applies to Paterson,
+whose expectations are spoofed from Newark's MS data (see the Paterson note
+above); it would apply to any future region that never gets the plugin.
 
 The `exclude_from_gpa = 0` filter intentionally excludes teachers who teach only
 GPA-excluded courses (~22 teachers per quarter in AY 2025 data). Those sections
@@ -1044,11 +1047,12 @@ Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
   per-student score flags (plan Step 9.4 — a T&L/Tableau-layout decision). See
   Task 9 in the
   [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md).
-- **Paterson expectations**: Paterson is excluded from category-level audit rows
-  (`assignment_teacher` branch) because the KIPP NJ Gradebook Audit plugin
-  cannot be installed on its PowerSchool instance, so `U_EXPECTATIONS` is never
-  populated there. Spoofing expectations from Newark is planned but the approach
-  is undecided and unimplemented. EOQ flags for Paterson ES are unaffected.
+- ~~**Paterson expectations**~~ — resolved. The KIPP NJ Gradebook Audit plugin
+  still cannot be installed on Paterson's PowerSchool instance, so
+  `U_EXPECTATIONS` is never populated there natively — but `kipppaterson` now
+  ships its own `stg_powerschool__u_expectations` override that reads Newark's
+  real MS data cross-project (see the Paterson note above). No remaining code
+  gap for the `assignment_teacher` branch.
 
 See [GitHub issue #3908](https://github.com/TEAMSchools/teamster/issues/3908)
 for the full AY 2026-2027 tracking issue.
