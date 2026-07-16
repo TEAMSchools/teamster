@@ -1,6 +1,8 @@
 import logging
 import os
 import socket
+import threading
+import time
 from unittest.mock import MagicMock
 
 
@@ -84,3 +86,69 @@ def test_paramiko_tunnel_listener_closes_on_exit():
         connected = False
 
     assert not connected
+
+
+def test_paramiko_tunnel_cleanup_does_not_hang_on_stuck_handler():
+    """Cleanup must not deadlock when a handler thread is mid-`select()`.
+
+    Reproduces the deadlock this test guards against: a forwarded connection
+    is still open (client socket not closed) when the `with` block exits, so
+    its handler thread is genuinely parked in
+    ``select.select([self.request, channel], [], [])`` — neither side is
+    ever readable, since the pipe backing ``channel.fileno()`` is never
+    written to and the client socket is deliberately left open. Under the
+    pre-fix ordering (``server.shutdown()`` -> ``server.server_close()`` ->
+    ``client.close()``), ``server_close()`` joins that handler thread with no
+    timeout (``ThreadingMixIn.block_on_close`` defaults to ``True``) and
+    hangs forever. The whole `with`-block body runs on a daemon watchdog
+    thread so a real hang fails this test (via the timed `join`) instead of
+    hanging the suite.
+    """
+    ssh_resource = _make_resource()
+
+    # Channel side: a real, pollable fd that never becomes readable.
+    read_fd, write_fd = os.pipe()
+
+    channel = MagicMock()
+    channel.fileno.return_value = read_fd
+    channel.recv.return_value = b""
+
+    transport = MagicMock()
+    transport.open_channel.return_value = channel
+
+    client = MagicMock()
+    client.get_transport.return_value = transport
+
+    object.__setattr__(ssh_resource, "get_connection", lambda: client)
+
+    exited = threading.Event()
+    client_sockets: list[socket.socket] = []
+
+    def run_tunnel():
+        with ssh_resource.open_ssh_tunnel_paramiko(local_port=0) as local_port:
+            s = socket.create_connection(("127.0.0.1", local_port), timeout=5)
+            client_sockets.append(s)
+            # Send nothing: both `self.request` (this socket, server side)
+            # and `channel` (the pipe) stay unreadable, so once the handler
+            # thread accepts the connection and opens the channel, it parks
+            # in `select()` and never returns on its own — exactly the
+            # still-open-forwarded-connection scenario that deadlocks
+            # `server_close()` pre-fix.
+            time.sleep(0.3)
+        exited.set()
+
+    watchdog = threading.Thread(target=run_tunnel, daemon=True)
+    watchdog.start()
+    watchdog.join(timeout=5)
+
+    try:
+        assert exited.is_set(), (
+            "open_ssh_tunnel_paramiko's context exit hung for 5s+ — "
+            "server_close() likely blocked joining a handler thread stuck "
+            "in select() on a still-open forwarded connection"
+        )
+    finally:
+        for s in client_sockets:
+            s.close()
+        os.close(read_fd)
+        os.close(write_fd)

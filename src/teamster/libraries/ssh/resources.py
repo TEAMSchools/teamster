@@ -210,6 +210,7 @@ class SSHResource(DagsterSSHResource):
         Yields the bound local port; pass local_port=0 for an ephemeral port.
         """
         client = self.get_connection()
+        server: _ForwardServer | None = None
 
         try:
             transport = check.not_none(value=client.get_transport())
@@ -227,18 +228,42 @@ class SSHResource(DagsterSSHResource):
             server_thread = threading.Thread(target=server.serve_forever, daemon=True)
             server_thread.start()
 
-            try:
-                yield server.server_address[1]
-            finally:
-                server.shutdown()
-                server.server_close()
+            yield server.server_address[1]
         finally:
+            # Stop accepting new connections, then close the SSH
+            # client/transport BEFORE closing the listener. Closing the
+            # transport EOFs every open `direct-tcpip` channel, which makes a
+            # handler thread blocked in
+            # `select.select([self.request, channel], [], [])` on a
+            # still-open forwarded connection return and unwind on its own.
+            # Only then is it safe to call `server_close()`. `server` stays
+            # `None` if construction raised before assignment (e.g.
+            # `tunnel_remote_host` unset) — guard both server calls so
+            # `client.close()` (paramiko no-ops on a second call, so this is
+            # the single close site regardless of path) still runs.
+            if server is not None:
+                server.shutdown()
+
             client.close()
+
+            if server is not None:
+                # `_ForwardServer.block_on_close = False` is a bounded
+                # backstop on top of the ordering above: `server_close()`
+                # never joins per-connection handler threads (the
+                # `ThreadingMixIn.block_on_close=True` default would join
+                # with no timeout), so a thread that is somehow still stuck
+                # can't hang cleanup — it's already `daemon_threads = True`,
+                # so it won't block interpreter exit either.
+                server.server_close()
 
 
 class _ForwardServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
     allow_reuse_address = True
+    # See the cleanup-ordering comment in `open_ssh_tunnel_paramiko`: without
+    # this, `server_close()` joins every per-connection handler thread with
+    # no timeout, which can hang forever on a handler parked in `select()`.
+    block_on_close = False
 
 
 def _make_forward_handler(
