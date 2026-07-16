@@ -155,7 +155,10 @@ git commit -m "docs(powerschool): record dlt spike results in spec"
 
 - Modify: `src/teamster/libraries/dlt/powerschool/assets.py` (add to top, keep
   existing content for now)
-- Test: `tests/test_dlt_powerschool.py` (create)
+- Test: `tests/libraries/test_dlt_powerschool_assets.py` (REPLACE — this file
+  currently holds two tests for the removed per-table signature (`table_name=`,
+  `load_strategy=`); overwrite it entirely with the new tests below, since Task
+  3 deletes the behavior they cover)
 
 **Interfaces:**
 
@@ -168,13 +171,12 @@ git commit -m "docs(powerschool): record dlt spike results in spec"
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `tests/test_dlt_powerschool.py`:
+Replace the entire contents of `tests/libraries/test_dlt_powerschool_assets.py`:
 
 ```python
 """Unit tests for the probe-gated PowerSchool dlt factory (no external deps)."""
 
 from datetime import datetime
-from types import SimpleNamespace
 
 from teamster.libraries.dlt.powerschool.assets import (
     PowerSchoolTable,
@@ -229,8 +231,9 @@ def test_powerschool_table_dataclass():
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `cd <worktree> && uv run pytest tests/test_dlt_powerschool.py -v` Expected:
-FAIL — `ImportError: cannot import name 'PowerSchoolTable'`.
+Run:
+`cd <worktree> && uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v`
+Expected: FAIL — `ImportError: cannot import name 'PowerSchoolTable'`.
 
 - [ ] **Step 3: Implement**
 
@@ -278,13 +281,14 @@ authoritative suppression.)
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `cd <worktree> && uv run pytest tests/test_dlt_powerschool.py -v` Expected:
-3 PASS.
+Run:
+`cd <worktree> && uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v`
+Expected: 3 PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/teamster/libraries/dlt/powerschool/assets.py tests/test_dlt_powerschool.py
+git add src/teamster/libraries/dlt/powerschool/assets.py tests/libraries/test_dlt_powerschool_assets.py
 git commit -m "feat(powerschool): add dlt probe signature helpers"
 ```
 
@@ -303,7 +307,7 @@ fine, they land in sequence).
   `LOAD_STRATEGIES` and `build_powerschool_dlt_assets`; keep `ORACLE_SCHEMA`,
   `oracle_number_adapter`, `_oracle_connection_url`,
   `PowerSchoolDagsterDltTranslator`, Task 2's additions)
-- Test: `tests/test_dlt_powerschool.py` (extend)
+- Test: `tests/libraries/test_dlt_powerschool_assets.py` (extend)
 
 **Interfaces:**
 
@@ -319,7 +323,7 @@ fine, they land in sequence).
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `tests/test_dlt_powerschool.py`:
+Append to `tests/libraries/test_dlt_powerschool_assets.py`:
 
 ```python
 from teamster.libraries.dlt.powerschool.assets import build_powerschool_dlt_assets
@@ -349,7 +353,7 @@ def test_factory_builds_single_subsettable_multiasset():
 - [ ] **Step 2: Run test to verify it fails**
 
 Run:
-`cd <worktree> && uv run pytest tests/test_dlt_powerschool.py::test_factory_builds_single_subsettable_multiasset -v`
+`cd <worktree> && uv run pytest tests/libraries/test_dlt_powerschool_assets.py::test_factory_builds_single_subsettable_multiasset -v`
 Expected: FAIL — `TypeError` (old signature takes `table_name`, not `tables`).
 
 - [ ] **Step 3: Replace the factory**
@@ -489,13 +493,14 @@ imports and drop the local import; `Iterator` is already imported from
 
 - [ ] **Step 4: Run the test suite**
 
-Run: `cd <worktree> && uv run pytest tests/test_dlt_powerschool.py -v` Expected:
-all PASS (factory test + Task 2 tests).
+Run:
+`cd <worktree> && uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v`
+Expected: all PASS (factory test + Task 2 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/teamster/libraries/dlt/powerschool/assets.py tests/test_dlt_powerschool.py
+git add src/teamster/libraries/dlt/powerschool/assets.py tests/libraries/test_dlt_powerschool_assets.py
 git commit -m "feat(powerschool): probe-gated single multi-asset dlt factory"
 ```
 
@@ -511,7 +516,7 @@ git commit -m "feat(powerschool): probe-gated single multi-asset dlt factory"
   `src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/assets.py`
 - Rewrite:
   `src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/schedules.py`
-- Test: `tests/test_dlt_powerschool.py` (extend)
+- Test: `tests/libraries/test_dlt_powerschool_assets.py` (extend)
 
 **Interfaces:**
 
@@ -523,7 +528,7 @@ git commit -m "feat(powerschool): probe-gated single multi-asset dlt factory"
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `tests/test_dlt_powerschool.py`:
+Append to `tests/libraries/test_dlt_powerschool_assets.py`:
 
 ```python
 import pathlib
@@ -612,7 +617,7 @@ def test_assets_module_exposes_single_def():
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run:
-`cd <worktree> && uv run pytest tests/test_dlt_powerschool.py -v -k "config or schedules or single_def"`
+`cd <worktree> && uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v -k "config or schedules or single_def"`
 Expected: FAIL (yaml lacks `cursor_column`; assets module has 48 defs; old
 schedules have no tags).
 
@@ -877,15 +882,16 @@ schedules = [
 
 - [ ] **Step 6: Run the full test file**
 
-Run: `cd <worktree> && uv run pytest tests/test_dlt_powerschool.py -v` Expected:
-all PASS. Also sanity-check tier sizes inline:
+Run:
+`cd <worktree> && uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v`
+Expected: all PASS. Also sanity-check tier sizes inline:
 `uv run python -c "from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import _tier_targets; print(len(_tier_targets('intraday')), len(_tier_targets('nightly')))"`
 Expected: `23 25`.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/ tests/test_dlt_powerschool.py
+git add src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/ tests/libraries/test_dlt_powerschool_assets.py
 git commit -m "feat(kipppaterson): probe-gated single multi-asset powerschool dlt config"
 ```
 
@@ -906,7 +912,7 @@ git commit -m "feat(kipppaterson): probe-gated single multi-asset powerschool dl
 cd <worktree>
 uv run dagster-dbt project prepare-and-package --file src/teamster/code_locations/kipppaterson/__init__.py
 uv run dagster definitions validate -m teamster.code_locations.kipppaterson.definitions
-uv run pytest tests/test_dlt_powerschool.py tests/test_dagster_definitions.py -v
+uv run pytest tests/libraries/test_dlt_powerschool_assets.py tests/test_dagster_definitions.py -v
 ```
 
 Expected: validate succeeds; tests pass. (If validate fails on missing env vars
