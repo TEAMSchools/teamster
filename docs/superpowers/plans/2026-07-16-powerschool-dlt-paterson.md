@@ -1260,10 +1260,11 @@ uv run dbt build --select staging.dlt+ --project-dir /workspaces/teamster/.workt
 > `stg_powerschool__student_email` model has a real downstream consumer:
 > `kipptaf` `base_powerschool__student_enrollments.sql:113`
 > `if(ar.region = 'Paterson', se.email, sl.google_email) as student_email_google`
-> (join at `:219`). Retiring the source requires a replacement for the Paterson
-> branch of that column — **resolution pending user answer** (see the
-> controller's question). Steps 6-7 below implement whichever the user chooses;
-> do not code them until the resolution is recorded here.
+> (join at `:219`). **Resolution (user, 2026-07-16):** collapse to
+> `sl.google_email` for all regions — drop the `if(region='Paterson', ...)`
+> special-case so `student_email_google = sl.google_email` everywhere (Paterson
+> students use the Google-directory path like every other region). Steps 6-7
+> implement this.
 
 **Files:**
 
