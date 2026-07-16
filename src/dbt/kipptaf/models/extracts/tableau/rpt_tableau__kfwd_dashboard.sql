@@ -290,6 +290,7 @@ select
     c.is_dlm,
     c.contact_graduation_year as graduation_year,
     c.exit_school_name,
+    c.exit_grade_level,
     c.powerschool_enroll_status,
     c.contact_postsec_advisor_name as postsec_advisor,
     c.best_guess_pathway as bgp,
@@ -719,6 +720,9 @@ select
     coalesce(
         ogc.has_duplicate_overgrad_1st_choice, false
     ) as has_duplicate_overgrad_1st_choice,
+
+    (13 - c.exit_grade_level) + c.exit_academic_year
+    = c.contact_graduation_year as is_grade_grad_year,
 from {{ ref("int_kippadb__roster") }} as c
 cross join year_scaffold as ay
 left join {{ ref("int_kippadb__enrollment_pivot") }} as ei on c.contact_id = ei.student

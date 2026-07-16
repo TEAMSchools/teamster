@@ -531,6 +531,11 @@ models:
         data_type: string
       - name: exit_school_name
         data_type: string
+      - name: exit_grade_level
+        data_type: int64
+        description: >
+          Grade level recorded on the student's most recent undergraduate
+          enrollment in PowerSchool (grades 8 through 12).
       - name: graduation_year
         data_type: int64
       - name: highest_sat_score
@@ -608,6 +613,16 @@ models:
         description: >
           True if the student has tagged more than one school as #1 Choice in
           Overgrad. False if the student has no Overgrad top-choice data.
+      - name: is_grade_grad_year
+        data_type: boolean
+        description: >
+          True when the graduation year implied by the PowerSchool exit grade
+          level matches the Salesforce-derived graduation year. Implied year is
+          (13 minus exit grade level) plus the academic year the exit grade was
+          recorded, anchoring on that academic year rather than the current one
+          because most rows are alumni whose last enrollment predates the
+          current year. False flags a student whose grade level and graduation
+          year do not comport.
       - name: es_attended
         data_type: string
       - name: total_aid_amount
