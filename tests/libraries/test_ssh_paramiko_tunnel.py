@@ -91,18 +91,23 @@ def test_paramiko_tunnel_listener_closes_on_exit():
 def test_paramiko_tunnel_cleanup_does_not_hang_on_stuck_handler():
     """Cleanup must not deadlock when a handler thread is mid-`select()`.
 
-    Reproduces the deadlock this test guards against: a forwarded connection
-    is still open (client socket not closed) when the `with` block exits, so
-    its handler thread is genuinely parked in
-    ``select.select([self.request, channel], [], [])`` — neither side is
-    ever readable, since the pipe backing ``channel.fileno()`` is never
-    written to and the client socket is deliberately left open. Under the
-    pre-fix ordering (``server.shutdown()`` -> ``server.server_close()`` ->
-    ``client.close()``), ``server_close()`` joins that handler thread with no
-    timeout (``ThreadingMixIn.block_on_close`` defaults to ``True``) and
-    hangs forever. The whole `with`-block body runs on a daemon watchdog
-    thread so a real hang fails this test (via the timed `join`) instead of
-    hanging the suite.
+    Drives a forwarded connection that is still open (client socket not
+    closed) when the `with` block exits, so its handler thread is genuinely
+    parked in ``select.select([self.request, channel], [], [])`` — neither
+    side is ever readable, since the pipe backing ``channel.fileno()`` is
+    never written to and the client socket is deliberately left open.
+
+    This is a regression guard, not a literal repro against the pre-fix
+    commit: `_ForwardServer.daemon_threads = True` was already set before
+    this fix, and CPython's `socketserver.ThreadingMixIn._Threads.append()`
+    unconditionally skips daemon threads — so `server_close()` never actually
+    joined a stuck handler here regardless of `block_on_close`. Confirmed via
+    a throwaway monkeypatch (`daemon_threads = False`, `block_on_close =
+    True`) that this exact scenario *does* hang indefinitely without either
+    protection, which is what this test would catch if a future change
+    weakened `block_on_close = False` or removed `daemon_threads = True`. The
+    whole `with`-block body runs on a daemon watchdog thread so a real hang
+    fails this test (via the timed `join`) instead of hanging the suite.
     """
     ssh_resource = _make_resource()
 
