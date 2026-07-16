@@ -236,6 +236,19 @@ with
                 ) as float64
             ) as annual_income_clean,
         from survey_pivot
+    ),
+
+    excluded_responses as (
+        select survey_response_id,
+        from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
+        where reconcile_or_exclude = 'Exclude'
+    ),
+
+    survey_filtered as (
+        select sc.*,
+        from survey_clean as sc
+        left join excluded_responses as er on sc.response_id = er.survey_response_id
+        where er.survey_response_id is null
     )
 
 select
@@ -359,7 +372,7 @@ select
     ) as rn_respondent,
 from roster as r
 full join
-    survey_clean as sp
+    survey_filtered as sp
     on r.rn_graduated = 1
     and (
         r.sf_email = sp.respondent_user_principal_name
