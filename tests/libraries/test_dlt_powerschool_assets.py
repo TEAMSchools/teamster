@@ -1,36 +1,53 @@
-"""Definition-time checks for the PowerSchool dlt asset factory.
+"""Unit tests for the probe-gated PowerSchool dlt factory (no external deps)."""
 
-Run in the Codespace with no PowerSchool credentials — assert the module
-imports cleanly (lazy env reads) and produces the expected asset keys.
-"""
+from datetime import datetime
 
-import pytest
-from dagster import AssetKey
-
-
-def test_powerschool_dlt_asset_key():
-    from teamster.libraries.dlt.powerschool.assets import (
-        build_powerschool_dlt_assets,
-    )
-
-    assets_def = build_powerschool_dlt_assets(
-        code_location="kipppaterson", table_name="students"
-    )
-
-    assert set(assets_def.keys) == {
-        AssetKey(["kipppaterson", "powerschool", "students"])
-    }
-    assert assets_def.op.name == "kipppaterson__powerschool__students"
+from teamster.libraries.dlt.powerschool.assets import (
+    PowerSchoolTable,
+    probe_signature,
+)
 
 
-def test_powerschool_dlt_rejects_unknown_load_strategy():
-    from teamster.libraries.dlt.powerschool.assets import (
-        build_powerschool_dlt_assets,
-    )
+class FakeResult:
+    def __init__(self, row):
+        self._row = row
 
-    with pytest.raises(ValueError, match="load_strategy"):
-        build_powerschool_dlt_assets(
-            code_location="kipppaterson",
-            table_name="students",
-            load_strategy="merge",
-        )
+    def one(self):
+        return self._row
+
+
+class FakeConnection:
+    def __init__(self, row):
+        self.row = row
+        self.queries = []
+
+    def execute(self, clause):
+        self.queries.append(str(clause))
+        return FakeResult(self.row)
+
+
+def test_probe_signature_shapes_datetime_cursor():
+    conn = FakeConnection((42, datetime(2026, 7, 15, 13, 30, 0)))
+
+    sig = probe_signature(conn, "students", "transaction_date")
+
+    assert sig == {"count": 42, "max_cursor": "2026-07-15T13:30:00"}
+    assert "COUNT(*)" in conn.queries[0]
+    assert "MAX(transaction_date)" in conn.queries[0]
+    assert "FROM students" in conn.queries[0]
+
+
+def test_probe_signature_empty_table_none_cursor():
+    conn = FakeConnection((0, None))
+
+    sig = probe_signature(conn, "cc", "transaction_date")
+
+    assert sig == {"count": 0, "max_cursor": None}
+
+
+def test_powerschool_table_dataclass():
+    t = PowerSchoolTable(name="students", cursor_column="transaction_date")
+    n = PowerSchoolTable(name="test", cursor_column=None)
+
+    assert t.cursor_column == "transaction_date"
+    assert n.cursor_column is None

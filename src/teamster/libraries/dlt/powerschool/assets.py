@@ -1,8 +1,10 @@
 import os
 from collections.abc import Iterator
+from dataclasses import dataclass
 from urllib.parse import quote
 
 import dlt
+import sqlalchemy as sa
 from dagster import AssetExecutionContext, AssetKey, AssetSpec
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt.common.runtime.collector import LogCollector
@@ -20,6 +22,38 @@ from teamster.libraries.ssh.resources import SSHResource
 ORACLE_SCHEMA = "ps"
 
 LOAD_STRATEGIES = {"full_refresh": "replace"}
+
+
+@dataclass(frozen=True)
+class PowerSchoolTable:
+    """One PowerSchool table's sync config.
+
+    cursor_column None means the table has no change-tracking column and is
+    always fully replaced when selected (nightly tier only).
+    """
+
+    name: str
+    cursor_column: str | None
+
+
+def probe_signature(
+    connection, table_name: str, cursor_column: str
+) -> dict[str, int | str | None]:
+    """Fetch the change signature for a table: total count + max cursor.
+
+    Equality-compared against the stored signature; drift in either value
+    (including a cursor regression) triggers a full replace. Values are
+    JSON-serializable for dlt resource state.
+    """
+    count, max_cursor = connection.execute(
+        # trunk-ignore(bandit/B608): table/column names from static YAML config
+        sa.text(f"SELECT COUNT(*), MAX({cursor_column}) FROM {table_name}")
+    ).one()
+
+    return {
+        "count": count,
+        "max_cursor": max_cursor.isoformat() if max_cursor is not None else None,
+    }
 
 
 def oracle_number_adapter(col_type: TypeEngine) -> TypeEngine | None:
