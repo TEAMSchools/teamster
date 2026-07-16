@@ -9,9 +9,12 @@
 probe-gated `@dlt_assets` multi-asset that full-replaces only tables whose
 `COUNT(*)`/`MAX(cursor)` signature drifted.
 
-**Architecture:** One `@dlt.source` of 48 custom `@dlt.resource`s (gate inside
-each resource, signature in `dlt.current.resource_state()`), one `dlt.pipeline`,
-one `@dlt_assets`. Two schedules subset the multi-asset by tier. Spec:
+**Architecture:** One `@dlt_assets` over one `@dlt.source` of 48
+`@dlt.resource`s, one `dlt.pipeline`. The op gates: it probes each selected
+table (`COUNT(*)`/`MAX(cursor)`), compares against the signature in
+`dlt.current.resource_state()`, and runs only the changed resources via
+`source.with_resources(*changed)`. Two schedules subset the multi-asset by tier.
+Spec:
 `docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md`.
 
 **Tech Stack:** dagster 1.13.13, dagster-dlt 0.29.13, dlt 1.28.1, SQLAlchemy +
