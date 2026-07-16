@@ -8,6 +8,21 @@ from teamster.code_locations.kipppaterson import CODE_LOCATION, LOCAL_TIMEZONE
 config_file = pathlib.Path(__file__).parent / "config" / "assets.yaml"
 config = yaml.safe_load(config_file.read_text())
 
+_VALID_SCHEDULE_TIERS = {"intraday", "nightly"}
+
+_invalid_tier_assets = [
+    a for a in config["assets"] if a["schedule_tier"] not in _VALID_SCHEDULE_TIERS
+]
+if _invalid_tier_assets:
+    raise ValueError(
+        "Invalid schedule_tier for table(s): "
+        + ", ".join(
+            f"{a['table_name']!r} ({a['schedule_tier']!r})"
+            for a in _invalid_tier_assets
+        )
+        + f"; expected one of {sorted(_VALID_SCHEDULE_TIERS)}"
+    )
+
 
 def _tier_targets(tier: str) -> list[str]:
     return [

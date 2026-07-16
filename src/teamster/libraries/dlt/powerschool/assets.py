@@ -110,6 +110,12 @@ def build_powerschool_dlt_assets(
 
     dlt_pipeline = dlt.pipeline(
         pipeline_name=f"powerschool_{table_name}",
+        # Deliberately no `autodetect_schema=True` (unlike
+        # libraries/dlt/focus/assets.py): `oracle_number_adapter` +
+        # `reflection_level="full_with_precision"` above are the authoritative
+        # decimal schema. Autodetect would let BigQuery re-infer NUMBER
+        # columns as FLOAT64, reintroducing the float drift this adapter
+        # exists to prevent.
         destination=bigquery(),
         dataset_name=f"dagster_{code_location}_dlt_powerschool",
         progress=LogCollector(dump_system_stats=False),

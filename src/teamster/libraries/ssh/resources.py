@@ -297,12 +297,18 @@ def _make_forward_handler(
                         data = self.request.recv(16384)
                         if len(data) == 0:
                             break
-                        channel.send(data)
+                        # `Channel.send()` may write fewer bytes than given
+                        # (returns the count) — `sendall()` loops until the
+                        # full buffer is written, preventing a short write
+                        # from silently truncating the forwarded stream.
+                        channel.sendall(data)
                     if channel in r:
                         data = channel.recv(16384)
                         if len(data) == 0:
                             break
-                        self.request.send(data)
+                        # `socket.send()` has the same short-write behavior as
+                        # `Channel.send()` above — use `sendall()` here too.
+                        self.request.sendall(data)
             finally:
                 channel.close()
                 self.request.close()

@@ -27,16 +27,19 @@ def test_paramiko_tunnel_forwards_to_remote_bind():
 
     # `select.select()` requires a real, pollable file descriptor for each
     # waited-on object — a bare MagicMock's `fileno()` isn't one. Back the
-    # mocked channel with a pipe's read end. `channel.send`'s side effect
-    # writes to the pipe, so the channel only becomes select()-ready *after*
-    # the handler has forwarded the client's byte — deterministic, no sleep.
-    read_fd, write_fd = os.pipe()
+    # mocked channel with a real socketpair instead of a bare pipe:
+    # `MagicMock(wraps=real_channel_sock)` lets the handler's actual
+    # recv/select/sendall loop run against genuine socket semantics (real
+    # byte delivery, both directions) while still recording calls so we can
+    # assert `sendall` -- not `send` -- is the call site used. `send()` may
+    # write fewer bytes than given (returns the short count); a payload
+    # larger than the handler's 16384-byte recv() buffer would lose its tail
+    # silently if either write call regressed from `sendall()` back to a
+    # bare `send()`.
+    real_channel_sock, remote_probe_sock = socket.socketpair()
 
     try:
-        channel = MagicMock()
-        channel.fileno.return_value = read_fd
-        channel.recv.return_value = b""  # remote closes once selected
-        channel.send.side_effect = lambda data: os.write(write_fd, b".")
+        channel = MagicMock(wraps=real_channel_sock)
 
         transport = MagicMock()
         transport.open_channel.return_value = channel
@@ -52,16 +55,48 @@ def test_paramiko_tunnel_forwards_to_remote_bind():
         # the class method (see tests/resources/test_resource_adp_workforce_now.py).
         object.__setattr__(ssh_resource, "get_connection", lambda: client)
 
+        # 50_000 bytes > 16384-byte recv() buffer, so each direction needs
+        # multiple recv()/sendall() round trips inside the handler's
+        # forwarding loop -- the shape of a bulk Oracle result-set pull.
+        client_to_remote = os.urandom(50_000)
+        remote_to_client = os.urandom(50_000)
+
         with ssh_resource.open_ssh_tunnel_paramiko(local_port=0) as local_port:
             assert isinstance(local_port, int) and local_port > 0
 
             with socket.create_connection(("127.0.0.1", local_port), timeout=5) as s:
-                # drive one byte through so the handler opens the channel
-                s.sendall(b"x")
-                s.recv(1)  # returns b"" when the handler closes
+                s.sendall(client_to_remote)
+                remote_probe_sock.sendall(remote_to_client)
+
+                s.settimeout(5)
+                remote_probe_sock.settimeout(5)
+
+                received_by_remote = bytearray()
+                while len(received_by_remote) < len(client_to_remote):
+                    chunk = remote_probe_sock.recv(65536)
+                    if not chunk:
+                        break
+                    received_by_remote.extend(chunk)
+
+                received_by_client = bytearray()
+                while len(received_by_client) < len(remote_to_client):
+                    chunk = s.recv(65536)
+                    if not chunk:
+                        break
+                    received_by_client.extend(chunk)
+
+            # Full payload, not a truncated prefix, reached each end.
+            assert bytes(received_by_remote) == client_to_remote
+            assert bytes(received_by_client) == remote_to_client
+
+        # The client->channel direction is fully mocked, so we can also
+        # assert the call site directly: `sendall`, never the short-write-
+        # prone `send`.
+        channel.send.assert_not_called()
+        assert channel.sendall.call_count >= 1
     finally:
-        os.close(read_fd)
-        os.close(write_fd)
+        real_channel_sock.close()
+        remote_probe_sock.close()
 
     _, kwargs = transport.open_channel.call_args
     assert kwargs["dest_addr"] == ("oracle.internal", 1521)
