@@ -1,9 +1,8 @@
-import os
-
 from dagster import (
     AssetSelection,
     AutomationConditionSensorDefinition,
     Definitions,
+    EnvVar,
     load_assets_from_modules,
 )
 from dagster_dlt import DagsterDltResource
@@ -77,11 +76,11 @@ defs = Definitions(
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_powerschool": SSHResource(
-            remote_host=os.getenv("PS_SSH_HOST", ""),
-            remote_port=int(os.getenv("PS_SSH_PORT", "22")),
-            username=os.getenv("PS_SSH_USERNAME", ""),
-            password=os.getenv("PS_SSH_PASSWORD", ""),
-            tunnel_remote_host=os.getenv("PS_SSH_REMOTE_BIND_HOST", ""),
+            remote_host=EnvVar("PS_SSH_HOST"),
+            remote_port=EnvVar.int("PS_SSH_PORT"),
+            username=EnvVar("PS_SSH_USERNAME"),
+            password=EnvVar("PS_SSH_PASSWORD"),
+            tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
             enable_legacy_rsa=True,
         ),
     },
