@@ -1,6 +1,6 @@
-from teamster.code_locations.kipppaterson.powerschool.sis import dlt, sftp
+from teamster.code_locations.kipppaterson.powerschool.sis import dlt
 
-assets = [*dlt.assets.assets, *sftp.assets]
+assets = [*dlt.assets.assets]
 
 schedules = [*dlt.schedules.schedules]
 
