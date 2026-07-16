@@ -45,29 +45,24 @@ def test_paterson_powerschool_dlt_schedules_cover_every_table_exactly_once():
     asset selections equals the full configured asset-key set, with no
     drops and no duplicates.
     """
+    import yaml
+
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt import (
+        schedules as schedules_module,
+    )
     from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import (
-        assets as dlt_assets,
-    )
-    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
-        schedules,
+        config_file,
     )
 
-    expected_keys = {key for a in dlt_assets for key in a.keys}
+    config = yaml.safe_load(config_file.read_text())
+    expected = {f"kipppaterson/powerschool/{a['table_name']}" for a in config["assets"]}
 
-    per_schedule_keys = [
-        schedule.target.resolvable_to_job.selection.resolve(
-            all_assets=dlt_assets, allow_missing=False
-        )
-        for schedule in schedules
-    ]
-
-    union_keys: set[AssetKey] = set()
-    total = 0
-    for keys in per_schedule_keys:
-        union_keys |= keys
-        total += len(keys)
+    # Resolve targets through the real scheduling function — the exact code a
+    # typo'd tier would silently route around.
+    intraday = schedules_module._tier_targets("intraday")
+    nightly = schedules_module._tier_targets("nightly")
 
     # No table dropped...
-    assert union_keys == expected_keys
+    assert set(intraday) | set(nightly) == expected
     # ...and no table scheduled in more than one tier.
-    assert total == len(expected_keys)
+    assert len(intraday) + len(nightly) == len(expected)
