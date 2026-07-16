@@ -379,10 +379,12 @@ select
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
 
-    /* schoolid, not school name/abbreviation — PS renamed the school
-       (Elementary -> Academy) and name predicates silently stop matching */
+    -- TODO: figure out a better way to track these
     case
-        when e.academic_year >= 2025 and e.schoolid = 179905 and e.grade_level = 5
+        when
+            e.academic_year >= 2025
+            and e.school_abbreviation = 'Sumner'
+            and e.grade_level >= 5
         then 'MS'
         else e.school_level
     end as school_level_alt,

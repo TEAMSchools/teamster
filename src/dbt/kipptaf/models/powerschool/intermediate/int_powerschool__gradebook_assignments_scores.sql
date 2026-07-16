@@ -41,7 +41,7 @@ with
             if(
                 e.cc_academic_year >= 2025
                 and e.cc_schoolid = 179905
-                and e.sections_grade_level = 5,
+                and e.sections_grade_level >= 5,
                 'MS',
                 d.school_level
             ) as school_level_alt,

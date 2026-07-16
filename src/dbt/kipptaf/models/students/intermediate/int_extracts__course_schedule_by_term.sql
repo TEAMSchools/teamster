@@ -100,7 +100,7 @@ with
             if(
                 s.terms_academic_year >= 2025
                 and s.sections_schoolid = 179905
-                and s.sections_grade_level = 5,
+                and s.sections_grade_level >= 5,
                 'MS',
                 d.school_level
             ) as school_level_alt,
