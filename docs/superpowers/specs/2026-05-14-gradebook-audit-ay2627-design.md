@@ -235,12 +235,13 @@ five intermediate models are removed. The model is **disabled**
 (`config: enabled: false`) rather than deleted, pending operational decisions
 after July 1, 2026.
 
-### ~~7-day grace period for percent-graded flags~~ (deferred — not implemented)
+### ~~7-day grace period for percent-graded flags~~ (dropped as policy)
 
-**Deferred.** The AY 2026-2027 pipeline shipped without a due-date grace period:
+**Dropped (July 2026).** T&L officially dropped the grace period as policy — it
+will not be implemented. The AY 2026-2027 pipeline shipped without one:
 `is_expected` in `int_powerschool__gradebook_assignments_scores` has no due-date
 condition (its code comment points here). An assignment counts as expected the
-moment it is due. Revisit in a future year if T&L asks for it.
+moment it is due.
 
 The original design, kept for history: `percent_graded_min_not_met` should only
 fire for assignments that have been due for at least 7 days. At quarter grain
@@ -290,5 +291,5 @@ the inverse of a bare `max()`.
 - ~~**Percent-graded flag grain**~~ — resolved: shipped at per-assignment grain
   (`percent_graded_min_not_met` in
   `int_powerschool__gradebook_assignment_scores_rollup`, threshold 0.90, one
-  input to `assignment_has_flags`), without the 7-day grace condition (see the
-  deferred grace-period section above).
+  input to `assignment_has_flags`), without the 7-day grace condition (dropped
+  as policy — see the grace-period section above).

@@ -7,8 +7,9 @@
 
 **Goal:** Implement all AY 2026-2027 changes to the gradebook audit pipeline:
 annual config rollover for Newark, Camden, and Paterson; remove Miami; remove
-FYI, Summative 200, and ADA/GPA flags; add a 7-day grading grace period; add QTD
-cumulative assignment count; and remove the exceptions suppression mechanism.
+FYI, Summative 200, and ADA/GPA flags; add a 7-day grading grace period (later
+dropped as policy — see Step 4d.2); add QTD cumulative assignment count; and
+remove the exceptions suppression mechanism.
 
 **Architecture:** Task 1 is Google Sheets config only — creating AY 2026 flag
 rows while omitting deprecated ones deactivates those flags immediately without
@@ -615,13 +616,10 @@ Drop it using BigQuery `SELECT * EXCEPT`.
 
 ### 4d: `int_powerschool__gradebook_assignments_scores` — Sumner G5 fix + `is_expected` grace period
 
-Two changes to this model: fix the Sumner Elementary G5 → MS override hardcoded
-to `cc_academic_year = 2025`, and add a 7-day post-due grace period to
-`is_expected`. The grace period applies universally — all `is_expected_*`
-derived columns inherit it automatically, covering null, zero, missing, late,
-academic-dishonesty, and scored checks across every downstream consumer
-(`categories_teacher`, `assignments_teacher`, `assignments_student`,
-`fct_grades_assignments`).
+Two changes were planned for this model: fix the Sumner G5 → MS override
+hardcoded to `cc_academic_year = 2025` (done), and add a 7-day post-due grace
+period to `is_expected` (never implemented; **dropped as policy** in July 2026 —
+see Step 4d.2).
 
 **File:**
 `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql`
@@ -652,7 +650,10 @@ academic-dishonesty, and scored checks across every downstream consumer
   ) as school_level,
   ```
 
-- [x] **Step 4d.2: Add 7-day grace period to `is_expected`**
+- [x] ~~**Step 4d.2: Add 7-day grace period to `is_expected`**~~ — NOT
+      implemented; T&L **dropped the grace period as policy** (July 2026).
+      `is_expected` has no due-date condition. The sketch below is kept for
+      history only.
 
   In the `scores` CTE (line ~29), add a third `when` branch:
 
@@ -1926,8 +1927,8 @@ Complete replacement. Changes from the old model:
 - `total_expected_section_quarter_category` → `n_expected`;
   `total_expected_scored_section_quarter_category` → `n_expected_scored`;
   `percent_graded_for_quarter_class` → `percent_graded_for_assignment`
-- 7-day grace period handled upstream in step 4d.2 (`is_expected` on the scores
-  model)
+- 7-day grace period — dropped as policy (July 2026); `is_expected` on the
+  scores model has no due-date condition (see Step 4d.2)
 - `final` CTE eliminated — per-assignment grain means each group has exactly one
   row; `avg()` wrappers and `GROUP BY` removed; outer SELECT reads directly
   `from percent_graded as f`
@@ -2842,7 +2843,8 @@ Complete replacement. Changes from the old model:
 - All 4 remaining join conditions: remove
   `t.audit_qt_week_number = v.audit_qt_week_number`
 - All 4 WHERE clauses: remove `t.audit_start_date <= current_date(...)` and
-  `not t.is_current_week` (week dimension gone; grace period handled upstream)
+  `not t.is_current_week` (week dimension gone; grace period later dropped as
+  policy)
 - Branch 3 WHERE: remove `cte_grouping != 'student_course_category'` (vacuously
   true now)
 

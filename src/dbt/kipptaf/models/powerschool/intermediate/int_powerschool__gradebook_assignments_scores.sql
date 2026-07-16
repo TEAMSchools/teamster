@@ -26,8 +26,8 @@ with
 
             initcap(regexp_extract(a._dbt_source_project, r'kipp(\w+)')) as region,
 
-            -- no due-date grace period yet; a 7-day grace was scoped for
-            -- AY 2026-2027 but deferred, see design spec "7-day grace period"
+            -- no due-date grace period: the 7-day grace scoped for AY
+            -- 2026-2027 was dropped as policy (July 2026), see design spec
             case
                 when coalesce(s.isexempt, 0) = 1
                 then false
