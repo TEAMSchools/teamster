@@ -1,0 +1,36 @@
+select
+    * replace (
+        cast(cumulativedaysabsent as int) as cumulativedaysabsent,
+        cast(cumulativedayspresent as int) as cumulativedayspresent,
+        cast(cumulativestateabs as int) as cumulativestateabs,
+        cast(daysopen as int) as daysopen,
+        cast(deviceowner as int) as deviceowner,
+        cast(devicetype as int) as devicetype,
+        cast(homelessprimarynighttimeres as int) as homelessprimarynighttimeres,
+        cast(internetconnectivity as int) as internetconnectivity,
+        cast(languageacquisition as int) as languageacquisition,
+        cast(learningenvironment as int) as learningenvironment,
+        cast(lep_completion_date_refused as int) as lep_completion_date_refused,
+        cast(lep_tf as int) as lep_tf,
+        cast(reenrollmentsdcid as int) as reenrollmentsdcid,
+        cast(remotedaysabsent as int) as remotedaysabsent,
+        cast(remotedayspresent as int) as remotedayspresent,
+        cast(retained_tf as int) as retained_tf,
+        cast(sid_excludeenrollment as int) as sid_excludeenrollment,
+
+        cast(declassificationspeddate as date) as declassificationspeddate,
+        cast(districtentrydate as date) as districtentrydate,
+        cast(elp_screener_date as date) as elp_screener_date,
+        cast(lepbegindate as date) as lepbegindate,
+        cast(lepbegindate2 as date) as lepbegindate2,
+        cast(lependdate as date) as lependdate,
+        cast(liep_parent_refusal_date as date) as liep_parent_refusal_date,
+        cast(liependdate2 as date) as liependdate2,
+        cast(schoolentrydate as date) as schoolentrydate,
+        cast(sid_entrydate as date) as sid_entrydate,
+        cast(sid_exitdate as date) as sid_exitdate,
+        cast(withdrawal_date as date) as withdrawal_date,
+
+        cast(cast(pid_504_tf as int) as bool) as pid_504_tf
+    ),
+from {{ source("powerschool_dlt", "s_nj_ren_x") }}

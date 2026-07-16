@@ -1,0 +1,36 @@
+select
+    * except (
+        islimitcategoryenabled,
+        islimitcategoryeditable,
+        isminimumassignmentenabled,
+        isminimumassignmenteditable
+    ) replace (
+        cast(defaultdecimalcount as int) as defaultdecimalcount,
+        cast(gradeschoolconfigid as int) as gradeschoolconfigid,
+        cast(iscalcformulaeditable as int) as iscalcformulaeditable,
+        cast(iscalcmetriceditable as int) as iscalcmetriceditable,
+        cast(iscalcmetricschooledit as int) as iscalcmetricschooledit,
+        cast(iscalcprecisioneditable as int) as iscalcprecisioneditable,
+        cast(iscitizenshipdisplayed as int) as iscitizenshipdisplayed,
+        cast(isdropscoreeditable as int) as isdropscoreeditable,
+        cast(isgradescaleteachereditable as int) as isgradescaleteachereditable,
+        cast(ishigherstndautocalc as int) as ishigherstndautocalc,
+        cast(ishigherstndcalceditable as int) as ishigherstndcalceditable,
+        cast(ishighstandardeditable as int) as ishighstandardeditable,
+        cast(ismulticategoryallowed as int) as ismulticategoryallowed,
+        cast(ismulticategoryeditable as int) as ismulticategoryeditable,
+        cast(isrecentscoreeditable as int) as isrecentscoreeditable,
+        cast(issectstndweighteditable as int) as issectstndweighteditable,
+        cast(isstandardslimited as int) as isstandardslimited,
+        cast(isstandardslimitededitable as int) as isstandardslimitededitable,
+        cast(isstandardsshown as int) as isstandardsshown,
+        cast(isstandardsshownonasgmt as int) as isstandardsshownonasgmt,
+        cast(istraditionalgradeshown as int) as istraditionalgradeshown,
+        cast(isusingpercentforstndautocalc as int) as isusingpercentforstndautocalc,
+        cast(lockwarningoffset as int) as lockwarningoffset,
+        cast(minimumassignmentvalue as int) as minimumassignmentvalue,
+        cast(schoolsdcid as int) as schoolsdcid,
+        cast(termbinlockoffset as int) as termbinlockoffset,
+        cast(yearid as int) as yearid
+    ),
+from {{ source("powerschool_dlt", "gradeschoolconfig") }}
