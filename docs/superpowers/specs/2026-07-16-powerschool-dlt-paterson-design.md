@@ -9,7 +9,7 @@ Tracked in [#3807](https://github.com/TEAMSchools/teamster/issues/3807). Spike:
 Replace the homegrown PowerSchool ODBC sync with dlt, piloted at `kipppaterson`.
 Paterson is the one district without live ODBC today — its PowerSchool data
 arrives as CSV drops over Couchdrop SFTP (26 tables). The pilot gives Paterson a
-live Oracle connection via dlt at **full ODBC parity** (~68 tables, matching
+live Oracle connection via dlt at **full ODBC parity** (~57 tables, matching
 `kippnewark`'s table set), retires the Couchdrop path, and establishes the
 template the ODBC districts (`kippnewark`, `kippcamden`, `kippmiami`) migrate
 onto afterward.
@@ -18,7 +18,7 @@ onto afterward.
 
 1. One design covering both the Dagster/dlt ingestion layer and the dbt staging
    rework — for Paterson the staging swap is the acceptance test.
-1. Full ODBC parity table set (~68 tables), not just Paterson's current 26.
+1. Full ODBC parity table set (~57 tables), not just Paterson's current 26.
 1. Cutover validated pre-merge on the PR's branch deployment; **single PR**.
 1. Tiered cron schedules matching `kippnewark`'s cadence; no sensors, no Oracle
    staleness probes.
@@ -73,7 +73,7 @@ Add a paramiko-based port-forward method:
 
 Replaces `powerschool/sis/sftp/` (removed in the same PR):
 
-- `config/assets.yaml` — ~68 entries: `table_name`, `load_strategy` (only
+- `config/assets.yaml` — ~57 entries: `table_name`, `load_strategy` (only
   `full_refresh` valid in the pilot) and `schedule_tier` (`intraday` |
   `nightly`).
 - `assets.py` — builds per-table assets from YAML via the library factory.
@@ -96,7 +96,7 @@ BQ tables, keyless ADC load jobs, no GCS staging.
 ## dbt staging layer
 
 Third staging variant in the shared `powerschool` package:
-`src/dbt/powerschool/models/sis/staging/dlt/` (~68 models), alongside `odbc/`
+`src/dbt/powerschool/models/sis/staging/dlt/` (~57 models), alongside `odbc/`
 (82) and `sftp/` (65). Each model:
 
 - Reads a `powerschool_dlt` source resolving to
@@ -131,7 +131,7 @@ staging tables instead (below).
    - 26 overlapping tables: row counts, key-set equality (e.g. `dcid`), spot
      value checks on the divergence-prone classes (dates, numerics, free text
      with embedded newlines).
-   - ~42 net-new tables: no incumbent to compare; dbt contract enforcement +
+   - ~31 net-new tables: no incumbent to compare; dbt contract enforcement +
      non-empty checks.
 1. dbt Cloud CI builds the new staging variants + downstream off the populated
    dataset. CI may fire on push before branch-deployment materializations finish

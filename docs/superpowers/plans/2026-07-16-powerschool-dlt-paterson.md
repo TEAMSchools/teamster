@@ -6,7 +6,7 @@
 > checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace kipppaterson's Couchdrop-SFTP PowerSchool feed with dlt
-syncing ~68 tables live from Paterson's Oracle, plus the dbt `staging/dlt`
+syncing ~57 tables live from Paterson's Oracle, plus the dbt `staging/dlt`
 variant, in a single PR validated on the branch deployment.
 
 **Architecture:** New `libraries/dlt/powerschool/` factory (per-table
@@ -862,9 +862,17 @@ assets:
     }
 ```
 
-(56 intraday + 12 nightly = 68. Custom tables that may not exist in Paterson's
-Oracle — `u_clg_et_stu`, `u_clg_et_stu_alt`, `u_expectations`,
-`u_storedgrades_de` — get pruned in Task 5 if reflection fails.)
+**Scope correction (2026-07-16):** the block above was drafted from a grep that
+swept kippnewark's commented-out entries. 11 tables that Newark keeps DISABLED
+were removed to match Newark's ACTIVE set (45 intraday + 12 nightly = **57**):
+`gpprogresssubjectrequested`, `gpprogresssubjectwaived`,
+`gpprogresssubjwaivedapplied`, `gpselectedcrs`, `gpselectedcrtype`,
+`gpselector`, `gpstudentwaiver`, `gptarget`, `gpversion`, `gradplan`,
+`s_nj_usr_x`. The real `assets.yaml` and the test count below reflect 57.
+
+Custom tables that may not exist in Paterson's Oracle — `u_clg_et_stu`,
+`u_clg_et_stu_alt`, `u_expectations`, `u_storedgrades_de` — get pruned in Task 5
+if reflection fails.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -882,7 +890,7 @@ def test_paterson_powerschool_dlt_asset_keys():
 
     config = yaml.safe_load(config_file.read_text())
 
-    assert len(config["assets"]) == 68
+    assert len(config["assets"]) == 57
 
     keys = {key for a in assets.assets for key in a.keys}
     assert keys == {
