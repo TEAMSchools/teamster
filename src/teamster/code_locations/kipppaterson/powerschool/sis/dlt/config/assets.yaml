@@ -114,18 +114,6 @@ assets:
   - table_name: testscore
     load_strategy: full_refresh
     schedule_tier: intraday
-  - table_name: u_clg_et_stu
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: u_clg_et_stu_alt
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: u_expectations
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: u_storedgrades_de
-    load_strategy: full_refresh
-    schedule_tier: intraday
   - table_name: u_studentsuserfields
     load_strategy: full_refresh
     schedule_tier: intraday
