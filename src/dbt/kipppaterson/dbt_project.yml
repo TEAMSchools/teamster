@@ -112,87 +112,9 @@ models:
         odbc:
           +enabled: false
         sftp:
+          +enabled: false
+        dlt:
           +enabled: true
-          stg_powerschool__assignmentscore:
-            +enabled: false
-          stg_powerschool__assignmentcategoryassoc:
-            +enabled: false
-          stg_powerschool__assignmentsection:
-            +enabled: false
-          stg_powerschool__districtteachercategory:
-            +enabled: false
-          stg_powerschool__gpnode:
-            +enabled: false
-          stg_powerschool__gpprogresssubject:
-            +enabled: false
-          stg_powerschool__gpprogresssubjectearned:
-            +enabled: false
-          stg_powerschool__gpprogresssubjectenrolled:
-            +enabled: false
-          stg_powerschool__gradecalcformulaweight:
-            +enabled: false
-          stg_powerschool__gradecalcschoolassoc:
-            +enabled: false
-          stg_powerschool__gradecalculationtype:
-            +enabled: false
-          stg_powerschool__gradeformulaset:
-            +enabled: false
-          stg_powerschool__gradescaleitem:
-            +enabled: false
-          stg_powerschool__gradeschoolconfig:
-            +enabled: false
-          stg_powerschool__gradeschoolformulaassoc:
-            +enabled: false
-          stg_powerschool__gradesectionconfig:
-            +enabled: false
-          stg_powerschool__log:
-            +enabled: false
-          stg_powerschool__pgfinalgrades:
-            +enabled: false
-          stg_powerschool__roledef:
-            +enabled: false
-          stg_powerschool__s_stu_x:
-            +enabled: false
-          stg_powerschool__sectionteacher:
-            +enabled: false
-          stg_powerschool__studentrace:
-            +enabled: false
-          stg_powerschool__studenttest:
-            +enabled: false
-          stg_powerschool__studenttestscore:
-            +enabled: false
-          stg_powerschool__teachercategory:
-            +enabled: false
-          stg_powerschool__test:
-            +enabled: false
-          stg_powerschool__testscore:
-            +enabled: false
-          stg_powerschool__u_clg_et_stu:
-            +enabled: false
-          stg_powerschool__u_clg_et_stu_alt:
-            +enabled: false
-          stg_powerschool__codeset:
-            +enabled: false
-          stg_powerschool__emailaddress:
-            +enabled: false
-          stg_powerschool__originalcontactmap:
-            +enabled: false
-          stg_powerschool__person:
-            +enabled: false
-          stg_powerschool__personaddress:
-            +enabled: false
-          stg_powerschool__personaddressassoc:
-            +enabled: false
-          stg_powerschool__personemailaddressassoc:
-            +enabled: false
-          stg_powerschool__personphonenumberassoc:
-            +enabled: false
-          stg_powerschool__phonenumber:
-            +enabled: false
-          stg_powerschool__studentcontactassoc:
-            +enabled: false
-          stg_powerschool__studentcontactdetail:
-            +enabled: false
 
 sources:
   amplify:

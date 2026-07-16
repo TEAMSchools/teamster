@@ -1,7 +1,26 @@
 select
-    * replace (
-        cast(coursesdcid as int) as coursesdcid,
-        cast(exclude_course_submission_tf as int) as exclude_course_submission_tf,
-        cast(sla_include_tf as int) as sla_include_tf
-    ),
+    cte_test_name_code,
+    whocreated,
+    whencreated,
+    whomodified,
+    whenmodified,
+    block_schedule_session,
+    ap_course_subject,
+    course_level,
+    course_sequence_code,
+    course_span,
+    course_type,
+    ctecollegecredits,
+    ctetestdevelopercode,
+    ctetestname,
+    nces_course_id,
+    nces_subject_area,
+    county_code_override,
+    district_code_override,
+    school_code_override,
+    dual_institution,
+
+    cast(coursesdcid as int) as coursesdcid,
+    cast(exclude_course_submission_tf as int) as exclude_course_submission_tf,
+    cast(sla_include_tf as int) as sla_include_tf,
 from {{ source("powerschool_dlt", "s_nj_crs_x") }}

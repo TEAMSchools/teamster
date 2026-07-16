@@ -1,6 +1,7 @@
 select
     `name`,
     `description`,
+    categorytype,
     color,
     defaultpublishstate,
     defaultpublishoption,
@@ -18,12 +19,15 @@ select
     defaultweight,
     defaulttotalvalue,
 
+    cast(teachercategoryid as int) as teachercategoryid,
     cast(districtteachercategoryid as int) as districtteachercategoryid,
+    cast(usersdcid as int) as usersdcid,
     cast(isinfinalgrades as int) as isinfinalgrades,
     cast(isactive as int) as isactive,
     cast(isusermodifiable as int) as isusermodifiable,
+    cast(teachermodified as int) as teachermodified,
     cast(displayposition as int) as displayposition,
     cast(isdefaultpublishscores as int) as isdefaultpublishscores,
     cast(defaultdaysbeforedue as int) as defaultdaysbeforedue,
     cast(whomodifiedid as int) as whomodifiedid,
-from {{ source("powerschool_dlt", "districtteachercategory") }}
+from {{ source("powerschool_dlt", "teachercategory") }}
