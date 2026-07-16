@@ -1,7 +1,12 @@
+import logging
+import select
 import socket
+import socketserver
 import subprocess
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
@@ -192,3 +197,89 @@ class SSHResource(DagsterSSHResource):
         time.sleep(1.0)
 
         return ssh_tunnel
+
+    @contextmanager
+    def open_ssh_tunnel_paramiko(
+        self, local_port: int = 1521, remote_port: int = 1521
+    ) -> Iterator[int]:
+        """In-process SSH local port forward.
+
+        Replaces the sshpass subprocess for the dlt PowerSchool path: no
+        password file mount, no readiness race, host-key verification kept
+        (get_connection handles legacy ssh-rsa and transient-failure retry).
+        Yields the bound local port; pass local_port=0 for an ephemeral port.
+        """
+        client = self.get_connection()
+
+        try:
+            transport = check.not_none(value=client.get_transport())
+
+            server = _ForwardServer(
+                server_address=("127.0.0.1", local_port),
+                RequestHandlerClass=_make_forward_handler(
+                    transport=transport,
+                    remote_host=check.not_none(value=self.tunnel_remote_host),
+                    remote_port=remote_port,
+                    log=self.log,
+                ),
+            )
+
+            server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+            server_thread.start()
+
+            try:
+                yield server.server_address[1]
+            finally:
+                server.shutdown()
+                server.server_close()
+        finally:
+            client.close()
+
+
+class _ForwardServer(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+
+
+def _make_forward_handler(
+    transport: Transport,
+    remote_host: str,
+    remote_port: int,
+    log: logging.Logger,
+) -> type[socketserver.BaseRequestHandler]:
+    class Handler(socketserver.BaseRequestHandler):
+        def handle(self):
+            try:
+                channel = transport.open_channel(
+                    kind="direct-tcpip",
+                    dest_addr=(remote_host, remote_port),
+                    src_addr=self.request.getpeername(),
+                )
+            except Exception as e:
+                log.warning(
+                    f"direct-tcpip channel to {remote_host}:{remote_port} failed: {e}"
+                )
+                return
+
+            if channel is None:
+                log.warning("direct-tcpip channel rejected by server")
+                return
+
+            try:
+                while True:
+                    r, _, _ = select.select([self.request, channel], [], [])
+                    if self.request in r:
+                        data = self.request.recv(16384)
+                        if len(data) == 0:
+                            break
+                        channel.send(data)
+                    if channel in r:
+                        data = channel.recv(16384)
+                        if len(data) == 0:
+                            break
+                        self.request.send(data)
+            finally:
+                channel.close()
+                self.request.close()
+
+    return Handler
