@@ -22,6 +22,15 @@ for large-table efficiency. Key parameters:
 - `partition_column` — column to filter by partition window
 - `partition_size` / `prefetch_rows` / `array_size` — Oracle cursor tuning knobs
 
+**Per-table cursor + key (not uniform).** The incremental cursor and merge key
+vary by table: `students`/`storedgrades` use `transaction_date` (no
+`whenmodified` column); `assignmentscore` uses `whenmodified` and keys on
+`assignmentscoreid` (no `dcid`). Source of truth:
+`code_locations/kippnewark/powerschool/assets.py` + `config/*.yaml`. Verify real
+Oracle column names/case without a tunnel by querying the landed
+`kippnewark_powerschool.src_powerschool__*` external tables via the BigQuery
+MCP.
+
 **`sensors.py`** (`build_powerschool_asset_sensor()`): Sensor that detects stale
 partitioned assets by comparing the last materialized partition's
 `updated_at`-equivalent column against current data, triggering backfill runs.

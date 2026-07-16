@@ -146,6 +146,20 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
+- **A mid-session Codespace restart can delete `.worktrees/` and desync local
+  git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
+  HEAD that reads as the pre-session commit yet holds merged content). Trust
+  GitHub over local git for ground truth: `gh api .../branches/main` and
+  `gh api .../pulls/<n>` (`merged` / `merge_commit_sha`), then re-fetch and
+  recreate any lost worktree off `origin/main`.
+
+- **Reverting experimental code to a docs-only PR**:
+  `git checkout origin/main -- <file>` restores main's CURRENT blob, which can
+  differ from the branch's merge-base and leak main's advancement into the
+  three-dot PR diff. Restore to the merge-base instead —
+  `git checkout $(git merge-base origin/main HEAD) -- <file>` — then verify with
+  `git diff --stat origin/main...HEAD`.
+
 - **Auto-classifier doesn't see verbal approval or `AskUserQuestion` answers** —
   only the assistant message immediately preceding the tool call. After
   out-of-band consent, re-confirm in plain text the same turn or the write will
@@ -158,6 +172,14 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the classifier (which can't see `AskUserQuestion` answers) allows it.
   `gh issue develop --name <branch>` also fails when the branch contains trigger
   words like `log`, `auth`, `secret` — rename and retry.
+
+- **Destructive SQL / shared-resource mutations need _named_ consent.** The
+  auto-classifier ("Cloud Storage Mass Delete", "Shared Cluster Mutation")
+  rejects a warehouse `DELETE`/`DROP` or a bulk `launch_multiple_runs` even
+  after "yes"/"resume" and an agent plain-text re-confirm — the USER's message
+  must name the specific operation + target ("delete rows where X from
+  `dataset.table`"). Draft the exact statement and have them restate it, or hand
+  it to their terminal.
 
 - **`git push origin main` is hard-blocked by the classifier** regardless of
   in-conversation consent (AskUserQuestion answers or plain-text
@@ -211,7 +233,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   monitor for a re-review after a fix push. A PR with all checks green but
   `mergeable_state: blocked` (from `gh api repos/<owner>/<repo>/pulls/<n>`) is
   awaiting a required review approval (CODEOWNERS `src/dbt/` =
-  analytics-engineers), not a CI failure.
+  analytics-engineers), not a CI failure. `claude-review` may leave TWO issue
+  comments — an initial "Reviewing…" status stub and a separate final findings
+  comment — and the stub can stay stuck mid-render even after the check-run
+  reports `success`. Fetch ALL issue comments and read the newest / longest, not
+  the first.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -528,6 +554,16 @@ or mart `facts`/`dimensions`/`bridges`) —
 `cursor=<evaluationId of the oldest record returned>` — not a timestamp or
 opaque token.
 
+- **The dagster MCP targets a branch deployment via a `deployment` arg.**
+  `launch_run`, `launch_multiple_runs`, `get_run`, `get_run_logs`,
+  `get_run_compute_logs`, and `terminate_runs` all accept `deployment=<name>`
+  (omit for prod). `list_deployments` may return only `prod` — recover a PR's
+  branch-deployment name (an opaque hash) from its `deploy` job log line
+  `Deploying to branch deployment <hash>`. A dormant branch deployment throws
+  `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on the first call —
+  retry after ~90s to let the code location warm. BigQuery/GCS reads are
+  deployment-agnostic, so downstream data validation via the BigQuery MCP works
+  regardless of which deployment wrote the data.
 - **Prod dbt models are materialized by `<loc>__automation_condition_sensor`
   runs** (job `__ASSET_JOB`, tag `dagster/from_automation_condition`), NOT dbt
   Cloud (CI-only) or crons. A merged model SQL change goes stale on CODE and is
@@ -582,6 +618,14 @@ wait — no `step_execution_timeout` knob exists. When a run hits `max_runtime`
 having done little work, suspect step-pod `FailedScheduling`, not slow code or
 upstream APIs.
 
+Concurrency-**pool**-blocked runs stay QUEUED, not STARTED (run blocking is the
+Dagster >=1.10 default; repo is 1.13), so pool queue-wait does NOT burn
+`dagster/max_runtime` (it counts from STARTED). With `k8s_job_executor` (all
+locations) each step runs in its own pod (compute is `pid 1`) and a resource's
+`setup_for_execution` runs there only after the op's pool slot is claimed — so a
+pooled resource's short-lived token/session is not aged by queue-wait. Size a
+pooled asset's `max_runtime` for its own run, not for waiting behind siblings.
+
 GKE Autopilot top-of-hour fan-out is the dominant cause of step-pod scheduling
 latency. `FailedScheduling` events trace to "Insufficient cpu/memory" (3-9 min
 waits) while nodes provision. Image pull is ~2s on cached nodes — don't chase
@@ -601,6 +645,12 @@ position expecting type 'String'".
 Authenticates as impersonated service account
 `codespaces@teamster-332318.iam.gserviceaccount.com`. If `PermissionDenied`,
 check the `CodespacesRole` custom IAM role, not user IAM bindings.
+
+`gcloud` via Bash is denied by a `Bash(gcloud *)` deny rule (full-path or
+variable-aliased invocations are classifier-flagged as evasion — don't). Prefer
+the GKE MCP (`list_clusters`/`get_cluster`) and gcp-observability MCP; for
+Compute resources with no MCP coverage (Cloud NAT, routers) or the gcloud
+commands noted elsewhere in this file, hand them to the user to run.
 
 `mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
 `end_time`), not camelCase. Results cap at 100 — paginate by using the last
@@ -683,6 +733,18 @@ shell-quoting. `--max_rows` defaults to 100 — raise it for full dumps. To hand
 PII to Ops, redirect to a local `.claude/scratch/*.csv`
 (`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
 verify with `wc -l`, and reference the FILE (never the values) in any tracker.
+
+**`bq` CLI auth expires mid-session** — it uses gcloud USER creds (not the MCP's
+SA), so SELECTs that worked early fail later with "Reauthentication failed"
+(non-interactive can't `gcloud auth login`). The BQ MCP keeps working but is
+SELECT-only, so **DML/DDL (`DELETE`/`CREATE`/`DROP`) must be handed to the
+user's terminal**.
+
+**BQ merge/upsert cost**: clustering the target does NOT prune a dynamic-join
+`MERGE` / `DELETE ... WHERE EXISTS` (only partitioning + a _static_ predicate
+prunes). `--dry_run` reflects partition pruning but NOT clustering pruning —
+measure clustering via actual `total_bytes_billed` in
+`INFORMATION_SCHEMA.JOBS_BY_PROJECT`.
 
 Pre-merge queries against PR-branch schema use
 `dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is
