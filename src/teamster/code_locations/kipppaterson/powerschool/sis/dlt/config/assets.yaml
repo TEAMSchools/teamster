@@ -30,18 +30,6 @@ assets:
   - table_name: gen
     load_strategy: full_refresh
     schedule_tier: intraday
-  - table_name: gpnode
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpprogresssubject
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpprogresssubjectearned
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpprogresssubjectenrolled
-    load_strategy: full_refresh
-    schedule_tier: intraday
   - table_name: gradescaleitem
     load_strategy: full_refresh
     schedule_tier: intraday
@@ -152,9 +140,6 @@ assets:
     load_strategy: full_refresh
     schedule_tier: nightly
   - table_name: gradeschoolformulaassoc
-    load_strategy: full_refresh
-    schedule_tier: nightly
-  - table_name: gradesectionconfig
     load_strategy: full_refresh
     schedule_tier: nightly
   - table_name: teachercategory
