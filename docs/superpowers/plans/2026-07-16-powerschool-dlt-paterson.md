@@ -1079,7 +1079,12 @@ Refs #3807"
 
 ---
 
-### Task 5: full materialization, prune, and `student_email` discovery
+### Task 5: full materialization and prune
+
+> **Decision (2026-07-16):** `student_email` is **retired**, not rebuilt from a
+> dlt source. It was a Paterson-only Couchdrop CSV with no Oracle counterpart;
+> the discovery step below is removed and Task 8 retires the model + its
+> `kipptaf` consumer.
 
 **Files:**
 
@@ -1110,18 +1115,8 @@ Refs #3807"
       adapter, drop the affected tables in BQ (hand `DROP` statements to the
       user — `replace` disposition cannot change existing column types), and
       re-run.
-- [ ] **Step 4: `student_email` discovery.** The SFTP CSV (`email` +
-      `student_number`) has no known Oracle table. Locate the source: query the
-      landed candidates for a populated email column — `students` (fields like
-      `person_id`), `studentcorefields`, `u_studentsuserfields`, `s_nj_stu_x`.
-      If none carry it, sync the PS core contact tables (`person`,
-      `emailaddress`, `personemailaddressassoc`) as a one-off probe (add
-      temporarily to `assets.yaml`, materialize, inspect). Compare a few hundred
-      rows' worth of aggregate agreement (count of matching
-      `student_number→email` pairs) against the SFTP-fed
-      `stg_powerschool__student_email`. Record the finding on the issue
-      (aggregates only). The winning source stays in `assets.yaml`; Task 6
-      writes the dlt `stg_powerschool__student_email` from it.
+- [ ] **Step 4: (removed)** `student_email` is retired — no discovery needed.
+      See the Task 5 decision note above and Task 8.
 
 ---
 
@@ -1197,12 +1192,11 @@ sources:
 VIRTUAL_ENV= uv --directory /workspaces/teamster/.worktrees/cbini/feat/claude-powerschool-dlt-paterson run python /workspaces/teamster/.worktrees/cbini/feat/claude-powerschool-dlt-paterson/scripts/gen_powerschool_dlt_staging.py
 ```
 
-- [ ] **Step 3: Handle the models with no odbc/sftp counterpart or special
-      cases**: `stg_powerschool__student_email` (write by hand from the Task 5
-      discovery source, keeping the two-column contract
-      `email, student_number int64`); the kipppaterson-local
-      `stg_powerschool__u_studentsuserfields` override (port to the dlt source
-      if it reads sftp).
+- [ ] **Step 3: Handle special-case models.** `stg_powerschool__student_email`
+      is **retired** — do NOT create a dlt variant of it (Task 8 removes the
+      model and its consumer). For the kipppaterson-local
+      `stg_powerschool__u_studentsuserfields` override, port it to the dlt
+      source if it reads sftp.
 - [ ] **Step 4: Swap the Paterson project config** in
       `src/dbt/kipppaterson/dbt_project.yml`: under `powerschool.sis.staging`,
       set `sftp: +enabled: false` (drop its per-model sub-entries) and
@@ -1260,7 +1254,16 @@ uv run dbt build --select staging.dlt+ --project-dir /workspaces/teamster/.workt
 
 ---
 
-### Task 8: retire the SFTP path
+### Task 8: retire the SFTP path (and `student_email`)
+
+> **`student_email` retirement (decision 2026-07-16).** The Paterson-only
+> `stg_powerschool__student_email` model has a real downstream consumer:
+> `kipptaf` `base_powerschool__student_enrollments.sql:113`
+> `if(ar.region = 'Paterson', se.email, sl.google_email) as student_email_google`
+> (join at `:219`). Retiring the source requires a replacement for the Paterson
+> branch of that column — **resolution pending user answer** (see the
+> controller's question). Steps 6-7 below implement whichever the user chooses;
+> do not code them until the resolution is recorded here.
 
 **Files:**
 
@@ -1297,6 +1300,17 @@ uv run dbt build --select staging.dlt+ --project-dir /workspaces/teamster/.workt
 - [ ] **Step 5: Commit** —
       `feat(kipppaterson)!: retire powerschool couchdrop sftp path` (the `!`
       marks the asset-key removal).
+- [ ] **Step 6: Retire `student_email` (per resolution above).** Remove the
+      Paterson `stg_powerschool__student_email` (do not create a dlt variant;
+      remove/disable the sftp one and its source entry) AND the `kipptaf`
+      `stg_powerschool__student_email.sql` + its properties + the
+      `sources-kipppaterson.yml` entry.
+- [ ] **Step 7: Update the `kipptaf` consumer.** Edit
+      `base_powerschool__student_enrollments.sql` (drop the `se` join at `:219`
+      and rewrite `student_email_google` at `:113` per the recorded resolution).
+      Build `base_powerschool__student_enrollments+` on the kipptaf project to
+      confirm downstream marts still build green. Commit separately:
+      `refactor(kipptaf): retire powerschool student_email source`.
 
 ---
 
