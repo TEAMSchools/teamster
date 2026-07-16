@@ -2,7 +2,6 @@ from dagster import (
     AssetSelection,
     AutomationConditionSensorDefinition,
     Definitions,
-    EnvVar,
     load_assets_from_modules,
 )
 from dagster_dlt import DagsterDltResource
@@ -20,7 +19,10 @@ from teamster.code_locations.kipppaterson import (
     pearson,
     powerschool,
 )
-from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
+from teamster.code_locations.kipppaterson.resources import (
+    FINALSITE_RESOURCE,
+    SSH_POWERSCHOOL,
+)
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
@@ -33,7 +35,6 @@ from teamster.core.resources import (
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
 )
-from teamster.libraries.ssh.resources import SSHResource
 
 defs = Definitions(
     executor=k8s_job_executor,
@@ -75,13 +76,6 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
-        "ssh_powerschool": SSHResource(
-            remote_host=EnvVar("PS_SSH_HOST"),
-            remote_port=EnvVar.int("PS_SSH_PORT"),
-            username=EnvVar("PS_SSH_USERNAME"),
-            password=EnvVar("PS_SSH_PASSWORD"),
-            tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
-            enable_legacy_rsa=True,
-        ),
+        "ssh_powerschool": SSH_POWERSCHOOL,
     },
 )

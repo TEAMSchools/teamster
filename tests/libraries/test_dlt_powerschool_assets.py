@@ -52,6 +52,16 @@ def test_probe_signature_empty_table_none_cursor():
     assert sig == {"count": 0, "max_cursor": None}
 
 
+def test_probe_signature_non_datetime_cursor_stringified():
+    # Guard for the ODBC-district template: a future table with a numeric or
+    # string change column has no .isoformat(); it must stringify, not raise.
+    conn = FakeConnection((7, 12345))
+
+    sig = probe_signature(conn, "some_table", "numeric_cursor")
+
+    assert sig == {"count": 7, "max_cursor": "12345"}
+
+
 def test_powerschool_table_dataclass():
     t = PowerSchoolTable(name="students", cursor_column="transaction_date")
     n = PowerSchoolTable(name="test", cursor_column=None)
@@ -72,9 +82,9 @@ def test_factory_builds_single_subsettable_multiasset():
     )
 
     assert {k.to_user_string() for k in assets_def.keys} == {
-        "kipppaterson/powerschool/students",
-        "kipppaterson/powerschool/users",
-        "kipppaterson/powerschool/test",
+        "kipppaterson/powerschool/sis/students",
+        "kipppaterson/powerschool/sis/users",
+        "kipppaterson/powerschool/sis/test",
     }
     assert assets_def.can_subset is True
     assert assets_def.op.name == "kipppaterson__powerschool"
@@ -196,6 +206,23 @@ def test_assets_module_exposes_single_def():
 
     assert len(assets) == 1
     assert len(list(assets[0].keys)) == 48
+
+
+def test_tier_targets_sis_keys_and_counts():
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
+        _tier_targets,
+    )
+
+    intraday = _tier_targets("intraday")
+    nightly = _tier_targets("nightly")
+
+    assert len(intraday) == 23
+    assert len(nightly) == 25
+    assert all(
+        t.startswith("kipppaterson/powerschool/sis/") for t in intraday + nightly
+    )
+    assert "kipppaterson/powerschool/sis/students" in intraday
+    assert "kipppaterson/powerschool/sis/teachercategory" in nightly
 
 
 def test_compute_changed_no_cursor_table_always_included():

@@ -1,6 +1,7 @@
 import os
 from collections.abc import Iterator
 from dataclasses import dataclass
+from datetime import date, datetime
 from urllib.parse import quote
 
 import dlt
@@ -20,6 +21,10 @@ from teamster.libraries.ssh.resources import SSHResource
 # SQLAlchemy reflection needs the owner schema explicitly or it raises
 # NoSuchTableError.
 ORACLE_SCHEMA = "ps"
+
+# All PowerSchool tables land under one dlt source/pipeline named "powerschool".
+# The `sis` asset-key segment mirrors the `powerschool/enrollment/*` namespace.
+_SOURCE_NAME = "powerschool"
 
 
 @dataclass(frozen=True)
@@ -48,10 +53,16 @@ def probe_signature(
         sa.text(f"SELECT COUNT(*), MAX({cursor_column}) FROM {table_name}")
     ).one()
 
-    return {
-        "count": count,
-        "max_cursor": max_cursor.isoformat() if max_cursor is not None else None,
-    }
+    if max_cursor is None:
+        max_cursor_value = None
+    elif isinstance(max_cursor, (datetime, date)):
+        max_cursor_value = max_cursor.isoformat()
+    else:
+        # Non-temporal cursor (e.g. a numeric change column on a future table);
+        # store its string form so the signature stays JSON-serializable.
+        max_cursor_value = str(max_cursor)
+
+    return {"count": count, "max_cursor": max_cursor_value}
 
 
 def _compute_changed(
@@ -116,11 +127,50 @@ class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
         asset_spec = super().get_asset_spec(data)
 
         asset_spec = asset_spec.replace_attributes(
-            key=AssetKey([self.code_location, "powerschool", data.resource.name]),
+            key=AssetKey(
+                [self.code_location, "powerschool", "sis", data.resource.name]
+            ),
             deps=[],
         )
 
         return asset_spec.merge_attributes(kinds={"oracle"})
+
+
+def _build_resource(table: PowerSchoolTable, signature: dict | None):
+    """Build one full-replace dlt resource for a PowerSchool table.
+
+    When a signature is provided it is persisted to the resource's dlt state
+    with the load package (so the next run can detect drift). No-cursor tables
+    are passed signature=None and carry no stored signature.
+    """
+
+    @dlt.resource(name=table.name, write_disposition="replace")
+    def _table_rows() -> Iterator:
+        if signature is not None:
+            dlt.current.resource_state()["signature"] = signature
+        yield from sql_table(
+            credentials=_oracle_connection_url(),
+            schema=ORACLE_SCHEMA,
+            table=table.name,
+            backend="pyarrow",
+            reflection_level="full_with_precision",
+            defer_table_reflect=True,
+            table_adapter_callback=remove_nullability_adapter,
+            type_adapter_callback=oracle_number_adapter,
+        )
+
+    return _table_rows
+
+
+def _build_source(selected: list[PowerSchoolTable], signatures: dict[str, dict]):
+    """Build the dlt source narrowed to `selected`, wiring each table's signature."""
+
+    @dlt.source(name=_SOURCE_NAME)
+    def _src():
+        for table in selected:
+            yield _build_resource(table, signatures.get(table.name))
+
+    return _src()
 
 
 def build_powerschool_dlt_assets(
@@ -140,38 +190,8 @@ def build_powerschool_dlt_assets(
     tables are untouched. Schedules subset the multi-asset per tier. See
     docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md.
     """
-    source_name = "powerschool"
-
-    def _build_resource(table: PowerSchoolTable, signature: dict | None):
-        @dlt.resource(name=table.name, write_disposition="replace")
-        def _table_rows() -> Iterator:
-            # Persist the just-probed signature with this load package so the
-            # next run detects drift. No-cursor tables carry no signature.
-            if signature is not None:
-                dlt.current.resource_state()["signature"] = signature
-            yield from sql_table(
-                credentials=_oracle_connection_url(),
-                schema=ORACLE_SCHEMA,
-                table=table.name,
-                backend="pyarrow",
-                reflection_level="full_with_precision",
-                defer_table_reflect=True,
-                table_adapter_callback=remove_nullability_adapter,
-                type_adapter_callback=oracle_number_adapter,
-            )
-
-        return _table_rows
-
-    def _build_source(selected: list[PowerSchoolTable], signatures: dict[str, dict]):
-        @dlt.source(name=source_name)
-        def _src():
-            for table in selected:
-                yield _build_resource(table, signatures.get(table.name))
-
-        return _src()
-
     dlt_pipeline = dlt.pipeline(
-        pipeline_name=source_name,
+        pipeline_name=_SOURCE_NAME,
         # No `autodetect_schema=True`: oracle_number_adapter +
         # full_with_precision reflection are the authoritative decimal schema
         # (see oracle_number_adapter docstring).
@@ -182,7 +202,7 @@ def build_powerschool_dlt_assets(
 
     translator = PowerSchoolDagsterDltTranslator(code_location)
     tables_by_key = {
-        AssetKey([code_location, "powerschool", t.name]): t for t in tables
+        AssetKey([code_location, "powerschool", "sis", t.name]): t for t in tables
     }
 
     @dlt_assets(
@@ -217,7 +237,7 @@ def build_powerschool_dlt_assets(
                     "as changed"
                 )
 
-            stored = _stored_signatures(dlt_pipeline, source_name)
+            stored = _stored_signatures(dlt_pipeline, _SOURCE_NAME)
 
             # Probe every selected table that has a cursor column (one shared
             # engine over the single tunnel).
@@ -243,13 +263,27 @@ def build_powerschool_dlt_assets(
             if not changed:
                 return  # idle tick: nothing to load
 
-            yield from dlt.run(
-                context=context,
-                dlt_source=_build_source(changed, current),
-                dlt_pipeline=dlt_pipeline,
-                dagster_dlt_translator=translator,
-                write_disposition="replace",
-            )
+            try:
+                # fetch_row_count() attaches an authoritative per-table row_count
+                # to each materialization's metadata (surfaced in the asset
+                # catalog) alongside dagster-dlt's default load metadata.
+                yield from dlt.run(
+                    context=context,
+                    dlt_source=_build_source(changed, current),
+                    dlt_pipeline=dlt_pipeline,
+                    dagster_dlt_translator=translator,
+                    write_disposition="replace",
+                ).fetch_row_count()
+            except Exception:
+                # Surface dlt's per-table extracted row counts in the run log so a
+                # load failure is legible without walking the exception chain.
+                trace = dlt_pipeline.last_trace
+                if trace is not None and trace.last_normalize_info is not None:
+                    context.log.info(
+                        "dlt normalize row counts before failure: "
+                        f"{trace.last_normalize_info.row_counts}"
+                    )
+                raise
 
     return _assets
 

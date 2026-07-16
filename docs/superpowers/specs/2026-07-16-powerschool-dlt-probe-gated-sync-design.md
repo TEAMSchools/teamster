@@ -27,8 +27,9 @@ enough (37/37 tables in ~202s wall-clock, unthrottled) — the redesign case is
 
 One factory builds **one `@dlt_assets`** over one `@dlt.source` containing all
 48 table resources, one `dlt.pipeline`, one dlt state, landing in the existing
-`dagster_kipppaterson_dlt_powerschool` dataset. Asset keys
-(`kipppaterson/powerschool/{table}`), BigQuery table names, and the dbt
+`dagster_kipppaterson_dlt_powerschool` dataset. Asset keys gain a `sis` segment
+(`kipppaterson/powerschool/sis/{table}`, parallel to the
+`powerschool/enrollment/*` namespace); BigQuery table names and the dbt
 `staging/dlt` variant are unchanged. `PowerSchoolODBCResource` is eliminated for
 Paterson.
 

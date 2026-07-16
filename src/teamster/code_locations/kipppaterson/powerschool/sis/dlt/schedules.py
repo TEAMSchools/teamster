@@ -10,36 +10,36 @@ config = yaml.safe_load(config_file.read_text())
 
 _VALID_SCHEDULE_TIERS = {"intraday", "nightly"}
 
-_invalid_tier_assets = [
-    a for a in config["assets"] if a["schedule_tier"] not in _VALID_SCHEDULE_TIERS
-]
-if _invalid_tier_assets:
-    raise ValueError(
-        "Invalid schedule_tier for table(s): "
-        + ", ".join(
-            f"{a['table_name']!r} ({a['schedule_tier']!r})"
-            for a in _invalid_tier_assets
-        )
-        + f"; expected one of {sorted(_VALID_SCHEDULE_TIERS)}"
-    )
-
-# no-cursor tables cannot be probe-gated, so they must not run intraday
-_ungated_intraday = [
-    a
-    for a in config["assets"]
-    if a["schedule_tier"] == "intraday" and a["cursor_column"] is None
-]
-if _ungated_intraday:
-    raise ValueError(
-        "intraday tables require a cursor_column: "
-        + ", ".join(a["table_name"] for a in _ungated_intraday)
-    )
-
 
 def _tier_targets(tier: str) -> list[str]:
+    assets = config["assets"]
+
+    invalid = [a for a in assets if a["schedule_tier"] not in _VALID_SCHEDULE_TIERS]
+    if invalid:
+        raise ValueError(
+            "Invalid schedule_tier for table(s): "
+            + ", ".join(
+                f"{a['table_name']!r} ({a['schedule_tier']!r})" for a in invalid
+            )
+            + f"; expected one of {sorted(_VALID_SCHEDULE_TIERS)}"
+        )
+
+    if tier == "intraday":
+        # no-cursor tables cannot be probe-gated, so they must not run intraday
+        ungated = [
+            a
+            for a in assets
+            if a["schedule_tier"] == "intraday" and a["cursor_column"] is None
+        ]
+        if ungated:
+            raise ValueError(
+                "intraday tables require a cursor_column: "
+                + ", ".join(a["table_name"] for a in ungated)
+            )
+
     return [
-        f"{CODE_LOCATION}/powerschool/{a['table_name']}"
-        for a in config["assets"]
+        f"{CODE_LOCATION}/powerschool/sis/{a['table_name']}"
+        for a in assets
         if a["schedule_tier"] == tier
     ]
 

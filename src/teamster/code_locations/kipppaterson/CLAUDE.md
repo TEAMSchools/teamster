@@ -39,9 +39,10 @@ the multi-asset (intraday 15-min = 23 cursor tables; nightly = 25). Design:
 
 Consequences:
 
-- `dlt` (`DagsterDltResource`) + `ssh_powerschool` (`SSHResource`) resources in
-  `definitions.py`; PS Oracle + SSH creds wired via `dagster-cloud.yaml`
-  (`PS_DB_*`, `PS_SSH_*`)
+- `dlt` (`DagsterDltResource`) wired in `definitions.py`; `ssh_powerschool`
+  (`SSHResource`) defined as `SSH_POWERSCHOOL` in `resources.py` and wired in
+  `definitions.py`; PS Oracle + SSH creds via `dagster-cloud.yaml` (`PS_DB_*`,
+  `PS_SSH_*`)
 - Ingestion writes to BigQuery `dagster_kipppaterson_dlt_powerschool`; the dbt
   `powerschool` package `staging/dlt` variant is enabled here
 - The former Couchdrop-SFTP PowerSchool feed is retired; `couchdrop_sftp_sensor`
@@ -50,6 +51,14 @@ Consequences:
 - The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
   settings, UI) so an overrunning tick serializes with the next instead of
   racing it
+- **Go-live cutover**: the `powerschool` pipeline is new (the migration's
+  per-table pipelines were `powerschool_<table>`), and its all-`NULLABLE` schema
+  cannot `replace`-load into the migration-era tables (their identity column is
+  `REQUIRED`). Before the first op-gate run against a dataset that already holds
+  migration-era tables, drop them so the pipeline recreates fresh:
+  `DROP SCHEMA IF EXISTS` the `dagster_kipppaterson_dlt_powerschool` dataset
+  `CASCADE`. The dataset name is not branch-isolated, so this applies to prod
+  go-live, not just branch testing.
 
 ## Schedules
 

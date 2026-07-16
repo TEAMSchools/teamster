@@ -32,7 +32,8 @@ oracledb (probe), BigQuery destination.
 - Python via `uv run` only; execute from inside the worktree
   (`cd <worktree> && uv run ...`). Python ≥3.13 style: built-in generics,
   `X | None`, return-type annotations on library functions.
-- Asset keys stay `kipppaterson/powerschool/{table}`; BQ dataset stays
+- Asset keys are `kipppaterson/powerschool/sis/{table}` (the `sis` segment added
+  during review, parallel to `powerschool/enrollment/*`); BQ dataset stays
   `dagster_kipppaterson_dlt_powerschool`; schedule names stay
   `kipppaterson__powerschool__dlt__intraday_asset_job_schedule` /
   `..__nightly_asset_job_schedule` (regenerated docs depend on names).
@@ -344,9 +345,9 @@ def test_factory_builds_single_subsettable_multiasset():
     )
 
     assert {k.to_user_string() for k in assets_def.keys} == {
-        "kipppaterson/powerschool/students",
-        "kipppaterson/powerschool/users",
-        "kipppaterson/powerschool/test",
+        "kipppaterson/powerschool/sis/students",
+        "kipppaterson/powerschool/sis/users",
+        "kipppaterson/powerschool/sis/test",
     }
     assert assets_def.can_subset is True
     assert assets_def.op.name == "kipppaterson__powerschool"
