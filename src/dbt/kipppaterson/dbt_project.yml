@@ -80,30 +80,12 @@ models:
   powerschool:
     +materialized: table
     sis:
-      base:
-        base_powerschool__final_grades:
-          +enabled: false
       intermediate:
-        int_powerschool__gradebook_assignments:
-          +enabled: false
-        int_powerschool__gpa_cumulative:
-          +enabled: false
-        int_powerschool__gpa_cumulative_year:
-          +enabled: false
-        int_powerschool__gpa_term:
-          +enabled: false
-        int_powerschool__category_grades:
-          +enabled: false
-        int_powerschool__category_grades_pivot:
-          +enabled: false
-        int_powerschool__final_grades_pivot:
-          +enabled: false
-        int_powerschool__gradescaleitem_lookup:
-          +enabled: false
+        # data-forced exception: needs gradesectionconfig, which is empty in
+        # Paterson's PowerSchool (no dlt model)
         int_powerschool__section_grade_config:
           +enabled: false
-        int_powerschool__teacher_grade_levels:
-          +enabled: false
+        # contacts layer disabled for Paterson (parity with kippnewark)
         int_powerschool__contacts:
           +enabled: false
         int_powerschool__person_contacts:
