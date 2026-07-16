@@ -10,7 +10,8 @@ from dagster import AssetExecutionContext, AssetKey, AssetSpec
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
-from dlt.sources.sql_database import remove_nullability_adapter, sql_table
+from dlt.sources.sql_database import remove_nullability_adapter
+from dlt.sources.sql_database.helpers import table_rows
 from sqlalchemy import Float, Numeric
 from sqlalchemy.types import TypeEngine
 
@@ -137,33 +138,48 @@ class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
 
 
 def _build_resource(table: PowerSchoolTable, signature: dict | None):
-    """Build one full-replace dlt resource for a PowerSchool table.
+    """Build one full-replace, parallel-extracted dlt resource for a table.
 
     When a signature is provided it is persisted to the resource's dlt state
     with the load package (so the next run can detect drift). No-cursor tables
     are passed signature=None and carry no stored signature.
 
-    Extraction is serial (no `parallelized=True`): because this resource wraps
-    another dlt resource via `yield from sql_table(...)`, dlt's parallel extract
-    mangles its per-resource injectable context across worker threads
-    (`ContainerInjectableContextMangled`) — verified on a branch-deployment run.
-    See the dlt CLAUDE.md note.
+    `parallelized=True` runs each table's extract in its own dlt worker thread.
+    The resource does NOT wrap `sql_table` (a `DltResource`) — nesting a resource
+    under `parallelized` mangles dlt's per-resource injectable context
+    (`ContainerInjectableContextMangled`). Instead it drives the exported
+    `table_rows` generator directly (a plain generator, not a resource), which
+    accepts the same reflection + Oracle-decimal adapters, so `resource_state`
+    writes persist correctly under parallel extract. See the dlt CLAUDE.md note.
     """
 
-    @dlt.resource(name=table.name, write_disposition="replace")
+    @dlt.resource(name=table.name, write_disposition="replace", parallelized=True)
     def _table_rows() -> Iterator:
         if signature is not None:
             dlt.current.resource_state()["signature"] = signature
-        yield from sql_table(
-            credentials=_oracle_connection_url(),
-            schema=ORACLE_SCHEMA,
-            table=table.name,
-            backend="pyarrow",
-            reflection_level="full_with_precision",
-            defer_table_reflect=True,
-            table_adapter_callback=remove_nullability_adapter,
-            type_adapter_callback=oracle_number_adapter,
-        )
+
+        # One engine per resource: parallelized resources run in separate worker
+        # threads, so each needs its own connection pool over the shared tunnel.
+        engine = sa.create_engine(_oracle_connection_url())
+        try:
+            yield from table_rows(
+                engine=engine,
+                table=table.name,
+                metadata=sa.MetaData(schema=ORACLE_SCHEMA),
+                chunk_size=50000,
+                backend="pyarrow",
+                incremental=None,
+                table_adapter_callback=remove_nullability_adapter,
+                reflection_level="full_with_precision",
+                backend_kwargs={},
+                type_adapter_callback=oracle_number_adapter,
+                included_columns=None,
+                excluded_columns=None,
+                query_adapter_callback=None,
+                resolve_foreign_keys=False,
+            )
+        finally:
+            engine.dispose()
 
     return _table_rows
 

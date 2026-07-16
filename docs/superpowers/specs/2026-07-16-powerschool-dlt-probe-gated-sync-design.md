@@ -70,11 +70,12 @@ def _assets(context, dlt, ssh_powerschool):
   catches cursor regressions (newest row deleted).
 - **Signature store (`resource_state`)**: each selected resource writes its
   just-probed signature into `dlt.current.resource_state()["signature"]` (the op
-  passes the probed value in) and then `yield from sql_table(...)` (pyarrow,
-  `full_with_precision`, existing `oracle_number_adapter` +
-  `remove_nullability_adapter`), `replace` truncate+load (free in BigQuery). The
-  state write rides with the load package, so signature and data commit
-  atomically — a run that fails before load re-detects the change next tick.
+  passes the probed value in) and then streams rows via the exported
+  `table_rows` generator (pyarrow, `full_with_precision`, existing
+  `oracle_number_adapter` + `remove_nullability_adapter`), `replace`
+  truncate+load (free in BigQuery). The state write rides with the load package,
+  so signature and data commit atomically — a run that fails before load
+  re-detects the change next tick.
 - **`cursor_column: null`** (14 tables) → probe skipped, table is always in the
   changed set when selected. These are only ever scheduled nightly.
 
@@ -115,16 +116,19 @@ is a free truncate+load.
 - The `dlt_powerschool_kipppaterson` pool is kept at **limit 1** as insurance
   against a wedged run piling up duplicates; `dagster/max_runtime` sized
   generously above the worst case (see Baseline).
-- **Serial extract** (parallelization attempted, reverted). Each resource wraps
-  another dlt resource (`yield from sql_table(...)`) to write its signature to
-  `resource_state`; `@dlt.resource(parallelized=True)` mangles dlt's
-  per-resource injectable context across worker threads for that nesting
-  (`ContainerInjectableContextMangled`, verified on a branch-deployment run — a
-  duckdb spike missed it because it yielded plain rows, not a nested resource).
-  Parallel extract would require dropping the wrapper — i.e. moving the
-  signature store off `resource_state` to Dagster materialization metadata so
-  resources can be bare `sql_table(...).parallelize()`. Deferred as a future
-  optimization; the all-changed full load is a rare worst case.
+- **Parallel extract** (`parallelized=True` per resource). Each table extracts
+  in its own dlt worker thread. `parallelized=True` is fully compatible with
+  `resource_state` writes (dlt's documented incremental pattern); what mangled
+  the injectable context in an earlier attempt was **nesting a `DltResource`**
+  (`yield from sql_table(...)`) under `parallelized`, not parallelism itself.
+  The resource instead drives the exported `table_rows` generator directly (a
+  plain generator, not a resource) with the same reflection + decimal adapters,
+  so the signature still lands in `resource_state` under parallel extract.
+  Verified with isolation spikes (`.claude/scratch/dlt_spike_par4.py`,
+  `par5.py`): 3 tables, 3 extract threads, all signatures round-tripped, rows
+  loaded. Cost: `table_rows` is a lower-level dlt building block
+  (`dlt.sources.sql_database.helpers`) with a broad signature — pin the dlt
+  version and pass args explicitly.
 - Live per-phase progress is not surfaced to Dagster events (dagster-dlt yields
   materializations only after `pipeline.run()`; dlt's `LogCollector` goes to
   step-pod compute logs) — `.fetch_row_count()` attaches per-table `row_count`
@@ -196,11 +200,12 @@ success, ~202s wall-clock):
 - Sum of all 37 step durations: ~657s; the 23 redesign-intraday tables: ~429s.
 - Per-step floor ~10.5s is fixed overhead (pipeline init, BQ schema sync,
   load-job latency) paid per pod today but once per run after the collapse; dlt
-  parallelizes normalize and load (up to 20 concurrent BQ load jobs) within one
-  `pipeline.run`.
+  parallelizes extract (`parallelized=True` per resource), normalize, and load
+  (up to 20 concurrent BQ load jobs) within one `pipeline.run`.
 - Estimated worst case (all 23 intraday tables changed, one pod): ~3-5 min, ~7
-  min ceiling. All-48 catch-up: under ~10 min serialized. Typical tick (probes +
-  a few loads): ~1-2 min including pod startup.
+  min ceiling — extract now runs concurrent worker threads rather than
+  table-by-table. All-48 catch-up: under ~10 min. Typical tick (probes + a few
+  loads): ~1-2 min including pod startup.
 
 These estimates are derived, not measured — the spike times the real thing.
 

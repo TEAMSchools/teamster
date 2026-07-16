@@ -84,14 +84,25 @@ changes on existing tables.
 - A `@dlt.source` yielding two resources with the **same name** raises
   `InvalidResourceDataTypeMultiplePipes`; build one resource per table with a
   distinct `name=` (or `.with_name()`, which sets both `name` and `table_name`).
-- **`parallelized=True` does not compose with a resource that wraps another dlt
-  resource** (`yield from sql_table(...)`): concurrent worker threads mangle
-  dlt's per-resource injectable context (`ContainerInjectableContextMangled` /
-  "generator already executing"). A duckdb spike yielding plain rows will pass
-  and miss this — it only fires with the nested resource on a real run. To
-  parallelize extract, don't wrap: use a bare `sql_table(...).parallelize()` and
-  persist any per-table state (e.g. a probe signature) somewhere other than
-  `resource_state` (which is what forces the wrapper).
+- **`parallelized=True` is compatible with `resource_state` writes** — that is
+  the documented incremental pattern (write `dlt.current.resource_state()[...]`
+  in the resource body; the value persists per-thread). What breaks is **nesting
+  a `DltResource` inside a `parallelized` resource**
+  (`yield from sql_table(...)`): concurrent worker threads mangle dlt's
+  per-resource injectable context (`ContainerInjectableContextMangled` /
+  "generator already executing"). To parallelize a `sql_table`-style extract
+  while still writing `resource_state`, don't wrap the resource — drive the
+  exported **`table_rows`** generator directly inside your own
+  `@dlt.resource(parallelized=True)`:
+  `from dlt.sources.sql_database.helpers import table_rows`. It's a plain
+  generator (no resource nesting) and takes the same `reflection_level` /
+  `table_adapter_callback` / `type_adapter_callback` args, so
+  decimal/nullability adapters and precision reflection are preserved. Caveat:
+  `table_rows` is a lower-level building block with a broad, semi-internal
+  signature (Pyright flags it as not top-level exported) — pin the dlt version
+  and pass every positional arg explicitly, since arg changes there would
+  surface on upgrade. A duckdb spike yielding plain rows will pass and miss the
+  nesting mangle — it only fires with a nested resource on a real run.
 - `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
   metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
   `except` so a load failure is legible without walking the exception chain.
