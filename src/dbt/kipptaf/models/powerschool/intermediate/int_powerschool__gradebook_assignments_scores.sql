@@ -24,10 +24,8 @@ with
             coalesce(s.isexempt, 0) as is_exempt,
             coalesce(s.ismissing, 0) as is_missing,
 
-            initcap(regexp_extract(a._dbt_source_project, r'kipp(\w+)')) as region,
+            {{ extract_region("a") }} as region,
 
-            -- no due-date grace period: the 7-day grace scoped for AY
-            -- 2026-2027 was dropped as policy (July 2026), see design spec
             case
                 when coalesce(s.isexempt, 0) = 1
                 then false
