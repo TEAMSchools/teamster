@@ -42,37 +42,7 @@ assets:
   - table_name: gpprogresssubjectenrolled
     load_strategy: full_refresh
     schedule_tier: intraday
-  - table_name: gpprogresssubjectrequested
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpprogresssubjectwaived
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpprogresssubjwaivedapplied
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpselectedcrs
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpselectedcrtype
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpselector
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpstudentwaiver
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gptarget
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gpversion
-    load_strategy: full_refresh
-    schedule_tier: intraday
   - table_name: gradescaleitem
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: gradplan
     load_strategy: full_refresh
     schedule_tier: intraday
   - table_name: log
@@ -94,9 +64,6 @@ assets:
     load_strategy: full_refresh
     schedule_tier: intraday
   - table_name: s_nj_stu_x
-    load_strategy: full_refresh
-    schedule_tier: intraday
-  - table_name: s_nj_usr_x
     load_strategy: full_refresh
     schedule_tier: intraday
   - table_name: s_stu_x

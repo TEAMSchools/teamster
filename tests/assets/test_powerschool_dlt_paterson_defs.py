@@ -11,7 +11,7 @@ def test_paterson_powerschool_dlt_asset_keys():
 
     config = yaml.safe_load(config_file.read_text())
 
-    assert len(config["assets"]) == 68
+    assert len(config["assets"]) == 57
 
     keys = {key for a in assets.assets for key in a.keys}
     assert keys == {
