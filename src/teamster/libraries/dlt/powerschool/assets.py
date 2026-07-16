@@ -141,10 +141,13 @@ def _build_resource(table: PowerSchoolTable, signature: dict | None):
 
     When a signature is provided it is persisted to the resource's dlt state
     with the load package (so the next run can detect drift). No-cursor tables
-    are passed signature=None and carry no stored signature.
+    are passed signature=None and carry no stored signature. `parallelized=True`
+    lets dlt extract the changed tables concurrently (extract worker pool,
+    default 5) — signature writes stay per-resource-correct under threading
+    (verified).
     """
 
-    @dlt.resource(name=table.name, write_disposition="replace")
+    @dlt.resource(name=table.name, write_disposition="replace", parallelized=True)
     def _table_rows() -> Iterator:
         if signature is not None:
             dlt.current.resource_state()["signature"] = signature
@@ -162,15 +165,11 @@ def _build_resource(table: PowerSchoolTable, signature: dict | None):
     return _table_rows
 
 
-def _build_source(selected: list[PowerSchoolTable], signatures: dict[str, dict]):
-    """Build the dlt source narrowed to `selected`, wiring each table's signature."""
-
-    @dlt.source(name=_SOURCE_NAME)
-    def _src():
-        for table in selected:
-            yield _build_resource(table, signatures.get(table.name))
-
-    return _src()
+@dlt.source(name=_SOURCE_NAME)
+def _powerschool_source(selected: list[PowerSchoolTable], signatures: dict[str, dict]):
+    """dlt source narrowed to `selected`, wiring each table's probed signature."""
+    for table in selected:
+        yield _build_resource(table, signatures.get(table.name))
 
 
 def build_powerschool_dlt_assets(
@@ -183,7 +182,7 @@ def build_powerschool_dlt_assets(
     The op opens the SSH tunnel, restores prior per-table signatures from dlt
     resource_state (persisted in the destination), probes each selected table's
     COUNT(*)/MAX(cursor), and runs the pipeline over a source narrowed to only
-    the changed tables (`_build_source(changed, current)`) — a full `replace`
+    the changed tables (`_powerschool_source(changed, current)`) — a full `replace`
     load per changed table. Tables without a cursor_column are always loaded
     when selected.
     Unselected / unchanged tables are never in the run, so their destination
@@ -207,7 +206,7 @@ def build_powerschool_dlt_assets(
 
     @dlt_assets(
         # Full source only defines the asset specs; the op runs a narrowed one.
-        dlt_source=_build_source(tables, {}),
+        dlt_source=_powerschool_source(tables, {}),
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__powerschool",
         dagster_dlt_translator=translator,
@@ -269,7 +268,7 @@ def build_powerschool_dlt_assets(
                 # catalog) alongside dagster-dlt's default load metadata.
                 yield from dlt.run(
                     context=context,
-                    dlt_source=_build_source(changed, current),
+                    dlt_source=_powerschool_source(changed, current),
                     dlt_pipeline=dlt_pipeline,
                     dagster_dlt_translator=translator,
                     write_disposition="replace",

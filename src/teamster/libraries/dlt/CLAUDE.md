@@ -64,3 +64,26 @@ not `NUMERIC`. Fix pattern: cast at the dbt staging layer
 If the adapter's scale changes, any existing BQ table with a conflicting column
 type must be dropped manually — `replace` write disposition does not allow type
 changes on existing tables.
+
+### `replace` write-disposition + runtime subsetting (dlt 1.28.1)
+
+- A `replace` resource that yields **zero rows truncates** its destination table
+  — you cannot skip a table by yielding nothing from inside the run. To load a
+  runtime-chosen subset, exclude the others from the run entirely: pass a
+  narrowed source to
+  `DagsterDltResource.run(dlt_source=source.with_resources(*subset))` (its
+  `is_subset` filter intersects with `selected_asset_keys`).
+- `replace` never changes an existing table's column **mode** (not just type):
+  an all-`NULLABLE` load into a table whose column is `REQUIRED` fails with BQ
+  400 "changed mode from REQUIRED to NULLABLE". Drop the table so the pipeline
+  recreates it (same remedy as the type-change note above).
+- `dataset_name` (e.g. `dagster_<loc>_dlt_*`) is **not branch-isolated** —
+  branch-deployment runs write to the SAME dataset as prod, so branch testing
+  pollutes it and schema-mode mismatches recur at prod go-live. Plan a one-time
+  `DROP SCHEMA ... CASCADE` cutover when a new pipeline replaces an old one.
+- A `@dlt.source` yielding two resources with the **same name** raises
+  `InvalidResourceDataTypeMultiplePipes`; build one resource per table with a
+  distinct `name=` (or `.with_name()`, which sets both `name` and `table_name`).
+- `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
+  metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
+  `except` so a load failure is legible without walking the exception chain.
