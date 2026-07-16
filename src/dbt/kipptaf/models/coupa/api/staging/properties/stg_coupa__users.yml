@@ -1,9 +1,9 @@
 models:
   - name: stg_coupa__users
     description: >-
-      One row per Coupa user account, from the Coupa REST API users endpoint.
-      The identity keys (id, login, employee_number) are what rpt_coupa__users
-      resolves a staff member to their Coupa account on.
+      One row per Coupa user account, from the Coupa REST API users endpoint. id
+      is the account primary key; login (first) then employee_number are the
+      keys rpt_coupa__users matches a staff member to their Coupa account on.
     columns:
       - name: id
         data_type: int64
