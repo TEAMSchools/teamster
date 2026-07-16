@@ -28,10 +28,14 @@ Paterson ingests PowerSchool with **dlt**, syncing directly from its Oracle
 database through an in-process paramiko SSH tunnel (`ssh_powerschool` resource,
 `enable_legacy_rsa=True`) and landing to BigQuery via keyless ADC (issue #3807).
 This is the pilot/template for migrating the ODBC districts (`kippnewark`,
-`kippcamden`, `kippmiami`) off `sshpass`. Assets are defined in
-`powerschool/sis/dlt/` (per-table `@dlt_assets`, full-refresh `replace`); config
-in `powerschool/sis/dlt/config/assets.yaml`; two cron schedules in
-`powerschool/sis/dlt/schedules.py`.
+`kippcamden`, `kippmiami`) off `sshpass`. ONE probe-gated `@dlt_assets`
+multi-asset covers all 48 tables (`powerschool/sis/dlt/`): each table's dlt
+resource probes `COUNT(*)`/`MAX(cursor_column)` and full-replaces only on
+signature drift (signature in dlt resource state, restored from BigQuery);
+`cursor_column: null` tables always replace. Config in
+`powerschool/sis/dlt/config/assets.yaml`; two schedules in `schedules.py` subset
+the multi-asset (intraday 15-min = 23 cursor tables; nightly = 25). Design:
+`docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md`.
 
 Consequences:
 
@@ -43,9 +47,9 @@ Consequences:
 - The former Couchdrop-SFTP PowerSchool feed is retired; `couchdrop_sftp_sensor`
   now watches Finalsite `status_report` only
 - No `edplan`, `iready`, `overgrad`, `renlearn`, or `titan`
-- **Go-live**: set a low concurrency limit on the `dlt_powerschool_kipppaterson`
-  pool (Dagster+ deployment settings, UI) before the intraday schedule fans out,
-  so the per-table pipelines don't overwhelm the shared dlt state table
+- The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
+  settings, UI) so an overrunning tick serializes with the next instead of
+  racing it
 
 ## Schedules
 
