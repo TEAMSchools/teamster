@@ -110,7 +110,7 @@ select
 
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
 
-    if(ar.region = 'Paterson', se.email, sl.google_email) as student_email_google,
+    sl.google_email as student_email_google,
     if(ar.region = 'Paterson', null, sl.username) as student_web_id,
     if(ar.region = 'Paterson', null, sl.default_password) as student_web_password,
 
@@ -215,9 +215,6 @@ left join
     {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
     and ar._dbt_source_project = njr._dbt_source_project
-left join
-    {{ ref("stg_powerschool__student_email") }} as se
-    on ar.student_number = se.student_number
 left join
     {{ ref("stg_people__student_logins") }} as sl
     on ar.student_number = sl.student_number
