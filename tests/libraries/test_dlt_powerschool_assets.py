@@ -4,6 +4,7 @@ from datetime import datetime
 
 from teamster.libraries.dlt.powerschool.assets import (
     PowerSchoolTable,
+    build_powerschool_dlt_assets,
     probe_signature,
 )
 
@@ -51,3 +52,24 @@ def test_powerschool_table_dataclass():
 
     assert t.cursor_column == "transaction_date"
     assert n.cursor_column is None
+
+
+def test_factory_builds_single_subsettable_multiasset():
+    tables = [
+        PowerSchoolTable(name="students", cursor_column="transaction_date"),
+        PowerSchoolTable(name="users", cursor_column="whenmodified"),
+        PowerSchoolTable(name="test", cursor_column=None),
+    ]
+
+    assets_def = build_powerschool_dlt_assets(
+        code_location="kipppaterson", tables=tables
+    )
+
+    assert {k.to_user_string() for k in assets_def.keys} == {
+        "kipppaterson/powerschool/students",
+        "kipppaterson/powerschool/users",
+        "kipppaterson/powerschool/test",
+    }
+    assert assets_def.can_subset is True
+    assert assets_def.op.name == "kipppaterson__powerschool"
+    assert assets_def.op.pool == "dlt_powerschool_kipppaterson"

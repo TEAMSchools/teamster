@@ -21,8 +21,6 @@ from teamster.libraries.ssh.resources import SSHResource
 # NoSuchTableError.
 ORACLE_SCHEMA = "ps"
 
-LOAD_STRATEGIES = {"full_refresh": "replace"}
-
 
 @dataclass(frozen=True)
 class PowerSchoolTable:
@@ -108,58 +106,71 @@ class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
 
 def build_powerschool_dlt_assets(
     code_location: str,
-    table_name: str,
-    load_strategy: str = "full_refresh",
+    tables: list[PowerSchoolTable],
     op_tags: dict[str, object] | None = None,
 ):
-    if load_strategy not in LOAD_STRATEGIES:
-        raise ValueError(
-            f"load_strategy {load_strategy!r} not supported; "
-            f"expected one of {sorted(LOAD_STRATEGIES)}"
-        )
+    """Build ONE probe-gated @dlt_assets over all PowerSchool tables.
 
-    write_disposition = LOAD_STRATEGIES[load_strategy]
+    The op opens the SSH tunnel, restores prior per-table signatures from dlt
+    resource_state (persisted in the destination), probes each selected table's
+    COUNT(*)/MAX(cursor), and runs the pipeline over only the changed resources
+    via source.with_resources(*changed) — a full `replace` load per changed
+    table. Tables without a cursor_column are always loaded when selected.
+    Unselected / unchanged tables are never in the run, so their destination
+    tables are untouched. Schedules subset the multi-asset per tier. See
+    docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md.
+    """
+    source_name = "powerschool"
 
-    if op_tags is None:
-        op_tags = {}
+    def _build_resource(table: PowerSchoolTable, signature: dict | None):
+        @dlt.resource(name=table.name, write_disposition="replace")
+        def _table_rows() -> Iterator:
+            # Persist the just-probed signature with this load package so the
+            # next run detects drift. No-cursor tables carry no signature.
+            if signature is not None:
+                dlt.current.resource_state()["signature"] = signature
+            yield from sql_table(
+                credentials=_oracle_connection_url(),
+                schema=ORACLE_SCHEMA,
+                table=table.name,
+                backend="pyarrow",
+                reflection_level="full_with_precision",
+                defer_table_reflect=True,
+                table_adapter_callback=remove_nullability_adapter,
+                type_adapter_callback=oracle_number_adapter,
+            )
 
-    # dagster-dlt's @dlt_assets requires a DltSource (it reads
-    # .selected_resources); sql_table() alone returns a bare DltResource. Wrap
-    # it in a @dlt.source generator — the same shape dlt's own sql_database()
-    # and libraries/dlt/illuminate/assets.py use.
-    @dlt.source(name=f"powerschool_{table_name}")
-    def dlt_source():
-        # placeholder credentials at import time; real values resolve in the
-        # run pod because sql_table defers connection until extraction
-        yield sql_table(
-            credentials=_oracle_connection_url(),
-            schema=ORACLE_SCHEMA,
-            table=table_name,
-            backend="pyarrow",
-            reflection_level="full_with_precision",
-            defer_table_reflect=True,
-            table_adapter_callback=remove_nullability_adapter,
-            type_adapter_callback=oracle_number_adapter,
-        )
+        return _table_rows
+
+    def _build_source(selected: list[PowerSchoolTable], signatures: dict[str, dict]):
+        @dlt.source(name=source_name)
+        def _src():
+            for table in selected:
+                yield _build_resource(table, signatures.get(table.name))
+
+        return _src()
 
     dlt_pipeline = dlt.pipeline(
-        pipeline_name=f"powerschool_{table_name}",
-        # Deliberately no `autodetect_schema=True` (unlike
-        # libraries/dlt/focus/assets.py): `oracle_number_adapter` +
-        # `reflection_level="full_with_precision"` above are the authoritative
-        # decimal schema. Autodetect would let BigQuery re-infer NUMBER
-        # columns as FLOAT64, reintroducing the float drift this adapter
-        # exists to prevent.
+        pipeline_name=source_name,
+        # No `autodetect_schema=True`: oracle_number_adapter +
+        # full_with_precision reflection are the authoritative decimal schema
+        # (see oracle_number_adapter docstring).
         destination=bigquery(),
         dataset_name=f"dagster_{code_location}_dlt_powerschool",
         progress=LogCollector(dump_system_stats=False),
     )
 
+    translator = PowerSchoolDagsterDltTranslator(code_location)
+    tables_by_key = {
+        AssetKey([code_location, "powerschool", t.name]): t for t in tables
+    }
+
     @dlt_assets(
-        dlt_source=dlt_source(),
+        # Full source only defines the asset specs; the op runs a narrowed one.
+        dlt_source=_build_source(tables, {}),
         dlt_pipeline=dlt_pipeline,
-        name=f"{code_location}__powerschool__{table_name}",
-        dagster_dlt_translator=PowerSchoolDagsterDltTranslator(code_location),
+        name=f"{code_location}__powerschool",
+        dagster_dlt_translator=translator,
         group_name="powerschool",
         pool=f"dlt_powerschool_{code_location}",
         op_tags=op_tags,
@@ -169,7 +180,69 @@ def build_powerschool_dlt_assets(
         dlt: DagsterDltResource,
         ssh_powerschool: SSHResource,
     ) -> Iterator:
+        selected = [
+            tables_by_key[key]
+            for key in context.selected_asset_keys
+            if key in tables_by_key
+        ]
+
         with ssh_powerschool.open_ssh_tunnel_paramiko():
-            yield from dlt.run(context=context, write_disposition=write_disposition)
+            # Restore prior signatures from the destination state table. On a
+            # truly first run (no dataset) this raises; treat as no prior state.
+            try:
+                dlt_pipeline.sync_destination()
+            except Exception:
+                context.log.info("no prior dlt state; all selected are changed")
+
+            stored = _stored_signatures(dlt_pipeline, source_name)
+
+            # Probe every selected table that has a cursor column (one shared
+            # engine over the single tunnel).
+            current: dict[str, dict] = {}
+            engine = sa.create_engine(_oracle_connection_url())
+            try:
+                with engine.connect() as connection:
+                    for table in selected:
+                        if table.cursor_column is not None:
+                            current[table.name] = probe_signature(
+                                connection, table.name, table.cursor_column
+                            )
+            finally:
+                engine.dispose()
+
+            changed = [
+                table
+                for table in selected
+                if table.cursor_column is None
+                or current.get(table.name) != stored.get(table.name)
+            ]
+
+            context.log.info(
+                f"powerschool probe: {len(changed)}/{len(selected)} changed; "
+                f"changed={sorted(t.name for t in changed)}"
+            )
+
+            if not changed:
+                return  # idle tick: nothing to load
+
+            yield from dlt.run(
+                context=context,
+                dlt_source=_build_source(changed, current),
+                dlt_pipeline=dlt_pipeline,
+                dagster_dlt_translator=translator,
+                write_disposition="replace",
+            )
 
     return _assets
+
+
+def _stored_signatures(dlt_pipeline, source_name: str) -> dict[str, dict]:
+    """Read last-run per-resource signatures from dlt pipeline state."""
+    resources = (
+        dlt_pipeline.state.get("sources", {}).get(source_name, {}).get("resources", {})
+    )
+    return {
+        name: res_state["signature"]
+        for name, res_state in resources.items()
+        if isinstance(res_state, dict) and "signature" in res_state
+    }
