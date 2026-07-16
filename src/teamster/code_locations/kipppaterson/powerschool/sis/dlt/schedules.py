@@ -23,6 +23,18 @@ if _invalid_tier_assets:
         + f"; expected one of {sorted(_VALID_SCHEDULE_TIERS)}"
     )
 
+# no-cursor tables cannot be probe-gated, so they must not run intraday
+_ungated_intraday = [
+    a
+    for a in config["assets"]
+    if a["schedule_tier"] == "intraday" and a["cursor_column"] is None
+]
+if _ungated_intraday:
+    raise ValueError(
+        "intraday tables require a cursor_column: "
+        + ", ".join(a["table_name"] for a in _ungated_intraday)
+    )
+
 
 def _tier_targets(tier: str) -> list[str]:
     return [
@@ -37,6 +49,7 @@ powerschool_dlt_intraday_asset_job_schedule = ScheduleDefinition(
     cron_schedule="*/15 * * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
     target=_tier_targets("intraday"),
+    tags={"dagster/max_runtime": "3600"},
 )
 
 powerschool_dlt_nightly_asset_job_schedule = ScheduleDefinition(
@@ -44,6 +57,7 @@ powerschool_dlt_nightly_asset_job_schedule = ScheduleDefinition(
     cron_schedule="0 2 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
     target=_tier_targets("nightly"),
+    tags={"dagster/max_runtime": "3600"},
 )
 
 schedules = [

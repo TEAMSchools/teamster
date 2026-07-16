@@ -1,6 +1,9 @@
 """Unit tests for the probe-gated PowerSchool dlt factory (no external deps)."""
 
+import pathlib
 from datetime import datetime
+
+import yaml
 
 from teamster.libraries.dlt.powerschool.assets import (
     PowerSchoolTable,
@@ -73,3 +76,120 @@ def test_factory_builds_single_subsettable_multiasset():
     assert assets_def.can_subset is True
     assert assets_def.op.name == "kipppaterson__powerschool"
     assert assets_def.op.pool == "dlt_powerschool_kipppaterson"
+
+
+CONFIG = pathlib.Path(
+    "src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/config/assets.yaml"
+)
+
+INTRADAY_TRANSACTION_DATE = {
+    "attendance",
+    "storedgrades",
+    "pgfinalgrades",
+    "cc",
+    "students",
+    "courses",
+    "schools",
+    "sections",
+    "termbins",
+    "terms",
+}
+INTRADAY_WHENMODIFIED = {
+    "gradescaleitem",
+    "roledef",
+    "s_nj_crs_x",
+    "s_nj_ren_x",
+    "s_nj_stu_x",
+    "s_stu_x",
+    "schoolstaff",
+    "sectionteacher",
+    "studentcorefields",
+    "studentrace",
+    "u_studentsuserfields",
+    "users",
+    "userscorefields",
+}
+NIGHTLY_WHENMODIFIED = {
+    "assignmentcategoryassoc",
+    "assignmentscore",
+    "assignmentsection",
+    "districtteachercategory",
+    "gradecalcformulaweight",
+    "gradecalcschoolassoc",
+    "gradecalculationtype",
+    "gradeformulaset",
+    "gradeschoolconfig",
+    "gradeschoolformulaassoc",
+    "teachercategory",
+}
+NIGHTLY_NO_CURSOR = {
+    "attendance_code",
+    "attendance_conversion_items",
+    "bell_schedule",
+    "calendar_day",
+    "cycle_day",
+    "fte",
+    "gen",
+    "log",
+    "reenrollments",
+    "spenrollments",
+    "studenttest",
+    "studenttestscore",
+    "test",
+    "testscore",
+}
+
+
+def test_config_matches_spec_cursor_map():
+    entries = yaml.safe_load(CONFIG.read_text())["assets"]
+    by_name = {e["table_name"]: e for e in entries}
+
+    assert len(entries) == 48
+
+    for name in INTRADAY_TRANSACTION_DATE:
+        assert by_name[name] == {
+            "table_name": name,
+            "cursor_column": "transaction_date",
+            "schedule_tier": "intraday",
+        }
+    for name in INTRADAY_WHENMODIFIED:
+        assert by_name[name] == {
+            "table_name": name,
+            "cursor_column": "whenmodified",
+            "schedule_tier": "intraday",
+        }
+    for name in NIGHTLY_WHENMODIFIED:
+        assert by_name[name] == {
+            "table_name": name,
+            "cursor_column": "whenmodified",
+            "schedule_tier": "nightly",
+        }
+    for name in NIGHTLY_NO_CURSOR:
+        assert by_name[name] == {
+            "table_name": name,
+            "cursor_column": None,
+            "schedule_tier": "nightly",
+        }
+
+
+def test_schedules_subset_by_tier():
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
+        powerschool_dlt_intraday_asset_job_schedule as intraday,
+    )
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
+        powerschool_dlt_nightly_asset_job_schedule as nightly,
+    )
+
+    assert intraday.cron_schedule == "*/15 * * * *"
+    assert nightly.cron_schedule == "0 2 * * *"
+    assert intraday.tags == {"dagster/max_runtime": "3600"}
+    assert nightly.tags == {"dagster/max_runtime": "3600"}
+
+
+def test_assets_module_exposes_single_def():
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets import (
+        assets,
+    )
+
+    assert len(assets) == 1
+    assert len(list(assets[0].keys)) == 48
