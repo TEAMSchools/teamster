@@ -775,6 +775,11 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   where the raw value first appears, as a named column. Downstream expressions
   operate on already-typed columns — never nest `cast()` inside another
   function.
+- **`cast(col as type)` needs an explicit alias** — unaliased, BigQuery names
+  the column `f0_`, not `col`, so a contracted / explicitly-projected `select`
+  gets the wrong column name and fails. Write `cast(col as type) as col`; the
+  matching alias on a function-wrapped expression is NOT an AL09 self-alias
+  (it's the repo norm).
 - **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
   lookups, or correlated subqueries; restructure as a CTE and join it.
   Carve-out: a scalar _aggregate_ over `unnest` of an array

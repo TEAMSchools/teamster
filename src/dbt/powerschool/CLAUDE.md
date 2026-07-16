@@ -13,6 +13,7 @@ models/
     staging/
       odbc/      # models sourced from live Oracle ODBC connection (enabled by default)
       sftp/      # models sourced from SFTP file extracts (disabled by default)
+      dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); disabled by default
     intermediate/
 ```
 
@@ -35,9 +36,25 @@ reference it as a dbt package and override variables and enabled flags. When a
 district project runs, it resolves `ref('stg_powerschool__*')` models from this
 project.
 
-The `odbc/` vs `sftp/` split exists because some schools pull data via live
-Oracle ODBC tunnel and others via SFTP file drops. Only one should be enabled
-per deployment.
+The `odbc/` / `sftp/` / `dlt/` split exists because districts pull PowerSchool
+via a live Oracle ODBC tunnel, SFTP file drops, or dlt (Oracle over an SSH
+tunnel → BigQuery). Only one variant is enabled per district.
+
+## dlt staging variant (#3807)
+
+`kipppaterson` ingests PowerSchool via dlt; `staging/dlt/` is the template for
+migrating the ODBC districts. A dlt model = its **odbc** sibling minus the
+struct-unwrap: dlt lands raw Oracle scalars, so drop the
+`.int_value`/`.double_value`/`coalesce(... .bytes_decimal_value ...)` accessors,
+the `dbt_utils.deduplicate` (native table, no `_file_name` dupes), and any
+`_dagster_partition_*`; explicitly project the shared contract columns and cast
+to the contract type (`NUMERIC(10)`→int, `NUMERIC(38,9)`→float64,
+`TIMESTAMP`→date, `STRING`→bare). Watch native-type divergence per column: a
+date Oracle stores as DATE lands `TIMESTAMP` (use `cast(x as date)`), one stored
+as text lands `STRING` (keep the odbc `parse_date`) — check the landed type,
+don't assume. Source is `sources-bigquery.yml` schema
+`dagster_<district>_dlt_powerschool`, read in every target (dlt writes the prod
+dataset even on branch deploys).
 
 ## GPA Gotchas
 
