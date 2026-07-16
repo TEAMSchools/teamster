@@ -321,8 +321,6 @@ models:
         data_type: string
       - name: region_school_level
         data_type: string
-      - name: region_school_level_alt
-        data_type: string
       - name: guardian_email
         data_type: string
       - name: academic_year_display
