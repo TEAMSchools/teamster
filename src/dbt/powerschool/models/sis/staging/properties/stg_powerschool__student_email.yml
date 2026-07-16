@@ -1,0 +1,17 @@
+models:
+  - name: stg_powerschool__student_email
+    columns:
+      - name: student_number
+        data_type: int64
+        data_tests:
+          - unique:
+              config:
+                severity: error
+        description: District-assigned student identification number.
+        config:
+          meta:
+            contains_pii: true
+        constraints:
+          - type: primary_key
+      - name: email
+        data_type: string
