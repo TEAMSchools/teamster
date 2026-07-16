@@ -84,6 +84,14 @@ changes on existing tables.
 - A `@dlt.source` yielding two resources with the **same name** raises
   `InvalidResourceDataTypeMultiplePipes`; build one resource per table with a
   distinct `name=` (or `.with_name()`, which sets both `name` and `table_name`).
+- **`parallelized=True` does not compose with a resource that wraps another dlt
+  resource** (`yield from sql_table(...)`): concurrent worker threads mangle
+  dlt's per-resource injectable context (`ContainerInjectableContextMangled` /
+  "generator already executing"). A duckdb spike yielding plain rows will pass
+  and miss this — it only fires with the nested resource on a real run. To
+  parallelize extract, don't wrap: use a bare `sql_table(...).parallelize()` and
+  persist any per-table state (e.g. a probe signature) somewhere other than
+  `resource_state` (which is what forces the wrapper).
 - `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
   metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
   `except` so a load failure is legible without walking the exception chain.

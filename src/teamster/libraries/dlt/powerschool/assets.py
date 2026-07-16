@@ -141,13 +141,16 @@ def _build_resource(table: PowerSchoolTable, signature: dict | None):
 
     When a signature is provided it is persisted to the resource's dlt state
     with the load package (so the next run can detect drift). No-cursor tables
-    are passed signature=None and carry no stored signature. `parallelized=True`
-    lets dlt extract the changed tables concurrently (extract worker pool,
-    default 5) — signature writes stay per-resource-correct under threading
-    (verified).
+    are passed signature=None and carry no stored signature.
+
+    Extraction is serial (no `parallelized=True`): because this resource wraps
+    another dlt resource via `yield from sql_table(...)`, dlt's parallel extract
+    mangles its per-resource injectable context across worker threads
+    (`ContainerInjectableContextMangled`) — verified on a branch-deployment run.
+    See the dlt CLAUDE.md note.
     """
 
-    @dlt.resource(name=table.name, write_disposition="replace", parallelized=True)
+    @dlt.resource(name=table.name, write_disposition="replace")
     def _table_rows() -> Iterator:
         if signature is not None:
             dlt.current.resource_state()["signature"] = signature

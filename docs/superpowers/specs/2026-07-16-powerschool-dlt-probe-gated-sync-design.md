@@ -115,15 +115,20 @@ is a free truncate+load.
 - The `dlt_powerschool_kipppaterson` pool is kept at **limit 1** as insurance
   against a wedged run piling up duplicates; `dagster/max_runtime` sized
   generously above the worst case (see Baseline).
-- **Parallelized extract**: resources are `@dlt.resource(parallelized=True)`, so
-  dlt extracts the changed tables concurrently (extract worker pool, default 5)
-  — bounding simultaneous Oracle connections through the one tunnel while
-  cutting all-changed wall-clock. Signature writes stay per-resource-correct
-  under threading (spike-verified). Live per-phase progress is not surfaced to
-  Dagster events (dagster-dlt yields materializations only after
-  `pipeline.run()`; dlt's `LogCollector` goes to step-pod compute logs) —
-  `.fetch_row_count()` attaches per-table `row_count` metadata as the
-  after-the-fact record.
+- **Serial extract** (parallelization attempted, reverted). Each resource wraps
+  another dlt resource (`yield from sql_table(...)`) to write its signature to
+  `resource_state`; `@dlt.resource(parallelized=True)` mangles dlt's
+  per-resource injectable context across worker threads for that nesting
+  (`ContainerInjectableContextMangled`, verified on a branch-deployment run — a
+  duckdb spike missed it because it yielded plain rows, not a nested resource).
+  Parallel extract would require dropping the wrapper — i.e. moving the
+  signature store off `resource_state` to Dagster materialization metadata so
+  resources can be bare `sql_table(...).parallelize()`. Deferred as a future
+  optimization; the all-changed full load is a rare worst case.
+- Live per-phase progress is not surfaced to Dagster events (dagster-dlt yields
+  materializations only after `pipeline.run()`; dlt's `LogCollector` goes to
+  step-pod compute logs) — `.fetch_row_count()` attaches per-table `row_count`
+  metadata as the after-the-fact record.
 - No partitioning. The fiscal-year-partition capability was considered and
   **discarded** — reintroduce only if a table's full replace becomes an actual
   problem (Paterson's `attendance` is ~1/10th Newark's).
