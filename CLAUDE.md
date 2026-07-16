@@ -146,6 +146,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
+- **A mid-session Codespace restart can delete `.worktrees/` and desync local
+  git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
+  HEAD that reads as the pre-session commit yet holds merged content). Trust
+  GitHub over local git for ground truth: `gh api .../branches/main` and
+  `gh api .../pulls/<n>` (`merged` / `merge_commit_sha`), then re-fetch and
+  recreate any lost worktree off `origin/main`.
+
 - **Reverting experimental code to a docs-only PR**:
   `git checkout origin/main -- <file>` restores main's CURRENT blob, which can
   differ from the branch's merge-base and leak main's advancement into the
@@ -226,7 +233,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   monitor for a re-review after a fix push. A PR with all checks green but
   `mergeable_state: blocked` (from `gh api repos/<owner>/<repo>/pulls/<n>`) is
   awaiting a required review approval (CODEOWNERS `src/dbt/` =
-  analytics-engineers), not a CI failure.
+  analytics-engineers), not a CI failure. `claude-review` may leave TWO issue
+  comments — an initial "Reviewing…" status stub and a separate final findings
+  comment — and the stub can stay stuck mid-render even after the check-run
+  reports `success`. Fetch ALL issue comments and read the newest / longest, not
+  the first.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).

@@ -54,7 +54,6 @@ with
 
             coalesce(cul.id, cue.id) as coupa_user_id,
 
-            if(cul.id is not null, cul.active, cue.active) as active,
             if(
                 cul.id is not null, cul.purchasing_user, cue.purchasing_user
             ) as purchasing_user,
@@ -82,7 +81,6 @@ with
             scm.sam_account_name,
             scm.user_principal_name,
             scm.mail,
-            scm.active,
 
             r.roles,
 
@@ -124,7 +122,6 @@ with
             scm.user_principal_name,
             scm.mail,
 
-            true as active,
             'Expense User' as roles,
             null as content_groups,
             null as days_terminated,
@@ -144,7 +141,6 @@ with
             au.legal_family_name,
             au.roles,
             au.assignment_status,
-            au.active,
             au.purchasing_user,
             au.content_groups,
             au.home_business_unit_code,
