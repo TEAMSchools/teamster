@@ -1016,11 +1016,13 @@ Plugin source and update instructions:
 
 ### Step 2 — Revert the summer toggle (if applied)
 
-If the summer toggle was applied to
-`int_tableau__gradebook_audit_flags_calculations` during the off-season
-(switching year filters to `current_academic_year - 1` and grades type to
-`'last_year'`), revert both changes before the new school year begins. See the
-`gradebook-audit` skill for the exact lines.
+If the summer toggle was applied during the off-season (switching year filters
+to `current_academic_year - 1`, grades type to `'last_year'`) to
+`int_tableau__gradebook_audit_flags_calculations`,
+`rpt_tableau__gradebook_audit`, and
+`int_powerschool__u_expectations_qtd_unpivot`, revert all changes in all three
+files before the new school year begins. See the `gradebook-audit` skill for the
+exact lines.
 
 ---
 

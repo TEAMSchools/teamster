@@ -149,8 +149,9 @@ the `grades_type` will still produce no data.
 
 - `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags_calculations.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
+- `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations_qtd_unpivot.sql`
 
-**Two changes to make:**
+**Three changes to make:**
 
 1. In `int_tableau__gradebook_audit_flags_calculations` — change the year filter
    (appears 3 times, marked with `/* summer toggle: see skill */`):
@@ -187,11 +188,31 @@ the `grades_type` will still produce no data.
    s.academic_year = {{ var("current_academic_year") - 1 }}
    ```
 
-Build and verify after both changes:
+3. In `int_powerschool__u_expectations_qtd_unpivot` — change both occurrences
+   (one filters `int_powerschool__calendar_week`, marked
+   `-- summer toggle: see skill`; one stamps the output `academic_year` column,
+   marked `/* summer toggle: see skill */`):
+
+   ```sql
+   -- change this (appears 2 times):
+   {{ var("current_academic_year") }}
+   -- to this:
+   {{ var("current_academic_year") - 1 }}
+   ```
+
+   This model has no `academic_year` column upstream (`U_EXPECTATIONS` reflects
+   whatever's currently live in PowerSchool, not a specific year) — its
+   `academic_year` is a literal stamped on every row. `flags_calculations` joins
+   to it on `academic_year` among other keys; leaving this model at
+   `current_academic_year` while `flags_calculations` is toggled to `- 1` breaks
+   that join and silently drops all `assignment_teacher` rows.
+
+Build and verify after all three changes:
 
 ```bash
 uv run dbt build \
-  --select int_tableau__gradebook_audit_flags_calculations rpt_tableau__gradebook_audit \
+  --select int_powerschool__u_expectations_qtd_unpivot \
+    int_tableau__gradebook_audit_flags_calculations rpt_tableau__gradebook_audit \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state target/prod
@@ -199,7 +220,7 @@ uv run dbt build \
 
 **When to revert:** once the new school year starts and teachers begin entering
 grades in PowerSchool (typically Q1), revert all changes:
-`current_academic_year - 1` → `current_academic_year` in both files, and
+`current_academic_year - 1` → `current_academic_year` in all three files, and
 `'last_year'` → `'current_year'` in flags calculations.
 
 ---
