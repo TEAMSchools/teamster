@@ -227,13 +227,16 @@ unchanged.
 | `assign_s_score_less_50p` (non-HS only)                                                                                        | `assign_ms_s_score_less_50p`         |
 | `assign_s_hs_score_less_50p`                                                                                                   | `assign_hs_s_score_less_50p`         |
 
-!!! note "KIPP Sumner G5 school_level override" Grade 5 sections at KIPP Sumner
-Academy (formerly KIPP Sumner Elementary; school 179905) are treated as MS
-(`school_level_alt = 'MS'`) for AY 2025+. The override is hardcoded — always by
-`schoolid = 179905`, never by school name, which PowerSchool has renamed once
-already — in the `scores` CTE here and in
-`int_extracts__course_schedule_by_term` / `int_extracts__student_enrollments`.
-It ensures HS-vs-non-HS flag conditions apply consistently to those students.
+!!! note "KIPP Sumner base level + grade 5/6 MS override" KIPP Sumner Academy
+(formerly KIPP Sumner Elementary; school 179905) is base-classified **ES**
+network-wide in `stg_powerschool__schools` (matched by `abbreviation = 'Sumner'`
+— high_grade alone no longer implies ES now that Sumner is K-6). Grades 5 and 6
+are then overridden to MS (`school_level_alt = 'MS'`) for AY 2025+ in three
+downstream models: the `scores` CTE here and
+`int_extracts__course_schedule_by_term` match on `schoolid = 179905`;
+`int_extracts__student_enrollments` matches on `school_abbreviation = 'Sumner'`
+— never on school name, which PowerSchool has renamed once already. This ensures
+HS-vs-non-HS flag conditions apply consistently to those students.
 
 Feeds `int_powerschool__gradebook_assignment_scores_rollup`.
 
