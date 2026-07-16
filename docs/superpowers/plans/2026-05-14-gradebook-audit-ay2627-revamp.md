@@ -4039,10 +4039,12 @@ new model:
 
 - [ ] **Step 9.4: Review score-flag consolidation**
 
-  Determine whether existing individual score-level flags (`assign_null_score`,
-  `assign_score_above_max`, etc.) should remain alongside the new
-  assignment-level flag, be consolidated, or be removed. Decision depends on
-  Tableau dashboard layout — coordinate with T&L stakeholders.
+  Determine whether existing individual score-level flags
+  (`assign_score_above_max`, etc. — `assign_null_score` itself was removed as
+  dead code; nothing downstream read it, use `is_expected_null` for the same
+  signal) should remain alongside the new assignment-level flag, be
+  consolidated, or be removed. Decision depends on Tableau dashboard layout —
+  coordinate with T&L stakeholders.
 
 - [ ] **Step 9.5: Build and verify** — moot as written (references disabled
       pre-refactor models); the actual fix was built and verified against

@@ -118,16 +118,6 @@ with
             assign_final_score_percent,
             half_total_point_value,
 
-            if(score_entered = 0, 1, 0) as is_zero,
-
-            if(
-                score_entered = 0 and school_level_alt = 'HS' and is_missing = 0, 1, 0
-            ) as is_academic_dishonesty,
-
-            if(score_entered is null, 1, 0) as is_null,
-
-            if(score_entered is not null, 1, 0) as is_scored,
-
             if(is_expected and score_entered = 0, 1, 0) as is_expected_zero,
 
             if(
@@ -154,8 +144,6 @@ with
 
 select
     *,
-
-    if(is_expected_null = 1, true, false) as assign_null_score,
 
     if(
         is_expected and score_entered > totalpointvalue, true, false

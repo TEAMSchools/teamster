@@ -68,8 +68,7 @@ models:
           Count of expected students whose assignment is marked missing.
       - name: n_null
         data_type: int64
-        description:
-          Count of expected students with a null score (assign_null_score).
+        description: Count of expected students with a null score.
       - name: n_score_above_max
         data_type: int64
         description:

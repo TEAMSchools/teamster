@@ -191,8 +191,10 @@ no score has been entered — `score_entered` is null in that case.
 
 **What changed in AY 2026-2027**: the 12 per-category per-school-level boolean
 flag columns were consolidated to 5 merged flags using `category_code in (...)`
-predicates. The `assign_null_score` and `assign_score_above_max` flags are
-unchanged.
+predicates. `assign_score_above_max` is unchanged. `assign_null_score` was
+removed — nothing downstream read it
+(`int_powerschool__gradebook_assignment_scores_rollup` sums `is_expected_null`
+directly instead); use `is_expected_null` for the same signal.
 
 **Key computed columns** (unchanged):
 
@@ -212,7 +214,6 @@ unchanged.
 
 | Flag                                 | Fires when                                                                                   |
 | ------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `assign_null_score`                  | `is_expected_null = 1` (score field is blank)                                                |
 | `assign_score_above_max`             | `is_expected` and `score_entered > totalpointvalue`                                          |
 | `assign_mh_hwf_score_less_5`         | H/W/F category; `is_expected` and `is_missing = 0`; `score_entered < 5`                      |
 | `assign_ms_hwf_missing_score_not_5`  | H/W/F category; MS; `is_expected_missing = 1`; `score_entered != 5`                          |
