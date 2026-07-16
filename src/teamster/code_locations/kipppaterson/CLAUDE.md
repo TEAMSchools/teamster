@@ -29,8 +29,8 @@ database through an in-process paramiko SSH tunnel (`ssh_powerschool` resource,
 `enable_legacy_rsa=True`) and landing to BigQuery via keyless ADC (issue #3807).
 This is the pilot/template for migrating the ODBC districts (`kippnewark`,
 `kippcamden`, `kippmiami`) off `sshpass`. ONE probe-gated `@dlt_assets`
-multi-asset covers all 48 tables (`powerschool/sis/dlt/`): each table's dlt
-resource probes `COUNT(*)`/`MAX(cursor_column)` and full-replaces only on
+multi-asset covers all 48 tables (`powerschool/sis/dlt/`): the op probes each
+selected table's `COUNT(*)`/`MAX(cursor_column)` and full-replaces only on
 signature drift (signature in dlt resource state, restored from BigQuery);
 `cursor_column: null` tables always replace. Config in
 `powerschool/sis/dlt/config/assets.yaml`; two schedules in `schedules.py` subset

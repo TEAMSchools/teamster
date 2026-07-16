@@ -54,6 +54,25 @@ def probe_signature(
     }
 
 
+def _compute_changed(
+    selected: list[PowerSchoolTable],
+    current: dict[str, dict],
+    stored: dict[str, dict],
+) -> list[PowerSchoolTable]:
+    """Select tables to load: no-cursor tables always, cursor tables on drift.
+
+    A table is changed when it has no cursor column (always reloaded when
+    selected) or its just-probed signature differs from the stored one
+    (drift, or first run when stored has no entry).
+    """
+    return [
+        table
+        for table in selected
+        if table.cursor_column is None
+        or current.get(table.name) != stored.get(table.name)
+    ]
+
+
 def oracle_number_adapter(col_type: TypeEngine) -> TypeEngine | None:
     """Keep Oracle NUMBER columns off FLOAT64 in BigQuery.
 
@@ -113,9 +132,10 @@ def build_powerschool_dlt_assets(
 
     The op opens the SSH tunnel, restores prior per-table signatures from dlt
     resource_state (persisted in the destination), probes each selected table's
-    COUNT(*)/MAX(cursor), and runs the pipeline over only the changed resources
-    via source.with_resources(*changed) — a full `replace` load per changed
-    table. Tables without a cursor_column are always loaded when selected.
+    COUNT(*)/MAX(cursor), and runs the pipeline over a source narrowed to only
+    the changed tables (`_build_source(changed, current)`) — a full `replace`
+    load per changed table. Tables without a cursor_column are always loaded
+    when selected.
     Unselected / unchanged tables are never in the run, so their destination
     tables are untouched. Schedules subset the multi-asset per tier. See
     docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md.
@@ -191,8 +211,11 @@ def build_powerschool_dlt_assets(
             # truly first run (no dataset) this raises; treat as no prior state.
             try:
                 dlt_pipeline.sync_destination()
-            except Exception:
-                context.log.info("no prior dlt state; all selected are changed")
+            except Exception as e:
+                context.log.info(
+                    f"dlt sync_destination failed ({e}); treating all selected "
+                    "as changed"
+                )
 
             stored = _stored_signatures(dlt_pipeline, source_name)
 
@@ -210,12 +233,7 @@ def build_powerschool_dlt_assets(
             finally:
                 engine.dispose()
 
-            changed = [
-                table
-                for table in selected
-                if table.cursor_column is None
-                or current.get(table.name) != stored.get(table.name)
-            ]
+            changed = _compute_changed(selected, current, stored)
 
             context.log.info(
                 f"powerschool probe: {len(changed)}/{len(selected)} changed; "

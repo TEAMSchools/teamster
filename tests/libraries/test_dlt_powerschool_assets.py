@@ -1,12 +1,15 @@
 """Unit tests for the probe-gated PowerSchool dlt factory (no external deps)."""
 
 import pathlib
+import types
 from datetime import datetime
 
 import yaml
 
 from teamster.libraries.dlt.powerschool.assets import (
     PowerSchoolTable,
+    _compute_changed,
+    _stored_signatures,
     build_powerschool_dlt_assets,
     probe_signature,
 )
@@ -193,3 +196,102 @@ def test_assets_module_exposes_single_def():
 
     assert len(assets) == 1
     assert len(list(assets[0].keys)) == 48
+
+
+def test_compute_changed_no_cursor_table_always_included():
+    # No-cursor tables are always reloaded when selected, regardless of
+    # whatever current/stored signatures happen to hold (there's nothing to
+    # compare — signature is never probed or persisted for these tables).
+    table = PowerSchoolTable(name="test", cursor_column=None)
+
+    changed = _compute_changed([table], current={}, stored={})
+
+    assert changed == [table]
+
+
+def test_compute_changed_cursor_table_drift_included():
+    table = PowerSchoolTable(name="students", cursor_column="transaction_date")
+    current = {"students": {"count": 43, "max_cursor": "2026-07-16T00:00:00"}}
+    stored = {"students": {"count": 42, "max_cursor": "2026-07-15T00:00:00"}}
+
+    changed = _compute_changed([table], current, stored)
+
+    assert changed == [table]
+
+
+def test_compute_changed_cursor_table_unchanged_excluded():
+    table = PowerSchoolTable(name="students", cursor_column="transaction_date")
+    signature = {"count": 42, "max_cursor": "2026-07-15T00:00:00"}
+    current = {"students": dict(signature)}
+    stored = {"students": dict(signature)}
+
+    changed = _compute_changed([table], current, stored)
+
+    assert changed == []
+
+
+def test_compute_changed_first_run_empty_stored_all_cursor_tables_changed():
+    tables = [
+        PowerSchoolTable(name="students", cursor_column="transaction_date"),
+        PowerSchoolTable(name="users", cursor_column="whenmodified"),
+    ]
+    current = {
+        "students": {"count": 10, "max_cursor": "2026-07-15T00:00:00"},
+        "users": {"count": 5, "max_cursor": "2026-07-14T00:00:00"},
+    }
+
+    changed = _compute_changed(tables, current, stored={})
+
+    assert changed == tables
+
+
+def test_compute_changed_mixed_set_order_preserved():
+    no_cursor = PowerSchoolTable(name="test", cursor_column=None)
+    drifted = PowerSchoolTable(name="students", cursor_column="transaction_date")
+    unchanged = PowerSchoolTable(name="users", cursor_column="whenmodified")
+    selected = [no_cursor, drifted, unchanged]
+
+    unchanged_signature = {"count": 5, "max_cursor": "2026-07-14T00:00:00"}
+    current = {
+        "students": {"count": 43, "max_cursor": "2026-07-16T00:00:00"},
+        "users": dict(unchanged_signature),
+    }
+    stored = {
+        "students": {"count": 42, "max_cursor": "2026-07-15T00:00:00"},
+        "users": dict(unchanged_signature),
+    }
+
+    changed = _compute_changed(selected, current, stored)
+
+    assert changed == [no_cursor, drifted]
+
+
+def test_stored_signatures_returns_resource_signatures():
+    pipeline = types.SimpleNamespace(
+        state={
+            "sources": {
+                "powerschool": {
+                    "resources": {
+                        "students": {
+                            "signature": {
+                                "count": 5,
+                                "max_cursor": "2026-07-15T00:00:00",
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+
+    stored = _stored_signatures(pipeline, "powerschool")
+
+    assert stored == {"students": {"count": 5, "max_cursor": "2026-07-15T00:00:00"}}
+
+
+def test_stored_signatures_first_run_empty_state():
+    pipeline = types.SimpleNamespace(state={})
+
+    stored = _stored_signatures(pipeline, "powerschool")
+
+    assert stored == {}
