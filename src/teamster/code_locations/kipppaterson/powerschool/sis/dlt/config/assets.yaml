@@ -1,0 +1,207 @@
+assets:
+  # intraday tier - kippnewark sensor-driven sets
+  - table_name: attendance
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: attendance_code
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: attendance_conversion_items
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: bell_schedule
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: calendar_day
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: cc
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: courses
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: cycle_day
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: fte
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gen
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpnode
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpprogresssubject
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpprogresssubjectearned
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpprogresssubjectenrolled
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpprogresssubjectrequested
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpprogresssubjectwaived
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpprogresssubjwaivedapplied
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpselectedcrs
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpselectedcrtype
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpselector
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpstudentwaiver
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gptarget
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gpversion
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gradescaleitem
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: gradplan
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: log
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: pgfinalgrades
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: reenrollments
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: roledef
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: s_nj_crs_x
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: s_nj_ren_x
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: s_nj_stu_x
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: s_nj_usr_x
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: s_stu_x
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: schools
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: schoolstaff
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: sections
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: sectionteacher
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: spenrollments
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: storedgrades
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: studentcorefields
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: studentrace
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: students
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: studenttest
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: studenttestscore
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: termbins
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: terms
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: test
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: testscore
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: u_clg_et_stu
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: u_clg_et_stu_alt
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: u_expectations
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: u_storedgrades_de
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: u_studentsuserfields
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: users
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  - table_name: userscorefields
+    load_strategy: full_refresh
+    schedule_tier: intraday
+  # nightly tier - kippnewark gradebook sets
+  - table_name: assignmentcategoryassoc
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: assignmentscore
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: assignmentsection
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: districtteachercategory
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: gradecalcformulaweight
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: gradecalcschoolassoc
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: gradecalculationtype
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: gradeformulaset
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: gradeschoolconfig
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: gradeschoolformulaassoc
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: gradesectionconfig
+    load_strategy: full_refresh
+    schedule_tier: nightly
+  - table_name: teachercategory
+    load_strategy: full_refresh
+    schedule_tier: nightly
