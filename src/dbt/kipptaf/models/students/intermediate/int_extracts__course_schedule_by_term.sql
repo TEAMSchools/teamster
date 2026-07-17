@@ -131,6 +131,7 @@ with
 select
     s.* except (section_quarter_count),
 
+    r.employee_number as teacher_employee_number,
     r.sam_account_name as teacher_tableau_username,
     r.reports_to_employee_number as manager_employee_number,
     r.reports_to_formatted_name as manager_name,

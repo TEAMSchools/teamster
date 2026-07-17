@@ -1046,6 +1046,14 @@ models:
             source_system: PowerSchool
             source_model: base_powerschool__course_enrollments
             source_column: teacher_lastfirst
+      - name: teacher_employee_number
+        data_type: int64
+        description: Employee number of the teacher.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: employee_number
       - name: teacher_tableau_username
         data_type: string
         description: Teacher's Tableau username (SAM account name).
