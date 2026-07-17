@@ -1,4 +1,3 @@
-import os
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -258,7 +257,11 @@ def build_powerschool_dlt_assets(
             context.run.tags.get("dlt_extract_workers"), max_extract_workers
         )
         if workers is not None:
-            os.environ["EXTRACT__WORKERS"] = str(workers)
+            # Set via dlt's config accessor (an in-memory provider that
+            # pipeline.extract() resolves `workers=ConfigValue` from) rather than
+            # os.environ — keeps the override inside dlt's config channel instead
+            # of mutating the process environment.
+            dlt.config["extract.workers"] = workers
             context.log.info(f"dlt extract workers capped at {workers}")
 
         # Diagnostic knob: Oracle cursor fetch size (rows/round-trip).
