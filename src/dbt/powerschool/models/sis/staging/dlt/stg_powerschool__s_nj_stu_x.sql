@@ -234,6 +234,7 @@ select
     sla_examiner_smid,
     sla_extended_time,
     sla_humanreader_signer,
+    sla_presentation,
     sla_science_response_el,
     sla_selected_response,
     sla_spanish_trans,
