@@ -46,15 +46,30 @@ tunnel → BigQuery). Only one variant is enabled per district.
 migrating the ODBC districts. A dlt model = its **odbc** sibling minus the
 struct-unwrap: dlt lands raw Oracle scalars, so drop the
 `.int_value`/`.double_value`/`coalesce(... .bytes_decimal_value ...)` accessors,
-the `dbt_utils.deduplicate` (native table, no `_file_name` dupes), and any
-`_dagster_partition_*`; explicitly project the shared contract columns and cast
-to the contract type (`NUMERIC(10)`→int, `NUMERIC(38,9)`→float64,
-`TIMESTAMP`→date, `STRING`→bare). Watch native-type divergence per column: a
-date Oracle stores as DATE lands `TIMESTAMP` (use `cast(x as date)`), one stored
-as text lands `STRING` (keep the odbc `parse_date`) — check the landed type,
-don't assume. Source is `sources-bigquery.yml` schema
-`dagster_<district>_dlt_powerschool`, read in every target (dlt writes the prod
-dataset even on branch deploys).
+the `_file_name`-snapshot `dbt_utils.deduplicate` (native table, no file dupes)
+— but KEEP a business-grain dedup the odbc model already had (e.g.
+`u_clg_et_stu`/`u_clg_et_stu_alt` on `(studentsdcid, exit_date)`, which guards a
+downstream LEFT JOIN from fan-out), and any `_dagster_partition_*`; explicitly
+project the shared contract columns and cast to the contract type
+(`NUMERIC(10)`→int, `NUMERIC(38,9)`→float64, `TIMESTAMP`→date, `STRING`→bare).
+Watch native-type divergence per column: a date Oracle stores as DATE lands
+`TIMESTAMP` (use `cast(x as date)`), one stored as text lands `STRING` (keep the
+odbc `parse_date`) — check the landed type, don't assume. Source is
+`sources-bigquery.yml` schema `dagster_<district>_dlt_powerschool`, read in
+every target (dlt writes the prod dataset even on branch deploys).
+
+## Validating an ODBC→dlt cutover
+
+Compare the dlt landing table to prod `stg_powerschool__<t>` (native, deduped) —
+NOT `src_powerschool__<t>` (snapshot-accumulating external, dup-laden). Cast dlt
+raw scalars to the staging contract types first. Expect sub-1e-10 float epsilon
+on `.double_value`-derived numeric columns (`points`, `percent`, `gpa_points`):
+dlt reads the raw Oracle `NUMBER`, ODBC stored a lossy double — benign, not a
+defect. Key-set differences are extract-time drift (dlt lands a clean subset of
+prod). The migration PR's dbt Cloud CI stays **red until the dlt landing tables
+exist** — trigger a branch-deployment load of the `@dlt_assets` first (they
+write the non-branch-isolated prod dataset), then CI can build the staging
+models.
 
 ## ODBC source schema drift (recurring on `s_nj_stu_x`)
 

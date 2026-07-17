@@ -248,6 +248,11 @@ locations:
                   secretKeyRef:
                     name: op-ps-db-kippmiami
                     key: password
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippmiami
+                    key: password
               - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:

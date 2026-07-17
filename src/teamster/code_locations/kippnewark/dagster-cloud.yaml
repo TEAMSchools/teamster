@@ -78,6 +78,11 @@ locations:
                   secretKeyRef:
                     name: op-ps-db-kippnewark
                     key: password
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippnewark
+                    key: password
               - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:

@@ -130,6 +130,42 @@ sources:
                 - powerschool
                 - sis
                 - gen
+      - name: gpnode
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gpnode
+      - name: gpprogresssubject
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gpprogresssubject
+      - name: gpprogresssubjectearned
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gpprogresssubjectearned
+      - name: gpprogresssubjectenrolled
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gpprogresssubjectenrolled
       - name: gradecalcformulaweight
         config:
           meta:
@@ -193,6 +229,15 @@ sources:
                 - powerschool
                 - sis
                 - gradeschoolformulaassoc
+      - name: gradesectionconfig
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gradesectionconfig
       - name: log
         config:
           meta:
@@ -409,6 +454,42 @@ sources:
                 - powerschool
                 - sis
                 - testscore
+      - name: u_clg_et_stu
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - u_clg_et_stu
+      - name: u_clg_et_stu_alt
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - u_clg_et_stu_alt
+      - name: u_expectations
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - u_expectations
+      - name: u_storedgrades_de
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - u_storedgrades_de
       - name: u_studentsuserfields
         config:
           meta:

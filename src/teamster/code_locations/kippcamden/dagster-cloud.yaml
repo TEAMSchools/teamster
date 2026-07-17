@@ -68,6 +68,11 @@ locations:
                   secretKeyRef:
                     name: op-ps-db-kippcamden
                     key: password
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippcamden
+                    key: password
               - name: PS_SSH_PORT
                 valueFrom:
                   secretKeyRef:

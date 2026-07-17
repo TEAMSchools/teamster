@@ -16,8 +16,8 @@ models/
     powerschool/ # PowerSchool autocomm extracts (teachers, students IEP)
 ```
 
-PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
-`sftp.+enabled: false`)
+PowerSchool data source: **dlt** (Oracle over SSH tunnel → BigQuery;
+`dlt.+enabled: true`, `odbc.+enabled: false`)
 
 ## Source Packages
 

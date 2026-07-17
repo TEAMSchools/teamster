@@ -47,3 +47,17 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
   the offered host-key algorithms at the `peer server KEXINIT proposal` line,
   then read the paramiko traceback to identify which of the three layers the
   failure surfaces from.
+
+- **The three ssh-rsa mutations above are class-level and reverted right after
+  the initial handshake — so they do NOT survive a mid-stream rekey.** paramiko
+  renegotiates keys every `Packetizer.REKEY_BYTES` (512 MiB); against an
+  ssh-rsa-only server that rekey's KEXINIT would drop ssh-rsa and kill the
+  transport (surfaced as `oracledb DPY-4011` on a bulk PowerSchool pull — the
+  9M-row cliff). `get_connection` fixes this by calling `_persist_legacy_rsa` on
+  the returned transport: it re-applies ssh-rsa scoped to that **instance**
+  (`_preferred_keys` + a `_LegacyRSAKey` in `_key_info`, so no process-global
+  `RSAKey.HASHES` weakening) and bumps the instance `packetizer.REKEY_BYTES` to
+  disable auto-rekey outright (OpenSSH `RekeyLimit none`). Preserve this call if
+  you refactor `get_connection`. Regression:
+  `tests/resources/test_resource_ssh_rekey.py` (loopback ssh-rsa-only server,
+  forced rekey — no external creds).
