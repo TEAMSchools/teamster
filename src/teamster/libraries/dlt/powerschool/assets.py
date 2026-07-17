@@ -73,7 +73,9 @@ def probe_signature(
         # store its string form so the signature stays JSON-serializable.
         max_cursor_value = str(max_cursor)
 
-    return {"count": count, "max_cursor": max_cursor_value}
+    # int(count): mirror the JSON-safe-scalar normalization done for max_cursor
+    # above (oracledb returns int today, but keep the state doc driver-agnostic).
+    return {"count": int(count), "max_cursor": max_cursor_value}
 
 
 def _compute_changed(
