@@ -281,6 +281,15 @@ def build_powerschool_dlt_assets(
             if not changed:
                 return  # idle tick: nothing to load
 
+            # Stream dlt's periodic extract/normalize/load progress into the
+            # Dagster event log. The factory-built collector defaults to
+            # logger="stdout" (step-pod compute logs only); context.log is a
+            # DagsterLogManager (a logging.Logger), so pointing the collector at
+            # it surfaces progress as structured run events every log_period s.
+            dlt_pipeline.collector = LogCollector(
+                logger=context.log, log_period=15.0, dump_system_stats=False
+            )
+
             try:
                 # fetch_row_count() attaches an authoritative per-table row_count
                 # to each materialization's metadata (surfaced in the asset
