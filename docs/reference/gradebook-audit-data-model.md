@@ -43,11 +43,20 @@ The audit operates at multiple grains simultaneously:
 
 !!! note "Paterson GradeBook plugin" The **KIPP NJ Gradebook Audit** plugin
 cannot be installed on Paterson's PowerSchool instance, so `U_EXPECTATIONS` is
-never populated there natively. Instead, `kipppaterson`'s own
-`stg_powerschool__u_expectations` model (overriding the disabled `powerschool`
-package version) reads Newark's real U_EXPECTATIONS data cross-project via a
-`source()` on `kippnewark_powerschool`, filtered to `school_level = 'MS'` (see
-`src/dbt/kipppaterson/models/powerschool/sis/staging/stg_powerschool__u_expectations.sql`).
+never populated there natively. `kipptaf`'s own
+`stg_powerschool__u_expectations` model handles this directly: a
+`paterson_spoof` CTE reads Newark's real U_EXPECTATIONS data via
+`source("kippnewark_powerschool", "stg_powerschool__u_expectations")`, filtered
+to `school_level = 'MS'`, with a hardcoded
+`'kipppaterson' as _dbt_source_project` (bypassing the usual
+`extract_code_location()` regex-on-schema-name derivation, since the physical
+relation really is Newark's — deriving from it would mislabel these rows as
+`kippnewark`). This is `UNION ALL`-ed alongside the real Camden/Newark union
+(`src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`).
+There is no per-district override model in `kipppaterson` anymore — that
+approach (a `kipppaterson`-project model reading Newark's source under a
+misleadingly-named `kippnewark_powerschool` source declaration) was replaced
+after review; see PR #4132 review discussion.
 `int_powerschool__u_expectations_qtd_unpivot`'s kipptaf-level union picks this
 up as a third region alongside Camden and Newark — no different from a real
 region's data at that point. Tracked:

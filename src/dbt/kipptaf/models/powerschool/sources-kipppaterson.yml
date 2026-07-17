@@ -545,15 +545,6 @@ sources:
                 - kipppaterson
                 - powerschool
                 - stg_powerschool__u_def_ext_students
-      - name: stg_powerschool__u_expectations
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kipppaterson
-                - powerschool
-                - stg_powerschool__u_expectations
       - name: stg_powerschool__u_studentsuserfields
         config:
           meta:
