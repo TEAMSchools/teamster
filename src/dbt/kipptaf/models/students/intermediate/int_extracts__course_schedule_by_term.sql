@@ -87,7 +87,7 @@ with
 
             d.school_level,
 
-            initcap(regexp_extract(s._dbt_source_project, r'kipp(\w+)')) as region,
+            {{ extract_region("s") }} as region,
 
             cast(s.terms_academic_year as string)
             || '-'
@@ -95,8 +95,6 @@ with
                 cast(s.terms_academic_year + 1 as string), 2
             ) as academic_year_display,
 
-            /* schoolid, not school_name — PS renamed the school (Elementary ->
-               Academy) and a name predicate silently stops matching */
             if(
                 s.terms_academic_year >= 2025
                 and s.sections_schoolid = 179905
