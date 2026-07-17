@@ -59,10 +59,12 @@ shared legacy ODBC SIS library) into one PR. Parent: #4427.
 - **kipptaf**: convert
   `src/dbt/kipptaf/models/powerschool/sources-kippmiami.yml` to a BQ-native
   frozen source — hardcoded `kippmiami_powerschool` schema (no
-  target-conditional prefix), drop every `meta.dagster.asset_key` block (the
-  Miami assets are being deleted; leaving them would dangle in kipptaf's asset
-  graph). Add a source `description` stating this is a frozen pre-Focus archive
-  that must not be dropped. All ~50 kipptaf union models compile unchanged.
+  target-conditional prefix). KEEP the `meta.dagster.asset_key` blocks: the
+  `kippmiami_fldoe_archive` precedent keeps asset keys on archived sources,
+  preserving Dagster lineage continuity (the keys become external assets once
+  the Miami definitions are deleted; Dagster tolerates this). Add a source
+  `description` stating this is a frozen pre-Focus archive that must not be
+  dropped. All ~50 kipptaf union models compile unchanged.
 - **kipptaf fldoe** (`src/dbt/kipptaf/models/fldoe/sources-kippmiami.yml`) stays
   as-is — Miami fldoe keeps building live.
 - **kippmiami fldoe**: add a BQ-native source (`sources-bigquery.yml`, schema
@@ -75,6 +77,11 @@ shared legacy ODBC SIS library) into one PR. Parent: #4427.
 - `code_locations/kippmiami/powerschool/` (assets, schedules, sensors, config)
   and its wiring in `definitions.py` (module import, schedules, sensors,
   `db_powerschool`, `ssh_powerschool` resources).
+- The dead ODBC-era integration tests
+  `tests/{assets,schedules,sensors}/test_*_powerschool_sis.py` (they import
+  pre-dlt `code_locations/<loc>/powerschool` module shapes that no longer exist
+  in any district) plus their two `tests/utils.py` helpers. The archived unit
+  suite `tests/libraries/powerschool/sis/odbc/` stays.
 - `code_locations/kippmiami/extracts/config/powerschool.yaml` plus its
   job/schedule entry (the focus extract stays).
 - Miami dbt: `models/extracts/powerschool/` (both `rpt_powerschool__autocomm_*`
