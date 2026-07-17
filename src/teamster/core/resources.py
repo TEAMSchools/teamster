@@ -69,7 +69,11 @@ def get_powerschool_ssh_resource() -> SSHResource:
         remote_host=EnvVar("PS_SSH_HOST"),
         remote_port=EnvVar.int("PS_SSH_PORT"),
         username=EnvVar("PS_SSH_USERNAME"),
+        password=EnvVar("PS_SSH_PASSWORD"),
         tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
+        # paramiko 5.0 dropped ssh-rsa; PowerSchool-hosted servers still
+        # require it (the ODBC sshpass path forces +ssh-rsa the same way)
+        enable_legacy_rsa=True,
     )
 
 

@@ -25,10 +25,7 @@ from teamster.code_locations.kippnewark import (
     renlearn,
     titan,
 )
-from teamster.code_locations.kippnewark.resources import (
-    FINALSITE_RESOURCE,
-    SSH_POWERSCHOOL,
-)
+from teamster.code_locations.kippnewark.resources import FINALSITE_RESOURCE
 from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
@@ -47,6 +44,7 @@ from teamster.core.resources import (
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
     get_powerschool_oracle_resource,
+    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
@@ -106,7 +104,7 @@ defs = Definitions(
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_edplan": SSH_EDPLAN,
         "ssh_iready": SSH_IREADY,
-        "ssh_powerschool": SSH_POWERSCHOOL,
+        "ssh_powerschool": get_powerschool_ssh_resource(),
         "ssh_renlearn": SSH_RENLEARN,
         "ssh_titan": SSH_TITAN,
     },
