@@ -32,7 +32,6 @@ from teamster.code_locations.kippnewark.resources import (
 from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
-    DB_POWERSCHOOL,
     DEANSLIST_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
@@ -47,6 +46,7 @@ from teamster.core.resources import (
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
+    get_powerschool_oracle_resource,
 )
 
 defs = Definitions(
@@ -82,7 +82,6 @@ defs = Definitions(
         *couchdrop.sensors,
         *edplan.sensors,
         *iready.sensors,
-        *powerschool.sensors,
         *renlearn.sensors,
         *titan.sensors,
         AutomationConditionSensorDefinition(
@@ -92,7 +91,7 @@ defs = Definitions(
     ],
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
-        "db_powerschool": DB_POWERSCHOOL,
+        "db_powerschool": get_powerschool_oracle_resource(),
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
         "dlt": DagsterDltResource(),
