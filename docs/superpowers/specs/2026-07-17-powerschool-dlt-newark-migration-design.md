@@ -122,9 +122,8 @@ it (final-teardown phase of #4427).
 
 ## Validation
 
-- Branch deployment: launch a multi-table subset (small + trimmed + large) and
-  verify row counts, trimmed column lists, and probe idle-tick behavior on a
-  second run.
+- Branch deployment: launch a multi-table subset (small + wide + large) and
+  verify row counts and probe idle-tick behavior on a second run.
 - dbt: `uv run dbt build --select staging.dlt --target staging` equivalents per
   repo conventions; dbt Cloud CI on the PR builds `state:modified+`.
 - Compare `stg_powerschool__*` dlt-variant row counts to prod ODBC-variant
