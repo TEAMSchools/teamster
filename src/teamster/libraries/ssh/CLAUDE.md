@@ -21,6 +21,10 @@ Extended SSH/SFTP resource used by every SFTP-based integration. Wraps
 - `SFTPAttributes.st_mtime` and `st_mode` are `int | None` in paramiko's type
   stubs — wrap in `check.not_none()` when comparing
 - `open_ssh_tunnel()` is only called by the PowerSchool ODBC library
+- `open_ssh_tunnel_paramiko()` is the in-process forward used by the dlt
+  PowerSchool path (password from resource config / `PS_SSH_PASSWORD`);
+  `open_ssh_tunnel()` (sshpass) remains for the incumbent ODBC districts until
+  they migrate.
 - In production, the PowerSchool SSH password is read from
   `/etc/secret-volume/powerschool_ssh_password.txt`; in test mode it reads from
   the `password` field directly
