@@ -24,6 +24,7 @@ Measured against Newark's production Oracle over the SSH tunnel:
 | `attendance` full extract, `arraysize=10_000`     | **49.6k rows/s** — 5,825,606 rows in 117s extract + 34s BQ load      |
 | SSH                                               | `enable_legacy_rsa=True` paramiko tunnel works against Newark's host |
 | Probe gate                                        | works (`1/1 changed` on first run)                                   |
+| Untrimmed `cc` / `log` / `u_studentsuserfields`   | all load cleanly — 42 / 52 / 349 columns, 3 tables in one 56s step   |
 
 Conclusions:
 
@@ -37,6 +38,12 @@ Conclusions:
 - Newark's code-server container needs `PS_SSH_PASSWORD` (execution-plan
   resource resolution happens there, not only in run pods) — fixed in
   `dagster-cloud.yaml`.
+- **No column selection needed.** The ODBC `select_columns` trims existed to
+  contain the hand-maintained Avro schema surface, which dlt (inferred schema)
+  doesn't have. Untrimmed extracts of all three trimmed tables — including
+  `u_studentsuserfields` with 349 Newark custom columns — reflect and load with
+  no type failures. The raw dataset holds the full width; the dbt staging models
+  still select the narrow column set, governing downstream exposure.
 
 ## Design
 
@@ -44,10 +51,10 @@ Conclusions:
 
 - Keep `arraysize=10_000` on the extract engine (already committed; Paterson
   inherits the speedup through the shared factory).
-- Add `included_columns: list[str] | None = None` to `PowerSchoolTable`,
-  threaded to `table_rows(included_columns=...)`. Newark trims columns on `cc`,
-  `u_studentsuserfields`, and `log` (PII/noise columns excluded at source,
-  mirroring the ODBC `select_columns`).
+- **No `included_columns` axis** — spike-disproven (see above). If a future
+  table surfaces an unloadable column type, `table_rows` already accepts
+  `included_columns`/`excluded_columns`, so the knob is a small additive change
+  kept in the back pocket, not built speculatively.
 - **#4423**: replace the `os.getenv`-based `_oracle_connection_url()` with an
   injected `ConfigurableResource` (`OracleResource` or similarly named: `user`,
   `password`, `host`, `port`, `service_name`, all `EnvVar`-backed; exposes
@@ -74,8 +81,6 @@ Mirror Paterson's layout (`assets.py`, `config/assets.yaml`, `schedules.py`):
   tables; commented-out tables stay out). Per-table `cursor_column` from the
   incumbent `partition_column` (`transaction_date` / `whenmodified`);
   no-partition tables get `cursor_column: null`.
-- **`included_columns`** carried from the ODBC `select_columns` for `cc`,
-  `u_studentsuserfields`, `log`.
 - **Tiers**: `intraday` (15-min schedule) for the cursor-bearing tables the ODBC
   sensor refreshes today — including `attendance`, `storedgrades`,
   `pgfinalgrades`; `nightly` for gradebook tables (`assignmentscore`,
