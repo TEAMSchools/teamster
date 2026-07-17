@@ -1,5 +1,10 @@
-from teamster.code_locations.kipppaterson.powerschool.sis.sftp import assets
+from teamster.code_locations.kipppaterson.powerschool.sis import dlt
+
+assets = [*dlt.assets.assets]
+
+schedules = [*dlt.schedules.schedules]
 
 __all__ = [
     "assets",
+    "schedules",
 ]

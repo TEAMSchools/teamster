@@ -4,6 +4,7 @@ from dagster import (
     Definitions,
     load_assets_from_modules,
 )
+from dagster_dlt import DagsterDltResource
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kipppaterson import (
@@ -18,7 +19,10 @@ from teamster.code_locations.kipppaterson import (
     pearson,
     powerschool,
 )
-from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
+from teamster.code_locations.kipppaterson.resources import (
+    FINALSITE_RESOURCE,
+    SSH_POWERSCHOOL,
+)
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
@@ -49,6 +53,7 @@ defs = Definitions(
         *deanslist.schedules,
         *extracts.schedules,
         *finalsite.schedules,
+        *powerschool.schedules,
     ],
     sensors=[
         *amplify.sensors,
@@ -62,6 +67,7 @@ defs = Definitions(
         "db_bigquery": BIGQUERY_RESOURCE,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
+        "dlt": DagsterDltResource(),
         "finalsite": FINALSITE_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
@@ -70,5 +76,6 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
+        "ssh_powerschool": SSH_POWERSCHOOL,
     },
 )

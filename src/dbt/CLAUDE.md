@@ -381,6 +381,22 @@ found inside <alias>"), not just relationships tests.
 upstream to prod regardless of stale dev copies — cleaner than enumerating
 parents in `--select`.
 
+Also manifests as false row-count / row-presence deltas (not just
+`relationships`/PK tests): a stale dev `int_people__staff_roster` missing recent
+hires makes a dev-built rpt look like it dropped rows. Confirm which upstreams
+resolved to dev by grepping the compiled SQL (`target/compiled/.../<model>.sql`)
+for `zz_<user>_` refs — dev-schema refs mean `--defer` was shadowed; validate
+against prod (or an ad-hoc prod query) instead.
+
+To validate a MODIFIED `rpt_`/view against prod (the deployed view is still the
+OLD code, and a dev build is stale-shadowed), rewrite its compiled SQL
+(`target/compiled/.../<model>.sql`): `zz_<user>_` refs → prod schemas, and
+inline any `stg_` you changed from its `source()` (prod lacks the new column);
+run via `bq`. Tell live drift from a real logic change with distinct-key counts
+(`total - dup`) vs a FRESH same-moment prod baseline — an unchanged distinct set
+means the row delta is fan-out/drift (warehouse tables rematerialize
+mid-session), not your change.
+
 ## Column-rename refactors strand dependent prod views
 
 When a staging column is dropped or renamed and a downstream view's SQL is
@@ -774,6 +790,11 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   where the raw value first appears, as a named column. Downstream expressions
   operate on already-typed columns — never nest `cast()` inside another
   function.
+- **`cast(col as type)` needs an explicit alias** — unaliased, BigQuery names
+  the column `f0_`, not `col`, so a contracted / explicitly-projected `select`
+  gets the wrong column name and fails. Write `cast(col as type) as col`; the
+  matching alias on a function-wrapped expression is NOT an AL09 self-alias
+  (it's the repo norm).
 - **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
   lookups, or correlated subqueries; restructure as a CTE and join it.
   Carve-out: a scalar _aggregate_ over `unnest` of an array

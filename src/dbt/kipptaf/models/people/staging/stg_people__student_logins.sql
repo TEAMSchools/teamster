@@ -29,7 +29,6 @@
                 and first_name is not null
                 and last_name is not null
                 and enroll_status = 0
-                and _dbt_source_relation not like '%kipppaterson%'
         ),
 
         username_options as (
