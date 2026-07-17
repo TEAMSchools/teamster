@@ -105,6 +105,20 @@ def _view_member_to_qualified_name(view_doc: dict) -> dict[str, str]:
     return mapping
 
 
+def _view_exposed_members(view_doc: dict) -> set[str]:
+    # Reconstructs the flat member names a view actually exposes, the same
+    # way Cube does: prefix: true -> "<lastJoinPathSegment>_<member>",
+    # else bare (see src/cube/CLAUDE.md "row_level.filters[].member is a
+    # flat view-member name, not a cube-qualified path").
+    exposed: set[str] = set()
+    for cube_ref in view_doc.get("cubes", []) or []:
+        join_cube = cube_ref["join_path"].split(".")[-1]
+        prefixed = cube_ref.get("prefix", False)
+        for member in cube_ref.get("includes", []) or []:
+            exposed.add(f"{join_cube}_{member}" if prefixed else member)
+    return exposed
+
+
 def _root_cube(view_doc: dict) -> str | None:
     cube_refs = view_doc.get("cubes", []) or []
     if not cube_refs:
@@ -147,5 +161,30 @@ def test_pre_aggregation_covers_row_level_scoping_members() -> None:
                         )
     assert not offenders, (
         "pre-aggregation missing a dimension its own view scopes row_level on:\n"
+        + "\n".join(offenders)
+    )
+
+
+def test_row_level_filter_members_are_exposed_by_their_view() -> None:
+    # A row_level filter naming a member the view doesn't (or no longer)
+    # expose compiles fine but silently never matches -- Cube has no
+    # standalone error for it (this is the same prefix/bare divergence
+    # documented in src/cube/CLAUDE.md).
+    offenders = []
+    for path in CUBE_MODEL_DIR.rglob("views/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for view in doc.get("views", []) or []:
+            exposed = _view_exposed_members(view)
+            for policy in view.get("access_policy", []) or []:
+                filters = policy.get("row_level", {}).get("filters", []) or []
+                for member in _filter_members(filters):
+                    if member not in exposed:
+                        offenders.append(
+                            f"{path}: view {view['name']!r} group "
+                            f"{policy.get('group')!r} row_level member "
+                            f"{member!r} is not exposed by this view"
+                        )
+    assert not offenders, (
+        "row_level filter references a member the view doesn't expose:\n"
         + "\n".join(offenders)
     )

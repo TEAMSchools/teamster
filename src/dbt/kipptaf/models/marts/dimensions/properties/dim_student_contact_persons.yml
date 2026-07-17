@@ -1,17 +1,23 @@
 models:
   - name: dim_student_contact_persons
     description: >-
-      Contact person dimension. One row per unique contact person, deduplicated
-      across students. A parent linked to multiple students (siblings) appears
-      once here and has multiple rows in bridge_student_contacts. Person
-      attributes (name, phone, email, address) are stable across student-contact
-      pairs and live on this dimension.
+      Contact person dimension. One row per unique student contact person. A
+      contact_1 person shared across siblings appears once here (keyed by their
+      real contact identity) and has one bridge_student_contacts row per
+      student. Emergency contacts have no stable person record under the
+      Finalsite 1+4 contact shape, so each is its own person keyed by student
+      and contact slot. Person attributes (name, email, typed phones, home
+      address) live on this dimension; the relationship and the emergency flags
+      that vary per student-contact pair live on bridge_student_contacts.
 
     columns:
       - name: student_contact_person_key
         data_type: string
-        description:
+        description: >-
           Surrogate key for the contact person. Primary key for this dimension.
+          For contact_1 it is hashed from the district and the contact's real
+          identity; for emergency contacts it is hashed from the district,
+          student, and contact slot.
         constraints:
           - type: primary_key
             warn_unsupported: false
@@ -22,33 +28,80 @@ models:
 
         config:
           meta:
-            source_system: PowerSchool
-            source_model: int_powerschool__contacts
-            source_column: personid
+            source_model: int_students__contacts
             column_role: primary_key
 
       - name: full_name
         data_type: string
         description: >-
-          Full name of the contact person (first + last, trimmed) as stored in
-          PowerSchool. Matches dim_staff.full_name and dim_students.full_name.
+          Full name of the contact person. Matches dim_students.full_name and
+          dim_staff.full_name naming.
 
-      - name: phone
-        data_type: string
-        description: >-
-          Primary phone number for the contact person. Prefers Mobile over Home
-          over Daytime over Work. Formatted as (NXX) NXX-XXXX. NULL if no phone
-          is recorded.
+        config:
+          meta:
+            source_column: contact_name
+            contains_pii: true
 
       - name: email
         data_type: string
+        description: Current email address for the contact person. Null if none.
+
+        config:
+          meta:
+            source_column: email_current
+            contains_pii: true
+
+      - name: phone_mobile
+        data_type: string
+        description: The contact's phone number typed as mobile or cell, if any.
+
+        config:
+          meta:
+            contains_pii: true
+
+      - name: phone_home
+        data_type: string
+        description: The contact's phone number typed as home, if any.
+
+        config:
+          meta:
+            contains_pii: true
+
+      - name: phone_daytime
+        data_type: string
         description: >-
-          Current email address for the contact person. NULL if no email is
-          recorded in PowerSchool.
+          The contact's phone number typed as daytime, if any. Always null for
+          Finalsite-sourced regions, which have no daytime phone type.
+
+        config:
+          meta:
+            contains_pii: true
+
+      - name: phone_work
+        data_type: string
+        description: The contact's phone number typed as work, if any.
+
+        config:
+          meta:
+            contains_pii: true
+
+      - name: phone_primary
+        data_type: string
+        description: >-
+          The contact's first or best phone number regardless of type — a
+          fallback for phones the typed columns miss.
+
+        config:
+          meta:
+            contains_pii: true
 
       - name: home_address
         data_type: string
         description: >-
-          Primary home address for the contact person. Single concatenated
-          address string from the PowerSchool Home contact type. NULL if no home
-          address is recorded.
+          The contact's home address as a single string. Always null for
+          emergency contacts, which carry no address.
+
+        config:
+          meta:
+            source_column: address_home
+            contains_pii: true

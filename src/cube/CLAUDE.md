@@ -28,11 +28,23 @@ school_calendars) go in `cubes/conformed/`.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
-- **Transformation lives in dbt, not cube.** Multi-table joins, window
-  functions, and derived grains (SCD2 period-intersection / status spines)
-  belong in a dbt mart read via `sql_table` — not inline cube `sql:`, which is
-  for thin column/expression shaping only. (Cube's own dbt guidance and the
-  `original_sql` pre-agg confirm this.)
+- **Transformation lives in dbt, not cube. A cube's `sql:` / `sql_table:` reads
+  exactly ONE dbt model — never a `JOIN`, subquery, CTE, or `SELECT t.*`.**
+  Multi-table joins, window functions, and derived grains (SCD2
+  period-intersection / status spines) belong in a dbt mart. To surface columns
+  from a second table on a view, give that table its own cube (`public: false`,
+  exposing only the needed dimensions) and bring them in with a **Cube join**
+  keyed on the shared grain — never inline the join in a cube `sql:`.
+  `SELECT t.*` is separately forbidden: it silently breaks the moment the base
+  model gains a same-named column. The Cube custom-calendar **range-join
+  recipe** (`BETWEEN` / `>=`) applies only to a _join's_ `sql:` predicate — it
+  is NOT a license for a `JOIN` inside a cube-body `sql:`. (Cube's own dbt
+  guidance and the `original_sql` pre-agg confirm the one-model rule.) The
+  one-model rule holds with zero exceptions: SCD2 period-intersection grains
+  (`staff_work_history` ← `dim_staff_work_history`,
+  `staff_reporting_relationships` ← `dim_staff_reporting_periods`) are
+  materialized in dbt marts and read via `sql_table:`, not built in a cube-body
+  `sql:`.
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
@@ -122,6 +134,13 @@ combination to reason about.
   the chain-IN check). The location∩department remit is precomputed server-side
   into `securityContext.allowed_abbreviations` / `allowed_department_groups` —
   domain-agnostic, reused as-is when comp/observations/benefits views are built.
+- **No aggregate-demographics view yet.** A `staff_summary` view once exposed
+  `gender_identity`/`race`/`is_hispanic` as open, unscoped aggregate breakdowns
+  — removed because small-cell slices (e.g. location × race) can re-identify an
+  individual, and suppression isn't built. Re-introduce only once
+  [#4237](https://github.com/TEAMSchools/teamster/issues/4237) (small-cell
+  suppression) ships; don't add demographic fields to `staff_directory` in the
+  meantime as a workaround.
 - **Forward-compatible staff tiers**: `staff-compensation`,
   `staff-observations`, `staff-benefits` are emitted by `buildGroups` when the
   corresponding `*_scope` column is non-`none`, but no view has an
@@ -142,8 +161,12 @@ assessment views, which join `locations` unprefixed — bare
 **Interpolation forms.** An array value (`IN`) uses the UNBRACKETED string form:
 `values: "{ securityContext.allowed_abbreviations }"`. A single scalar uses the
 bracketed form: `values: ["{ securityContext.region_key }"]`.
-`operator: equals` + array value compiles to SQL `IN`; an empty array (e.g. an
-allow-list computed to nothing) compiles to `IN ()` — zero rows, fail-closed.
+`operator: equals` + array value compiles to SQL `IN`. An **empty** array does
+NOT compile to `IN ()`/zero rows — Cube (Tesseract) throws "Values required for
+filter" and fails the query (fail-closed, but a hard error, not a clean deny;
+verified empirically, #4269). `access.buildGroups` therefore does not emit a
+staff-pii group whose remit/chain array resolved empty, so such a viewer takes
+the no-group default-deny path instead of hitting that error.
 
 **Scope selection is group-based, not `conditions.if`-based.** `conditions.if`
 only compiles a bare truthy reference (`if: "{ userAttributes.x }"`) — a `==`

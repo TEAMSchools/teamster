@@ -3,13 +3,29 @@
 ## Workflows
 
 - `claude-code-review.yaml` — auto-reviews PRs touching `src/`, `tests/`,
-  `scripts/`, `mcp/` (excludes markdown).
+  `scripts/`, `mcp/` (excludes markdown). **Gated to `base=main`
+  (`branches: [main]`)** — a **stacked PR** (base = another feature branch) gets
+  no auto-review. dbt Cloud CI is NOT base-gated: it triggers via dbt Cloud's
+  own GitHub app on PR events, independent of any GH-Actions `branches` filter,
+  so a stacked PR **does** run dbt Cloud CI (verified on #4381) alongside
+  Trunk + Dagster deploy — only `claude-code-review` is skipped. Review a
+  stacked PR via `superpowers:requesting-code-review` or an `@claude` PR comment
+  (`claude.yaml` is comment-triggered, not base-gated). A base-retarget after
+  the parent merges does NOT re-fire `opened`, so `claude-code-review` does not
+  auto-trigger then.
 - `claude.yaml` — responds to `@claude` mentions on issues/PRs.
 - `dagster-cloud-deploy.yaml` — reusable workflow (`workflow_call`) for
   multi-arch Docker builds and Dagster Cloud deploys. Called by per-location
   `deploy-prod-*.yaml` workflows. Uses `cancel-in-progress: true` grouped by
   workflow + ref + event — rapid pushes to the same branch cancel prior deploys.
   Does not prevent multiple locations deploying simultaneously from one commit.
+- **Branch deployments build only on a NON-draft PR** —
+  `deploy-prod-<location>.yaml` gates the deploy job
+  `if: ${{ !github.event.pull_request.draft }}`. To get a branch deployment
+  (e.g. to test a change before merge), open the PR ready-for-review, not draft.
+  A change to a shared `pull_request`-path file (`uv.lock`, `Dockerfile`,
+  `src/teamster/core/**`) fans a branch-deploy build out to ALL five locations,
+  not just the one you touched.
 - **Each `deploy-prod-<location>.yaml` push-`paths` must list every dbt package
   in that district's `src/dbt/<district>/packages.yml`** (`src/dbt/pearson/**`,
   etc.). Drift silently skips that district's prod deploy on a shared
@@ -42,7 +58,8 @@
   event — use `!` negation patterns instead (e.g., `!**/*.md`).
 - YAML values should not be redundantly quoted — Trunk flags it. Only quote when
   required (e.g., `!` negation patterns need quotes).
-- All workflows use `actions/checkout@v6` — keep this consistent.
+- All workflows use `actions/checkout` v6 (some pin the full SHA for the v6 tag)
+  — keep the major version consistent.
 - Dagster Cloud actions are pinned to a specific version tag (not `@latest`) —
   update all occurrences together when upgrading.
 - All workflows gate on `github.actor != 'dependabot[bot]'` — maintain this when

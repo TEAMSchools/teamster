@@ -91,7 +91,7 @@ async function resolveAccess(email) {
     const bq = new BigQuery();
     const [rows] = await bq.query({
       query:
-        "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email LIMIT 1",
+        "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email ORDER BY staff_key LIMIT 1",
       params: { email },
     });
     const row = rows[0] ?? null;
@@ -191,12 +191,29 @@ module.exports = {
     // default JWT verify+decode). Verify the HS256 signature against
     // CUBEJS_API_SECRET ourselves, then resolve identity from the email claim.
     // An invalid/expired token → clean 403 (see catch below). A request with no
-    // Authorization header resolves to the empty default-deny context.
+    // Authorization header intentionally resolves to the empty default-deny
+    // context (200 + zero rows), NOT a 403: the data is fully protected either
+    // way, and this lets an unauthenticated capability probe get a no-access
+    // context rather than an error. The 403 is reserved for a token that is
+    // present but invalid.
     let email;
     if (auth) {
       try {
+        // maxAge is a defense-in-depth cap independent of the token's own
+        // `exp`: it derives from `iat` (issued-at) instead, so a compromised
+        // or misconfigured minter can't extend a token's life by inflating
+        // `exp` alone — jsonwebtoken rejects any token missing `iat` once
+        // maxAge is set (fails closed). `mcp/server.py`'s `_mint_token` sets
+        // both `iat` and a 5-minute `exp`, so this 12h ceiling is a backstop,
+        // not the primary control.
         const payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
           algorithms: ["HS256"],
+          maxAge: "12h",
+          // Absorb minor minter/server clock skew so a short-lived (5-min) token
+          // isn't spuriously 403'd near its edges. Small relative to the token
+          // life, and it fails closed — an expired token past the tolerance is
+          // still rejected.
+          clockTolerance: 30,
         });
         email = payload?.email;
       } catch (err) {
@@ -213,13 +230,29 @@ module.exports = {
       (process.env.NODE_ENV !== "production" &&
         process.env.CUBE_SQL_DEV_EMAIL) ||
       user;
-    // Cube validates the presented password against the RETURNED one — returning
-    // null rejects every connection (Task 1 verdict). Return the server-known
-    // SQL password (Cube's canonical checkSqlAuth pattern); RLS identity comes
-    // from securityContext.email, not the SQL user. `password` (the presented
-    // value) is absent on SET-USER re-auth flows, so do not compare against it.
+    // Fail closed on an unset/blank SQL password: Cube validates the presented
+    // password against the RETURNED one, so returning the env var unconditionally
+    // would validate presented passwords against `undefined` when it is absent —
+    // potentially accepting a blank-password connection. Return null to reject
+    // every connection instead (Task 1 verdict: a null password rejects). The
+    // REST path already fails closed here because jwt.verify throws on an absent
+    // CUBEJS_API_SECRET.
+    const sqlPassword = process.env.CUBEJS_SQL_PASSWORD;
+    if (!sqlPassword) {
+      console.error(
+        "checkSqlAuth: CUBEJS_SQL_PASSWORD is not set — rejecting SQL API connection",
+      );
+      return {
+        password: null,
+        securityContext: access.buildSecurityContext(null, []),
+      };
+    }
+    // Return the server-known SQL password (Cube's canonical checkSqlAuth
+    // pattern). RLS identity is resolved from the connecting `user` (the email),
+    // not from the presented password — which is absent on SET-USER re-auth
+    // flows, so do not compare against it.
     return {
-      password: process.env.CUBEJS_SQL_PASSWORD,
+      password: sqlPassword,
       securityContext: await resolveAccess(email),
     };
   },

@@ -13,7 +13,7 @@ assets:
         header: False
     destination_config:
       name: couchdrop
-      path: teamster-kippmiami/couchdrop/powerschool
+      path: data-team/kippmiami/powerschool/autocomm
   - query_config:
       type: schema
       value:
@@ -28,4 +28,4 @@ assets:
         header: False
     destination_config:
       name: couchdrop
-      path: teamster-kippmiami/couchdrop/powerschool
+      path: data-team/kippmiami/powerschool/autocomm

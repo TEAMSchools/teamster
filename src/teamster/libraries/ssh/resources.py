@@ -1,7 +1,12 @@
+import logging
+import select
 import socket
+import socketserver
 import subprocess
 import threading
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
@@ -192,3 +197,120 @@ class SSHResource(DagsterSSHResource):
         time.sleep(1.0)
 
         return ssh_tunnel
+
+    @contextmanager
+    def open_ssh_tunnel_paramiko(
+        self, local_port: int = 1521, remote_port: int = 1521
+    ) -> Iterator[int]:
+        """In-process SSH local port forward.
+
+        Replaces the sshpass subprocess for the dlt PowerSchool path: no
+        password file mount, no readiness race, host-key verification kept
+        (get_connection handles legacy ssh-rsa and transient-failure retry).
+        Yields the bound local port; pass local_port=0 for an ephemeral port.
+        """
+        client = self.get_connection()
+        server: _ForwardServer | None = None
+
+        try:
+            transport = check.not_none(value=client.get_transport())
+
+            server = _ForwardServer(
+                server_address=("127.0.0.1", local_port),
+                RequestHandlerClass=_make_forward_handler(
+                    transport=transport,
+                    remote_host=check.not_none(value=self.tunnel_remote_host),
+                    remote_port=remote_port,
+                    log=self.log,
+                ),
+            )
+
+            server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+            server_thread.start()
+
+            yield server.server_address[1]
+        finally:
+            # Stop accepting new connections, then close the SSH
+            # client/transport BEFORE closing the listener. Closing the
+            # transport EOFs every open `direct-tcpip` channel, which makes a
+            # handler thread blocked in
+            # `select.select([self.request, channel], [], [])` on a
+            # still-open forwarded connection return and unwind on its own.
+            # Only then is it safe to call `server_close()`. `server` stays
+            # `None` if construction raised before assignment (e.g.
+            # `tunnel_remote_host` unset) — guard both server calls so
+            # `client.close()` (paramiko no-ops on a second call, so this is
+            # the single close site regardless of path) still runs.
+            if server is not None:
+                server.shutdown()
+
+            client.close()
+
+            if server is not None:
+                # `_ForwardServer.block_on_close = False` is a bounded
+                # backstop on top of the ordering above: `server_close()`
+                # never joins per-connection handler threads (the
+                # `ThreadingMixIn.block_on_close=True` default would join
+                # with no timeout), so a thread that is somehow still stuck
+                # can't hang cleanup — it's already `daemon_threads = True`,
+                # so it won't block interpreter exit either.
+                server.server_close()
+
+
+class _ForwardServer(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+    # See the cleanup-ordering comment in `open_ssh_tunnel_paramiko`: without
+    # this, `server_close()` joins every per-connection handler thread with
+    # no timeout, which can hang forever on a handler parked in `select()`.
+    block_on_close = False
+
+
+def _make_forward_handler(
+    transport: Transport,
+    remote_host: str,
+    remote_port: int,
+    log: logging.Logger,
+) -> type[socketserver.BaseRequestHandler]:
+    class Handler(socketserver.BaseRequestHandler):
+        def handle(self) -> None:
+            try:
+                channel = transport.open_channel(
+                    kind="direct-tcpip",
+                    dest_addr=(remote_host, remote_port),
+                    src_addr=self.request.getpeername(),
+                )
+            except Exception as e:
+                log.warning(
+                    f"direct-tcpip channel to {remote_host}:{remote_port} failed: {e}"
+                )
+                return
+
+            if channel is None:
+                log.warning("direct-tcpip channel rejected by server")
+                return
+
+            try:
+                while True:
+                    r, _, _ = select.select([self.request, channel], [], [])
+                    if self.request in r:
+                        data = self.request.recv(16384)
+                        if len(data) == 0:
+                            break
+                        # `Channel.send()` may write fewer bytes than given
+                        # (returns the count) — `sendall()` loops until the
+                        # full buffer is written, preventing a short write
+                        # from silently truncating the forwarded stream.
+                        channel.sendall(data)
+                    if channel in r:
+                        data = channel.recv(16384)
+                        if len(data) == 0:
+                            break
+                        # `socket.send()` has the same short-write behavior as
+                        # `Channel.send()` above — use `sendall()` here too.
+                        self.request.sendall(data)
+            finally:
+                channel.close()
+                self.request.close()
+
+    return Handler

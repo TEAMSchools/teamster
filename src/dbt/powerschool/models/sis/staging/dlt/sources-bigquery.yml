@@ -1,0 +1,438 @@
+sources:
+  - name: powerschool_dlt
+    schema:
+      "{{ var('powerschool_dlt_schema', 'dagster_' ~ project_name ~
+      '_dlt_powerschool') }}"
+    tables:
+      - name: assignmentcategoryassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - assignmentcategoryassoc
+      - name: assignmentscore
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - assignmentscore
+      - name: assignmentsection
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - assignmentsection
+      - name: attendance
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - attendance
+      - name: attendance_code
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - attendance_code
+      - name: attendance_conversion_items
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - attendance_conversion_items
+      - name: bell_schedule
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - bell_schedule
+      - name: calendar_day
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - calendar_day
+      - name: cc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - cc
+      - name: courses
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - courses
+      - name: cycle_day
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - cycle_day
+      - name: districtteachercategory
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - districtteachercategory
+      - name: fte
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - fte
+      - name: gen
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gen
+      - name: gradecalcformulaweight
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gradecalcformulaweight
+      - name: gradecalcschoolassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gradecalcschoolassoc
+      - name: gradecalculationtype
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gradecalculationtype
+      - name: gradeformulaset
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gradeformulaset
+      - name: gradescaleitem
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gradescaleitem
+      - name: gradeschoolconfig
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gradeschoolconfig
+      - name: gradeschoolformulaassoc
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - gradeschoolformulaassoc
+      - name: log
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - log
+      - name: pgfinalgrades
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - pgfinalgrades
+      - name: reenrollments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - reenrollments
+      - name: roledef
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - roledef
+      - name: s_nj_crs_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - s_nj_crs_x
+      - name: s_nj_ren_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - s_nj_ren_x
+      - name: s_nj_stu_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - s_nj_stu_x
+      - name: s_stu_x
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - s_stu_x
+      - name: schools
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - schools
+      - name: schoolstaff
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - schoolstaff
+      - name: sections
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sections
+      - name: sectionteacher
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - sectionteacher
+      - name: spenrollments
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - spenrollments
+      - name: storedgrades
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - storedgrades
+      - name: studentcorefields
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - studentcorefields
+      - name: studentrace
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - studentrace
+      - name: students
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - students
+      - name: studenttest
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - studenttest
+      - name: studenttestscore
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - studenttestscore
+      - name: teachercategory
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - teachercategory
+      - name: termbins
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - termbins
+      - name: terms
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - terms
+      - name: test
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - test
+      - name: testscore
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - testscore
+      - name: u_studentsuserfields
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - u_studentsuserfields
+      - name: users
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - users
+      - name: userscorefields
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - powerschool
+                - sis
+                - userscorefields

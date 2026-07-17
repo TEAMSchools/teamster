@@ -30,6 +30,10 @@ vars:
 
 models:
   kipppaterson:
+    extracts:
+      +schema: extracts
+      +contract:
+        enforced: true
     powerschool:
       +materialized: table
       +schema: powerschool
@@ -42,7 +46,7 @@ models:
       +schema: pearson
   finalsite:
     api:
-      +enabled: false
+      +enabled: true
   amplify:
     dds:
       +enabled: false
@@ -53,6 +57,17 @@ models:
         staging:
           stg_amplify__mclass__sftp__pm_student_summary_aimline:
             +enabled: false
+  deanslist:
+    +materialized: table
+    staging:
+      stg_deanslist__dff_stats:
+        +enabled: false
+      stg_deanslist__followups:
+        +enabled: false
+      stg_deanslist__homework:
+        +enabled: false
+      stg_deanslist__lists:
+        +enabled: false
   pearson:
     +materialized: table
     staging:
@@ -65,93 +80,23 @@ models:
   powerschool:
     +materialized: table
     sis:
-      base:
-        base_powerschool__final_grades:
-          +enabled: false
       intermediate:
-        int_powerschool__gradebook_assignments:
-          +enabled: false
-        int_powerschool__gpa_cumulative:
-          +enabled: false
-        int_powerschool__gpa_cumulative_year:
-          +enabled: false
-        int_powerschool__gpa_term:
-          +enabled: false
-        int_powerschool__category_grades:
-          +enabled: false
-        int_powerschool__category_grades_pivot:
-          +enabled: false
-        int_powerschool__final_grades_pivot:
-          +enabled: false
-        int_powerschool__gradescaleitem_lookup:
-          +enabled: false
+        # data-forced exception: needs gradesectionconfig, which is empty in
+        # Paterson's PowerSchool (no dlt model)
         int_powerschool__section_grade_config:
           +enabled: false
-        int_powerschool__teacher_grade_levels:
+        # contacts layer disabled for Paterson (parity with kippnewark)
+        int_powerschool__contacts:
+          +enabled: false
+        int_powerschool__person_contacts:
           +enabled: false
       staging:
         odbc:
           +enabled: false
         sftp:
+          +enabled: false
+        dlt:
           +enabled: true
-          stg_powerschool__assignmentscore:
-            +enabled: false
-          stg_powerschool__assignmentcategoryassoc:
-            +enabled: false
-          stg_powerschool__assignmentsection:
-            +enabled: false
-          stg_powerschool__districtteachercategory:
-            +enabled: false
-          stg_powerschool__gpnode:
-            +enabled: false
-          stg_powerschool__gpprogresssubject:
-            +enabled: false
-          stg_powerschool__gpprogresssubjectearned:
-            +enabled: false
-          stg_powerschool__gpprogresssubjectenrolled:
-            +enabled: false
-          stg_powerschool__gradecalcformulaweight:
-            +enabled: false
-          stg_powerschool__gradecalcschoolassoc:
-            +enabled: false
-          stg_powerschool__gradecalculationtype:
-            +enabled: false
-          stg_powerschool__gradeformulaset:
-            +enabled: false
-          stg_powerschool__gradescaleitem:
-            +enabled: false
-          stg_powerschool__gradeschoolconfig:
-            +enabled: false
-          stg_powerschool__gradeschoolformulaassoc:
-            +enabled: false
-          stg_powerschool__gradesectionconfig:
-            +enabled: false
-          stg_powerschool__log:
-            +enabled: false
-          stg_powerschool__pgfinalgrades:
-            +enabled: false
-          stg_powerschool__roledef:
-            +enabled: false
-          stg_powerschool__s_stu_x:
-            +enabled: false
-          stg_powerschool__sectionteacher:
-            +enabled: false
-          stg_powerschool__studentrace:
-            +enabled: false
-          stg_powerschool__studenttest:
-            +enabled: false
-          stg_powerschool__studenttestscore:
-            +enabled: false
-          stg_powerschool__teachercategory:
-            +enabled: false
-          stg_powerschool__test:
-            +enabled: false
-          stg_powerschool__testscore:
-            +enabled: false
-          stg_powerschool__u_clg_et_stu:
-            +enabled: false
-          stg_powerschool__u_clg_et_stu_alt:
-            +enabled: false
 
 sources:
   amplify:
@@ -169,6 +114,16 @@ sources:
   finalsite:
     finalsite:
       contacts:
+        +enabled: true
+  deanslist:
+    deanslist:
+      src_deanslist__dff_stats:
+        +enabled: false
+      src_deanslist__followups:
+        +enabled: false
+      src_deanslist__homework:
+        +enabled: false
+      src_deanslist__lists:
         +enabled: false
   pearson:
     pearson:
@@ -276,4 +231,26 @@ sources:
             src_powerschool__gpversion:
               +enabled: false
             src_powerschool__gpstudentwaiver:
+              +enabled: false
+            src_powerschool__codeset:
+              +enabled: false
+            src_powerschool__emailaddress:
+              +enabled: false
+            src_powerschool__originalcontactmap:
+              +enabled: false
+            src_powerschool__person:
+              +enabled: false
+            src_powerschool__personaddress:
+              +enabled: false
+            src_powerschool__personaddressassoc:
+              +enabled: false
+            src_powerschool__personemailaddressassoc:
+              +enabled: false
+            src_powerschool__personphonenumberassoc:
+              +enabled: false
+            src_powerschool__phonenumber:
+              +enabled: false
+            src_powerschool__studentcontactassoc:
+              +enabled: false
+            src_powerschool__studentcontactdetail:
               +enabled: false

@@ -23,7 +23,9 @@ const SL = {
 };
 
 test("buildGroups: SL gets the single student tier and staff directory+pii", () => {
-  const g = a.buildGroups(SL);
+  // SL is school-scoped with an all-department remit → a non-empty resolved
+  // remit, so the all_in_scope PII group is emitted.
+  const g = a.buildGroups(SL, ["ABC"], ["Ops"]);
   assert.ok(g.includes("student-school"));
   // No summary/detail/pii split — one student tier.
   assert.ok(!g.includes("student-detail"));
@@ -79,8 +81,16 @@ test("buildGroups: null row → no groups", () => {
   assert.deepEqual(a.buildGroups(null), []);
 });
 
+test("buildGroups: an object with no staff_key gets no groups (not even staff-directory)", () => {
+  // Defense-in-depth: a lookup miss shaped as {} must not be treated as a
+  // resolved viewer. The wired caller passes null, but gate on a real identity.
+  assert.deepEqual(a.buildGroups({}), []);
+  assert.deepEqual(a.buildGroups({ staff_pii_scope: "all_in_scope" }), []);
+});
+
 test("buildSecurityContext flattens the access row + chain", () => {
   const row = {
+    staff_key: "s1",
     student_location_scope: "region",
     staff_pii_scope: "reporting_chain_or_below_rank",
     region_key: "R1",
@@ -119,6 +129,61 @@ test("buildSecurityContext passes through the precomputed allow-lists", () => {
   );
   assert.deepEqual(ctx.allowed_abbreviations, ["A", "B"]);
   assert.deepEqual(ctx.allowed_department_groups, ["talent"]);
+});
+
+// Empty-remit hardening: Cube (Tesseract) throws "Values required for filter" on
+// an `equals []` row_level filter (verified #4269) rather than compiling it to
+// zero rows, so a staff-pii scope whose remit/chain resolved empty must not emit
+// its group — the viewer takes the clean no-group default-deny path instead.
+test("buildGroups: all_in_scope with a full remit emits the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "all_in_scope" },
+    ["A"],
+    ["Ops"],
+    [],
+  );
+  assert.ok(g.includes("staff-pii-all_in_scope"));
+});
+
+test("buildGroups: all_in_scope with an empty location remit does NOT emit the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "all_in_scope" },
+    [],
+    ["Ops"],
+    [],
+  );
+  assert.ok(!g.includes("staff-pii-all_in_scope"));
+  assert.ok(g.includes("staff-directory")); // directory tier stays open
+});
+
+test("buildGroups: all_in_scope with an empty department remit does NOT emit the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "all_in_scope" },
+    ["A"],
+    [],
+    [],
+  );
+  assert.ok(!g.includes("staff-pii-all_in_scope"));
+});
+
+test("buildGroups: reporting_chain with no reportees does NOT emit the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "reporting_chain" },
+    [],
+    [],
+    [],
+  );
+  assert.ok(!g.includes("staff-pii-reporting_chain"));
+});
+
+test("buildGroups: reporting_chain with reportees emits the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "reporting_chain" },
+    [],
+    [],
+    ["k1"],
+  );
+  assert.ok(g.includes("staff-pii-reporting_chain"));
 });
 
 const LOCATION_UNIVERSE = [

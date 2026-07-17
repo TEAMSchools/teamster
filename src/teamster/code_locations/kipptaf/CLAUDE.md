@@ -34,6 +34,11 @@ GCS bucket: `teamster-kipptaf`
 | `zendesk`                | assets                                                    | schedule         | —                       |
 | `couchdrop`              | sensor only                                               | —                | sensor                  |
 
+**Coupa Dagster code is aliased `l`** — resource `lResource`, env vars `l_*`
+(`l_SFTP_*`, `l_API_*`), asset group `l`, and `libraries/l/` + `kipptaf/l/`
+modules that the `coupa` submodule wires from. Grep `l` as well as `coupa`. The
+dbt side is cleanly named `coupa`.
+
 ## dbt Asset Groups (`dbt/assets.py`)
 
 Kipptaf splits dbt into **three separate asset groups** with different resource
@@ -71,6 +76,16 @@ See `src/dbt/kipptaf/CLAUDE.md` for the full exposure YAML reference.
 
 `freshness.py` attaches `FreshnessPolicy.cron` to ADP WFN people models
 (deadline 1:15am, 45-minute window).
+
+## ADP WFN `workers` asset
+
+Pulls with `asOfDate=<partition_key>` — each partition reconstructs ADP's state
+as of that date from ADP's _current_ data (full snapshot, ~4.5–4.7k workers).
+The schedule re-materializes only a rolling ~45-partition window
+(`partition_keys[-45:]`, roughly −1 month / +2 weeks via `end_offset=14`), so an
+ADP hard-delete / merge / backdated edit to a record older than the window
+doesn't propagate until you manually rematerialize the affected partition span.
+Absence from a re-pulled partition therefore means the record is gone from ADP.
 
 ## Illuminate DLT Schedule Split
 

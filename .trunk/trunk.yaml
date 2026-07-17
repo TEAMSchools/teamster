@@ -19,7 +19,7 @@ lint:
     - markdownlint@0.49.0
     - osv-scanner@2.4.0
     - oxipng@10.1.1
-    - prettier@3.9.4
+    - prettier@3.9.5
     - pyright@1.1.411
     - ruff@0.15.20
     - shellcheck@0.11.0
