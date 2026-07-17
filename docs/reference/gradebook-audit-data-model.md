@@ -161,6 +161,15 @@ quarters). In AY 2025-2026 data this drops a handful of trimester-term specials
 (Paterson MS Music/Spanish) and short-term Newark sections; those teachers'
 gradebooks are not audited.
 
+**No business rationale for this filter is recoverable.** It shipped in the
+model's original commit (`f8650076d`) with only a mechanical commit-message
+description ("qualify filter drops quarter-level PS term sections"); the PR that
+introduced it has no comment discussing why single-quarter sections should be
+out of scope for the audit; and as of this doc's last review, the model's own
+author could no longer recall the reason either. Treat the current behavior as
+inherited, not deliberate policy — if you're touching this filter, re-derive
+whether excluding these sections is still desired before assuming it is.
+
 ### Expectations source: `int_powerschool__u_expectations_qtd_unpivot`
 
 Replaces `stg_google_sheets__gradebook_expectations_assignments`. Reads the

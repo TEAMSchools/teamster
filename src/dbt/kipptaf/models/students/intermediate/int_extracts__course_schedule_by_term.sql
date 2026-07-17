@@ -155,4 +155,8 @@ left join
 left join
     {{ ref("int_people__leadership_crosswalk") }} as l
     on s.schoolid = l.home_work_location_powerschool_school_id
+-- excludes single-quarter PS term sections (trimester specials, short-term
+-- sections); origin is the model's initial commit, no documented business
+-- rationale beyond the mechanical description -- see reference doc before
+-- assuming this is deliberate policy vs. inherited behavior
 where s.section_quarter_count >= 2
