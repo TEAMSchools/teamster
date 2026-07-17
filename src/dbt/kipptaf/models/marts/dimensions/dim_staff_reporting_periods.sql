@@ -24,7 +24,7 @@ with
             and swa.staff_key is not null
         inner join
             {{ ref("dim_work_assignment_reporting_relationships") }} as rr
-            on rr.work_assignment_key = wap.work_assignment_key
+            on wap.work_assignment_key = rr.work_assignment_key
             and wap.effective_start_date <= rr.effective_end_date
             and wap.effective_end_date >= rr.effective_start_date
         where wap.is_primary_position

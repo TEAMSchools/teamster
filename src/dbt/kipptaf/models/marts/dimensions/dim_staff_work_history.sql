@@ -58,36 +58,36 @@ with
         from {{ ref("dim_staff_work_assignments") }} as swa
         inner join
             {{ ref("dim_work_assignment_status") }} as was
-            on was.work_assignment_key = swa.work_assignment_key
+            on swa.work_assignment_key = was.work_assignment_key
         inner join
             {{ ref("dim_work_assignment_jobs") }} as wj
-            on wj.work_assignment_key = swa.work_assignment_key
+            on swa.work_assignment_key = wj.work_assignment_key
             and was.effective_start_date < wj.effective_end_date
             and was.effective_end_date > wj.effective_start_date
         inner join
             {{ ref("dim_work_assignment_types") }} as wt
-            on wt.work_assignment_key = swa.work_assignment_key
+            on swa.work_assignment_key = wt.work_assignment_key
             and was.effective_start_date < wt.effective_end_date
             and was.effective_end_date > wt.effective_start_date
         inner join
             {{ ref("dim_work_assignment_organizational_units") }} as wo
-            on wo.work_assignment_key = swa.work_assignment_key
+            on swa.work_assignment_key = wo.work_assignment_key
             and wo.assignment_type = 'home'
             and was.effective_start_date < wo.effective_end_date
             and was.effective_end_date > wo.effective_start_date
         inner join
             {{ ref("dim_work_assignment_locations") }} as wl
-            on wl.work_assignment_key = swa.work_assignment_key
+            on swa.work_assignment_key = wl.work_assignment_key
             and was.effective_start_date < wl.effective_end_date
             and was.effective_end_date > wl.effective_start_date
         left join
             {{ ref("dim_work_assignment_primary") }} as wp
-            on wp.work_assignment_key = swa.work_assignment_key
+            on swa.work_assignment_key = wp.work_assignment_key
             and was.effective_start_date < wp.effective_end_date
             and was.effective_end_date > wp.effective_start_date
         left join
             {{ ref("dim_staff_reporting_periods") }} as mgr
-            on mgr.staff_key = swa.staff_key
+            on swa.staff_key = mgr.staff_key
             and was.effective_start_date < mgr.effective_end_date
             and was.effective_end_date > mgr.effective_start_date
     )
