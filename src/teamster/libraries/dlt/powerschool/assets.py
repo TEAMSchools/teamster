@@ -135,7 +135,7 @@ class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
 
 
 def _build_resource(
-    table: PowerSchoolTable, signature: dict | None, connection_url: str
+    table: PowerSchoolTable, signature: dict | None, connection_url: str, arraysize: int
 ):
     """Build one full-replace, parallel-extracted dlt resource for a table.
 
@@ -161,7 +161,8 @@ def _build_resource(
         # threads, so each needs its own connection pool over the shared tunnel.
         # arraysize: the driver default of 100 rows/fetch makes the extract
         # latency-bound over the WAN tunnel (~2.5k rows/s at ~40ms RTT).
-        engine = sa.create_engine(connection_url, arraysize=10_000)
+        # Runtime-tunable via the `dlt_arraysize` run tag (diagnostic sweep).
+        engine = sa.create_engine(connection_url, arraysize=arraysize)
         try:
             yield from table_rows(
                 engine=engine,
@@ -190,10 +191,13 @@ def _powerschool_source(
     selected: list[PowerSchoolTable],
     signatures: dict[str, dict],
     connection_url: str,
+    arraysize: int,
 ):
     """dlt source narrowed to `selected`, wiring each table's probed signature."""
     for table in selected:
-        yield _build_resource(table, signatures.get(table.name), connection_url)
+        yield _build_resource(
+            table, signatures.get(table.name), connection_url, arraysize
+        )
 
 
 def build_powerschool_dlt_assets(
@@ -234,7 +238,7 @@ def build_powerschool_dlt_assets(
 
     @dlt_assets(
         # Full source only defines the asset specs; the op runs a narrowed one.
-        dlt_source=_powerschool_source(tables, {}, ""),
+        dlt_source=_powerschool_source(tables, {}, "", 10_000),
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__powerschool",
         dagster_dlt_translator=translator,
@@ -254,6 +258,10 @@ def build_powerschool_dlt_assets(
         if workers is not None:
             os.environ["EXTRACT__WORKERS"] = str(workers)
             context.log.info(f"dlt extract workers capped at {workers}")
+
+        # Diagnostic knob: Oracle cursor fetch size (rows/round-trip).
+        arraysize = int(context.run.tags.get("dlt_arraysize") or 10_000)
+        context.log.info(f"dlt oracle arraysize {arraysize}")
 
         selected = [
             tables_by_key[key]
@@ -316,7 +324,9 @@ def build_powerschool_dlt_assets(
                 # catalog) alongside dagster-dlt's default load metadata.
                 yield from dlt.run(
                     context=context,
-                    dlt_source=_powerschool_source(changed, current, connection_url),
+                    dlt_source=_powerschool_source(
+                        changed, current, connection_url, arraysize
+                    ),
                     dlt_pipeline=dlt_pipeline,
                     dagster_dlt_translator=translator,
                     write_disposition="replace",
