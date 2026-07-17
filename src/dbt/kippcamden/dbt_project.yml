@@ -23,8 +23,8 @@ data_tests:
 
 vars:
   local_timezone: America/New_York
-  current_academic_year: 2025
-  current_fiscal_year: 2026
+  current_academic_year: 2026
+  current_fiscal_year: 2027
   cloud_storage_uri_base: gs://teamster-kippcamden/dagster/kippcamden
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
 
