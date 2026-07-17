@@ -720,78 +720,83 @@ Refs #4424. Refs #4427"
 
 ### Task 5: dbt — missing dlt staging models and the variant flip
 
+**Controller note (corrected after verification):** The gap is **10** tables,
+not 9. Nine are SHARED-package tables that need new `staging/dlt` models
+translated from their odbc counterparts; the tenth, `u_studentsuserfields`, is
+**district-specific** (each district has its own model because the user-defined
+columns differ) and needs its Newark model repointed, not a shared model. AND:
+because enabling the `staging/dlt` directory builds every model in it,
+kipppaterson (the only other dlt district) will start building the 9 new shared
+models against source tables it does NOT extract — so they MUST be disabled for
+Paterson or Paterson's CI breaks. The reverse check is clean: every EXISTING
+shared dlt model's table is in Newark's 57, so Newark needs no dlt per-model
+disables.
+
 **Files:**
 
-- Modify: `src/dbt/powerschool/models/sis/staging/dlt/sources-bigquery.yml`
-- Create:
-  `src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__<table>.sql` for
-  each missing table (computed in Step 1; expected ≈ 9: `gpnode`,
-  `gpprogresssubject`, `gpprogresssubjectearned`, `gpprogresssubjectenrolled`,
-  `gradesectionconfig`, `u_clg_et_stu`, `u_clg_et_stu_alt`, `u_expectations`,
-  `u_storedgrades_de` — verify, don't trust this list)
-- Modify: `src/dbt/kippnewark/dbt_project.yml`
+- Create (9 shared models, translated from their odbc counterparts):
+  `src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__<t>.sql` for `t`
+  in: `gpnode`, `gpprogresssubject`, `gpprogresssubjectearned`,
+  `gpprogresssubjectenrolled`, `gradesectionconfig`, `u_clg_et_stu`,
+  `u_clg_et_stu_alt`, `u_expectations`, `u_storedgrades_de`
+- Modify: `src/dbt/powerschool/models/sis/staging/dlt/sources-bigquery.yml` (add
+  the 9; `u_studentsuserfields` is already present)
+- Modify: `src/dbt/kipppaterson/dbt_project.yml` (disable the 9 new shared
+  models for Paterson)
+- Rewrite:
+  `src/dbt/kippnewark/models/powerschool/sis/staging/stg_powerschool__u_studentsuserfields.sql`
+  (repoint from the odbc source to the dlt source, dlt idiom, Newark's own
+  column set)
+- Modify: `src/dbt/kippnewark/dbt_project.yml` (variant flip)
 
 **Interfaces:**
 
 - Consumes: table names from Task 2's `assets.yaml`.
-- Produces: a `stg_powerschool__<table>` dlt model for every Newark-extracted
-  table; kippnewark builds the `dlt` staging variant.
+- Produces: a `stg_powerschool__<t>` dlt model for every Newark-extracted shared
+  table; kippnewark builds the `dlt` staging variant; kipppaterson's build is
+  preserved.
 
-- [ ] **Step 1: Compute the missing-model set**
+- [ ] **Step 1: Confirm the gap set (already computed by the controller)**
 
 ```bash
 wt=/workspaces/teamster/.worktrees/cbini/feat/claude-powerschool-dlt-newark-spike
 grep 'table_name:' "$wt/src/teamster/code_locations/kippnewark/powerschool/sis/dlt/config/assets.yaml" | awk '{print $3}' | sort > /tmp/claude-1000/newark_tables.txt
 ls "$wt/src/dbt/powerschool/models/sis/staging/dlt/" | grep '\.sql$' | sed 's/stg_powerschool__//;s/\.sql$//' | sort > /tmp/claude-1000/dlt_models.txt
-comm -23 /tmp/claude-1000/newark_tables.txt /tmp/claude-1000/dlt_models.txt
+comm -23 /tmp/claude-1000/newark_tables.txt /tmp/claude-1000/dlt_models.txt   # expect the 10
 ```
 
-The output is the authoritative list of models to create. (Planning-time
-snapshot suggested the 9 above; if `u_studentsuserfields` or others appear, they
-get the same treatment.)
+The 10: the 9 shared listed above + `u_studentsuserfields` (district-specific,
+handled in Step 5). Confirm the output is exactly these 10 before proceeding.
 
-- [ ] **Step 2: Add each missing table to sources-bigquery.yml**
+- [ ] **Step 2: Author the 9 shared dlt staging models**
 
-For each table from Step 1, append an entry following the existing pattern
-exactly (alphabetical order within the `tables:` list):
+For each of the 9 shared tables, open the ODBC counterpart
+`src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__<t>.sql` and
+translate to a new
+`src/dbt/powerschool/models/sis/staging/dlt/stg_powerschool__<t>.sql` using
+these mechanical rules (study an existing dlt model such as
+`stg_powerschool__gradescaleitem.sql` for the exact idiom):
 
-```yaml
-- name: gradesectionconfig
-  config:
-    meta:
-      dagster:
-        asset_key:
-          - "{{ project_name }}"
-          - powerschool
-          - sis
-          - gradesectionconfig
-```
-
-- [ ] **Step 3: Author each missing staging model**
-
-For each table, open the ODBC counterpart
-`src/dbt/powerschool/models/sis/staging/odbc/stg_powerschool__<table>.sql` and
-translate with these mechanical rules (see any existing dlt model, e.g.
-`stg_powerschool__gradescaleitem.sql`, for the target idiom):
-
-1. `from {{ source(...) }}` → `from {{ source("powerschool_dlt", "<table>") }}`.
+1. `from {{ source("powerschool_odbc", "src_powerschool__<t>") }}` (or whatever
+   the odbc source ref is) → `from {{ source("powerschool_dlt", "<t>") }}`.
 1. Avro union unwraps become casts, keeping the identical output column name:
    - `x.int_value as x` → `cast(x as int) as x`
    - `x.long_value as x` → `cast(x as int) as x`
    - `x.double_value as x` → `cast(x as float64) as x`
    - date/timestamp unwraps: match what an existing dlt model does for the same
-     column name (e.g. `whenmodified` passthrough in
+     column name (`whenmodified` passthrough in
      `stg_powerschool__gradescaleitem.sql`; `transaction_date` handling in
      `stg_powerschool__storedgrades.sql`) — the dlt source lands Oracle DATE as
      `datetime`.
 1. Plain passthrough columns stay as-is (keep backtick-quoting of reserved words
-   like `` `type` ``).
+   like `` `type` ``). Preserve the ODBC model's exact output column set and
+   order.
 1. Do NOT include avro metadata columns (`_dagster_*`) or dlt metadata columns
    (`_dlt_id`, `_dlt_load_id`).
 
 Example — `stg_powerschool__gradesectionconfig.sql` (translate the odbc file's
-FULL column list; this snippet shows the idiom, the real file must cover every
-column):
+FULL column list; snippet shows the idiom, the real file must cover EVERY column
+the odbc model outputs):
 
 ```sql
 select
@@ -814,7 +819,74 @@ select
 from {{ source("powerschool_dlt", "gradesectionconfig") }}
 ```
 
-- [ ] **Step 4: Flip the kippnewark variants**
+- [ ] **Step 3: Add the 9 to sources-bigquery.yml**
+
+In `src/dbt/powerschool/models/sis/staging/dlt/sources-bigquery.yml`, add one
+entry per new table, alphabetically within the `tables:` list, exactly matching
+the existing pattern (do NOT re-add `u_studentsuserfields` — verify it is
+already there):
+
+```yaml
+- name: gradesectionconfig
+  config:
+    meta:
+      dagster:
+        asset_key:
+          - "{{ project_name }}"
+          - powerschool
+          - sis
+          - gradesectionconfig
+```
+
+- [ ] **Step 4: Disable the 9 new shared models for kipppaterson**
+
+Paterson does NOT extract these 9 tables; without disabling, Paterson's dlt
+build reads non-existent source tables. In
+`src/dbt/kipppaterson/dbt_project.yml`, under
+`models: powerschool: sis: staging: dlt:`, add a per-model `+enabled: false` for
+each of the 9 (leave the existing `+enabled: true` for the directory and the
+existing `int_powerschool__section_grade_config: +enabled: false` under
+`intermediate:` untouched):
+
+```yaml
+dlt:
+  +enabled: true
+  stg_powerschool__gpnode:
+    +enabled: false
+  stg_powerschool__gpprogresssubject:
+    +enabled: false
+  stg_powerschool__gpprogresssubjectearned:
+    +enabled: false
+  stg_powerschool__gpprogresssubjectenrolled:
+    +enabled: false
+  stg_powerschool__gradesectionconfig:
+    +enabled: false
+  stg_powerschool__u_clg_et_stu:
+    +enabled: false
+  stg_powerschool__u_clg_et_stu_alt:
+    +enabled: false
+  stg_powerschool__u_expectations:
+    +enabled: false
+  stg_powerschool__u_storedgrades_de:
+    +enabled: false
+```
+
+- [ ] **Step 5: Repoint Newark's district-specific u_studentsuserfields**
+
+`src/dbt/kippnewark/models/powerschool/sis/staging/stg_powerschool__u_studentsuserfields.sql`
+currently reads
+`from {{ source("powerschool_odbc", "src_powerschool__u_studentsuserfields") }}`
+with the odbc avro-unwrap idiom. Rewrite it to read
+`from {{ source("powerschool_dlt", "u_studentsuserfields") }}` with the dlt cast
+idiom (same rules as Step 2), PRESERVING Newark's existing output column set (do
+not adopt Paterson's column list — Newark's UDF columns differ). Use
+`src/dbt/kipppaterson/models/powerschool/sis/staging/stg_powerschool__u_studentsuserfields.sql`
+ONLY as the idiom reference. Do not change its properties file
+(`properties/stg_powerschool__u_studentsuserfields.yml`) unless a column name
+actually changes — column names must stay identical so the contract and
+downstream `rpt_powerschool__autocomm_students` keep resolving.
+
+- [ ] **Step 6: Flip the kippnewark variants**
 
 In `src/dbt/kippnewark/dbt_project.yml`:
 
@@ -828,9 +900,11 @@ dlt:
   +enabled: true
 ```
 
-(keep the existing `sftp: +enabled: false` sibling; every model the odbc block
-disabled has no dlt counterpart, so no per-model overrides carry over — Step 5's
-parse verifies.)
+(keep the existing `sftp: +enabled: false` sibling. The reverse check confirmed
+every existing shared dlt model's table is in Newark's 57, and Newark extracts
+all 9 new tables, so Newark needs NO dlt per-model disables. Newark keeps
+`int_powerschool__section_grade_config` ENABLED — it has `gradesectionconfig`,
+unlike Paterson.)
 
 1. In the `sources:` section, mirror Paterson's powerschool shape
    (`src/dbt/kipppaterson/dbt_project.yml`,
@@ -838,25 +912,30 @@ parse verifies.)
    the sftp source disables Newark already has, and leave the `powerschool_dlt`
    source enabled. Preserve Newark's other source configs untouched.
 
-- [ ] **Step 5: Parse and lint**
+- [ ] **Step 7: Parse both projects and lint**
 
 ```bash
 uv run dbt parse --project-dir "$wt/src/dbt/kippnewark"
+uv run dbt parse --project-dir "$wt/src/dbt/kipppaterson"
 cd "$wt" && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix $(git -C "$wt" diff --name-only HEAD -- 'src/dbt/*' | sed "s|^|$wt/|") </dev/null
 ```
 
-Expected: parse succeeds (no missing-source or disabled-ref errors — a failure
-here usually means an int/mart model refs a staging model that only existed in
-odbc form); trunk clean (sqlfluff runs here, not at commit).
+Expected: BOTH parses succeed (Newark: no missing-source/disabled-ref errors;
+Paterson: the 9 disables resolve, no dangling refs); trunk clean (sqlfluff runs
+here, not at commit). A Paterson parse failure usually means a Paterson int/mart
+model refs one of the 9 disabled staging models — if so, STOP and report it (it
+means Paterson silently needs that table, which contradicts the analysis).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git -C "$wt" add src/dbt/powerschool/ src/dbt/kippnewark/dbt_project.yml
+git -C "$wt" add src/dbt/powerschool/ src/dbt/kippnewark/ src/dbt/kipppaterson/dbt_project.yml
 git -C "$wt" commit -m "feat(dbt): enable powerschool dlt staging variant for kippnewark
 
-Adds the dlt staging models Newark needs beyond the Paterson set.
-Refs #4427"
+Adds the 9 shared dlt staging models Newark needs beyond the Paterson set
+(disabled for Paterson, which does not extract them), repoints Newark's
+district-specific u_studentsuserfields to the dlt source, and flips Newark's
+staging variant to dlt. Refs #4427"
 ```
 
 ---
