@@ -70,59 +70,9 @@ models:
         sftp:
           +enabled: false
         odbc:
+          +enabled: false
+        dlt:
           +enabled: true
-          stg_powerschool__gpprogresssubjectrequested:
-            +enabled: false
-          stg_powerschool__gpprogresssubjectwaived:
-            +enabled: false
-          stg_powerschool__gpprogresssubjwaivedapplied:
-            +enabled: false
-          stg_powerschool__gpselectedcrs:
-            +enabled: false
-          stg_powerschool__gpselectedcrtype:
-            +enabled: false
-          stg_powerschool__gpselector:
-            +enabled: false
-          stg_powerschool__gpstudentwaiver:
-            +enabled: false
-          stg_powerschool__gptarget:
-            +enabled: false
-          stg_powerschool__gpversion:
-            +enabled: false
-          stg_powerschool__gradplan:
-            +enabled: false
-          stg_powerschool__period:
-            +enabled: false
-          stg_powerschool__prefs:
-            +enabled: false
-          stg_powerschool__s_nj_usr_x:
-            +enabled: false
-          stg_powerschool__sced_code_mapping:
-            +enabled: false
-          stg_powerschool__u_def_ext_students:
-            +enabled: false
-          stg_powerschool__codeset:
-            +enabled: false
-          stg_powerschool__emailaddress:
-            +enabled: false
-          stg_powerschool__originalcontactmap:
-            +enabled: false
-          stg_powerschool__person:
-            +enabled: false
-          stg_powerschool__personaddress:
-            +enabled: false
-          stg_powerschool__personaddressassoc:
-            +enabled: false
-          stg_powerschool__personemailaddressassoc:
-            +enabled: false
-          stg_powerschool__personphonenumberassoc:
-            +enabled: false
-          stg_powerschool__phonenumber:
-            +enabled: false
-          stg_powerschool__studentcontactassoc:
-            +enabled: false
-          stg_powerschool__studentcontactdetail:
-            +enabled: false
       intermediate:
         int_powerschool__contacts:
           +enabled: false
@@ -145,59 +95,7 @@ sources:
         sftp:
           +enabled: false
         odbc:
-          powerschool_odbc:
-            src_powerschool__gpprogresssubjectrequested:
-              +enabled: false
-            src_powerschool__gpprogresssubjectwaived:
-              +enabled: false
-            src_powerschool__gpprogresssubjwaivedapplied:
-              +enabled: false
-            src_powerschool__gpselectedcrs:
-              +enabled: false
-            src_powerschool__gpselectedcrtype:
-              +enabled: false
-            src_powerschool__gpselector:
-              +enabled: false
-            src_powerschool__gpstudentwaiver:
-              +enabled: false
-            src_powerschool__gptarget:
-              +enabled: false
-            src_powerschool__gpversion:
-              +enabled: false
-            src_powerschool__gradplan:
-              +enabled: false
-            src_powerschool__period:
-              +enabled: false
-            src_powerschool__prefs:
-              +enabled: false
-            src_powerschool__s_nj_usr_x:
-              +enabled: false
-            src_powerschool__sced_code_mapping:
-              +enabled: false
-            src_powerschool__u_def_ext_students:
-              +enabled: false
-            src_powerschool__codeset:
-              +enabled: false
-            src_powerschool__emailaddress:
-              +enabled: false
-            src_powerschool__originalcontactmap:
-              +enabled: false
-            src_powerschool__person:
-              +enabled: false
-            src_powerschool__personaddress:
-              +enabled: false
-            src_powerschool__personaddressassoc:
-              +enabled: false
-            src_powerschool__personemailaddressassoc:
-              +enabled: false
-            src_powerschool__personphonenumberassoc:
-              +enabled: false
-            src_powerschool__phonenumber:
-              +enabled: false
-            src_powerschool__studentcontactassoc:
-              +enabled: false
-            src_powerschool__studentcontactdetail:
-              +enabled: false
+          +enabled: false
   titan:
     titan:
       src_titan__income_form_data:
