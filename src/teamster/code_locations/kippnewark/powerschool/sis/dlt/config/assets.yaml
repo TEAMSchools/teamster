@@ -1,0 +1,10 @@
+# Spike (issue #4427): measure dlt full-replace throughput against Newark's
+# Oracle over the SSH tunnel using the two largest SIS tables. Launched
+# manually on the branch deployment; no schedules.
+assets:
+  - table_name: attendance
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: assignmentscore
+    cursor_column: whenmodified
+    schedule_tier: nightly

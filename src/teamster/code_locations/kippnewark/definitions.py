@@ -4,6 +4,7 @@ from dagster import (
     Definitions,
     load_assets_from_modules,
 )
+from dagster_dlt import DagsterDltResource
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kippnewark import (
@@ -24,7 +25,10 @@ from teamster.code_locations.kippnewark import (
     renlearn,
     titan,
 )
-from teamster.code_locations.kippnewark.resources import FINALSITE_RESOURCE
+from teamster.code_locations.kippnewark.resources import (
+    FINALSITE_RESOURCE,
+    SSH_POWERSCHOOL,
+)
 from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
@@ -43,7 +47,6 @@ from teamster.core.resources import (
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
-    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
@@ -92,6 +95,7 @@ defs = Definitions(
         "db_powerschool": DB_POWERSCHOOL,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
+        "dlt": DagsterDltResource(),
         "finalsite": FINALSITE_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
@@ -103,7 +107,7 @@ defs = Definitions(
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_edplan": SSH_EDPLAN,
         "ssh_iready": SSH_IREADY,
-        "ssh_powerschool": get_powerschool_ssh_resource(),
+        "ssh_powerschool": SSH_POWERSCHOOL,
         "ssh_renlearn": SSH_RENLEARN,
         "ssh_titan": SSH_TITAN,
     },
