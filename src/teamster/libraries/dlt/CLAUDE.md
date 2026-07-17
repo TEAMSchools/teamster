@@ -103,6 +103,20 @@ changes on existing tables.
   and pass every positional arg explicitly, since arg changes there would
   surface on upgrade. A duckdb spike yielding plain rows will pass and miss the
   nesting mangle — it only fires with a nested resource on a real run.
+- **dlt commits state only from a resource actually extracted into the load**
+  (serial main-thread OR a `parallelized` worker). Writes from the `@dlt.source`
+  function body or a `selected=False` resource never round-trip
+  (spike-confirmed, silent) — this is why the per-table signature write lives
+  inside the extracted resource, not the source.
 - `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
   metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
   `except` so a load failure is legible without walking the exception chain.
+- **Stream dlt progress into the Dagster event log**: in the op, set
+  `dlt_pipeline.collector = LogCollector(logger=context.log, log_period=30.0)`
+  (`context.log` is a `logging.Logger`). The factory default `logger="stdout"`
+  reaches only step-pod compute logs, so the UI goes dark mid-load. Gotcha:
+  `log_period` throttles only _repeat_ dumps of the **same** counter — each new
+  table force-logs (dlt's `update()` resets `last_log_time=None` on a new
+  counter), so per-table bursts at Extract/Normalize phase starts are
+  unavoidable; `log_period` only quiets the long Load phase. Dropping it
+  defaults to 1.0s -> a chatty Load phase.

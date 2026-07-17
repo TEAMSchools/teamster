@@ -287,7 +287,7 @@ def build_powerschool_dlt_assets(
             # DagsterLogManager (a logging.Logger), so pointing the collector at
             # it surfaces progress as structured run events every log_period s.
             dlt_pipeline.collector = LogCollector(
-                logger=context.log, log_period=15.0, dump_system_stats=False
+                logger=context.log, log_period=30.0, dump_system_stats=False
             )
 
             try:
