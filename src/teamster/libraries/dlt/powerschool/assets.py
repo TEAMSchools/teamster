@@ -168,7 +168,9 @@ def _build_resource(table: PowerSchoolTable, signature: dict | None):
 
         # One engine per resource: parallelized resources run in separate worker
         # threads, so each needs its own connection pool over the shared tunnel.
-        engine = sa.create_engine(_oracle_connection_url())
+        # arraysize: the driver default of 100 rows/fetch makes the extract
+        # latency-bound over the WAN tunnel (~2.5k rows/s at ~40ms RTT).
+        engine = sa.create_engine(_oracle_connection_url(), arraysize=10_000)
         try:
             yield from table_rows(
                 engine=engine,
