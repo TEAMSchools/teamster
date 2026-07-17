@@ -1,8 +1,6 @@
-import os
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, datetime
-from urllib.parse import quote
 
 import dlt
 import sqlalchemy as sa
@@ -15,6 +13,7 @@ from dlt.sources.sql_database.helpers import table_rows
 from sqlalchemy import Float, Numeric
 from sqlalchemy.types import TypeEngine
 
+from teamster.libraries.dlt.powerschool.resources import OracleResource
 from teamster.libraries.ssh.resources import SSHResource
 
 # PowerSchool tables are owned by the `ps` schema. The ODBC pipeline reaches
@@ -110,25 +109,6 @@ def oracle_number_adapter(col_type: TypeEngine) -> TypeEngine | None:
     return col_type
 
 
-def _oracle_connection_url() -> str:
-    """Build the SQLAlchemy URL at call time (env vars exist only in pods).
-
-    The SSH tunnel forwards localhost:1521 -> PS_SSH_REMOTE_BIND_HOST:1521,
-    so the DB host here is the tunnel-local endpoint (PS_DB_HOST, normally
-    localhost), matching the existing ODBC resource's connection shape.
-    """
-    user = os.getenv("PS_DB_USERNAME", "")
-    password = quote(os.getenv("PS_DB_PASSWORD", ""), safe="")
-    host = os.getenv("PS_DB_HOST", "localhost")
-    port = os.getenv("PS_DB_PORT", "1521")
-    service_name = os.getenv("PS_DB_DATABASE", "")
-
-    return (
-        f"oracle+oracledb://{user}:{password}@{host}:{port}"
-        f"/?service_name={service_name}"
-    )
-
-
 class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
     def __init__(self, code_location: str) -> None:
         self.code_location = code_location
@@ -145,7 +125,9 @@ class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
         return asset_spec.merge_attributes(kinds={"oracle"})
 
 
-def _build_resource(table: PowerSchoolTable, signature: dict | None):
+def _build_resource(
+    table: PowerSchoolTable, signature: dict | None, connection_url: str
+):
     """Build one full-replace, parallel-extracted dlt resource for a table.
 
     When a signature is provided it is persisted to the resource's dlt state
@@ -170,7 +152,7 @@ def _build_resource(table: PowerSchoolTable, signature: dict | None):
         # threads, so each needs its own connection pool over the shared tunnel.
         # arraysize: the driver default of 100 rows/fetch makes the extract
         # latency-bound over the WAN tunnel (~2.5k rows/s at ~40ms RTT).
-        engine = sa.create_engine(_oracle_connection_url(), arraysize=10_000)
+        engine = sa.create_engine(connection_url, arraysize=10_000)
         try:
             yield from table_rows(
                 engine=engine,
@@ -195,10 +177,14 @@ def _build_resource(table: PowerSchoolTable, signature: dict | None):
 
 
 @dlt.source(name=_SOURCE_NAME)
-def _powerschool_source(selected: list[PowerSchoolTable], signatures: dict[str, dict]):
+def _powerschool_source(
+    selected: list[PowerSchoolTable],
+    signatures: dict[str, dict],
+    connection_url: str,
+):
     """dlt source narrowed to `selected`, wiring each table's probed signature."""
     for table in selected:
-        yield _build_resource(table, signatures.get(table.name))
+        yield _build_resource(table, signatures.get(table.name), connection_url)
 
 
 def build_powerschool_dlt_assets(
@@ -233,7 +219,7 @@ def build_powerschool_dlt_assets(
 
     @dlt_assets(
         # Full source only defines the asset specs; the op runs a narrowed one.
-        dlt_source=_powerschool_source(tables, {}),
+        dlt_source=_powerschool_source(tables, {}, ""),
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__powerschool",
         dagster_dlt_translator=translator,
@@ -245,6 +231,7 @@ def build_powerschool_dlt_assets(
         context: AssetExecutionContext,
         dlt: DagsterDltResource,
         ssh_powerschool: SSHResource,
+        db_powerschool: OracleResource,
     ) -> Iterator:
         selected = [
             tables_by_key[key]
@@ -253,6 +240,8 @@ def build_powerschool_dlt_assets(
         ]
 
         with ssh_powerschool.open_ssh_tunnel_paramiko():
+            connection_url = db_powerschool.connection_url()
+
             # Restore prior signatures from the destination state table. On a
             # truly first run (no dataset) this raises; treat as no prior state.
             try:
@@ -267,7 +256,7 @@ def build_powerschool_dlt_assets(
 
             # Probe every selected table that has a cursor column (one shared
             # engine over the single tunnel).
-            engine = sa.create_engine(_oracle_connection_url())
+            engine = sa.create_engine(connection_url)
             try:
                 with engine.connect() as connection:
                     current: dict[str, dict] = {
@@ -305,7 +294,7 @@ def build_powerschool_dlt_assets(
                 # catalog) alongside dagster-dlt's default load metadata.
                 yield from dlt.run(
                     context=context,
-                    dlt_source=_powerschool_source(changed, current),
+                    dlt_source=_powerschool_source(changed, current, connection_url),
                     dlt_pipeline=dlt_pipeline,
                     dagster_dlt_translator=translator,
                     write_disposition="replace",

@@ -8,6 +8,7 @@ from dagster_gcp import BigQueryResource, GCSResource
 from teamster import GCS_PROJECT_NAME
 from teamster.core.io_managers.gcs import GCSIOManager
 from teamster.libraries.deanslist.resources import DeansListResource
+from teamster.libraries.dlt.powerschool.resources import OracleResource
 from teamster.libraries.google.drive.resources import GoogleDriveResource
 from teamster.libraries.google.forms.resources import GoogleFormsResource
 from teamster.libraries.overgrad.resources import OvergradResource
@@ -69,6 +70,16 @@ def get_powerschool_ssh_resource() -> SSHResource:
         remote_port=EnvVar.int("PS_SSH_PORT"),
         username=EnvVar("PS_SSH_USERNAME"),
         tunnel_remote_host=EnvVar("PS_SSH_REMOTE_BIND_HOST"),
+    )
+
+
+def get_powerschool_oracle_resource() -> OracleResource:
+    return OracleResource(
+        user=EnvVar("PS_DB_USERNAME"),
+        password=EnvVar("PS_DB_PASSWORD"),
+        host=EnvVar("PS_DB_HOST"),
+        port=EnvVar("PS_DB_PORT"),
+        service_name=EnvVar("PS_DB_DATABASE"),
     )
 
 
