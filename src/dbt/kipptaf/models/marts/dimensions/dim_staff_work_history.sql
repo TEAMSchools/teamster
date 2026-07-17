@@ -12,13 +12,15 @@
   staff_work_history cube-body sql (with the manager logic copy-pasted inline and
   is_primary_position NOT clipped into the intersection, which fanned the grain).
 
-  Known residual: a small number of active+primary staff carry two concurrent
-  reporting relationships in ADP (see dim_staff_reporting_chain's dedupe TODO).
-  When both manager periods overlap one status window, the mgr range-join emits
-  two rows sharing (work_assignment_key, effective_start_date), so the PK unique
-  test warns (project default severity) rather than errors. Left as-is pending
-  the upstream ADP fix / a product decision on which manager wins; no defensive
-  dedupe here.
+  Known residual (TODO #4431): the PK unique test warns (project-default
+  severity) on a small number of rows where a staff member held two OVERLAPPING
+  primary work assignments — an ADP data anomaly — each contributing its own
+  manager period. The staff_key-keyed mgr join then attaches both managers to a
+  single assignment's status window, emitting two rows that share
+  (work_assignment_key, effective_start_date). Left as a warn pending the
+  upstream fix (#4431); no defensive dedupe here. Distinct from
+  dim_staff_reporting_chain's dedupe, which handles concurrent CURRENT reporting
+  relationships (0 instances in current data).
 -#}
 with
     work_history as (
