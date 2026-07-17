@@ -28,27 +28,43 @@ school_calendars) go in `cubes/conformed/`.
 - **Cubes private, views public.** Every cube YAML gets `public: false` at the
   cube level. Dimensions/measures use `public: true` only when meant to be
   exposed via a view. Never flip a cube to `public: true`.
-- **Transformation lives in dbt, not cube.** Multi-table joins, window
-  functions, and derived grains (SCD2 period-intersection / status spines)
-  belong in a dbt mart read via `sql_table` — not inline cube `sql:`, which is
-  for thin column/expression shaping only. (Cube's own dbt guidance and the
-  `original_sql` pre-agg confirm this.)
+- **Transformation lives in dbt, not cube. A cube's `sql:` / `sql_table:` reads
+  exactly ONE dbt model — never a `JOIN`, subquery, CTE, or `SELECT t.*`.**
+  Multi-table joins, window functions, and derived grains (SCD2
+  period-intersection / status spines) belong in a dbt mart. To surface columns
+  from a second table on a view, give that table its own cube (`public: false`,
+  exposing only the needed dimensions) and bring them in with a **Cube join**
+  keyed on the shared grain — never inline the join in a cube `sql:`.
+  `SELECT t.*` is separately forbidden: it silently breaks the moment the base
+  model gains a same-named column. The Cube custom-calendar **range-join
+  recipe** (`BETWEEN` / `>=`) applies only to a _join's_ `sql:` predicate — it
+  is NOT a license for a `JOIN` inside a cube-body `sql:`. (Cube's own dbt
+  guidance and the `original_sql` pre-agg confirm the one-model rule.) The
+  one-model rule holds with zero exceptions: SCD2 period-intersection grains
+  (`staff_work_history` ← `dim_staff_work_history`,
+  `staff_reporting_relationships` ← `dim_staff_reporting_periods`) are
+  materialized in dbt marts and read via `sql_table:`, not built in a cube-body
+  `sql:`.
 - **Naming.** Cube `name:` always matches its filename, and neither carries the
   warehouse `dim_`/`fct_` prefix — the file `conformed/dates.yml` defines
   `name: dates` reading `sql_table: kipptaf_marts.dim_dates`. **Domain-prefix
   rule:** student-domain cubes start with `student` (`student_attendance`,
   `student_enrollments`, `students`); staff-domain cubes start with `staff`.
-  `queryRewrite`'s `isStudentMember` access gating keys off the `student`
-  prefix, so a misnamed student-domain cube silently loses its access guard.
-  Staff cubes carry no prefix-based gate in `cube.js` — staff RLS is governed by
-  the location scope filter plus each staff view's `cube-access-staff-data`
-  access policy. The `staff` prefix is still a naming convention, not a guard.
-  Conformed dims (`dates`, `locations`, `regions`, `terms`, `school_calendars`)
-  are deliberately unprefixed — they carry no domain access tier. View names are
-  `<domain>_<grain>` (`student_attendance_detail`,
-  `student_attendance_summary`). `sql_table` always points at
-  `kipptaf_marts.<table>` (the warehouse table keeps its `dim_`/`fct_` prefix) —
-  cubes never read district datasets directly.
+  This is an organizational convention only — RLS is no longer keyed off the
+  cube-name prefix. Every view enforces access through its own `access_policy`
+  matching a `securityContext` group (see View access policies below); a
+  misnamed cube has no security consequence, but keep the convention so the
+  domain is legible from the name. Conformed dims (`dates`, `locations`,
+  `regions`, `terms`, `school_calendars`) are deliberately unprefixed — they
+  carry no domain access tier. Student views are single, collapsed views named
+  `<domain>_view` (`student_attendance_view`, `student_assessment_scores_view`,
+  `student_enrollments_view`) — a view can't share a bare name with its
+  same-domain cube, hence the `_view` suffix. Staff views keep the
+  `<domain>_<grain>` pattern (`staff_directory`, `staff_pii`) since that split
+  is a genuine access tier, not a grain distinction (see View access policies
+  below). `sql_table` always points at `kipptaf_marts.<table>` (the warehouse
+  table keeps its `dim_`/`fct_` prefix) — cubes never read district datasets
+  directly.
 - **Joins use cube-reference syntax** (`{students.col} = {CUBE}.col`), not raw
   identifiers. Dim joins from facts set `relationship: many_to_one`.
 - **Range/non-equi join predicates** (`BETWEEN`, `>=`) are valid in a join
@@ -85,63 +101,129 @@ school_calendars) go in `cubes/conformed/`.
 
 ## View access policies
 
-Views own access via `access_policy:`. Two patterns:
+Views own access entirely via `access_policy:` — RLS is Cube-native and
+declarative, not injected server-side. `cube.js`'s `queryRewrite` carries none
+of it (see `cube.js` security model below). Each policy matches one
+scope-specific group emitted by `access.buildGroups`; a viewer holds exactly one
+group per domain axis, so exactly one policy per view is ever active — no AND/OR
+combination to reason about.
 
-- **Detail views** (row-level, contain student identifiers): two policy blocks —
-  `cube-access-student-data` with `member_level.excludes` listing PII fields
-  (names, DOB, all `*_student_identifier`, `salesforce_contact_id`), and
-  `cube-access-student-pii` with `includes: "*"`.
-- **Summary views** (no direct identifiers, demographic breakdowns only): single
-  `cube-access-student-data` block with `includes: "*"`. Add a comment
-  explaining why no PII tier is needed.
-- **Staff views**: `staff_summary` uses a single `cube-access-staff-data` block
-  with `includes: "*"` — aggregate demographics only, no direct identifiers.
-  `staff_detail` uses two blocks: `cube-access-staff-data` with `includes: "*"`
-  and `excludes:` the personal/sensitive fields (`personal_email`,
-  `personal_cell_phone`, `birth_date`, `gender_identity`, `race`,
-  `is_hispanic`), plus `cube-access-staff-pii` with `includes: "*"`.
-  Work-directory info (names, work/google email, AD username, `staff_unique_id`,
-  manager contacts) stays in the base tier — already internally public.
-  Demographics are gated row-level in `staff_detail` but remain valid aggregate
-  breakdowns in `staff_summary` (low-n suppression tracked separately in
-  [#4237](https://github.com/TEAMSchools/teamster/issues/4237)).
+- **Student views are single, collapsed views** — each student domain
+  (`student_attendance_view`, `student_assessment_scores_view`,
+  `student_enrollments_view`) exposes both row-level identifiers and
+  aggregate-breakdown dimensions on the same view; there is no separate
+  detail/summary pair. Three policies, one per non-`none`
+  `student_location_scope` — `student-region` (`row_level` on the region key),
+  `student-school` (`row_level` on the school abbreviation), `student-network`
+  (no `row_level` — every location). All three use
+  `member_level: { includes: "*" }` — any viewer holding one of these groups
+  sees every field on every student view, including PII. `none` scope → no group
+  → default-deny (zero rows).
+- **Staff views are split.** `staff_directory` (roster/employment/work-contact
+  fields — no personal or sensitive data) has one open block:
+  `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
+  every resolved staff viewer gets this group. `staff_pii` (the six sensitive
+  fields — `personal_email`, `personal_cell_phone`, `birth_date`,
+  `gender_identity`, `race`, `is_hispanic` — plus the identity/remit keys needed
+  to filter on) has one policy per `staff_pii_scope`: `staff-pii-all_in_scope`
+  (`locations_abbreviation` ∩ `department_group` remit),
+  `staff-pii-teaching_staff` (that remit +
+  `job_function_code IN ('TEACH', 'TIR')`), `staff-pii-reporting_chain`
+  (`staff_key IN reportee_staff_keys`),
+  `staff-pii-reporting_chain_or_below_rank` (OR of the remit-plus-rank check and
+  the chain-IN check). The location∩department remit is precomputed server-side
+  into `securityContext.allowed_abbreviations` / `allowed_department_groups` —
+  domain-agnostic, reused as-is when comp/observations/benefits views are built.
+- **No aggregate-demographics view yet.** A `staff_summary` view once exposed
+  `gender_identity`/`race`/`is_hispanic` as open, unscoped aggregate breakdowns
+  — removed because small-cell slices (e.g. location × race) can re-identify an
+  individual, and suppression isn't built. Re-introduce only once
+  [#4237](https://github.com/TEAMSchools/teamster/issues/4237) (small-cell
+  suppression) ships; don't add demographic fields to `staff_directory` in the
+  meantime as a workaround.
+- **Forward-compatible staff tiers**: `staff-compensation`,
+  `staff-observations`, `staff-benefits` are emitted by `buildGroups` when the
+  corresponding `*_scope` column is non-`none`, but no view has an
+  `access_policy` block for them yet. Wire them when those cubes/views are
+  built.
 
-When adding a field to a detail view, decide PII status per project CLAUDE.md
-FERPA guidance. If PII, add it to the `excludes` list under the base-tier policy
-block — `cube-access-student-data` for student views, `cube-access-staff-data`
-for `staff_detail`.
+**Authoring rule — `row_level.filters[].member` is a flat view-member name, not
+a cube-qualified path.** A path (`locations.abbreviation`) fails to compile:
+"Paths aren't allowed in the accessPolicy policy." The exposed name follows the
+`prefix:` setting on the `includes:` block that surfaces it: `prefix: true` →
+`<lastJoinPathSegment>_<member>` (e.g. `locations_abbreviation`,
+`locations_region_key`); `prefix: false` → bare (`department_group`,
+`staff_key`, `job_function_code`, `job_function_level`, and — in the student
+assessment views, which join `locations` unprefixed — bare
+`abbreviation`/`region_key`). Check the view's own `includes:` blocks for the
+`prefix:` setting before writing a filter; don't assume it matches another view.
+
+**Interpolation forms.** An array value (`IN`) uses the UNBRACKETED string form:
+`values: "{ securityContext.allowed_abbreviations }"`. A single scalar uses the
+bracketed form: `values: ["{ securityContext.region_key }"]`.
+`operator: equals` + array value compiles to SQL `IN`. An **empty** array does
+NOT compile to `IN ()`/zero rows — Cube (Tesseract) throws "Values required for
+filter" and fails the query (fail-closed, but a hard error, not a clean deny;
+verified empirically, #4269). `access.buildGroups` therefore does not emit a
+staff-pii group whose remit/chain array resolved empty, so such a viewer takes
+the no-group default-deny path instead of hitting that error.
+
+**Scope selection is group-based, not `conditions.if`-based.** `conditions.if`
+only compiles a bare truthy reference (`if: "{ userAttributes.x }"`) — a `==`
+comparison does not compile (Task 1 spike finding). That's why `buildGroups`
+emits one scope-specific group per enum value instead of a single group gated by
+a `conditions.if` branch.
+
+When adding a sensitive staff field, decide PII status per project CLAUDE.md
+FERPA guidance. If PII, add it to `staff_pii.yml` (not `staff_directory.yml`)
+and wire its per-field scope in `access.js`'s `STAFF_SENSITIVE_SCOPE_BY_MEMBER`.
+Student views have no PII split — any scope-specific `student-*` group sees
+every field.
 
 ## `cube.js` security model
 
-Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
+Default-deny, HR-derived, group-driven. Read [`cube.js`](cube.js) and
+[`access.js`](access.js) before modifying. All pure access helpers live in
+`access.js` (unit-tested); `cube.js` owns BigQuery reads, caching, and the two
+auth hooks. RLS itself lives entirely in per-view `access_policy` (see View
+access policies above) — `queryRewrite` retains only the snapshot-anchor guard.
 
-- **`contextToGroups`** resolves the requester's email to `cube-*` Google
-  Workspace groups via the Admin Directory API, cached until next midnight ET.
-  `CUBE_GROUP_MAP` (local dev only, gated on `NODE_ENV !== "production"`) is the
-  sole bypass.
-- **Group membership is direct-only.** Admin Directory API's
-  `groups.list({userKey})` returns direct memberships; nested `cube-*` groups
-  don't transitively resolve. Flat-enroll users in every `cube-*` group they
-  need: a scope tier (`cube-network-*` / `cube-region-*` / `cube-school-*`) plus
-  `cube-access-student-data` for student views and `cube-access-staff-data` for
-  staff views.
-- **Cloud Identity `searchTransitiveGroups` is edition-gated** (Workspace
-  Enterprise / Education Plus / Cloud Identity Premium). On lower editions it
-  returns `INVALID_ARGUMENT`, not `PERMISSION_DENIED` — don't propose it as a
-  transitive-resolution fix without verifying the tenant's edition.
-- **`queryRewrite`** enforces two filters:
-  - Strips student-domain dims/measures (members where `isStudentMember` is
-    true) for users without `cube-access-student-data`.
-  - Adds a `locations` filter based on the highest-priority scope group: network
-    (no filter) → region (`region_key`) → school (`abbreviation`). No scope
-    group → empty `IN ()` filter (default deny). This scope filter applies to
-    staff views too (resolved through their `locations` join).
-- **`isStudentMember` prefix helper.** Student-domain gating is derived from the
-  cube-name prefix (`student*`), not a static array — a query member is
-  `<cube_name>.<member>`, so the cube name is the prefix. A new student-domain
-  cube needs no `cube.js` change as long as it follows the naming rule above; a
-  misnamed one silently loses its guard. Staff has no equivalent `cube.js` gate
-  (manager-hierarchy RLS was removed pending a view-aware rebuild).
+- **`resolveAccess(email)`** is the shared identity-resolution function, called
+  from both auth hooks below (not from `contextToGroups`). It reads one row from
+  `dim_staff_cube_access` (per-field scope enums) plus the caller's transitive
+  reportees from `dim_staff_reporting_chain`, loads the global "universes"
+  (`loadUniverses`: every location abbreviation+region, every distinct
+  `department_group`), computes `allowed_abbreviations` /
+  `allowed_department_groups` via `access.computeAllowedAbbreviations` /
+  `computeAllowedDepartmentGroups`, and returns
+  `access.buildSecurityContext(...)`. Per-email cache and the global universe
+  cache both expire at next midnight ET. Wrapped in try/catch — any BigQuery
+  error fails closed to an empty (default-deny) context rather than throwing.
+- **`checkAuth` (REST/MCP)** receives the RAW bearer token STRING — a custom
+  `checkAuth` replaces Cube's default JWT verify+decode. It verifies the HS256
+  signature against `CUBEJS_API_SECRET` itself, reads the `email` claim, and
+  sets `req.securityContext = await resolveAccess(email)`. No/invalid token →
+  `jwt.verify` throws → Cube rejects the request; no `Authorization` header
+  resolves to the empty default-deny context. Auth is skipped entirely in Cube
+  developer mode (`CUBEJS_DEV_MODE=true`) — `checkAuth` only runs with dev mode
+  off / `NODE_ENV=production`.
+- **`checkSqlAuth` (SQL API)** returns
+  `{ password: process.env.CUBEJS_SQL_PASSWORD, securityContext }` — Cube
+  validates the presented password against the RETURNED one, so returning `null`
+  rejects every connection. Identity is resolved from the connecting `user` (or
+  `CUBE_SQL_DEV_EMAIL` outside prod); the presented `password` is not compared
+  and is absent entirely on `SET USER` re-auth flows.
+- **`contextToGroups`** is now a one-line read: `securityContext?.groups ?? []`
+  — the BigQuery reads and all group-building logic moved to `resolveAccess` /
+  `access.buildGroups`.
+- **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`
+  (`student-region` / `student-school` / `student-network`); `staff-directory`
+  (always, for any resolved row); `staff-pii-<staff_pii_scope>`
+  (`staff-pii-all_in_scope` / `-reporting_chain` /
+  `-reporting_chain_or_below_rank` / `-teaching_staff`); plus forward-compat
+  flat `staff-compensation` / `-observations` / `-benefits` (emitted per
+  non-`none` scope; no view consumes them yet). `none` on any axis → no group
+  for that axis → default-deny on the views gated by it.
 - **`SNAPSHOT_CUBES` / `SNAPSHOT_MEASURE_STEMS` / `SNAPSHOT_ANCHOR_OVERRIDES`.**
   For cubes built on fact tables with cumulative daily-status flags (values
   re-stamped on every row — overcounts without a point-in-time anchor), or a
@@ -162,6 +244,14 @@ Default-deny, group-driven. Read [`cube.js`](cube.js) before modifying.
   — do not put an additive measure (e.g. `avg_daily_attendance`) and a guarded
   snapshot measure in the same request, or the additive one is wrongly anchored
   ([#4160](https://github.com/TEAMSchools/teamster/issues/4160)).
+- **`access_policy` blocks, it does not strip.** When a user requests a member
+  their tier excludes, Cube denies the whole query — it does not silently drop
+  the column and return the rest. BI tools connected via the SQL API (Superset)
+  avoid this because the field list is filtered per-user at connection time. In
+  Tableau, a workbook published by someone with broader access may error at
+  query time for viewers with narrower access. A `queryRewrite` member-strip
+  approach (detect and remove inaccessible members before execution) is tracked
+  in [#4268](https://github.com/TEAMSchools/teamster/issues/4268).
 - **`canSwitchSqlUser`** only allows the SQL super-user to impersonate
   `@apps.teamschools.org` accounts (Superset integration). Do not broaden the
   suffix check.
@@ -173,8 +263,9 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 - Mint HS256 JWT locally per request from `CUBE_API_SECRET` (1P:
   `op://Data Team/Cube Cloud REST API/credential`).
 - The **entire JWT payload is `securityContext`** — top-level `email` claim
-  flows into `cube.js`'s `contextToGroups`. Not nested under
-  `u`/`securityContext`/`userContext`.
+  flows into `cube.js`'s `checkAuth`, which resolves it via `resolveAccess` into
+  the enriched `securityContext` every view's `access_policy` reads. Not nested
+  under `u`/`securityContext`/`userContext`.
 - `Authorization` header is raw token — **no `Bearer` prefix** (Cube Cloud
   Metadata API exception per docs is a footnote, not the norm).
 - Cube Cloud "Personal Core Data API Token" (PAT) returns 403 against `/meta`
@@ -193,17 +284,22 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
 - `/sql` compiles queries even against `public: false` members; `/load` enforces
   hiding. A `/load` 500 "You requested hidden member" with `/sql` succeeding =
   security-context delta, not a schema bug.
-- `queryRewrite` default-deny manifests as `WHERE (1 = 0)` plus
-  `rlsAccessDenied` in `sortedDimensions` of `/sql` output.
+- `access_policy` default-deny (no `securityContext` group matches any policy on
+  the view) manifests as `WHERE (1 = 0)` plus `rlsAccessDenied` in
+  `sortedDimensions` of `/sql` output — same diagnostic signature as the old
+  `queryRewrite`-based deny.
 - **Branch endpoints**: `/staging/<branch>/cubejs-api/v1` is the per-branch
   staging endpoint (stable, redeploys on push).
   `/user/<urlencoded-email>/<id>/cubejs-api/v1` is the per-developer Dev Mode
   endpoint. Only Dev Mode surfaces server `console.log` in the playground logs
   panel — staging has no log UI. Debug `cube.js` code paths on Dev Mode.
 - **Branch staging configuration doesn't fully inherit from production.** Before
-  diagnosing API errors on a branch staging env, verify
-  `GOOGLE_DIRECTORY_SA_KEY` / `GOOGLE_DIRECTORY_SA_SUBJECT` (and any other
-  required secrets) are set on that environment.
+  diagnosing API errors on a branch staging env, verify the BigQuery connection
+  variables (`CUBEJS_DB_TYPE`, `CUBEJS_DB_BQ_PROJECT_ID`,
+  `CUBEJS_DB_BQ_CREDENTIALS`) are set on that environment. Also verify
+  `dim_staff_cube_access` and `dim_staff_reporting_chain` exist in prod
+  `kipptaf_marts` — branch staging reads prod, so identity resolution fails
+  silently (default deny) if those models haven't been deployed yet.
 - **Validate a cube against a Tableau dashboard from the workbook extract**:
   `unzip <workbook>.twbx`, then query `Data/Extracts/*.hyper` with
   `uv run --with tableauhyperapi python` (the data table is
@@ -243,27 +339,85 @@ before merge:
 1. Build in your dev schema:
    `uv run dbt run --select <model> --project-dir src/dbt/kipptaf --target dev`
    → creates `zz_<username>_kipptaf_marts.<model>`
-2. Temporarily change `sql_table` in the cube YAML to
-   `zz_<username>_kipptaf_marts.<table>` — do NOT commit or push
+2. Temporarily redirect the cube YAML to the dev schema — do NOT commit or push:
+   - For `sql_table` cubes: change `sql_table: kipptaf_marts.<table>` to
+     `sql_table: zz_<username>_kipptaf_marts.<table>`
+   - For inline `sql:` cubes (e.g. `staff`, which LEFT JOINs
+     `dim_staff_cube_access`): change the dataset reference(s) inside the `sql:`
+     block. If `cube.js` also reads the same table directly (e.g.
+     `dim_staff_cube_access` for identity resolution), redirect those queries
+     too.
 3. Test in the local dev server — launch the **`Cube: Dev Server`** VS Code task
    (`.vscode/tasks.json`; installs `src/cube/node_modules` if missing, then
    `npm --prefix src/cube run dev`). Hot-reloads on file save, no push required.
    Claude can't run it (long-running server) — ask the user to start the task
    and report back. Or commit+push for Cube Cloud Dev Mode.
-4. Revert `sql_table` to `kipptaf_marts.<table>` before committing
+4. Revert all dev-schema redirects to `kipptaf_marts.<table>` before committing.
+   Verify with `grep -r "zz_" src/cube/` before pushing.
 
-For **snowflake sub-dims** (cubes joined one-to-one from a parent), swap
-`sql_table` on the sub-dim cube file, not the parent. The parent's `sql_table`
-stays pointed at prod; only the new sub-dim needs redirecting.
+For **snowflake sub-dims** (cubes joined one-to-one from a parent), swap the
+dataset reference on the sub-dim cube file, not the parent.
 
 The security hook flags `zz_*` schemas as an access-control regression —
 expected if you do commit the temporary change; acknowledge and revert.
 
 **`zz_*` redirect — never `git add` the whole cubes/ dir while it's live.** When
-a `sql_table` redirect to a `zz_*` dev schema is in the working tree, staging
-with `git add -A`, `git add .`, or `git add src/cube/model/cubes/` accidentally
-commits the redirect. Name files explicitly in every `git add` while any cube
-YAML is redirected.
+a dev-schema redirect is in the working tree, staging with `git add -A`,
+`git add .`, or `git add src/cube/model/cubes/` accidentally commits the
+redirect. Name files explicitly in every `git add` while any cube YAML is
+redirected.
+
+**Never `bq cp` a dev-schema table into `kipptaf_marts` to unblock testing.**
+`kipptaf_marts` is the live prod dataset read by all dashboards, the Cube
+semantic layer, and dbt downstream models. Overwriting a mart table corrupts
+prod for all consumers with no rollback path. Use the dev-schema redirect above
+instead.
+
+## Testing row-level security locally
+
+RLS lives in per-view `access_policy` driven by the `securityContext` that
+`resolveAccess` builds inside the auth hooks — so the setup below is REQUIRED to
+exercise it; a plain dev server silently default-denies every gated view.
+
+- **Testing RLS locally — prefer the SQL API.** `checkSqlAuth` (SQL API) runs
+  even in dev mode; `checkAuth` (REST) does NOT — with `CUBEJS_DEV_MODE=true`
+  REST skips auth, so `resolveAccess` never runs and every gated view zero-rows
+  for ALL REST viewers. So validate over the SQL API via `psycopg2`: set
+  `CUBEJS_PG_SQL_PORT` + `CUBEJS_SQL_USER`/`_PASSWORD`, then connect as the
+  viewer's email in the SQL `user` — identity resolves from the connecting user,
+  so switch viewers per connection with no restart.
+  (`CUBE_SQL_DEV_EMAIL=<viewer>` optionally pins every connection to one alias,
+  overriding the connecting user — change + restart to switch.) No `NODE_ENV`
+  flip, and it's the prod BI/Superset surface. Tesseract
+  (`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on both APIs
+  and joining views is a supported SQL-API feature (multi-fact views); the old
+  `JoinDefinitionStatic` note was a Playground (REST) observation, not a SQL-API
+  limit — verified: `student_attendance_view` / `staff_directory` /
+  `student_assessment_scores_view` query cleanly on the SQL API under Tesseract.
+  REST `/load` also works but needs auth on (`NODE_ENV=production`, drop
+  `CUBEJS_DEV_MODE`) + an HS256 JWT with the viewer's `email` claim signed with
+  `CUBEJS_API_SECRET`.
+- **`CUBE_GROUP_MAP` cannot validate `row_level`** — it supplies `groups` only,
+  not the `region_key` / `allowed_abbreviations` / `reportee_staff_keys` the
+  filters interpolate. Worse, `.env.example`'s placeholder value uses stale
+  group names (`cube-network-detail`, …) that no current policy matches, so
+  `cp .env.example .env` verbatim makes its dev-bypass deny EVERYTHING. Comment
+  out `CUBE_GROUP_MAP` to force real resolution.
+- **Branch models aren't in prod.** Cubes + `resolveAccess` read
+  `kipptaf_marts`. When the branch reworks a mart they read
+  (`dim_staff_cube_access`, `dim_staff_reporting_chain`): build it to your dev
+  schema (`dbt build --target dev --defer --select <models>`), RE-STAGE any
+  changed Google-Sheets external first (`stage_external_sources --target dev`
+  `ext_full_refresh: true`) or the staging model fails its contract on the stale
+  external, then redirect ONLY the changed identity tables in `cube.js` + cube
+  YAML to `zz_<user>_kipptaf_marts`. Do NOT redirect `dim_work_assignment_jobs`
+  (the `staff` cube reads `job_function_code` from `dim_staff_cube_access`, not
+  it; redirecting it breaks its surrogate-key join to prod
+  `dim_staff_work_assignments`). Uncommitted scaffold — revert +
+  `grep -r zz_ src/cube` before committing.
+- **`count_students` is seasonal.** On `student_enrollments` it anchors to
+  `is_current_record` (→ 0 off-season); validate location scoping with
+  `student_attendance`'s additive `count_students` over a date range.
 
 ## School weeks vs ISO weeks
 

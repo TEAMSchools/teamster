@@ -1,0 +1,127 @@
+models:
+  - name: dim_staff_work_history
+    description: >-
+      SCD2 period-intersection dimension. One row per work assignment per
+      contiguous window during which the worker's status, job, worker type, home
+      org unit, work location, and point-in-time manager all held
+      simultaneously. Consumed by the Cube semantic layer (staff_work_history
+      cube feeding the staff_directory and staff_pii views).
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: effective_start_date <= effective_end_date
+    columns:
+      - name: staff_work_history_key
+        data_type: string
+        description:
+          Surrogate primary key of (work_assignment_key, effective_start_date).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+        data_tests:
+          - unique
+          - not_null
+      - name: work_assignment_key
+        data_type: string
+        description:
+          Foreign key to `dim_staff_work_assignments.work_assignment_key`.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff_work_assignments')
+            to_columns: [work_assignment_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff_work_assignments')
+                field: work_assignment_key
+      - name: staff_key
+        data_type: string
+        description: Foreign key to `dim_staff.staff_key`.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: manager_staff_key
+        data_type: string
+        description: >-
+          Foreign key to `dim_staff.staff_key` — point-in-time manager for the
+          period. Nullable for manager-less staff.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: work_location_key
+        data_type: string
+        description: >-
+          Foreign key to `dim_locations.location_key`. Nullable when the ADP
+          location has no canonical mapping.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_locations')
+            to_columns: [location_key]
+            warn_unsupported: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_key
+      - name: status_name
+        data_type: string
+        description: >-
+          Assignment-level employment status during this period (Active, Leave,
+          Terminated), from dim_work_assignment_status.
+      - name: status_reason
+        data_type: string
+        description: >-
+          Reason for the status (leave type or termination reason). Null for
+          many Active periods.
+      - name: position_title
+        data_type: string
+        description:
+          Free-text position title for the work assignment during this period.
+      - name: job_code
+        data_type: string
+        description: Job code for the work assignment during this period.
+      - name: worker_type
+        data_type: string
+        description: ADP worker type display name (e.g. Regular, Temporary).
+      - name: department_name
+        data_type: string
+        description: Home Department display name during this period.
+      - name: business_unit_name
+        data_type: string
+        description: Home Business Unit display name during this period.
+      - name: is_primary_position
+        data_type: boolean
+        description: >-
+          True if this was the worker's primary work assignment during the
+          period.
+      - name: is_management_position
+        data_type: boolean
+        description:
+          True if this work assignment is designated a management position.
+      - name: full_time_equivalency
+        data_type: float64
+        description: FTE ratio for the assignment (1.0 = full-time).
+      - name: effective_start_date
+        data_type: date
+        description:
+          Start of the contiguous period (intersection of all SCD2 children).
+      - name: effective_end_date
+        data_type: date
+        description: End (inclusive) of the contiguous period.
