@@ -246,6 +246,16 @@ Set `contract: enforced: false` on the model and keep `relationships`/uniqueness
 data tests for coverage. A bounded Jinja unroll is the alternative but hits
 "query is too complex" when it re-expands view upstreams once per level.
 
+## dbt Cloud CI builds only kipptaf
+
+The dbt Cloud CI job (`Build - CI (Modified)`, dbt Cloud project 211862) runs
+against the `kipptaf` project alone. A PR confined to a district project
+(`kipp{newark,camden,miami,paterson}`) or a source-system package selects zero
+models under `state:modified+` unless it changes a kipptaf-consumed `source()`
+schema (column set) — so the dbt Cloud check goes green **trivially, not as
+validation** (a ~30s no-op run). Those models are first exercised by Dagster's
+dbt step (branch deployment / prod automation), not dbt Cloud CI.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
