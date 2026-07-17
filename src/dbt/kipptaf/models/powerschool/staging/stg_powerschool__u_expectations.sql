@@ -14,7 +14,7 @@ with
         }}
     ),
 
-    real as (
+    real_union as (
         select
             id,
             school_level,
@@ -65,7 +65,7 @@ with
     )
 
 select *,
-from real
+from real_union
 
 union all
 
