@@ -85,9 +85,11 @@ Cube YAML files, the existing manifest stays valid.
 
 ### 3. Test locally
 
-Run the **Cube: Dev Server** VS Code task to start Cube at `localhost:4000`. Use
-`CUBE_GROUP_MAP` in your `.env` to simulate different users' group membership —
-see [Local Dev](#local-dev) for setup.
+Run the **Cube: Dev Server** VS Code task to start Cube at `localhost:4000` —
+see [Local Dev](#local-dev). To exercise **row-level security** (not just that
+models compile), see
+[Testing row-level security locally](#testing-row-level-security-locally) —
+developer mode disables auth, so RLS needs a specific setup.
 
 ### 4. Test in Cube Cloud
 
@@ -95,9 +97,9 @@ Push your branch, then switch to it in the Cube Cloud UI's development mode
 branch switcher. Cube Cloud activates a staging environment for the branch
 automatically.
 
-Test in the Cube Cloud Playground. Your real Google Workspace group membership
-applies here — use this to verify security behavior against the real Directory
-API.
+Test in the Cube Cloud Playground. Your real access row from
+`kipptaf_marts.dim_staff_cube_access` applies here — use this to verify security
+behavior against live HR data.
 
 Check:
 
@@ -122,8 +124,10 @@ The reviewing analyst:
    - Do all cubes and views load without errors?
    - Do queries return expected results against live BigQuery data?
    - Do existing cubes and views still work?
-3. To test security behavior with specific group combinations, run locally with
-   `CUBE_GROUP_MAP` set to the groups you want to simulate
+3. To test row-level security behavior, follow
+   [Testing row-level security locally](#testing-row-level-security-locally)
+   (auth must be on — developer mode bypasses it), or test in Cube Cloud dev
+   mode where your real access row applies
 4. Leaves review comments on the PR, or approves
 
 Author and reviewer can work together in the same Cube Cloud Playground session
@@ -147,27 +151,222 @@ When a business user needs to validate changes before merge:
 
 ## Local Dev
 
-1. `cp src/cube/.env.example src/cube/.env`
-2. Fill in `CUBE_GROUP_MAP` with your email and the groups you want to simulate:
-   ```text
-   CUBE_GROUP_MAP='{"you@apps.teamschools.org":["cube-network-detail"]}'
-   ```
+1. `cp src/cube/.env.example src/cube/.env` and fill in the BigQuery connection
+   variables (already pre-filled in `.env.example` for the teamster project — no
+   credentials needed, ADC handles auth)
+2. Run the **GCloud: Application Default Login** VS Code task if your ADC token
+   is stale
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
 4. Playground opens at `http://localhost:4000`
+5. Click **Edit Security Context** and set
+   `{"email": "you@apps.teamschools.org"}`. **Caveat:** in developer mode this
+   only reaches `contextToGroups` as an `email` claim — it does NOT run identity
+   resolution, so gated views return zero rows. See
+   [Testing row-level security locally](#testing-row-level-security-locally).
 
-ADC is used for BigQuery auth locally — run the **GCloud: Application Default
-Login** VS Code task first if you haven't already.
+## Testing row-level security locally
+
+Row-level security is enforced by per-view `access_policy`, driven by the
+`securityContext` that `resolveAccess` builds **inside the auth hooks**
+(`checkAuth` for REST, `checkSqlAuth` for the SQL API). That placement has a
+sharp consequence for local testing:
+
+Developer mode skips `checkAuth` (REST) — so the Playground and REST `/load`
+default-deny every gated view (empty `securityContext`, `contextToGroups`
+returns `[]`) unless you turn auth on. But `checkSqlAuth` (the SQL API's hook)
+runs **even in developer mode**, which makes the SQL API the easier and
+truer-to-prod way to validate.
+
+**Prefer the SQL API for validation.** It resolves your real identity with no
+`NODE_ENV` change, and it is the surface Superset/BI actually use — so you
+validate the production path. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`, default
+`true`) is the planner on the SQL API, and joining views is a supported feature
+there
+([multi-fact views](https://docs.cube.dev/docs/data-modeling/multi-fact-views)).
+Enable the SQL API in `src/cube/.env`:
+
+```bash
+CUBEJS_PG_SQL_PORT=15432
+CUBEJS_SQL_USER=cube_dev
+CUBEJS_SQL_PASSWORD=local-dev-sql
+# Optional: pin EVERY connection to one viewer (dev-only override of the
+# connecting user). Leave it commented to resolve as the connecting SQL user
+# instead, which lets you switch viewers per connection with no restart.
+# CUBE_SQL_DEV_EMAIL=someone@apps.teamschools.org
+```
+
+Restart the **Cube: Dev Server** task. Identity resolves from the **SQL `user`
+you connect as** (unless `CUBE_SQL_DEV_EMAIL` is set, which overrides it) — so
+put the viewer's email in `user`, and switch viewers by opening a new connection
+rather than restarting. `MEASURE()` wraps measures:
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+# identity = the `user` you connect as; swap it to test a different viewer
+conn = psycopg2.connect(host="127.0.0.1", port=15432,
+                        user="you@apps.teamschools.org",
+                        password="local-dev-sql", dbname="cube")
+cur = conn.cursor()
+cur.execute("SELECT MEASURE(count_employees) FROM staff_directory")
+print(cur.fetchall())
+PY
+```
+
+`resolveAccess` reads that email's row from `dim_staff_cube_access`, builds the
+real `securityContext`, and the policies enforce. Compare a scoped viewer's
+counts against a network viewer's breakdown to confirm scoping.
+
+A quick region-isolation check on student data — loop the SAME query over a few
+viewer emails (a region-scoped viewer, a network viewer, a `none`-scope viewer):
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+for email in ["a-region-scoped-viewer@apps.teamschools.org",
+              "a-network-viewer@apps.teamschools.org",
+              "a-none-scope-viewer@apps.teamschools.org"]:
+    conn = psycopg2.connect(host="127.0.0.1", port=15432, user=email,
+                            password="local-dev-sql", dbname="cube")
+    cur = conn.cursor()
+    cur.execute("SELECT regions_region_name, MEASURE(count_students) "
+                "FROM student_enrollments_view GROUP BY 1 ORDER BY 1")
+    print(email, cur.fetchall())
+    conn.close()
+PY
+```
+
+Expect the region-scoped viewer to return only their own region, the network
+viewer all four regions, and the `none`-scope viewer no rows (default-deny) —
+which confirms `resolveAccess` and the `student-<scope>` policies agree. Because
+identity is the connecting `user`, one loop covers the whole viewer matrix with
+no restart.
+
+**Alternative: REST `/load` with a JWT.** The REST hook is disabled in developer
+mode, so this path needs auth **on** — run with `NODE_ENV=production` and drop
+`CUBEJS_DEV_MODE` (it overrides `NODE_ENV`):
+
+```bash
+NODE_ENV=production npm run dev
+```
+
+Then sign an HS256 JWT whose `email` claim is the viewer (with
+`CUBEJS_API_SECRET`) and POST it:
+
+```bash
+tok=$(node -e "const j=require('jsonwebtoken');console.log(j.sign({email:'you@apps.teamschools.org'},process.env.CUBEJS_API_SECRET,{algorithm:'HS256'}))")
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{"measures":["staff_pii.count_employees"]}}' \
+  http://localhost:4000/cubejs-api/v1/load
+```
+
+**The `CUBE_GROUP_MAP` trap.** `.env.example` ships a `CUBE_GROUP_MAP` line
+whose placeholder value uses **stale group names** (`cube-network-detail`,
+`cube-access-student-data`) that predate the current taxonomy (`student-<scope>`
+/ `staff-directory` / `staff-pii-<scope>`). If you `cp .env.example .env`
+verbatim, that map's dev-bypass **overrides real resolution with dead groups no
+policy matches → every view denies**. Comment out (or delete) `CUBE_GROUP_MAP`
+so `resolveAccess` reads real HR data. (The bypass fires whenever
+`NODE_ENV !== production`, so it is inert on the REST auth-on path but active on
+the SQL-API/dev-mode path — keep it commented out either way.)
+
+**Testing branch models not yet in production.** The cubes and `resolveAccess`
+read `kipptaf_marts` (production). If your branch reworks a mart the cubes read
+(`dim_staff_cube_access`, `dim_staff_reporting_chain`, etc.), production still
+has the old schema and resolution fails closed. To test against your branch:
+
+1. Build the changed models to your dev schema:
+   `uv run dbt build --project-dir src/dbt/kipptaf --target dev --defer --select <models>`
+   (lands in `zz_<user>_kipptaf_marts`).
+2. If a changed source is a Google Sheet, **re-stage its external first** — the
+   external table caches the sheet's columns, so a stale external makes the
+   staging model fail its contract:
+   `uv run dbt run-operation stage_external_sources --project-dir src/dbt/kipptaf --target dev --args "select: <source>.<table>" --vars '{ext_full_refresh: true}'`.
+3. Surgically redirect **only** the changed identity tables in `cube.js` / the
+   cube YAML to `zz_<user>_kipptaf_marts`; leave unchanged facts/dims on
+   `kipptaf_marts`. Do **not** redirect a table whose surrogate keys must join
+   against prod siblings — e.g. redirecting `dim_work_assignment_jobs` breaks
+   its join to prod `dim_staff_work_assignments`. This redirect is an
+   **uncommitted** scaffold; `git checkout` to revert before committing (and
+   `grep -r zz_ src/cube` to confirm none leaked).
+
+**`count_students` is seasonal.** On `student_enrollments` it anchors to
+`is_current_record` (current-as-of-now), so it returns 0 during summer/breaks.
+For a location-scoping check that returns real numbers year-round, use
+`student_attendance`'s `count_students` (additive over a date range).
+
+### SQL-level RLS invariants to check
+
+The default-deny behavior rests entirely on Cube compiling an empty allow-list
+array to `IN ()` — no explicit "deny" branch exists at the SQL level. These two
+cases exercise that boundary directly and are worth running whenever
+`access_policy` or a pre-aggregation's dimension list changes.
+
+**1. Empty-allow-list case.** A viewer whose role resolves
+`staff_pii_scope='all_in_scope'` but `staff_department_scope='none'` should get
+zero rows on `staff_pii`, not an error and not every row. Over the SQL API
+(viewer identity = the connecting `user`):
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+conn = psycopg2.connect(host="127.0.0.1", port=15432,
+                        user="a-department-scope-none-viewer@apps.teamschools.org",
+                        password="local-dev-sql", dbname="cube")
+cur = conn.cursor()
+cur.execute("SELECT MEASURE(count_employees) FROM staff_pii")
+print(cur.fetchall())  # expect zero rows / zero count, not an error
+PY
+```
+
+**2. Pre-agg-served scoped case.** Once a cube carries a pre-aggregation (e.g.
+`proficiency_rollup` on `student_assessment_scores`), a region-scoped viewer
+querying a rolled-up measure by subject on the corresponding view should get
+region-scoped rows AND the response should show the query was served by the
+pre-aggregation (rollup hit), not a fact-table fallback. Over the REST API,
+check `usedPreAggregations` in the response metadata:
+
+```bash
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{
+    "measures":["student_assessment_scores_view.pct_proficient"],
+    "dimensions":["student_assessment_scores_view.academic_subject"]
+  }}' \
+  http://localhost:4000/cubejs-api/v1/load | jq '.usedPreAggregations'
+```
+
+An empty `{}` means the query fell back to the fact — check that every
+`row_level` scoping member the view filters on (e.g. `region_key`,
+`abbreviation`) is also declared in the pre-aggregation's `dimensions:` list. A
+schema test can catch this statically; this case confirms it end-to-end against
+a live server.
 
 ## Warnings
 
-Do **not** set `CUBE_GROUP_MAP` in Cube Cloud — it bypasses the Directory API
-entirely and must only be used for local dev. The `cube.js` guard relies on
-`NODE_ENV !== "production"` as a second line of defense, but the variable should
-never be configured in Cube Cloud in the first place.
+Do **not** set `CUBE_GROUP_MAP` in Cube Cloud. This variable is a dev bypass
+that short-circuits BigQuery identity reads; it must never be configured in
+production. It only supplies `groups` (not the `row_level` interpolation
+values), so it cannot validate row-level scoping — and `.env.example`'s
+placeholder value uses stale group names that deny everything. See
+[Testing row-level security locally](#testing-row-level-security-locally).
 
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
 discarding hand-authored definitions.
+
+When a user requests a field their access tier excludes, Cube **blocks the
+entire query** — it does not silently drop the column and return the rest. In
+practice this only surfaces in Tableau, where a workbook published by someone
+with broad access (e.g. `staff-pii`) may error at query time for viewers with
+narrower access. BI tools that connect via Cube's SQL API (Superset) avoid this
+because each user's field list is filtered at connection time. A member-strip
+approach that drops inaccessible fields transparently is tracked in
+[#4268](https://github.com/TEAMSchools/teamster/issues/4268). Until then, build
+Tableau workbooks using only the fields your least-privileged audience can see,
+or publish separate workbooks per access tier.
 
 ## Using Cube with Claude
 
@@ -281,101 +480,52 @@ tail -f ~/Library/Logs/Claude/mcp-server-cube-mcp-server.log
 
 ## Admin Setup
 
-### Why a Service Account Key Is Required
+### How access is resolved
 
-Cube looks up each user's Google Workspace group membership at query time using
-the Admin Directory API. It calls the API as a service account with
-[domain-wide delegation](https://developers.google.com/workspace/guides/create-credentials#optional_set_up_domain-wide_delegation_for_a_service_account)
-— a mechanism that lets the service account impersonate a Workspace super-admin,
-which is required for cross-domain group lookups.
+Cube resolves each user's access at query time via two BigQuery reads against
+`kipptaf_marts` (no Google Admin Directory API):
 
-Keyless authentication (Workload Identity Federation) would eliminate the need
-for a stored key, but it requires the workload to present an OIDC token from a
-trusted identity provider to Google's Security Token Service. Cube Cloud is
-managed SaaS running on Cube's infrastructure — KIPP cannot configure Workload
-Identity on those pods. A service account key is the only viable credential for
-this deployment.
+1. **`dim_staff_cube_access`** — one row per active+primary staff member, keyed
+   on `google_email`. Carries per-field scope enums (`student_location_scope`,
+   `staff_pii_scope`, etc.) that `cube.js` translates into Cube group strings
+   via `access.buildGroups(row)`.
+2. **`dim_staff_reporting_chain`** — transitive closure of the org tree, keyed
+   on `(manager_staff_key, reportee_staff_key)`. Used to resolve the viewer's
+   direct and indirect reports for `reporting_chain` and
+   `reporting_chain_or_below_rank` scopes.
 
-If Cube is ever migrated to a self-hosted deployment on KIPP's GKE cluster,
-Workload Identity can replace the key — `GoogleAuth` would pick up ambient ADC
-credentials automatically and `GOOGLE_DIRECTORY_SA_KEY` could be removed.
+Results are cached until next midnight ET. A staff member not in
+`dim_staff_cube_access` (e.g. a non-staff admin user) resolves to an empty group
+list and sees no data (default deny).
 
-### Directory API Service Account Setup
+### Access groups
 
-Performed once by an admin. Creates the service account used by Cube to look up
-Workspace group membership.
+`access.buildGroups(row)` emits scope-specific group strings from the access
+row's scope columns. A viewer holds at most one group per axis, and each gated
+view's `access_policy` matches exactly one of them — no group on an axis means
+default-deny for the views gated by it:
 
-#### 1. Enable the Admin SDK API
+| Group                                                          | Emitted when                                 |
+| -------------------------------------------------------------- | -------------------------------------------- |
+| `student-region` / `student-school` / `student-network`        | matching non-`none` `student_location_scope` |
+| `staff-directory`                                              | always (every resolved viewer)               |
+| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`   |
+| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                |
 
-In the [GCP Console](https://console.cloud.google.com/apis/library) for project
-`teamster-332318`, search for **Admin SDK API** and enable it.
+The `staff_pii_scope` values are `all_in_scope`, `teaching_staff`,
+`reporting_chain`, and `reporting_chain_or_below_rank`. The compensation /
+observations / benefits groups are emitted but no view consumes them yet
+(forward-compat).
 
-#### 2. Create the service account
-
-In **IAM & Admin → Service Accounts**, create a new service account:
-
-- Name: `cube-directory-reader`
-- ID: `cube-directory-reader@teamster-332318.iam.gserviceaccount.com`
-- No GCP IAM roles — access is granted via Workspace DWD, not GCP IAM
-
-Do not reuse the BigQuery service account (`CUBEJS_DB_BQ_CREDENTIALS`). The
-BigQuery SA has GCP data access; combining it with DWD means a single key
-compromise grants both warehouse access and domain-wide group enumeration.
-
-#### 3. Create a JSON key
-
-In the service account details, go to **Keys → Add key → Create new key →
-JSON**. Download the file and keep it secure.
-
-#### 4. Grant domain-wide delegation in Google Workspace
-
-In [Google Workspace Admin](https://admin.google.com), go to **Security → Access
-and data control → API controls → Domain-wide delegation → Add new**:
-
-- **Client ID**: the numeric client ID from the service account details page in
-  GCP
-- **OAuth scopes**:
-  `https://www.googleapis.com/auth/admin.directory.group.readonly`
-
-#### 5. Encode the key and set environment variables
-
-Base64-encode the JSON key (no line wrapping):
-
-```bash
-base64 -w 0 key.json
-```
-
-Set the following in Cube Cloud:
-
-- `GOOGLE_DIRECTORY_SA_KEY` — the base64-encoded output
-- `GOOGLE_DIRECTORY_SA_SUBJECT` — email of the dedicated Workspace admin account
-  used as the impersonation subject (see below)
-
-!!! warning "Delete the key file after encoding — never store the raw JSON."
-
-#### Key rotation
-
-Rotate the key if it is ever exposed. In GCP, create a new key on the service
-account, update `GOOGLE_DIRECTORY_SA_KEY` in Cube Cloud, then delete the old
-key.
-
-#### 6. Create the impersonation subject account
-
-The Directory API requires the service account to act as a Workspace super-admin
-— this is the `GOOGLE_DIRECTORY_SA_SUBJECT` value. It must be a **dedicated
-shared admin account**, not a personal one. If the account is suspended,
-deleted, or has super-admin revoked, every Cube query will fail with a default
-deny (no data visible to any user).
-
-In [Google Workspace Admin](https://admin.google.com):
-
-1. **Directory → Users → Add new user** — create
-   `cube-service@apps.teamschools.org` (or similar)
-2. **Account → Admin roles → Super Admin → Assign** on that user
-
-Set `GOOGLE_DIRECTORY_SA_SUBJECT` to that account's email in Cube Cloud.
-
-!!! warning "Never use a personal admin account as the impersonation subject."
+Row-level filtering is enforced **declaratively in each view's `access_policy`**
+— `row_level` filters that interpolate the `securityContext` values
+`resolveAccess` builds — **not** in `queryRewrite`, which now carries only the
+snapshot-anchor guard. Student domains are single collapsed views (no
+summary/detail split); any `student-<scope>` group sees every field, including
+PII, with location scoping applied by the matching policy. Staff is split into
+`staff_directory` (open roster, no PII) and `staff_pii` (the sensitive fields,
+gated per `staff_pii_scope` by a location-and-department remit precomputed into
+`securityContext`).
 
 ### Cube Cloud One-Time Setup
 
@@ -391,11 +541,6 @@ Performed in the Cube Cloud UI by an admin:
    - `CUBEJS_DB_TYPE=bigquery`
    - `CUBEJS_DB_BQ_PROJECT_ID=teamster-332318`
    - `CUBEJS_DB_BQ_CREDENTIALS` — service account JSON (base64-encoded)
-   - `GOOGLE_DIRECTORY_SA_KEY` — Admin Directory API service account
-     (base64-encoded)
-   - `GOOGLE_DIRECTORY_SA_SUBJECT` — email of the dedicated Workspace admin
-     account used as the impersonation subject (e.g.
-     `cube-service@apps.teamschools.org`)
    - `CUBEJS_SQL_SUPER_USER=cube-superset-service` — SQL API super-user for
      Superset user impersonation (follow-up integration)
 
@@ -404,6 +549,6 @@ Performed in the Cube Cloud UI by an admin:
    deployment's **Settings → Environment Variables**. Do not set these manually.
 
 6. The service account for BigQuery needs `roles/bigquery.dataViewer` and
-   `roles/bigquery.jobUser` on the `teamster-332318` project
-7. The Admin Directory API service account needs domain-wide delegation scoped
-   to `https://www.googleapis.com/auth/admin.directory.group.readonly`
+   `roles/bigquery.jobUser` on the `teamster-332318` project — both for the
+   warehouse data (`dim_*` / `fct_*`) and for `dim_staff_cube_access` /
+   `dim_staff_reporting_chain` used for identity resolution

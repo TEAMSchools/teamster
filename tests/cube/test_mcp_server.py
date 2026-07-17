@@ -277,7 +277,7 @@ def test_with_default_timezone_injects_utc_when_absent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     server = _load_server(monkeypatch)
-    query = {"measures": ["student_attendance_summary.avg_daily_attendance"]}
+    query = {"measures": ["student_attendance_view.avg_daily_attendance"]}
     result = server._with_default_timezone(query)
     assert result["timezone"] == "UTC"
     # Original query object is not mutated.

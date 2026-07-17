@@ -255,6 +255,16 @@ short canonical names (`Newark` / `Camden` / `Miami` / `Paterson`). For region
 lookups by short name, use `city`. For mapping `_dbt_source_project` to region,
 use `dim_regions.dagster_code_location`.
 
+**`dim_staff` is all-time staff (~4,600), not active-only.** For an active-staff
+grain, spine on `dim_staff_work_assignments` where `is_current` (which already
+excludes terminated staff via termination date). Do NOT filter
+`dim_work_assignment_status.status_name != 'Terminated'` to get "active" — that
+assignment-status field is misaligned with the roster's `worker_status_code` and
+over-drops (~100 roster-active staff). The roster active+primary set (~1,526)
+runs ~30 larger than the marts' current-primary set (hire/term timing). `entity`
+(KTAF vs Region) derives from `business_unit_name`
+(`KIPP TEAM and Family Schools Inc.` = KTAF, else Region).
+
 **`stg_renlearn__star` is the consolidated STAR model** — the Nov-2025
 "consolidate star calcs" refactor disabled `int_renlearn__star_rollup`
 (`config: enabled: false`; leave it) and folded the derived columns

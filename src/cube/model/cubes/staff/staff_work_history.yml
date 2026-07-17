@@ -2,100 +2,15 @@ cubes:
   - name: staff_work_history
     public: false
     # SCD2 period intersection: one row per work assignment x contiguous window
-    # during which the worker's status, job, worker type, org unit, location,
-    # AND point-in-time manager all held simultaneously. Overlaps are anchored to
-    # the work-assignment status period (dim_work_assignment_status — the
-    # assignment-level Active/Leave/Terminated status, keyed by
-    # work_assignment_key like the other children; not the coarser worker-level
-    # dim_staff_status); GREATEST/LEAST then collapse each combination to
-    # its true effective range. Manager is folded into the intersection (not a
-    # separate cube join) so each period carries exactly one manager — a
-    # single-day query returns one row per person instead of one per manager the
-    # person ever had. Periods where children do not mutually overlap yield
-    # start > end and are silently excluded by the dates BETWEEN join (queries
-    # always filter on a date). Transformation lives here in sql: rather than a
-    # dbt mart only because every input is already a published dim; a dedicated
-    # mart is the future home if this grows.
-    sql: |
-      SELECT
-        swa.work_assignment_key,
-        swa.staff_key,
-        swa.full_time_equivalency,
-        swa.is_management_position,
-        was.status_name,
-        was.reason_name AS status_reason,
-        wj.position_title,
-        wj.job_code,
-        wt.worker_type_name AS worker_type,
-        wo.department_name,
-        wo.business_unit_name,
-        wl.location_key AS work_location_key,
-        wp.is_primary_position,
-        mgr.manager_staff_key,
-        GREATEST(
-          was.effective_start_date,
-          wj.effective_start_date,
-          wt.effective_start_date,
-          wo.effective_start_date,
-          wl.effective_start_date,
-          COALESCE(mgr.effective_start_date, DATE '1900-01-01')
-        ) AS effective_start_date,
-        LEAST(
-          was.effective_end_date,
-          wj.effective_end_date,
-          wt.effective_end_date,
-          wo.effective_end_date,
-          wl.effective_end_date,
-          COALESCE(mgr.effective_end_date, DATE '9999-12-31')
-        ) AS effective_end_date
-      FROM kipptaf_marts.dim_staff_work_assignments swa
-      JOIN kipptaf_marts.dim_work_assignment_status was
-        ON was.work_assignment_key = swa.work_assignment_key
-      JOIN kipptaf_marts.dim_work_assignment_jobs wj
-        ON wj.work_assignment_key = swa.work_assignment_key
-        AND was.effective_start_date < wj.effective_end_date
-        AND was.effective_end_date   > wj.effective_start_date
-      JOIN kipptaf_marts.dim_work_assignment_types wt
-        ON wt.work_assignment_key = swa.work_assignment_key
-        AND was.effective_start_date < wt.effective_end_date
-        AND was.effective_end_date   > wt.effective_start_date
-      JOIN kipptaf_marts.dim_work_assignment_organizational_units wo
-        ON wo.work_assignment_key = swa.work_assignment_key
-        AND wo.assignment_type = 'home'
-        AND was.effective_start_date < wo.effective_end_date
-        AND was.effective_end_date   > wo.effective_start_date
-      JOIN kipptaf_marts.dim_work_assignment_locations wl
-        ON wl.work_assignment_key = swa.work_assignment_key
-        AND was.effective_start_date < wl.effective_end_date
-        AND was.effective_end_date   > wl.effective_start_date
-      LEFT JOIN kipptaf_marts.dim_work_assignment_primary wp
-        ON wp.work_assignment_key = swa.work_assignment_key
-        AND was.effective_start_date < wp.effective_end_date
-        AND was.effective_end_date   > wp.effective_start_date
-      -- Point-in-time manager from the primary assignment's reporting
-      -- relationship. LEFT JOIN + COALESCE in GREATEST/LEAST keeps manager-less
-      -- staff (no primary reporting row) instead of dropping them. Splitting a
-      -- period on manager changes adds rows over time (correct) but never
-      -- duplicates a person on a single day.
-      LEFT JOIN (
-        SELECT
-          swa_m.staff_key,
-          rr.manager_staff_key,
-          GREATEST(wap.effective_start_date, rr.effective_start_date) AS effective_start_date,
-          LEAST(wap.effective_end_date,      rr.effective_end_date)   AS effective_end_date
-        FROM kipptaf_marts.dim_work_assignment_primary wap
-        JOIN kipptaf_marts.dim_staff_work_assignments swa_m
-          ON wap.work_assignment_key = swa_m.work_assignment_key
-          AND swa_m.staff_key IS NOT NULL
-        JOIN kipptaf_marts.dim_work_assignment_reporting_relationships rr
-          ON rr.work_assignment_key = wap.work_assignment_key
-          AND wap.effective_start_date <= rr.effective_end_date
-          AND wap.effective_end_date   >= rr.effective_start_date
-        WHERE wap.is_primary_position
-      ) mgr
-        ON mgr.staff_key = swa.staff_key
-        AND was.effective_start_date < mgr.effective_end_date
-        AND was.effective_end_date   > mgr.effective_start_date
+    # during which the worker's status, job, worker type, home org unit,
+    # location, primary-position flag, AND point-in-time manager all held
+    # simultaneously. Reads the dim_staff_work_history mart (the intersection is
+    # materialized there, not in cube sql — src/cube/CLAUDE.md "Transformation
+    # lives in dbt"). Each period carries exactly one manager, so a single-day
+    # query (via the dates BETWEEN join below) returns one row per person. That
+    # dates BETWEEN range join stays in cube — a sanctioned join-sql use, not a
+    # cube-body multi-table join.
+    sql_table: kipptaf_marts.dim_staff_work_history
 
     joins:
       # One employment period spans many calendar days. Range (BETWEEN) join is
@@ -116,6 +31,18 @@ cubes:
         sql: "{staff.staff_key} = {CUBE}.staff_key"
         relationship: many_to_one
 
+      # Current-role access attributes (job_function_level/code, department_group)
+      # from dim_staff_cube_access, surfaced to staff_directory / staff_pii. Joined
+      # HERE rather than on `staff` because the manager alias staff_manager extends
+      # staff and would inherit a staff-level join, creating an ambiguous second
+      # path to staff_cube_access in staff_directory (which joins both). Attaching
+      # via staff_key on the period rows gives each period the person's CURRENT
+      # role (not period-accurate), which is what the remit gate needs. Not every
+      # staff has an access row, so this LEFT-joins (attrs NULL when absent).
+      - name: staff_cube_access
+        sql: "{staff_cube_access.staff_key} = {CUBE}.staff_key"
+        relationship: many_to_one
+
       - name: locations
         sql: "{locations.location_key} = {CUBE}.work_location_key"
         relationship: many_to_one
@@ -130,14 +57,10 @@ cubes:
     dimensions:
       - name: staff_work_history_key
         description: >-
-          Composite key (work_assignment_key, intersected effective_start_date).
+          Surrogate key (work_assignment_key, intersected effective_start_date).
           Primary key. Includes work_assignment_key so concurrent assignments
           starting the same day do not collide.
-        sql: >
-          CONCAT(
-            CAST({CUBE}.work_assignment_key AS STRING), '|',
-            CAST({CUBE}.effective_start_date AS STRING)
-          )
+        sql: staff_work_history_key
         type: string
         primary_key: true
 

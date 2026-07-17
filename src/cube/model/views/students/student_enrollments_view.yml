@@ -1,30 +1,20 @@
 views:
-  - name: student_enrollments_summary
+  - name: student_enrollments_view
     description: >-
-      Point-in-time student enrollment headcounts and demographic breakdowns.
-      One row per filter slice — never per student-day. No direct student
-      identifiers; demographic dimensions are aggregate breakdowns only.
+      Point-in-time student enrollment — row-level (one row per enrolled
+      student-day, for roster exports and questions like "who was enrolled on
+      October 1?"; pin a single date by filtering dates_date_day) and aggregate
+      headcount breakdowns in a single view.
 
-      count_students is a point-in-time distinct-student headcount
-      (count_distinct student_key), alumni-free because the year/date filter
-      selects on the calendar day's school year, not student status. With a year
-      filter it counts students enrolled as of each school's last occurred
-      in-session day (period-end-as-of-now); group by month or week to trend the
-      headcount over the year; pin a single date (filter dates_date_day to e.g.
-      2025-10-01) for that exact day's count. It is governed by the snapshot
-      guard so it is always a point-in-time snapshot, never an unanchored
-      day-sum. Quarter granularity is unsupported — use month.
-
-      Status and enrollment breakdowns (ELL / IEP / meal eligibility,
-      graduation_year, is_retained_year) come from the enrollment stint and are
-      stint-grain — the student's status within the stint, not point-in-time on
-      the queried date. Use them as demographic breakdowns of the headcount, not
-      as a status-on-a-specific-day fact.
+      count_students is point-in-time (as of the most recent in-session day in
+      the query, or the pinned date).
 
     cubes:
       - join_path: student_enrollments
         includes:
           - count_students
+          - student_attendance_daily_key
+          - student_enrollment_key
           - is_current_record
           - is_month_end_record
           - is_week_end_record
@@ -45,6 +35,7 @@ views:
         includes:
           - location_name
           - abbreviation
+          - region_key
           - grade_band
           - campus
           - city
@@ -58,9 +49,15 @@ views:
       - join_path: student_enrollments.student_school_enrollments.students
         prefix: false
         includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
           - gender_identity
           - race
           - is_gifted
+          - enrollment_status
 
       - join_path: student_enrollments.student_school_enrollments
         prefix: false
@@ -83,30 +80,10 @@ views:
 
     meta:
       folders:
-        - name: Date
-          members:
-            - dates_date_day
-            - dates_month_number
-            - dates_month_name
-            - dates_quarter_number
-            - dates_academic_year
-            - dates_school_week_start_date
-        - name: Location
-          members:
-            - locations_location_name
-            - locations_abbreviation
-            - locations_grade_band
-            - locations_campus
-            - locations_city
-            - regions_region_name
-            - regions_state
-        - name: Student
-          members:
-            - gender_identity
-            - race
-            - is_gifted
         - name: Enrollment
           members:
+            - student_attendance_daily_key
+            - student_enrollment_key
             - grade_level
             - graduation_year
             - is_retained_year
@@ -120,6 +97,35 @@ views:
             - special_education_placement
             - is_meal_eligible
             - meal_eligibility
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_month_number
+            - dates_month_name
+            - dates_quarter_number
+            - dates_academic_year
+            - dates_school_week_start_date
+        - name: Location
+          members:
+            - locations_location_name
+            - locations_abbreviation
+            - locations_region_key
+            - locations_grade_band
+            - locations_campus
+            - locations_city
+            - regions_region_name
+            - regions_state
+        - name: Student
+          members:
+            - student_key
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+            - gender_identity
+            - race
+            - is_gifted
+            - enrollment_status
         - name: Filter
           members:
             - is_current_record
@@ -128,9 +134,27 @@ views:
             - is_latest_record
 
     access_policy:
-      # No PII tier — view contains no direct student identifiers.
-      # Demographic dimensions (race, gender_identity, is_gifted) are
-      # aggregate breakdowns only.
-      - group: cube-access-student-data
+      # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
+      # holds exactly one student-<scope> group (buildGroups); none => no group =>
+      # default-deny. row_level uses this view's flat location member names (see
+      # the includes/folders below), not cube-qualified paths.
+      - group: student-region
         member_level:
           includes: "*"
+        row_level:
+          filters:
+            - member: locations_region_key
+              operator: equals
+              values: ["{ securityContext.region_key }"]
+      - group: student-school
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations_abbreviation
+              operator: equals
+              values: ["{ securityContext.location_abbreviation }"]
+      - group: student-network
+        member_level:
+          includes: "*"
+        # network: no row_level (sees all locations)
