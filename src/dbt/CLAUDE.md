@@ -271,6 +271,18 @@ standalone — build/test them via a **consuming district** project-dir with tha
 district's prod manifest for `--defer` (e.g. focus → kippmiami):
 `uv run dbt build --select <model> --project-dir src/dbt/kippmiami --defer --state src/dbt/kippmiami/target/prod --target dev`.
 
+**A contract-enforced change needs a real `dbt build` to verify, not a prod
+SELECT** — `assert_columns_equivalent` runs only inside `dbt build`/CTAS, so a
+SELECT against the prod external validates data/logic but NOT the column set,
+and an all-NULL new source column that `select *` passes through slips past
+(this shipped a 2nd prod contract failure a build would have caught). For an
+Avro/GCS-source model, the dev source copy
+`zz_<GITHUB_USER>_<district>_<source>` may be stale/missing the new column —
+re-stage YOUR copy first:
+`dbt run-operation stage_external_sources --args "select: <source>.<table>" --vars '{ext_full_refresh: true}' --target dev --project-dir src/dbt/<district>`
+(personal schema, NOT classifier-blocked, unlike `--target staging`), then
+`dbt build --select <model> --target dev`.
+
 ## Local dev schema naming
 
 Local dev builds land in `zz_<GITHUB_USER>_<district>[_<source>]` (repo
