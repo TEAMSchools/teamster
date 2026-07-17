@@ -152,7 +152,7 @@ inner join
     and s.`quarter` = h.`quarter`
     and h.is_healthy_gradebook
 where
-    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
+    s.academic_year = {{ var("current_academic_year") - 1 }}  /* summer toggle: see skill */
     and s.school_level != 'ES'
     and s._dbt_source_project != 'kippmiami'
     and s.cte_grouping = 'sections_teacher'
@@ -264,7 +264,7 @@ inner join
     and s.teacher_number = h.teacher_number
     and s.`quarter` = h.`quarter`
 where
-    s.academic_year = {{ var("current_academic_year") }}  /* summer toggle: see skill */
+    s.academic_year = {{ var("current_academic_year") - 1 }}  /* summer toggle: see skill */
     and s.school_level != 'ES'
     and s._dbt_source_project != 'kippmiami'
     and s.cte_grouping = 'assignment_teacher'
