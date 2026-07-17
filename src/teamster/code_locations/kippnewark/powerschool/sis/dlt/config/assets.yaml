@@ -1,21 +1,176 @@
-# Spike (issue #4427): measure dlt full-replace throughput against Newark's
-# Oracle over the SSH tunnel using the two largest SIS tables. Launched
-# manually on the branch deployment; no schedules.
 assets:
+  # intraday, cursor transaction_date
   - table_name: attendance
     cursor_column: transaction_date
     schedule_tier: intraday
-  - table_name: assignmentscore
-    cursor_column: whenmodified
-    schedule_tier: nightly
-  # untrimmed extracts of the tables the ODBC path column-selected — tests
-  # whether included_columns is needed at all (Newark custom columns)
   - table_name: cc
     cursor_column: transaction_date
     schedule_tier: intraday
-  - table_name: log
-    cursor_column: null
-    schedule_tier: nightly
+  - table_name: courses
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: pgfinalgrades
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: schools
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: sections
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: storedgrades
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: students
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: termbins
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: terms
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  # intraday, cursor whenmodified
+  - table_name: gradescaleitem
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: roledef
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: s_nj_crs_x
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: s_nj_ren_x
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: s_nj_stu_x
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: s_stu_x
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: schoolstaff
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: sectionteacher
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: studentcorefields
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: studentrace
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: u_clg_et_stu
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: u_clg_et_stu_alt
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: u_expectations
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: u_storedgrades_de
+    cursor_column: whenmodified
+    schedule_tier: intraday
   - table_name: u_studentsuserfields
     cursor_column: whenmodified
     schedule_tier: intraday
+  - table_name: users
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  - table_name: userscorefields
+    cursor_column: whenmodified
+    schedule_tier: intraday
+  # nightly, cursor whenmodified (gradebook)
+  - table_name: assignmentcategoryassoc
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: assignmentscore
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: assignmentsection
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: districtteachercategory
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: gradecalcformulaweight
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: gradecalcschoolassoc
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: gradecalculationtype
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: gradeformulaset
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: gradeschoolconfig
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: gradeschoolformulaassoc
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: gradesectionconfig
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  - table_name: teachercategory
+    cursor_column: whenmodified
+    schedule_tier: nightly
+  # nightly, no cursor (always fully replaced when selected)
+  - table_name: attendance_code
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: attendance_conversion_items
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: bell_schedule
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: calendar_day
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: cycle_day
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: fte
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: gen
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: gpnode
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: gpprogresssubject
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: gpprogresssubjectearned
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: gpprogresssubjectenrolled
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: log
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: reenrollments
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: spenrollments
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: studenttest
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: studenttestscore
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: test
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: testscore
+    cursor_column: null
+    schedule_tier: nightly
