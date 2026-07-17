@@ -65,9 +65,11 @@ asset keys `[code_location, "powerschool", "sis", table]`.
   `libraries/ssh/resources.py` (`_persist_legacy_rsa`): ssh-rsa is now persisted
   per-transport and auto-rekey disabled. **No windowing/partitioning needed** —
   naive full-replace works at any table size; `assignmentscore` (19M) completes
-  as one query. dlt extract concurrency is set via `EXTRACT__WORKERS` (dlt
-  config/env; `pipeline.run()` does NOT accept a `workers` arg — only
-  `pipeline.extract()` does).
+  as one query. Set dlt extract concurrency from the op via
+  `dlt.config["extract.workers"] = N` (a writable in-memory provider that
+  `pipeline.extract()` resolves `workers=ConfigValue` from) — preferred over the
+  `EXTRACT__WORKERS` env var so the op doesn't mutate the process environment.
+  `pipeline.run()` accepts no `workers` arg.
 
 ## Notes
 

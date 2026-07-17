@@ -58,6 +58,19 @@ odbc `parse_date`) — check the landed type, don't assume. Source is
 `sources-bigquery.yml` schema `dagster_<district>_dlt_powerschool`, read in
 every target (dlt writes the prod dataset even on branch deploys).
 
+## Validating an ODBC→dlt cutover
+
+Compare the dlt landing table to prod `stg_powerschool__<t>` (native, deduped) —
+NOT `src_powerschool__<t>` (snapshot-accumulating external, dup-laden). Cast dlt
+raw scalars to the staging contract types first. Expect sub-1e-10 float epsilon
+on `.double_value`-derived numeric columns (`points`, `percent`, `gpa_points`):
+dlt reads the raw Oracle `NUMBER`, ODBC stored a lossy double — benign, not a
+defect. Key-set differences are extract-time drift (dlt lands a clean subset of
+prod). The migration PR's dbt Cloud CI stays **red until the dlt landing tables
+exist** — trigger a branch-deployment load of the `@dlt_assets` first (they
+write the non-branch-isolated prod dataset), then CI can build the staging
+models.
+
 ## ODBC source schema drift (recurring on `s_nj_stu_x`)
 
 The odbc Avro schema is inferred from the Oracle cursor type
