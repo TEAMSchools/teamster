@@ -97,6 +97,24 @@ models:
           +enabled: false
         dlt:
           +enabled: true
+          stg_powerschool__gpnode:
+            +enabled: false
+          stg_powerschool__gpprogresssubject:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectearned:
+            +enabled: false
+          stg_powerschool__gpprogresssubjectenrolled:
+            +enabled: false
+          stg_powerschool__gradesectionconfig:
+            +enabled: false
+          stg_powerschool__u_clg_et_stu:
+            +enabled: false
+          stg_powerschool__u_clg_et_stu_alt:
+            +enabled: false
+          stg_powerschool__u_expectations:
+            +enabled: false
+          stg_powerschool__u_storedgrades_de:
+            +enabled: false
 
 sources:
   amplify:
