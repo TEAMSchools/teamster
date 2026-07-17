@@ -53,19 +53,21 @@ Loads PowerSchool SIS Oracle tables to BigQuery over an SSH tunnel
 `build_powerschool_dlt_assets(code_location, tables, op_tags=None, max_extract_workers=None)`;
 asset keys `[code_location, "powerschool", "sis", table]`.
 
-- **Single-tunnel data-volume ceiling**: a single-stream `table_rows` pull of a
-  large table (`assignmentscore` ~19M) dies with `oracledb DPY-4011` (connection
-  closed) at a consistent **~8.6M rows**, independent of throughput or elapsed
-  time — `arraysize=10k` hit the wall at ~245s (~35k rows/s), `arraysize=50k` at
-  ~158s (~60k rows/s), same ~8.6M rows. So it is a per-connection/tunnel VOLUME
-  cap (the single in-process paramiko tunnel), NOT a duration or concurrency
-  limit (a 5→1 `EXTRACT__WORKERS` sweep all failed at the same volume).
-  `arraysize` raises throughput but only reaches the wall sooner. Naive
-  full-replace only works for tables under the cap; larger tables need
-  windowed/partitioned extraction (each window < the cap) — the retired ODBC
-  path partitioned by fiscal year for exactly this reason. dlt extract
-  concurrency is set via `EXTRACT__WORKERS` (dlt config/env; `pipeline.run()`
-  does NOT accept a `workers` arg — only `pipeline.extract()` does).
+- **`DPY-4011` at ~512 MiB was a paramiko rekey bug, now fixed (not a volume
+  cap)**: a large pull (`assignmentscore` ~19M) died with `oracledb DPY-4011`
+  (connection closed) at a consistent **~8.6M rows** regardless of throughput
+  (`arraysize=10k`→245s, `50k`→158s, same rows) or `EXTRACT__WORKERS` (5→1 all
+  failed). That ~8.6M rows × ~60 B/row ≈ 512 MiB = paramiko's
+  `Packetizer.REKEY_BYTES`: at 512 MiB received, paramiko renegotiates keys, and
+  `SSHResource.get_connection` had reverted its `ssh-rsa` patch right after the
+  handshake, so the rekey KEXINIT no longer offered `ssh-rsa` and the
+  ssh-rsa-only server (GlobalSCAPE) dropped the transport. Fixed in
+  `libraries/ssh/resources.py` (`_persist_legacy_rsa`): ssh-rsa is now persisted
+  per-transport and auto-rekey disabled. **No windowing/partitioning needed** —
+  naive full-replace works at any table size; `assignmentscore` (19M) completes
+  as one query. dlt extract concurrency is set via `EXTRACT__WORKERS` (dlt
+  config/env; `pipeline.run()` does NOT accept a `workers` arg — only
+  `pipeline.extract()` does).
 
 ## Notes
 
