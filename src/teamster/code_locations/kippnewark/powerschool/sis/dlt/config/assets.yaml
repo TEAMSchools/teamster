@@ -8,3 +8,14 @@ assets:
   - table_name: assignmentscore
     cursor_column: whenmodified
     schedule_tier: nightly
+  # untrimmed extracts of the tables the ODBC path column-selected — tests
+  # whether included_columns is needed at all (Newark custom columns)
+  - table_name: cc
+    cursor_column: transaction_date
+    schedule_tier: intraday
+  - table_name: log
+    cursor_column: null
+    schedule_tier: nightly
+  - table_name: u_studentsuserfields
+    cursor_column: whenmodified
+    schedule_tier: intraday
