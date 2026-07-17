@@ -15,12 +15,12 @@ with
             countif(is_expected) as n_expected,
             countif(is_expected_scored) as n_expected_scored,
 
-            sum(is_expected_late) as n_late,
+            sum(is_expected_late) as n_expected_late,
             sum(is_exempt) as n_exempt,
-            sum(is_expected_missing) as n_missing,
-            sum(is_expected_null) as n_null,
+            sum(is_expected_missing) as n_expected_missing,
+            sum(is_expected_null) as n_expected_null,
             sum(if(assign_score_above_max, 1, 0)) as n_score_above_max,
-            sum(is_expected_academic_dishonesty) as n_academic_dishonesty,
+            sum(is_expected_academic_dishonesty) as n_expected_academic_dishonesty,
 
             sum(if(assign_mh_hwf_score_less_5, 1, 0)) as n_assign_mh_hwf_score_less_5,
 
@@ -34,14 +34,6 @@ with
 
             sum(if(assign_ms_s_score_less_50p, 1, 0)) as n_assign_ms_s_score_less_50p,
             sum(if(assign_hs_s_score_less_50p, 1, 0)) as n_assign_hs_s_score_less_50p,
-
-            sum(
-                if(is_expected_null = 1 and is_expected_missing = 1, 1, 0)
-            ) as n_is_null_missing,
-
-            sum(
-                if(is_expected_null = 1 and is_expected_missing = 0, 1, 0)
-            ) as n_is_null_not_missing,
 
             avg(
                 if(is_expected_scored, assign_final_score_percent, null)
@@ -82,7 +74,7 @@ with
             *,
 
             (
-                n_null
+                n_expected_null
                 + n_score_above_max
                 + n_assign_mh_hwf_score_less_5
                 + n_assign_ms_hwf_missing_score_not_5

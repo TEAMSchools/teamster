@@ -276,31 +276,29 @@ this model directly rather than computing inline rollups.
 | `n_students`                           | `count(students_dcid)` — all students with an assignment row           |
 | `n_expected`                           | `countif(is_expected)` — not exempt and counted in final grade         |
 | `n_expected_scored`                    | `countif(is_expected_scored)` — expected students with a score entered |
-| `n_late`                               | `sum(is_expected_late)`                                                |
+| `n_expected_late`                      | `sum(is_expected_late)`                                                |
 | `n_exempt`                             | `sum(is_exempt)`                                                       |
-| `n_missing`                            | `sum(is_expected_missing)`                                             |
-| `n_null`                               | `sum(is_expected_null)`                                                |
+| `n_expected_missing`                   | `sum(is_expected_missing)`                                             |
+| `n_expected_null`                      | `sum(is_expected_null)`                                                |
 | `n_score_above_max`                    | Count of students where `assign_score_above_max` fired                 |
-| `n_academic_dishonesty`                | Count of expected HS students with score = 0 and not missing           |
+| `n_expected_academic_dishonesty`       | Count of expected HS students with score = 0 and not missing           |
 | `n_assign_mh_hwf_score_less_5`         | Count of students where `assign_mh_hwf_score_less_5` fired             |
 | `n_assign_ms_hwf_missing_score_not_5`  | Count of students where `assign_ms_hwf_missing_score_not_5` fired      |
 | `n_assign_hs_hwfs_missing_score_not_0` | Count of students where `assign_hs_hwfs_missing_score_not_0` fired     |
 | `n_assign_ms_s_score_less_50p`         | Count of students where `assign_ms_s_score_less_50p` fired             |
 | `n_assign_hs_s_score_less_50p`         | Count of students where `assign_hs_s_score_less_50p` fired             |
-| `n_is_null_missing`                    | Expected students with null score also marked missing                  |
-| `n_is_null_not_missing`                | Expected students with null score not marked missing                   |
 | `avg_score_for_assign`                 | Average `assign_final_score_percent` across expected scored students   |
 
 **Assignment-level flags** (from `flags` and `invalid_assign_check`):
 
-| Column                       | Definition                                                                                                                                                                                             |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `assign_max_score_not_10`    | True when H/W/F category and `totalpointvalue != 10`                                                                                                                                                   |
-| `overly_exempt_assignment`   | True when `n_exempt >= 0.5 * n_students`                                                                                                                                                               |
-| `assign_percent_graded`      | `safe_divide(n_expected_scored, n_expected)`                                                                                                                                                           |
-| `flags_sum`                  | `n_null + n_score_above_max + n_assign_mh_hwf_score_less_5 + n_assign_ms_hwf_missing_score_not_5 + n_assign_hs_hwfs_missing_score_not_0 + n_assign_ms_s_score_less_50p + n_assign_hs_s_score_less_50p` |
-| `percent_graded_min_not_met` | True when `assign_percent_graded < 0.90`                                                                                                                                                               |
-| `assignment_has_flags`       | True when `assign_max_score_not_10` OR `overly_exempt_assignment` OR `flags_sum > 0` OR `percent_graded_min_not_met`                                                                                   |
+| Column                       | Definition                                                                                                                                                                                                      |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `assign_max_score_not_10`    | True when H/W/F category and `totalpointvalue != 10`                                                                                                                                                            |
+| `overly_exempt_assignment`   | True when `n_exempt >= 0.5 * n_students`                                                                                                                                                                        |
+| `assign_percent_graded`      | `safe_divide(n_expected_scored, n_expected)`                                                                                                                                                                    |
+| `flags_sum`                  | `n_expected_null + n_score_above_max + n_assign_mh_hwf_score_less_5 + n_assign_ms_hwf_missing_score_not_5 + n_assign_hs_hwfs_missing_score_not_0 + n_assign_ms_s_score_less_50p + n_assign_hs_s_score_less_50p` |
+| `percent_graded_min_not_met` | True when `assign_percent_graded < 0.90`                                                                                                                                                                        |
+| `assignment_has_flags`       | True when `assign_max_score_not_10` OR `overly_exempt_assignment` OR `flags_sum > 0` OR `percent_graded_min_not_met`                                                                                            |
 
 `assignment_has_flags` is the single rollup signal: `false` = fully compliant,
 `true` = at least one check failed. The individual flag columns and counts
