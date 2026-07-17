@@ -1,3 +1,4 @@
+import os
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -92,6 +93,14 @@ def _compute_changed(
         if table.cursor_column is None
         or current.get(table.name) != stored.get(table.name)
     ]
+
+
+def _resolve_extract_workers(tag_value: str | None, param: int | None) -> int | None:
+    """Resolve the dlt extract worker cap: a per-run tag overrides the
+    factory param, which overrides dlt's default (None = leave default)."""
+    if tag_value is not None:
+        return int(tag_value)
+    return param
 
 
 def oracle_number_adapter(col_type: TypeEngine) -> TypeEngine | None:
@@ -191,6 +200,7 @@ def build_powerschool_dlt_assets(
     code_location: str,
     tables: list[PowerSchoolTable],
     op_tags: dict[str, object] | None = None,
+    max_extract_workers: int | None = None,
 ):
     """Build ONE probe-gated @dlt_assets over all PowerSchool tables.
 
@@ -203,6 +213,11 @@ def build_powerschool_dlt_assets(
     Unselected / unchanged tables are never in the run, so their destination
     tables are untouched. Schedules subset the multi-asset per tier. See
     docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md.
+
+    `max_extract_workers` caps concurrent dlt extract workers to avoid
+    saturating the single SSH tunnel (see DPY-4011); None leaves dlt's
+    default (5). A per-run `dlt_extract_workers` tag overrides this param for
+    a manual concurrency sweep.
     """
     dlt_pipeline = dlt.pipeline(
         pipeline_name=_SOURCE_NAME,
@@ -233,6 +248,13 @@ def build_powerschool_dlt_assets(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ) -> Iterator:
+        workers = _resolve_extract_workers(
+            context.run.tags.get("dlt_extract_workers"), max_extract_workers
+        )
+        if workers is not None:
+            os.environ["EXTRACT__WORKERS"] = str(workers)
+            context.log.info(f"dlt extract workers capped at {workers}")
+
         selected = [
             tables_by_key[key]
             for key in context.selected_asset_keys

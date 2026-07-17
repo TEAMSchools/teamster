@@ -17,5 +17,10 @@ assets = [
             PowerSchoolTable(name=a["table_name"], cursor_column=a["cursor_column"])
             for a in yaml.safe_load(config_file.read_text())["assets"]
         ],
+        # Single-stream extract avoids saturating the one SSH tunnel (dlt's
+        # default of 5 concurrent workers drops the Oracle connection,
+        # DPY-4011). A per-run `dlt_extract_workers` tag overrides this for a
+        # manual concurrency sweep.
+        max_extract_workers=1,
     )
 ]
