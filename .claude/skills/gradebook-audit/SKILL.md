@@ -180,8 +180,9 @@ the `grades_type` will still produce no data.
 - `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags_calculations.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
 - `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations_qtd_unpivot.sql`
+- `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_es_comments.sql`
 
-**Three changes to make:**
+**Four changes to make:**
 
 1. In `int_tableau__gradebook_audit_flags_calculations` — change the year filter
    (appears 3 times, marked with `/* summer toggle: see skill */`):
@@ -237,12 +238,57 @@ the `grades_type` will still produce no data.
    `current_academic_year` while `flags_calculations` is toggled to `- 1` breaks
    that join and silently drops all `assignment_teacher` rows.
 
-Build and verify after all three changes:
+4. In `rpt_tableau__gradebook_es_comments` — change the year filter (1
+   occurrence, marked `-- summer toggle: see skill`):
+
+   ```sql
+   -- change this:
+   s.academic_year = {{ var("current_academic_year") }}
+   -- to this:
+   s.academic_year = {{ var("current_academic_year") - 1 }}
+   ```
+
+   **No `grades_type`/`storedgrades` fallback here, unlike
+   `flags_calculations`** — this was tried and reverted. `flags_calculations`
+   audits MS/HS grades, and `stg_powerschool__storedgrades` genuinely has MS/HS
+   archived Q-term data for the prior year, so its union+fallback pattern gives
+   correct results. `es_comments` only needs comments for ES schools, and
+   `stg_powerschool__storedgrades` has **no Q-term data at all for ES schools in
+   academic years 2021, 2024, or 2025** (confirmed empty via direct query — only
+   2020/2022/2023 exist). Adding the same union pattern here doesn't add safety;
+   it silently shows every comment as missing instead of falling back to real
+   data, because the fallback source has nothing to fall back to. The
+   single-source join works today because `base_powerschool__final_grades` still
+   holds live prior-year data even after the academic-year var rolls over
+   (confirmed empirically: AY2025 rows were still present after the var bumped
+   to 2026).
+
+   If this toggle ever stops returning real comments (i.e.
+   `base_powerschool__final_grades` gets cleared for the prior year before the
+   new year's data is ready), do NOT reflexively re-add a
+   `stg_powerschool__storedgrades` union to fix it — first confirm whether the
+   ES archival gap has actually been backfilled:
+
+   ```sql
+   select schoolid, academic_year, count(*) as n
+   from `teamster-332318`.kipptaf_powerschool.stg_powerschool__storedgrades
+   where storecode_type = 'Q'
+     and schoolid in (73255, 73257, 73259, 179901, 73256, 73254) -- non-Sumner ES schools
+   group by 1, 2
+   order by 1, 2 desc
+   ```
+
+   If the target prior year is still missing from the results, there is no real
+   fallback data source available; escalate instead of shipping a change that
+   silently reports every comment as missing.
+
+Build and verify after all four changes:
 
 ```bash
 uv run dbt build \
   --select int_powerschool__u_expectations_qtd_unpivot \
     int_tableau__gradebook_audit_flags_calculations rpt_tableau__gradebook_audit \
+    rpt_tableau__gradebook_es_comments \
   --project-dir src/dbt/kipptaf \
   --defer \
   --state target/prod
@@ -250,7 +296,7 @@ uv run dbt build \
 
 **When to revert:** once the new school year starts and teachers begin entering
 grades in PowerSchool (typically Q1), revert all changes:
-`current_academic_year - 1` → `current_academic_year` in all three files, and
+`current_academic_year - 1` → `current_academic_year` in all four files, and
 `'last_year'` → `'current_year'` in flags calculations.
 
 ---
