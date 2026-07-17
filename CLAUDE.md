@@ -592,6 +592,19 @@ opaque token.
   run's `LogMessageEvent` compute logs (`context.log.info` lines).
 - `mcp__dagster__search_assets` `cursor` is the JSON-string form returned by the
   prior call (`"[\"a\",\"b\"]"`), not a bare list.
+- **`ASSET_FAILED_TO_MATERIALIZE` on a SUCCESS run is usually benign**: planned
+  events are written at run creation from the execution plan (the op cannot
+  retract them); the Dagster+ PROD backend — not OSS, not branch deployments —
+  reconciles planned-vs-materialized post-run and emits the event for each
+  unmaterialized planned asset. For `can_subset` multiassets that yield nothing
+  (e.g. dlt idle ticks) they are `failure_type=SKIPPED`, level INFO: no health
+  degradation, no alert. Only a real materialization reconciles a planned asset
+  — avoid the events by not planning (subset the RunRequest / launch no run),
+  never by yielding fake materializations (bumps data versions, fires downstream
+  automation). `get_run_logs` hides `materializationFailureType` — confirm
+  FAILED-vs-SKIPPED via GraphQL `FailedToMaterializeEvent` fields.
+- `get_run_logs` needs the full run UUID (abbreviated ids fail). To find a
+  schedule's runs: `list_runs` with `tags={"dagster/schedule_name": "<name>"}`.
 
 ### Dagster run failure diagnosis
 
@@ -639,6 +652,11 @@ field is `success` (not `successful`). `assetMaterializations`
 `beforeTimestampMillis` / `afterTimestampMillis` are `String`, not `Float` —
 pass quoted numeric strings or the request fails with "type 'Float' used in
 position expecting type 'String'".
+
+Claude cannot authenticate direct GraphQL calls — the token comes from `op read`
+(hook-blocked). Hand queries to the user to run in the Dagster+ UI GraphQL
+playground; the MCP's fixed field selections omit some fields (e.g.
+`materializationFailureType` on `FailedToMaterializeEvent`).
 
 ### GKE MCP
 
