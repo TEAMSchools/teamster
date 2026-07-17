@@ -49,7 +49,7 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="actual_quarters",
-                partition_by="_dbt_source_project, academic_year, region, schoolid, `quarter`",
+                partition_by="_dbt_source_project, academic_year, schoolid, `quarter`",
                 order_by="quarter_start_date",
             )
         }}
