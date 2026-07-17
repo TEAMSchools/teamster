@@ -144,7 +144,13 @@ def _mint_token(email: str) -> str:
     if cached and cached[1] - now > _TOKEN_REFRESH_BUFFER_SECONDS:
         return cached[0]
     exp = now + TOKEN_TTL_SECONDS
-    token = jwt.encode({"email": email, "exp": exp}, CUBE_API_SECRET, algorithm="HS256")
+    # `iat` is required by cube.js's `jwt.verify(..., { maxAge: "12h" })` —
+    # PyJWT does not add it automatically. `exp` alone is not enough: maxAge
+    # derives its cutoff from `iat`, not `exp`, so a token minted without it
+    # would fail `checkAuth` with "iat required when maxAge is specified".
+    token = jwt.encode(
+        {"email": email, "iat": now, "exp": exp}, CUBE_API_SECRET, algorithm="HS256"
+    )
     _token_cache[email] = (token, exp)
     return token
 
@@ -222,14 +228,15 @@ mcp = FastMCP(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
         "and views) via Cube Cloud's REST API.\n\n"
         "Workflow: (1) call `meta` to discover available views, measures, and "
-        "dimensions — analyst-facing surfaces are views named `<domain>_<grain>` "
-        "(e.g. `student_attendance_detail`, `student_attendance_summary`); (2) "
+        "dimensions — analyst-facing surfaces are views, e.g. `student_attendance_view` "
+        "(one view per student domain) or `staff_directory` / `staff_pii` (staff "
+        "domain, split by access tier); (2) "
         "build a Cube "
         "query object (measures, dimensions, filters, timeDimensions, order, "
         "limit) and call `load` to execute, or `sql` to inspect the compiled "
         "SQL without running it. The query spec follows the Cube REST API.\n\n"
         "Member naming: every measure/dimension is dotted `<view>.<member>` "
-        "(e.g. `student_attendance_summary.count_students`). Bare names won't "
+        "(e.g. `student_attendance_view.count_students`). Bare names won't "
         "resolve.\n\n"
         "Filter operators are named, not SQL: `equals`, `notEquals`, `contains`, "
         "`gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`, "
@@ -264,12 +271,16 @@ mcp = FastMCP(
         "Numeric values come back as strings — cast to numeric before "
         "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
         "(`'10' < '9'`).\n\n"
-        "PII defaults: prefer summary views (`*_summary`) for aggregate "
-        "questions. Detail views (`*_detail`) carry row-level student "
-        "identifiers and should be used only when drill-down is explicitly "
-        "requested. Never emit detail-view values to PR comments, issues, "
-        "Slack, scheduled-agent outputs, or any external surface — only to "
-        "the local conversation.\n\n"
+        "PII defaults: student views (`student_attendance_view`, "
+        "`student_assessment_scores_view`, `student_enrollments_view`) carry "
+        "row-level student identifiers alongside aggregate-safe dimensions — "
+        "any scope-specific student group can see both; avoid pulling "
+        "identifier fields (student_key, full_name, birth_date, state/lea "
+        "IDs) unless drill-down is explicitly requested. Staff PII "
+        "(`staff_pii`, the six sensitive fields) is gated separately from "
+        "`staff_directory` (roster/employment). Never emit identifying "
+        "values to PR comments, issues, Slack, scheduled-agent outputs, or "
+        "any external surface — only to the local conversation.\n\n"
         "Access is group-driven and default-deny: empty `meta` results or "
         "`WHERE (1=0)` in `sql` output usually means the requester lacks the "
         "required `cube-*` Workspace group, not a missing model."
@@ -384,8 +395,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     filters, timeDimensions, segments, order, limit, offset, total). Polls
     automatically on Cube's 'Continue wait' long-polling response.
 
-    PII: `*_detail` view results carry row-level student identifiers — keep
-    those values in the local conversation only.
+    PII: student view results carry row-level student identifiers alongside
+    aggregate-safe dimensions — keep identifying values (names, birth dates,
+    state/lea IDs) in the local conversation only.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.

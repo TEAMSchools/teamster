@@ -58,6 +58,20 @@ odbc `parse_date`) — check the landed type, don't assume. Source is
 `sources-bigquery.yml` schema `dagster_<district>_dlt_powerschool`, read in
 every target (dlt writes the prod dataset even on branch deploys).
 
+## ODBC source schema drift (recurring on `s_nj_stu_x`)
+
+The odbc Avro schema is inferred from the Oracle cursor type
+(`libraries/powerschool/sis/odbc/schema.py` `ORACLE_AVRO_SCHEMA_TYPES`): NUMBER
+→ `STRUCT<int_value, double_value, bytes_decimal_value>`, VARCHAR/CHAR → STRING.
+Two drift modes both surface as failed `stg_powerschool__*` builds: (1)
+PowerSchool retypes a column NUMBER→VARCHAR → the `.int_value` unwrap fails
+"Cannot access field int_value on a value with type STRING" — fix by casting
+(`cast(col as int)`, matching the sftp/dlt variants); (2) PowerSchool adds a new
+column → `select *` passes it through and the enforced contract fails "missing
+in contract" — fix by declaring it in `properties.yml`. Diff the full source
+column set (`INFORMATION_SCHEMA.COLUMNS`) against the contract to catch ALL new
+columns at once — dbt reports only the first.
+
 ## GPA Gotchas
 
 - **`storecode = 'Y1'` only**: Q1–Q4 records have `gpa_points = 0` by design —

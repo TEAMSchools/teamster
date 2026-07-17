@@ -1,12 +1,11 @@
 views:
-  - name: student_assessment_scores_detail
+  - name: student_assessment_scores_view
     description: >-
-      Row-level assessment scores across internal Illuminate interims and NJ/FL
-      state assessments. One row per student x assessment x administration x
-      response type. Use for drill-down and individual investigations; for
-      roll-ups use student_assessment_scores_summary. pct_proficient (mastery
-      rate) is the source-agnostic headline; scale_score is null for internal
-      rows and percent_correct is null for state rows. response_type /
+      Assessment scores across internal Illuminate interims and NJ/FL state
+      assessments — row-level (one row per student x assessment x administration
+      x response type) and aggregate breakdowns in a single view. pct_proficient
+      (mastery rate) is the source-agnostic headline; scale_score is null for
+      internal rows and percent_correct is null for state rows. response_type /
       response_type_code carry the standard/skill breakdown. State rows have
       null administration dates by design (no exact administered date). Contains
       direct student identifiers — see access_policy for PII gating.
@@ -122,6 +121,7 @@ views:
         includes:
           - location_name
           - abbreviation
+          - region_key
           - grade_band
           - campus
           - city
@@ -192,6 +192,7 @@ views:
           members:
             - location_name
             - abbreviation
+            - region_key
             - grade_band
             - campus
             - city
@@ -234,16 +235,27 @@ views:
             - is_dropped_course
 
     access_policy:
-      - group: cube-access-student-data
+      # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
+      # holds exactly one student-<scope> group (buildGroups); none => no group =>
+      # default-deny. row_level uses this view's flat location member names (see
+      # the includes/folders below), not cube-qualified paths.
+      - group: student-region
         member_level:
           includes: "*"
-          excludes:
-            - full_name
-            - birth_date
-            - lea_student_identifier
-            - state_student_identifier
-            - district_student_identifier
-            - salesforce_contact_id
-      - group: cube-access-student-pii
+        row_level:
+          filters:
+            - member: region_key
+              operator: equals
+              values: ["{ securityContext.region_key }"]
+      - group: student-school
         member_level:
           includes: "*"
+        row_level:
+          filters:
+            - member: abbreviation
+              operator: equals
+              values: ["{ securityContext.location_abbreviation }"]
+      - group: student-network
+        member_level:
+          includes: "*"
+        # network: no row_level (sees all locations)

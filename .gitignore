@@ -6,6 +6,7 @@ dagster-tmp
 .claude/settings.local.json
 .claude/scratch/
 .claude/scheduled_tasks.lock
+.superpowers/
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,macos,windows,python,dbt
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,macos,windows,python,dbt

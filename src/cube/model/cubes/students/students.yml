@@ -13,7 +13,8 @@ cubes:
         primary_key: true
         public: true
 
-      # PII — excluded from detail views without cube-access-student-pii
+      # PII — visible to any viewer with student access (single student tier;
+      # no separate PII gate)
       - name: lea_student_identifier
         description: >-
           KIPP's own SIS identifier for the student. KIPP is a charter Local

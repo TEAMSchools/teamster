@@ -63,9 +63,9 @@ DEFAULT_OUT = Path(__file__).resolve().parent / "out" / "results_cc.jsonl"
 _LOAD_RESULT = {
     "data": [
         {
-            "student_attendance_summary.count_students": "1248",
-            "student_attendance_summary.count_chronically_absent": "187",
-            "student_attendance_summary.percent_chronically_absent": "0.15",
+            "student_attendance_view.count_students": "1248",
+            "student_attendance_view.count_chronically_absent": "187",
+            "student_attendance_view.percent_chronically_absent": "0.15",
         }
     ]
 }
