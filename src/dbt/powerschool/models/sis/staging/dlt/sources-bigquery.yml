@@ -11,6 +11,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - assignmentcategoryassoc
       - name: assignmentscore
         config:
@@ -19,6 +20,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - assignmentscore
       - name: assignmentsection
         config:
@@ -27,6 +29,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - assignmentsection
       - name: attendance
         config:
@@ -35,6 +38,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - attendance
       - name: attendance_code
         config:
@@ -43,6 +47,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - attendance_code
       - name: attendance_conversion_items
         config:
@@ -51,6 +56,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - attendance_conversion_items
       - name: bell_schedule
         config:
@@ -59,6 +65,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - bell_schedule
       - name: calendar_day
         config:
@@ -67,6 +74,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - calendar_day
       - name: cc
         config:
@@ -75,6 +83,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - cc
       - name: courses
         config:
@@ -83,6 +92,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - courses
       - name: cycle_day
         config:
@@ -91,6 +101,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - cycle_day
       - name: districtteachercategory
         config:
@@ -99,6 +110,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - districtteachercategory
       - name: fte
         config:
@@ -107,6 +119,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - fte
       - name: gen
         config:
@@ -115,6 +128,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - gen
       - name: gradecalcformulaweight
         config:
@@ -123,6 +137,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - gradecalcformulaweight
       - name: gradecalcschoolassoc
         config:
@@ -131,6 +146,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - gradecalcschoolassoc
       - name: gradecalculationtype
         config:
@@ -139,6 +155,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - gradecalculationtype
       - name: gradeformulaset
         config:
@@ -147,6 +164,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - gradeformulaset
       - name: gradescaleitem
         config:
@@ -155,6 +173,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - gradescaleitem
       - name: gradeschoolconfig
         config:
@@ -163,6 +182,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - gradeschoolconfig
       - name: gradeschoolformulaassoc
         config:
@@ -171,6 +191,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - gradeschoolformulaassoc
       - name: log
         config:
@@ -179,6 +200,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - log
       - name: pgfinalgrades
         config:
@@ -187,6 +209,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - pgfinalgrades
       - name: reenrollments
         config:
@@ -195,6 +218,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - reenrollments
       - name: roledef
         config:
@@ -203,6 +227,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - roledef
       - name: s_nj_crs_x
         config:
@@ -211,6 +236,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - s_nj_crs_x
       - name: s_nj_ren_x
         config:
@@ -219,6 +245,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - s_nj_ren_x
       - name: s_nj_stu_x
         config:
@@ -227,6 +254,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - s_nj_stu_x
       - name: s_stu_x
         config:
@@ -235,6 +263,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - s_stu_x
       - name: schools
         config:
@@ -243,6 +272,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - schools
       - name: schoolstaff
         config:
@@ -251,6 +281,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - schoolstaff
       - name: sections
         config:
@@ -259,6 +290,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - sections
       - name: sectionteacher
         config:
@@ -267,6 +299,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - sectionteacher
       - name: spenrollments
         config:
@@ -275,6 +308,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - spenrollments
       - name: storedgrades
         config:
@@ -283,6 +317,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - storedgrades
       - name: studentcorefields
         config:
@@ -291,6 +326,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - studentcorefields
       - name: studentrace
         config:
@@ -299,6 +335,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - studentrace
       - name: students
         config:
@@ -307,6 +344,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - students
       - name: studenttest
         config:
@@ -315,6 +353,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - studenttest
       - name: studenttestscore
         config:
@@ -323,6 +362,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - studenttestscore
       - name: teachercategory
         config:
@@ -331,6 +371,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - teachercategory
       - name: termbins
         config:
@@ -339,6 +380,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - termbins
       - name: terms
         config:
@@ -347,6 +389,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - terms
       - name: test
         config:
@@ -355,6 +398,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - test
       - name: testscore
         config:
@@ -363,6 +407,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - testscore
       - name: u_studentsuserfields
         config:
@@ -371,6 +416,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - u_studentsuserfields
       - name: users
         config:
@@ -379,6 +425,7 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - users
       - name: userscorefields
         config:
@@ -387,4 +434,5 @@ sources:
               asset_key:
                 - "{{ project_name }}"
                 - powerschool
+                - sis
                 - userscorefields
