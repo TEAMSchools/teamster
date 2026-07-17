@@ -87,8 +87,6 @@ models:
       staging:
         sftp:
           +enabled: false
-        odbc:
-          +enabled: false
         dlt:
           +enabled: true
   renlearn:
@@ -125,8 +123,6 @@ sources:
     sis:
       staging:
         sftp:
-          +enabled: false
-        odbc:
           +enabled: false
   renlearn:
     renlearn:

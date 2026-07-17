@@ -91,8 +91,6 @@ models:
         int_powerschool__person_contacts:
           +enabled: false
       staging:
-        odbc:
-          +enabled: false
         sftp:
           +enabled: false
         dlt:
@@ -154,8 +152,6 @@ sources:
   powerschool:
     sis:
       staging:
-        odbc:
-          +enabled: false
         sftp:
           powerschool_sftp:
             src_powerschool__assignmentscore:

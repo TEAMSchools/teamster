@@ -29,9 +29,19 @@ models:
       staging:
         +contract:
           enforced: true
+        # ARCHIVED (#4442): the ODBC ingestion path is retired; models are
+        # kept in-tree for reference. No district enables this variant.
         odbc:
-          +enabled: true
+          +enabled: false
         sftp:
           +enabled: false
         dlt:
+          +enabled: false
+
+sources:
+  powerschool:
+    sis:
+      staging:
+        # ARCHIVED (#4442): see models note above.
+        odbc:
           +enabled: false
