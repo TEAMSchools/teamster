@@ -279,6 +279,15 @@ Check in order:
    `student_course` flags) drives the Branch 3 output rows.
    `expected_assign_count_not_met` is emitted as a hardcoded literal in Branch
    2, not unpivoted.
+4. **Is the affected student/course/quarter one of the known ambiguous-dedup
+   cases in `int_extracts__course_enrollments_by_term`?** Its `student_course`
+   branch (Branch 3) picks one section per student/course/quarter with a
+   `row_number()` tiebreaker that is frequently a true tie (see reference doc) —
+   when it is, the teacher/section actually in scope for that student that
+   quarter is arbitrary and can differ from what you'd expect from PowerSchool.
+   Query the model directly for that student/course/quarter to check whether
+   more than one candidate section exists before assuming the flag logic itself
+   is wrong.
 
 `stg_google_sheets__gradebook_flags` is disabled — do not check the allowlist
 sheet. `stg_google_sheets__gradebook_exceptions` is also disabled — do not check

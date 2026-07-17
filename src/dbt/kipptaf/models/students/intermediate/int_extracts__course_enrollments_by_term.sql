@@ -178,6 +178,11 @@ with
                 d.days_course_enrolled, s.days_in_quarter
             ) as pct_enrolled_in_quarter,
 
+            -- known limitation: when PS has 2 overlapping section records for
+            -- the same student/course/quarter (stale dateleft on the old
+            -- section after a reassignment -- see #3900), exitdate/dateleft
+            -- are frequently identical on both candidates, leaving this pick
+            -- arbitrary; see reference doc before assuming it's deterministic
             row_number() over (
                 partition by
                     s._dbt_source_project,

@@ -170,6 +170,24 @@ author could no longer recall the reason either. Treat the current behavior as
 inherited, not deliberate policy — if you're touching this filter, re-derive
 whether excluding these sections is still desired before assuming it is.
 
+**`int_extracts__course_enrollments_by_term` has a known, arbitrary dedup tie in
+its `student_course` branch (Branch 3 above).** Its final `enrollments` CTE
+picks one candidate section per student/course/quarter with
+`row_number() over (... order by e.exitdate desc, s.dateleft desc)`. When
+PowerSchool has two overlapping course-enrollment records for the same
+student/course/school/quarter — a section reassignment where the old section's
+`dateleft` was never closed out at the switch, the same root cause tracked in
+[#3900](https://github.com/TEAMSchools/teamster/issues/3900) — those two
+tiebreaker columns are frequently identical on both candidates, leaving nothing
+to actually break the tie. BigQuery gives no ordering guarantee for exact ties,
+so the pick is arbitrary and not guaranteed stable across rebuilds. Verified in
+AY 2025-2026 data: 431 ambiguous student/course/quarter combinations, 354 of
+them fully tied (identical `exitdate` and `dateleft` on every candidate), 86 of
+those fully-tied cases spanning two different teachers — meaning for those 86,
+which teacher's gradebook is in scope for that student/quarter is effectively
+arbitrary today. No code fix has been applied; this is called out here as a
+known limitation rather than resolved.
+
 ### Expectations source: `int_powerschool__u_expectations_qtd_unpivot`
 
 Replaces `stg_google_sheets__gradebook_expectations_assignments`. Reads the
