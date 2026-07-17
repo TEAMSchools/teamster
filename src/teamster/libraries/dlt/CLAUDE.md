@@ -46,6 +46,27 @@ using a vendored DLT Zendesk pipeline.
 - Vendored pipeline in `zendesk/pipeline/` handles auth via
   `TZendeskCredentials` and API pagination
 
+### `powerschool/`
+
+Loads PowerSchool SIS Oracle tables to BigQuery over an SSH tunnel
+(`table_rows` + PyArrow), probe-gated full-replace. Factory:
+`build_powerschool_dlt_assets(code_location, tables, op_tags=None, max_extract_workers=None)`;
+asset keys `[code_location, "powerschool", "sis", table]`.
+
+- **Single-tunnel data-volume ceiling**: a single-stream `table_rows` pull of a
+  large table (`assignmentscore` ~19M) dies with `oracledb DPY-4011` (connection
+  closed) at a consistent **~8.6M rows**, independent of throughput or elapsed
+  time — `arraysize=10k` hit the wall at ~245s (~35k rows/s), `arraysize=50k` at
+  ~158s (~60k rows/s), same ~8.6M rows. So it is a per-connection/tunnel VOLUME
+  cap (the single in-process paramiko tunnel), NOT a duration or concurrency
+  limit (a 5→1 `EXTRACT__WORKERS` sweep all failed at the same volume).
+  `arraysize` raises throughput but only reaches the wall sooner. Naive
+  full-replace only works for tables under the cap; larger tables need
+  windowed/partitioned extraction (each window < the cap) — the retired ODBC
+  path partitioned by fiscal year for exactly this reason. dlt extract
+  concurrency is set via `EXTRACT__WORKERS` (dlt config/env; `pipeline.run()`
+  does NOT accept a `workers` arg — only `pipeline.extract()` does).
+
 ## Notes
 
 All DLT assets use `DagsterDltResource` (from `dagster-dlt`) and write directly

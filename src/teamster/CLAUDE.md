@@ -122,6 +122,13 @@ Resources are defined in two places:
   kipptaf defines ADP WFN, Airbyte, Coupa, LDAP, Tableau, etc.). Only exists
   when a code location needs resources beyond the shared set.
 
+**`EnvVar`-backed resource config resolves in TWO places** under
+`k8s_job_executor`: execution-plan build (code server) AND step-pod resource
+init (run pod). A field like `password=EnvVar("PS_SSH_PASSWORD")` needs that var
+in BOTH `dagster-cloud.yaml` blocks — `container_context` (server) and
+`run_k8s_config` (run pod). Missing server-side fails at launch
+(`PostProcessingError: ... not set`); missing run-pod-side fails at step init.
+
 ## Asset Key Convention
 
 `[code_location, integration, ...]` — e.g., `kippnewark/powerschool/students`,

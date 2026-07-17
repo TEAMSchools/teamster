@@ -46,15 +46,17 @@ tunnel → BigQuery). Only one variant is enabled per district.
 migrating the ODBC districts. A dlt model = its **odbc** sibling minus the
 struct-unwrap: dlt lands raw Oracle scalars, so drop the
 `.int_value`/`.double_value`/`coalesce(... .bytes_decimal_value ...)` accessors,
-the `dbt_utils.deduplicate` (native table, no `_file_name` dupes), and any
-`_dagster_partition_*`; explicitly project the shared contract columns and cast
-to the contract type (`NUMERIC(10)`→int, `NUMERIC(38,9)`→float64,
-`TIMESTAMP`→date, `STRING`→bare). Watch native-type divergence per column: a
-date Oracle stores as DATE lands `TIMESTAMP` (use `cast(x as date)`), one stored
-as text lands `STRING` (keep the odbc `parse_date`) — check the landed type,
-don't assume. Source is `sources-bigquery.yml` schema
-`dagster_<district>_dlt_powerschool`, read in every target (dlt writes the prod
-dataset even on branch deploys).
+the `_file_name`-snapshot `dbt_utils.deduplicate` (native table, no file dupes)
+— but KEEP a business-grain dedup the odbc model already had (e.g.
+`u_clg_et_stu`/`u_clg_et_stu_alt` on `(studentsdcid, exit_date)`, which guards a
+downstream LEFT JOIN from fan-out), and any `_dagster_partition_*`; explicitly
+project the shared contract columns and cast to the contract type
+(`NUMERIC(10)`→int, `NUMERIC(38,9)`→float64, `TIMESTAMP`→date, `STRING`→bare).
+Watch native-type divergence per column: a date Oracle stores as DATE lands
+`TIMESTAMP` (use `cast(x as date)`), one stored as text lands `STRING` (keep the
+odbc `parse_date`) — check the landed type, don't assume. Source is
+`sources-bigquery.yml` schema `dagster_<district>_dlt_powerschool`, read in
+every target (dlt writes the prod dataset even on branch deploys).
 
 ## GPA Gotchas
 
