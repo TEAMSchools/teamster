@@ -28,6 +28,16 @@ ORACLE_SCHEMA = "ps"
 _SOURCE_NAME = "powerschool"
 
 
+def _asset_key(code_location: str, table_name: str) -> AssetKey:
+    """The asset key for one PowerSchool SIS table (single source of truth).
+
+    The `sis` segment differentiates SIS from the `powerschool/enrollment/*`
+    namespace; the dbt `powerschool_dlt` source's `asset_key` meta must match
+    this shape or the dbt-source -> dlt-asset lineage breaks.
+    """
+    return AssetKey([code_location, _SOURCE_NAME, "sis", table_name])
+
+
 @dataclass(frozen=True)
 class PowerSchoolTable:
     """One PowerSchool table's sync config.
@@ -93,9 +103,9 @@ def oracle_number_adapter(col_type: TypeEngine) -> TypeEngine | None:
     BIGNUMERIC via dlt's decimal128(38, 9+) default). Pin both to
     Numeric(38, 9), which dlt's BigQuery destination maps to NUMERIC.
     """
-    if isinstance(col_type, Float):
-        return Numeric(precision=38, scale=9)
-    if isinstance(col_type, Numeric) and col_type.precision is None:
+    if isinstance(col_type, Float) or (
+        isinstance(col_type, Numeric) and col_type.precision is None
+    ):
         return Numeric(precision=38, scale=9)
     return col_type
 
@@ -120,7 +130,7 @@ def _oracle_connection_url() -> str:
 
 
 class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
-    def __init__(self, code_location: str):
+    def __init__(self, code_location: str) -> None:
         self.code_location = code_location
         super().__init__()
 
@@ -128,9 +138,7 @@ class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
         asset_spec = super().get_asset_spec(data)
 
         asset_spec = asset_spec.replace_attributes(
-            key=AssetKey(
-                [self.code_location, "powerschool", "sis", data.resource.name]
-            ),
+            key=_asset_key(self.code_location, data.resource.name),
             deps=[],
         )
 
@@ -214,14 +222,12 @@ def build_powerschool_dlt_assets(
         # full_with_precision reflection are the authoritative decimal schema
         # (see oracle_number_adapter docstring).
         destination=bigquery(),
-        dataset_name=f"dagster_{code_location}_dlt_powerschool",
+        dataset_name=f"dagster_{code_location}_dlt_{_SOURCE_NAME}",
         progress=LogCollector(dump_system_stats=False),
     )
 
     translator = PowerSchoolDagsterDltTranslator(code_location)
-    tables_by_key = {
-        AssetKey([code_location, "powerschool", "sis", t.name]): t for t in tables
-    }
+    tables_by_key = {_asset_key(code_location, t.name): t for t in tables}
 
     @dlt_assets(
         # Full source only defines the asset specs; the op runs a narrowed one.
@@ -259,15 +265,16 @@ def build_powerschool_dlt_assets(
 
             # Probe every selected table that has a cursor column (one shared
             # engine over the single tunnel).
-            current: dict[str, dict] = {}
             engine = sa.create_engine(_oracle_connection_url())
             try:
                 with engine.connect() as connection:
-                    for table in selected:
-                        if table.cursor_column is not None:
-                            current[table.name] = probe_signature(
-                                connection, table.name, table.cursor_column
-                            )
+                    current: dict[str, dict] = {
+                        table.name: probe_signature(
+                            connection, table.name, table.cursor_column
+                        )
+                        for table in selected
+                        if table.cursor_column is not None
+                    }
             finally:
                 engine.dispose()
 

@@ -273,7 +273,7 @@ def _make_forward_handler(
     log: logging.Logger,
 ) -> type[socketserver.BaseRequestHandler]:
     class Handler(socketserver.BaseRequestHandler):
-        def handle(self):
+        def handle(self) -> None:
             try:
                 channel = transport.open_channel(
                     kind="direct-tcpip",
