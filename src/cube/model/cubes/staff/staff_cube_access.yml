@@ -4,13 +4,15 @@ cubes:
     # Exposes only the three access-control role attributes from
     # dim_staff_cube_access (job_function_level/code, department_group) as
     # queryable dimensions for the staff views' access_policy remit and display.
-    # Joined 1:1 to `staff` on staff_key so both staff_directory and staff_pii
-    # reach them through one join, keeping `staff`'s sql a thin single-model read
-    # (src/cube/CLAUDE.md "Transformation lives in dbt, not cube"). The scope
-    # columns (staff_*_scope, region_key, location_abbreviation, ...) are NOT
-    # exposed here — resolveAccess reads those directly from
-    # dim_staff_cube_access to build the securityContext; only these three role
-    # attributes need to be queryable dimensions.
+    # Surfaced onto the staff views via a Cube join from staff_work_history on
+    # staff_key (see staff_work_history.yml) — attached there rather than on
+    # `staff` because the manager alias staff_manager extends `staff` and would
+    # inherit a staff-level join, creating an ambiguous second path to
+    # staff_cube_access in staff_directory (which joins both). The scope columns
+    # (staff_*_scope, region_key, location_abbreviation, ...) are NOT exposed
+    # here — resolveAccess reads those directly from dim_staff_cube_access to
+    # build the securityContext; only these three role attributes need to be
+    # queryable dimensions.
     sql_table: kipptaf_marts.dim_staff_cube_access
 
     dimensions:
