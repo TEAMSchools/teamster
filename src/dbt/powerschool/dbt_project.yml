@@ -33,3 +33,5 @@ models:
           +enabled: true
         sftp:
           +enabled: false
+        dlt:
+          +enabled: false

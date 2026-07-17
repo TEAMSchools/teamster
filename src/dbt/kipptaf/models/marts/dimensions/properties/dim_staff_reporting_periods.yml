@@ -1,0 +1,66 @@
+models:
+  - name: dim_staff_reporting_periods
+    description: >-
+      Point-in-time manager resolver. One row per staff member per contiguous
+      window during which they held a single primary work-assignment reporting
+      relationship, formed by intersecting the primary work-assignment validity
+      window with the reporting-relationship window. Consumed by the Cube
+      semantic layer (staff_reporting_relationships helper cube) and by
+      dim_staff_work_history / dim_staff_reporting_chain.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: effective_start_date <= effective_end_date
+    columns:
+      - name: staff_reporting_periods_key
+        data_type: string
+        description: Surrogate primary key of (staff_key, effective_start_date).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - unique
+          - not_null
+      - name: staff_key
+        data_type: string
+        description: Foreign key to `dim_staff.staff_key` — the reportee.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: manager_staff_key
+        data_type: string
+        description: >-
+          Foreign key to `dim_staff.staff_key` — the manager for this period.
+          Nullable: a primary reporting-relationship row may carry no manager.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+      - name: effective_start_date
+        data_type: date
+        description: Start of the contiguous reporting-relationship period.
+        data_tests:
+          - not_null
+      - name: effective_end_date
+        data_type: date
+        description:
+          End (inclusive) of the contiguous reporting-relationship period.
+        data_tests:
+          - not_null

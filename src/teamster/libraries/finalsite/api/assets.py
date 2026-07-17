@@ -18,6 +18,11 @@ def build_finalsite_asset(
         # partitions_def=partitions_def,
         check_specs=[build_check_spec_avro_schema_valid(key)],
         group_name="finalsite",
+        # One shared pool across ALL districts (not per-location): the Finalsite
+        # gateway throttles by source IP, so simultaneous pulls from the shared
+        # egress IP return 403 even with separate subdomains and credentials.
+        # Set this pool's limit to 1 in Dagster+ to serialize them. See #4408.
+        pool="finalsite_api",
         kinds={"python"},
     )
     def _asset(context: AssetExecutionContext, finalsite: FinalsiteResource):

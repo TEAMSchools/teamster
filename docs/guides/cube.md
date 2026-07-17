@@ -218,6 +218,32 @@ PY
 real `securityContext`, and the policies enforce. Compare a scoped viewer's
 counts against a network viewer's breakdown to confirm scoping.
 
+A quick region-isolation check on student data — loop the SAME query over a few
+viewer emails (a region-scoped viewer, a network viewer, a `none`-scope viewer):
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+for email in ["a-region-scoped-viewer@apps.teamschools.org",
+              "a-network-viewer@apps.teamschools.org",
+              "a-none-scope-viewer@apps.teamschools.org"]:
+    conn = psycopg2.connect(host="127.0.0.1", port=15432, user=email,
+                            password="local-dev-sql", dbname="cube")
+    cur = conn.cursor()
+    cur.execute("SELECT regions_region_name, MEASURE(count_students) "
+                "FROM student_enrollments_view GROUP BY 1 ORDER BY 1")
+    print(email, cur.fetchall())
+    conn.close()
+PY
+```
+
+Expect the region-scoped viewer to return only their own region, the network
+viewer all four regions, and the `none`-scope viewer no rows (default-deny) —
+which confirms `resolveAccess` and the `student-<scope>` policies agree. Because
+identity is the connecting `user`, one loop covers the whole viewer matrix with
+no restart.
+
 **Alternative: REST `/load` with a JWT.** The REST hook is disabled in developer
 mode, so this path needs auth **on** — run with `NODE_ENV=production` and drop
 `CUBEJS_DEV_MODE` (it overrides `NODE_ENV`):
@@ -270,6 +296,53 @@ has the old schema and resolution fails closed. To test against your branch:
 `is_current_record` (current-as-of-now), so it returns 0 during summer/breaks.
 For a location-scoping check that returns real numbers year-round, use
 `student_attendance`'s `count_students` (additive over a date range).
+
+### SQL-level RLS invariants to check
+
+The default-deny behavior rests entirely on Cube compiling an empty allow-list
+array to `IN ()` — no explicit "deny" branch exists at the SQL level. These two
+cases exercise that boundary directly and are worth running whenever
+`access_policy` or a pre-aggregation's dimension list changes.
+
+**1. Empty-allow-list case.** A viewer whose role resolves
+`staff_pii_scope='all_in_scope'` but `staff_department_scope='none'` should get
+zero rows on `staff_pii`, not an error and not every row. Over the SQL API
+(viewer identity = the connecting `user`):
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+conn = psycopg2.connect(host="127.0.0.1", port=15432,
+                        user="a-department-scope-none-viewer@apps.teamschools.org",
+                        password="local-dev-sql", dbname="cube")
+cur = conn.cursor()
+cur.execute("SELECT MEASURE(count_employees) FROM staff_pii")
+print(cur.fetchall())  # expect zero rows / zero count, not an error
+PY
+```
+
+**2. Pre-agg-served scoped case.** Once a cube carries a pre-aggregation (e.g.
+`proficiency_rollup` on `student_assessment_scores`), a region-scoped viewer
+querying a rolled-up measure by subject on the corresponding view should get
+region-scoped rows AND the response should show the query was served by the
+pre-aggregation (rollup hit), not a fact-table fallback. Over the REST API,
+check `usedPreAggregations` in the response metadata:
+
+```bash
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{
+    "measures":["student_assessment_scores_view.pct_proficient"],
+    "dimensions":["student_assessment_scores_view.academic_subject"]
+  }}' \
+  http://localhost:4000/cubejs-api/v1/load | jq '.usedPreAggregations'
+```
+
+An empty `{}` means the query fell back to the fact — check that every
+`row_level` scoping member the view filters on (e.g. `region_key`,
+`abbreviation`) is also declared in the pre-aggregation's `dimensions:` list. A
+schema test can catch this statically; this case confirms it end-to-end against
+a live server.
 
 ## Warnings
 
@@ -425,23 +498,34 @@ Results are cached until next midnight ET. A staff member not in
 `dim_staff_cube_access` (e.g. a non-staff admin user) resolves to an empty group
 list and sees no data (default deny).
 
-### Access tiers
+### Access groups
 
-`buildGroups(row)` emits the following tier strings based on the access row's
-scope columns:
+`access.buildGroups(row)` emits scope-specific group strings from the access
+row's scope columns. A viewer holds at most one group per axis, and each gated
+view's `access_policy` matches exactly one of them — no group on an axis means
+default-deny for the views gated by it:
 
-| Tier                 | Emitted when                         |
-| -------------------- | ------------------------------------ |
-| `student`            | `student_location_scope != 'none'`   |
-| `staff-directory`    | always (every resolved viewer)       |
-| `staff-pii`          | `staff_pii_scope != 'none'`          |
-| `staff-compensation` | `staff_compensation_scope != 'none'` |
-| `staff-observations` | `staff_observations_scope != 'none'` |
-| `staff-benefits`     | `staff_benefits_scope != 'none'`     |
+| Group                                                          | Emitted when                                 |
+| -------------------------------------------------------------- | -------------------------------------------- |
+| `student-region` / `student-school` / `student-network`        | matching non-`none` `student_location_scope` |
+| `staff-directory`                                              | always (every resolved viewer)               |
+| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`   |
+| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                |
 
-The single `student` tier grants every student view (summary + detail) and all
-fields, including PII. Row-level location scoping (network / region / school) is
-applied in `queryRewrite`.
+The `staff_pii_scope` values are `all_in_scope`, `teaching_staff`,
+`reporting_chain`, and `reporting_chain_or_below_rank`. The compensation /
+observations / benefits groups are emitted but no view consumes them yet
+(forward-compat).
+
+Row-level filtering is enforced **declaratively in each view's `access_policy`**
+— `row_level` filters that interpolate the `securityContext` values
+`resolveAccess` builds — **not** in `queryRewrite`, which now carries only the
+snapshot-anchor guard. Student domains are single collapsed views (no
+summary/detail split); any `student-<scope>` group sees every field, including
+PII, with location scoping applied by the matching policy. Staff is split into
+`staff_directory` (open roster, no PII) and `staff_pii` (the sensitive fields,
+gated per `staff_pii_scope` by a location-and-department remit precomputed into
+`securityContext`).
 
 ### Cube Cloud One-Time Setup
 

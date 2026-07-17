@@ -64,3 +64,59 @@ not `NUMERIC`. Fix pattern: cast at the dbt staging layer
 If the adapter's scale changes, any existing BQ table with a conflicting column
 type must be dropped manually — `replace` write disposition does not allow type
 changes on existing tables.
+
+### `replace` write-disposition + runtime subsetting (dlt 1.28.1)
+
+- A `replace` resource that yields **zero rows truncates** its destination table
+  — you cannot skip a table by yielding nothing from inside the run. To load a
+  runtime-chosen subset, exclude the others from the run entirely: pass a
+  narrowed source to
+  `DagsterDltResource.run(dlt_source=source.with_resources(*subset))` (its
+  `is_subset` filter intersects with `selected_asset_keys`).
+- `replace` never changes an existing table's column **mode** (not just type):
+  an all-`NULLABLE` load into a table whose column is `REQUIRED` fails with BQ
+  400 "changed mode from REQUIRED to NULLABLE". Drop the table so the pipeline
+  recreates it (same remedy as the type-change note above).
+- `dataset_name` (e.g. `dagster_<loc>_dlt_*`) is **not branch-isolated** —
+  branch-deployment runs write to the SAME dataset as prod, so branch testing
+  pollutes it and schema-mode mismatches recur at prod go-live. Plan a one-time
+  `DROP SCHEMA ... CASCADE` cutover when a new pipeline replaces an old one.
+- A `@dlt.source` yielding two resources with the **same name** raises
+  `InvalidResourceDataTypeMultiplePipes`; build one resource per table with a
+  distinct `name=` (or `.with_name()`, which sets both `name` and `table_name`).
+- **`parallelized=True` is compatible with `resource_state` writes** — that is
+  the documented incremental pattern (write `dlt.current.resource_state()[...]`
+  in the resource body; the value persists per-thread). What breaks is **nesting
+  a `DltResource` inside a `parallelized` resource**
+  (`yield from sql_table(...)`): concurrent worker threads mangle dlt's
+  per-resource injectable context (`ContainerInjectableContextMangled` /
+  "generator already executing"). To parallelize a `sql_table`-style extract
+  while still writing `resource_state`, don't wrap the resource — drive the
+  exported **`table_rows`** generator directly inside your own
+  `@dlt.resource(parallelized=True)`:
+  `from dlt.sources.sql_database.helpers import table_rows`. It's a plain
+  generator (no resource nesting) and takes the same `reflection_level` /
+  `table_adapter_callback` / `type_adapter_callback` args, so
+  decimal/nullability adapters and precision reflection are preserved. Caveat:
+  `table_rows` is a lower-level building block with a broad, semi-internal
+  signature (Pyright flags it as not top-level exported) — pin the dlt version
+  and pass every positional arg explicitly, since arg changes there would
+  surface on upgrade. A duckdb spike yielding plain rows will pass and miss the
+  nesting mangle — it only fires with a nested resource on a real run.
+- **dlt commits state only from a resource actually extracted into the load**
+  (serial main-thread OR a `parallelized` worker). Writes from the `@dlt.source`
+  function body or a `selected=False` resource never round-trip
+  (spike-confirmed, silent) — this is why the per-table signature write lives
+  inside the extracted resource, not the source.
+- `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
+  metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
+  `except` so a load failure is legible without walking the exception chain.
+- **Stream dlt progress into the Dagster event log**: in the op, set
+  `dlt_pipeline.collector = LogCollector(logger=context.log, log_period=30.0)`
+  (`context.log` is a `logging.Logger`). The factory default `logger="stdout"`
+  reaches only step-pod compute logs, so the UI goes dark mid-load. Gotcha:
+  `log_period` throttles only _repeat_ dumps of the **same** counter — each new
+  table force-logs (dlt's `update()` resets `last_log_time=None` on a new
+  counter), so per-table bursts at Extract/Normalize phase starts are
+  unavoidable; `log_period` only quiets the long Load phase. Dropping it
+  defaults to 1.0s -> a chatty Load phase.

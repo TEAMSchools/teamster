@@ -67,8 +67,9 @@ not appear in site navigation.
 adding, removing, or renaming schedules or sensors.
 
 The script imports every code location's `definitions` and silently SKIPS any
-that fail to import — so running it in the codespace (district `definitions`
-fail on unset `PS_SSH_PORT`, etc.) drops those locations from the catalog.
+that fail to import — so running it in the codespace (locations fail to import
+without their dbt manifests, and `kipptaf` additionally on unset
+Illuminate/Zendesk dlt credentials) drops those locations from the catalog.
 Regenerate only in a full environment where all locations load.
 
 ## `superpowers/` Directory
@@ -100,8 +101,6 @@ documentation mechanism for that work.
   subsection heading repeated across sections is fine). `mkdocs build` does NOT
   run markdownlint, so `trunk check` the generated/edited `.md` before pushing —
   MD036 / MD001 fire only at pre-push / CI, not in the mkdocs build.
-- Always specify a language on fenced code blocks (` ```python `, ` ```sql `,
-  ` ```yaml `, ` ```bash `, ` ```text ` for plain output)
 - SQL examples must follow `.trunk/config/.sqlfluff` rules (BigQuery dialect,
   trailing commas, single quotes, max line length 88)
 - Use admonitions for warnings and notes:

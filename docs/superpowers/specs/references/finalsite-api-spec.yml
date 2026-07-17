@@ -2,6 +2,213 @@
 ---
 openapi: 3.0.1
 paths:
+  "/api/external/contacts/{contact_id}/appointments":
+    parameters:
+      - name: contact_id
+        in: path
+        required: true
+        format: uuid
+        schema:
+          type: string
+    get:
+      summary: List Contact Appointments
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+        - name: updated_since
+          in: query
+          format: date-time
+          required: false
+          description:
+            Filter results to appointments updated on or after the given ISO
+            8601 timestamp
+          schema:
+            type: string
+      responses:
+        "401":
+          description: Requires Authorization
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: filters appointments by updated_since
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  appointments:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/Appointment"
+        "400":
+          description: Bad Request for an invalid updated_since
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not Found when contact does not exist
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+  "/api/external/contacts/{contact_id}/files":
+    parameters:
+      - name: contact_id
+        in: path
+        required: true
+        format: uuid
+        schema:
+          type: string
+    get:
+      summary: List Contact Files
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: Requires Authorization
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: uses ContactAbility for authorization decisions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/UploadedFile"
+        "404":
+          description: Not Found when contact belongs to different customer
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+  "/api/external/contacts/{contact_id}/forms":
+    parameters:
+      - name: contact_id
+        in: path
+        required: true
+        format: uuid
+        schema:
+          type: string
+    get:
+      summary: List Contact Forms
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+        - name: updated_since
+          in: query
+          format: date-time
+          required: false
+          description:
+            Filter results to forms updated on or after the given ISO 8601
+            timestamp
+          schema:
+            type: string
+      responses:
+        "401":
+          description: Requires Authorization
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: filters forms by updated_since
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  forms:
+                    type: array
+                    items:
+                      "$ref": "#/components/schemas/ContactForm"
+        "400":
+          description: Bad Request for an invalid updated_since
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not Found when contact does not exist
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+  "/api/external/contacts/{contact_id}/forms/{id}/pdf":
+    parameters:
+      - name: contact_id
+        in: path
+        required: true
+        format: uuid
+        schema:
+          type: string
+      - name: id
+        in: path
+        required: true
+        format: uuid
+        schema:
+          type: string
+    get:
+      summary: Download Contact Form as PDF
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: Requires Authorization
+          content:
+            application/pdf:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+        "200":
+          description: Download Contact Form as PDF
+        "404":
+          description: Not Found when the form does not belong to the contact
+          content:
+            application/pdf:
+              schema:
+                "$ref": "#/components/schemas/ErrorResponse"
+  "/api/external/contacts/{contact_id}/photo":
+    parameters:
+      - name: contact_id
+        in: path
+        required: true
+        format: uuid
+        schema:
+          type: string
+    get:
+      summary: Get Contact Photo
+      parameters:
+        - name: X-Api-Version
+          in: header
+          required: true
+          schema:
+            "$ref": "#components/schemas/XApiVersionHeader"
+      responses:
+        "401":
+          description: Requires Authorization
+        "200":
+          description: Get Contact Photo
+        "404":
+          description: Not Found when the contact does not exist
   "/api/external/contact_statuses":
     get:
       summary: Returns all ContactStatuses
@@ -255,7 +462,7 @@ paths:
               schema:
                 "$ref": "#/components/schemas/ErrorResponse"
         "200":
-          description: Get Contact
+          description: omits checklist_answers when not requested
           content:
             application/json:
               schema:
@@ -855,6 +1062,40 @@ components:
             Admin indicates an employee of the school
           type: string
           example: User
+    UploadedFile:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this file
+          type: string
+          format: uuid
+          example: 00000000-0000-0000-0000-000000acb123
+        file_name:
+          description: Original file name
+          type: string
+          example: transcript.pdf
+        content_type:
+          description: MIME type of the file
+          type: string
+          example: application/pdf
+        file_size:
+          description: File size in bytes
+          type: integer
+          example: 204800
+          nullable: true
+        url:
+          description:
+            URL to download the file. Redirects to a short-lived presigned S3
+            URL. Requires the same API authentication as other endpoints.
+          type: string
+          nullable: true
+          example: https://midvale.schooladmin.com/api/external/contacts/00000000-0000-0000-0000-000000acb123/files/00000000-0000-0000-0000-000000acb456/download
+        created_at:
+          description: When the file was uploaded
+          type: string
+          format: date-time
+          example: "2024-09-01T12:00:00Z"
+    Portrait: {}
     Ping:
       type: object
       properties:
@@ -1473,6 +1714,23 @@ components:
           x-expandable: true
           items:
             "$ref": "#components/schemas/Relationship"
+        checklist_answers:
+          description:
+            List of applicable checklist items and their completion dates,
+            siloed to the current school year (or school_year_id if provided)
+          type: array
+          x-expandable: true
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: Application Fee
+              completion_date:
+                type: string
+                format: date-time
+                nullable: true
+                example: "2026-01-15T12:00:00Z"
         custom_attributes:
           description: List of custom field values for this contact
           type: array
@@ -1505,6 +1763,74 @@ components:
             - "$ref": "#/components/schemas/SchoolYear"
             - type: "null"
           nullable: true
+    ContactPhoto:
+      type: object
+      properties:
+        url:
+          description:
+            Short-lived (10 minute) presigned S3 URL for the contact photo. The
+            download file name is the contact's last name, first name, id and
+            'photo', plus the original extension.
+          type: string
+          nullable: true
+          example: https://s3.amazonaws.com/bucket/portraits/Lewis_Alice_00000000-0000-0000-0000-000000acb123_photo.jpg?...
+        file_name:
+          description:
+            "Download file name: last name, first name, contact id and 'photo',
+            plus the original extension"
+          type: string
+          example: Lewis_Alice_00000000-0000-0000-0000-000000acb123_photo.jpg
+        content_type:
+          description: MIME type of the photo
+          type: string
+          example: image/jpeg
+          nullable: true
+        updated_at:
+          description:
+            When the photo was last updated. Callers can use this to detect
+            changes.
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-09-01T12:00:00Z"
+    ContactForm:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this form
+          type: string
+          example: 00000000-0000-0000-0000-000000acb123
+        form_type:
+          description: The kind of form
+          type: string
+          enum:
+            - application
+            - inquiry
+            - ad_hoc_form
+          example: application
+        name:
+          description:
+            Human-readable label for the form (template name when available)
+          type: string
+          nullable: true
+          example: Application for Admission
+        submit_date:
+          description: When the form was submitted
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-09-01T12:00:00Z"
+        updated_at:
+          description: When the form was last updated
+          type: string
+          format: date-time
+          example: "2024-09-01T12:00:00Z"
+        pdf_url:
+          description:
+            URL to download the form as a PDF. Requires the same API
+            authentication as other endpoints.
+          type: string
+          example: https://midvale.schooladmin.com/api/external/contacts/00000000-0000-0000-0000-000000acb123/forms/00000000-0000-0000-0000-000000acb456/pdf
     Relationship:
       type: object
       properties:
@@ -1821,6 +2147,49 @@ components:
           description: The current school year for this contact
           type: object
           "$ref": "#/components/schemas/SchoolYear"
+    Appointment:
+      type: object
+      properties:
+        id:
+          description: Unique ID for this appointment
+          type: string
+          example: 00000000-0000-0000-0000-000000acb123
+        type:
+          description: Calendar event type (calendar name)
+          type: string
+          nullable: true
+          example: Campus Visit
+        date:
+          description: Appointment date
+          type: string
+          format: date
+          nullable: true
+          example: "2024-09-01"
+        start_time:
+          description: Appointment start in ISO 8601
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-09-01T10:00:00-04:00"
+        end_time:
+          description: Appointment end in ISO 8601
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-09-01T11:00:00-04:00"
+        status:
+          description: Whether the appointment is upcoming or already passed
+          type: string
+          enum:
+            - scheduled
+            - completed
+          nullable: true
+          example: scheduled
+        updated_at:
+          description: When the appointment was last updated
+          type: string
+          format: date-time
+          example: "2024-09-01T12:00:00Z"
     TrackAttribute:
       type: object
       properties:

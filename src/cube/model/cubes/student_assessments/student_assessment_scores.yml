@@ -317,5 +317,19 @@ cubes:
           - locations.abbreviation
           - student_section_enrollments.lead_teacher_staff_key
           - staff_lead_teacher.full_name
+        # Partitioned refresh: without a time_dimension, Cube rebuilds this
+        # entire rollup from the ~14.2M-row fact on every refresh_key check,
+        # regardless of what changed. dates.date_day (via
+        # student_assessment_administrations -> dates), not the cube's own
+        # date_taken, is the time anchor — date_taken is documented above as
+        # corrupt for a small share of rows and its own description says
+        # calendar rollups belong on the administration date. Year
+        # partitioning (not day/month) matches how corrections actually land:
+        # restatements replace a whole academic year at a time, so a
+        # correction only invalidates the partition(s) touching that year,
+        # not the full history.
+        time_dimension: dates.date_day
+        granularity: year
+        partition_granularity: year
         refresh_key:
           every: 1 day

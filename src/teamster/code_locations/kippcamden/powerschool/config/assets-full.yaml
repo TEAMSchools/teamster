@@ -14,23 +14,7 @@ assets:
   - asset_name: terms
     partition_column: transaction_date
   # whenmodified
-  - asset_name: emailaddress
-    partition_column: whenmodified
   - asset_name: gradescaleitem
-    partition_column: whenmodified
-  - asset_name: originalcontactmap
-    partition_column: whenmodified
-  - asset_name: person
-    partition_column: whenmodified
-  - asset_name: personaddress
-    partition_column: whenmodified
-  - asset_name: personaddressassoc
-    partition_column: whenmodified
-  - asset_name: personemailaddressassoc
-    partition_column: whenmodified
-  - asset_name: personphonenumberassoc
-    partition_column: whenmodified
-  - asset_name: phonenumber
     partition_column: whenmodified
   - asset_name: roledef
     partition_column: whenmodified
@@ -45,10 +29,6 @@ assets:
   - asset_name: schoolstaff
     partition_column: whenmodified
   - asset_name: sectionteacher
-    partition_column: whenmodified
-  - asset_name: studentcontactassoc
-    partition_column: whenmodified
-  - asset_name: studentcontactdetail
     partition_column: whenmodified
   - asset_name: studentcorefields
     partition_column: whenmodified

@@ -54,6 +54,13 @@ views:
           - active_directory_username
           - original_hire_date
           - rehire_date
+
+      # Role attributes via the staff_work_history -> staff_cube_access join.
+      # prefix: false keeps the member names bare (job_function_level /
+      # job_function_code / department_group), matching the meta.folders below.
+      - join_path: staff_work_history.staff_cube_access
+        prefix: false
+        includes:
           - job_function_level
           - job_function_code
           - department_group

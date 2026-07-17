@@ -37,10 +37,48 @@ Output row counts and full-build input scans of the candidate large facts:
 | `fct_family_communications`               | 980K  | small                  |
 | `fct_grades_term`                         | 262K  | —                      |
 | `fct_assessment_scores_student_scoped`    | 66.5K | —                      |
+| `proficiency_rollup` pre-agg (grouped)    | 767K  | n/a (rollup, not fact) |
 
 The build scans are modest (~1–1.5¢ per full rebuild at on-demand rates). The
 47–73 s cold latency is a **read-path** cost (view re-expansion per query), not
 a build cost. This drives the materialization decision below.
+
+### `proficiency_rollup` cardinality (measured 2026-07-13, #4384)
+
+The `student_assessment_scores.proficiency_rollup` pre-aggregation
+(`src/cube/model/cubes/student_assessments/student_assessment_scores.yml`) had
+never had its row cardinality measured. Its current dimension list is 11 members
+(not the 13 a prior planning summary assumed, and it does not include
+`lead_teacher_staff_key` — that column is not on any cube reachable from this
+rollup): `dates.academic_year`, `student_assessments.module_code`,
+`student_assessments.academic_subject`,
+`student_assessments.grade_level_tested`,
+`student_assessment_administrations.administration_period`,
+`student_assessment_scores.response_type_code`, `students.race`,
+`students.gender_identity`, `student_school_enrollments.grade_level`,
+`locations.region_key`, `locations.abbreviation`.
+
+Method: reconstructed the equivalent grouping directly against
+`kipptaf_marts.fct_assessment_scores_enrollment_scoped`, joining
+`dim_assessment_administrations` → `dim_dates` / `dim_assessments`, and
+`dim_student_section_enrollments` → `dim_student_enrollments` → `dim_students` /
+`dim_locations` (all declared `many_to_one` in the cube YAML, so no fan-out).
+The join matched 14,103,543 of 14,187,497 fact rows (99.4%) before grouping.
+`COUNT(*)` over the 11-column `GROUP BY` on the matched rows: **766,688 distinct
+combinations**. Individual axis cardinalities in the same join:
+`response_type_code` 2,620, `module_code` 177, `academic_subject` 34,
+`abbreviation` 25 (not ~60 — only 25 school abbreviations appear on scored
+enrollment rows), `race` 9, `grade_level`/`grade_level_tested` 13 each,
+`academic_year` 11, `region_key` 4, `gender_identity` 3; `administration_period`
+is null for effectively all matched rows (internal/AP assessments dominate the
+fact), contributing negligible additional cardinality.
+
+**Finding: 766,688 rows is ~5.4% of the 14.2M-row fact — comfortably smaller,
+not the same order of magnitude.** No split into a narrower rollup is needed on
+cardinality grounds; ships as-is. `response_type_code` is the dominant
+cardinality driver (2,620 distinct values), consistent with its strand/standard
+grain, but the other dimensions' lower cardinalities keep the cross-product an
+order of magnitude below the fact.
 
 ## Approach
 

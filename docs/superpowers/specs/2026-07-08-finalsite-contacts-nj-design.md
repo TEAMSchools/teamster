@@ -122,8 +122,7 @@ kipptaf
      `surrogate_key(source, student, slot)`.
    - Dim slims to name/phone/email/address; bridge carries student ↔ person
      links with slot and `is_emergency`.
-   - Cube reads both (`cube.yml` exposure) — grep `src/cube/model/` for removed
-     columns and ship Cube updates in the same change.
+   - Cube does NOT consume these marts (see addendum) — no Cube change needed.
 4. **Contact columns move out of the powerschool package** — drop the `scw.*`
    pivot columns from `base_powerschool__student_enrollments` (the package
    cannot reference finalsite models); `int_extracts__student_enrollments` joins
@@ -218,3 +217,114 @@ Blocks final SQL shape; answers recorded as a spec addendum:
   — separate, existing work)
 - Deleting the PowerSchool contact staging/int models (raw PS contact tables
   keep loading; deletion waits for Miami/Focus)
+
+## Addendum: Discovery findings (2026-07-08, Newark)
+
+Sourced from 23,585 Newark contacts (materialization run `df1a3807`, commit
+`22e7461`), queried via a dev-staged external over the prod GCS Avro. Resolves
+the Phase 2 discovery checklist and pins the Phase 3 model shape.
+
+### Top-ranked contact (contacts module)
+
+- No explicit rank field on `relationships`; the Avro schema-drift check is
+  clean at top level (no hidden field). The ranking signal is
+  `relationships[].primary`.
+- `primary` is **at most one true per contact** (never multiple).
+- The `contacts` dataset mixes **student** and **parent/prospect** records. On
+  student records (those carrying `emrg_*` fields), `primary` is set on
+  **94.7%** (6,389 / 6,740 with relationships); on non-student records only
+  22.3% (parent records point back at the student, primary unset).
+- **Rule:** `contact_1` = the `relationships` element with `primary = true` on
+  the student record. **Fallback (resolved):** for the ~5.3% of students with
+  relationships but no `primary`, use the **first array element**
+  (`relationships[0]`) — justified because when `primary` IS set it sits at
+  offset 0 in 79.1% of cases (offset 1: 15.4%, tail after), so array order
+  tracks rank.
+
+### contact_1 detail resolution
+
+- The primary relationship's `rel_id` resolves to another Contact record's `id`
+  in the same dataset **100%** of the time (when `primary` set).
+- That resolved (parent) record carries `email` 99.5%, `phone_1.number` 99.9%,
+  `households[0]` address 96.5%.
+- **So** `contact_1` details = student → primary `rel_id` → contact record
+  (`email`, `phone_1/2/3`, `households[0]`); `rel_name` / `rel_type` on the
+  relationship give the display name and relationship label.
+
+### Emergency contacts — 4 custom-field sets
+
+- Global `custom_attributes` (NOT `track_attributes`); field-name pattern
+  `emrg_<N>_<attr>`; exactly **4 sets** (`emrg_1`..`emrg_4`).
+- Per-set fields:
+  - `emrg_N_name_first_name`, `emrg_N_name_last_name`
+  - `emrg_N_email`
+  - `emrg_N_phone_1_number` / `_phone_1_type` / `_phone_1_opt_in`, plus
+    `_phone_2_*` and `_phone_3_*`
+  - `emrg_N_relationship_ss` (single-select), `emrg_N_relationship_txt` (free
+    text)
+  - `emrg_N_priority_ss`
+  - `emrg_N_custody_yn`, `emrg_N_lives_with_yn`, `emrg_N_pickup_yn`
+- Value subtypes: names/email/phone/relationship/priority = `string_value`;
+  `_yn`/`_opt_in` = `boolean_value`. No arrays.
+- Fill tapers: set 1 ~6,748, set 2 ~6,604, set 3 ~1,734, set 4 ~441.
+
+### SIS join
+
+- Student records carry `emrg_*`; join to PowerSchool via
+  `id_attributes.powerschool_student_number` (existing
+  `int_finalsite__contact_id_attributes` pivot).
+
+### Phone typing (for the downstream surface)
+
+- The existing pivot surface exposes typed phone columns (`*_phone_mobile` /
+  `_home` / `_daytime` / `_work` / `_primary`). Finalsite `phone_type`
+  vocabulary is **`Cell` / `Home` / `Work`** (plus blank). Mapping:
+  `phone_mobile`←Cell, `phone_home`←Home, `phone_work`←Work,
+  `phone_daytime`←null (no Finalsite equivalent), `phone_primary`←`phone_1`
+  (first listed, ~32% are blank-type so only `_primary` catches them). Both
+  `contact_1` (parent `phone_1/2/3`) and `emergency_N` (`emrg_N_phone_1/2/3`)
+  carry `_type` per phone. So `int_finalsite__student_contacts` emits the typed
+  phone columns, not a single `phone`.
+
+### Consumers of the marts
+
+- `dim_student_contact_persons` / `bridge_student_contacts` are **not**
+  referenced by Cube (`grep src/cube` empty) — the spec's "ship a Cube update"
+  step does not apply. Their consumers are the enrollment-pivot chain
+  (`base_powerschool__student_enrollments` → `int_extracts__student_enrollments`
+  (+`_subjects_weeks`) → the extract feeds) and `int_kippadb__roster`;
+  `rpt_clever__students` reads the LONG contact model (person_type-keyed), not
+  the pivot.
+
+### Model-shape implications (Phase 3)
+
+- `contact_1`: primary-relationship join (details from the resolved parent
+  record), plus a fallback-pick rule for no-primary students.
+- `emergency_1..4`: direct from `emrg_N_*` fields; no `rel_id` join. Emergency
+  ordering (**resolved**): order by `emrg_N_priority_ss` (numeric string) asc,
+  tiebreak on natural set order (`emrg_1`..`emrg_4`), nulls last. `priority_ss`
+  values run 1-8 and appear to be a **global family ranking** (priority 1 is
+  typically the primary guardian in the contacts module, so emergency sets
+  usually start at 2 — emrg_1 is modally priority 2, emrg_2 priority 3, etc.);
+  values collide across sets, hence the natural-order tiebreaker.
+- Contacts-module shape (**resolved**): strict **1+4** — `contact_1` only from
+  the module (no `contact_2`), ranked over **any** relationship type (no
+  guardian-type filter; `primary` is ~99% a parent so contact_1 is a parent in
+  practice, and the first-element fallback may occasionally be a sibling —
+  accepted). The `relationships` array mixes parents with siblings/relatives, so
+  array position is not a reliable second-parent selector — which is why no
+  `contact_2` is derived.
+- Consumer parent2 (**resolved, revised**): 1+4 is a DATA-shape decision — only
+  `contact_1` + `emergency_1..4` carry data. But the retired `contact_2_*` /
+  `pickup_*` **columns are NOT removed** from reporting views: external
+  consumers (Google Sheets tabs, Tableau, DeansList, NJSMART, Clever) read fixed
+  column schemas, and dropping a column breaks the feed. So the new pivot
+  preserves the old column surface (contact_2/pickup emit NULL) and downstream
+  feeds keep their columns unchanged. This supersedes the body's "removed from
+  all surfaces" line; the enrollment team's 1+4 ask governs the data model, not
+  the view column list. The switch itself is mandated (no go/no-go gate).
+- Bridge flags (**resolved**): `emrg_N_pickup_yn` / `_custody_yn` /
+  `_lives_with_yn` map to the redefined bridge's `is_pickup` / `is_custodial` /
+  `is_household_member`. `contact_1` (primary relationship) carries no such
+  flags — they are **null/false** for the top contact (the two sources don't
+  share these flags; no fuzzy matching between them).

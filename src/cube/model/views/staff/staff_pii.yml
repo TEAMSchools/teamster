@@ -41,6 +41,14 @@ views:
           - gender_identity
           - race
           - is_hispanic
+
+      # Role attributes via the staff_work_history -> staff_cube_access join.
+      # prefix: false keeps the member names bare (job_function_level /
+      # job_function_code / department_group) so the row_level remit filters
+      # below still resolve them.
+      - join_path: staff_work_history.staff_cube_access
+        prefix: false
+        includes:
           - job_function_level
           - job_function_code
           - department_group

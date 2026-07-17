@@ -149,12 +149,22 @@ run only the project you need.
 
 A source-system package's staging models build in **every** district that
 imports it, but only carry data where that source's Dagster ingestion is wired
-per code location — e.g. `stg_finalsite__contacts` builds in all four districts
-(all import the `finalsite` package) but only `kippmiami` materializes the
-contacts asset; the other three build it empty. Before promoting a district
-model to a shared source package, confirm the source ingestion exists in every
-consuming district, or the promoted model builds empty there (or fails on a
-missing external).
+per code location — e.g. while finalsite `contacts` ingestion was Miami-only,
+`stg_finalsite__contacts` still built in all four districts (all import the
+`finalsite` package) but carried rows only in `kippmiami`; the contacts asset is
+now wired in all four regions. Before promoting a district model to a shared
+source package, confirm the source ingestion exists in every consuming district,
+or the promoted model builds empty there (or fails on a missing external).
+
+**Partial-endpoint onboarding**: when a district ingests only a subset of a
+source package's endpoints, disable BOTH the unused `stg_*` models AND their
+`src_*` sources in the district `dbt_project.yml`. An enabled staging model over
+a disabled source is a parse error, and `stage_external_sources` fails creating
+an AVRO external over an empty GCS prefix (autodetect needs >=1 file). Don't
+copy a peer district's disable list blindly — a district that _once_ pulled an
+endpoint keeps stale Avro so its source still stages (e.g. Newark deanslist
+leaves `homework`/`lists`/`dff_stats` enabled), but a never-pulled district must
+disable them.
 
 To gate an _optional_ package layer per region, split the package into
 method/source subfolders (`api/`, `sftp/` — the amplify convention) and set
@@ -261,6 +271,19 @@ standalone — build/test them via a **consuming district** project-dir with tha
 district's prod manifest for `--defer` (e.g. focus → kippmiami):
 `uv run dbt build --select <model> --project-dir src/dbt/kippmiami --defer --state src/dbt/kippmiami/target/prod --target dev`.
 
+## Local dev schema naming
+
+Local dev builds land in `zz_<GITHUB_USER>_<district>[_<source>]` (repo
+`.dbt/profiles.yml` dev target, e.g. `zz_cbini_kippnewark_finalsite`) — NOT the
+shipped `src/dbt/*/profiles.yml` `zz_dagster_*` schema. Find where a model
+actually built with:
+
+```sql
+select schema_name
+from `teamster-332318`.INFORMATION_SCHEMA.SCHEMATA
+where schema_name like '%<frag>%'
+```
+
 ## Dev `--defer` for unstaged externals
 
 Dev builds depending on GCS externals (`stg_google_sheets__*` etc.) fail with
@@ -357,6 +380,22 @@ found inside <alias>"), not just relationships tests.
 `dbt build --favor-state --defer --state <prod>` resolves every unselected
 upstream to prod regardless of stale dev copies — cleaner than enumerating
 parents in `--select`.
+
+Also manifests as false row-count / row-presence deltas (not just
+`relationships`/PK tests): a stale dev `int_people__staff_roster` missing recent
+hires makes a dev-built rpt look like it dropped rows. Confirm which upstreams
+resolved to dev by grepping the compiled SQL (`target/compiled/.../<model>.sql`)
+for `zz_<user>_` refs — dev-schema refs mean `--defer` was shadowed; validate
+against prod (or an ad-hoc prod query) instead.
+
+To validate a MODIFIED `rpt_`/view against prod (the deployed view is still the
+OLD code, and a dev build is stale-shadowed), rewrite its compiled SQL
+(`target/compiled/.../<model>.sql`): `zz_<user>_` refs → prod schemas, and
+inline any `stg_` you changed from its `source()` (prod lacks the new column);
+run via `bq`. Tell live drift from a real logic change with distinct-key counts
+(`total - dup`) vs a FRESH same-moment prod baseline — an unchanged distinct set
+means the row delta is fan-out/drift (warehouse tables rematerialize
+mid-session), not your change.
 
 ## Column-rename refactors strand dependent prod views
 
@@ -507,6 +546,12 @@ without it being real drift — normalize before comparing.
 
 1. Have `contract: enforced: true`
 2. Have a uniqueness test
+
+**Exception** — thin cross-project wrapper `rpt_` models (a district
+`rpt_powerschool__autocomm_*` or other `extracts/` wrapper sourcing
+`kipptaf_extracts`) are contract-columns-only: NO uniqueness test or
+descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
+`extracts/powerschool/` special case before adding either.
 
 ### Uniqueness test examples
 
@@ -730,6 +775,13 @@ here enforce reviewability. Common remedy for the restructure prohibitions:
 derive the expression as a **named column in an upstream CTE**, then reference
 the plain column.
 
+The `dbt:using-dbt-for-analytics-engineering` skill's process guidance (plan
+backwards, validate results) applies here, but where it conflicts, this file
+wins: its test-tiering advice ("avoid liberal `not_null` /
+`expression_is_true`") must not remove this repo's intentional
+`config.where`-scoped warn tests, its example SQL is non-BigQuery dialect, and
+validation/profiling goes through BigQuery MCP, not `dbt show`.
+
 - **Max 1 level of function nesting.** `if(coalesce(x, y) > 0, 'a', 'b')` is at
   the limit; anything deeper gets split into a CTE. Aggregates as direct
   function arguments don't count toward depth —
@@ -738,6 +790,11 @@ the plain column.
   where the raw value first appears, as a named column. Downstream expressions
   operate on already-typed columns — never nest `cast()` inside another
   function.
+- **`cast(col as type)` needs an explicit alias** — unaliased, BigQuery names
+  the column `f0_`, not `col`, so a contracted / explicitly-projected `select`
+  gets the wrong column name and fails. Write `cast(col as type) as col`; the
+  matching alias on a function-wrapped expression is NOT an AL09 self-alias
+  (it's the repo norm).
 - **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
   lookups, or correlated subqueries; restructure as a CTE and join it.
   Carve-out: a scalar _aggregate_ over `unnest` of an array
@@ -780,9 +837,16 @@ the plain column.
   not `ON`. For `LEFT JOIN`, a filter in `ON` preserves non-matching rows.
   Exception: `FULL JOIN` conditions referencing one side stay in `ON` — moving
   them to `WHERE` collapses the join to an inner.
+- **No pass-through "import" CTEs.** Don't open a model with
+  `orders as (select * from {{ ref("...") }})` aliases — reference the
+  ref/source directly in `FROM`/`JOIN`. Every CTE must do real work (filter,
+  derive, aggregate, shape a `dbt_utils.deduplicate` input). Exception: the
+  same-name whole-row-STRUCT collision below, which _requires_ reading through a
+  `source` CTE. Existing models with import CTEs don't need a sweep — drop them
+  opportunistically when editing the model anyway.
 - **No `SELECT *` in final `SELECT` of `rpt_`/mart models** — list columns
-  explicitly. Pass-through CTEs (`select * from ref(...)`) are fine. Get the
-  authoritative column list via `INFORMATION_SCHEMA.COLUMNS`:
+  explicitly. Get the authoritative column list via
+  `INFORMATION_SCHEMA.COLUMNS`:
 
   ```sql
   select column_name
@@ -855,7 +919,9 @@ the plain column.
   — then project the typed column per field (`s_x as x` / `b_x as x`). Output
   columns are `{agg_alias}_{value}`; a SINGLE-aggregate pivot names them by the
   bare value (`'x'` → column `x`). `max()` can't aggregate ARRAY — use
-  `any_value()` for array fields.
+  `any_value()` for array fields. A reserved-word aggregate alias (e.g. `name`)
+  must be backticked (sqlfluff RF04); the backtick doesn't change the produced
+  column name (`name_<value>`).
 - **BigQuery `UNPIVOT` excludes null rows** — an entity whose unpivoted columns
   are all null drops out of the result. Harmless for a pure decode companion (a
   left join from staging yields null labels anyway), but when the model also

@@ -12,6 +12,10 @@ with
                     source(
                         "kippmiami_deanslist", "int_deanslist__incidents__penalties"
                     ),
+                    source(
+                        "kipppaterson_deanslist",
+                        "int_deanslist__incidents__penalties",
+                    ),
                 ]
             )
         }}

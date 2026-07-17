@@ -144,7 +144,13 @@ def _mint_token(email: str) -> str:
     if cached and cached[1] - now > _TOKEN_REFRESH_BUFFER_SECONDS:
         return cached[0]
     exp = now + TOKEN_TTL_SECONDS
-    token = jwt.encode({"email": email, "exp": exp}, CUBE_API_SECRET, algorithm="HS256")
+    # `iat` is required by cube.js's `jwt.verify(..., { maxAge: "12h" })` —
+    # PyJWT does not add it automatically. `exp` alone is not enough: maxAge
+    # derives its cutoff from `iat`, not `exp`, so a token minted without it
+    # would fail `checkAuth` with "iat required when maxAge is specified".
+    token = jwt.encode(
+        {"email": email, "iat": now, "exp": exp}, CUBE_API_SECRET, algorithm="HS256"
+    )
     _token_cache[email] = (token, exp)
     return token
 
