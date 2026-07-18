@@ -11,14 +11,14 @@ models/
   sis/
     base/        # base models (light renaming, no logic)
     staging/
-      odbc/      # models sourced from live Oracle ODBC connection (enabled by default)
+      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; no district builds it)
       sftp/      # models sourced from SFTP file extracts (disabled by default)
       dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); disabled by default
     intermediate/
 ```
 
 All staging models have `contract: enforced: true`. Each district project
-overrides `odbc.+enabled` and `sftp.+enabled` in its own `dbt_project.yml` to
+overrides `sftp.+enabled` and `dlt.+enabled` in its own `dbt_project.yml` to
 select the ingestion method.
 
 ## Key Variables
