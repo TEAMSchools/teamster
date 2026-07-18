@@ -2,9 +2,7 @@ import logging
 import select
 import socket
 import socketserver
-import subprocess
 import threading
-import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -69,10 +67,6 @@ def _persist_legacy_rsa(transport: Transport) -> None:
     transport._key_info = {**transport._key_info, "ssh-rsa": _LegacyRSAKey}
     transport.packetizer.REKEY_BYTES = _REKEY_DISABLED_BYTES
     transport.packetizer.REKEY_PACKETS = _REKEY_DISABLED_BYTES
-
-
-class SSHTunnelError(Exception):
-    """Raised when the sshpass tunnel subprocess emits unexpected stdout."""
 
 
 class SSHResource(DagsterSSHResource):
@@ -194,66 +188,14 @@ class SSHResource(DagsterSSHResource):
 
         return files
 
-    def open_ssh_tunnel(self) -> subprocess.Popen[bytes]:
-        # trunk-ignore(bandit/B603): static argv, no shell; inputs are EnvVar resource config
-        ssh_tunnel = subprocess.Popen(
-            args=[
-                "sshpass",
-                (
-                    f"-p{self.password}"
-                    if self.test
-                    else "-f/etc/secret-volume/powerschool_ssh_password.txt"
-                ),
-                "ssh",
-                self.remote_host,
-                f"-p{self.remote_port}",
-                f"-l{self.username}",
-                f"-L1521:{self.tunnel_remote_host}:1521",
-                "-oHostKeyAlgorithms=+ssh-rsa",
-                "-oStrictHostKeyChecking=accept-new",
-                "-oConnectTimeout=10",
-                "-oServerAliveInterval=30",
-                "-oServerAliveCountMax=3",
-                "-N",
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-
-        stdout_stream = check.not_none(value=ssh_tunnel.stdout)
-
-        while True:
-            stdout = stdout_stream.readline()
-            self.log.debug(msg=stdout)
-
-            if stdout in [
-                (
-                    f"Warning: Permanently added '[{self.remote_host}]:"
-                    f"{self.remote_port}' (RSA) to the list of known hosts.\r\n"
-                ).encode(),
-                b"A secure connection to your server has been established.\n",
-            ]:
-                continue
-            elif stdout == b"To disconnect, simply close this window.\n":
-                break
-            else:
-                ssh_tunnel.kill()
-                raise SSHTunnelError(stdout)
-
-        # Prevent a race condition with the ssh tunnel becoming fully established
-        # before downstream code (e.g. PowerSchool ODBC) opens a forwarded port.
-        time.sleep(1.0)
-
-        return ssh_tunnel
-
     @contextmanager
-    def open_ssh_tunnel_paramiko(
+    def open_ssh_tunnel(
         self, local_port: int = 1521, remote_port: int = 1521
     ) -> Iterator[int]:
         """In-process SSH local port forward.
 
-        Replaces the sshpass subprocess for the dlt PowerSchool path: no
-        password file mount, no readiness race, host-key verification kept
+        Replaced the retired sshpass-subprocess tunnel (#4442): no password
+        file mount, no readiness race, host-key verification kept
         (get_connection handles legacy ssh-rsa and transient-failure retry).
         Yields the bound local port; pass local_port=0 for an ephemeral port.
         """
@@ -308,7 +250,7 @@ class SSHResource(DagsterSSHResource):
 class _ForwardServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
     allow_reuse_address = True
-    # See the cleanup-ordering comment in `open_ssh_tunnel_paramiko`: without
+    # See the cleanup-ordering comment in `open_ssh_tunnel`: without
     # this, `server_close()` joins every per-connection handler thread with
     # no timeout, which can hang forever on a handler parked in `select()`.
     block_on_close = False

@@ -274,7 +274,7 @@ def build_powerschool_dlt_assets(
             if key in tables_by_key
         ]
 
-        with ssh_powerschool.open_ssh_tunnel_paramiko():
+        with ssh_powerschool.open_ssh_tunnel():
             connection_url = db_powerschool.connection_url()
 
             # Restore prior signatures from the destination state table. On a
