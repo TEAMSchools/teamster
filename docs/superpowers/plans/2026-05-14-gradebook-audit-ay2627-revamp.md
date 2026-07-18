@@ -4478,7 +4478,7 @@ models:
 uv run dbt build \
   --select int_extracts__gradebook_audit_student_flags \
   --project-dir src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state target/prod --target dev
 ```
 
 Expected: model builds, `dbt_utils.unique_combination_of_columns` passes.
@@ -4569,7 +4569,7 @@ uv run dbt build \
   --select int_extracts__gradebook_audit_student_flags \
     rpt_gsheets__gradebook_audit_student_flags rpt_tableau__gradebook_audit \
   --project-dir src/dbt/kipptaf \
-  --defer --state src/dbt/kipptaf/target/prod --target dev
+  --defer --state target/prod --target dev
 ```
 
 Expected: all three build; both `dbt_utils.unique_combination_of_columns` tests
