@@ -137,18 +137,24 @@ The old scaffold models (`int_tableau__gradebook_audit_teacher_scaffold` and
 `int_tableau__gradebook_audit_student_scaffold`) were eliminated first, and
 `int_tableau__gradebook_audit_flags_calculations` (their AY 2026-2027
 replacement) was deleted outright in the July 2026 teacher/student split — see
-"Why changed" below. The pipeline is now two models, each reading directly from
-the extract/expectation layer:
+"Why changed" below. A July 2026 follow-up then extracted the shared
+student-flag logic into `int_extracts__gradebook_audit_student_flags` so the two
+reports no longer depend on each other (`rpt_` reading `rpt_` was a layering
+violation). The pipeline is now one shared intermediate feeding two terminal
+reports:
 
 ```text
 int_extracts__course_enrollments_by_term ──┐
-int_extracts__course_schedule_by_term ─────┼──► rpt_gsheets__gradebook_audit_student_flags
+int_extracts__course_schedule_by_term ─────┼──► int_extracts__gradebook_audit_student_flags
 base_powerschool__final_grades /            │        │
-  stg_powerschool__storedgrades ────────────┘         │ (read for section-level
-                                                        │  "any student flagged" booleans)
-                                                        ▼
-int_extracts__course_schedule_by_term ──┐
-int_powerschool__u_expectations_qtd_unpivot ┼──► rpt_tableau__gradebook_audit
+  stg_powerschool__storedgrades ────────────┘        │
+                                    ┌──────────────────┴──────────────────┐
+                                    ▼                                     ▼
+             rpt_gsheets__gradebook_audit_student_flags       (section-level "any student
+             (projection, flagged rows only)                   flagged" booleans, zero PII)
+                                                                          │
+int_extracts__course_schedule_by_term ──┐                                 ▼
+int_powerschool__u_expectations_qtd_unpivot ┼──────────────► rpt_tableau__gradebook_audit
 int_powerschool__gradebook_assignment_scores_rollup ┘
 ```
 
@@ -179,8 +185,9 @@ inherited, not deliberate policy — if you're touching this filter, re-derive
 whether excluding these sections is still desired before assuming it is.
 
 **`int_extracts__course_enrollments_by_term` has a known, arbitrary dedup tie,
-inherited by `rpt_gsheets__gradebook_audit_student_flags`.** Its final
-`enrollments` CTE picks one candidate section per student/course/quarter with
+inherited by `int_extracts__gradebook_audit_student_flags`** (and thus by both
+reports downstream of it). Its final `enrollments` CTE picks one candidate
+section per student/course/quarter with
 `row_number() over (... order by e.exitdate desc, s.dateleft desc)`. When
 PowerSchool has two overlapping course-enrollment records for the same
 student/course/school/quarter — a section reassignment where the old section's
@@ -197,7 +204,7 @@ arbitrary today. No code fix has been applied; this is called out here as a
 known limitation rather than resolved.
 
 The teacher/student split also fixed a related, separate gap:
-`rpt_gsheets__gradebook_audit_student_flags` inner-joins
+`int_extracts__gradebook_audit_student_flags` inner-joins
 `int_extracts__course_schedule_by_term` so a student's course-quarter row only
 appears if the section also exists in the schedule model — scoping out orphans
 from the `section_quarter_count` exclusion above (a student could otherwise be
@@ -349,30 +356,41 @@ this model directly rather than computing inline rollups.
 `true` = at least one check failed. The individual flag columns and counts
 remain available for diagnostic drill-down.
 
-### Student flags: `rpt_gsheets__gradebook_audit_student_flags`
+### Student flags source: `int_extracts__gradebook_audit_student_flags`
 
-Feeds an external Google Sheet for ops review — not Tableau. One row per student
-× section × quarter, **flagged rows only** (at least one of
-`qt_percent_grade_greater_100` / `qt_grade_70_comment_missing` is true). Carries
-full student PII (name, student number) — appropriate here since this is an
-internal ops artifact, unlike the Tableau-facing report below.
+The shared intermediate where both student-level flags are computed. One row per
+student × section × quarter, **unfiltered** (every scoped enrollment, flag
+`true` or `false`). Both reports read it: the Google Sheet projects and filters
+it, and the Tableau report aggregates it. Extracting it (July 2026 follow-up)
+removed the earlier `rpt_`-reading-`rpt_` layering violation. Materialized as a
+table in the `extracts` schema, matching its `int_extracts__course_*` siblings.
 
 Source is `int_extracts__course_enrollments_by_term`, filtered `rn_year = 1`,
 `enroll_status = 0`, `not is_out_of_district`, `school_level_alt != 'ES'`,
 `_dbt_source_project != 'kippmiami'`, `exclude_from_gpa = 0`, and inner-joined
 to `int_extracts__course_schedule_by_term` (the orphan-scoping fix described
-above). Grades/comments come from the same `quarter_course_grades` union used
-throughout this pipeline (`base_powerschool__final_grades` for the current year,
-`stg_powerschool__storedgrades` for the prior year during the summer toggle).
+above). Grades/comments come from the `quarter_course_grades` union it defines
+(`base_powerschool__final_grades` for the current year,
+`stg_powerschool__storedgrades` for the prior year during the summer toggle —
+the summer-toggle markers live here). Carries full student PII (name, student
+number) — acceptable because it is an internal intermediate read only by the two
+reports, never by an external tool directly.
 
-Also carries `teacher_employee_number` (added July 2026, from
-`int_people__staff_roster`) and `is_current_quarter`, added to make the sheet
-easy to filter to the in-progress quarter.
+### Student flags sheet: `rpt_gsheets__gradebook_audit_student_flags`
 
-`rpt_tableau__gradebook_audit` reads this same model (aggregated, with PII
-dropped) for its section-level "any student flagged" booleans — see below. No
-per-rule "reason" is ever surfaced for either flag; the whole point of the July
-2026 split was to move to aggregated boolean signals instead of granular
+Feeds an external Google Sheet for ops review — not Tableau. A thin projection
+over `int_extracts__gradebook_audit_student_flags`, filtered to **flagged rows
+only** (at least one of `qt_percent_grade_greater_100` /
+`qt_grade_70_comment_missing` is true). Same columns and grain as the
+intermediate, including `teacher_employee_number` (from
+`int_people__staff_roster`) and `is_current_quarter`, which make the sheet easy
+to filter to the in-progress quarter. Full student PII is appropriate here since
+this is an internal ops artifact, unlike the Tableau-facing report below.
+
+`rpt_tableau__gradebook_audit` reads the intermediate above (aggregated, with
+PII dropped) for its section-level "any student flagged" booleans — see below.
+No per-rule "reason" is ever surfaced for either flag; the whole point of the
+July 2026 split was to move to aggregated boolean signals instead of granular
 rule-level detail.
 
 ### Final extract: `rpt_tableau__gradebook_audit`
@@ -411,9 +429,11 @@ concept, unlike the pre-July-2026 design below.
    `assignment_detail` rows; the assignment-identity columns are null on
    `category_summary` rows.
 6. `student_flags_aggregate` — reads
-   `rpt_gsheets__gradebook_audit_student_flags` (see above), grouped to
+   `int_extracts__gradebook_audit_student_flags` (see above), grouped to
    `_dbt_source_project, sectionid, quarter`, computing `has_grade_above_100` /
-   `has_grade_below_70_no_comment` via `count(*) > 0` per flag type. No PII
+   `has_grade_below_70_no_comment` via `countif(<flag>) > 0` per flag type.
+   Reading the unfiltered intermediate yields the same booleans as the old
+   flagged-only source (an un-flagged row adds 0 to either `countif`). No PII
    survives this aggregation.
 7. `with_section_flags` — left-joins `combined` to the aggregate above,
    broadcasting the two booleans onto **every** row for a section (all 4
@@ -1094,13 +1114,15 @@ Plugin source and update instructions:
 
 If the summer toggle was applied during the off-season (switching year filters
 to `current_academic_year - 1`, grades type to `'last_year'` where applicable)
-to `rpt_tableau__gradebook_audit`, `rpt_gsheets__gradebook_audit_student_flags`,
+to `rpt_tableau__gradebook_audit`,
+`int_extracts__gradebook_audit_student_flags`,
 `int_powerschool__u_expectations_qtd_unpivot`, and
 `rpt_tableau__gradebook_es_comments`, revert all changes in all four files
 before the new school year begins. See the `gradebook-audit` skill for the exact
-lines — `rpt_gsheets__gradebook_audit_student_flags` replaced
-`int_tableau__gradebook_audit_flags_calculations` (deleted July 2026) in this
-list, and `rpt_tableau__gradebook_es_comments` does not use the
+lines — the student grade/comment toggle now lives in
+`int_extracts__gradebook_audit_student_flags` (the July 2026 intermediate
+extraction moved it out of `rpt_gsheets__gradebook_audit_student_flags`), and
+`rpt_tableau__gradebook_es_comments` does not use the
 `grades_type`/`storedgrades` fallback the other three do (see the skill for
 why).
 
