@@ -4747,3 +4747,24 @@ git commit -m "docs: repoint gradebook audit reference to the int model"
 ```
 
 Refs #3908.
+
+### Delivered (2026-07-18) — two deviations from the plan above
+
+Implemented as planned, with two simplifications applied during/after execution:
+
+- **`int_extracts__gradebook_audit_student_flags` is a single `select`, not the
+  two-CTE shape in step 11a above.** The planned `student_course_flags` wrapper
+  CTE + verbatim final projection was redundant, so it was collapsed to one
+  `quarter_course_grades` CTE feeding the main `select` directly (same output —
+  106.1k rows, uniqueness test passes). The two summer-toggle markers live in
+  that `select`.
+- **`rpt_tableau__gradebook_audit`'s `category_summary` is a grain-projection
+  `SELECT DISTINCT`, not `dbt_utils.deduplicate()`.** A follow-up (per a
+  `@claude` PR-review suggestion) dropped the `category_dedup` CTE — every
+  projected column is functionally determined by
+  `(_dbt_source_project, sectionid, quarter, assignment_category_code)`, so
+  `DISTINCT` collapses the per-assignment fan-out identically. Verified
+  byte-identical: 52,502 rows, unchanged row-set fingerprint, uniqueness test
+  passes.
+
+Refs #3908.

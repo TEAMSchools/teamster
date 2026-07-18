@@ -413,34 +413,38 @@ concept, unlike the pre-July-2026 design below.
    `assignments_entered_count_no_flags` as **window functions** partitioned by
    `_dbt_source_project, sectionid, quarter, assignment_category_code` — not a
    `GROUP BY` — so the per-assignment row grain survives for step 2 to use.
-2. `category_dedup` — `dbt_utils.deduplicate()` on the same partition,
-   collapsing the fanned-out per-assignment rows down to one row per category.
-   Safe as a grain projection (not upstream-duplicate masking): every surviving
-   column, including the three window-computed aggregates, is functionally
-   determined by the partition key, so any candidate row is equally correct to
-   keep.
-3. `category_summary` — reads `category_dedup`; adds `not_enough_assignments`
-   (`assignments_entered_count_no_flags < expectation`).
-4. `assignment_detail` — reads `category_join` directly (the full fanned-out
-   set, not the dedup), filtered to `assignment_has_flags`.
-5. `combined` — explicit-column `UNION ALL` of `category_summary` and
+2. `category_summary` — a grain-projection `SELECT DISTINCT` over
+   `category_join` that collapses the per-assignment fan-out to one row per
+   section × quarter × category, and adds `not_enough_assignments`
+   (`assignments_entered_count_no_flags < expectation`). Every projected column
+   is functionally determined by
+   `_dbt_source_project, sectionid, quarter, assignment_category_code` — the
+   section columns (from `int_extracts__course_schedule_by_term`), the category
+   columns (from `int_powerschool__u_expectations_qtd_unpivot`), and the three
+   window aggregates from step 1 over that same partition — so `DISTINCT` is a
+   pure grain projection, not a mask for upstream duplicates. The
+   assignment-level columns from the rollup are not projected, so they collapse
+   out.
+3. `assignment_detail` — reads `category_join` directly (the full fanned-out
+   set), filtered to `assignment_has_flags`.
+4. `combined` — explicit-column `UNION ALL` of `category_summary` and
    `assignment_detail`, tagging `row_type`. `expectation`,
    `assignments_entered_count`, and `not_enough_assignments` are null on
    `assignment_detail` rows; the assignment-identity columns are null on
    `category_summary` rows.
-6. `student_flags_aggregate` — reads
+5. `student_flags_aggregate` — reads
    `int_extracts__gradebook_audit_student_flags` (see above), grouped to
    `_dbt_source_project, sectionid, quarter`, computing `has_grade_above_100` /
    `has_grade_below_70_no_comment` via `countif(<flag>) > 0` per flag type.
    Reading the unfiltered intermediate yields the same booleans as the old
    flagged-only source (an un-flagged row adds 0 to either `countif`). No PII
    survives this aggregation.
-7. `with_section_flags` — left-joins `combined` to the aggregate above,
+6. `with_section_flags` — left-joins `combined` to the aggregate above,
    broadcasting the two booleans onto **every** row for a section (all 4
    category rows, plus any assignment-detail rows) — these are section-level
    facts, not category-level ones, so they're intentionally identical across all
    of a section's rows.
-8. `health_calc` — aggregates over `with_section_flags` at
+7. `health_calc` — aggregates over `with_section_flags` at
    `_dbt_source_project, academic_year, schoolid, teacher_number, quarter` grain
    (across _all_ of a teacher's sections, not just one), producing two booleans:
    - `is_healthy_gradebook_all_flags` — false if any of
@@ -452,7 +456,7 @@ concept, unlike the pre-July-2026 design below.
      picks which health column to read — implemented as two columns on one
      row-set rather than two duplicated branches, to avoid doubling the model's
      row count for a single-column difference.
-9. Final `SELECT` — joins `with_section_flags` to `health_calc`, broadcasting
+8. Final `SELECT` — joins `with_section_flags` to `health_calc`, broadcasting
    the two health columns onto every row for the teacher/quarter.
 
 Verified empirically at merge time: every section-quarter has exactly 4

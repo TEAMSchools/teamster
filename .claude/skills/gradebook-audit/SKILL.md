@@ -115,8 +115,8 @@ fired — flags stay aggregated booleans.
 `qt_percent_grade_greater_100`/`qt_grade_70_comment_missing`):
 
 1. Add the boolean column to `int_extracts__gradebook_audit_student_flags.sql`
-   (`student_course_flags` CTE) — the flag is computed once here, where both
-   reports read it. Then add it to
+   (in its main `select`, alongside the two existing `qt_*` flags) — the flag is
+   computed once here, where both reports read it. Then add it to
    `rpt_gsheets__gradebook_audit_student_flags.sql`'s final filter
    (`where qt_percent_grade_greater_100 or qt_grade_70_comment_missing or <new_flag>`),
    and to that report's projected column list.
@@ -158,9 +158,9 @@ correctly.
 `stg_google_sheets__gradebook_flags` is disabled — no sheet step needed.
 
 1. Remove the boolean column from wherever it's computed
-   (`int_extracts__gradebook_audit_student_flags`'s `student_course_flags` CTE
-   for a student-level flag, `rpt_tableau__gradebook_audit`'s `category_summary`
-   CTE for a category-level one).
+   (`int_extracts__gradebook_audit_student_flags`'s main `select` for a
+   student-level flag, `rpt_tableau__gradebook_audit`'s `category_summary` CTE
+   for a category-level one).
 2. Remove it from every place it's threaded through: the gsheets model's final
    filter and projected columns (if student-level), `student_flags_aggregate` /
    `with_section_flags` (if student-level), and both `health_calc`

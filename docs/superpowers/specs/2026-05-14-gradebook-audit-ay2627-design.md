@@ -293,13 +293,17 @@ Implemented as designed below, with one deviation and one addition:
 
 - **Deviation:** `category_summary`'s aggregates (`expectation`,
   `assignments_entered_count`, `not_enough_assignments`) are computed via window
-  functions (`over (partition by project, sectionid, quarter, category)`) plus
-  `dbt_utils.deduplicate()`, not a `GROUP BY` — a 30-column `GROUP BY` over
-  every dimension column was flagged in review as unnecessary overhead. Window
-  functions preserve the per-assignment row grain that `assignment_detail` also
-  needs from the same upstream CTE, so the join runs once and each downstream
-  CTE picks its own grain (dedup for the collapsed summary, a plain filter for
-  the detail rows) rather than joining twice.
+  functions (`over (partition by project, sectionid, quarter, category)`), not a
+  `GROUP BY` — a 30-column `GROUP BY` over every dimension column was flagged in
+  review as unnecessary overhead. Window functions preserve the per-assignment
+  row grain that `assignment_detail` also needs from the same upstream
+  `category_join`, so the join runs once and each downstream CTE picks its own
+  grain (a grain-projection `SELECT DISTINCT` for the collapsed summary, a plain
+  filter for the detail rows) rather than joining twice. The summary collapse
+  originally used `dbt_utils.deduplicate()`; a later follow-up replaced it with
+  `SELECT DISTINCT` — equivalent output, since every projected column is
+  functionally determined by the partition key
+  (`_dbt_source_project, sectionid, quarter, assignment_category_code`).
 - **Addition:** `rpt_gsheets__gradebook_audit_student_flags` also carries
   `teacher_employee_number` and `is_current_quarter`, added after this spec was
   written to make the sheet easier to filter/action on.
@@ -557,11 +561,13 @@ reports read. This follow-up removes the violation without changing any output.
 
 **New model — `int_extracts__gradebook_audit_student_flags`** (in
 `models/students/intermediate/`, alongside its `int_extracts__course_*`
-siblings). This is the current `student_course_flags` CTE lifted out of
-`rpt_gsheets__gradebook_audit_student_flags` verbatim, minus the flagged-only
-filter — every scoped student × section × quarter row, both boolean flags
-computed, no `where <either flag>` restriction. The `quarter_course_grades`
-grades-union CTE moves in with it (it is part of computing the flags).
+siblings). This is the flag-computing logic lifted out of
+`rpt_gsheets__gradebook_audit_student_flags`, minus the flagged-only filter —
+every scoped student × section × quarter row, both boolean flags computed, no
+`where <either flag>` restriction. Structurally it is one
+`quarter_course_grades` grades-union CTE feeding the main `select` (which joins
+the enrollment and schedule scaffolds and computes the two flags); the
+flagged-only filter is the only thing that stays behind in the gsheets report.
 
 - **Grain:** one row per (`_dbt_source_project`, `academic_year`, `studentid`,
   `sectionid`, `quarter`) — the same grain the gsheets model has today, but
