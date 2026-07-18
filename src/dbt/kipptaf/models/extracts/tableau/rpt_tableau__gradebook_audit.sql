@@ -329,7 +329,7 @@ with
             countif(qt_percent_grade_greater_100) > 0 as has_grade_above_100,
             countif(qt_grade_70_comment_missing) > 0 as has_grade_below_70_no_comment,
 
-        from {{ ref("rpt_gsheets__gradebook_audit_student_flags") }}
+        from {{ ref("int_extracts__gradebook_audit_student_flags") }}
         group by _dbt_source_project, sectionid, `quarter`
     ),
 
