@@ -1,8 +1,6 @@
-import os
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, datetime
-from urllib.parse import quote
 
 import dlt
 import sqlalchemy as sa
@@ -15,6 +13,7 @@ from dlt.sources.sql_database.helpers import table_rows
 from sqlalchemy import Float, Numeric
 from sqlalchemy.types import TypeEngine
 
+from teamster.libraries.dlt.powerschool.resources import OracleResource
 from teamster.libraries.ssh.resources import SSHResource
 
 # PowerSchool tables are owned by the `ps` schema. The ODBC pipeline reaches
@@ -73,7 +72,9 @@ def probe_signature(
         # store its string form so the signature stays JSON-serializable.
         max_cursor_value = str(max_cursor)
 
-    return {"count": count, "max_cursor": max_cursor_value}
+    # int(count): mirror the JSON-safe-scalar normalization done for max_cursor
+    # above (oracledb returns int today, but keep the state doc driver-agnostic).
+    return {"count": int(count), "max_cursor": max_cursor_value}
 
 
 def _compute_changed(
@@ -95,6 +96,14 @@ def _compute_changed(
     ]
 
 
+def _resolve_extract_workers(tag_value: str | None, param: int | None) -> int | None:
+    """Resolve the dlt extract worker cap: a per-run tag overrides the
+    factory param, which overrides dlt's default (None = leave default)."""
+    if tag_value is not None:
+        return int(tag_value)
+    return param
+
+
 def oracle_number_adapter(col_type: TypeEngine) -> TypeEngine | None:
     """Keep Oracle NUMBER columns off FLOAT64 in BigQuery.
 
@@ -108,25 +117,6 @@ def oracle_number_adapter(col_type: TypeEngine) -> TypeEngine | None:
     ):
         return Numeric(precision=38, scale=9)
     return col_type
-
-
-def _oracle_connection_url() -> str:
-    """Build the SQLAlchemy URL at call time (env vars exist only in pods).
-
-    The SSH tunnel forwards localhost:1521 -> PS_SSH_REMOTE_BIND_HOST:1521,
-    so the DB host here is the tunnel-local endpoint (PS_DB_HOST, normally
-    localhost), matching the existing ODBC resource's connection shape.
-    """
-    user = os.getenv("PS_DB_USERNAME", "")
-    password = quote(os.getenv("PS_DB_PASSWORD", ""), safe="")
-    host = os.getenv("PS_DB_HOST", "localhost")
-    port = os.getenv("PS_DB_PORT", "1521")
-    service_name = os.getenv("PS_DB_DATABASE", "")
-
-    return (
-        f"oracle+oracledb://{user}:{password}@{host}:{port}"
-        f"/?service_name={service_name}"
-    )
 
 
 class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
@@ -145,7 +135,9 @@ class PowerSchoolDagsterDltTranslator(DagsterDltTranslator):
         return asset_spec.merge_attributes(kinds={"oracle"})
 
 
-def _build_resource(table: PowerSchoolTable, signature: dict | None):
+def _build_resource(
+    table: PowerSchoolTable, signature: dict | None, connection_url: str, arraysize: int
+):
     """Build one full-replace, parallel-extracted dlt resource for a table.
 
     When a signature is provided it is persisted to the resource's dlt state
@@ -168,7 +160,10 @@ def _build_resource(table: PowerSchoolTable, signature: dict | None):
 
         # One engine per resource: parallelized resources run in separate worker
         # threads, so each needs its own connection pool over the shared tunnel.
-        engine = sa.create_engine(_oracle_connection_url())
+        # arraysize: the driver default of 100 rows/fetch makes the extract
+        # latency-bound over the WAN tunnel (~2.5k rows/s at ~40ms RTT).
+        # Runtime-tunable via the `dlt_arraysize` run tag (diagnostic sweep).
+        engine = sa.create_engine(connection_url, arraysize=arraysize)
         try:
             yield from table_rows(
                 engine=engine,
@@ -193,16 +188,24 @@ def _build_resource(table: PowerSchoolTable, signature: dict | None):
 
 
 @dlt.source(name=_SOURCE_NAME)
-def _powerschool_source(selected: list[PowerSchoolTable], signatures: dict[str, dict]):
+def _powerschool_source(
+    selected: list[PowerSchoolTable],
+    signatures: dict[str, dict],
+    connection_url: str,
+    arraysize: int,
+):
     """dlt source narrowed to `selected`, wiring each table's probed signature."""
     for table in selected:
-        yield _build_resource(table, signatures.get(table.name))
+        yield _build_resource(
+            table, signatures.get(table.name), connection_url, arraysize
+        )
 
 
 def build_powerschool_dlt_assets(
     code_location: str,
     tables: list[PowerSchoolTable],
     op_tags: dict[str, object] | None = None,
+    max_extract_workers: int | None = None,
 ):
     """Build ONE probe-gated @dlt_assets over all PowerSchool tables.
 
@@ -215,6 +218,11 @@ def build_powerschool_dlt_assets(
     Unselected / unchanged tables are never in the run, so their destination
     tables are untouched. Schedules subset the multi-asset per tier. See
     docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md.
+
+    `max_extract_workers` caps concurrent dlt extract workers to avoid
+    saturating the single SSH tunnel (see DPY-4011); None leaves dlt's
+    default (5). A per-run `dlt_extract_workers` tag overrides this param for
+    a manual concurrency sweep.
     """
     dlt_pipeline = dlt.pipeline(
         pipeline_name=_SOURCE_NAME,
@@ -231,7 +239,7 @@ def build_powerschool_dlt_assets(
 
     @dlt_assets(
         # Full source only defines the asset specs; the op runs a narrowed one.
-        dlt_source=_powerschool_source(tables, {}),
+        dlt_source=_powerschool_source(tables, {}, "", 10_000),
         dlt_pipeline=dlt_pipeline,
         name=f"{code_location}__powerschool",
         dagster_dlt_translator=translator,
@@ -243,14 +251,32 @@ def build_powerschool_dlt_assets(
         context: AssetExecutionContext,
         dlt: DagsterDltResource,
         ssh_powerschool: SSHResource,
+        db_powerschool: OracleResource,
     ) -> Iterator:
+        workers = _resolve_extract_workers(
+            context.run.tags.get("dlt_extract_workers"), max_extract_workers
+        )
+        if workers is not None:
+            # Set via dlt's config accessor (an in-memory provider that
+            # pipeline.extract() resolves `workers=ConfigValue` from) rather than
+            # os.environ — keeps the override inside dlt's config channel instead
+            # of mutating the process environment.
+            dlt.config["extract.workers"] = workers
+            context.log.info(f"dlt extract workers capped at {workers}")
+
+        # Diagnostic knob: Oracle cursor fetch size (rows/round-trip).
+        arraysize = int(context.run.tags.get("dlt_arraysize") or 10_000)
+        context.log.info(f"dlt oracle arraysize {arraysize}")
+
         selected = [
             tables_by_key[key]
             for key in context.selected_asset_keys
             if key in tables_by_key
         ]
 
-        with ssh_powerschool.open_ssh_tunnel_paramiko():
+        with ssh_powerschool.open_ssh_tunnel():
+            connection_url = db_powerschool.connection_url()
+
             # Restore prior signatures from the destination state table. On a
             # truly first run (no dataset) this raises; treat as no prior state.
             try:
@@ -265,7 +291,7 @@ def build_powerschool_dlt_assets(
 
             # Probe every selected table that has a cursor column (one shared
             # engine over the single tunnel).
-            engine = sa.create_engine(_oracle_connection_url())
+            engine = sa.create_engine(connection_url)
             try:
                 with engine.connect() as connection:
                     current: dict[str, dict] = {
@@ -303,7 +329,9 @@ def build_powerschool_dlt_assets(
                 # catalog) alongside dagster-dlt's default load metadata.
                 yield from dlt.run(
                     context=context,
-                    dlt_source=_powerschool_source(changed, current),
+                    dlt_source=_powerschool_source(
+                        changed, current, connection_url, arraysize
+                    ),
                     dlt_pipeline=dlt_pipeline,
                     dagster_dlt_translator=translator,
                     write_disposition="replace",

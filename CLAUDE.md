@@ -559,11 +559,13 @@ opaque token.
   `get_run_compute_logs`, and `terminate_runs` all accept `deployment=<name>`
   (omit for prod). `list_deployments` may return only `prod` — recover a PR's
   branch-deployment name (an opaque hash) from its `deploy` job log line
-  `Deploying to branch deployment <hash>`. A dormant branch deployment throws
-  `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on the first call —
-  retry after ~90s to let the code location warm. BigQuery/GCS reads are
-  deployment-agnostic, so downstream data validation via the BigQuery MCP works
-  regardless of which deployment wrote the data.
+  `Deploying to branch deployment <hash>` (job id from the
+  `dagster-cloud-deploy / deploy` check-run `details_url` `/job/<id>`, then
+  `gh api repos/<owner>/<repo>/actions/jobs/<id>/logs`). A dormant branch
+  deployment throws `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on
+  the first call — retry after ~90s to let the code location warm. BigQuery/GCS
+  reads are deployment-agnostic, so downstream data validation via the BigQuery
+  MCP works regardless of which deployment wrote the data.
 - **Prod dbt models are materialized by `<loc>__automation_condition_sensor`
   runs** (job `__ASSET_JOB`, tag `dagster/from_automation_condition`), NOT dbt
   Cloud (CI-only) or crons. A merged model SQL change goes stale on CODE and is

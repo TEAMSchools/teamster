@@ -246,6 +246,27 @@ Set `contract: enforced: false` on the model and keep `relationships`/uniqueness
 data tests for coverage. A bounded Jinja unroll is the alternative but hits
 "query is too complex" when it re-expands view upstreams once per level.
 
+## Counting package-variant models enabled in a consuming district
+
+`dbt ls --select "path:models/sis/staging/<variant>"` returns **0** in a
+consuming district — the variant's models live in the _package_ dir, not the
+district's `models/` path, so `path:` (relative to the project-dir) misses them.
+Count with
+`dbt ls --resource-type model --output path | grep 'sis/staging/<variant>/'`. A
+package's own `dbt_project.yml` `+enabled: false` (models AND sources) applies
+to every consumer — no per-district override needed (see the powerschool
+odbc/sftp variants).
+
+## dbt Cloud CI builds only kipptaf
+
+The dbt Cloud CI job (`Build - CI (Modified)`, dbt Cloud project 211862) runs
+against the `kipptaf` project alone. A PR confined to a district project
+(`kipp{newark,camden,miami,paterson}`) or a source-system package selects zero
+models under `state:modified+` unless it changes a kipptaf-consumed `source()`
+schema (column set) — so the dbt Cloud check goes green **trivially, not as
+validation** (a ~30s no-op run). Those models are first exercised by Dagster's
+dbt step (branch deployment / prod automation), not dbt Cloud CI.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`

@@ -17,13 +17,11 @@ from teamster.code_locations.kippmiami import (
     finalsite,
     fldoe,
     iready,
-    powerschool,
     renlearn,
 )
 from teamster.code_locations.kippmiami.resources import FINALSITE_RESOURCE, SSH_FOCUS
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
-    DB_POWERSCHOOL,
     DEANSLIST_RESOURCE,
     DLT_RESOURCE,
     GCS_RESOURCE,
@@ -35,7 +33,6 @@ from teamster.core.resources import (
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
-    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
@@ -49,7 +46,6 @@ defs = Definitions(
             finalsite,
             fldoe,
             iready,
-            powerschool,
             renlearn,
         ]
     ),
@@ -58,12 +54,10 @@ defs = Definitions(
         *extracts.schedules,
         *deanslist.schedules,
         *finalsite.schedules,
-        *powerschool.schedules,
     ],
     sensors=[
         *couchdrop.sensors,
         *iready.sensors,
-        *powerschool.sensors,
         *renlearn.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
@@ -72,7 +66,6 @@ defs = Definitions(
     ],
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
-        "db_powerschool": DB_POWERSCHOOL,
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
         "dlt": DLT_RESOURCE,
@@ -85,7 +78,6 @@ defs = Definitions(
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_focus": SSH_FOCUS,
         "ssh_iready": SSH_IREADY,
-        "ssh_powerschool": get_powerschool_ssh_resource(),
         "ssh_renlearn": SSH_RENLEARN,
     },
 )

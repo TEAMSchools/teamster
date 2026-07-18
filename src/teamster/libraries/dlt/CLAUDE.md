@@ -46,6 +46,31 @@ using a vendored DLT Zendesk pipeline.
 - Vendored pipeline in `zendesk/pipeline/` handles auth via
   `TZendeskCredentials` and API pagination
 
+### `powerschool/`
+
+Loads PowerSchool SIS Oracle tables to BigQuery over an SSH tunnel
+(`table_rows` + PyArrow), probe-gated full-replace. Factory:
+`build_powerschool_dlt_assets(code_location, tables, op_tags=None, max_extract_workers=None)`;
+asset keys `[code_location, "powerschool", "sis", table]`.
+
+- **`DPY-4011` at ~512 MiB was a paramiko rekey bug, now fixed (not a volume
+  cap)**: a large pull (`assignmentscore` ~19M) died with `oracledb DPY-4011`
+  (connection closed) at a consistent **~8.6M rows** regardless of throughput
+  (`arraysize=10k`→245s, `50k`→158s, same rows) or `EXTRACT__WORKERS` (5→1 all
+  failed). That ~8.6M rows × ~60 B/row ≈ 512 MiB = paramiko's
+  `Packetizer.REKEY_BYTES`: at 512 MiB received, paramiko renegotiates keys, and
+  `SSHResource.get_connection` had reverted its `ssh-rsa` patch right after the
+  handshake, so the rekey KEXINIT no longer offered `ssh-rsa` and the
+  ssh-rsa-only server (GlobalSCAPE) dropped the transport. Fixed in
+  `libraries/ssh/resources.py` (`_persist_legacy_rsa`): ssh-rsa is now persisted
+  per-transport and auto-rekey disabled. **No windowing/partitioning needed** —
+  naive full-replace works at any table size; `assignmentscore` (19M) completes
+  as one query. Set dlt extract concurrency from the op via
+  `dlt.config["extract.workers"] = N` (a writable in-memory provider that
+  `pipeline.extract()` resolves `workers=ConfigValue` from) — preferred over the
+  `EXTRACT__WORKERS` env var so the op doesn't mutate the process environment.
+  `pipeline.run()` accepts no `workers` arg.
+
 ## Notes
 
 All DLT assets use `DagsterDltResource` (from `dagster-dlt`) and write directly

@@ -2,9 +2,7 @@ import logging
 import select
 import socket
 import socketserver
-import subprocess
 import threading
-import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -29,9 +27,46 @@ from tenacity import (
 # value as "original" and restores to it).
 _PREFERRED_KEYS_LOCK = threading.Lock()
 
+# Effectively "no rekey": larger than any single PowerSchool extract's byte
+# volume, so paramiko's `need_rekey()` never trips on the tunnel (OpenSSH
+# `RekeyLimit none`). Explicit `Transport.renegotiate_keys()` still works.
+_REKEY_DISABLED_BYTES = 1 << 48
 
-class SSHTunnelError(Exception):
-    """Raised when the sshpass tunnel subprocess emits unexpected stdout."""
+
+# `RSAKey` subclass that accepts `ssh-rsa` (SHA-1) signatures. paramiko 5.0
+# keeps `ssh-rsa` out of `RSAKey.HASHES` (declared `Final`) to refuse SHA-1;
+# placing this subclass in a transport instance's `_key_info["ssh-rsa"]`
+# re-enables SHA-1 host-key verification at rekey WITHOUT mutating the
+# process-global `RSAKey.HASHES` (which would weaken every RSA verification in
+# the process). Built via `type()` because a static subclass cannot override
+# the `Final` `HASHES` attribute.
+_LegacyRSAKey = type(
+    "_LegacyRSAKey",
+    (RSAKey,),
+    {"HASHES": {**RSAKey.HASHES, "ssh-rsa": hashes.SHA1}},
+)
+
+
+def _persist_legacy_rsa(transport: Transport) -> None:
+    """Keep `ssh-rsa` usable for the LIFETIME of one transport, and disable
+    paramiko's periodic rekey on it.
+
+    `get_connection` re-enables ssh-rsa only for the initial handshake and
+    reverts the class-level patch immediately. But paramiko renegotiates keys
+    mid-stream every `Packetizer.REKEY_BYTES` (512 MiB); against an ssh-rsa-only
+    server (GlobalSCAPE EFT, the PowerSchool host) that rekey's KEXINIT would no
+    longer offer ssh-rsa, negotiation would fail, and the dropped transport
+    surfaced as `oracledb DPY-4011` on the forwarded Oracle connection.
+
+    All three assignments are scoped to the transport instance / a subclass, so
+    (unlike the class-level patch in `get_connection`) they never leak ssh-rsa
+    to other connections in the process. `getattr` reads the instance attribute
+    before the class attribute, so a mid-stream rekey sees ssh-rsa again.
+    """
+    transport._preferred_keys = tuple(transport._preferred_keys) + ("ssh-rsa",)
+    transport._key_info = {**transport._key_info, "ssh-rsa": _LegacyRSAKey}
+    transport.packetizer.REKEY_BYTES = _REKEY_DISABLED_BYTES
+    transport.packetizer.REKEY_PACKETS = _REKEY_DISABLED_BYTES
 
 
 class SSHResource(DagsterSSHResource):
@@ -85,11 +120,18 @@ class SSHResource(DagsterSSHResource):
             Transport._key_info = {**original_key_info, "ssh-rsa": RSAKey}
             RSAKey.HASHES = {**original_rsa_hashes, "ssh-rsa": hashes.SHA1}
             try:
-                return super().get_connection()
+                client = super().get_connection()
             finally:
                 Transport._preferred_keys = original_preferred_keys
                 Transport._key_info = original_key_info
                 RSAKey.HASHES = original_rsa_hashes
+
+        # The class-level patch above is reverted the instant the handshake
+        # returns; persist ssh-rsa on THIS transport (and disable auto-rekey) so
+        # a mid-stream 512 MiB rekey can't drop the connection. See
+        # `_persist_legacy_rsa`.
+        _persist_legacy_rsa(check.not_none(value=client.get_transport()))
+        return client
 
     def listdir_attr_r(
         self,
@@ -146,66 +188,14 @@ class SSHResource(DagsterSSHResource):
 
         return files
 
-    def open_ssh_tunnel(self) -> subprocess.Popen[bytes]:
-        # trunk-ignore(bandit/B603): static argv, no shell; inputs are EnvVar resource config
-        ssh_tunnel = subprocess.Popen(
-            args=[
-                "sshpass",
-                (
-                    f"-p{self.password}"
-                    if self.test
-                    else "-f/etc/secret-volume/powerschool_ssh_password.txt"
-                ),
-                "ssh",
-                self.remote_host,
-                f"-p{self.remote_port}",
-                f"-l{self.username}",
-                f"-L1521:{self.tunnel_remote_host}:1521",
-                "-oHostKeyAlgorithms=+ssh-rsa",
-                "-oStrictHostKeyChecking=accept-new",
-                "-oConnectTimeout=10",
-                "-oServerAliveInterval=30",
-                "-oServerAliveCountMax=3",
-                "-N",
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-        )
-
-        stdout_stream = check.not_none(value=ssh_tunnel.stdout)
-
-        while True:
-            stdout = stdout_stream.readline()
-            self.log.debug(msg=stdout)
-
-            if stdout in [
-                (
-                    f"Warning: Permanently added '[{self.remote_host}]:"
-                    f"{self.remote_port}' (RSA) to the list of known hosts.\r\n"
-                ).encode(),
-                b"A secure connection to your server has been established.\n",
-            ]:
-                continue
-            elif stdout == b"To disconnect, simply close this window.\n":
-                break
-            else:
-                ssh_tunnel.kill()
-                raise SSHTunnelError(stdout)
-
-        # Prevent a race condition with the ssh tunnel becoming fully established
-        # before downstream code (e.g. PowerSchool ODBC) opens a forwarded port.
-        time.sleep(1.0)
-
-        return ssh_tunnel
-
     @contextmanager
-    def open_ssh_tunnel_paramiko(
+    def open_ssh_tunnel(
         self, local_port: int = 1521, remote_port: int = 1521
     ) -> Iterator[int]:
         """In-process SSH local port forward.
 
-        Replaces the sshpass subprocess for the dlt PowerSchool path: no
-        password file mount, no readiness race, host-key verification kept
+        Replaced the retired sshpass-subprocess tunnel (#4442): no password
+        file mount, no readiness race, host-key verification kept
         (get_connection handles legacy ssh-rsa and transient-failure retry).
         Yields the bound local port; pass local_port=0 for an ephemeral port.
         """
@@ -260,7 +250,7 @@ class SSHResource(DagsterSSHResource):
 class _ForwardServer(socketserver.ThreadingTCPServer):
     daemon_threads = True
     allow_reuse_address = True
-    # See the cleanup-ordering comment in `open_ssh_tunnel_paramiko`: without
+    # See the cleanup-ordering comment in `open_ssh_tunnel`: without
     # this, `server_close()` joins every per-connection handler thread with
     # no timeout, which can hang forever on a handler parked in `select()`.
     block_on_close = False
