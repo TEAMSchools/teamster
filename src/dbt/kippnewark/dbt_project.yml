@@ -87,8 +87,6 @@ models:
       staging:
         sftp:
           +enabled: false
-        dlt:
-          +enabled: true
   renlearn:
     +materialized: table
     staging:

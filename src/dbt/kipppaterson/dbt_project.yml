@@ -94,7 +94,6 @@ models:
         sftp:
           +enabled: false
         dlt:
-          +enabled: true
           stg_powerschool__gpnode:
             +enabled: false
           stg_powerschool__gpprogresssubject:

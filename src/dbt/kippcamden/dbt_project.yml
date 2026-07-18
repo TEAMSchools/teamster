@@ -69,8 +69,6 @@ models:
       staging:
         sftp:
           +enabled: false
-        dlt:
-          +enabled: true
       intermediate:
         int_powerschool__contacts:
           +enabled: false

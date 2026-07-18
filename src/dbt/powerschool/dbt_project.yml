@@ -29,13 +29,16 @@ models:
       staging:
         +contract:
           enforced: true
+        # dlt is the live PowerSchool SIS ingestion path — enabled by default
+        # for every consuming district.
+        dlt:
+          +enabled: true
         # ARCHIVED (#4442): the ODBC ingestion path is retired; models are
         # kept in-tree for reference. No district enables this variant.
         odbc:
           +enabled: false
+        # SFTP ingestion is unused (no district enables it).
         sftp:
-          +enabled: false
-        dlt:
           +enabled: false
 
 sources:
