@@ -114,18 +114,26 @@ fired — flags stay aggregated booleans.
 **Student-level flag** (per student × section × quarter, like
 `qt_percent_grade_greater_100`/`qt_grade_70_comment_missing`):
 
-1. Add the boolean column to `rpt_gsheets__gradebook_audit_student_flags.sql`
-   (`student_course_flags` CTE), and add it to the final filter
-   (`where qt_percent_grade_greater_100 or qt_grade_70_comment_missing or <new_flag>`).
+1. Add the boolean column to `int_extracts__gradebook_audit_student_flags.sql`
+   (`student_course_flags` CTE) — the flag is computed once here, where both
+   reports read it. Then add it to
+   `rpt_gsheets__gradebook_audit_student_flags.sql`'s final filter
+   (`where qt_percent_grade_greater_100 or qt_grade_70_comment_missing or <new_flag>`),
+   and to that report's projected column list.
 2. Add a matching `has_<flag>` boolean to `rpt_tableau__gradebook_audit.sql`'s
-   `student_flags_aggregate` CTE (`countif(<new_flag>) > 0 as has_<flag>`), and
-   thread it through `with_section_flags` (broadcast) and `health_calc` (both
-   health columns, unless it's specifically excluded from one like
+   `student_flags_aggregate` CTE (`countif(<new_flag>) > 0 as has_<flag>`) —
+   this CTE reads `int_extracts__gradebook_audit_student_flags` — and thread it
+   through `with_section_flags` (broadcast) and `health_calc` (both health
+   columns, unless it's specifically excluded from one like
    `has_grade_below_70_no_comment` is from
    `is_healthy_gradebook_excl_comments`).
-3. Update the properties YAML for both models.
-4. Build both models — `rpt_gsheets__gradebook_audit_student_flags` first, then
-   `rpt_tableau__gradebook_audit` (it reads the former).
+3. Update the properties YAML for all three models
+   (`int_extracts__gradebook_audit_student_flags`,
+   `rpt_gsheets__gradebook_audit_student_flags`,
+   `rpt_tableau__gradebook_audit`).
+4. Build in dependency order — `int_extracts__gradebook_audit_student_flags`
+   first, then `rpt_gsheets__gradebook_audit_student_flags` and
+   `rpt_tableau__gradebook_audit` (both read the int).
 
 **Category-level flag** (per section × quarter × category, like
 `not_enough_assignments`):
@@ -150,12 +158,13 @@ correctly.
 `stg_google_sheets__gradebook_flags` is disabled — no sheet step needed.
 
 1. Remove the boolean column from wherever it's computed
-   (`rpt_gsheets__gradebook_audit_student_flags` for a student-level flag,
-   `rpt_tableau__gradebook_audit`'s `category_summary` CTE for a category-level
-   one).
+   (`int_extracts__gradebook_audit_student_flags`'s `student_course_flags` CTE
+   for a student-level flag, `rpt_tableau__gradebook_audit`'s `category_summary`
+   CTE for a category-level one).
 2. Remove it from every place it's threaded through: the gsheets model's final
-   filter (if student-level), `student_flags_aggregate` / `with_section_flags`
-   (if student-level), and both `health_calc` `logical_or(...)` expressions.
+   filter and projected columns (if student-level), `student_flags_aggregate` /
+   `with_section_flags` (if student-level), and both `health_calc`
+   `logical_or(...)` expressions.
 3. Update the properties YAML for the affected model(s).
 4. Build the modified models.
 
@@ -172,10 +181,10 @@ correctly.
 3. No flag sheet changes needed — the flag columns in
    `rpt_tableau__gradebook_audit` apply to all regions. The only exclusions,
    applied in `category_join`'s `WHERE` clause (and matched in
-   `rpt_gsheets__gradebook_audit_student_flags`'s own filters), are
-   `_dbt_source_project != 'kippmiami'` and `school_level_alt != 'ES'` (MS/HS
-   only). Confirm sections for the new region appear in
-   `rpt_tableau__gradebook_audit`.
+   `int_extracts__gradebook_audit_student_flags`'s own filters, which both
+   reports inherit), are `_dbt_source_project != 'kippmiami'` and
+   `school_level_alt != 'ES'` (MS/HS only). Confirm sections for the new region
+   appear in `rpt_tableau__gradebook_audit`.
 
 ---
 
@@ -200,13 +209,14 @@ views this summer"
 Both problems must be fixed together. Changing only the scaffold year or only
 the `grades_type` will still produce no data.
 
-**Files to edit** (as of the July 2026 teacher/student split —
-`int_tableau__gradebook_audit_flags_calculations` no longer exists;
-`rpt_gsheets__gradebook_audit_student_flags` is new and takes its place in this
-list):
+**Files to edit** (as of the July 2026 intermediate extraction — the student
+grade/comment toggle points moved out of
+`rpt_gsheets__gradebook_audit_student_flags` into the new
+`int_extracts__gradebook_audit_student_flags`, which the gsheets report now
+reads; the gsheets report itself no longer carries any toggle):
 
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
-- `src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__gradebook_audit_student_flags.sql`
+- `src/dbt/kipptaf/models/students/intermediate/int_extracts__gradebook_audit_student_flags.sql`
 - `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations_qtd_unpivot.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_es_comments.sql`
 
@@ -223,7 +233,7 @@ list):
    s.academic_year = {{ var("current_academic_year") - 1 }}
    ```
 
-2. In `rpt_gsheets__gradebook_audit_student_flags` — change both occurrences
+2. In `int_extracts__gradebook_audit_student_flags` — change both occurrences
    (marked `/* summer toggle: see skill */`): the outer `academic_year` filter,
    and the `quarter_course_grades` join's `grades_type` filter:
 
@@ -317,6 +327,7 @@ Build and verify after all four changes:
 ```bash
 uv run dbt build \
   --select int_powerschool__u_expectations_qtd_unpivot \
+    int_extracts__gradebook_audit_student_flags \
     rpt_gsheets__gradebook_audit_student_flags rpt_tableau__gradebook_audit \
     rpt_tableau__gradebook_es_comments \
   --project-dir src/dbt/kipptaf \
@@ -324,11 +335,15 @@ uv run dbt build \
   --state target/prod
 ```
 
+`int_extracts__gradebook_audit_student_flags` must be in the `--select` list
+(not just the two reports) — it now holds the student toggle, and `--defer`
+would otherwise read the un-toggled prod copy.
+
 **When to revert:** once the new school year starts and teachers begin entering
 grades in PowerSchool (typically Q1), revert all changes:
 `current_academic_year - 1` → `current_academic_year` in all four files, and
 `'last_year'` → `'current_year'` in
-`rpt_gsheets__gradebook_audit_student_flags`.
+`int_extracts__gradebook_audit_student_flags`.
 
 ---
 
@@ -338,31 +353,33 @@ Ask: which flag, region, school level, and quarter.
 
 First establish which flag: `has_grade_above_100` /
 `has_grade_below_70_no_comment` (student-level, aggregated from
-`rpt_gsheets__gradebook_audit_student_flags`), `not_enough_assignments`
+`int_extracts__gradebook_audit_student_flags`), `not_enough_assignments`
 (category-level), or one of the two health columns
 (`is_healthy_gradebook_all_flags` / `is_healthy_gradebook_excl_comments`).
 
 Check in order:
 
 1. **Boolean `true` at its source?** Student-level: query
-   `rpt_gsheets__gradebook_audit_student_flags` directly for the
-   student/section/quarter — it's already filtered to flagged-only, so if the
-   student doesn't appear there at all, the underlying grade/comment computation
-   didn't fire. Category-level: query `rpt_tableau__gradebook_audit` filtered to
+   `int_extracts__gradebook_audit_student_flags` directly for the
+   student/section/quarter — it is unfiltered (one row per scoped enrollment,
+   flag `true` or `false`), so it shows whether the grade/comment computation
+   fired. (`rpt_gsheets__gradebook_audit_student_flags` is the same rows
+   filtered to flagged-only, so absence there just means no flag fired.)
+   Category-level: query `rpt_tableau__gradebook_audit` filtered to
    `row_type = 'category_summary'` for the section/quarter/category.
 2. **In scope at all?** Two silent exclusion rules apply in `category_join`'s
    `WHERE` (`rpt_tableau__gradebook_audit`) and matched in
-   `rpt_gsheets__gradebook_audit_student_flags`'s own filters:
+   `int_extracts__gradebook_audit_student_flags`'s own filters:
    - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source (AY
      2026-2027 onward)
    - `school_level_alt != 'ES'` — ES is excluded everywhere; ES is handled
      separately by `rpt_tableau__gradebook_es_comments`
 3. **For a student-level flag, did it survive the aggregation into
    `rpt_tableau__gradebook_audit`?** `student_flags_aggregate` groups
-   `rpt_gsheets__gradebook_audit_student_flags` to
+   `int_extracts__gradebook_audit_student_flags` to
    `_dbt_source_project, sectionid, quarter` — if the flagged row exists in the
-   gsheets model but `has_<flag>` still reads `false` on the teacher-side
-   report, check the join in `with_section_flags` (on
+   int but `has_<flag>` still reads `false` on the teacher-side report, check
+   the join in `with_section_flags` (on
    `_dbt_source_project, sectionid, quarter`) for a key mismatch, not the flag
    logic itself.
 4. **Row-count floor intact?** Every section × quarter should have exactly 4
@@ -372,14 +389,14 @@ Check in order:
    model directly, not the flag logic.
 5. **Is the affected student/course/quarter one of the known ambiguous-dedup
    cases in `int_extracts__course_enrollments_by_term`?** (Inherited by
-   `rpt_gsheets__gradebook_audit_student_flags`, which reads it.) Its
-   `enrollments` CTE picks one section per student/course/quarter with a
-   `row_number()` tiebreaker that is frequently a true tie (see reference doc) —
-   when it is, the teacher/section actually in scope for that student that
-   quarter is arbitrary and can differ from what you'd expect from PowerSchool.
-   Query the model directly for that student/course/quarter to check whether
-   more than one candidate section exists before assuming the flag logic itself
-   is wrong.
+   `int_extracts__gradebook_audit_student_flags`, which reads it — and thus by
+   both reports downstream.) Its `enrollments` CTE picks one section per
+   student/course/quarter with a `row_number()` tiebreaker that is frequently a
+   true tie (see reference doc) — when it is, the teacher/section actually in
+   scope for that student that quarter is arbitrary and can differ from what
+   you'd expect from PowerSchool. Query the model directly for that
+   student/course/quarter to check whether more than one candidate section
+   exists before assuming the flag logic itself is wrong.
 
 `stg_google_sheets__gradebook_flags` is disabled — do not check the allowlist
 sheet. `stg_google_sheets__gradebook_exceptions` is also disabled — do not check
