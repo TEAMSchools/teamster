@@ -388,12 +388,14 @@ pipeline already retired several predecessor models
 (`int_tableau__gradebook_audit_teacher_scaffold`, `_assignments_teacher`, etc.)
 by folding their logic into successor models.
 
-**Note on layering:** `rpt_tableau__gradebook_audit` reads directly from
+**Note on layering:** ~~`rpt_tableau__gradebook_audit` reads directly from
 `rpt_gsheets__gradebook_audit_student_flags` via `ref()` — an
 `rpt_`-depends-on-`rpt_` dependency. This is slightly unusual (the documented
 convention is about keeping `int_` models away from external tools, not about
 rpt-to-rpt refs specifically) but is the only way to land on exactly two models.
-Accepted tradeoff for this design.
+Accepted tradeoff for this design.~~ **Superseded** — the rpt-to-rpt dependency
+was rejected in review as a layering violation and removed by the intermediate
+extraction described in the follow-up subsection below.
 
 ### Model 1: `rpt_gsheets__gradebook_audit_student_flags`
 
@@ -543,6 +545,79 @@ only).
 - Confirm `rpt_gsheets__gradebook_audit_student_flags` row count matches the
   count of true values across both flags in the pre-filter population (no rows
   lost or duplicated by the filter).
+
+### Intermediate extraction for the student flags (July 2026 follow-up)
+
+The two-model split above left `rpt_tableau__gradebook_audit` reading
+`rpt_gsheets__gradebook_audit_student_flags` via `ref()` — an `rpt_`-on-`rpt_`
+dependency (the "Accepted tradeoff" struck through above). Review rejected it:
+`rpt_` models are terminal reporting views for external tools and must not feed
+each other; shared logic belongs one layer down in an intermediate that both
+reports read. This follow-up removes the violation without changing any output.
+
+**New model — `int_extracts__gradebook_audit_student_flags`** (in
+`models/students/intermediate/`, alongside its `int_extracts__course_*`
+siblings). This is the current `student_course_flags` CTE lifted out of
+`rpt_gsheets__gradebook_audit_student_flags` verbatim, minus the flagged-only
+filter — every scoped student × section × quarter row, both boolean flags
+computed, no `where <either flag>` restriction. The `quarter_course_grades`
+grades-union CTE moves in with it (it is part of computing the flags).
+
+- **Grain:** one row per (`_dbt_source_project`, `academic_year`, `studentid`,
+  `sectionid`, `quarter`) — the same grain the gsheets model has today, but
+  unfiltered.
+- **Scope filters retained (unchanged):** `rn_year = 1`, `enroll_status = 0`,
+  `not is_out_of_district`, `school_level_alt != 'ES'`,
+  `_dbt_source_project != 'kippmiami'`, `exclude_from_gpa = 0`,
+  `quarter_start_date <= current_date`, the inner join to
+  `int_extracts__course_schedule_by_term` (the orphan-scoping fix), and the
+  `academic_year` summer-toggle filter.
+- **PII:** carries `student_number` / `student_name` with `contains_pii: true`
+  meta tags. This is an intermediate consumed only by the two `rpt_` models — no
+  external tool reads it directly — so it does not violate the "no `int_` to
+  external tools" rule.
+- **Tests:** `dbt_utils.unique_combination_of_columns` on the grain above (no
+  contract — intermediates do not carry one).
+
+**`rpt_gsheets__gradebook_audit_student_flags`** collapses to a thin projection:
+select its existing output columns from the new intermediate, filtered to
+`where qt_percent_grade_greater_100 or qt_grade_70_comment_missing`. Same output
+columns, same grain, same uniqueness test, same Google Sheet exposure — nothing
+changes externally.
+
+**`rpt_tableau__gradebook_audit`** — the `student_flags_aggregate` CTE's `from`
+changes from `ref("rpt_gsheets__gradebook_audit_student_flags")` to
+`ref("int_extracts__gradebook_audit_student_flags")`. Because each aggregate is
+`countif(<named flag column>) > 0`, the additional un-flagged rows the
+intermediate carries do not change any result — the output is byte-identical. No
+other CTE changes.
+
+**Resulting lineage** — both `rpt_` models are now terminal:
+
+```text
+int_extracts__course_enrollments_by_term ──┐
+int_extracts__course_schedule_by_term ─────┼─► int_extracts__gradebook_audit_student_flags
+quarter grade/comment data ────────────────┘        │
+                                    ┌───────────────┴───────────────┐
+                                    ▼                               ▼
+             rpt_gsheets__gradebook_audit_student_flags   rpt_tableau__gradebook_audit
+                    (+ PII cols, flagged-only filter)       (aggregate booleans to
+                                                             section x quarter)
+```
+
+**Summer-toggle relocation.** The two toggle points the gradebook-audit skill
+documents inside `rpt_gsheets__gradebook_audit_student_flags` (the
+`academic_year` filter and the `grades_type = 'last_year'` join filter) move
+into the new intermediate. The skill's rollover procedure, the reference doc,
+and this spec's file lists must be updated to name
+`int_extracts__gradebook_audit_student_flags` as the edit site instead of the
+gsheets model.
+
+**Validation.** Dev-build all three models; confirm both uniqueness tests still
+pass; confirm `rpt_tableau__gradebook_audit` output is byte-identical to the
+pre-refactor view (same distinct-key set and same flag/health column values),
+the same equivalence check used to verify the July split's window-function
+refactor.
 
 ## Open questions
 
