@@ -1,8 +1,11 @@
 sources:
   - name: kippmiami_powerschool
-    schema:
-      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippmiami_powerschool"
+    description: >-
+      Frozen pre-Focus PowerSchool archive (final ODBC pull 2026-07-01; Miami's
+      SIS moved to Focus). Never rebuilt — the kippmiami_powerschool dataset
+      must not be dropped. Declared BQ-native (plain schema, no target branch)
+      so every target reads the frozen prod tables directly.
+    schema: kippmiami_powerschool
     tables:
       - name: stg_powerschool__assignmentcategoryassoc
         config:

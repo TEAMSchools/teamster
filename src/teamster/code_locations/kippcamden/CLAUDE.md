@@ -14,7 +14,7 @@ GCS bucket: `teamster-kippcamden`
 | Module        | Type              | Trigger                                               |
 | ------------- | ----------------- | ----------------------------------------------------- |
 | `dbt`         | dbt assets        | `AutomationConditionSensor`                           |
-| `powerschool` | ODBC assets       | sensor (`build_powerschool_asset_sensor`)             |
+| `powerschool` | dlt assets        | schedules (intraday 15-min + nightly 2am)             |
 | `deanslist`   | API assets        | schedule (nightly)                                    |
 | `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                   |
 | `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`) |
@@ -26,7 +26,11 @@ GCS bucket: `teamster-kippcamden`
 
 ## PowerSchool Configuration
 
-Uses **ODBC** (live Oracle tunnel).
+Uses **dlt** (probe-gated, full-replace ingestion over 57 tables), not ODBC.
+Config at `powerschool/sis/dlt/config/assets.yaml` (per-table `cursor_column` +
+`schedule_tier`). Resources `ssh_powerschool` (paramiko tunnel) and
+`db_powerschool` (Oracle creds) are built by the shared `core/resources.py`
+factories. Writes directly to BigQuery — no GCS IO manager.
 
 ## Extracts
 
