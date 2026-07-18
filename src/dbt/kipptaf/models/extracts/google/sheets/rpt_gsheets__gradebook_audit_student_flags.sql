@@ -65,6 +65,7 @@ with
             s.semester,
             s.quarter_start_date,
             s.quarter_end_date,
+            s.is_current_quarter,
 
             qg.quarter_course_percent_grade,
             qg.quarter_comment_value,
@@ -137,6 +138,7 @@ select
     semester,
     quarter_start_date,
     quarter_end_date,
+    is_current_quarter,
 
     quarter_course_percent_grade,
     quarter_comment_value,

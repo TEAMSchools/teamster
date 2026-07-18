@@ -111,6 +111,9 @@ models:
       - name: quarter_end_date
         data_type: date
         description: Last day of the quarter term.
+      - name: is_current_quarter
+        data_type: boolean
+        description: True if this row belongs to the current academic quarter.
       - name: quarter_course_percent_grade
         data_type: float64
         description: >
