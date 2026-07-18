@@ -59,9 +59,11 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`
   with a `_FakeResponse` stub, and assert call counts for retry/no-retry paths.
   Reference harness: `tests/resources/test_resource_adp_workforce_now.py`.
-- **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
-  by default (`test=False`). Integration tests must set `test=True` and pass
-  `password` directly so each district uses its own credentials.
+- **SSH `test`**: vestigial config. It formerly switched the sshpass tunnel's
+  password source (secret file vs. the `password` field); that tunnel was
+  removed in #4442, so no method on `SSHResource` reads it now.
+  `tests/resources/test_resource_ssh_rekey.py` still sets `test=True` —
+  harmless, pending a later cleanup once fixtures drop it.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.
