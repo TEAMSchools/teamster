@@ -66,9 +66,6 @@ models:
   powerschool:
     +materialized: table
     sis:
-      staging:
-        sftp:
-          +enabled: false
       intermediate:
         int_powerschool__contacts:
           +enabled: false
@@ -85,11 +82,6 @@ sources:
     finalsite:
       contacts:
         +enabled: true
-  powerschool:
-    sis:
-      staging:
-        sftp:
-          +enabled: false
   titan:
     titan:
       src_titan__income_form_data:

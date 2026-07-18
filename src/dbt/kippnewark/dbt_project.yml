@@ -84,9 +84,6 @@ models:
           +enabled: false
         int_powerschool__person_contacts:
           +enabled: false
-      staging:
-        sftp:
-          +enabled: false
   renlearn:
     +materialized: table
     staging:
@@ -117,11 +114,6 @@ sources:
     finalsite:
       contacts:
         +enabled: true
-  powerschool:
-    sis:
-      staging:
-        sftp:
-          +enabled: false
   renlearn:
     renlearn:
       src_renlearn__accelerated_reader:

@@ -48,3 +48,6 @@ sources:
         # ARCHIVED (#4442): see models note above.
         odbc:
           +enabled: false
+        # SFTP ingestion is unused (no district enables it).
+        sftp:
+          +enabled: false
