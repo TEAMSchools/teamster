@@ -4119,3 +4119,631 @@ already nailed down through review.
   remaining `ref()` consumers before deleting.
 
 Refs #3908.
+
+## Task 11: Extract shared student-flag logic to an intermediate
+
+**Goal:** Remove the `rpt_`-on-`rpt_` layering violation left by Task 10
+(`rpt_tableau__gradebook_audit` reads
+`rpt_gsheets__gradebook_audit_student_flags` via `ref()`) by moving the shared
+`student_course_flags` logic down into a new intermediate that both reports
+read. Output of both reports stays unchanged.
+
+**Design:** see "Intermediate extraction for the student flags (July 2026
+follow-up)" in
+[the design spec](../specs/2026-05-14-gradebook-audit-ay2627-design.md).
+
+**Why this is safe:** the Tableau report only consumes the two section-level
+booleans `has_grade_above_100` / `has_grade_below_70_no_comment`, each computed
+as `countif(<named flag column>) > 0` grouped to (`_dbt_source_project`,
+`sectionid`, `quarter`). The new intermediate carries the same rows the gsheets
+model does **plus** the un-flagged rows (both flags false), and a false row
+contributes 0 to either `countif` — so every boolean is identical. No column,
+grain, or filter on either report changes.
+
+**Files:**
+
+| File                                                                                      | Change                                  |
+| ----------------------------------------------------------------------------------------- | --------------------------------------- |
+| `models/students/intermediate/int_extracts__gradebook_audit_student_flags.sql`            | Create                                  |
+| `models/students/intermediate/properties/int_extracts__gradebook_audit_student_flags.yml` | Create                                  |
+| `models/extracts/google/sheets/rpt_gsheets__gradebook_audit_student_flags.sql`            | Rewrite to thin projection over the int |
+| `models/extracts/tableau/rpt_tableau__gradebook_audit.sql`                                | Repoint one `ref()` (line ~332)         |
+| `.claude/skills/gradebook-audit/SKILL.md`                                                 | Repoint 3 procedures to the int         |
+| `docs/reference/gradebook-audit-data-model.md`                                            | Repoint lineage + model section         |
+
+The gsheets model's **properties YAML is unchanged** — its output columns,
+grain, uniqueness test, and PII tags are all identical after the rewrite. No
+exposure changes (the gsheets model still feeds the same sheet; the int is not
+an external consumer).
+
+### 11a: Create the intermediate model
+
+- [ ] **Step 1: Create `int_extracts__gradebook_audit_student_flags.sql`**
+
+This is the current `quarter_course_grades` + `student_course_flags` CTEs from
+`rpt_gsheets__gradebook_audit_student_flags.sql` lifted verbatim, with the final
+`SELECT` reading `student_course_flags` **without** the flagged-only `where`.
+The two `/* summer toggle: see skill */` markers move here with the code.
+
+Create
+`src/dbt/kipptaf/models/students/intermediate/int_extracts__gradebook_audit_student_flags.sql`:
+
+```sql
+with
+    quarter_course_grades as (
+        select
+            _dbt_source_project,
+            academic_year,
+            studentid,
+            sectionid,
+            storecode,
+            term_percent_grade_adjusted as quarter_course_percent_grade,
+            comment_value as quarter_comment_value,
+
+            'current_year' as grades_type,
+
+        from {{ ref("base_powerschool__final_grades") }}
+
+        union all
+
+        select
+            _dbt_source_project,
+            academic_year,
+            studentid,
+            sectionid,
+            storecode,
+            `percent` as quarter_course_percent_grade,
+            comment_value as quarter_comment_value,
+
+            'last_year' as grades_type,
+
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            academic_year = {{ var("current_academic_year") - 1 }}
+            and storecode_type = 'Q'
+            and not is_transfer_grade
+    ),
+
+    student_course_flags as (
+        select
+            s._dbt_source_project,
+            s.academic_year,
+            s.academic_year_display,
+            s.region,
+            s.school_level_alt as school_level,
+            s.schoolid,
+            s.school,
+
+            s.students_dcid,
+            s.studentid,
+            s.student_number,
+            s.student_name,
+            s.grade_level,
+
+            s.sectionid,
+            s.sections_dcid,
+            s.course_number,
+            s.course_name,
+            s.section_number,
+            s.external_expression,
+            s.section_or_period,
+
+            s.teacher_number,
+            s.teacher_name,
+            s.teacher_employee_number,
+
+            s.`quarter`,
+            s.semester,
+            s.quarter_start_date,
+            s.quarter_end_date,
+            s.is_current_quarter,
+
+            qg.quarter_course_percent_grade,
+            qg.quarter_comment_value,
+
+            if(
+                qg.quarter_course_percent_grade > 100, true, false
+            ) as qt_percent_grade_greater_100,
+
+            if(
+                qg.quarter_course_percent_grade < 70
+                and qg.quarter_comment_value is null,
+                true,
+                false
+            ) as qt_grade_70_comment_missing,
+
+        from {{ ref("int_extracts__course_enrollments_by_term") }} as s
+        inner join
+            {{ ref("int_extracts__course_schedule_by_term") }} as sc
+            on s._dbt_source_project = sc._dbt_source_project
+            and s.sectionid = sc.sectionid
+            and s.`quarter` = sc.`quarter`
+            and s.academic_year = sc.academic_year
+        left join
+            quarter_course_grades as qg
+            on s.academic_year = qg.academic_year
+            and s.studentid = qg.studentid
+            and s.sectionid = qg.sectionid
+            and s._dbt_source_project = qg._dbt_source_project
+            and s.`quarter` = qg.storecode
+            and qg.grades_type = 'last_year'  /* summer toggle: see skill */
+        where
+            s.academic_year = {{ var("current_academic_year") - 1 }}  /* summer toggle: see skill */
+            and s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
+            and s.rn_year = 1
+            and s.enroll_status = 0
+            and s.school_level_alt != 'ES'
+            and s._dbt_source_project != 'kippmiami'
+            and not s.is_out_of_district
+            and s.exclude_from_gpa = 0
+    )
+
+select
+    _dbt_source_project,
+    academic_year,
+    academic_year_display,
+    region,
+    school_level,
+    schoolid,
+    school,
+
+    students_dcid,
+    studentid,
+    student_number,
+    student_name,
+    grade_level,
+
+    sectionid,
+    sections_dcid,
+    course_number,
+    course_name,
+    section_number,
+    external_expression,
+    section_or_period,
+
+    teacher_number,
+    teacher_name,
+    teacher_employee_number,
+
+    `quarter`,
+    semester,
+    quarter_start_date,
+    quarter_end_date,
+    is_current_quarter,
+
+    quarter_course_percent_grade,
+    quarter_comment_value,
+
+    qt_percent_grade_greater_100,
+    qt_grade_70_comment_missing,
+
+from student_course_flags
+```
+
+- [ ] **Step 2: Create the properties YAML**
+
+Follows the `int_extracts__course_enrollments_by_term` sibling:
+`schema: extracts`, `materialized: table`, no contract, a
+`dbt_utils.unique_combination_of_columns` test at `severity: error`, and
+`contains_pii: true` on `student_number` / `student_name`. Column descriptions
+are copied from the current gsheets properties YAML (same columns).
+
+Create
+`src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__gradebook_audit_student_flags.yml`:
+
+```yaml
+models:
+  - name: int_extracts__gradebook_audit_student_flags
+    description: >
+      Student-level gradebook audit flags at one row per student x section x
+      quarter, unfiltered (every scoped enrollment, whether or not a flag
+      fired). Shared upstream for both gradebook-audit reports:
+      rpt_gsheets__gradebook_audit_student_flags projects these columns and
+      filters to flagged rows for the ops Google Sheet, and
+      rpt_tableau__gradebook_audit aggregates the two boolean flags up to
+      section x quarter with zero PII. Scoped to only sections that also exist
+      in int_extracts__course_schedule_by_term (the orphan-scoping fix — see the
+      section_quarter_count note on that model).
+    config:
+      schema: extracts
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - academic_year
+              - studentid
+              - sectionid
+              - quarter
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Source PowerSchool instance (kippnewark, kippcamden, kipppaterson).
+      - name: academic_year
+        data_type: int64
+        description:
+          Starting year of the academic year (e.g., 2025 for AY 2025-2026).
+      - name: academic_year_display
+        data_type: string
+        description: Human-readable academic year (e.g., '2025-2026').
+      - name: region
+        data_type: string
+        description: Region name (Newark, Camden, Paterson).
+      - name: school_level
+        data_type: string
+        description: School level after the Sumner G5 override (MS or HS).
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school ID.
+      - name: school
+        data_type: string
+        description: School abbreviation.
+      - name: students_dcid
+        data_type: int64
+        description: PowerSchool students DCID.
+      - name: studentid
+        data_type: int64
+        description: PowerSchool student ID.
+      - name: student_number
+        data_type: int64
+        description: Student number assigned by the school.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_name
+        data_type: string
+        description: Student last, first, middle name.
+        config:
+          meta:
+            contains_pii: true
+      - name: grade_level
+        data_type: int64
+        description: The grade the student is in.
+      - name: sectionid
+        data_type: int64
+        description: PowerSchool section ID.
+      - name: sections_dcid
+        data_type: int64
+        description: DCID of the associated Sections record.
+      - name: course_number
+        data_type: string
+        description: Course number from the PS Courses table.
+      - name: course_name
+        data_type: string
+        description: Course name.
+      - name: section_number
+        data_type: string
+        description: Section number.
+      - name: external_expression
+        data_type: string
+        description: Period/day expression for the section.
+      - name: section_or_period
+        data_type: string
+        description: >
+          Period expression for HS students (external_expression); section
+          number for non-HS students (section_number).
+      - name: teacher_number
+        data_type: string
+        description: PowerSchool teacher number for the section.
+      - name: teacher_name
+        data_type: string
+        description: Teacher last name, first name.
+      - name: teacher_employee_number
+        data_type: int64
+        description: Employee number of the teacher.
+      - name: quarter
+        data_type: string
+        quote: true
+        description: Term storecode (Q1, Q2, Q3, Q4).
+      - name: semester
+        data_type: string
+        description: Semester (S1, S2).
+      - name: quarter_start_date
+        data_type: date
+        description: First day of the quarter term.
+      - name: quarter_end_date
+        data_type: date
+        description: Last day of the quarter term.
+      - name: is_current_quarter
+        data_type: boolean
+        description: True if this row belongs to the current academic quarter.
+      - name: quarter_course_percent_grade
+        data_type: float64
+        description: >
+          The student's quarter course percent grade, from
+          base_powerschool__final_grades (current year) or
+          stg_powerschool__storedgrades (prior year, summer-toggle only).
+      - name: quarter_comment_value
+        data_type: string
+        description: >
+          The end-of-quarter comment entered in PowerSchool for this
+          student/section/quarter. Null when no comment has been entered.
+      - name: qt_percent_grade_greater_100
+        data_type: boolean
+        description: True when quarter_course_percent_grade is above 100.
+      - name: qt_grade_70_comment_missing
+        data_type: boolean
+        description: >
+          True when quarter_course_percent_grade is below 70 and
+          quarter_comment_value is null.
+```
+
+- [ ] **Step 3: Build the intermediate and confirm the uniqueness test passes**
+
+```bash
+uv run dbt build \
+  --select int_extracts__gradebook_audit_student_flags \
+  --project-dir src/dbt/kipptaf \
+  --defer --state src/dbt/kipptaf/target/prod --target dev
+```
+
+Expected: model builds, `dbt_utils.unique_combination_of_columns` passes.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/students/intermediate/int_extracts__gradebook_audit_student_flags.sql \
+        src/dbt/kipptaf/models/students/intermediate/properties/int_extracts__gradebook_audit_student_flags.yml
+git commit -m "feat(dbt): add int_extracts__gradebook_audit_student_flags"
+```
+
+### 11b: Rewire both reports to the intermediate
+
+- [ ] **Step 1: Thin out `rpt_gsheets__gradebook_audit_student_flags.sql`**
+
+Replace the entire file body with a projection over the new intermediate,
+keeping the flagged-only filter. Read directly from the `ref()` in `FROM` (no
+import CTE — repo convention). Full replacement:
+
+```sql
+select
+    _dbt_source_project,
+    academic_year,
+    academic_year_display,
+    region,
+    school_level,
+    schoolid,
+    school,
+
+    students_dcid,
+    studentid,
+    student_number,
+    student_name,
+    grade_level,
+
+    sectionid,
+    sections_dcid,
+    course_number,
+    course_name,
+    section_number,
+    external_expression,
+    section_or_period,
+
+    teacher_number,
+    teacher_name,
+    teacher_employee_number,
+
+    `quarter`,
+    semester,
+    quarter_start_date,
+    quarter_end_date,
+    is_current_quarter,
+
+    quarter_course_percent_grade,
+    quarter_comment_value,
+
+    qt_percent_grade_greater_100,
+    qt_grade_70_comment_missing,
+
+from {{ ref("int_extracts__gradebook_audit_student_flags") }}
+where qt_percent_grade_greater_100 or qt_grade_70_comment_missing
+```
+
+- [ ] **Step 2: Repoint the Tableau report's `student_flags_aggregate` CTE**
+
+In `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`,
+in the `student_flags_aggregate` CTE (around line 332), change only the `from`:
+
+```sql
+-- change this:
+        from {{ ref("rpt_gsheets__gradebook_audit_student_flags") }}
+-- to this:
+        from {{ ref("int_extracts__gradebook_audit_student_flags") }}
+```
+
+No other line in that file changes.
+
+- [ ] **Step 3: Build all three models together and confirm both uniqueness
+      tests pass**
+
+Build all three in one invocation so the reports read the freshly-built dev
+intermediate, not a stale copy (see the stale-dev-shadow note in
+`src/dbt/CLAUDE.md`):
+
+```bash
+uv run dbt build \
+  --select int_extracts__gradebook_audit_student_flags \
+    rpt_gsheets__gradebook_audit_student_flags rpt_tableau__gradebook_audit \
+  --project-dir src/dbt/kipptaf \
+  --defer --state src/dbt/kipptaf/target/prod --target dev
+```
+
+Expected: all three build; both `dbt_utils.unique_combination_of_columns` tests
+pass.
+
+- [ ] **Step 4: Validate the section-flag booleans are identical (byte-identical
+      proof)**
+
+Find the dev schema the models built into (per `src/dbt/CLAUDE.md`):
+
+```sql
+select schema_name
+from `teamster-332318`.INFORMATION_SCHEMA.SCHEMATA
+where schema_name like '%kipptaf_extracts%'
+```
+
+Then, substituting `<int_schema>` (where the int built) and `<gsheets_schema>`
+(where the gsheets model built), confirm the two aggregations agree on every
+shared key and that no gsheets-absent key carries a true flag in the int (both
+resolve to `false` via the report's left-join, so this proves the Tableau
+broadcast booleans are unchanged):
+
+```sql
+with
+    int_agg as (
+        select
+            _dbt_source_project,
+            sectionid,
+            `quarter`,
+            countif(qt_percent_grade_greater_100) > 0 as has_grade_above_100,
+            countif(qt_grade_70_comment_missing) > 0 as has_grade_below_70_no_comment,
+        from `<int_schema>`.int_extracts__gradebook_audit_student_flags
+        group by _dbt_source_project, sectionid, `quarter`
+    ),
+
+    gsheets_agg as (
+        select
+            _dbt_source_project,
+            sectionid,
+            `quarter`,
+            countif(qt_percent_grade_greater_100) > 0 as has_grade_above_100,
+            countif(qt_grade_70_comment_missing) > 0 as has_grade_below_70_no_comment,
+        from `<gsheets_schema>`.rpt_gsheets__gradebook_audit_student_flags
+        group by _dbt_source_project, sectionid, `quarter`
+    )
+
+select
+    countif(
+        i.has_grade_above_100 != g.has_grade_above_100
+        or i.has_grade_below_70_no_comment != g.has_grade_below_70_no_comment
+    ) as mismatched_shared_keys,
+    countif(g._dbt_source_project is null
+        and (i.has_grade_above_100 or i.has_grade_below_70_no_comment)
+    ) as int_only_keys_with_a_true_flag,
+from int_agg as i
+full join
+    gsheets_agg as g
+    on i._dbt_source_project = g._dbt_source_project
+    and i.sectionid = g.sectionid
+    and i.`quarter` = g.`quarter`
+```
+
+Expected: both columns `0`.
+
+- [ ] **Step 5: Confirm the 4-row category floor still holds**
+
+```sql
+select count(*) as bad_section_quarters
+from (
+    select _dbt_source_project, sectionid, `quarter`
+    from `<tableau_schema>`.rpt_tableau__gradebook_audit
+    where row_type = 'category_summary'
+    group by _dbt_source_project, sectionid, `quarter`
+    having count(*) != 4
+)
+```
+
+Expected: `0`.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__gradebook_audit_student_flags.sql \
+        src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql
+git commit -m "refactor(dbt): read student flags from int, not rpt-on-rpt"
+```
+
+### 11c: Update the skill
+
+Three procedures in `.claude/skills/gradebook-audit/SKILL.md` name the gsheets
+model as an edit/query site that is now wrong.
+
+- [ ] **Step 1: "Add a new flag" (student-level branch, ~line 117)**
+
+The `student_course_flags` CTE now lives in the intermediate. Change step 1 of
+the **Student-level flag** procedure so the boolean column is added to
+`int_extracts__gradebook_audit_student_flags.sql` (`student_course_flags` CTE),
+while the flagged-only `where` filter that must also learn the new flag stays in
+`rpt_gsheets__gradebook_audit_student_flags.sql`. Update the "Build both models"
+step (~line 127) to build the intermediate first, then the two reports.
+
+- [ ] **Step 2: "Work on the dashboard after academic year rollover" (~lines
+      203-241, 320, 329-331)**
+
+- In the "Files to edit" list, replace the
+  `rpt_gsheets__gradebook_audit_student_flags.sql` bullet with
+  `src/dbt/kipptaf/models/students/intermediate/int_extracts__gradebook_audit_student_flags.sql`.
+- In change **2**, rename the target from
+  `rpt_gsheets__gradebook_audit_student_flags` to
+  `int_extracts__gradebook_audit_student_flags` (both the `academic_year` filter
+  and the `grades_type` join filter now live there).
+- In the build command (~line 320), add
+  `int_extracts__gradebook_audit_student_flags` to the `--select` list.
+- In the "When to revert" note (~line 331), rename the `'last_year'` →
+  `'current_year'` file target to `int_extracts__gradebook_audit_student_flags`.
+
+- [ ] **Step 3: "Debug a flag that isn't firing" (~lines 348, 362, 375)**
+
+- Step 1 (student-level source check): the gsheets model is flagged-only, so a
+  `false` flag never appears there. Point the "boolean true at its source?"
+  check for student-level flags at `int_extracts__gradebook_audit_student_flags`
+  (unfiltered), noting the gsheets model only holds already-flagged rows.
+- Step 3 (aggregation survival): update the "did it survive the aggregation"
+  wording — `student_flags_aggregate` now reads the intermediate, not the
+  gsheets rpt.
+- Step 5 (ambiguous-dedup note): the "inherited by
+  `rpt_gsheets__gradebook_audit_student_flags`, which reads it" clause now
+  applies to `int_extracts__gradebook_audit_student_flags`.
+
+- [ ] **Step 4: Lint and commit**
+
+```bash
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
+  .claude/skills/gradebook-audit/SKILL.md </dev/null
+git add .claude/skills/gradebook-audit/SKILL.md
+git commit -m "docs(skill): repoint gradebook audit procedures to the int model"
+```
+
+Note: `.claude/skills/**/*.md` is writable but staged with an explicit path
+(fine — it is not a protected hook/settings path).
+
+### 11d: Update the reference doc
+
+`docs/reference/gradebook-audit-data-model.md` documents the lineage and a
+per-model section for the gsheets model.
+
+- [ ] **Step 1: Lineage diagram (~line 145)**
+
+Insert `int_extracts__gradebook_audit_student_flags` as the shared upstream of
+both reports, matching the corrected diagram in the design spec's follow-up
+subsection (the intermediate fans out to both `rpt_gsheets__*` and
+`rpt_tableau__*`).
+
+- [ ] **Step 2: Model section (~line 352, "Student flags")**
+
+Add a short subsection for `int_extracts__gradebook_audit_student_flags` (grain,
+that it is unfiltered, that both reports read it) and update the existing
+`rpt_gsheets__gradebook_audit_student_flags` description to say it is now a thin
+projection over the intermediate filtered to flagged rows. Update the
+`student_flags_aggregate` description (~line 414) to read from the intermediate.
+
+- [ ] **Step 3: Summer-toggle note (~lines 786-787)**
+
+The `quarter_course_grades` CTE now lives in
+`int_extracts__gradebook_audit_student_flags`; update the note's location
+reference accordingly.
+
+- [ ] **Step 4: Lint and commit**
+
+```bash
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
+  docs/reference/gradebook-audit-data-model.md </dev/null
+git add docs/reference/gradebook-audit-data-model.md
+git commit -m "docs: repoint gradebook audit reference to the int model"
+```
+
+Refs #3908.
