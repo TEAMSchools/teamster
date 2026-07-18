@@ -4061,3 +4061,61 @@ new model:
 > ⚠️ **Implementation details TBD.** Exact validity conditions, flag naming
 > conventions, and consolidation with existing score flags to be finalized.
 > Requires coordination with T&L stakeholders and a Tableau dashboard update.
+
+## Task 10: Teacher/student split
+
+### Delivered (2026-07-18)
+
+Design: see "Teacher/Student Split" in
+[the design spec](../specs/2026-05-14-gradebook-audit-ay2627-design.md#implemented).
+Built directly against that spec rather than a separately-written step
+breakdown, given how much of the design (grain, column names, join logic) was
+already nailed down through review.
+
+**Files:**
+
+| File                                                                                                  | Change                                                       |
+| ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `models/extracts/google/sheets/rpt_gsheets__gradebook_audit_student_flags.sql`                        | Create                                                       |
+| `models/extracts/google/sheets/properties/rpt_gsheets__gradebook_audit_student_flags.yml`             | Create                                                       |
+| `models/exposures/google-sheets.yml`                                                                  | Add exposure (after the destination sheet was created)       |
+| `models/extracts/tableau/rpt_tableau__gradebook_audit.sql`                                            | Full rewrite                                                 |
+| `models/extracts/tableau/properties/rpt_tableau__gradebook_audit.yml`                                 | Full rewrite                                                 |
+| `models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags_calculations.sql`            | Deleted (zero remaining consumers confirmed before deletion) |
+| `models/extracts/tableau/intermediate/properties/int_tableau__gradebook_audit_flags_calculations.yml` | Deleted                                                      |
+
+**What shipped:**
+
+- `rpt_gsheets__gradebook_audit_student_flags` — flagged-student rows
+  (`qt_percent_grade_greater_100` / `qt_grade_70_comment_missing`), inner-joined
+  to `int_extracts__course_schedule_by_term` for the orphan-scoping fix, feeding
+  a real Google Sheet. `teacher_employee_number` and `is_current_quarter` added
+  post-spec for sheet usability.
+- `rpt_tableau__gradebook_audit` — rebuilt around a `category_summary` /
+  `assignment_detail` `row_type` split (window functions +
+  `dbt_utils.deduplicate()` for the summary aggregates, not a `GROUP BY` — see
+  the spec's "implemented" note for why), broadcast section-level student flags
+  read from the model above with zero PII, and two health columns
+  (`is_healthy_gradebook_all_flags` / `is_healthy_gradebook_excl_comments`) in
+  place of the old single `is_healthy_gradebook` anchor-row branch.
+
+**Verification performed:**
+
+- Dev build of both models; both uniqueness tests pass.
+- Every section-quarter has exactly 4 `category_summary` rows (6,374 confirmed
+  via direct query, zero exceptions).
+- Health-column combinations are internally consistent — no
+  healthy-under-all-flags-but-unhealthy-under-excl-comments rows (would be a
+  logical impossibility since the second is strictly more lenient); the
+  46-teacher-quarter group that differs between the two columns differs solely
+  because of the comment flag, as designed.
+- Window-function refactor (post-review) reproduces byte-identical row counts
+  and health combinations to the `GROUP BY` version it replaced.
+- Orphan-scoping join confirmed as a real but not currently load-bearing
+  safeguard: zero overlap between the 83 previously-identified orphan sections
+  and the actually-flagged student population at merge time.
+- `kipptaf` reparses clean after the
+  `int_tableau__gradebook_audit_flags_calculations` deletion; confirmed zero
+  remaining `ref()` consumers before deleting.
+
+Refs #3908.

@@ -4,8 +4,8 @@ description: >-
   Use when any question or task touches the gradebook audit data model or its
   lineage. Triggers: explaining the model, listing refs/lineage/sources for the
   gradebook audit dashboard, adding/removing a flag, adding a region, debugging
-  a flag that isn't firing, or working on any model from
-  int_tableau__gradebook_audit_* through rpt_tableau__gradebook_audit.
+  a flag that isn't firing, or working on rpt_tableau__gradebook_audit or
+  rpt_gsheets__gradebook_audit_student_flags and their upstream models.
 ---
 
 # Gradebook Audit Data Model
@@ -59,6 +59,11 @@ Current `depends_on` list (update if the exposure changes):
 There is also a disabled exposure `gradebook_audit_teacher_report` — mention it
 only if the user asks about disabled or archived workbooks.
 
+The companion student-flags Google Sheet has its own separate exposure in
+`src/dbt/kipptaf/models/exposures/google-sheets.yml`, named
+`rpt_gsheets__gradebook_audit_student_flags` — check there if asked about the
+gsheets side rather than the Tableau side.
+
 ---
 
 ## Procedure: Explain the data model
@@ -100,25 +105,43 @@ present it as fact.
 
 ## Procedure: Add a new flag
 
-`stg_google_sheets__gradebook_flags` is disabled — no sheet step needed.
-`rpt_tableau__gradebook_audit.sql` has two UNPIVOT lists that both need updating
-for a `student_course`-grain flag — `health_calc` (3 flags, drives
-`is_healthy_gradebook`) and `flags_unpivot` (2 flags, drives the Branch 3 output
-rows). A non-`student_course` flag (teacher/assignment grain, like
-`expected_assign_count_not_met`) only goes in `health_calc`'s list and is
-emitted as a literal `audit_flag_name`/`audit_flag_value` pair in its own Branch
-(see Branch 2's pattern).
+`stg_google_sheets__gradebook_flags` is disabled — no sheet step needed. Since
+the July 2026 teacher/student split there are no UNPIVOT lists — every flag is a
+hardcoded boolean column, and which model it lives in depends on its grain. Per
+the split's design goal, do NOT add a "reason" column explaining why a flag
+fired — flags stay aggregated booleans.
 
-1. Add the boolean column to the source model that computes the flag (see
-   reference doc flag inventory for which model owns each flag type).
-2. Student-course flag: add the flag name to BOTH the `health_calc` and
-   `flags_unpivot` UNPIVOT lists in `rpt_tableau__gradebook_audit.sql`.
-   Teacher/assignment-grain flag: add it only to `health_calc`'s list and add a
-   branch emitting it as a literal, following Branch 2's pattern.
-3. Update the properties YAML for the source model and
-   `rpt_tableau__gradebook_audit`.
-4. Build the modified models. Verify the flag appears in
-   `rpt_tableau__gradebook_audit`.
+**Student-level flag** (per student × section × quarter, like
+`qt_percent_grade_greater_100`/`qt_grade_70_comment_missing`):
+
+1. Add the boolean column to `rpt_gsheets__gradebook_audit_student_flags.sql`
+   (`student_course_flags` CTE), and add it to the final filter
+   (`where qt_percent_grade_greater_100 or qt_grade_70_comment_missing or <new_flag>`).
+2. Add a matching `has_<flag>` boolean to `rpt_tableau__gradebook_audit.sql`'s
+   `student_flags_aggregate` CTE (`countif(<new_flag>) > 0 as has_<flag>`), and
+   thread it through `with_section_flags` (broadcast) and `health_calc` (both
+   health columns, unless it's specifically excluded from one like
+   `has_grade_below_70_no_comment` is from
+   `is_healthy_gradebook_excl_comments`).
+3. Update the properties YAML for both models.
+4. Build both models — `rpt_gsheets__gradebook_audit_student_flags` first, then
+   `rpt_tableau__gradebook_audit` (it reads the former).
+
+**Category-level flag** (per section × quarter × category, like
+`not_enough_assignments`):
+
+1. Add the boolean to `rpt_tableau__gradebook_audit.sql`'s `category_summary`
+   CTE (populated on `category_summary` rows; null it on the `assignment_detail`
+   branch of `combined`, matching the existing null-placeholder pattern).
+2. Thread it into `health_calc`'s `logical_or(...)` for both health columns
+   (unless deliberately excluded from one).
+3. Update the properties YAML.
+4. Build `rpt_tableau__gradebook_audit`.
+
+Either way, verify the row-count floor is unaffected (still exactly 4
+`category_summary` rows per section × quarter) and check
+`is_healthy_gradebook_all_flags`/`_excl_comments` pick up the new flag
+correctly.
 
 ---
 
@@ -126,12 +149,14 @@ emitted as a literal `audit_flag_name`/`audit_flag_value` pair in its own Branch
 
 `stg_google_sheets__gradebook_flags` is disabled — no sheet step needed.
 
-1. Remove the boolean column from the source model that computes the flag.
-2. Remove the flag name from the `health_calc` UNPIVOT list, and from
-   `flags_unpivot`'s UNPIVOT list if it was a `student_course` flag, in
-   `rpt_tableau__gradebook_audit.sql`.
-3. Update the properties YAML for the source model and
-   `rpt_tableau__gradebook_audit`.
+1. Remove the boolean column from wherever it's computed
+   (`rpt_gsheets__gradebook_audit_student_flags` for a student-level flag,
+   `rpt_tableau__gradebook_audit`'s `category_summary` CTE for a category-level
+   one).
+2. Remove it from every place it's threaded through: the gsheets model's final
+   filter (if student-level), `student_flags_aggregate` / `with_section_flags`
+   (if student-level), and both `health_calc` `logical_or(...)` expressions.
+3. Update the properties YAML for the affected model(s).
 4. Build the modified models.
 
 ---
@@ -144,13 +169,13 @@ emitted as a literal `audit_flag_name`/`audit_flag_value` pair in its own Branch
    [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
 2. Verify `int_powerschool__u_expectations_qtd_unpivot` returns rows for the new
    region.
-3. No flag sheet changes needed — the UNPIVOT lists in
+3. No flag sheet changes needed — the flag columns in
    `rpt_tableau__gradebook_audit` apply to all regions. The only exclusions,
-   applied uniformly across all three branches in
-   `int_tableau__gradebook_audit_flags_calculations`, are
+   applied in `category_join`'s `WHERE` clause (and matched in
+   `rpt_gsheets__gradebook_audit_student_flags`'s own filters), are
    `_dbt_source_project != 'kippmiami'` and `school_level_alt != 'ES'` (MS/HS
    only). Confirm sections for the new region appear in
-   `int_tableau__gradebook_audit_flags_calculations`.
+   `rpt_tableau__gradebook_audit`.
 
 ---
 
@@ -175,27 +200,39 @@ views this summer"
 Both problems must be fixed together. Changing only the scaffold year or only
 the `grades_type` will still produce no data.
 
-**Files to edit:**
+**Files to edit** (as of the July 2026 teacher/student split —
+`int_tableau__gradebook_audit_flags_calculations` no longer exists;
+`rpt_gsheets__gradebook_audit_student_flags` is new and takes its place in this
+list):
 
-- `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__gradebook_audit_flags_calculations.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_audit.sql`
+- `src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__gradebook_audit_student_flags.sql`
 - `src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__u_expectations_qtd_unpivot.sql`
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__gradebook_es_comments.sql`
 
 **Four changes to make:**
 
-1. In `int_tableau__gradebook_audit_flags_calculations` — change the year filter
-   (appears 3 times, marked with `/* summer toggle: see skill */`):
+1. In `rpt_tableau__gradebook_audit` — change the year filter in
+   `category_join`'s `WHERE` clause (1 occurrence, marked
+   `/* summer toggle: see skill */`):
 
    ```sql
-   -- change this (appears 3 times):
+   -- change this:
    s.academic_year = {{ var("current_academic_year") }}
    -- to this:
    s.academic_year = {{ var("current_academic_year") - 1 }}
    ```
 
-   Also change the `quarter_course_grades` join grades type filter (appears 1
-   time, also marked with `/* summer toggle: see skill */`):
+2. In `rpt_gsheets__gradebook_audit_student_flags` — change both occurrences
+   (marked `/* summer toggle: see skill */`): the outer `academic_year` filter,
+   and the `quarter_course_grades` join's `grades_type` filter:
+
+   ```sql
+   -- change this:
+   s.academic_year = {{ var("current_academic_year") }}
+   -- to this:
+   s.academic_year = {{ var("current_academic_year") - 1 }}
+   ```
 
    ```sql
    -- change this:
@@ -206,18 +243,9 @@ the `grades_type` will still produce no data.
 
    This routes the grade lookup to `stg_powerschool__storedgrades` (prior-year
    archived quarter grades) instead of `base_powerschool__final_grades` (empty
-   until teachers start entering grades for the new year).
-
-2. In `rpt_tableau__gradebook_audit` — change the year filter in both UNION
-   branches (appears twice in WHERE clauses, marked with
-   `/* summer toggle: see skill */`):
-
-   ```sql
-   -- change this (appears 2 times):
-   s.academic_year = {{ var("current_academic_year") }}
-   -- to this:
-   s.academic_year = {{ var("current_academic_year") - 1 }}
-   ```
+   until teachers start entering grades for the new year). This model's
+   `quarter_course_grades` CTE and toggle behave exactly like the old
+   `int_tableau__gradebook_audit_flags_calculations` did.
 
 3. In `int_powerschool__u_expectations_qtd_unpivot` — change both occurrences
    (one filters `int_powerschool__calendar_week`, marked
@@ -233,10 +261,11 @@ the `grades_type` will still produce no data.
 
    This model has no `academic_year` column upstream (`U_EXPECTATIONS` reflects
    whatever's currently live in PowerSchool, not a specific year) — its
-   `academic_year` is a literal stamped on every row. `flags_calculations` joins
-   to it on `academic_year` among other keys; leaving this model at
-   `current_academic_year` while `flags_calculations` is toggled to `- 1` breaks
-   that join and silently drops all `assignment_teacher` rows.
+   `academic_year` is a literal stamped on every row.
+   `rpt_tableau__gradebook_audit` joins to it on `academic_year` among other
+   keys; leaving this model at `current_academic_year` while
+   `rpt_tableau__gradebook_audit` is toggled to `- 1` breaks that join and
+   silently drops all `category_summary`/ `assignment_detail` rows.
 
 4. In `rpt_tableau__gradebook_es_comments` — change the year filter (1
    occurrence, marked `-- summer toggle: see skill`):
@@ -248,11 +277,12 @@ the `grades_type` will still produce no data.
    s.academic_year = {{ var("current_academic_year") - 1 }}
    ```
 
-   **No `grades_type`/`storedgrades` fallback here, unlike
-   `flags_calculations`** — this was tried and reverted. `flags_calculations`
-   audits MS/HS grades, and `stg_powerschool__storedgrades` genuinely has MS/HS
-   archived Q-term data for the prior year, so its union+fallback pattern gives
-   correct results. `es_comments` only needs comments for ES schools, and
+   **No `grades_type`/`storedgrades` fallback here, unlike the other three
+   files** — this was tried and reverted. The other files audit MS/HS grades
+   (or, for `u_expectations_qtd_unpivot`, aren't grade-sourced at all), and
+   `stg_powerschool__storedgrades` genuinely has MS/HS archived Q-term data for
+   the prior year, so a union+fallback pattern gives correct results there.
+   `es_comments` only needs comments for ES schools, and
    `stg_powerschool__storedgrades` has **no Q-term data at all for ES schools in
    academic years 2021, 2024, or 2025** (confirmed empty via direct query — only
    2020/2022/2023 exist). Adding the same union pattern here doesn't add safety;
@@ -287,7 +317,7 @@ Build and verify after all four changes:
 ```bash
 uv run dbt build \
   --select int_powerschool__u_expectations_qtd_unpivot \
-    int_tableau__gradebook_audit_flags_calculations rpt_tableau__gradebook_audit \
+    rpt_gsheets__gradebook_audit_student_flags rpt_tableau__gradebook_audit \
     rpt_tableau__gradebook_es_comments \
   --project-dir src/dbt/kipptaf \
   --defer \
@@ -297,7 +327,8 @@ uv run dbt build \
 **When to revert:** once the new school year starts and teachers begin entering
 grades in PowerSchool (typically Q1), revert all changes:
 `current_academic_year - 1` → `current_academic_year` in all four files, and
-`'last_year'` → `'current_year'` in flags calculations.
+`'last_year'` → `'current_year'` in
+`rpt_gsheets__gradebook_audit_student_flags`.
 
 ---
 
@@ -305,29 +336,44 @@ grades in PowerSchool (typically Q1), revert all changes:
 
 Ask: which flag, region, school level, and quarter.
 
+First establish which flag: `has_grade_above_100` /
+`has_grade_below_70_no_comment` (student-level, aggregated from
+`rpt_gsheets__gradebook_audit_student_flags`), `not_enough_assignments`
+(category-level), or one of the two health columns
+(`is_healthy_gradebook_all_flags` / `is_healthy_gradebook_excl_comments`).
+
 Check in order:
 
-1. **Boolean `true` in the source model?** Find which model computes the flag
-   (reference doc flag inventory) and query it directly.
-2. **Section in the scaffold?** Check
-   `int_tableau__gradebook_audit_flags_calculations` for the section/quarter
-   combination. Two silent exclusion rules apply uniformly across all three
-   branches (`sections_teacher`, `assignment_teacher`, `student_course`):
+1. **Boolean `true` at its source?** Student-level: query
+   `rpt_gsheets__gradebook_audit_student_flags` directly for the
+   student/section/quarter — it's already filtered to flagged-only, so if the
+   student doesn't appear there at all, the underlying grade/comment computation
+   didn't fire. Category-level: query `rpt_tableau__gradebook_audit` filtered to
+   `row_type = 'category_summary'` for the section/quarter/category.
+2. **In scope at all?** Two silent exclusion rules apply in `category_join`'s
+   `WHERE` (`rpt_tableau__gradebook_audit`) and matched in
+   `rpt_gsheets__gradebook_audit_student_flags`'s own filters:
    - `_dbt_source_project != 'kippmiami'` — Miami is excluded at source (AY
      2026-2027 onward)
-   - `school_level_alt != 'ES'` — ES is excluded everywhere, including the
-     `student_course` branch; ES is handled separately by
-     `rpt_tableau__gradebook_es_comments`
-3. **Flag in the UNPIVOT list?** Two lists in `rpt_tableau__gradebook_audit.sql`
-   matter: `health_calc`'s 3-flag list (`qt_percent_grade_greater_100`,
-   `qt_grade_70_comment_missing`, `expected_assign_count_not_met`) drives
-   `is_healthy_gradebook`; `flags_unpivot`'s 2-flag list (the same two
-   `student_course` flags) drives the Branch 3 output rows.
-   `expected_assign_count_not_met` is emitted as a hardcoded literal in Branch
-   2, not unpivoted.
-4. **Is the affected student/course/quarter one of the known ambiguous-dedup
-   cases in `int_extracts__course_enrollments_by_term`?** Its `student_course`
-   branch (Branch 3) picks one section per student/course/quarter with a
+   - `school_level_alt != 'ES'` — ES is excluded everywhere; ES is handled
+     separately by `rpt_tableau__gradebook_es_comments`
+3. **For a student-level flag, did it survive the aggregation into
+   `rpt_tableau__gradebook_audit`?** `student_flags_aggregate` groups
+   `rpt_gsheets__gradebook_audit_student_flags` to
+   `_dbt_source_project, sectionid, quarter` — if the flagged row exists in the
+   gsheets model but `has_<flag>` still reads `false` on the teacher-side
+   report, check the join in `with_section_flags` (on
+   `_dbt_source_project, sectionid, quarter`) for a key mismatch, not the flag
+   logic itself.
+4. **Row-count floor intact?** Every section × quarter should have exactly 4
+   `category_summary` rows (one per W/H/F/S). If fewer, the
+   `int_powerschool__u_expectations_qtd_unpivot` join in `category_join` is
+   probably missing a category for that region/school_level/quarter — check that
+   model directly, not the flag logic.
+5. **Is the affected student/course/quarter one of the known ambiguous-dedup
+   cases in `int_extracts__course_enrollments_by_term`?** (Inherited by
+   `rpt_gsheets__gradebook_audit_student_flags`, which reads it.) Its
+   `enrollments` CTE picks one section per student/course/quarter with a
    `row_number()` tiebreaker that is frequently a true tie (see reference doc) —
    when it is, the teacher/section actually in scope for that student that
    quarter is arbitrary and can differ from what you'd expect from PowerSchool.

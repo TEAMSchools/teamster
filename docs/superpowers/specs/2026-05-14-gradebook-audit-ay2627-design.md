@@ -287,7 +287,26 @@ the inverse of a bare `max()`.
 extracted out entirely, and the section/assignment branches are being redesigned
 around always-present boolean columns instead of filtered UNION branches.
 
-## Teacher/Student Split (July 2026 revision)
+## ~~Teacher/Student Split (July 2026 revision)~~ (implemented)
+
+Implemented as designed below, with one deviation and one addition:
+
+- **Deviation:** `category_summary`'s aggregates (`expectation`,
+  `assignments_entered_count`, `not_enough_assignments`) are computed via window
+  functions (`over (partition by project, sectionid, quarter, category)`) plus
+  `dbt_utils.deduplicate()`, not a `GROUP BY` — a 30-column `GROUP BY` over
+  every dimension column was flagged in review as unnecessary overhead. Window
+  functions preserve the per-assignment row grain that `assignment_detail` also
+  needs from the same upstream CTE, so the join runs once and each downstream
+  CTE picks its own grain (dedup for the collapsed summary, a plain filter for
+  the detail rows) rather than joining twice.
+- **Addition:** `rpt_gsheets__gradebook_audit_student_flags` also carries
+  `teacher_employee_number` and `is_current_quarter`, added after this spec was
+  written to make the sheet easier to filter/action on.
+- `int_tableau__gradebook_audit_flags_calculations` was deleted outright
+  (confirmed zero remaining consumers), not left disabled — this repo's usual
+  "disable, don't delete" convention for deprecated models was set aside here by
+  explicit request.
 
 ### Why
 
