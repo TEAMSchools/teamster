@@ -95,18 +95,19 @@ with
             and s.exclude_from_gpa = 0
     ),
 
-    category_dedup as (
-        {{
-            dbt_utils.deduplicate(
-                relation="category_join",
-                partition_by="_dbt_source_project, sectionid, `quarter`, assignment_category_code",
-                order_by="assignmentid desc",
-            )
-        }}
-    ),
-
     category_summary as (
-        select
+        -- grain projection: every selected column is functionally determined by
+        -- the partition key (_dbt_source_project, sectionid, `quarter`,
+        -- assignment_category_code); not a mask for upstream duplicates. Collapses
+        -- the per-assignment fan-out from category_join's rollup LEFT JOIN — the
+        -- section columns come from int_extracts__course_schedule_by_term (unique
+        -- per section/quarter), the category columns from
+        -- int_powerschool__u_expectations_qtd_unpivot (unique per
+        -- region/school_level/quarter/category), and expectation /
+        -- assignments_entered_count / not_enough_assignments are all window
+        -- aggregates over that same partition, so every row in a category is
+        -- byte-identical here.
+        select distinct
             _dbt_source_project,
             academic_year,
             academic_year_display,
@@ -153,7 +154,7 @@ with
                 assignments_entered_count_no_flags < expectation, true, false
             ) as not_enough_assignments,
 
-        from category_dedup
+        from category_join
     ),
 
     assignment_detail as (
