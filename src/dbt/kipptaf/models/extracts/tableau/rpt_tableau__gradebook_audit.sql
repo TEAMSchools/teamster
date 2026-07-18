@@ -97,16 +97,9 @@ with
 
     category_summary as (
         -- grain projection: every selected column is functionally determined by
-        -- the partition key (_dbt_source_project, sectionid, `quarter`,
-        -- assignment_category_code); not a mask for upstream duplicates. Collapses
-        -- the per-assignment fan-out from category_join's rollup LEFT JOIN — the
-        -- section columns come from int_extracts__course_schedule_by_term (unique
-        -- per section/quarter), the category columns from
-        -- int_powerschool__u_expectations_qtd_unpivot (unique per
-        -- region/school_level/quarter/category), and expectation /
-        -- assignments_entered_count / not_enough_assignments are all window
-        -- aggregates over that same partition, so every row in a category is
-        -- byte-identical here.
+        -- (_dbt_source_project, sectionid, `quarter`, assignment_category_code),
+        -- so DISTINCT collapses category_join's per-assignment fan-out; not a mask
+        -- for upstream duplicates.
         select distinct
             _dbt_source_project,
             academic_year,
