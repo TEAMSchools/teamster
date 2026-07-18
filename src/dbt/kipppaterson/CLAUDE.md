@@ -14,12 +14,10 @@ models/
     intermediate/
 ```
 
-PowerSchool data source: **SFTP** (`sftp.+enabled: true`,
-`odbc.+enabled: false`)
-
-This is the only NJ district using SFTP instead of ODBC for PowerSchool. Many
-gradebook-related models (GPA, category grades, assignments) are explicitly
-disabled.
+PowerSchool data source: **dlt** (the package default; `odbc` and `sftp` are
+off). Paterson disables a set of grad-plan and gradebook `stg_powerschool__*`
+dlt models its PowerSchool instance does not populate — see the
+`powerschool.sis.staging.dlt` block in `dbt_project.yml`.
 
 ## Source Packages
 

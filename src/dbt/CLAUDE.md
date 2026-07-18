@@ -246,6 +246,17 @@ Set `contract: enforced: false` on the model and keep `relationships`/uniqueness
 data tests for coverage. A bounded Jinja unroll is the alternative but hits
 "query is too complex" when it re-expands view upstreams once per level.
 
+## Counting package-variant models enabled in a consuming district
+
+`dbt ls --select "path:models/sis/staging/<variant>"` returns **0** in a
+consuming district — the variant's models live in the _package_ dir, not the
+district's `models/` path, so `path:` (relative to the project-dir) misses them.
+Count with
+`dbt ls --resource-type model --output path | grep 'sis/staging/<variant>/'`. A
+package's own `dbt_project.yml` `+enabled: false` (models AND sources) applies
+to every consumer — no per-district override needed (see the powerschool
+odbc/sftp variants).
+
 ## dbt Cloud CI builds only kipptaf
 
 The dbt Cloud CI job (`Build - CI (Modified)`, dbt Cloud project 211862) runs

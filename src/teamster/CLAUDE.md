@@ -76,7 +76,7 @@ Libraries fall into four patterns based on how they ingest data:
 | **SFTP file drop** | collegeboard, edplan, fldoe, iready, nsc, pearson, performance_management, renlearn, titan | `build_sftp_*_asset()` from `libraries/sftp/` + Avro schemas    |
 | **REST API**       | coupa, deanslist, knowbe4, level_data, overgrad, smartrecruiters                           | Custom `build_*_asset()` factory + resource class               |
 | **Framework**      | dbt, dlt, google, airbyte, fivetran                                                        | Dagster-native integration (`dagster-dbt`, `dagster-dlt`, etc.) |
-| **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (ODBC + SFTP + API)                    | Multiple factories per product line                             |
+| **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (dlt + SFTP + API; ODBC archived)      | Multiple factories per product line                             |
 
 Schema-only libraries (collegeboard, dayforce, fldoe, nsc, pearson,
 performance_management) contain only Avro schemas — the asset is built in the
@@ -233,10 +233,12 @@ missing manifest or env vars.
 
 In the codespace, importing a district `definitions.py` first needs the dbt
 manifest (`dagster-dbt project prepare-and-package`, above). With the manifest,
-the powerschool districts (`kippnewark`, `kippcamden`, `kippmiami`) import
-cleanly. `kipptaf.definitions` still fails at module load because the
-Illuminate/Zendesk dlt credential specs call `EnvVar("...").get_value()` eagerly
-(unset in the codespace). For a `kipptaf` per-integration change, import that
-integration submodule alone (e.g.
-`import teamster.code_locations.kipptaf.finalsite`), not the `definitions`
-module.
+`kippnewark` and `kippcamden` import cleanly. `kipptaf.definitions` AND
+`kippmiami.definitions` fail at module load: kipptaf on the Illuminate/Zendesk
+dlt credential specs, kippmiami on the Focus dlt spec
+(`resolve_configuration(ConnectionStringCredentials(), sections=("FOCUS_DB",))`
+in `dlt/focus/assets.py`) — both call the credential resolver eagerly (unset in
+the codespace). For a change to either, `py_compile` the edited files and import
+the affected submodule alone (e.g.
+`import teamster.code_locations.kipptaf.finalsite` or
+`teamster.code_locations.kippmiami.extracts`), not the `definitions` module.

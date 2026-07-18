@@ -16,7 +16,7 @@ def _make_resource():
         tunnel_remote_host="oracle.internal",
     )
     # Outside a real Dagster run, `_logger` (backing the `log` property used by
-    # `open_ssh_tunnel_paramiko`) is only set via `setup_for_execution` or this
+    # `open_ssh_tunnel`) is only set via `setup_for_execution` or this
     # public setter — without it, `self.log` raises `CheckError`.
     ssh_resource.set_logger(logging.getLogger(__name__))
     return ssh_resource
@@ -61,7 +61,7 @@ def test_paramiko_tunnel_forwards_to_remote_bind():
         client_to_remote = os.urandom(50_000)
         remote_to_client = os.urandom(50_000)
 
-        with ssh_resource.open_ssh_tunnel_paramiko(local_port=0) as local_port:
+        with ssh_resource.open_ssh_tunnel(local_port=0) as local_port:
             assert isinstance(local_port, int) and local_port > 0
 
             with socket.create_connection(("127.0.0.1", local_port), timeout=5) as s:
@@ -111,7 +111,7 @@ def test_paramiko_tunnel_listener_closes_on_exit():
 
     object.__setattr__(ssh_resource, "get_connection", lambda: client)
 
-    with ssh_resource.open_ssh_tunnel_paramiko(local_port=0) as local_port:
+    with ssh_resource.open_ssh_tunnel(local_port=0) as local_port:
         pass
 
     try:
@@ -165,7 +165,7 @@ def test_paramiko_tunnel_cleanup_does_not_hang_on_stuck_handler():
     client_sockets: list[socket.socket] = []
 
     def run_tunnel():
-        with ssh_resource.open_ssh_tunnel_paramiko(local_port=0) as local_port:
+        with ssh_resource.open_ssh_tunnel(local_port=0) as local_port:
             s = socket.create_connection(("127.0.0.1", local_port), timeout=5)
             client_sockets.append(s)
             # Send nothing: both `self.request` (this socket, server side)
@@ -183,7 +183,7 @@ def test_paramiko_tunnel_cleanup_does_not_hang_on_stuck_handler():
 
     try:
         assert exited.is_set(), (
-            "open_ssh_tunnel_paramiko's context exit hung for 5s+ — "
+            "open_ssh_tunnel's context exit hung for 5s+ — "
             "server_close() likely blocked joining a handler thread stuck "
             "in select() on a still-open forwarded connection"
         )

@@ -1,8 +1,9 @@
 # CLAUDE.md — `dbt/powerschool/`
 
 Source-system staging project for **PowerSchool SIS** data. Produces clean,
-contract-enforced staging models consumed by all district-specific dbt projects
-(`kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`) and `kipptaf`.
+contract-enforced staging models consumed by the NJ district dbt projects
+(`kippnewark`, `kippcamden`, `kipppaterson`) and `kipptaf`. `kippmiami` no
+longer consumes it — its SIS moved to Focus (#4441).
 
 ## Model Structure
 
@@ -11,15 +12,16 @@ models/
   sis/
     base/        # base models (light renaming, no logic)
     staging/
-      odbc/      # models sourced from live Oracle ODBC connection (enabled by default)
-      sftp/      # models sourced from SFTP file extracts (disabled by default)
-      dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); disabled by default
+      dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); ENABLED by default — the live SIS path
+      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; no district builds it)
+      sftp/      # models sourced from SFTP file extracts (disabled by default; unused)
     intermediate/
 ```
 
-All staging models have `contract: enforced: true`. Each district project
-overrides `odbc.+enabled` and `sftp.+enabled` in its own `dbt_project.yml` to
-select the ingestion method.
+All staging models have `contract: enforced: true`. The `dlt` variant is enabled
+by default (every consuming district ingests PowerSchool via dlt); `odbc` and
+`sftp` default off. A district only overrides these flags to disable specific
+`dlt` tables it does not populate (e.g. `kipppaterson`).
 
 ## Key Variables
 
