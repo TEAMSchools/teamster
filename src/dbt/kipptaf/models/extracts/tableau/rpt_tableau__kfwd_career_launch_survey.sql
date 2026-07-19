@@ -50,6 +50,40 @@ with
         group by contact_id
     ),
 
+    career_conversation_checklist as (
+        select
+            contact_id,
+
+            (
+                select countif(item),
+                from
+                    unnest(
+                        [
+                            is_resume_score,
+                            is_linkedin,
+                            is_mock_interview_or_prep,
+                            is_professional_references_list,
+                            is_job_search_template,
+                            is_cover_letter_template,
+                            is_work_samples
+                        ]
+                    ) as item
+            ) as career_conversation_items_complete_count,
+
+            if(
+                is_resume_score
+                and is_linkedin
+                and is_mock_interview_or_prep
+                and is_professional_references_list
+                and is_job_search_template
+                and is_cover_letter_template
+                and is_work_samples,
+                true,
+                false
+            ) as is_career_conversation_complete,
+        from {{ ref("stg_google_appsheet__kfwd_career_conversations__output") }}
+    ),
+
     roster as (
         select
             r.contact_id,
@@ -119,6 +153,12 @@ with
             coalesce(ccr.cc4_count, 0) as cc4_count,
             coalesce(ccr.cc5_count, 0) as cc5_count,
             coalesce(ccr.cc_total_count, 0) as cc_total_count,
+            coalesce(
+                ccc.career_conversation_items_complete_count, 0
+            ) as career_conversation_items_complete_count,
+            coalesce(
+                ccc.is_career_conversation_complete, false
+            ) as is_career_conversation_complete,
 
             extract(
                 month from r.contact_expected_college_graduation
@@ -165,6 +205,7 @@ with
             {{ ref("stg_google_appsheet__kfwd_career_conversations__output") }} as cc
             on r.contact_id = cc.contact_id
         left join career_conversations as ccr on r.contact_id = ccr.contact_id
+        left join career_conversation_checklist as ccc on r.contact_id = ccc.contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
@@ -337,6 +378,8 @@ select
     r.cc4_count,
     r.cc5_count,
     r.cc_total_count,
+    r.career_conversation_items_complete_count,
+    r.is_career_conversation_complete,
 
     sp.survey_id,
     sp.survey_title,
