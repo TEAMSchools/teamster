@@ -15,6 +15,10 @@ with
                         "kippmiami_powerschool",
                         "int_powerschool__gradebook_assignments",
                     ),
+                    source(
+                        "kipppaterson_powerschool",
+                        "int_powerschool__gradebook_assignments",
+                    ),
                 ]
             )
         }}
