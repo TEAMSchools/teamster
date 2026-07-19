@@ -19,31 +19,46 @@ it by describing what you need to do with the gradebook audit.
 ## What is the gradebook audit?
 
 KIPP TAF schools require teachers to maintain PowerSchool gradebooks that follow
-the network's grading policy. The gradebook audit dashboard gives school leaders
-and instructional coaches a per-quarter view of compliance across every section,
-flagging deviations from policy so they can be addressed before the end of the
-quarter.
+the network's grading policy. The audit surfaces deviations from policy each
+quarter so they can be addressed before the quarter closes. Since the July 2026
+teacher/student split it produces **two outputs** from one shared pipeline:
 
-The audit operates at multiple grains simultaneously:
+- **A Tableau dashboard** (`rpt_tableau__gradebook_audit`) for school leaders
+  and instructional coaches — teacher/section-facing gradebook compliance with
+  **zero student PII**. Per section × quarter × assignment category it reports
+  whether enough assignments were entered, lists individual assignments that
+  fail a validity check, and carries section-level "any student flagged"
+  booleans plus per-teacher "healthy gradebook" booleans.
+- **A Google Sheet** (`rpt_gsheets__gradebook_audit_student_flags`) for ops
+  follow-up — the student-level grade anomalies, which carry PII (student name
+  and number), one row per flagged student × section × quarter.
 
-- **Assignment-student** — did this specific student receive a valid score on
-  this assignment?
-- **Class-category** — has this teacher posted the required number of
-  assignments in this category this week? Are scores being entered on time?
-- **Student-course** — does this student's category grade meet policy thresholds
-  (grade inflation, effort/formative/summative missing)?
-- **End-of-quarter (EOQ)** — are comments and final grades correctly entered by
-  the end of each quarter?
+The audit operates at several grains:
+
+- **Assignment** — did this assignment receive valid scores (correct point
+  value, enough of the class graded, not over-exempt)? This is the
+  `assignment_has_flags` rollup, surfaced on the dashboard as per-assignment
+  detail rows.
+- **Section-category, quarter-to-date** — has this teacher entered the required
+  number of assignments in this category so far this quarter? (Quarter-grain as
+  of AY 2026-2027 — previously a weekly check.)
+- **Student-course** — is a student's quarter course grade out of policy: above
+  100, or below 70 with no end-of-quarter comment? These are the two flags that
+  feed the Google Sheet (and, aggregated with PII dropped, the dashboard's
+  section-level booleans).
+- **End-of-quarter (EOQ)** — are comments and final grades entered by quarter
+  close? MS/HS via the below-70 comment flag; ES via the separate
+  `rpt_tableau__gradebook_es_comments` model.
 
 ### Dashboard coverage (AY 2026-2027)
 
 | Region   | School level | Coverage depth                              | Notes                                                          |
 | -------- | ------------ | ------------------------------------------- | -------------------------------------------------------------- |
 | Camden   | MS, HS       | Full audit (all applicable flags)           |                                                                |
-| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
 | Newark   | MS, HS       | Full audit (all applicable flags)           |                                                                |
-| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
 | Paterson | MS           | Full audit (all applicable flags)           | Added AY 2026-2027; expectations spoofed from Newark's MS data |
+| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
+| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook            |
 | Paterson | ES           | EOQ comments only (`qt_es_comment_missing`) | Added AY 2026-2027                                             |
 | Miami    | n/a          | Removed                                     | Moved to Focus gradebook; excluded at scaffold level           |
 
@@ -68,16 +83,7 @@ up as a third region alongside Camden and Newark — no different from a real
 region's data at that point. Tracked:
 [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
 
-### Dashboard coverage (AY 2025-2026)
-
-| Region   | School level | Coverage depth                              | Notes                                               |
-| -------- | ------------ | ------------------------------------------- | --------------------------------------------------- |
-| Camden   | MS, HS       | Full audit (all applicable flags)           |                                                     |
-| Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook |
-| Newark   | MS, HS       | Full audit (all applicable flags)           |                                                     |
-| Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook |
-| Miami    | ES, MS       | Full audit (all applicable flags)           | Removed AY 2026-2027 — moved to Focus               |
-| Paterson | n/a          | Not on dashboard                            | Added AY 2026-2027                                  |
+---
 
 ## Grading policy overview
 
@@ -470,6 +476,93 @@ Verified empirically at merge time: every section-quarter has exactly 4
 internally consistent (no teacher/quarter is healthy-under-all-flags but
 unhealthy-under-excl-comments, which would be a logical impossibility given the
 second is strictly more lenient).
+
+---
+
+## Start-of-year procedure
+
+As of AY 2026-2027, there is no flags configuration sheet to roll over. The
+`stg_google_sheets__gradebook_flags` model is disabled. The three active audit
+flags (`has_grade_above_100`, `has_grade_below_70_no_comment`,
+`not_enough_assignments`) are hardcoded in `rpt_tableau__gradebook_audit`'s
+`health_calc` CTE and require no annual configuration.
+
+### Step 1 — Confirm assignment expectations are updated in PowerSchool
+
+The expectations data that drives `not_enough_assignments` comes from
+`int_powerschool__u_expectations_qtd_unpivot`, which reads the `U_EXPECTATIONS`
+table populated by the **KIPP NJ Gradebook Audit** PowerSchool plugin. The
+`U_EXPECTATIONS` table does not have an `academic_year` field — it reflects the
+current state of expectations in PowerSchool. Until the T&L team member
+responsible for gradebook expectations updates the table for the new year, the
+audit will continue to report against the prior year's expectation values.
+
+Plugin source and update instructions:
+[TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
+
+### Step 2 — Revert the summer toggle (if applied)
+
+If the summer toggle was applied during the off-season (switching year filters
+to `current_academic_year - 1`, grades type to `'last_year'` where applicable)
+to `rpt_tableau__gradebook_audit`,
+`int_extracts__gradebook_audit_student_flags`,
+`int_powerschool__u_expectations_qtd_unpivot`, and
+`rpt_tableau__gradebook_es_comments`, revert all changes in all four files
+before the new school year begins. See the `gradebook-audit` skill for the exact
+lines — the student grade/comment toggle now lives in
+`int_extracts__gradebook_audit_student_flags` (the July 2026 intermediate
+extraction moved it out of `rpt_gsheets__gradebook_audit_student_flags`), and
+`rpt_tableau__gradebook_es_comments` does not use the
+`grades_type`/`storedgrades` fallback the other three do (see the skill for
+why).
+
+---
+
+## Open questions and future work
+
+- **Task 9 — assignment validity filter**: delivered (July 2026). Flagged
+  assignments (`assignment_has_flags = true`) do not count toward the QTD valid
+  total, and `not_enough_assignments` fires when
+  `assignments_entered_count_no_flags < expectation` (renamed from
+  `expected_assign_count_not_met` /
+  `total_assign_count_qtd_by_cat_section_no_flags` in the July 2026
+  teacher/student split). Still open from the original ask: whether to keep or
+  consolidate the individual per-student score flags (plan Step 9.4 — a
+  T&L/Tableau-layout decision). See Task 9 in the
+  [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md).
+- ~~**Paterson expectations**~~ — resolved. The KIPP NJ Gradebook Audit plugin
+  still cannot be installed on Paterson's PowerSchool instance, so
+  `U_EXPECTATIONS` is never populated there natively. As of the July 2026
+  teacher/student split, the spoof lives directly in `kipptaf`'s
+  `stg_powerschool__u_expectations` (a `paterson_spoof` CTE reading Newark's
+  real source with a hardcoded `_dbt_source_project`) rather than as a
+  `kipppaterson`-project override model — see the Paterson note above. No
+  remaining code gap.
+- ~~**Teacher/student split**~~ — resolved (July 2026). See "Pipeline overview"
+  above for the current architecture.
+
+See [GitHub issue #3908](https://github.com/TEAMSchools/teamster/issues/3908)
+for the full AY 2026-2027 tracking issue.
+
+---
+
+## Legacy: AY 2025-2026 and superseded
+
+Reference material for the pre-AY 2026-2027 model and the configuration it
+replaced. Kept collapsed for history; none of it describes the current pipeline.
+
+---
+
+??? note "AY 2025-2026 dashboard coverage"
+
+    | Region   | School level | Coverage depth                              | Notes                                               |
+    | -------- | ------------ | ------------------------------------------- | --------------------------------------------------- |
+    | Camden   | MS, HS       | Full audit (all applicable flags)           |                                                     |
+    | Camden   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook |
+    | Newark   | MS, HS       | Full audit (all applicable flags)           |                                                     |
+    | Newark   | ES           | EOQ comments only (`qt_es_comment_missing`) | ES schools do not enter assignments in PS gradebook |
+    | Miami    | ES, MS       | Full audit (all applicable flags)           | Removed AY 2026-2027 — moved to Focus               |
+    | Paterson | n/a          | Not on dashboard                            | Added AY 2026-2027                                  |
 
 ---
 
@@ -1053,126 +1146,59 @@ second is strictly more lenient).
 
 ---
 
-## Configuration: `stg_google_sheets__gradebook_flags`
+??? note "Deprecated: gradebook_flags configuration"
 
-!!! warning "Deprecated in AY 2026-2027" This model is disabled
-(`config: enabled: false`) as of AY 2026-2027.
+    !!! warning "Deprecated in AY 2026-2027" This model is disabled
+    (`config: enabled: false`) as of AY 2026-2027.
 
-    **Why it was removed:** the AY 2026-2027 refactor consolidated all
-    individual flag signals into a small set of boolean columns
-    (`is_healthy_gradebook_all_flags` / `is_healthy_gradebook_excl_comments`
-    as of the July 2026 teacher/student split — see below). The audit no
-    longer calculates a per-flag gradebook score or reports individual flags
-    to Tableau — it surfaces only whether a teacher's gradebook is healthy or
-    not. With no per-flag filtering needed, the per-flag allowlist sheet
-    became vestigial.
+        **Why it was removed:** the AY 2026-2027 refactor consolidated all
+        individual flag signals into a small set of boolean columns
+        (`is_healthy_gradebook_all_flags` / `is_healthy_gradebook_excl_comments`
+        as of the July 2026 teacher/student split — see below). The audit no
+        longer calculates a per-flag gradebook score or reports individual flags
+        to Tableau — it surfaces only whether a teacher's gradebook is healthy or
+        not. With no per-flag filtering needed, the per-flag allowlist sheet
+        became vestigial.
 
-    The source sheet, staging SQL, and YAML remain in the repository in case
-    the per-flag reporting approach is restored in a future year. The INNER
-    JOIN to this model was removed from the pipeline in AY 2026-2027, and the
-    `audit_category` and `code_type` columns it provided were dropped from
-    `rpt_tableau__gradebook_audit`.
+        The source sheet, staging SQL, and YAML remain in the repository in case
+        the per-flag reporting approach is restored in a future year. The INNER
+        JOIN to this model was removed from the pipeline in AY 2026-2027, and the
+        `audit_category` and `code_type` columns it provided were dropped from
+        `rpt_tableau__gradebook_audit`.
 
-    The `src_google_sheets__gradebook_flags` source is also disabled
-    (`config: enabled: false` in `sources-external.yml`) as of AY 2026-2027 —
-    MS signed off on the same audit model as HS, so the sheet has no remaining
-    consumer in any region. Dagster no longer pulls the sheet into BigQuery.
-    Re-enable the source before re-enabling the staging model if this is ever
-    restored.
+        The `src_google_sheets__gradebook_flags` source is also disabled
+        (`config: enabled: false` in `sources-external.yml`) as of AY 2026-2027 —
+        MS signed off on the same audit model as HS, so the sheet has no remaining
+        consumer in any region. Dagster no longer pulls the sheet into BigQuery.
+        Re-enable the source before re-enabling the staging model if this is ever
+        restored.
 
-Previously, this was the flag allowlist. A flag only appeared in the dashboard
-if a matching row existed in this table, making it the primary on/off switch for
-every audit check.
+    Previously, this was the flag allowlist. A flag only appeared in the dashboard
+    if a matching row existed in this table, making it the primary on/off switch for
+    every audit check.
 
-**Grain**: one row per
-`academic_year × region × school_level × code × audit_flag_name`.
+    **Grain**: one row per
+    `academic_year × region × school_level × code × audit_flag_name`.
 
-| Column            | Purpose                                                                                                                                         |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `code_type`       | `'Quarter'` (EOQ flags) or `'Gradebook Category'` (weekly flags)                                                                                |
-| `code`            | Quarter (`Q3`, `Q4`) or category code (`W`, `H`, `F`, `S`)                                                                                      |
-| `audit_category`  | Human-readable grouping shown in Tableau (e.g., `'Missing Score'`, `'Conduct Code'`)                                                            |
-| `audit_flag_name` | Snake-case name matching the boolean column in the source model                                                                                 |
-| `cte_grouping`    | Which UNION branch in `int_tableau__gradebook_audit_flags_calculations` this row targeted (model deleted July 2026 — historical reference only) |
-| `grade_level`     | Set only for conduct code flags that require a grade-level-specific join                                                                        |
-| `alt_code`        | Computed in staging; maps student-category flags to their category code for joining                                                             |
-
----
-
-## Start-of-year procedure
-
-As of AY 2026-2027, there is no flags configuration sheet to roll over. The
-`stg_google_sheets__gradebook_flags` model is disabled. The three active audit
-flags (`has_grade_above_100`, `has_grade_below_70_no_comment`,
-`not_enough_assignments`) are hardcoded in `rpt_tableau__gradebook_audit`'s
-`health_calc` CTE and require no annual configuration.
-
-### Step 1 — Confirm assignment expectations are updated in PowerSchool
-
-The expectations data that drives `not_enough_assignments` comes from
-`int_powerschool__u_expectations_qtd_unpivot`, which reads the `U_EXPECTATIONS`
-table populated by the **KIPP NJ Gradebook Audit** PowerSchool plugin. The
-`U_EXPECTATIONS` table does not have an `academic_year` field — it reflects the
-current state of expectations in PowerSchool. Until the T&L team member
-responsible for gradebook expectations updates the table for the new year, the
-audit will continue to report against the prior year's expectation values.
-
-Plugin source and update instructions:
-[TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins)
-
-### Step 2 — Revert the summer toggle (if applied)
-
-If the summer toggle was applied during the off-season (switching year filters
-to `current_academic_year - 1`, grades type to `'last_year'` where applicable)
-to `rpt_tableau__gradebook_audit`,
-`int_extracts__gradebook_audit_student_flags`,
-`int_powerschool__u_expectations_qtd_unpivot`, and
-`rpt_tableau__gradebook_es_comments`, revert all changes in all four files
-before the new school year begins. See the `gradebook-audit` skill for the exact
-lines — the student grade/comment toggle now lives in
-`int_extracts__gradebook_audit_student_flags` (the July 2026 intermediate
-extraction moved it out of `rpt_gsheets__gradebook_audit_student_flags`), and
-`rpt_tableau__gradebook_es_comments` does not use the
-`grades_type`/`storedgrades` fallback the other three do (see the skill for
-why).
+    | Column            | Purpose                                                                                                                                         |
+    | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+    | `code_type`       | `'Quarter'` (EOQ flags) or `'Gradebook Category'` (weekly flags)                                                                                |
+    | `code`            | Quarter (`Q3`, `Q4`) or category code (`W`, `H`, `F`, `S`)                                                                                      |
+    | `audit_category`  | Human-readable grouping shown in Tableau (e.g., `'Missing Score'`, `'Conduct Code'`)                                                            |
+    | `audit_flag_name` | Snake-case name matching the boolean column in the source model                                                                                 |
+    | `cte_grouping`    | Which UNION branch in `int_tableau__gradebook_audit_flags_calculations` this row targeted (model deleted July 2026 — historical reference only) |
+    | `grade_level`     | Set only for conduct code flags that require a grade-level-specific join                                                                        |
+    | `alt_code`        | Computed in staging; maps student-category flags to their category code for joining                                                             |
 
 ---
 
-## Historical: Q1/Q2 removal (May 2026, superseded)
+??? note "Superseded: Q1/Q2 removal (May 2026)"
 
-In May 2026, Q1 and Q2 were removed from the (now disabled)
-`int_tableau__gradebook_audit_teacher_scaffold` by adding
-`t.term not in ('Q1', 'Q2')` to its `term_weeks` CTE. This was not a policy
-change — the audit policy for Q1 and Q2 was unchanged — but a volume reduction
-to address Tableau Server refresh failures. The AY 2026-2027 quarter-grain
-pipeline restored full Q1-Q4 coverage, superseding this workaround.
+    In May 2026, Q1 and Q2 were removed from the (now disabled)
+    `int_tableau__gradebook_audit_teacher_scaffold` by adding
+    `t.term not in ('Q1', 'Q2')` to its `term_weeks` CTE. This was not a policy
+    change — the audit policy for Q1 and Q2 was unchanged — but a volume reduction
+    to address Tableau Server refresh failures. The AY 2026-2027 quarter-grain
+    pipeline restored full Q1-Q4 coverage, superseding this workaround.
 
-Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
-
----
-
-## Open questions and future work
-
-- **Task 9 — assignment validity filter**: delivered (July 2026). Flagged
-  assignments (`assignment_has_flags = true`) do not count toward the QTD valid
-  total, and `not_enough_assignments` fires when
-  `assignments_entered_count_no_flags < expectation` (renamed from
-  `expected_assign_count_not_met` /
-  `total_assign_count_qtd_by_cat_section_no_flags` in the July 2026
-  teacher/student split). Still open from the original ask: whether to keep or
-  consolidate the individual per-student score flags (plan Step 9.4 — a
-  T&L/Tableau-layout decision). See Task 9 in the
-  [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md).
-- ~~**Paterson expectations**~~ — resolved. The KIPP NJ Gradebook Audit plugin
-  still cannot be installed on Paterson's PowerSchool instance, so
-  `U_EXPECTATIONS` is never populated there natively. As of the July 2026
-  teacher/student split, the spoof lives directly in `kipptaf`'s
-  `stg_powerschool__u_expectations` (a `paterson_spoof` CTE reading Newark's
-  real source with a hardcoded `_dbt_source_project`) rather than as a
-  `kipppaterson`-project override model — see the Paterson note above. No
-  remaining code gap.
-- ~~**Teacher/student split**~~ — resolved (July 2026). See "Pipeline overview"
-  above for the current architecture.
-
-See [GitHub issue #3908](https://github.com/TEAMSchools/teamster/issues/3908)
-for the full AY 2026-2027 tracking issue.
+    Tracking issue: [#3908](https://github.com/TEAMSchools/teamster/issues/3908)
