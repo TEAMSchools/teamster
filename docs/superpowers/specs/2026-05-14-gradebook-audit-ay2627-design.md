@@ -627,15 +627,6 @@ refactor.
 
 ## Open questions
 
-**For T&L:**
-
-- **ADA + GPA flag threshold** — current code fires when GPA is strictly below
-  2.0. Should students with exactly 2.0 also be flagged? Applies to both the
-  cumulative version (`int_extracts`) and the per-course version
-  (`rpt_tableau__gradebook_gpa`). See issue #3908 comment.
-
-**For implementation:**
-
 - ~~**Percent-graded flag grain**~~ — resolved: shipped at per-assignment grain
   (`percent_graded_min_not_met` in
   `int_powerschool__gradebook_assignment_scores_rollup`, threshold 0.90, one

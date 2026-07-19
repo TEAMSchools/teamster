@@ -520,29 +520,40 @@ why).
 
 ## Open questions and future work
 
-- **Task 9 — assignment validity filter**: delivered (July 2026). Flagged
-  assignments (`assignment_has_flags = true`) do not count toward the QTD valid
-  total, and `not_enough_assignments` fires when
-  `assignments_entered_count_no_flags < expectation` (renamed from
-  `expected_assign_count_not_met` /
-  `total_assign_count_qtd_by_cat_section_no_flags` in the July 2026
-  teacher/student split). Still open from the original ask: whether to keep or
-  consolidate the individual per-student score flags (plan Step 9.4 — a
-  T&L/Tableau-layout decision). See Task 9 in the
-  [implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md).
-- ~~**Paterson expectations**~~ — resolved. The KIPP NJ Gradebook Audit plugin
-  still cannot be installed on Paterson's PowerSchool instance, so
-  `U_EXPECTATIONS` is never populated there natively. As of the July 2026
-  teacher/student split, the spoof lives directly in `kipptaf`'s
-  `stg_powerschool__u_expectations` (a `paterson_spoof` CTE reading Newark's
-  real source with a hardcoded `_dbt_source_project`) rather than as a
-  `kipppaterson`-project override model — see the Paterson note above. No
-  remaining code gap.
-- ~~**Teacher/student split**~~ — resolved (July 2026). See "Pipeline overview"
-  above for the current architecture.
+Three known future-work items remain. The rest of the AY 2026-2027 build is
+delivered — see [#3908](https://github.com/TEAMSchools/teamster/issues/3908) and
+the
+[implementation plan](../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp.md)
+for that history.
 
-See [GitHub issue #3908](https://github.com/TEAMSchools/teamster/issues/3908)
-for the full AY 2026-2027 tracking issue.
+- **Install the gradebook-audit plugin on Paterson's PowerSchool instance.** The
+  KIPP NJ Gradebook Audit plugin cannot currently be installed on Paterson, so
+  `U_EXPECTATIONS` is not populated there natively and Paterson MS runs on
+  _spoofed_ expectations — Newark's MS values, via the `paterson_spoof` CTE in
+  `stg_powerschool__u_expectations` (see the Paterson note above). Once the
+  plugin can be installed on Paterson, it should use its own real expectations
+  and the spoof can be removed. Plugin source:
+  [TEAMSchools/ps-plugins](https://github.com/TEAMSchools/ps-plugins).
+- **Make student-course selection deterministic when enrollment dates overlap.**
+  `int_extracts__course_enrollments_by_term` picks one section per
+  student/course/quarter with a `row_number()` tiebreaker
+  (`exitdate desc, dateleft desc`) that is frequently a true tie when
+  PowerSchool holds overlapping course-enrollment records for the same
+  student/course/quarter (the #3900 double-write root cause). On a tie the
+  section — and therefore the teacher — in scope for that student is arbitrary
+  and not stable across rebuilds. Add a deterministic tiebreak here, or fix the
+  upstream double-writes
+  ([#3900](https://github.com/TEAMSchools/teamster/issues/3900)), so the pick is
+  stable and correct.
+- **Re-derive the `section_quarter_count >= 2` filter, or remove it.**
+  `int_extracts__course_schedule_by_term` silently excludes sections whose
+  PowerSchool term spans only a single quarter (some trimester specials and
+  short-term sections), so those teachers' gradebooks are never audited. The
+  filter shipped in the model's original commit with no recorded rationale, and
+  its original author could not reconstruct why single-quarter sections should
+  be out of scope (see the note under the pipeline section above). Confirm with
+  T&L whether excluding these sections is still intended; if not, drop the
+  filter.
 
 ---
 
