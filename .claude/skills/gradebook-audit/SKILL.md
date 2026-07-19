@@ -67,7 +67,8 @@ impact checks a newcomer would otherwise miss.
    - the **4-row category floor** — every section × quarter must keep exactly 4
      `category_summary` rows;
    - **grain changes cascade** — a grain change in any scaffold breaks every
-     downstream join and must be threaded through all consumers;
+     downstream join and must be threaded through all consumers before a full
+     chain build is valid;
    - **uniqueness tests and contracts** on every affected model;
    - the two **health columns** (`is_healthy_gradebook_all_flags` /
      `_excl_comments`) and the **broadcast** section-flag booleans — a
@@ -84,12 +85,12 @@ impact checks a newcomer would otherwise miss.
 5. **Implement** via the specific procedure below (add/remove/edit a flag, add a
    region, or the rollover), following the grain rules it gives.
 
-6. **Validate, then get a review.** Build the affected models one at a time,
-   confirm the checks that apply (uniqueness tests pass, the 4-row floor holds,
-   and — for a refactor that should not change output — a byte-identical
-   comparison of before/after), then invoke the
-   `superpowers:requesting-code-review` skill (`Skill` tool) before opening or
-   updating the PR.
+6. **Validate, then get a review.** Build the affected models one at a time
+   (never cascade a downstream build mid-refactor), confirm the checks that
+   apply (uniqueness tests pass, the 4-row floor holds, and — for a refactor
+   that should not change output — a byte-identical comparison of before/after),
+   then invoke the `superpowers:requesting-code-review` skill (`Skill` tool)
+   before opening or updating the PR.
 
 **For a flag that is misbehaving** (firing when it shouldn't, or not firing when
 it should) rather than a requested change, this is a bug, not a feature: use
@@ -103,9 +104,9 @@ it should) rather than a requested change, this is a bug, not a feature: use
 These values are hardcoded in SQL. When the user asks to change a threshold,
 find the location below and update the literal.
 
-| Threshold                                                                                                                                            | Current value | Location                                                                                        |
-| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------- |
-| `min_graded_percent` — minimum fraction of expected assignments that must be scored for an assignment to pass the `percent_graded_min_not_met` check | `0.90` (90%)  | `invalid_assign_check` CTE in `int_powerschool__gradebook_assignment_scores_rollup.sql` line 94 |
+| Threshold                                                                                                                                            | Current value | Location                                                                                |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------- |
+| `min_graded_percent` — minimum fraction of expected assignments that must be scored for an assignment to pass the `percent_graded_min_not_met` check | `0.90` (90%)  | `invalid_assign_check` CTE in `int_powerschool__gradebook_assignment_scores_rollup.sql` |
 
 To change `min_graded_percent`: update the literal `0.90` in the
 `invalid_assign_check` CTE (`if(assign_percent_graded < 0.90, true, false)`).
@@ -119,8 +120,7 @@ Do NOT search the codebase. Go directly to the exposure file:
 `src/dbt/kipptaf/models/exposures/tableau.yml`
 
 Find the exposure named `gradebook_audit` and read its `depends_on` list — that
-is the authoritative answer. If no `gradebook_audit` exposure exists yet, fall
-back to `gradebook_and_gpa_dashboard` and note the rename is pending.
+is the authoritative answer.
 
 Current `depends_on` list (update if the exposure changes):
 
@@ -331,9 +331,7 @@ reads; the gsheets report itself no longer carries any toggle):
 
    This routes the grade lookup to `stg_powerschool__storedgrades` (prior-year
    archived quarter grades) instead of `base_powerschool__final_grades` (empty
-   until teachers start entering grades for the new year). This model's
-   `quarter_course_grades` CTE and toggle behave exactly like the old
-   `int_tableau__gradebook_audit_flags_calculations` did.
+   until teachers start entering grades for the new year).
 
 3. In `int_powerschool__u_expectations_qtd_unpivot` — change both occurrences
    (one filters `int_powerschool__calendar_week`, marked
@@ -479,14 +477,3 @@ Check in order:
 `stg_google_sheets__gradebook_flags` is disabled — do not check the allowlist
 sheet. `stg_google_sheets__gradebook_exceptions` is also disabled — do not check
 for exception rows.
-
----
-
-## Procedure: Work on a model in the lineage
-
-Read the reference doc section for the specific model before touching it. Key
-rules from the implementation plan:
-
-- **Build one model at a time** — never cascade downstream mid-refactor.
-- A grain change in the scaffolds cascades to all downstream join conditions.
-  Downstream models must be updated before a full chain build is valid.
