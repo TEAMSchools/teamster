@@ -5,10 +5,16 @@ powers the gradebook audit dashboard used by school leaders to monitor teacher
 gradebook compliance with KIPP TAF grading policy.
 
 !!! tip "Claude Code skill available" The `gradebook-audit` skill in
-`.claude/skills/gradebook-audit/` provides guided procedures for common tasks:
-annual flags rollover, adding/removing a flag, adding a region, and debugging a
-flag that isn't firing. Invoke it by describing what you need to do with the
-gradebook audit.
+`.claude/skills/gradebook-audit/` walks you through the routine changes to this
+pipeline at the code level — for each task it names the exact dbt model and CTE
+to edit. It covers: the summer academic-year rollover (the dbt-side data toggle
+that keeps the dashboard populated after the database flips to the new year but
+before teachers start entering grades — this is separate from the academics
+team's annual expectations update in PowerSchool); adding, removing, or editing
+an audit flag (where a new flag's boolean column belongs based on its grain,
+where to remove an existing one, and which literal to change to adjust a
+threshold); adding a new region; and debugging a flag that isn't firing. Invoke
+it by describing what you need to do with the gradebook audit.
 
 ## What is the gradebook audit?
 
