@@ -36,6 +36,20 @@ with
         group by p.student
     ),
 
+    career_conversations as (
+        select
+            contact_id,
+
+            sum(cc1) as cc1_count,
+            sum(cc2) as cc2_count,
+            sum(cc3) as cc3_count,
+            sum(cc4) as cc4_count,
+            sum(cc5) as cc5_count,
+            sum(cc1 + cc2 + cc3 + cc4 + cc5) as cc_total_count,
+        from {{ ref("int_kippadb__contact_note_rollup") }}
+        group by contact_id
+    ),
+
     roster as (
         select
             r.contact_id,
@@ -99,6 +113,12 @@ with
             coalesce(cc.is_job_search_template, false) as is_job_search_template,
             coalesce(cc.is_cover_letter_template, false) as is_cover_letter_template,
             coalesce(cc.is_work_samples, false) as is_work_samples,
+            coalesce(ccr.cc1_count, 0) as cc1_count,
+            coalesce(ccr.cc2_count, 0) as cc2_count,
+            coalesce(ccr.cc3_count, 0) as cc3_count,
+            coalesce(ccr.cc4_count, 0) as cc4_count,
+            coalesce(ccr.cc5_count, 0) as cc5_count,
+            coalesce(ccr.cc_total_count, 0) as cc_total_count,
 
             extract(
                 month from r.contact_expected_college_graduation
@@ -144,6 +164,7 @@ with
         left join
             {{ ref("stg_google_appsheet__kfwd_career_conversations__output") }} as cc
             on r.contact_id = cc.contact_id
+        left join career_conversations as ccr on r.contact_id = ccr.contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
@@ -310,6 +331,12 @@ select
     r.is_job_search_template,
     r.is_cover_letter_template,
     r.is_work_samples,
+    r.cc1_count,
+    r.cc2_count,
+    r.cc3_count,
+    r.cc4_count,
+    r.cc5_count,
+    r.cc_total_count,
 
     sp.survey_id,
     sp.survey_title,

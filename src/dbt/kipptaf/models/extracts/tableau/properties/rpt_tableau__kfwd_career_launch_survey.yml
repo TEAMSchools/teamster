@@ -251,3 +251,39 @@ models:
         description:
           Whether work samples were discussed during the KFWD career
           conversation. False when no conversation is recorded.
+      - name: cc1_count
+        data_type: int64
+        description:
+          Count of the alumnus's first Career Conversation (CC1) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc2_count
+        data_type: int64
+        description:
+          Count of the alumnus's second Career Conversation (CC2) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc3_count
+        data_type: int64
+        description:
+          Count of the alumnus's third Career Conversation (CC3) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc4_count
+        data_type: int64
+        description:
+          Count of the alumnus's fourth Career Conversation (CC4) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc5_count
+        data_type: int64
+        description:
+          Count of the alumnus's fifth Career Conversation (CC5) Salesforce
+          contact notes, summed across all academic years. Zero when none are
+          recorded.
+      - name: cc_total_count
+        data_type: int64
+        description:
+          Total count of the alumnus's Career Conversation (CC1 through CC5)
+          Salesforce contact notes, summed across all academic years. Zero when
+          none are recorded.
