@@ -300,15 +300,32 @@ cubes:
         dimensions:
           - dates.academic_year
           - student_assessments.module_code
+          # module_type is functionally determined by module_code above, so it
+          # adds no rollup rows; it lets queries filter by the coarser
+          # QA / MQQ / CRQ grouping.
+          - student_assessments.module_type
           - student_assessments.academic_subject
           - student_assessments.grade_level_tested
           - student_assessment_administrations.administration_period
           - student_assessment_scores.response_type_code
+          # response_type (overall / strand / standard) and its human-readable
+          # description are both functionally determined by response_type_code
+          # above (zero added rows). They serve standard-level cuts: filter
+          # response_type = 'standard' and break out by response_type_description
+          # (the IEP-vs-gen-ed-by-standard pilot pattern, WG 2026-07-02).
+          - student_assessment_scores.response_type
+          - student_assessment_scores.response_type_description
           - students.race
           - students.gender_identity
           - student_school_enrollments.grade_level
+          # is_iep is the one independent addition (binary, so at most 2x rows);
+          # it serves the IEP-vs-gen-ed disparity cut.
+          - student_enrollment_status.is_iep
           - locations.region_key
           - locations.abbreviation
+          # region_name is functionally determined by region_key above (zero
+          # added rows) — supports region-name filter phrasing (e.g. "Newark").
+          - regions.region_name
         # Partitioned refresh: without a time_dimension, Cube rebuilds this
         # entire rollup from the ~14.2M-row fact on every refresh_key check,
         # regardless of what changed. dates.date_day (via
