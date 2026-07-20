@@ -280,6 +280,18 @@ foreign_key both render into DDL and warn otherwise.
   tables: `dbt run --select <closure> --target staging` (shared `zz_stg` — needs
   direct user authorization). BQ table clones preserve PK constraints, so
   `Clone - Staging` keeps CI healthy afterward.
+- Code-complete closure ≠ safe prod deploy. The prod automation-condition sensor
+  materializes assets one-at-a-time OUT of FK order, and a config-only
+  `materialized: table` YAML change does NOT bump the dagster-dbt code version
+  (SQL-checksum-derived) — so SQL-unchanged leaf dims (e.g. `dim_regions`,
+  `dim_locations`) are never auto-selected and the migration wedges. Because
+  view→table DROPS the view before CREATE, out-of-order dependents drop-fail
+  every tick and are left MISSING from prod (a hole, not stale — signature is
+  absence from `<schema>.__TABLES__`). Finish the migration post-merge with ONE
+  ordered run of the whole closure — a single Dagster `launch_run` selecting all
+  closure assets is one `dbt build` that dbt topologically sorts — not the
+  sensor. `git grep -l 'materialized: table' marts/*/properties` lists the
+  current closure.
 
 ## Constraints are informational (views)
 
