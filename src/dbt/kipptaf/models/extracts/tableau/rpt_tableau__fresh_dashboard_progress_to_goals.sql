@@ -16,7 +16,7 @@ with
 
             'School' as goal_granularity,
 
-        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
+        from {{ ref("int_finalsite__enrollment_scaffold") }} as s
         left join
             {{ ref("int_people__location_crosswalk") }} as x
             on s.schoolid = x.location_powerschool_school_id
@@ -41,7 +41,7 @@ with
 
             'School/Grade Level' as goal_granularity,
 
-        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
+        from {{ ref("int_finalsite__enrollment_scaffold") }} as s
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
         where s.grade_level != -1 and s.schoolid != 0
     ),
@@ -125,16 +125,16 @@ with
 
         -- PART 2: THE GOALS (Targets) - School
         select
-            enrollment_academic_year,
-            region,
-            schoolid,
-            school,
+            gp.enrollment_academic_year,
+            gp.region,
+            gp.schoolid,
+            gp.school,
 
             null as finalsite_id,
             null as powerschool_student_number,
             null as first_name,
             null as last_name,
-            grade_level,
+            gp.grade_level,
 
             'Goal Record' as latest_status,
             'NA' as self_contained,
@@ -148,19 +148,20 @@ with
 
             0 as student_count,
 
-            seat_target,
-            fdos_target,
-            budget_target,
-            new_student_target,
-            re_enroll_projection,
+            gp.seat_target,
+            gp.fdos_target,
+            gp.budget_target,
+            gp.new_student_target,
+            gp.re_enroll_projection,
 
-            enrollment_type,
+            gp.enrollment_type,
 
-        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
+        from {{ ref("int_google_sheets__finalsite__goals_pivot") }} as gp
+        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
         where
-            goal_granularity = 'School'
-            and goal_type = 'Enrollment'
-            and enrollment_academic_year = 2026
+            gp.goal_granularity = 'School'
+            and gp.goal_type = 'Enrollment'
+            and gp.enrollment_academic_year = cy.academic_year
     ),
 
     data_stack_school_grade as (
@@ -242,16 +243,16 @@ with
 
         -- PART 2: THE GOALS (Targets) - School
         select
-            enrollment_academic_year,
-            region,
-            schoolid,
-            school,
+            gp.enrollment_academic_year,
+            gp.region,
+            gp.schoolid,
+            gp.school,
 
             null as finalsite_id,
             null as powerschool_student_number,
             null as first_name,
             null as last_name,
-            grade_level,
+            gp.grade_level,
 
             'Goal Record' as latest_status,
             'NA' as self_contained,
@@ -265,19 +266,20 @@ with
 
             0 as student_count,
 
-            seat_target,
-            fdos_target,
-            budget_target,
-            new_student_target,
-            re_enroll_projection,
+            gp.seat_target,
+            gp.fdos_target,
+            gp.budget_target,
+            gp.new_student_target,
+            gp.re_enroll_projection,
 
-            enrollment_type,
+            gp.enrollment_type,
 
-        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
+        from {{ ref("int_google_sheets__finalsite__goals_pivot") }} as gp
+        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
         where
-            goal_granularity = 'School/Grade Level'
-            and goal_type = 'Enrollment'
-            and enrollment_academic_year = 2026
+            gp.goal_granularity = 'School/Grade Level'
+            and gp.goal_type = 'Enrollment'
+            and gp.enrollment_academic_year = cy.academic_year
     )
 
 select
