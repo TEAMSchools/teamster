@@ -15,9 +15,25 @@ models:
         data_type: int64
       - name: goal_granularity
         data_type: string
+        description: >
+          "School" (whole-school total, grade_level = -1), "School/Grade Level",
+          or "Region/Grade Level" (Inquiries/Applications/Deferred/ Waitlisted
+          -- not tied to a specific school).
       - name: goal_type
         data_type: string
+        description: >
+          "Enrollment" goals (Seat Target, FDOS Target, New Student Target,
+          Budget Target, Re-Enroll Projection) are plain manually-entered
+          targets. Every other goal_type is a computed roll-up of the Finalsite
+          recruitment funnel via status_crosswalk -- see
+          docs/reference/fresh-dashboard-data-model.md for full definitions.
       - name: goal_name
         data_type: string
+        description: >
+          See docs/reference/fresh-dashboard-data-model.md for the full
+          goal_name glossary (Seat Target, FDOS Target, New Student Target,
+          Budget Target, Re-Enroll Projection, Inquiries, App Target, Offers
+          Target, Accepted, Waitlisted, Deferred, Enrollment In Progress,
+          Pending Offers [+ day-bucket splits], Conversion sub-types).
       - name: goal_value
         data_type: numeric
