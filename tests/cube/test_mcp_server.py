@@ -273,7 +273,7 @@ def test_meta_in_memory_cache_skips_disk_read_on_repeat_calls(
     assert call_count == 1
 
 
-def test_meta_scoped_call_hits_entities_all_not_meta(
+def test_meta_scoped_call_filters_full_catalog_client_side(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
@@ -283,26 +283,29 @@ def test_meta_scoped_call_hits_entities_all_not_meta(
     server._meta_memory_cache.clear()
     monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
 
-    calls: list[tuple[str, str, dict[str, Any]]] = []
+    calls: list[tuple[str, str]] = []
 
-    async def fake_request(
-        method: str, path: str, *, email: str, **kwargs: Any
-    ) -> dict[str, Any]:
+    async def fake_request(method: str, path: str, *, email: str) -> dict[str, Any]:
         del email
-        calls.append((method, path, kwargs))
-        return {"cubes": [{"name": "student_attendance_view"}]}
+        calls.append((method, path))
+        return {
+            "cubes": [
+                {"name": "student_attendance_view", "measures": []},
+                {"name": "staff_directory", "measures": []},
+            ]
+        }
 
     monkeypatch.setattr(server, "_request", fake_request)
 
     ctx = MagicMock()
     result = asyncio.run(server.meta(ctx, views=["student_attendance_view"]))
 
-    assert result == {"cubes": [{"name": "student_attendance_view"}]}
-    assert len(calls) == 1
-    method, path, kwargs = calls[0]
-    assert method == "POST"
-    assert path == "/entities/all"
-    assert kwargs["json"] == {"views": ["student_attendance_view"]}
+    # No /entities endpoint — Cube's REST API only exposes filtering via a
+    # differently-scoped token this server doesn't mint (verified live: it
+    # 403s "Required scope is missing" against our JWT). Filter the one
+    # working /meta fetch client-side instead.
+    assert calls == [("GET", "/meta")]
+    assert result["cubes"] == [{"name": "student_attendance_view", "measures": []}]
 
 
 def test_meta_scoped_and_full_catalog_calls_cache_separately(
@@ -315,14 +318,18 @@ def test_meta_scoped_and_full_catalog_calls_cache_separately(
     server._meta_memory_cache.clear()
     monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
 
-    call_paths: list[str] = []
+    call_count = 0
 
-    async def fake_request(
-        method: str, path: str, *, email: str, **kwargs: Any
-    ) -> dict[str, Any]:
-        del method, email, kwargs
-        call_paths.append(path)
-        return {"cubes": [{"name": path}]}
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        nonlocal call_count
+        call_count += 1
+        return {
+            "cubes": [
+                {"name": "student_attendance_view", "measures": []},
+                {"name": "staff_directory", "measures": []},
+            ]
+        }
 
     monkeypatch.setattr(server, "_request", fake_request)
 
@@ -330,18 +337,22 @@ def test_meta_scoped_and_full_catalog_calls_cache_separately(
     full = asyncio.run(server.meta(ctx))
     scoped = asyncio.run(server.meta(ctx, views=["student_attendance_view"]))
 
-    # Distinct cache entries — a scoped call didn't short-circuit into the
-    # full-catalog cache entry, or vice versa.
+    # Distinct cache entries — the filtered result didn't overwrite (or read
+    # from) the full-catalog cache entry, or vice versa.
     assert full != scoped
-    assert call_paths == ["/meta", "/entities/all"]
+    assert len(full["cubes"]) == 2
+    assert len(scoped["cubes"]) == 1
+    # One network call for the full catalog, reused (not refetched) to build
+    # the filtered result.
+    assert call_count == 1
 
     # Repeat calls hit cache, not the network, for each scope independently.
     asyncio.run(server.meta(ctx))
     asyncio.run(server.meta(ctx, views=["student_attendance_view"]))
-    assert call_paths == ["/meta", "/entities/all"]
+    assert call_count == 1
 
 
-def test_meta_scoped_call_with_cubes_and_views(
+def test_meta_scoped_call_with_multiple_views(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
@@ -351,21 +362,29 @@ def test_meta_scoped_call_with_cubes_and_views(
     server._meta_memory_cache.clear()
     monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
 
-    sent_bodies: list[dict[str, Any]] = []
-
-    async def fake_request(*args: object, **kwargs: Any) -> dict[str, Any]:
-        del args
-        sent_bodies.append(kwargs["json"])
-        return {"cubes": []}
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        return {
+            "cubes": [
+                {"name": "student_attendance_view"},
+                {"name": "staff_directory"},
+                {"name": "staff_pii"},
+            ]
+        }
 
     monkeypatch.setattr(server, "_request", fake_request)
 
     ctx = MagicMock()
-    asyncio.run(server.meta(ctx, views=["student_attendance_view"], cubes=["dates"]))
-    assert sent_bodies == [{"cubes": ["dates"], "views": ["student_attendance_view"]}]
+    result = asyncio.run(
+        server.meta(ctx, views=["student_attendance_view", "staff_pii"])
+    )
+    assert {c["name"] for c in result["cubes"]} == {
+        "student_attendance_view",
+        "staff_pii",
+    }
 
 
-def test_meta_scoped_call_with_cubes_only_omits_views_key(
+def test_meta_scoped_call_for_unknown_view_returns_empty_cubes(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
@@ -375,52 +394,15 @@ def test_meta_scoped_call_with_cubes_only_omits_views_key(
     server._meta_memory_cache.clear()
     monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
 
-    sent_bodies: list[dict[str, Any]] = []
-
-    async def fake_request(*args: object, **kwargs: Any) -> dict[str, Any]:
-        del args
-        sent_bodies.append(kwargs["json"])
-        return {"cubes": []}
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        return {"cubes": [{"name": "student_attendance_view"}]}
 
     monkeypatch.setattr(server, "_request", fake_request)
 
     ctx = MagicMock()
-    asyncio.run(server.meta(ctx, cubes=["dates"]))
-    assert sent_bodies == [{"cubes": ["dates"]}]
-
-
-def test_meta_same_name_as_view_vs_cube_does_not_collide_in_cache(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """Regression guard: a name requested as a view and the same name requested
-    as a cube must hit /entities/all independently, never share a cache entry.
-    `/entities/all` can return different content for the two axes."""
-    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
-    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
-    monkeypatch.delenv("PUBLIC_URL", raising=False)
-    server = _load_server(monkeypatch)
-    server._meta_memory_cache.clear()
-    monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
-
-    sent_bodies: list[dict[str, Any]] = []
-
-    async def fake_request(*args: object, **kwargs: Any) -> dict[str, Any]:
-        del args
-        sent_bodies.append(kwargs["json"])
-        # Distinguish the two axes' responses so a collision is detectable.
-        return {"requested_as": "view" if "views" in kwargs["json"] else "cube"}
-
-    monkeypatch.setattr(server, "_request", fake_request)
-
-    ctx = MagicMock()
-    as_view = asyncio.run(server.meta(ctx, views=["dates"]))
-    as_cube = asyncio.run(server.meta(ctx, cubes=["dates"]))
-
-    # Two independent network calls, one per axis — no cache collision.
-    assert sent_bodies == [{"views": ["dates"]}, {"cubes": ["dates"]}]
-    assert as_view == {"requested_as": "view"}
-    assert as_cube == {"requested_as": "cube"}
-    assert as_view != as_cube
+    result = asyncio.run(server.meta(ctx, views=["does_not_exist"]))
+    assert result["cubes"] == []
 
 
 def test_with_default_timezone_injects_utc_when_absent(
