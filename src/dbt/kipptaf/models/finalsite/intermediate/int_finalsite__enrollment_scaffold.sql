@@ -1,10 +1,16 @@
 {% set scaffold_source_mode = var("finalsite_scaffold_source", "blend") %}
+{% if scaffold_source_mode not in ("gsheet", "powerschool", "blend") %}
+    {{
+        exceptions.raise_compiler_error(
+            "finalsite_scaffold_source must be 'gsheet', 'powerschool', or"
+            ~ " 'blend' -- got '"
+            ~ scaffold_source_mode
+            ~ "'"
+        )
+    }}
+{% endif %}
 
 with
-    current_year as (
-        select academic_year, from {{ ref("int_finalsite__current_academic_year") }}
-    ),
-
     powerschool_region as (
         select
             sps.school_number,
@@ -30,19 +36,20 @@ with
         where region != 'Miami'
     ),
 
+    -- Filters out any negative grade_level (PowerSchool's own domain for
+    -- pre-registration / pre-K, a different, real meaning) before it can
+    -- ever reach the scaffold's grade_level = -1 "whole school total"
+    -- sentinel -- without this, a school with a negative low_grade would
+    -- produce a real PowerSchool-sourced -1 row indistinguishable from
+    -- that sentinel. The -1 row always comes from gsheet_scaffold below.
     grade_expansion as (
         select school_number, abbreviation, region, grade_level,
 
         from powerschool_schools
         cross join unnest(generate_array(low_grade, high_grade)) as grade_level
+        where grade_level >= 0
     ),
 
-    -- No grade_level = -1 row is synthesized here. PowerSchool's own
-    -- grade-level domain uses negative values for a different, real
-    -- meaning (pre-registration / pre-K context) -- the scaffold's
-    -- grade_level = -1 "whole school total" sentinel must never be
-    -- conflated with that. The -1 row always comes from gsheet_scaffold
-    -- below.
     powerschool_scaffold as (
         select
             ge.school_number as schoolid,
@@ -60,12 +67,11 @@ with
                 then 'HS'
                 when ge.grade_level >= 5
                 then 'MS'
-                when ge.grade_level >= 0
-                then 'ES'
+                else 'ES'
             end as school_level,
 
         from grade_expansion as ge
-        cross join current_year as cy
+        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
     )
 
     {% if scaffold_source_mode in ("gsheet", "blend") %}
@@ -90,7 +96,9 @@ with
                 'gsheet' as scaffold_source,
 
             from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
-            inner join current_year as cy on s.academic_year = cy.academic_year
+            inner join
+                {{ ref("int_finalsite__current_academic_year") }} as cy
+                on s.academic_year = cy.academic_year
         )
     {% endif %}
 
