@@ -126,3 +126,44 @@ def test_render_view_tables_and_placeholder() -> None:
     # access summary line
     assert "sample-network" in block
     assert "sample-region" in block
+
+
+def test_normalize_neutralizes_table_padding() -> None:
+    compact = "| Name | Type |\n| --- | --- |\n| `a` | number |\n"
+    padded = "| Name  | Type   |\n| ----- | ------ |\n| `a`   | number |\n"
+    assert gen._normalize(compact) == gen._normalize(padded)
+
+
+def test_check_stale_passes_on_padding_only_diff(tmp_path) -> None:
+    page = "| Name | Type |\n| --- | --- |\n| `a` | number |\n"
+    padded_file = tmp_path / "out.md"
+    padded_file.write_text(
+        "| Name  | Type   |\n| ----- | ------ |\n| `a`   | number |\n",
+        encoding="utf-8",
+    )
+    assert gen.check_stale(page, padded_file) == 0
+
+
+def test_check_stale_fails_on_content_diff(tmp_path) -> None:
+    page = "| Name | Type |\n| --- | --- |\n| `a` | number |\n"
+    out = tmp_path / "out.md"
+    out.write_text(
+        "| Name | Type |\n| --- | --- |\n| `b` | number |\n", encoding="utf-8"
+    )
+    assert gen.check_stale(page, out) == 1
+
+
+def test_main_writes_output(tmp_path) -> None:
+    out = tmp_path / "catalog.md"
+    rc = gen.main(
+        [
+            "--cubes-dir",
+            str(FIXTURE_DIR / "cubes"),
+            "--views-dir",
+            str(FIXTURE_DIR / "views"),
+            "--output",
+            str(out),
+        ]
+    )
+    assert rc == 0
+    assert "## sample_view" in out.read_text(encoding="utf-8")

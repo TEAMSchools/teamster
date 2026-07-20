@@ -319,3 +319,83 @@ def render_page(views: list[ResolvedView]) -> str:
         ["# Cube data catalog", BANNER, INTRO, *(render_view(v) for v in views)]
     )
     return body + "\n"
+
+
+def _normalize(text: str) -> str:
+    """Canonicalize markdown so prettier table-padding is not a false diff.
+
+    Table rows are re-joined with single-space cells; separator dash-runs
+    collapse to `---` (alignment colons preserved); other lines are rstripped.
+    """
+    out: list[str] = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|"):
+            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            norm = []
+            for cell in cells:
+                if re.fullmatch(r":?-+:?", cell):
+                    left = ":" if cell.startswith(":") else ""
+                    right = ":" if cell.endswith(":") else ""
+                    norm.append(f"{left}---{right}")
+                else:
+                    norm.append(cell)
+            out.append("| " + " | ".join(norm) + " |")
+        else:
+            out.append(line.rstrip())
+    return "\n".join(out).strip() + "\n"
+
+
+def check_stale(page: str, output: Path) -> int:
+    if not output.exists():
+        print(f"ERROR: {output} does not exist — run the generator.", file=sys.stderr)
+        return 1
+    if _normalize(page) != _normalize(output.read_text(encoding="utf-8")):
+        print(
+            "ERROR: cube data catalog is stale. Regenerate with:\n"
+            "  uv run scripts/generate_cube_reference.py",
+            file=sys.stderr,
+        )
+        return 1
+    return 0
+
+
+def _build_page(cubes_dir: Path, views_dir: Path) -> tuple[str, int]:
+    cubes = parse_cubes(cubes_dir)
+    views = parse_views(views_dir, cubes)
+    return render_page(views), len(views)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--cubes-dir", type=Path, default=CUBES_DIR)
+    parser.add_argument("--views-dir", type=Path, default=VIEWS_DIR)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--check", action="store_true", help="fail if stale")
+    parser.add_argument(
+        "--verify-against-meta",
+        action="store_true",
+        help="cross-check resolved members against the live /meta endpoint",
+    )
+    args = parser.parse_args(argv)
+
+    page, n_views = _build_page(args.cubes_dir, args.views_dir)
+
+    if args.verify_against_meta:
+        return verify_against_meta(args.cubes_dir, args.views_dir)
+
+    if args.check:
+        return check_stale(page, args.output)
+
+    args.output.write_text(page, encoding="utf-8")
+    print(f"wrote {n_views} view sections to {args.output}")
+    return 0
+
+
+def verify_against_meta(cubes_dir: Path, views_dir: Path) -> int:
+    print("ERROR: --verify-against-meta not implemented yet", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
