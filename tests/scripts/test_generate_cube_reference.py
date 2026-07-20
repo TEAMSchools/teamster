@@ -96,3 +96,33 @@ def test_derive_access_reads_groups_and_row_level() -> None:
     assert access.row_level_members == ["sample_dim_region_name"]
     # no sensitive members in the fixture
     assert access.exposes_pii is False
+
+
+def test_render_page_has_banner_and_one_h2_per_view() -> None:
+    cubes = gen.parse_cubes(FIXTURE_DIR / "cubes")
+    views = gen.parse_views(FIXTURE_DIR / "views", cubes)
+    page = gen.render_page(views)
+
+    assert page.startswith("# Cube data catalog\n")
+    assert gen.BANNER in page
+    assert page.count("\n## ") == 1
+    assert "## sample_view" in page
+
+
+def test_render_view_tables_and_placeholder() -> None:
+    view = _resolved_view()
+    block = gen.render_view(view)
+
+    # measures section + a measure row
+    assert "### Measures" in block
+    assert "| `count_rows` | count | Row count. |" in block
+    # dimensions grouped by folder heading
+    assert "#### Sample" in block
+    assert "#### Region" in block
+    assert "#### Other" in block
+    assert "| `grade_level` | number | Student grade level. |" in block
+    # missing description -> visible placeholder, not blank
+    assert "| `no_desc_dim` | string | _No description._ |" in block
+    # access summary line
+    assert "sample-network" in block
+    assert "sample-region" in block

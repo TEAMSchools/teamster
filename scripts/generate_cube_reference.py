@@ -235,3 +235,87 @@ def parse_views(
         for view in doc.get("views", []):
             views.append(resolve_view(view, cubes))
     return sorted(views, key=lambda v: v.name)
+
+
+BANNER = (
+    "<!-- GENERATED FILE — do not edit by hand. Regenerate with:\n"
+    "     uv run scripts/generate_cube_reference.py -->"
+)
+
+INTRO = (
+    "Every analyst-facing Cube view and the fields it exposes. Only members a "
+    "view publishes appear here — private cubes never surface. For auth, query "
+    "format, and worked examples see the "
+    "[Cube API guide](../guides/cube-api.md)."
+)
+
+PLACEHOLDER = "_No description._"
+
+
+def _cell(value: str | None) -> str:
+    """Escape a table cell (pipes, newlines collapsed)."""
+    text = (value or "").replace("\n", " ").replace("|", "\\|")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _member_table(members: list[ResolvedMember]) -> str:
+    lines = ["| Name | Type | Description |", "| --- | --- | --- |"]
+    for m in sorted(members, key=lambda x: x.exposed_name):
+        desc = _cell(m.description) if m.description else PLACEHOLDER
+        lines.append(f"| `{m.exposed_name}` | {_cell(m.type)} | {desc} |")
+    return "\n".join(lines)
+
+
+def _access_block(access: AccessSummary) -> str:
+    if not access.groups:
+        groups = "None — default-deny (no reader group)."
+    else:
+        groups = ", ".join(f"`{g}`" for g in access.groups)
+    lines = [f"**Reader groups:** {groups}"]
+    if access.row_level_members:
+        scoped = ", ".join(f"`{m}`" for m in access.row_level_members)
+        lines.append(f"**Row-level scoping on:** {scoped}")
+    if access.exposes_pii:
+        lines.append(
+            "**Contains sensitive / PII fields** — see access policy in "
+            "[cube.md](../guides/cube.md#admin-setup)."
+        )
+    return "\n\n".join(lines)
+
+
+def _folder_order(view: ResolvedView) -> list[str]:
+    """Folder names in first-seen order, with Other last."""
+    order: list[str] = []
+    for m in view.members:
+        if m.kind == "dimension" and m.folder and m.folder not in order:
+            order.append(m.folder)
+    if OTHER_FOLDER in order:
+        order.remove(OTHER_FOLDER)
+        order.append(OTHER_FOLDER)
+    return order
+
+
+def render_view(view: ResolvedView) -> str:
+    parts = [f"## {view.name}", ""]
+    if view.description:
+        parts += [_cell(view.description), ""]
+    parts += ["### Access", "", _access_block(view.access), ""]
+
+    measures = [m for m in view.members if m.kind == "measure"]
+    if measures:
+        parts += ["### Measures", "", _member_table(measures), ""]
+
+    dims = [m for m in view.members if m.kind == "dimension"]
+    if dims:
+        parts += ["### Dimensions", ""]
+        for folder in _folder_order(view):
+            in_folder = [m for m in dims if m.folder == folder]
+            parts += [f"#### {folder}", "", _member_table(in_folder), ""]
+    return "\n".join(parts).rstrip()
+
+
+def render_page(views: list[ResolvedView]) -> str:
+    body = "\n\n".join(
+        ["# Cube data catalog", BANNER, INTRO, *(render_view(v) for v in views)]
+    )
+    return body + "\n"
