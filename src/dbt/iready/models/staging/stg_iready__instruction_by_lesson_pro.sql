@@ -14,6 +14,9 @@ select
     cast(skills_completed as int) as skills_completed,
     cast(skills_successful as int) as skills_successful,
     cast(percent_skills_successful as numeric) as percent_skills_successful,
+    cast(items_completed as int) as items_completed,
+    cast(items_correct as int) as items_correct,
+    cast(percent_items_correct as numeric) as percent_items_correct,
 
     safe_cast(student_id as int) as student_id,
 
