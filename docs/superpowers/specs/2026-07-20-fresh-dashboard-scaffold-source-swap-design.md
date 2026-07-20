@@ -449,12 +449,19 @@ A new singular test (`src/dbt/kipptaf/tests/`) guards the dual-maintenance risk
 above: for the current year's crosswalk config (scoped via
 `int_finalsite__current_academic_year`), compare
 `distinct fs_status_field, detailed_status_ranking` from
-`stg_google_sheets__finalsite__status_crosswalk` against
-`distinct fs_status_field, status_order` from
-`int_finalsite__status_report_unpivot` (both are real, materialized, queryable
-columns — this doesn't require parsing SQL source). Any `fs_status_field` whose
-ranking differs between the two, or that's present in one but missing from the
-other, fails the test. This turns a previously invisible drift into a loud,
+`stg_google_sheets__finalsite__status_crosswalk` against a **static list
+mirroring the `status_order` `CASE`'s declaration** in
+`int_finalsite__status_report_unpivot.sql` — not a live query of that model's
+actual rows. Discovered during implementation: BigQuery's `UNPIVOT` only emits a
+row for a source column when it's non-NULL for that row, so a `fs_status_field`
+declared in the `CASE` but never actually populated in the data (e.g.
+`retained_date`, network-wide, as of this writing) never appears in the model's
+output — a live-query comparison produces a false mismatch against the
+fully-populated crosswalk sheet for any such field. The static list is immune to
+data occurrence, at the cost of needing a manual update (alongside the sheet) if
+the `CASE` itself ever changes. Any `fs_status_field` whose ranking differs
+between the sheet and the static list, or that's present in one but missing from
+the other, fails the test. This turns a previously invisible drift into a loud,
 actionable CI failure instead of a silent tie-breaking bug.
 
 ## Downstream changes

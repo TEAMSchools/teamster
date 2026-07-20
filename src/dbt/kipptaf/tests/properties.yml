@@ -1,4 +1,25 @@
 data_tests:
+  - name: test_int_finalsite__status_order_matches_crosswalk_ranking
+    description: >-
+      detailed_status_ranking (stg_google_sheets__finalsite__status_crosswalk,
+      manually maintained) is hand-duplicated into a hardcoded CASE
+      (status_order, int_finalsite__status_report_unpivot.sql) rather than
+      joined live, per this repo's convention against staging-layer joins to
+      Google Sheets sources. Nothing keeps the two in sync automatically --
+      editing the sheet's ranking (reordering, or adding a new status) doesn't
+      update the hardcoded CASE, and a drift silently produces wrong
+      same-day-tie tie-breaking in int_tableau__finalsite_student_scaffold's
+      latest_status_calc with no error. This test fails loudly on any
+      fs_status_field whose ranking differs between the two, or that's present
+      in one but missing from the other, scoped to the current Finalsite
+      academic year.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__status_report_unpivot
+
   - name: test_stg_google_sheets__finalsite__status_crosswalk_single_year
     description: >-
       status_crosswalk must hold config for exactly one academic year at a time

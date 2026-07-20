@@ -202,6 +202,16 @@ git commit -m "feat(dbt): add int_finalsite__current_academic_year"
 
 `src/dbt/kipptaf/tests/test_int_finalsite__status_order_matches_crosswalk_ranking.sql`:
 
+**Important — do not compare against a live query of
+`int_finalsite__status_report_unpivot`'s actual rows.** BigQuery's `UNPIVOT`
+only emits a row for a source column when it's non-NULL for that row — a
+`fs_status_field` that's declared in the hardcoded `CASE` but has never occurred
+in the data (e.g. `retained_date`, if no student has ever had that status) never
+appears in the model's output at all, producing a false mismatch against a
+fully-populated crosswalk sheet. Compare against a **static list mirroring the
+CASE's declaration** instead — immune to data occurrence, verified during
+implementation (this exact false-positive was hit and fixed before landing):
+
 ```sql
 with
     current_year as (
@@ -217,15 +227,47 @@ with
         inner join current_year as cy on x.file_year = cy.academic_year
     ),
 
+    -- Mirrors the hardcoded status_order CASE in
+    -- int_finalsite__status_report_unpivot.sql exactly.
     unpivot_order as (
-        select distinct fs_status_field, status_order,
-        from {{ ref("int_finalsite__status_report_unpivot") }}
+        select fs_status_field, status_order,
+        from
+            unnest(
+                [
+                    struct('inquiry_date' as fs_status_field, 1 as status_order),
+                    ('inquiry_completed_date', 2),
+                    ('inactive_inquiry_date', 3),
+                    ('applicant_date', 4),
+                    ('application_withdrawn_date', 5),
+                    ('deferred_date', 6),
+                    ('application_complete_date', 7),
+                    ('review_in_progress_date', 8),
+                    ('waitlisted_date', 9),
+                    ('denied_date', 10),
+                    ('accepted_date', 11),
+                    ('assigned_school_date', 12),
+                    ('did_not_enroll_date', 13),
+                    ('campus_transfer_requested_date', 14),
+                    ('parent_declined_date', 15),
+                    ('enrollment_in_progress_date', 16),
+                    ('academic_hold_date', 17),
+                    ('financial_hold_date', 18),
+                    ('not_enrolling_date', 19),
+                    ('enrolled_date', 20),
+                    ('mid_year_withdrawal_date', 21),
+                    ('never_attended_date', 22),
+                    ('retained_date', 23),
+                    ('summer_withdraw_date', 24)
+                ]
+            )
     )
 
 select
-    coalesce(c.fs_status_field, u.fs_status_field) as fs_status_field,
     c.detailed_status_ranking,
     u.status_order,
+
+    coalesce(c.fs_status_field, u.fs_status_field) as fs_status_field,
+
 from crosswalk_ranking as c
 full join unpivot_order as u on c.fs_status_field = u.fs_status_field
 where
@@ -233,6 +275,12 @@ where
     or u.status_order is null
     or c.detailed_status_ranking != u.status_order
 ```
+
+If `int_finalsite__status_report_unpivot.sql`'s `status_order` `CASE` is ever
+edited (a new status added, a ranking changed), this static list must be updated
+to match by hand — it's a second place, alongside the sheet, that now needs to
+stay in sync. Note this explicitly in a comment above the `CASE` in that file if
+you touch it later.
 
 - [ ] **Step 2: Add the properties.yml entry**
 
