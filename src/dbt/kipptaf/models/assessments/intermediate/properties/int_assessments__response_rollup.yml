@@ -9,6 +9,8 @@ models:
       selection. `assessment_id` here is the canonical id, not the per-row
       member id; `assessment_ids` (array) preserves the underlying member ids
       for drilldown.
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
