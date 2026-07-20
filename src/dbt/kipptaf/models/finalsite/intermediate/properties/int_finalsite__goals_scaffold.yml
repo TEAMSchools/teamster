@@ -1,5 +1,5 @@
 models:
-  - name: int_google_sheets__finalsite__scaffold
+  - name: int_finalsite__goals_scaffold
     config:
       contract:
         enforced: true
