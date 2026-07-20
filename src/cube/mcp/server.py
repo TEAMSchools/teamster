@@ -336,19 +336,13 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
 
 
-def _meta_scope_key(views: list[str] | None, cubes: list[str] | None) -> str:
-    """Distinguish a scoped `/entities/all` fetch from the full `/meta` catalog
-    in the cache key — a filtered call must never read or write the full
-    catalog's cache entry, or another scope's. Views and cubes are keyed on
-    separate axes: `/entities/all` can return different content for a name
-    requested as a view vs. as a cube, so folding both into one sorted list
-    would collide (e.g. views=["dates"] and cubes=["dates"] must not share a
-    cache entry)."""
-    if not views and not cubes:
+def _meta_scope_key(views: list[str] | None) -> str:
+    """Distinguish a filtered fetch from the full `/meta` catalog in the cache
+    key — a filtered call must never read or write the full catalog's cache
+    entry, or another view-set's."""
+    if not views:
         return "all"
-    v = ",".join(sorted(views or []))
-    c = ",".join(sorted(cubes or []))
-    return f"entities:views={v}:cubes={c}"
+    return "views:" + ",".join(sorted(views))
 
 
 def _meta_cache_path(email: str, scope: str) -> Path:
@@ -359,31 +353,12 @@ def _meta_cache_path(email: str, scope: str) -> Path:
 _meta_memory_cache: dict[tuple[str, str], tuple[int, dict[str, Any]]] = {}
 
 
-@mcp.tool()
-async def meta(
-    ctx: Context,
-    views: list[str] | None = None,
-    cubes: list[str] | None = None,
-    force_refresh: bool = False,
-) -> dict[str, Any]:
-    """Discover available KIPP TEAM & Family data: students, attendance, grades,
-    assessments, enrollment, demographics, staff, schools, regions, terms.
-    Returns the catalog of views, measures, and dimensions queryable via `load`
-    or `sql`.
-
-    Call with no arguments first to discover which views exist (a lightweight
-    pass would still return the full catalog — there is no lighter discovery
-    call). Once you know the view(s) you need, pass `views` (and/or `cubes`) to
-    fetch only their measures/dimensions — this returns a fraction of the full
-    catalog's size and avoids exceeding a response size budget on large models.
-
-    Cached per (email, requested scope) for one hour (in-memory, with disk
-    fallback across process restarts) — a scoped call never reads or writes the
-    full-catalog cache entry, or another scope's. Pass `force_refresh=True`
-    after a model deploy.
-    """
-    email = await _get_user_email(ctx)
-    scope = _meta_scope_key(views, cubes)
+def _read_meta_cache(
+    email: str, scope: str, force_refresh: bool
+) -> dict[str, Any] | None:
+    """Return a cached payload for (email, scope) if fresh, else None. Checks
+    the in-memory cache first, then falls back to disk (surviving process
+    restarts) — writing back through the disk hit to warm the memory cache."""
     now = int(time.time())
     if not force_refresh:
         memory_hit = _meta_memory_cache.get((email, scope))
@@ -401,17 +376,13 @@ async def meta(
             if expires_at > now and "payload" in cached:
                 _meta_memory_cache[(email, scope)] = (expires_at, cached["payload"])
                 return cached["payload"]
-    if scope == "all":
-        payload = await _request("GET", "/meta", email=email)
-    else:
-        body: dict[str, list[str]] = {}
-        if cubes:
-            body["cubes"] = cubes
-        if views:
-            body["views"] = views
-        payload = await _request("POST", "/entities/all", json=body, email=email)
+    return None
+
+
+def _write_meta_cache(email: str, scope: str, payload: dict[str, Any]) -> None:
     expires_at = int(time.time()) + META_CACHE_TTL_SECONDS
     _meta_memory_cache[(email, scope)] = (expires_at, payload)
+    cache_path = _meta_cache_path(email, scope)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     # Atomic write: avoid corruption if two concurrent meta() calls race.
     tmp_path = cache_path.with_suffix(f".tmp.{os.getpid()}")
@@ -420,6 +391,64 @@ async def meta(
         encoding="utf-8",
     )
     os.replace(tmp_path, cache_path)
+
+
+async def _fetch_full_meta(email: str, force_refresh: bool) -> dict[str, Any]:
+    """Fetch (or serve from cache) the full `/meta` catalog for `email`. A
+    private helper — not the `meta` tool itself — so the filtered-view path
+    below can reuse it without resolving the caller's email or hitting
+    `/meta` twice."""
+    cached = _read_meta_cache(email, "all", force_refresh)
+    if cached is not None:
+        return cached
+    payload = await _request("GET", "/meta", email=email)
+    _write_meta_cache(email, "all", payload)
+    return payload
+
+
+@mcp.tool()
+async def meta(
+    ctx: Context,
+    views: list[str] | None = None,
+    force_refresh: bool = False,
+) -> dict[str, Any]:
+    """Discover available KIPP TEAM & Family data: students, attendance, grades,
+    assessments, enrollment, demographics, staff, schools, regions, terms.
+    Returns the catalog of views, measures, and dimensions queryable via `load`
+    or `sql`.
+
+    Call with no arguments first to discover which views exist. Once you know
+    the view(s) you need, pass `views` to get back just their measures and
+    dimensions — a fraction of the full catalog's size, filtered client-side
+    from the same underlying `/meta` fetch (Cube's REST API doesn't take a
+    filter param, and its separate `/entities` endpoints need a differently
+    scoped token this server doesn't mint) — so it avoids exceeding a response
+    size budget on large models without any extra round trip once the full
+    catalog is cached.
+
+    Cached per (email, requested scope) for one hour (in-memory, with disk
+    fallback across process restarts) — a filtered call never reads or writes
+    the full-catalog cache entry, or another view-set's, though it does reuse
+    the full catalog's cached fetch to build its filtered result. Pass
+    `force_refresh=True` after a model deploy.
+    """
+    email = await _get_user_email(ctx)
+    scope = _meta_scope_key(views)
+    if scope == "all":
+        return await _fetch_full_meta(email, force_refresh)
+
+    cached = _read_meta_cache(email, scope, force_refresh)
+    if cached is not None:
+        return cached
+    full_payload = await _fetch_full_meta(email, force_refresh)
+    wanted = set(views or [])
+    payload = {
+        **full_payload,
+        "cubes": [
+            dict(c) for c in full_payload.get("cubes", []) if c.get("name") in wanted
+        ],
+    }
+    _write_meta_cache(email, scope, payload)
     return payload
 
 
