@@ -93,17 +93,15 @@ def _compute_changed(
     current: dict[str, dict],
     stored: dict[str, dict],
 ) -> list[PowerSchoolTable]:
-    """Select tables to load: no-cursor tables always, cursor tables on drift.
+    """Select tables whose just-probed signature differs from the stored one.
 
-    A table is changed when it has no cursor column (always reloaded when
-    selected) or its just-probed signature differs from the stored one
-    (drift, or first run when stored has no entry).
+    Drift in count or max cursor — or a missing stored entry (first tick, or a
+    table new to intraday) — selects the table. No-cursor tables carry a
+    count-only signature (``max_cursor: None``), so a net row add/remove
+    selects them; in-place edits are caught by the nightly full refresh.
     """
     return [
-        table
-        for table in selected
-        if table.cursor_column is None
-        or current.get(table.name) != stored.get(table.name)
+        table for table in selected if current.get(table.name) != stored.get(table.name)
     ]
 
 

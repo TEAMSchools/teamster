@@ -238,13 +238,34 @@ def test_tier_targets_sis_keys_and_counts():
     assert "kipppaterson/powerschool/sis/teachercategory" in nightly
 
 
-def test_compute_changed_no_cursor_table_always_included():
-    # No-cursor tables are always reloaded when selected, regardless of
-    # whatever current/stored signatures happen to hold (there's nothing to
-    # compare — signature is never probed or persisted for these tables).
-    table = PowerSchoolTable(name="test", cursor_column=None)
+def test_compute_changed_no_cursor_count_drift_included():
+    table = PowerSchoolTable(name="gen", cursor_column=None)
+    current = {"gen": {"count": 43, "max_cursor": None}}
+    stored = {"gen": {"count": 42, "max_cursor": None}}
 
-    changed = _compute_changed([table], current={}, stored={})
+    changed = _compute_changed([table], current, stored)
+
+    assert changed == [table]
+
+
+def test_compute_changed_no_cursor_stable_count_excluded():
+    table = PowerSchoolTable(name="gen", cursor_column=None)
+    signature = {"count": 42, "max_cursor": None}
+    current = {"gen": dict(signature)}
+    stored = {"gen": dict(signature)}
+
+    changed = _compute_changed([table], current, stored)
+
+    assert changed == []
+
+
+def test_compute_changed_no_stored_baseline_included():
+    # Bootstrap: a table new to intraday (or first tick ever) has no stored
+    # signature and must load once to establish one.
+    table = PowerSchoolTable(name="gen", cursor_column=None)
+    current = {"gen": {"count": 42, "max_cursor": None}}
+
+    changed = _compute_changed([table], current, stored={})
 
     assert changed == [table]
 
@@ -293,10 +314,12 @@ def test_compute_changed_mixed_set_order_preserved():
 
     unchanged_signature = {"count": 5, "max_cursor": "2026-07-14T00:00:00"}
     current = {
+        "test": {"count": 9, "max_cursor": None},
         "students": {"count": 43, "max_cursor": "2026-07-16T00:00:00"},
         "users": dict(unchanged_signature),
     }
     stored = {
+        "test": {"count": 8, "max_cursor": None},
         "students": {"count": 42, "max_cursor": "2026-07-15T00:00:00"},
         "users": dict(unchanged_signature),
     }
