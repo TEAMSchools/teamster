@@ -3,6 +3,10 @@
 **Issue:** Refs #4438 (continuation of the Cube API reference / field catalog
 work)
 
+**Preview:** an interactive MkDocs-Material mockup of this design — built from
+the real member list resolved from the repo model — is published for team review
+at <https://claude.ai/code/artifact/21187c36-25a1-4749-a9b8-543c2072eadc>.
+
 ## Problem
 
 `docs/reference/cube-data-catalog.md` is a single ~600-line generated page with
@@ -20,8 +24,8 @@ a flat list of `## {view_name}` sections. Two usability gaps:
   structure, with human-friendly headings.
 - A visible top-of-page domain index plus a sidebar TOC that mirrors Domain ->
   View.
-- A single **Find a field** table spanning every view, **sortable and
-  filterable** in the browser.
+- A single **Find a field** finder spanning every view, **filterable** in the
+  browser (a text filter plus a Measures quick-filter).
 - **Future-proof:** domains are discovered from the folder layout at generation
   time. Adding a new `views/{domain}/` folder later must surface a new domain
   automatically — no hardcoded domain list anywhere.
@@ -80,7 +84,7 @@ stored). This is the only new state the parser needs.
 - Student Attendance (`student_attendance_view`) — ...
 ...
 
-## Find a field             <- master sortable/filterable table
+## Find a field             <- two-column finder (filter + Measures quick-filter)
 
 ## Staff                    <- one H2 per domain
 ### Staff Directory         <- one H3 per view; exact name as code beneath
@@ -101,29 +105,45 @@ folder H5. The sidebar TOC (`toc.integrate`, already enabled) mirrors the Domain
 The one-line summary in the index is the first sentence of the view
 `description` (truncated), or the placeholder if none.
 
-### Find a field table
+Per-view rendering notes:
 
-One row per exposed field across all views:
+- A view's **Measures** table (and likewise **Dimensions**) is emitted only when
+  that kind has members — never an empty table.
+- Member **names stay on one line** in these tables (no mid-word wrapping); the
+  Name column sizes to fit.
+- Dimensions retain the existing **folder grouping** (H5). The shared preview
+  flattens them for brevity; the generator keeps folders.
 
-| Column      | Content                                                         |
-| ----------- | --------------------------------------------------------------- |
-| Field       | exact `exposed_name` as code                                    |
-| View        | friendly view title, linked to that view's section anchor       |
-| Domain      | domain title                                                    |
-| Type        | member type                                                     |
-| Kind        | `measure` or `dimension`                                        |
-| Sensitive   | `Yes` when `exposed_name` is in `SENSITIVE_MEMBERS`, else empty |
-| Description | full field description; placeholder when missing                |
+### Find a field
 
-The Description text is shown **in full** (not truncated) so the in-page filter
-can match on it — a reader who does not know the field name can type a keyword
-from the description and keep matching rows. The **View** column links up to the
-field's view section for full surrounding context. Rows are emitted sorted by
-field name for a stable default.
+A two-column **glossary** spanning every view — one row per exposed member,
+listing the complete member set (278 members today), not a curated subset:
 
-Truncated display with full-text search would require rendering the finder as
-raw HTML with `data-` attributes (per-row search text); rejected for now to keep
-the generated file pure Markdown (no MD033) and the freshness check simple.
+| Column  | Content                                           |
+| ------- | ------------------------------------------------- |
+| Field   | exact `exposed_name`, monospace, kept on one line |
+| Details | a tag row, then the full description              |
+
+The **Details** cell holds, in order:
+
+1. a **link to the field's view section** (`↗ {View Title}`),
+1. a **domain** tag,
+1. a **kind** tag (`measure` / `dimension`),
+1. a **type** tag (data type),
+1. a **sensitive** tag — only when the member is sensitive,
+
+then the full **description** beneath the tags. Tags are lowercase and share one
+calm translucent-blue style; the **sensitive** tag is the single exception,
+rendered in the warning orange. Rows default to domain-then-field order. The
+full description is shown (not truncated) so the filter can match on its text.
+
+**Rendering approach.** Per-tag styling needs `<span>` chips, so the generator
+emits the finder as an HTML `<table>` rather than a Markdown table. Inline HTML
+is scoped-allowed for this one generated file (markdownlint `MD033` disabled via
+a directive the generator writes at the top of the page, or a path scope in the
+trunk markdownlint config); the per-view member tables stay pure Markdown. The
+freshness check compares normalized output regardless of Markdown-vs-HTML, and
+Material's search still indexes the visible text.
 
 ### Interactivity — self-contained vanilla JS
 
@@ -132,23 +152,25 @@ in `mkdocs.yml`. Behavior:
 
 - Subscribe to Material's `document$` observable (fires on initial load and on
   every instant-navigation) so it re-initializes correctly.
-- Locate the Find-a-field table by the `find-a-field` section anchor (the table
-  immediately following that heading) — no inline HTML in the generated
-  Markdown, so no MD033 concern.
-- Inject a text `input` above the table; on `keyup`, hide any row whose full
-  text does not contain the query (case-insensitive). The match spans the
-  **entire row** — Field, View, Domain, Type, Kind, and Description — so a
-  description keyword narrows the table even when the field name is unknown.
-- Make each column header click-to-sort (toggle asc/desc) with a small homegrown
-  comparator (numeric-aware). ~50 lines, no dependency.
+- A **filter box** above the finder: on input, hide any row whose full text —
+  field, tags (domain / kind / type / sensitive), view, and description — does
+  not contain the query (case-insensitive). A description keyword narrows the
+  table even when the field name is unknown.
+- A **"Measures" quick-filter** button beside the box: when active, show only
+  `measure` rows; it combines with the text filter. A Dimensions counterpart can
+  be added later if useful.
+- The finder is capped to ~10 rows with its own **vertical scroll**, its header
+  pinned within that scroll box. This sticky is scoped to the finder only — the
+  per-view member tables use normal, non-sticky headers so they never float over
+  their rows on the long page.
+- **No sort controls:** ordering is domain-then-field; filtering is the find
+  path.
 
-Material's site-wide search independently indexes all of this page text (the
-finder rows and the per-view sections), so description keywords are also
-discoverable through the top search box. The in-page filter is the fast,
-in-context path.
+Material's site-wide search independently indexes all of this page text, so
+description keywords are also discoverable through the top search box.
 
-Rationale for homegrown over vendoring `tablesort`: no new package, no CDN, no
-offline-build breakage, no license to track — the behavior is small.
+No external library or CDN — the filter / scroll behavior is a few dozen lines
+of vanilla JS.
 
 ### Freshness check
 
@@ -169,11 +191,14 @@ entry live outside the generated file and are not part of the check.
   - domain derivation from the folder (`sample_domain` -> "Sample Domain");
     fallback to `Other` when a view sits directly in `views_dir`.
   - friendly-title transform (trailing `_view` stripped; `PII` uppercased).
-  - the Find-a-field table: a row per field, correct `Sensitive` flag, View cell
-    links to the view anchor.
+  - the Find-a-field finder: a row per exposed member; the sensitive tag present
+    only for sensitive members; the view link points at the view section;
+    measures precede dimensions in domain-then-field order.
+  - measures/dimensions tables omitted when a view has none of that kind.
   - deterministic domain/view ordering.
 - The JS is static and not unit-tested by pytest; verify by building the site
-  and driving the page (filter narrows rows; header click sorts).
+  and driving the page (filter narrows rows; the Measures quick-filter limits to
+  measures; the finder scrolls within its box).
 
 ## Files touched
 
