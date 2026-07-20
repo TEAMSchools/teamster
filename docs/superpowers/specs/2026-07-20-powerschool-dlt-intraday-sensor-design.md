@@ -2,9 +2,12 @@
 
 - **Date:** 2026-07-20
 - **Issue:** [#4453](https://github.com/TEAMSchools/teamster/issues/4453)
-- **Status:** Draft
-- **Scope:** `kippnewark` first; library factory generalizes to other districts
-  later.
+- **Status:** Approved (amended 2026-07-20: all three dlt districts migrate in
+  one cutover; nightly re-baseline is probe-before-load)
+- **Scope:** All three dlt PowerSchool districts — `kippnewark`, `kippcamden`,
+  `kipppaterson`. The shared op contract changes, so a partial migration would
+  leave the non-migrated districts' intraday schedules launching unconditional
+  full loads; migrating everyone at once avoids a legacy compatibility mode.
 
 ## Problem
 
@@ -44,10 +47,8 @@ artifacts.
 
 ## Non-goals
 
-- Other districts. `kippnewark` is the first consumer; the factory is written to
-  generalize, but wiring other locations is out of scope here.
-- Changing the nightly schedule's target set (still the 30 tables it targets
-  today) — only its behavior changes to unconditional full-refresh.
+- Changing the nightly schedules' target sets (still the tables they target
+  today) — only their behavior changes to unconditional full-refresh.
 - Windowing/partitioning large tables — full-replace remains the load strategy
   (see the dlt `powerschool` CLAUDE.md `DPY-4011` note).
 
@@ -72,16 +73,20 @@ signatures, but no longer decides the selection.
 
 ### Tiering
 
-| Group                      | Count | Intraday (sensor) gate | Nightly      |
-| -------------------------- | ----- | ---------------------- | ------------ |
-| Cursor (existing intraday) | 27    | `count` + `max_cursor` | none         |
-| No-cursor                  | 18    | `count` only           | full refresh |
-| Gradebook FK cluster       | 12    | excluded               | full refresh |
+Counts per district (`kippnewark` / `kippcamden` / `kipppaterson` — newark and
+camden share the same 57-table set; paterson has 48):
 
-- **Intraday sensor set (45):** the 27 cursor tables plus the 18 no-cursor
+| Group                      | NWK/CAM | PAT | Intraday (sensor) gate | Nightly      |
+| -------------------------- | ------- | --- | ---------------------- | ------------ |
+| Cursor (existing intraday) | 27      | 23  | `count` + `max_cursor` | none         |
+| No-cursor                  | 18      | 14  | `count` only           | full refresh |
+| Gradebook FK cluster       | 12      | 11  | excluded               | full refresh |
+
+- **Intraday sensor set (45 / 45 / 37):** the cursor tables plus the no-cursor
   tables.
-- **Nightly set (30):** the 18 no-cursor tables plus the 12 gradebook cluster
-  tables. Same target as today; the mode changes to unconditional full-refresh.
+- **Nightly set (30 / 30 / 25):** the no-cursor tables plus the gradebook
+  cluster tables. Same target as today; the mode changes to unconditional
+  full-refresh.
 - **Gradebook FK cluster (12, nightly-only):** `assignmentscore`,
   `assignmentsection`, `assignmentcategoryassoc`, `districtteachercategory`,
   `teachercategory`, `gradecalcformulaweight`, `gradecalcschoolassoc`,
@@ -98,16 +103,20 @@ authoritative sweep that catches in-place edits `COUNT(*)` cannot see.
 ### Sensor
 
 New library factory
-`build_powerschool_dlt_intraday_sensor(code_location, tables, dlt_pipeline, minimum_interval_seconds=900)`
-in `libraries/dlt/powerschool/`, wired into `kippnewark`, replacing
-`powerschool_dlt_intraday_asset_job_schedule`. Requests resources
-`ssh_powerschool`, `db_powerschool`, and `dlt`.
+`build_powerschool_dlt_intraday_sensor(code_location, tables, nightly_schedule_name, minimum_interval_seconds=900)`
+in `libraries/dlt/powerschool/sensors.py`, wired into all three districts,
+replacing each `powerschool_dlt_intraday_asset_job_schedule`. Requests resources
+`ssh_powerschool` and `db_powerschool`; the dlt pipeline (for baseline reads) is
+built internally via a shared helper, so no pipeline or dlt resource is passed
+in.
 
 Each tick:
 
-1. Skip if a run for the target job is already in progress or queued (the
-   baseline advances only on load success, so an in-flight table would otherwise
-   re-select and launch a duplicate).
+1. Skip if a run launched by this sensor OR by the district's nightly schedule
+   is already in progress or queued (the baseline advances only on load success,
+   so an in-flight table would otherwise re-select and launch a duplicate).
+   Detected via the auto-applied `dagster/sensor_name` / `dagster/schedule_name`
+   run tags.
 2. Open the tunnel; probe each intraday table — `COUNT(*)` +
    `MAX(cursor_column)` for cursor tables, `COUNT(*)` only for no-cursor tables.
    Reuses `probe_signature` (extended for the no-cursor case) over one shared
@@ -130,12 +139,21 @@ absent (nightly loads all selected):
 - **Probe arg present (intraday):** load exactly `selected_asset_keys` using the
   passed per-table signatures; write those signatures to `resource_state`. No
   re-probe, no gate.
-- **Probe arg absent (nightly full-refresh):** load all `selected_asset_keys`
-  unconditionally; re-probe the selected set once to write fresh baseline
-  signatures (so the next intraday tick has a baseline). No gate.
+- **Probe arg absent (nightly full-refresh, or any manual/ad-hoc launch):**
+  probe all `selected_asset_keys` once BEFORE the load (count-only for no-cursor
+  tables), then load them all unconditionally with those signatures. No gate.
+  The probe must precede the load because dlt commits state only from a resource
+  actually extracted into a successful load — a post-load write from the op body
+  never round-trips (see the dlt library CLAUDE.md). A source change during the
+  load causes at most one redundant intraday reload — the same benign staleness
+  window already accepted for the sensor.
 
 dlt still commits signatures only on successful load in both modes, preserving
-self-healing.
+self-healing. **Signature shape is normalized**: `probe_signature` always
+returns both keys (`{"count": n, "max_cursor": None}` for no-cursor tables) so a
+stored signature that round-trips through the op's run-config schema (which
+defaults `max_cursor` to `None`) compares equal to the next raw probe —
+otherwise every no-cursor table would re-select on every tick forever.
 
 ### Config schema
 
@@ -197,13 +215,18 @@ at least one of `intraday`/`nightly`.
 
 ## Cutover
 
-Single deploy: remove `powerschool_dlt_intraday_asset_job_schedule`, add the
-sensor (started), switch the nightly schedule to full-refresh mode, and migrate
-`config/assets.yaml` to the new membership fields. The intraday schedule and the
-sensor must not both run (double loads), so this is one atomic change, not a
-staged rollout. Branch-deployment note: the dlt dataset is **not**
-branch-isolated (see the dlt CLAUDE.md), so branch testing writes to the prod
-dataset — validate via probe/log rather than a real branch load.
+Single deploy across all three districts: remove each
+`powerschool_dlt_intraday_asset_job_schedule`, add each sensor (repo convention
+sets no `default_status`, so start each sensor post-deploy — until started, the
+nightly schedule still covers freshness), switch the nightly schedules to
+full-refresh mode, and migrate each `config/assets.yaml` to the new membership
+fields. The intraday schedule and the sensor must not both run (double loads),
+so this is one atomic change per district, not a staged rollout. One-time
+cutover effect: the no-cursor tables have no stored signature, so each
+district's first sensor tick loads all of them once and establishes baselines.
+Branch-deployment note: the dlt dataset is **not** branch-isolated (see the dlt
+CLAUDE.md), so branch testing writes to the prod dataset — validate via
+probe/log rather than a real branch load.
 
 ## Testing
 
@@ -221,17 +244,16 @@ dataset — validate via probe/log rather than a real branch load.
 
 ## Docs
 
-- Regenerate `docs/reference/automations.md` (new sensor, removed intraday
-  schedule) in a full environment where all locations import.
-- Update the `kippnewark` CLAUDE.md integration table: PowerSchool trigger
-  becomes "sensor (intraday) + schedule (nightly full-refresh)."
+- Regenerate `docs/reference/automations.md` (new sensors, removed intraday
+  schedules) in a full environment where all locations import.
+- Update the `kippnewark`, `kippcamden`, and `kipppaterson` CLAUDE.md
+  integration tables: PowerSchool trigger becomes "sensor (intraday) + schedule
+  (nightly full-refresh)."
 - Update the dlt `powerschool` library CLAUDE.md to describe the sensor + op
   run-arg contract.
 
 ## Follow-ups
 
-- Generalize the sensor wiring to the other districts as their dlt PowerSchool
-  migrations land.
 - Revisit the intraday cadence: idle ticks are now probe-only, so a tighter
   interval is cheap on the Dagster side but multiplies the Oracle probe load —
   measure before changing.
