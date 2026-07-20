@@ -1,0 +1,168 @@
+models:
+  - name: stg_google_sheets__reporting__promo_status_policies
+    description: >-
+      Promotional status policy rules, one row per condition, maintained by
+      regional leaders in Google Sheets. Conditions sharing a rule_group within
+      the same scope (academic_year, region, grade range, term, domain) are
+      ANDed together; rule groups are ORed. A student is Off-Track for a domain
+      when any fully-satisfied rule group matches their scope.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - grade_min
+              - grade_max
+              - term_name
+              - domain
+              - rule_group
+              - metric
+              - comparator
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: grade_min <= grade_max
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: >-
+              metric not in ('is_off_track_attendance', 'is_off_track_academic')
+              or domain = 'overall'
+          config:
+            severity: error
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Starting calendar year of the school year the rule applies to (2025 =
+          SY25-26).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: region
+        data_type: string
+        description: Region the rule applies to.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [Camden, Newark, Miami, Paterson]
+              config:
+                severity: error
+      - name: grade_min
+        data_type: int64
+        description: Lowest grade level in scope. Kindergarten is 0.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: grade_max
+        data_type: int64
+        description: >-
+          Highest grade level in scope, inclusive. Equal to grade_min for a
+          single-grade rule.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: term_name
+        data_type: string
+        description: >-
+          Reporting term the rule applies to, or All for every term. Term-scaled
+          thresholds are one row per term.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [Q1, Q2, Q3, Q4, All]
+              config:
+                severity: error
+      - name: domain
+        data_type: string
+        description: >-
+          Status the rule feeds — attendance, academic, or overall. Overall
+          rules may reference the pseudo-metrics is_off_track_attendance and
+          is_off_track_academic.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [attendance, academic, overall]
+              config:
+                severity: error
+      - name: rule_group
+        data_type: int64
+        description: >-
+          Grouping integer within a scope and domain. Conditions in the same
+          group must ALL be met for the group to fire; the domain is Off-Track
+          when ANY group fires.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: metric
+        data_type: string
+        description: >-
+          Metric the condition tests, from the fixed catalog defined by the
+          promo_status_metric_columns macro (plus pseudo-metrics for the overall
+          domain).
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: comparator
+        data_type: string
+        description: Comparison operator applied as metric comparator value.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values:
+                  - less_than
+                  - less_than_or_equal
+                  - greater_than
+                  - greater_than_or_equal
+                  - equals
+                  - not_equals
+              config:
+                severity: error
+      - name: value
+        data_type: float64
+        quote: true
+        description: Cutoff value the metric is compared against.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: if_missing
+        data_type: string
+        description: >-
+          What the condition evaluates to when the student has no value for the
+          metric — met or not_met. Makes null handling explicit.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [met, not_met]
+              config:
+                severity: error
+      - name: detail_label
+        data_type: string
+        description: >-
+          Optional label emitted as attendance_status_hs_detail when an
+          attendance-domain rule group fires. When several labeled groups fire,
+          the lowest rule_group number wins.

@@ -1,0 +1,366 @@
+models:
+  - name: int_students__promotional_status
+    description: >-
+      Per-student, per-term promotional status for all active enrollments,
+      evaluated from the sheet-driven policy rule table
+      (stg_google_sheets__reporting__promo_status_policies). Metrics come from
+      int_students__promotional_status_metrics; conditions in a rule group AND
+      together, rule groups OR together, and any fired group makes the domain
+      Off-Track. The overall domain is evaluated second and may reference the
+      attendance and academic outcomes as pseudo-metrics. Statuses are NULL for
+      student-terms no policy row matches (e.g. years not yet seeded in the
+      sheet). SPED exemptions and PowerSchool log overrides stay code-owned in
+      the metrics model.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - term_name
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student Number assigned by the school. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+            column_role: primary_key
+      - name: academic_year
+        data_type: int64
+        description:
+          Starting calendar year of the school year, extracted from school_year
+          (e.g., 2025 from '2025-2026').
+        config:
+          meta:
+            source_system: Amplify
+            source_model: stg_amplify__mclass__sftp__pm_student_summary_aimline
+            source_column: academic_year
+      - name: term_name
+        data_type: string
+        description: Reporting term name (Q1-Q4).
+      - name: is_current
+        data_type: boolean
+        description:
+          True if this is the most recent completed or active reporting term.
+      - name: ada_term_running
+        data_type: float64
+        description:
+          Average daily attendance rate accumulated through the end of the term.
+      - name: n_absences_y1_running
+        data_type: float64
+        description: >
+          Total absences year-to-date through the end of the term, including
+          suspensions and tardy-converted absences.
+      - name: n_absences_y1_running_non_susp
+        data_type: float64
+        description: >
+          Absences year-to-date excluding suspension codes (ISS, OSS, OS, OSSP,
+          SHI), plus a tardy penalty of floor(tardies / 3). Used for Camden HS
+          promotion thresholds.
+      - name: n_absences_y1_running_non_susp_no_tardy
+        data_type: float64
+        description: >
+          Absences year-to-date excluding suspension codes (ISS, OSS, OS, OSSP,
+          SHI) with no tardy penalty applied. Used for Newark HS promotion
+          thresholds.
+      - name: iready_reading_recent
+        data_type: string
+        description:
+          Most recent iReady reading overall relative placement for the year.
+      - name: iready_math_recent
+        data_type: string
+        description:
+          Most recent iReady math overall relative placement for the year.
+      - name: n_failing
+        data_type: int64
+        description: Number of courses with a failing grade as of the term.
+      - name: n_failing_core
+        data_type: int64
+        description: Number of core courses with a failing grade as of the term.
+      - name: projected_credits_cum
+        data_type: float64
+        description: >
+          Projected cumulative credits earned through end of year, combining
+          projected year credits with historical earned credits.
+      - name: projected_credits_y1_term
+        data_type: float64
+        description:
+          Projected credits to be earned in the current academic year through
+          the term.
+      - name: dibels_composite_level_recent_str
+        data_type: string
+        description:
+          Most recent DIBELS composite benchmark level label for the year.
+      - name: dibels_composite_level_recent
+        data_type: int64
+        description: >
+          Most recent DIBELS composite benchmark level as an integer (lower is
+          more at-risk).
+      - name: star_math_level_recent
+        data_type: int64
+        description:
+          Most recent Renaissance STAR math achievement level for the year.
+      - name: star_reading_level_recent
+        data_type: int64
+        description:
+          Most recent Renaissance STAR reading achievement level for the year.
+      - name: fast_ela_level_recent
+        data_type: int64
+        description:
+          Most recent FAST ELA achievement level for the year (Florida only).
+      - name: fast_math_level_recent
+        data_type: int64
+        description:
+          Most recent FAST math achievement level for the year (Florida only).
+      - name: attendance_status
+        data_type: string
+        description: >-
+          On-Track or Off-Track from the attendance-domain policy rules matching
+          the student's region, grade, year, and term. NULL when no attendance
+          rule matches.
+      - name: attendance_status_hs_detail
+        data_type: string
+        description: >
+          Detailed attendance status for HS students: On-Track, Off-Track
+          (Approaching threshold), or Off-Track (Already reached threshold).
+          Identical to attendance_status for non-HS grades.
+      - name: academic_status
+        data_type: string
+        description: >-
+          On-Track or Off-Track from the academic-domain policy rules matching
+          the student's region, grade, year, and term. NULL when no academic
+          rule matches.
+      - name: exemption
+        data_type: string
+        description: >
+          Populated when a student is exempt from retention criteria: Exempt -
+          Special Education or Exempt - Manual Override.
+      - name: manual_retention
+        data_type: string
+        description: >
+          Populated with 'Manual Retention' when a staff member has logged a
+          force-retention entry in PowerSchool regardless of other criteria.
+      - name: overall_status
+        data_type: string
+        description: >-
+          On-Track or Off-Track from the overall-domain policy rules, which may
+          combine the attendance and academic outcomes (as pseudo-metrics) with
+          direct metric conditions. NULL when no overall rule matches.
+
+unit_tests:
+  - name: test_promo_status_or_of_ands
+    description: >-
+      Verifies OR-of-ANDs evaluation and if_missing handling. Student 1 fires
+      single-condition group 1 (n_failing_core >= 2). Student 2 fires
+      two-condition group 2 (low ADA AND 3+ levels below in reading). Student 3
+      partially satisfies group 2 only, so stays On-Track. Student 4 has NULL
+      ADA and NULL iReady with if_missing met on both group-2 conditions, so
+      fires. Student 5 is in a region with no rules and gets NULL statuses.
+    model: int_students__promotional_status
+    given:
+      - input: ref('int_students__promotional_status_metrics')
+        format: sql
+        rows: |
+          select 1 as student_number, 2025 as academic_year,
+            'Q1' as term_name, true as is_current, 'Newark' as region,
+            5 as grade_level, 0.95 as ada_term_running,
+            0.0 as n_absences_y1_running,
+            0.0 as n_absences_y1_running_non_susp,
+            0.0 as n_absences_y1_running_non_susp_no_tardy,
+            0 as iready_reading_levels_below,
+            0 as iready_math_levels_below,
+            cast(null as int64) as dibels_composite_level,
+            cast(null as int64) as star_ela_level,
+            cast(null as int64) as star_math_level,
+            cast(null as int64) as fast_ela_level,
+            cast(null as int64) as fast_math_level,
+            2 as n_failing, 2 as n_failing_core,
+            cast(null as float64) as projected_credits_y1_term,
+            cast(null as float64) as projected_credits_cum,
+            cast(null as string) as iready_reading_recent,
+            cast(null as string) as iready_math_recent,
+            cast(null as string) as dibels_composite_level_recent_str,
+            cast(null as string) as exemption,
+            cast(null as string) as manual_retention
+          union all
+          select 2, 2025, 'Q1', true, 'Newark', 5, 0.80, 0.0, 0.0, 0.0,
+            3, 0, null, null, null, null, null, 0, 0, null, null,
+            null, null, null, null, null
+          union all
+          select 3, 2025, 'Q1', true, 'Newark', 5, 0.80, 0.0, 0.0, 0.0,
+            1, 0, null, null, null, null, null, 0, 0, null, null,
+            null, null, null, null, null
+          union all
+          select 4, 2025, 'Q1', true, 'Newark', 5,
+            cast(null as float64), 0.0, 0.0, 0.0,
+            null, null, null, null, null, null, null, 0, 0, null, null,
+            null, null, null, null, null
+          union all
+          select 5, 2025, 'Q1', true, 'Miami', 5, 0.50, 0.0, 0.0, 0.0,
+            3, 3, null, null, null, null, null, 5, 5, null, null,
+            null, null, null, null, null
+      - input: ref('stg_google_sheets__reporting__promo_status_policies')
+        format: sql
+        rows: |
+          select 2025 as academic_year, 'Newark' as region,
+            5 as grade_min, 8 as grade_max, 'All' as term_name,
+            'academic' as domain, 1 as rule_group,
+            'n_failing_core' as metric, 'greater_than_or_equal' as comparator,
+            2.0 as `value`, 'not_met' as if_missing,
+            cast(null as string) as detail_label
+          union all
+          select 2025, 'Newark', 5, 8, 'All', 'academic', 2,
+            'ada_term_running', 'less_than', 0.85, 'met', null
+          union all
+          select 2025, 'Newark', 5, 8, 'All', 'academic', 2,
+            'iready_reading_levels_below', 'greater_than_or_equal', 3.0, 'met', null
+    expect:
+      rows:
+        - { student_number: 1, academic_status: Off-Track }
+        - { student_number: 2, academic_status: Off-Track }
+        - { student_number: 3, academic_status: On-Track }
+        - { student_number: 4, academic_status: Off-Track }
+        - { student_number: 5, academic_status: null }
+  - name: test_promo_status_detail_label_term_scope_and_overall
+    description: >-
+      Verifies term scoping, detail-label precedence, and the overall pseudo
+      metric pass. Student 1 (Q1, 30 absences) fires both attendance groups and
+      takes the lowest fired group's label; overall ORs attendance and academic
+      so it is Off-Track. Student 2 (Q1, 10 absences) fires only the Q1-scoped
+      approaching group. Student 3 is in Q2 where the Q1-scoped group does not
+      apply and stays On-Track everywhere.
+    model: int_students__promotional_status
+    given:
+      - input: ref('int_students__promotional_status_metrics')
+        format: sql
+        rows: |
+          select 1 as student_number, 2025 as academic_year,
+            'Q1' as term_name, true as is_current, 'Newark' as region,
+            9 as grade_level, 0.90 as ada_term_running,
+            30.0 as n_absences_y1_running,
+            30.0 as n_absences_y1_running_non_susp,
+            30.0 as n_absences_y1_running_non_susp_no_tardy,
+            cast(null as int64) as iready_reading_levels_below,
+            cast(null as int64) as iready_math_levels_below,
+            cast(null as int64) as dibels_composite_level,
+            cast(null as int64) as star_ela_level,
+            cast(null as int64) as star_math_level,
+            cast(null as int64) as fast_ela_level,
+            cast(null as int64) as fast_math_level,
+            0 as n_failing, 0 as n_failing_core,
+            25.0 as projected_credits_y1_term,
+            50.0 as projected_credits_cum,
+            cast(null as string) as iready_reading_recent,
+            cast(null as string) as iready_math_recent,
+            cast(null as string) as dibels_composite_level_recent_str,
+            cast(null as string) as exemption,
+            cast(null as string) as manual_retention
+          union all
+          select 2, 2025, 'Q1', true, 'Newark', 9, 0.90, 10.0, 10.0, 10.0,
+            null, null, null, null, null, null, null, 0, 0, 25.0, 50.0,
+            null, null, null, null, null
+          union all
+          select 3, 2025, 'Q2', true, 'Newark', 9, 0.90, 10.0, 10.0, 10.0,
+            null, null, null, null, null, null, null, 0, 0, 25.0, 50.0,
+            null, null, null, null, null
+      - input: ref('stg_google_sheets__reporting__promo_status_policies')
+        format: sql
+        rows: |
+          select 2025 as academic_year, 'Newark' as region,
+            9 as grade_min, 12 as grade_max, 'All' as term_name,
+            'attendance' as domain, 1 as rule_group,
+            'n_absences_y1_running_non_susp_no_tardy' as metric,
+            'greater_than_or_equal' as comparator, 27.0 as `value`,
+            'not_met' as if_missing,
+            'Off-Track (Already reached threshold)' as detail_label
+          union all
+          select 2025, 'Newark', 9, 12, 'Q1', 'attendance', 2,
+            'n_absences_y1_running_non_susp_no_tardy', 'greater_than_or_equal',
+            6.0, 'not_met', 'Off-Track (Approaching threshold)'
+          union all
+          select 2025, 'Newark', 9, 12, 'All', 'academic', 1,
+            'projected_credits_cum', 'less_than', 25.0, 'not_met', null
+          union all
+          select 2025, 'Newark', 9, 12, 'All', 'overall', 1,
+            'is_off_track_attendance', 'equals', 1.0, 'not_met', null
+          union all
+          select 2025, 'Newark', 9, 12, 'All', 'overall', 2,
+            'is_off_track_academic', 'equals', 1.0, 'not_met', null
+    expect:
+      rows:
+        - {
+            student_number: 1,
+            attendance_status: Off-Track,
+            attendance_status_hs_detail: Off-Track (Already reached threshold),
+            academic_status: On-Track,
+            overall_status: Off-Track,
+          }
+        - {
+            student_number: 2,
+            attendance_status: Off-Track,
+            attendance_status_hs_detail: Off-Track (Approaching threshold),
+            academic_status: On-Track,
+            overall_status: Off-Track,
+          }
+        - {
+            student_number: 3,
+            attendance_status: On-Track,
+            attendance_status_hs_detail: On-Track,
+            academic_status: On-Track,
+            overall_status: On-Track,
+          }
+  - name: test_promo_status_invalid_comparator_fails_closed
+    description: >-
+      Verifies a rule group fails closed when one of its conditions is
+      unevaluable. Student 1's group 1 has two conditions that AND together:
+      n_failing_core >= 2 (met) and an ada_term_running condition whose
+      comparator is not a recognized token, so is_met is NULL. The group must
+      NOT fire (academic_status On-Track) — a NULL condition cannot satisfy an
+      AND. Locks in coalesce(is_met, false) against logical_and silently
+      ignoring the NULL and firing the group, which would loosen the AND
+      whenever a bad comparator lands in the policy sheet.
+    model: int_students__promotional_status
+    given:
+      - input: ref('int_students__promotional_status_metrics')
+        format: sql
+        rows: |
+          select 1 as student_number, 2025 as academic_year,
+            'Q1' as term_name, true as is_current, 'Newark' as region,
+            5 as grade_level, 0.50 as ada_term_running,
+            0.0 as n_absences_y1_running,
+            0.0 as n_absences_y1_running_non_susp,
+            0.0 as n_absences_y1_running_non_susp_no_tardy,
+            0 as iready_reading_levels_below,
+            0 as iready_math_levels_below,
+            cast(null as int64) as dibels_composite_level,
+            cast(null as int64) as star_ela_level,
+            cast(null as int64) as star_math_level,
+            cast(null as int64) as fast_ela_level,
+            cast(null as int64) as fast_math_level,
+            0 as n_failing, 2 as n_failing_core,
+            cast(null as float64) as projected_credits_y1_term,
+            cast(null as float64) as projected_credits_cum,
+            cast(null as string) as iready_reading_recent,
+            cast(null as string) as iready_math_recent,
+            cast(null as string) as dibels_composite_level_recent_str,
+            cast(null as string) as exemption,
+            cast(null as string) as manual_retention
+      - input: ref('stg_google_sheets__reporting__promo_status_policies')
+        format: sql
+        rows: |
+          select 2025 as academic_year, 'Newark' as region,
+            5 as grade_min, 8 as grade_max, 'All' as term_name,
+            'academic' as domain, 1 as rule_group,
+            'n_failing_core' as metric, 'greater_than_or_equal' as comparator,
+            2.0 as `value`, 'not_met' as if_missing,
+            cast(null as string) as detail_label
+          union all
+          select 2025, 'Newark', 5, 8, 'All', 'academic', 1,
+            'ada_term_running', 'invalid_comparator', 0.85, 'not_met', null
+    expect:
+      rows:
+        - { student_number: 1, academic_status: On-Track }

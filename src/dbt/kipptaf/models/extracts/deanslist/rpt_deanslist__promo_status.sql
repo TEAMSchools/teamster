@@ -128,7 +128,7 @@ left join
     and term = gpa.term_name
     and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
 left join
-    {{ ref("int_reporting__promotional_status") }} as p
+    {{ ref("int_students__promotional_status") }} as p
     on co.student_number = p.student_number
     and co.academic_year = p.academic_year
     and term = p.term_name
