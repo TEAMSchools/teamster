@@ -35,7 +35,7 @@ replace. Config in `powerschool/sis/dlt/config/assets.yaml` (per-table
 is decided by `kipppaterson__powerschool__dlt__intraday_sensor` (probe +
 dlt-state baseline); the nightly schedule full-refreshes its targets
 unconditionally and re-baselines. Design:
-`docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md`.
+`docs/superpowers/specs/2026-07-20-powerschool-dlt-intraday-sensor-design.md`.
 
 Consequences:
 
