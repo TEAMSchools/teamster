@@ -86,3 +86,13 @@ def test_resolve_view_assigns_folders_with_other_fallback() -> None:
     assert by_name["base_key"].folder == "Other"
     # measures are never folder-grouped
     assert by_name["count_rows"].folder == ""
+
+
+def test_derive_access_reads_groups_and_row_level() -> None:
+    view = _resolved_view()
+    access = view.access
+
+    assert access.groups == ["sample-network", "sample-region"]
+    assert access.row_level_members == ["sample_dim_region_name"]
+    # no sensitive members in the fixture
+    assert access.exposes_pii is False

@@ -140,6 +140,41 @@ def _folder_map(view: dict) -> dict[str, str]:
     return mapping
 
 
+# Known sensitive member names (FERPA direct/indirect identifiers). Used only
+# to flag "exposes PII" in the access summary; the authoritative access model
+# is each view's access_policy and docs/guides/cube.md.
+SENSITIVE_MEMBERS = frozenset(
+    {
+        "personal_email",
+        "personal_cell_phone",
+        "birth_date",
+        "gender_identity",
+        "race",
+        "is_hispanic",
+        "full_name",
+        "lea_student_identifier",
+        "state_student_identifier",
+    }
+)
+
+
+def derive_access(view: dict, members: list[ResolvedMember]) -> AccessSummary:
+    groups: list[str] = []
+    row_level: list[str] = []
+    for policy in view.get("access_policy", []):
+        group = policy.get("group")
+        if group and group not in groups:
+            groups.append(group)
+        for flt in policy.get("row_level", {}).get("filters", []):
+            member = flt.get("member")
+            if member and member not in row_level:
+                row_level.append(member)
+    exposes_pii = any(m.exposed_name in SENSITIVE_MEMBERS for m in members)
+    return AccessSummary(
+        groups=groups, row_level_members=row_level, exposes_pii=exposes_pii
+    )
+
+
 def resolve_view(view: dict, cubes: dict[str, dict[str, CubeMember]]) -> ResolvedView:
     folders = _folder_map(view)
     members: list[ResolvedMember] = []
@@ -187,7 +222,7 @@ def resolve_view(view: dict, cubes: dict[str, dict[str, CubeMember]]) -> Resolve
             str(view["description"]).strip() if view.get("description") else None
         ),
         members=members,
-        access=AccessSummary(),
+        access=derive_access(view, members),
     )
 
 
