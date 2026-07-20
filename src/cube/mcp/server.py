@@ -227,10 +227,13 @@ mcp = FastMCP(
     instructions=(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
         "and views) via Cube Cloud's REST API.\n\n"
-        "Workflow: (1) call `meta` to discover available views, measures, and "
-        "dimensions — analyst-facing surfaces are views, e.g. `student_attendance_view` "
+        "Workflow: (1) call `meta` with no arguments once to discover available "
+        "view names — analyst-facing surfaces are views, e.g. `student_attendance_view` "
         "(one view per student domain) or `staff_directory` / `staff_pii` (staff "
-        "domain, split by access tier); (2) "
+        "domain, split by access tier); (2) call `meta` again with "
+        '`views=["<the-view-you-need>"]` to fetch just that view\'s measures '
+        "and dimensions — much smaller than the full catalog, prefer it once "
+        "you know which view(s) are relevant; (3) "
         "build a Cube "
         "query object (measures, dimensions, filters, timeDimensions, order, "
         "limit) and call `load` to execute, or `sql` to inspect the compiled "
@@ -333,31 +336,54 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
 
 
-def _meta_cache_path(email: str) -> Path:
-    digest = hashlib.sha256(email.encode("utf-8")).hexdigest()[:16]
+def _meta_scope_key(views: list[str] | None, cubes: list[str] | None) -> str:
+    """Distinguish a scoped `/entities/all` fetch from the full `/meta` catalog
+    in the cache key — a filtered call must never read or write the full
+    catalog's cache entry (and vice versa)."""
+    if not views and not cubes:
+        return "all"
+    return "entities:" + ",".join(sorted([*(views or []), *(cubes or [])]))
+
+
+def _meta_cache_path(email: str, scope: str) -> Path:
+    digest = hashlib.sha256(f"{email}:{scope}".encode()).hexdigest()[:16]
     return META_CACHE_DIR / f"cube-meta-{digest}.json"
 
 
-_meta_memory_cache: dict[str, tuple[int, dict[str, Any]]] = {}
+_meta_memory_cache: dict[tuple[str, str], tuple[int, dict[str, Any]]] = {}
 
 
 @mcp.tool()
-async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
+async def meta(
+    ctx: Context,
+    views: list[str] | None = None,
+    cubes: list[str] | None = None,
+    force_refresh: bool = False,
+) -> dict[str, Any]:
     """Discover available KIPP TEAM & Family data: students, attendance, grades,
     assessments, enrollment, demographics, staff, schools, regions, terms.
     Returns the catalog of views, measures, and dimensions queryable via `load`
     or `sql`.
 
-    Cached per-email for one hour (in-memory, with disk fallback across process
-    restarts). Pass `force_refresh=True` after a model deploy.
+    Call with no arguments first to discover which views exist (a lightweight
+    pass would still return the full catalog — there is no lighter discovery
+    call). Once you know the view(s) you need, pass `views` (and/or `cubes`) to
+    fetch only their measures/dimensions — this returns a fraction of the full
+    catalog's size and avoids exceeding a response size budget on large models.
+
+    Cached per (email, requested scope) for one hour (in-memory, with disk
+    fallback across process restarts) — a scoped call never reads or writes the
+    full-catalog cache entry, or another scope's. Pass `force_refresh=True`
+    after a model deploy.
     """
     email = await _get_user_email(ctx)
+    scope = _meta_scope_key(views, cubes)
     now = int(time.time())
     if not force_refresh:
-        memory_hit = _meta_memory_cache.get(email)
+        memory_hit = _meta_memory_cache.get((email, scope))
         if memory_hit and memory_hit[0] > now:
             return memory_hit[1]
-    cache_path = _meta_cache_path(email)
+    cache_path = _meta_cache_path(email, scope)
     if not force_refresh and cache_path.exists():
         try:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -367,11 +393,19 @@ async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
             cache_path.unlink(missing_ok=True)
         else:
             if expires_at > now and "payload" in cached:
-                _meta_memory_cache[email] = (expires_at, cached["payload"])
+                _meta_memory_cache[(email, scope)] = (expires_at, cached["payload"])
                 return cached["payload"]
-    payload = await _request("GET", "/meta", email=email)
+    if scope == "all":
+        payload = await _request("GET", "/meta", email=email)
+    else:
+        body: dict[str, list[str]] = {}
+        if cubes:
+            body["cubes"] = cubes
+        if views:
+            body["views"] = views
+        payload = await _request("POST", "/entities/all", json=body, email=email)
     expires_at = int(time.time()) + META_CACHE_TTL_SECONDS
-    _meta_memory_cache[email] = (expires_at, payload)
+    _meta_memory_cache[(email, scope)] = (expires_at, payload)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     # Atomic write: avoid corruption if two concurrent meta() calls race.
     tmp_path = cache_path.with_suffix(f".tmp.{os.getpid()}")
