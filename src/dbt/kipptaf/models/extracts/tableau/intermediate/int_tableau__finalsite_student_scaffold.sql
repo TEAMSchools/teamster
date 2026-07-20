@@ -38,6 +38,7 @@ with
             ) as latest_status,
 
         from {{ ref("int_finalsite__status_report_unpivot") }} as r
+        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
         inner join
             {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
             on r._dagster_partition_key = x._dagster_partition_key
@@ -45,9 +46,7 @@ with
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
             and not x.qa_flag
-        /* hardcoding year here to ensure the correct enrollment academic year from FS
-           is being used. the status_crosswalk is set to one year only */
-        where r.enrollment_academic_year = 2026
+        where r.enrollment_academic_year = cy.academic_year
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
