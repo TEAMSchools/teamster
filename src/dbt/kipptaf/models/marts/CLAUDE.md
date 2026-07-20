@@ -244,6 +244,12 @@ Marts inherit `contract: enforced: true` and `materialized: view` from
 explicit uniqueness test on its PK (`unique` on a single column, or
 `dbt_utils.unique_combination_of_columns` for composite).
 
+Exception: the assessment-scores star (`fct_assessment_scores_enrollment_scoped`
+plus its FK-closure dims) and the three assessment intermediates are
+`materialized: table` for Cube query performance
+([#4464](https://github.com/TEAMSchools/teamster/issues/4464)) — don't revert to
+view without re-profiling Cube's BigQuery spend.
+
 Drop model-level `dbt_utils.unique_combination_of_columns` when its column set
 equals the surrogate-key hash inputs — `unique` on the PK detects the same
 violations.
@@ -259,8 +265,21 @@ still good to keep for orphan detection, but it does not feed the diagram.
 
 A `config.materialized: table` mart renders `constraints:` into CREATE TABLE DDL
 (inert on the default view marts). On a table mart, add `warn_unenforced: false`
-(not just `warn_unsupported: false`) on the `primary_key` constraint to clear
-the parse warning.
+(not just `warn_unsupported: false`) on EVERY constraint — primary_key AND
+foreign_key both render into DDL and warn otherwise.
+
+## Converting a view mart to a table
+
+- BigQuery FK DDL requires every referenced relation to be a TABLE with a PK
+  constraint. Convert the full FK closure (walk `to: ref(...)` edges) in one PR
+  — a table mart FK'ing a still-view mart fails the build.
+- Under `--defer` (local dev AND dbt Cloud CI), dbt resolves FK constraint refs
+  to the DEFERRED relation unconditionally — even for models rebuilt in the same
+  run (dbt-core `compilation.py`). CI fails against still-view `zz_stg` copies
+  no matter what the PR schema builds. Before pushing, pre-seed staging as
+  tables: `dbt run --select <closure> --target staging` (shared `zz_stg` — needs
+  direct user authorization). BQ table clones preserve PK constraints, so
+  `Clone - Staging` keeps CI healthy afterward.
 
 ## Constraints are informational (views)
 

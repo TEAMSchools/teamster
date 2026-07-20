@@ -275,6 +275,14 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   calls (each call = fresh Postgres connection). REST is the right abstraction
   for stateless tool calls.
 
+## Profiling Cube's BigQuery spend
+
+Query `region-us.INFORMATION_SCHEMA.JOBS_BY_PROJECT` with
+`user_email = 'cube-cloud@teamster-332318.iam.gserviceaccount.com'`; attribute
+per-mart via `regexp_extract_all(query, r'kipptaf_marts\.([a-z_]+)')`. Latency
+pain shows in `total_slot_ms`, not bytes — view-chain recomputation is
+compute-bound (#4464 moved the assessment star to tables for this).
+
 ## Diagnostic surfaces
 
 - `/meta` returning `{"cubes": []}` ≠ model not deployed. With no matching

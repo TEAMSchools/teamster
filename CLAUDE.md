@@ -551,7 +551,8 @@ the allowlist.
   additive label add. `mcp__github__issue_write` with `labels` REPLACES the full
   set; passing one label drops the rest.
 - GitHub Search API caps at 5 OR/AND/NOT operators per query (422 otherwise).
-  Loop per-term via `gh api search/issues -f q='...'` for larger searches.
+  Loop per-term via `gh api -X GET search/issues -f q='...'` for larger searches
+  — without `-X GET`, `-f` turns the request into a POST and 404s.
 - `mcp__github__search_issues` returns full issue **bodies** — a broad query
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.
