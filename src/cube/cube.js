@@ -88,7 +88,21 @@ async function resolveAccess(email) {
 
   try {
     const { BigQuery } = require("@google-cloud/bigquery");
-    const bq = new BigQuery();
+    // Cube's data driver is configured via CUBEJS_DB_BQ_* and runs jobs in
+    // teamster-332318. This hand-rolled client inherits none of that: a bare
+    // `new BigQuery()` defaults to the Cube Cloud host project (cubejs-cloud),
+    // where this identity has no bigquery.jobs.create — so every identity read
+    // throws, resolveAccess fails closed, and the whole network is denied
+    // (#4466). Pin the project + credentials to the driver's own config.
+    const bq = new BigQuery({
+      projectId: process.env.CUBEJS_DB_BQ_PROJECT_ID,
+      credentials: JSON.parse(
+        Buffer.from(
+          process.env.CUBEJS_DB_BQ_CREDENTIALS ?? "",
+          "base64",
+        ).toString("utf8"),
+      ),
+    });
     const [rows] = await bq.query({
       query:
         "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email ORDER BY staff_key LIMIT 1",
