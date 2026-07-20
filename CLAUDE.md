@@ -179,7 +179,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   after "yes"/"resume" and an agent plain-text re-confirm — the USER's message
   must name the specific operation + target ("delete rows where X from
   `dataset.table`"). Draft the exact statement and have them restate it, or hand
-  it to their terminal.
+  it to their terminal. For `launch_multiple_runs` the block fires even at
+  `confirm=False` (preview), and the dagster MCP has no `create_backfill` — hand
+  a partition-range backfill to the user to launch from the Dagster UI
+  (splitting into per-partition `launch_run`s to dodge the bulk classifier
+  bypasses intent — don't).
 
 - **`git push origin main` is hard-blocked by the classifier** regardless of
   in-conversation consent (AskUserQuestion answers or plain-text
@@ -580,6 +584,10 @@ opaque token.
   failure-triage groupings keyed on `assetSelection` silently drop these.
 - `mcp__dagster__list_runs` caps at `limit=100` with no truncation signal;
   paginate via `cursor` for incident triage that may exceed 100 runs.
+- A running backfill's `get_backfill` `status` can read `REQUESTED` with empty
+  `partitionStatusCounts` while its partition runs already execute — use
+  `list_runs(tags={"dagster/backfill": "<id>"})` for real per-partition
+  progress.
 - `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
   jobName alone won't queue. Resolve null-`assetSelection` failures to asset
   keys first.
