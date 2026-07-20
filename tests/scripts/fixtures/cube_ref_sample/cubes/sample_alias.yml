@@ -1,0 +1,4 @@
+cubes:
+  - name: sample_alias
+    extends: sample_base
+    public: false

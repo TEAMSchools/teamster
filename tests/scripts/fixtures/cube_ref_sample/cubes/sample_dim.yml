@@ -1,0 +1,10 @@
+cubes:
+  - name: sample_dim
+    public: false
+    sql_table: kipptaf_marts.dim_sample
+    dimensions:
+      - name: region_name
+        description: Region name.
+        sql: region_name
+        type: string
+        public: true
