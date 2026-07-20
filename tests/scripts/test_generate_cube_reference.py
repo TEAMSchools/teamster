@@ -134,6 +134,17 @@ def test_normalize_neutralizes_table_padding() -> None:
     assert gen._normalize(compact) == gen._normalize(padded)
 
 
+def test_normalize_neutralizes_prose_wrap() -> None:
+    # prettier's proseWrap: always hard-wraps long paragraphs; the unwrapped
+    # generator output and the wrapped-on-commit file must normalize equal.
+    one_line = "## view\n\nA long description that would normally wrap onto more than one line here.\n"
+    wrapped = (
+        "## view\n\nA long description that would normally wrap onto more than\n"
+        "one line here.\n"
+    )
+    assert gen._normalize(one_line) == gen._normalize(wrapped)
+
+
 def test_check_stale_passes_on_padding_only_diff(tmp_path) -> None:
     page = "| Name | Type |\n| --- | --- |\n| `a` | number |\n"
     padded_file = tmp_path / "out.md"

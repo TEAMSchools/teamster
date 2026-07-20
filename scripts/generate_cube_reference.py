@@ -321,28 +321,47 @@ def render_page(views: list[ResolvedView]) -> str:
     return body + "\n"
 
 
+def _normalize_table_row(stripped: str) -> str:
+    cells = [c.strip() for c in stripped.strip("|").split("|")]
+    norm = []
+    for cell in cells:
+        if re.fullmatch(r":?-+:?", cell):
+            left = ":" if cell.startswith(":") else ""
+            right = ":" if cell.endswith(":") else ""
+            norm.append(f"{left}---{right}")
+        else:
+            norm.append(cell)
+    return "| " + " | ".join(norm) + " |"
+
+
 def _normalize(text: str) -> str:
-    """Canonicalize markdown so prettier table-padding is not a false diff.
+    """Canonicalize markdown so prettier formatting is not a false diff.
 
     Table rows are re-joined with single-space cells; separator dash-runs
-    collapse to `---` (alignment colons preserved); other lines are rstripped.
+    collapse to `---` (alignment colons preserved). Prose paragraphs (runs of
+    non-blank, non-table, non-heading lines) are unwrapped to one line and
+    whitespace-collapsed, neutralizing the repo's `proseWrap: always` prettier
+    setting. Headings and blank lines pass through as-is (rstripped).
     """
     out: list[str] = []
+    paragraph: list[str] = []
+
+    def flush() -> None:
+        if paragraph:
+            out.append(re.sub(r"\s+", " ", " ".join(paragraph)).strip())
+            paragraph.clear()
+
     for line in text.splitlines():
         stripped = line.strip()
         if stripped.startswith("|"):
-            cells = [c.strip() for c in stripped.strip("|").split("|")]
-            norm = []
-            for cell in cells:
-                if re.fullmatch(r":?-+:?", cell):
-                    left = ":" if cell.startswith(":") else ""
-                    right = ":" if cell.endswith(":") else ""
-                    norm.append(f"{left}---{right}")
-                else:
-                    norm.append(cell)
-            out.append("| " + " | ".join(norm) + " |")
-        else:
+            flush()
+            out.append(_normalize_table_row(stripped))
+        elif not stripped or stripped.startswith("#"):
+            flush()
             out.append(line.rstrip())
+        else:
+            paragraph.append(stripped)
+    flush()
     return "\n".join(out).strip() + "\n"
 
 
