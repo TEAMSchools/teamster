@@ -8,19 +8,17 @@ school-level PowerSchool staging and extracts.
 
 ```text
 models/
-  powerschool/   # district-specific PowerSchool staging (refs powerschool package)
-    sis/staging/
   fldoe/         # Florida Department of Education assessment data
     staging/
-  extracts/
-    powerschool/ # PowerSchool autocomm extracts (teachers)
 ```
 
-PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
-`sftp.+enabled: false`)
+PowerSchool (pre-Focus SIS) is retired. The frozen `kippmiami_powerschool`
+BigQuery dataset (source, not a dbt package) now feeds
+`int_fldoe__all_assessments` directly; `powerschool` is no longer in
+`packages.yml`.
 
 ## Source Packages
 
 Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`). `focus`
 — `focus_schema` points to `dagster_kippmiami_dlt_focus`. Miami does not use
-`edplan`, `overgrad`, `pearson`, or `titan`.
+`edplan`, `overgrad`, `pearson`, `powerschool`, or `titan`.

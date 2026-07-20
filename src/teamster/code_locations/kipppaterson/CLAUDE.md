@@ -40,9 +40,9 @@ the multi-asset (intraday 15-min = 23 cursor tables; nightly = 25). Design:
 Consequences:
 
 - `dlt` (`DagsterDltResource`) wired in `definitions.py`; `ssh_powerschool`
-  (`SSHResource`) defined as `SSH_POWERSCHOOL` in `resources.py` and wired in
-  `definitions.py`; PS Oracle + SSH creds via `dagster-cloud.yaml` (`PS_DB_*`,
-  `PS_SSH_*`)
+  (`SSHResource`) built by the shared `get_powerschool_ssh_resource()` factory
+  in `core/resources.py` and wired in `definitions.py`; PS Oracle + SSH creds
+  via `dagster-cloud.yaml` (`PS_DB_*`, `PS_SSH_*`)
 - Ingestion writes to BigQuery `dagster_kipppaterson_dlt_powerschool`; the dbt
   `powerschool` package `staging/dlt` variant is enabled here
 - The former Couchdrop-SFTP PowerSchool feed is retired; `couchdrop_sftp_sensor`

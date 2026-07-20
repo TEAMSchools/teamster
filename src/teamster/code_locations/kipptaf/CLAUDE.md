@@ -87,6 +87,14 @@ ADP hard-delete / merge / backdated edit to a record older than the window
 doesn't propagate until you manually rematerialize the affected partition span.
 Absence from a re-pulled partition therefore means the record is gone from ADP.
 
+The asset pulls the **list** endpoint (`GET hr/v2/workers?asOfDate=`), which
+OMITS a worker not yet effective as of that date (hire date after the partition
+date). The `_test_get_worker` harness in
+`tests/resources/test_resource_adp_workforce_now.py` uses the **single-worker**
+GET (`/workers/{aoid}`), which returns the worker regardless — so a
+single-worker probe does NOT predict which partitions a bulk re-pull will place
+them in.
+
 ## Illuminate DLT Schedule Split
 
 Illuminate DLT assets are split across two schedules in

@@ -60,7 +60,11 @@ uv run dbt run-operation stage_external_sources \
 
 - `dbt-manifest.py` — requires `dbt parse` to have run first (reads
   `target/manifest.json`)
-- `gen-automations-doc.py` — requires dbt manifests to be parsed
+- `gen-automations-doc.py` — requires dbt manifests to be parsed. **Do NOT run
+  in the codespace**: it imports every code location incl. `kipptaf`, which
+  fails at module load (eager `EnvVar`), and the script `continue`s past the
+  failed import → writes a catalog with `kipptaf` silently DROPPED. Run only in
+  a bootstrapped terminal where all locations import.
 - `generate_marts_reference.py` — no prerequisites; run after adding/removing a
   fact table or changing FK constraints:
   `uv run scripts/generate_marts_reference.py`. Like `automations.md`, commit
