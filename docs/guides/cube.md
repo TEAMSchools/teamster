@@ -8,9 +8,9 @@ for all downstream consumers.
 
 !!! tip "Looking to query Cube?"
 
-    See the [Cube API guide](cube-api.md) for auth and query format, and the
-    [Cube data catalog](../reference/cube-data-catalog.md) for every view and
-    field.
+    See the [Cube data catalog](../reference/cube-data-catalog.md) for every
+    view and the fields it exposes. Access resolution is covered under
+    [How access is resolved](#how-access-is-resolved).
 
 **Jump to:** [Concepts](#concepts) ·
 [Development Workflow](#development-workflow) ·

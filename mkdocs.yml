@@ -45,7 +45,6 @@ nav:
       - SFTP Integration: guides/sftp-integration.md
       - Claude Code & Superpowers: guides/superpowers.md
       - Cube: guides/cube.md
-      - Cube API: guides/cube-api.md
       - Claude + Cube Connector: guides/claude-cube-connector.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md

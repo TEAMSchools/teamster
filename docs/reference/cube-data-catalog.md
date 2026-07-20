@@ -4,8 +4,8 @@
      uv run scripts/generate_cube_reference.py -->
 
 Every analyst-facing Cube view and the fields it exposes. Only members a view
-publishes appear here — private cubes never surface. For auth, query format, and
-worked examples see the [Cube API guide](../guides/cube-api.md).
+publishes appear here — private cubes never surface. For how access is resolved
+and how to connect, see the [Cube guide](../guides/cube.md).
 
 ## staff_directory
 
