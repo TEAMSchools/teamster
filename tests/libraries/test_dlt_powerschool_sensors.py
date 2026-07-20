@@ -35,6 +35,7 @@ def test_build_run_request_selects_changed_and_passes_signatures():
 
     run_request = _build_run_request("kipppaterson", changed, current)
 
+    # trunk-ignore(pyright): asset_selection is always set in our RunRequests
     assert [k.to_user_string() for k in run_request.asset_selection] == [
         "kipppaterson/powerschool/sis/students",
         "kipppaterson/powerschool/sis/gen",
