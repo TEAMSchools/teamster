@@ -49,6 +49,14 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/workspaces/teamster"
+      ]
+    },
     "tableau": {
       "command": "/workspaces/teamster/scripts/tableau-mcp-launch.sh",
       "args": [],
