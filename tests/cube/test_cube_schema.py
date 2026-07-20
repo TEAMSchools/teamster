@@ -65,9 +65,21 @@ def test_views_declare_access_policies() -> None:
     assert _access_policy_groups(), "no access_policy groups found under views"
 
 
+def _pre_aggregations_by_root_cube() -> dict[str, list[dict]]:
+    # Keyed by the fact cube the pre-aggregation is declared on.
+    found: dict[str, list[dict]] = {}
+    for path in CUBE_MODEL_DIR.rglob("cubes/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for cube in doc.get("cubes", []) or []:
+            pre_aggs = cube.get("pre_aggregations", []) or []
+            if pre_aggs:
+                found[cube["name"]] = pre_aggs
+    return found
+
+
 def _filter_members(filters: list[dict]) -> list[str]:
     # row_level filters can nest boolean combinators (Cube's accessPolicy
-    # schema) -- walk "or"/"and" branches too, not just the top-level list.
+    # schema) — walk "or"/"and" branches too, not just the top-level list.
     members = []
     for f in filters:
         if "member" in f:
@@ -76,6 +88,21 @@ def _filter_members(filters: list[dict]) -> list[str]:
             if combinator in f:
                 members.extend(_filter_members(f[combinator]))
     return members
+
+
+def _view_member_to_qualified_name(view_doc: dict) -> dict[str, str]:
+    # Maps each member name exposed by this view back to its cube-qualified
+    # name, honoring each includes block's prefix: setting (see
+    # src/cube/CLAUDE.md "row_level.filters[].member is a flat view-member
+    # name" -- prefix: true -> "<lastJoinPathSegment>_<member>", else bare).
+    mapping: dict[str, str] = {}
+    for cube_ref in view_doc.get("cubes", []) or []:
+        join_cube = cube_ref["join_path"].split(".")[-1]
+        prefixed = cube_ref.get("prefix", False)
+        for member in cube_ref.get("includes", []) or []:
+            exposed = f"{join_cube}_{member}" if prefixed else member
+            mapping[exposed] = f"{join_cube}.{member}"
+    return mapping
 
 
 def _view_exposed_members(view_doc: dict) -> set[str]:
@@ -90,6 +117,52 @@ def _view_exposed_members(view_doc: dict) -> set[str]:
         for member in cube_ref.get("includes", []) or []:
             exposed.add(f"{join_cube}_{member}" if prefixed else member)
     return exposed
+
+
+def _root_cube(view_doc: dict) -> str | None:
+    cube_refs = view_doc.get("cubes", []) or []
+    if not cube_refs:
+        return None
+    return cube_refs[0]["join_path"].split(".")[0]
+
+
+def test_pre_aggregation_covers_row_level_scoping_members() -> None:
+    # A row_level scoping member added to a view's access_policy without a
+    # matching addition to that fact's pre-aggregation dimensions silently
+    # drops scoped viewers back to the slow fact-scan path -- no error, no
+    # test failure otherwise.
+    pre_aggs_by_cube = _pre_aggregations_by_root_cube()
+    offenders = []
+    for path in CUBE_MODEL_DIR.rglob("views/**/*.yml"):
+        doc = yaml.safe_load(path.read_text()) or {}
+        for view in doc.get("views", []) or []:
+            root = _root_cube(view)
+            if root not in pre_aggs_by_cube:
+                continue
+
+            member_map = _view_member_to_qualified_name(view)
+            filter_members = [
+                member
+                for policy in view.get("access_policy", []) or []
+                for member in _filter_members(
+                    policy.get("row_level", {}).get("filters", []) or []
+                )
+            ]
+
+            for pre_agg in pre_aggs_by_cube[root]:
+                rollup_dims = set(pre_agg.get("dimensions", []) or [])
+                for filter_member in filter_members:
+                    qualified = member_map.get(filter_member)
+                    if qualified is not None and qualified not in rollup_dims:
+                        offenders.append(
+                            f"{path}: view {view['name']!r} row_level member "
+                            f"{filter_member!r} ({qualified}) is not in "
+                            f"{root}.{pre_agg['name']}'s dimensions"
+                        )
+    assert not offenders, (
+        "pre-aggregation missing a dimension its own view scopes row_level on:\n"
+        + "\n".join(offenders)
+    )
 
 
 def test_row_level_filter_members_are_exposed_by_their_view() -> None:
