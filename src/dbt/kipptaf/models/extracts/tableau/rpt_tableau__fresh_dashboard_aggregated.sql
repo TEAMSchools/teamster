@@ -50,7 +50,7 @@ select
 
     f.finalsite_id as goal_name_value,
 
-from {{ ref("int_google_sheets__finalsite__scaffold") }} as s
+from {{ ref("int_finalsite__goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
@@ -101,7 +101,7 @@ select
 
     f.finalsite_id as goal_name_value,
 
-from {{ ref("int_google_sheets__finalsite__scaffold") }} as s
+from {{ ref("int_finalsite__goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
@@ -154,7 +154,7 @@ select
 
     f.finalsite_id as goal_name_value,
 
-from {{ ref("int_google_sheets__finalsite__scaffold") }} as s
+from {{ ref("int_finalsite__goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
@@ -204,7 +204,7 @@ select
 
     f.finalsite_id as goal_name_value,
 
-from {{ ref("int_google_sheets__finalsite__scaffold") }} as s
+from {{ ref("int_finalsite__goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
@@ -255,7 +255,7 @@ select
 
     c.finalsite_id as goal_name_value,
 
-from {{ ref("int_google_sheets__finalsite__scaffold") }} as s
+from {{ ref("int_finalsite__goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
     on s.academic_year = f.enrollment_academic_year
