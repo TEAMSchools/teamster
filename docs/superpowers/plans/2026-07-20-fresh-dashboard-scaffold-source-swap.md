@@ -917,15 +917,14 @@ with
     ),
 ```
 
-to:
+to (note: no `current_year` CTE is introduced here — per this repo's
+no-pass-through-CTE convention, applied consistently with Task 4's checkpoint
+fix, `int_finalsite__current_academic_year` is cross-joined directly at each of
+the two usage sites in Step 2, not wrapped in a shared CTE at the top of the
+file):
 
 ```sql
 with
-    current_year as (
-        select academic_year,
-        from {{ ref("int_finalsite__current_academic_year") }}
-    ),
-
     scaffold as (
         /* dont have a better location where only one schoolid matches a single school
            name */
@@ -976,9 +975,57 @@ with
 
 - [ ] **Step 2: Replace the two hardcoded `2026` filters**
 
+**Important — adding the cross join makes every other column reference in this
+`select` ambiguous** (sqlfluff RF02 fires: "unqualified reference found in
+select with more than one referenced table/view") once a second table
+(`int_finalsite__current_academic_year`) is in the `FROM`/`JOIN` — so every
+plain column from `int_google_sheets__finalsite__goals_pivot` must be qualified
+with an alias, not just the filter predicates. **Also — do not reorder any of
+the qualified columns relative to the other two branches in this `UNION ALL`.**
+`BigQuery` matches `UNION ALL` columns **positionally, not by name**; moving
+`grade_level` to sit next to the other plain columns (the natural ST06 instinct)
+breaks positional alignment against the PART 1A/1B branches above, which keep
+`finalsite_id` at position 5 and `grade_level` at position 9 — this exact
+mistake was made and caught via a real `dbt build` failure ("Column 5 in UNION
+ALL has incompatible types") during implementation. Keep `grade_level` in its
+original position, after the four `null as ...` columns, exactly as shown below.
+
 In the `data_stack_school` CTE, change:
 
 ```sql
+        -- PART 2: THE GOALS (Targets) - School
+        select
+            enrollment_academic_year,
+            region,
+            schoolid,
+            school,
+
+            null as finalsite_id,
+            null as powerschool_student_number,
+            null as first_name,
+            null as last_name,
+            grade_level,
+
+            'Goal Record' as latest_status,
+            'NA' as self_contained,
+            null as enroll_status,
+            null as is_enrolled_fdos,
+            null as is_enrolled_oct01,
+            null as is_enrolled_oct15,
+            null as is_enrolled_mar15,
+
+            'Goal' as row_type,
+
+            0 as student_count,
+
+            seat_target,
+            fdos_target,
+            budget_target,
+            new_student_target,
+            re_enroll_projection,
+
+            enrollment_type,
+
         from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
         where
             goal_granularity = 'School'
@@ -990,41 +1037,52 @@ In the `data_stack_school` CTE, change:
 to:
 
 ```sql
-        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
-        cross join current_year as cy
+        -- PART 2: THE GOALS (Targets) - School
+        select
+            gp.enrollment_academic_year,
+            gp.region,
+            gp.schoolid,
+            gp.school,
+
+            null as finalsite_id,
+            null as powerschool_student_number,
+            null as first_name,
+            null as last_name,
+            gp.grade_level,
+
+            'Goal Record' as latest_status,
+            'NA' as self_contained,
+            null as enroll_status,
+            null as is_enrolled_fdos,
+            null as is_enrolled_oct01,
+            null as is_enrolled_oct15,
+            null as is_enrolled_mar15,
+
+            'Goal' as row_type,
+
+            0 as student_count,
+
+            gp.seat_target,
+            gp.fdos_target,
+            gp.budget_target,
+            gp.new_student_target,
+            gp.re_enroll_projection,
+
+            gp.enrollment_type,
+
+        from {{ ref("int_google_sheets__finalsite__goals_pivot") }} as gp
+        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
         where
-            goal_granularity = 'School'
-            and goal_type = 'Enrollment'
-            and enrollment_academic_year = cy.academic_year
+            gp.goal_granularity = 'School'
+            and gp.goal_type = 'Enrollment'
+            and gp.enrollment_academic_year = cy.academic_year
     ),
 ```
 
-And in `data_stack_school_grade`, change:
-
-```sql
-        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
-        where
-            goal_granularity = 'School/Grade Level'
-            and goal_type = 'Enrollment'
-            and enrollment_academic_year = 2026
-    )
-```
-
-to:
-
-```sql
-        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
-        cross join current_year as cy
-        where
-            goal_granularity = 'School/Grade Level'
-            and goal_type = 'Enrollment'
-            and enrollment_academic_year = cy.academic_year
-    )
-```
-
-Note: `current_year` is defined once at the top of the file (Step 1) and
-referenced again here — since these two CTEs are siblings inside the same `with`
-block, this is a plain reference to an already-defined CTE, not a redefinition.
+Apply the identical transformation (add the `gp` alias, qualify every column,
+add the `cross join`, keep `grade_level`'s position unchanged) to
+`data_stack_school_grade`'s PART 2 block, whose only difference is
+`goal_granularity = 'School/Grade Level'` in the filter.
 
 - [ ] **Step 3: Build and verify**
 
