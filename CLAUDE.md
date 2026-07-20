@@ -124,6 +124,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
 
+- **Subagent worktree dispatches must spell out the absolute worktree path**: a
+  subagent starts in the MAIN checkout, so the dispatch prompt must give the
+  worktree path and mandate `git -C <worktree>` + `uv run` from it (bare edits
+  hit `main` silently), and state that IDE Pyright errors on worktree files
+  (`reportMissingImports`, "not accessed", "not iterable") are expected false
+  positives — trust `uv run` inside the worktree, not the IDE.
+
 - **The `Workflow`-tool orchestrator is unreliable for long fan-outs in this
   Codespace** — it stalled/died mid-run repeatedly (not OOM; 11Gi free), and a
   window reload left a prior run orphaned-but-alive that kept spawning
@@ -238,6 +245,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   comment — and the stub can stay stuck mid-render even after the check-run
   reports `success`. Fetch ALL issue comments and read the newest / longest, not
   the first.
+
+- **`dagster-cloud-deploy / deploy` emits one same-named check-run per code
+  location** (~5) — `get_check_runs` returns duplicates; wait for ALL to reach a
+  terminal conclusion before calling the deploy green. A shared-library change
+  (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
+  whose config you edited.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
