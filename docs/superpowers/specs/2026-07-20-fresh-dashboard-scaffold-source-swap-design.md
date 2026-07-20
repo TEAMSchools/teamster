@@ -315,10 +315,43 @@ troubleshooting section:
   does **not** automatically update the hardcoded `CASE`, and there's no error
   if they drift, only silently wrong tie-breaking. A new automated test guards
   this — see "New test: status ranking sync check" below.
-- Comparing `status_crosswalk` against the raw Finalsite staging data
-  (`stg_finalsite__status_report`) is the standard first troubleshooting move
-  for a count discrepancy — the user will walk through concrete troubleshooting
-  steps for this during the skill-writing phase.
+- **Same-day status ties can pick the wrong "latest status," and this is
+  permanent and unfixable at the data layer.** The pipeline compares
+  `status_start_date` — a **date**, cast down from the underlying timestamp — so
+  two statuses set hours apart on the same calendar day still tie, and the
+  tiebreak (`status_order desc`) picks whichever has the _higher_ rank number.
+  That assumption ("higher rank = correct winner") breaks for an exit/terminal
+  status vs. an in-progress one: e.g. `Parent Declined` (rank 15) vs.
+  `Enrollment In Progress` (rank 16) set the same day — `Enrollment In Progress`
+  wins the tie purely because 16 > 15, even though the family actually declined
+  and the student isn't attending. Finalsite's data model has no richer signal
+  to fix this with (confirmed: "there is nothing we can do about it — the
+  statuses are flexible and the data Finalsite can provide is extremely
+  limited"), so this is a **permanent, accepted limitation**, not a bug this
+  project (or any future one) should try to engineer around at the data layer.
+
+  **The established operational fix is the "Reset Protocol™"** (the SRE/ School
+  Relations & Enrollment team's own name for it):
+  1. Put the student in another status.
+  2. Wait a day.
+  3. Put them in the status you actually want them to show.
+
+  (Waiting a day works because it breaks the date-tie — the new status now has a
+  strictly later `status_start_date` and wins outright, without depending on the
+  rank comparison at all.)
+
+  Operational guidance for teams: **to fix**, school teams check the FRESH
+  Dashboard's Progress-to-Goals tab for students appearing on the dashboard but
+  not in `Enrolled` status, using the **OPEN ROSTER** button (top right of that
+  tab) to see every student's current status, and apply the Reset Protocol to
+  any that are wrong. **To prevent**, teams are reminded a student should not,
+  if at all possible, receive multiple status changes in Finalsite on the same
+  calendar day — if it does happen, a Reset Protocol is needed.
+
+  This is the standard root cause to check, alongside the missing-mapping and
+  invalid/QA-flagged checks above, whenever a specific student's status on the
+  dashboard looks wrong (as opposed to a whole-category count being off, which
+  points more toward the first two checks).
 
 ### New test: status ranking sync check
 
