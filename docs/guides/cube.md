@@ -6,6 +6,12 @@ models and are version-controlled in this repository. Security — row-level
 filtering, column access policies, group membership — is enforced once in Cube
 for all downstream consumers.
 
+!!! tip "Looking to query Cube?"
+
+    See the [Cube API guide](cube-api.md) for auth and query format, and the
+    [Cube data catalog](../reference/cube-data-catalog.md) for every view and
+    field.
+
 **Jump to:** [Concepts](#concepts) ·
 [Development Workflow](#development-workflow) ·
 [Review and Staging](#review-and-staging) · [Local Dev](#local-dev) ·
