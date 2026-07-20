@@ -101,3 +101,102 @@ def parse_cubes(cubes_dir: Path) -> dict[str, dict[str, CubeMember]]:
             merged.update(raw.get(child, {}))
             resolved[child] = merged
     return resolved
+
+
+OTHER_FOLDER = "Other"
+
+
+@dataclasses.dataclass(frozen=True)
+class ResolvedMember:
+    exposed_name: str
+    kind: str
+    type: str | None
+    description: str | None
+    folder: str
+    source: str
+
+
+@dataclasses.dataclass
+class AccessSummary:
+    groups: list[str] = dataclasses.field(default_factory=list)
+    row_level_members: list[str] = dataclasses.field(default_factory=list)
+    exposes_pii: bool = False
+
+
+@dataclasses.dataclass
+class ResolvedView:
+    name: str
+    description: str | None
+    members: list[ResolvedMember]
+    access: AccessSummary
+
+
+def _folder_map(view: dict) -> dict[str, str]:
+    """{exposed_member_name: folder_name} from the view's meta.folders."""
+    mapping: dict[str, str] = {}
+    for folder in view.get("meta", {}).get("folders", []):
+        for member in folder.get("members", []):
+            mapping[member] = folder["name"]
+    return mapping
+
+
+def resolve_view(view: dict, cubes: dict[str, dict[str, CubeMember]]) -> ResolvedView:
+    folders = _folder_map(view)
+    members: list[ResolvedMember] = []
+
+    for include in view.get("cubes", []):
+        join_path = include["join_path"]
+        prefix = bool(include.get("prefix", False))
+        segment = join_path.split(".")[-1]  # cube whose members are included
+        cube_members = cubes.get(segment, {})
+
+        includes = include.get("includes", [])
+        if includes == "*":
+            includes = list(cube_members)
+
+        for raw_member in includes:
+            member_name = (
+                raw_member["name"] if isinstance(raw_member, dict) else raw_member
+            )
+            info = cube_members.get(member_name)
+            if info is None:
+                print(
+                    f"WARNING: {view['name']}: {segment}.{member_name} not found "
+                    f"on cube (check extends/join_path)",
+                    file=sys.stderr,
+                )
+                continue
+            exposed = f"{segment}_{member_name}" if prefix else member_name
+            folder = (
+                "" if info.kind == "measure" else folders.get(exposed, OTHER_FOLDER)
+            )
+            members.append(
+                ResolvedMember(
+                    exposed_name=exposed,
+                    kind=info.kind,
+                    type=info.type,
+                    description=info.description,
+                    folder=folder,
+                    source=f"{segment}.{member_name}",
+                )
+            )
+
+    return ResolvedView(
+        name=view["name"],
+        description=(
+            str(view["description"]).strip() if view.get("description") else None
+        ),
+        members=members,
+        access=AccessSummary(),
+    )
+
+
+def parse_views(
+    views_dir: Path, cubes: dict[str, dict[str, CubeMember]]
+) -> list[ResolvedView]:
+    views: list[ResolvedView] = []
+    for path in sorted(views_dir.rglob("*.yml")):
+        doc = _load_yaml(path)
+        for view in doc.get("views", []):
+            views.append(resolve_view(view, cubes))
+    return sorted(views, key=lambda v: v.name)

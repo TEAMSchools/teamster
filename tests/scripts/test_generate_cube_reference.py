@@ -44,3 +44,45 @@ def test_parse_cubes_flattens_extends() -> None:
     assert "base_key" in alias
     assert alias["base_key"].description == "Base key."
     assert alias["base_key"].primary_key is True
+
+
+def _resolved_view(name: str = "sample_view"):
+    cubes = gen.parse_cubes(FIXTURE_DIR / "cubes")
+    views = gen.parse_views(FIXTURE_DIR / "views", cubes)
+    return next(v for v in views if v.name == name)
+
+
+def test_resolve_view_applies_prefix_rule() -> None:
+    view = _resolved_view()
+    by_name = {m.exposed_name: m for m in view.members}
+
+    # prefix: false -> bare member names
+    assert "grade_level" in by_name
+    assert "count_rows" in by_name
+    assert "base_key" in by_name  # from sample_alias (extends sample_base)
+    # prefix: true -> <last-join_path-segment>_<member>
+    assert "sample_dim_region_name" in by_name
+    assert by_name["sample_dim_region_name"].description == "Region name."
+
+
+def test_resolve_view_classifies_and_types_members() -> None:
+    view = _resolved_view()
+    by_name = {m.exposed_name: m for m in view.members}
+
+    assert by_name["count_rows"].kind == "measure"
+    assert by_name["grade_level"].kind == "dimension"
+    assert by_name["grade_level"].type == "number"
+    assert by_name["no_desc_dim"].description is None
+    assert by_name["grade_level"].source == "sample_fact.grade_level"
+
+
+def test_resolve_view_assigns_folders_with_other_fallback() -> None:
+    view = _resolved_view()
+    by_name = {m.exposed_name: m for m in view.members}
+
+    assert by_name["grade_level"].folder == "Sample"
+    assert by_name["sample_dim_region_name"].folder == "Region"
+    # base_key is exposed but listed in no meta folder -> "Other"
+    assert by_name["base_key"].folder == "Other"
+    # measures are never folder-grouped
+    assert by_name["count_rows"].folder == ""
