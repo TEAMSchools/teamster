@@ -62,6 +62,19 @@ def test_probe_signature_non_datetime_cursor_stringified():
     assert sig == {"count": 7, "max_cursor": "12345"}
 
 
+def test_probe_signature_no_cursor_count_only():
+    # No-cursor tables are count-gated: COUNT(*) only, and the signature keeps
+    # the max_cursor key (None) so it compares equal to the run-config
+    # round-trip shape.
+    conn = FakeConnection((42,))
+
+    sig = probe_signature(conn, "gen", None)
+
+    assert sig == {"count": 42, "max_cursor": None}
+    assert "COUNT(*)" in conn.queries[0]
+    assert "MAX(" not in conn.queries[0]
+
+
 def test_powerschool_table_dataclass():
     t = PowerSchoolTable(name="students", cursor_column="transaction_date")
     n = PowerSchoolTable(name="test", cursor_column=None)

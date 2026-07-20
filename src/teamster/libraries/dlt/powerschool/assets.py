@@ -50,14 +50,25 @@ class PowerSchoolTable:
 
 
 def probe_signature(
-    connection, table_name: str, cursor_column: str
+    connection, table_name: str, cursor_column: str | None
 ) -> dict[str, int | str | None]:
     """Fetch the change signature for a table: total count + max cursor.
 
     Equality-compared against the stored signature; drift in either value
-    (including a cursor regression) triggers a full replace. Values are
-    JSON-serializable for dlt resource state.
+    (including a cursor regression) triggers a full replace. Tables without a
+    cursor column are count-only — the signature still carries
+    ``max_cursor: None`` so it compares equal to the run-config round-trip
+    shape (which defaults the key to None). Values are JSON-serializable for
+    dlt resource state.
     """
+    if cursor_column is None:
+        (count,) = connection.execute(
+            # trunk-ignore(bandit/B608): table name from static YAML config
+            sa.text(f"SELECT COUNT(*) FROM {table_name}")
+        ).one()
+
+        return {"count": int(count), "max_cursor": None}
+
     count, max_cursor = connection.execute(
         # trunk-ignore(bandit/B608): table/column names from static YAML config
         sa.text(f"SELECT COUNT(*), MAX({cursor_column}) FROM {table_name}")
