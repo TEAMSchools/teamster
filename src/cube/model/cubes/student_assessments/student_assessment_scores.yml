@@ -287,3 +287,41 @@ cubes:
         type: number
         format: percent
         public: true
+
+    pre_aggregations:
+      # Rollup on the additive proficiency primitives for the standard-level
+      # proficiency-by-demographic hot path. Includes the RLS scoping keys
+      # (locations.region_key / locations.abbreviation) so region/school viewers
+      # hit the rollup rather than falling back to the fact.
+      - name: proficiency_rollup
+        measures:
+          - student_assessment_scores.count_scores
+          - student_assessment_scores._sum_proficient
+        dimensions:
+          - dates.academic_year
+          - student_assessments.module_code
+          - student_assessments.academic_subject
+          - student_assessments.grade_level_tested
+          - student_assessment_administrations.administration_period
+          - student_assessment_scores.response_type_code
+          - students.race
+          - students.gender_identity
+          - student_school_enrollments.grade_level
+          - locations.region_key
+          - locations.abbreviation
+        # Partitioned refresh: without a time_dimension, Cube rebuilds this
+        # entire rollup from the ~14.2M-row fact on every refresh_key check,
+        # regardless of what changed. dates.date_day (via
+        # student_assessment_administrations -> dates), not the cube's own
+        # date_taken, is the time anchor — date_taken is documented above as
+        # corrupt for a small share of rows and its own description says
+        # calendar rollups belong on the administration date. Year
+        # partitioning (not day/month) matches how corrections actually land:
+        # restatements replace a whole academic year at a time, so a
+        # correction only invalidates the partition(s) touching that year,
+        # not the full history.
+        time_dimension: dates.date_day
+        granularity: year
+        partition_granularity: year
+        refresh_key:
+          every: 1 day
