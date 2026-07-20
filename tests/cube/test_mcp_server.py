@@ -405,6 +405,69 @@ def test_meta_scoped_call_for_unknown_view_returns_empty_cubes(
     assert result["cubes"] == []
 
 
+def test_meta_scoped_call_first_also_populates_full_catalog_cache(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Reverse of test_meta_scoped_and_full_catalog_calls_cache_separately: a
+    cold scoped call must populate the full-catalog cache entry too, so a
+    subsequent full call is served from cache rather than refetching."""
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    server = _load_server(monkeypatch)
+    server._meta_memory_cache.clear()
+    monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
+
+    call_count = 0
+
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        nonlocal call_count
+        call_count += 1
+        return {
+            "cubes": [
+                {"name": "student_attendance_view", "measures": []},
+                {"name": "staff_directory", "measures": []},
+            ]
+        }
+
+    monkeypatch.setattr(server, "_request", fake_request)
+
+    ctx = MagicMock()
+    scoped = asyncio.run(server.meta(ctx, views=["student_attendance_view"]))
+    full = asyncio.run(server.meta(ctx))
+
+    assert call_count == 1
+    assert len(scoped["cubes"]) == 1
+    assert len(full["cubes"]) == 2
+
+
+def test_meta_force_refresh_on_scoped_call_refetches_full_catalog(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    server = _load_server(monkeypatch)
+    server._meta_memory_cache.clear()
+    monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
+
+    call_count = 0
+
+    async def fake_request(*args: object, **kwargs: object) -> dict[str, Any]:
+        del args, kwargs
+        nonlocal call_count
+        call_count += 1
+        return {"cubes": [{"name": "student_attendance_view"}]}
+
+    monkeypatch.setattr(server, "_request", fake_request)
+
+    ctx = MagicMock()
+    asyncio.run(server.meta(ctx, views=["student_attendance_view"], force_refresh=True))
+    asyncio.run(server.meta(ctx, views=["student_attendance_view"], force_refresh=True))
+    assert call_count == 2
+
+
 def test_with_default_timezone_injects_utc_when_absent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -353,6 +353,59 @@ def _meta_cache_path(email: str, scope: str) -> Path:
 _meta_memory_cache: dict[tuple[str, str], tuple[int, dict[str, Any]]] = {}
 
 
+def _read_meta_cache(
+    email: str, scope: str, force_refresh: bool
+) -> dict[str, Any] | None:
+    """Return a cached payload for (email, scope) if fresh, else None. Checks
+    the in-memory cache first, then falls back to disk (surviving process
+    restarts) — writing back through the disk hit to warm the memory cache."""
+    now = int(time.time())
+    if not force_refresh:
+        memory_hit = _meta_memory_cache.get((email, scope))
+        if memory_hit and memory_hit[0] > now:
+            return memory_hit[1]
+    cache_path = _meta_cache_path(email, scope)
+    if not force_refresh and cache_path.exists():
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            expires_at = int(cached.get("expires_at", 0))
+        except (json.JSONDecodeError, TypeError, ValueError):
+            # Corrupt cache file — drop it so subsequent runs don't keep failing.
+            cache_path.unlink(missing_ok=True)
+        else:
+            if expires_at > now and "payload" in cached:
+                _meta_memory_cache[(email, scope)] = (expires_at, cached["payload"])
+                return cached["payload"]
+    return None
+
+
+def _write_meta_cache(email: str, scope: str, payload: dict[str, Any]) -> None:
+    expires_at = int(time.time()) + META_CACHE_TTL_SECONDS
+    _meta_memory_cache[(email, scope)] = (expires_at, payload)
+    cache_path = _meta_cache_path(email, scope)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    # Atomic write: avoid corruption if two concurrent meta() calls race.
+    tmp_path = cache_path.with_suffix(f".tmp.{os.getpid()}")
+    tmp_path.write_text(
+        json.dumps({"expires_at": expires_at, "payload": payload}),
+        encoding="utf-8",
+    )
+    os.replace(tmp_path, cache_path)
+
+
+async def _fetch_full_meta(email: str, force_refresh: bool) -> dict[str, Any]:
+    """Fetch (or serve from cache) the full `/meta` catalog for `email`. A
+    private helper — not the `meta` tool itself — so the filtered-view path
+    below can reuse it without resolving the caller's email or hitting
+    `/meta` twice."""
+    cached = _read_meta_cache(email, "all", force_refresh)
+    if cached is not None:
+        return cached
+    payload = await _request("GET", "/meta", email=email)
+    _write_meta_cache(email, "all", payload)
+    return payload
+
+
 @mcp.tool()
 async def meta(
     ctx: Context,
@@ -381,46 +434,21 @@ async def meta(
     """
     email = await _get_user_email(ctx)
     scope = _meta_scope_key(views)
-    now = int(time.time())
-    if not force_refresh:
-        memory_hit = _meta_memory_cache.get((email, scope))
-        if memory_hit and memory_hit[0] > now:
-            return memory_hit[1]
-    cache_path = _meta_cache_path(email, scope)
-    if not force_refresh and cache_path.exists():
-        try:
-            cached = json.loads(cache_path.read_text(encoding="utf-8"))
-            expires_at = int(cached.get("expires_at", 0))
-        except (json.JSONDecodeError, TypeError, ValueError):
-            # Corrupt cache file — drop it so subsequent runs don't keep failing.
-            cache_path.unlink(missing_ok=True)
-        else:
-            if expires_at > now and "payload" in cached:
-                _meta_memory_cache[(email, scope)] = (expires_at, cached["payload"])
-                return cached["payload"]
     if scope == "all":
-        payload = await _request("GET", "/meta", email=email)
-    else:
-        # Reuses (and populates) the full-catalog cache entry via the same
-        # code path above, rather than a second network round trip per call.
-        full_payload = await meta(ctx, force_refresh=force_refresh)
-        wanted = set(views or [])
-        payload = {
-            **full_payload,
-            "cubes": [
-                c for c in full_payload.get("cubes", []) if c.get("name") in wanted
-            ],
-        }
-    expires_at = int(time.time()) + META_CACHE_TTL_SECONDS
-    _meta_memory_cache[(email, scope)] = (expires_at, payload)
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-    # Atomic write: avoid corruption if two concurrent meta() calls race.
-    tmp_path = cache_path.with_suffix(f".tmp.{os.getpid()}")
-    tmp_path.write_text(
-        json.dumps({"expires_at": expires_at, "payload": payload}),
-        encoding="utf-8",
-    )
-    os.replace(tmp_path, cache_path)
+        return await _fetch_full_meta(email, force_refresh)
+
+    cached = _read_meta_cache(email, scope, force_refresh)
+    if cached is not None:
+        return cached
+    full_payload = await _fetch_full_meta(email, force_refresh)
+    wanted = set(views or [])
+    payload = {
+        **full_payload,
+        "cubes": [
+            dict(c) for c in full_payload.get("cubes", []) if c.get("name") in wanted
+        ],
+    }
+    _write_meta_cache(email, scope, payload)
     return payload
 
 
