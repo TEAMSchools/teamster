@@ -353,6 +353,33 @@ troubleshooting section:
   dashboard looks wrong (as opposed to a whole-category count being off, which
   points more toward the first two checks).
 
+- **Ingestion lag can make the dashboard temporarily disagree with what's
+  currently in Finalsite.** `stg_finalsite__status_report` is ingested via a
+  Couchdrop SFTP file drop
+  (`build_sftp_file_asset`/`ssh_resource_key="ssh_couchdrop"`), which is
+  sensor/file-drop-triggered, not a fixed Dagster cron — so there's no precise
+  cutoff time to point to from this codebase; the actual export timing is
+  controlled by Finalsite itself (external, vendor-side). In practice this
+  means: a status cleanup done late in one team member's workday may not be
+  reflected in the file Finalsite exports until the _next_ day's pull — e.g., a
+  Spain-based SRE team member doing status cleanup work has a workday that ends
+  in the middle of the US teams' night, so by the time his cleanup is done, the
+  dashboard may not reflect it until the following day. **Unconfirmed whether
+  this specifically applies to Miami** — flag as unverified in the reference doc
+  rather than asserting it network-wide.
+- **Fake/test Finalsite student records not yet added to the exclusion sheet
+  inflate FRESH counts, and this isn't only an annual-rollover concern.**
+  `stg_google_sheets__finalsite__exclude_ids` is already enforced upstream of
+  everything FRESH touches (the kipptaf-level `stg_finalsite__status_report`
+  union filters
+  `finalsite_enrollment_id not in (select finalsite_student_id from ...)`) — but
+  a test/fake student record can be created in Finalsite at _any_ time (not just
+  at year rollover), and until someone adds its id to the exclude sheet, it's
+  counted as a real student. This is a standard check when a count looks
+  inflated rather than deflated (the opposite direction from the
+  missing-mapping/invalid-status causes above, which only ever _drop_ students,
+  never add phantom ones).
+
 ### New test: status ranking sync check
 
 A new singular test (`src/dbt/kipptaf/tests/`) guards the dual-maintenance risk
