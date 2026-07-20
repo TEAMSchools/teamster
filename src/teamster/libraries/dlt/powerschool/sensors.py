@@ -30,6 +30,29 @@ _IN_FLIGHT_STATUSES = [
 ]
 
 
+def _in_flight_run(instance, sensor_name: str, nightly_schedule_name: str):
+    """Return the first in-flight run launched by this sensor or the nightly
+    schedule, or None.
+
+    The intraday baseline advances only on load success, so while a run
+    launched by either trigger is still committing, re-selecting its tables
+    would double-launch. Checked over the non-terminal status set
+    (``_IN_FLIGHT_STATUSES``) against the auto-applied ``dagster/sensor_name``
+    and ``dagster/schedule_name`` run tags.
+    """
+    for tag, value in (
+        ("dagster/sensor_name", sensor_name),
+        ("dagster/schedule_name", nightly_schedule_name),
+    ):
+        records = instance.get_run_records(
+            filters=RunsFilter(tags={tag: value}, statuses=_IN_FLIGHT_STATUSES),
+            limit=1,
+        )
+        if records:
+            return records[0]
+    return None
+
+
 def _build_run_request(
     code_location: str,
     changed: list[PowerSchoolTable],
@@ -85,18 +108,9 @@ def build_powerschool_dlt_intraday_sensor(
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
     ) -> RunRequest | SkipReason:
-        for tag, value in (
-            ("dagster/sensor_name", sensor_name),
-            ("dagster/schedule_name", nightly_schedule_name),
-        ):
-            records = context.instance.get_run_records(
-                filters=RunsFilter(tags={tag: value}, statuses=_IN_FLIGHT_STATUSES),
-                limit=1,
-            )
-            if records:
-                return SkipReason(
-                    f"run {records[0].dagster_run.run_id} in flight ({value})"
-                )
+        in_flight = _in_flight_run(context.instance, sensor_name, nightly_schedule_name)
+        if in_flight is not None:
+            return SkipReason(f"run {in_flight.dagster_run.run_id} in flight")
 
         dlt_pipeline = build_powerschool_dlt_pipeline(code_location)
 

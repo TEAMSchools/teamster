@@ -186,8 +186,11 @@ def _build_resource(
     """Build one full-replace, parallel-extracted dlt resource for a table.
 
     When a signature is provided it is persisted to the resource's dlt state
-    with the load package (so the next run can detect drift). No-cursor tables
-    are passed signature=None and carry no stored signature.
+    with the load package, becoming the baseline the next intraday tick
+    compares against. Every selected table is passed a signature now: cursor
+    tables a count + max-cursor pair, no-cursor tables a count-only signature
+    (``max_cursor`` None) whose count is the intraday change gate. A ``None``
+    signature persists nothing.
 
     `parallelized=True` runs each table's extract in its own dlt worker thread.
     The resource does NOT wrap `sql_table` (a `DltResource`) — nesting a resource

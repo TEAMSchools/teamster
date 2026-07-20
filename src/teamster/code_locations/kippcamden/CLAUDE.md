@@ -26,14 +26,14 @@ GCS bucket: `teamster-kippcamden`
 
 ## PowerSchool Configuration
 
-Uses **dlt** (probe-gated, full-replace ingestion over 57 tables), not ODBC.
-Config at `powerschool/sis/dlt/config/assets.yaml` (per-table `cursor_column` +
-`intraday`/`nightly` membership booleans). Intraday selection is decided by
-`kippcamden__powerschool__dlt__intraday_sensor` (probe + dlt-state baseline);
-the nightly schedule full-refreshes its targets unconditionally and
-re-baselines. Resources `ssh_powerschool` (paramiko tunnel) and `db_powerschool`
-(Oracle creds) are built by the shared `core/resources.py` factories. Writes
-directly to BigQuery — no GCS IO manager.
+Uses **dlt** (sensor-gated intraday + unconditional nightly full-refresh, over
+57 tables), not ODBC. Config at `powerschool/sis/dlt/config/assets.yaml`
+(per-table `cursor_column` + `intraday`/`nightly` membership booleans). Intraday
+selection is decided by `kippcamden__powerschool__dlt__intraday_sensor` (probe +
+dlt-state baseline); the nightly schedule full-refreshes its targets
+unconditionally and re-baselines. Resources `ssh_powerschool` (paramiko tunnel)
+and `db_powerschool` (Oracle creds) are built by the shared `core/resources.py`
+factories. Writes directly to BigQuery — no GCS IO manager.
 
 ## Extracts
 
