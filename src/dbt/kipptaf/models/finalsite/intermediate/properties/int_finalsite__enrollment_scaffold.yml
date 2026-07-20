@@ -1,0 +1,66 @@
+models:
+  - name: int_finalsite__enrollment_scaffold
+    description: >
+      School x grade spine for the FRESH dashboard, replacing the fully
+      hand-maintained stg_google_sheets__finalsite__school_scaffold. Source is
+      controlled by var finalsite_scaffold_source ('gsheet' | 'powerschool' |
+      'blend', default 'blend'): the PowerSchool builder derives grade spans
+      from stg_powerschool__schools (grade-span expansion, not enrollment
+      actuals, so an empty-but-recruited grade still appears); the sheet builder
+      covers what PowerSchool can't -- every school's grade_level = -1
+      whole-school row (PowerSchool never supplies this row), genuinely new
+      schools/grades not yet live in PowerSchool, and all of Miami (deliberate,
+      temporary carve-out -- Miami's SIS moved to Focus and Focus isn't ready as
+      a scaffold source yet). In blend mode, PowerSchool wins on any overlapping
+      (schoolid, grade_level) key; the sheet fills everything else -- the same
+      single rule naturally covers -1 rows, genuinely-new grades/schools, and
+      the entire Miami region, with no special-casing.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - schoolid
+              - grade_level
+          config:
+            severity: error
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: >
+          The current Finalsite recruitment cycle -- always
+          int_finalsite__current_academic_year's value, never a historical year
+          (stg_powerschool__schools is current-state only).
+      - name: region
+        data_type: string
+        description: One of "Newark", "Camden", "Miami", "Paterson".
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school_number.
+      - name: school
+        data_type: string
+        description: Short school abbreviation (e.g. "KURA", "Legacy ES").
+      - name: grade_level
+        data_type: int64
+        description: >
+          -1 = whole-school total row (never PowerSchool-sourced -- see
+          scaffold_source), else 0-12.
+      - name: org
+        data_type: string
+        description: Always "KTAF" (verified constant, network-wide).
+      - name: school_level
+        data_type: string
+        description: >
+          ES / MS / HS. On PowerSchool-sourced rows, derived per expanded
+          grade_level (>=9 HS, >=5 MS, >=0 ES) -- NOT read from
+          stg_powerschool__schools.school_level, which is a single per-school
+          value and would incorrectly apply one classification to a school
+          spanning two bands. On gsheet-sourced rows, whatever the analyst
+          entered.
+      - name: scaffold_source
+        data_type: string
+        description: >
+          'powerschool' or 'gsheet' -- per-row lineage tag, not a mode-level
+          constant. In blend mode a given row is tagged with whichever builder
+          actually produced it.
