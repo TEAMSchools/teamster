@@ -68,9 +68,12 @@ permanent either/or choice.
 
 ## Non-goals
 
-- The goals sheet's target _values_ (`stg_google_sheets__finalsite__goals`) are
-  unchanged — this project doesn't touch how targets are entered or computed,
-  only the school x grade spine they're reported against.
+- The goals sheet's target _values_ and column contract
+  (`stg_google_sheets__finalsite__goals`) are unchanged — target numbers are
+  still 100% manually entered and this project doesn't touch how they're
+  computed. The goals-sheet gap-row generator (see "Documentation & skill") only
+  assists with producing candidate row _keys_ to reduce copy/paste effort; it
+  never supplies a value.
 - Historical / multi-year scaffold reporting. As the data currently stands,
   Finalsite's model has no straightforward path to historical spine data —
   **this is an open question, not solved here.** It's flagged explicitly in the
@@ -250,6 +253,32 @@ model, not a scalar subquery, per this repo's SQL conventions). This fixes
 
 No separate manually-set var remains for this purpose.
 
+A bare `select max(file_year)` always physically returns one row regardless of
+how many years are present upstream, so the "one year only" convention needs its
+test on the upstream side, not on `int_finalsite__current_academic_year` itself:
+add a test on `stg_google_sheets__finalsite__status_crosswalk` asserting
+`count(distinct file_year) <= 1`, so a violation of the convention (e.g. someone
+forgetting to remove the prior year's config rows) fails loudly instead of
+silently resolving via `max()`. If a transition period ever does leave both the
+outgoing and incoming year's rows present simultaneously, `max(file_year)`
+degrades gracefully on its own — it favors the newer (incoming) year, which is
+the direction the sheet is moving anyway — but the test still belongs there to
+catch a genuine accumulation bug rather than assuming the convention always
+holds.
+
+**Why fixing it once at `int_tableau__finalsite_student_scaffold` is sufficient
+for both `rpt_` views**: `rpt_tableau__fresh_dashboard_aggregated` never
+references the goals model or hardcodes a year anywhere in its own SQL — it only
+reads `int_google_sheets__finalsite__scaffold` (an unfiltered join of scaffold
+to goals on `academic_year`, with no year restriction of its own) and
+`int_tableau__finalsite_student_scaffold`. So the _only_ hardcoded-year
+dependency common to both `rpt_` views is
+`int_tableau__finalsite_student_scaffold` — fixing it there once means both
+views inherit the correct year transitively, with no separate fix needed in
+either `rpt_` model, and nothing about this touches goals data. Goals _values_
+(`goal_value`) still flow into `aggregated` via the scaffold-goals join, same as
+today — only "which year" is at stake here, and that never came from goals.
+
 ## Known data model caveats (for the reference doc & skill)
 
 These are permanent properties of how Finalsite works, not defects to fix — they
@@ -340,6 +369,45 @@ Mirroring the `gradebook-audit` pattern established in this repo
     the same rematerialize-then-verify workflow already established in this
     project's own history (see the goals-sheet value-fix earlier in issue
     discussion).
+  - **Goals-sheet gap-row generator** — same shape of helper (ad hoc query,
+    documented in the skill, not a persistent dbt model), extended to the goals
+    sheet. `status_crosswalk` has no grade-level dimension, so its only role
+    here is supplying the target `academic_year` (via
+    `int_finalsite__current_academic_year`) — it does not shape which goal types
+    apply. That comes from each school's/region's own existing pattern in the
+    goals sheet, verified against real data:
+
+    - **`School` rows** (`grade_level = -1`) — keyed by `schoolid`. Copy that
+      school's own existing `(goal_type, goal_name)` combo-set forward.
+      Verified: this set is uniform across almost every school, with one real
+      exception (Miami's MTH lacks the lottery-based categories — Accepted /
+      Offers / Pending Offers — at `School` granularity) that a per-school
+      copy-forward rule handles correctly without special-casing.
+    - **`School/Grade Level` rows** — keyed by `(schoolid, grade_level)`, same
+      copy-forward rule applied per grade in the new scaffold. **Unverified**:
+      whether the combo-set is uniform across every grade within a school, or
+      varies grade-to-grade — today's check only confirmed uniformity in
+      aggregate per `(school, granularity)`, not grade-by-grade. Verify during
+      implementation.
+    - **`Region/Grade Level` rows** (Inquiries, Applications, Deferred,
+      Waitlisted, etc.) — keyed by **region alone**, independent of the
+      scaffold's `schoolid`/`grade_level` dimensions entirely. One row-set per
+      active region.
+    - **Template source is each school's/region's most recent existing year in
+      the goals sheet**, not necessarily "the current year" — this lets the same
+      generator serve both a full annual rollover (a brand new year with nothing
+      populated yet) and the incremental case (a new school/grade added
+      mid-cycle via blend), with identical logic: does this scaffold row have a
+      matching goal row yet? If not, project one from the most recent prior
+      pattern.
+    - A genuinely new school/grade has no prior-year precedent and cannot be
+      auto-generated — flagged for the analyst to choose goal types manually.
+
+  - **`status_crosswalk`'s own annual rollover stays a documented manual
+    process, not a generated one** — there is no source of truth to derive its
+    content from (the Finalsite-status → category mapping is institutional
+    judgment, not computable), unlike the scaffold's `-1` rows or the goals
+    sheet's gap rows, which both have a real prior pattern to project forward.
 
 Both are detailed further in the implementation plan, not this design doc.
 
@@ -371,14 +439,6 @@ is an implementation-plan decision, not a design-scope split.
   practice. This needs a dedicated discussion (with the user) during the
   documentation-writing phase; it is explicitly **not** solved by this design.
   The reference doc will carry this as a known limitation until resolved.
-- **Does the same rollover pattern (generate candidates → analyst fills in →
-  verify & confirm prod) extend to `status_crosswalk` and the goals sheet, or do
-  those need a different shape of help?** The scaffold's `-1` rows have a
-  mechanically generatable candidate list (school identity is known ahead of
-  time); goals-sheet rows need a human-supplied _value_ no matter what, and
-  `status_crosswalk` needs a new year's mapping config, which may or may not be
-  sensibly copy-forward-able from the prior year. To confirm before/at the
-  implementation-plan stage.
 
 ## Out of Scope (recap)
 
