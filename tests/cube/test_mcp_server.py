@@ -365,6 +365,64 @@ def test_meta_scoped_call_with_cubes_and_views(
     assert sent_bodies == [{"cubes": ["dates"], "views": ["student_attendance_view"]}]
 
 
+def test_meta_scoped_call_with_cubes_only_omits_views_key(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    server = _load_server(monkeypatch)
+    server._meta_memory_cache.clear()
+    monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
+
+    sent_bodies: list[dict[str, Any]] = []
+
+    async def fake_request(*args: object, **kwargs: Any) -> dict[str, Any]:
+        del args
+        sent_bodies.append(kwargs["json"])
+        return {"cubes": []}
+
+    monkeypatch.setattr(server, "_request", fake_request)
+
+    ctx = MagicMock()
+    asyncio.run(server.meta(ctx, cubes=["dates"]))
+    assert sent_bodies == [{"cubes": ["dates"]}]
+
+
+def test_meta_same_name_as_view_vs_cube_does_not_collide_in_cache(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Regression guard: a name requested as a view and the same name requested
+    as a cube must hit /entities/all independently, never share a cache entry.
+    `/entities/all` can return different content for the two axes."""
+    monkeypatch.setenv("CUBE_USER_EMAIL", "engineer@apps.teamschools.org")
+    monkeypatch.delenv("AUTHKIT_DOMAIN", raising=False)
+    monkeypatch.delenv("PUBLIC_URL", raising=False)
+    server = _load_server(monkeypatch)
+    server._meta_memory_cache.clear()
+    monkeypatch.setattr(server, "META_CACHE_DIR", tmp_path)
+
+    sent_bodies: list[dict[str, Any]] = []
+
+    async def fake_request(*args: object, **kwargs: Any) -> dict[str, Any]:
+        del args
+        sent_bodies.append(kwargs["json"])
+        # Distinguish the two axes' responses so a collision is detectable.
+        return {"requested_as": "view" if "views" in kwargs["json"] else "cube"}
+
+    monkeypatch.setattr(server, "_request", fake_request)
+
+    ctx = MagicMock()
+    as_view = asyncio.run(server.meta(ctx, views=["dates"]))
+    as_cube = asyncio.run(server.meta(ctx, cubes=["dates"]))
+
+    # Two independent network calls, one per axis — no cache collision.
+    assert sent_bodies == [{"views": ["dates"]}, {"cubes": ["dates"]}]
+    assert as_view == {"requested_as": "view"}
+    assert as_cube == {"requested_as": "cube"}
+    assert as_view != as_cube
+
+
 def test_with_default_timezone_injects_utc_when_absent(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

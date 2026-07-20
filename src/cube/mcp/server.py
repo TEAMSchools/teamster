@@ -339,14 +339,20 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
 def _meta_scope_key(views: list[str] | None, cubes: list[str] | None) -> str:
     """Distinguish a scoped `/entities/all` fetch from the full `/meta` catalog
     in the cache key — a filtered call must never read or write the full
-    catalog's cache entry (and vice versa)."""
+    catalog's cache entry, or another scope's. Views and cubes are keyed on
+    separate axes: `/entities/all` can return different content for a name
+    requested as a view vs. as a cube, so folding both into one sorted list
+    would collide (e.g. views=["dates"] and cubes=["dates"] must not share a
+    cache entry)."""
     if not views and not cubes:
         return "all"
-    return "entities:" + ",".join(sorted([*(views or []), *(cubes or [])]))
+    v = ",".join(sorted(views or []))
+    c = ",".join(sorted(cubes or []))
+    return f"entities:views={v}:cubes={c}"
 
 
 def _meta_cache_path(email: str, scope: str) -> Path:
-    digest = hashlib.sha256(f"{email}:{scope}".encode()).hexdigest()[:16]
+    digest = hashlib.sha256(f"{email}:{scope}".encode("utf-8")).hexdigest()[:16]
     return META_CACHE_DIR / f"cube-meta-{digest}.json"
 
 
