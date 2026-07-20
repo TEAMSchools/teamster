@@ -25,6 +25,7 @@ scripts: `bash scripts/<name>.sh`.
 | `extract_pdf_dictionary.py`                         | Extract column descriptions from source-system PDFs                                                                                                                                                                                                                              |
 | `gen-automations-doc.py`                            | Regenerate `docs/reference/automations.md`                                                                                                                                                                                                                                       |
 | `generate_marts_reference.py`                       | Regenerate `docs/reference/marts-data-models.md` from marts FK constraints (parses marts properties YAML; no dbt build or warehouse access needed)                                                                                                                               |
+| `generate_cube_reference.py`                        | Regenerate `docs/reference/cube-data-catalog.md` from Cube model YAML (parses `src/cube/model/`; no network). `--check` for CI, `--verify-against-meta` for the live cross-check                                                                                                 |
 | `gen_column_naming_audit_inventory.py`              | Generate mart column naming audit inventory CSV                                                                                                                                                                                                                                  |
 | `propagate_mart_descriptions.py`                    | Propagate staging descriptions into downstream YAML                                                                                                                                                                                                                              |
 | `init_sftp_integration.py`                          | Inspect SFTP servers and scaffold new integrations                                                                                                                                                                                                                               |
@@ -66,6 +67,12 @@ uv run dbt run-operation stage_external_sources \
   the output in its prettier-formatted form — the generator emits compact tables
   that the pre-commit formatter pads, so the working tree shows table-padding
   churn between run and commit; that is expected.
+- `generate_cube_reference.py` — no prerequisites for the default/`--check`
+  paths (parses YAML only): `uv run scripts/generate_cube_reference.py`. Like
+  `automations.md`, commit the prettier-padded output — table-padding churn
+  between run and commit is expected. `--verify-against-meta` additionally needs
+  `CUBE_META_URL`, `CUBE_API_SECRET`, and `CUBE_META_EMAIL` (a broad-access
+  identity) and reaches the live `/meta` endpoint.
 
 ## Caveats
 
