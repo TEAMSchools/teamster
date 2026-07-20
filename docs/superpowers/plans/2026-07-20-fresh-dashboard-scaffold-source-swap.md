@@ -329,15 +329,15 @@ with
 
     powerschool_region as (
         select
-            school_number,
-            abbreviation,
-            low_grade,
-            high_grade,
+            sps.school_number,
+            sps.abbreviation,
+            sps.low_grade,
+            sps.high_grade,
 
-            {{ extract_region("stg_powerschool__schools") }} as region,
+            {{ extract_region("sps") }} as region,
 
-        from {{ ref("stg_powerschool__schools") }}
-        where state_excludefromreporting = 0
+        from {{ ref("stg_powerschool__schools") }} as sps
+        where sps.state_excludefromreporting = 0
     ),
 
     -- Miami's SIS moved to Focus (#4441); stg_powerschool__schools' Miami
@@ -1507,7 +1507,7 @@ select distinct
 from `teamster-332318`.kipptaf_powerschool.stg_powerschool__schools as ps
 cross join (
   select academic_year
-  from `teamster-332318`.kipptaf_google_sheets.int_finalsite__current_academic_year
+  from `teamster-332318`.kipptaf_finalsite.int_finalsite__current_academic_year
 ) as cy
 left join `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__school_scaffold as s
   on ps.school_number = s.schoolid
