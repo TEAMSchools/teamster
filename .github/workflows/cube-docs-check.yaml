@@ -1,0 +1,20 @@
+name: Cube Docs Freshness
+
+on:
+  pull_request:
+    paths:
+      - src/cube/model/**
+      - scripts/generate_cube_reference.py
+      - docs/reference/cube-data-catalog.md
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Check catalog is up to date
+        run: uv run scripts/generate_cube_reference.py --check
