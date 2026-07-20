@@ -105,17 +105,25 @@ The one-line summary in the index is the first sentence of the view
 
 One row per exposed field across all views:
 
-| Column    | Content                                                         |
-| --------- | --------------------------------------------------------------- |
-| Field     | exact `exposed_name` as code                                    |
-| View      | friendly view title, linked to that view's section anchor       |
-| Domain    | domain title                                                    |
-| Type      | member type                                                     |
-| Kind      | `measure` or `dimension`                                        |
-| Sensitive | `Yes` when `exposed_name` is in `SENSITIVE_MEMBERS`, else empty |
+| Column      | Content                                                         |
+| ----------- | --------------------------------------------------------------- |
+| Field       | exact `exposed_name` as code                                    |
+| View        | friendly view title, linked to that view's section anchor       |
+| Domain      | domain title                                                    |
+| Type        | member type                                                     |
+| Kind        | `measure` or `dimension`                                        |
+| Sensitive   | `Yes` when `exposed_name` is in `SENSITIVE_MEMBERS`, else empty |
+| Description | full field description; placeholder when missing                |
 
-No description column — full descriptions stay in each view section; the finder
-stays scannable. Rows are emitted sorted by field name for a stable default.
+The Description text is shown **in full** (not truncated) so the in-page filter
+can match on it — a reader who does not know the field name can type a keyword
+from the description and keep matching rows. The **View** column links up to the
+field's view section for full surrounding context. Rows are emitted sorted by
+field name for a stable default.
+
+Truncated display with full-text search would require rendering the finder as
+raw HTML with `data-` attributes (per-row search text); rejected for now to keep
+the generated file pure Markdown (no MD033) and the freshness check simple.
 
 ### Interactivity — self-contained vanilla JS
 
@@ -127,10 +135,17 @@ in `mkdocs.yml`. Behavior:
 - Locate the Find-a-field table by the `find-a-field` section anchor (the table
   immediately following that heading) — no inline HTML in the generated
   Markdown, so no MD033 concern.
-- Inject a text `input` above the table; on `keyup`, hide rows whose text does
-  not contain the query (case-insensitive).
+- Inject a text `input` above the table; on `keyup`, hide any row whose full
+  text does not contain the query (case-insensitive). The match spans the
+  **entire row** — Field, View, Domain, Type, Kind, and Description — so a
+  description keyword narrows the table even when the field name is unknown.
 - Make each column header click-to-sort (toggle asc/desc) with a small homegrown
   comparator (numeric-aware). ~50 lines, no dependency.
+
+Material's site-wide search independently indexes all of this page text (the
+finder rows and the per-view sections), so description keywords are also
+discoverable through the top search box. The in-page filter is the fast,
+in-context path.
 
 Rationale for homegrown over vendoring `tablesort`: no new package, no CDN, no
 offline-build breakage, no license to track — the behavior is small.
