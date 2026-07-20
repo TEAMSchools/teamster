@@ -158,6 +158,26 @@ redundant with this filter in today's data — every summer-school row is alread
 the filter is on `state_excludefromreporting` specifically, not assumed to also
 catch summer schools some other way.)
 
+**Also filter `where region != 'Miami'`, unconditionally — a deliberate,
+temporary carve-out, not a config toggle.** `src/dbt/powerschool/CLAUDE.md`
+already documents that Miami's SIS moved to Focus (#4441) and it no longer
+consumes the PowerSchool package — so `stg_powerschool__schools`'s Miami rows
+are a frozen snapshot from before that migration, not a live source of truth.
+Verified against today's data: two Miami schools (Courage, Royalty) still have
+current, correctly-flagged PowerSchool rows, but three actively-recruited
+schools (Legacy ES, Legacy MS, MTH) don't exist in PowerSchool at all — they
+were never onboarded post-migration — while two more (Sunrise, Liberty) exist
+but are stale/retired (`state_excludefromreporting = 1`, absent from the current
+goals sheet; likely the pre-rename identities of Legacy ES/MS, though
+unconfirmed). Rather than special-case per-school, **Miami is excluded from the
+PowerSchool builder entirely, for every school, regardless of the global
+`finalsite_scaffold_source` var** — confirmed with the team: Focus isn't ready
+yet as a source, so Miami stays 100% sheet-sourced until a future project
+revisits this once it is. This is a hardcoded filter with a comment explaining
+why and pointing at #4441, not a new per-region config axis — deliberately not
+building region-level configurability for what's a one-time, temporary pause
+tied to a specific future migration, not a recurring operational need.
+
 Expand each remaining school's grade span into one row per grade
 (`generate_array(low_grade, high_grade)` + `unnest`), then attach:
 
@@ -200,6 +220,14 @@ PowerSchool, the analyst never re-types its per-grade rows — only the `-1` row
 See "Documentation & skill" below for the tooling that generates the `-1`
 candidate list.
 
+**Miami is the exception to this reduction, not an example of it.** Since the
+PowerSchool builder excludes Miami entirely (see above), Miami's sheet rows must
+continue to carry its **full** spine — every school, every grade, not just `-1`
+rows and net-new entries — for as long as the Miami carve-out is in effect. The
+`-1` candidate-row generator (see "Documentation & skill") should scope itself
+to non-Miami regions accordingly, since Miami has no PowerSchool-derived rows to
+compare against in the first place.
+
 **Why the `academic_year` filter matters**: without it, a stale row from a prior
 cycle (a school that's since closed, or a grade that's been dropped) would look
 identical to "PowerSchool doesn't have this yet" from blend's point of view, and
@@ -211,7 +239,7 @@ residual case this doesn't cover: a school/grade that closes **mid-cycle** (same
 the year filter and still get blended in. That's rare enough to be a
 documentation note in the skill, not a design requirement.
 
-### Blend mode — simplified by the `-1` exclusion
+### Blend mode — simplified by the `-1` exclusion, and by the Miami carve-out
 
 Because the PowerSchool builder never emits a `-1` row, blend's "sheet fills
 gaps absent from PowerSchool" rule already handles `-1` rows correctly with **no
@@ -220,7 +248,12 @@ construction, always absent from the PowerSchool builder's output, so it always
 comes from the sheet. The same single rule
 (`PowerSchool wins on any overlapping key; sheet fills the rest`) simultaneously
 covers both the `-1` rows and genuinely new grades/schools — no separate branch
-needed.
+needed. The Miami carve-out generalizes the same way, again with no special
+handling in the blend rule itself: since the PowerSchool builder excludes Miami
+entirely, _every_ Miami key is absent from its output, so blend naturally
+sources 100% of Miami from the sheet — the exact same mechanism that handles
+`-1` rows and genuinely-new grades, just applied to an entire region instead of
+one row at a time.
 
 ### Source-selection control
 
@@ -566,18 +599,30 @@ Mirroring the `gradebook-audit` pattern established in this repo
 
 Both are detailed further in the implementation plan, not this design doc.
 
-## Verification (to run during implementation, before cutover)
+## Verification
 
-- **`schoolid` domain alignment**: confirm
-  `stg_powerschool__schools.school_number` and
-  `int_people__location_crosswalk.location_powerschool_school_id` cover the same
-  population of real schools (accounting for Pathways exclusions and
-  multi-campus `reporting_school_id` rollups) — this is the join path Finalsite
-  actuals already use to resolve `schoolid`
+- **`schoolid` domain alignment — run, findings below (was a pending item in an
+  earlier revision of this doc; now resolved).** Compared
+  `stg_powerschool__schools.school_number` (filtered
+  `state_excludefromreporting = 0`) against
+  `int_people__location_crosswalk.location_powerschool_school_id` — the join
+  path Finalsite actuals already use to resolve `schoolid`
   (`int_finalsite__status_report_unpivot`, via `assigned_school` →
-  `location_name`), independent of the new seam model. The two `schoolid`
-  domains must agree for the scaffold-to-actuals join in
-  `rpt_tableau__fresh_dashboard_progress_to_goals` to keep working.
+  `location_name`), independent of the new seam model:
+
+  - Every filtered PowerSchool school has a matching crosswalk entry — zero
+    mismatches in that direction, network-wide.
+  - Several crosswalk entries have no matching filtered-PowerSchool row — but
+    every one of them resolves to either: (a) a retired/renamed school,
+    correctly excluded by `state_excludefromreporting = 1` and correctly absent
+    from the current goals sheet too (confirmed for both a Newark pair — "KIPP
+    Newark Community Prep" / "KIPP Truth Academy" — and a Miami pair — Sunrise /
+    Liberty Academy — so this is a general pattern across regions, not
+    Miami-specific), or (b) the Miami/Focus gap (Legacy ES, Legacy MS, MTH)
+    already covered by the Miami carve-out above, or (c) the `schoolid = 0` "no
+    school assigned" sentinel.
+  - **Net result: the `schoolid` domains fully align for every case that matters
+    to this design.** No further reconciliation work is needed before cutover.
 
 ## Delivery
 
