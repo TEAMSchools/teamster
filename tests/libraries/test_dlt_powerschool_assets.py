@@ -166,7 +166,7 @@ NIGHTLY_NO_CURSOR = {
 }
 
 
-def test_config_matches_spec_cursor_map():
+def test_config_matches_spec_membership_map():
     entries = yaml.safe_load(CONFIG.read_text())["assets"]
     by_name = {e["table_name"]: e for e in entries}
 
@@ -176,40 +176,48 @@ def test_config_matches_spec_cursor_map():
         assert by_name[name] == {
             "table_name": name,
             "cursor_column": "transaction_date",
-            "schedule_tier": "intraday",
+            "intraday": True,
+            "nightly": False,
         }
     for name in INTRADAY_WHENMODIFIED:
         assert by_name[name] == {
             "table_name": name,
             "cursor_column": "whenmodified",
-            "schedule_tier": "intraday",
+            "intraday": True,
+            "nightly": False,
         }
     for name in NIGHTLY_WHENMODIFIED:
         assert by_name[name] == {
             "table_name": name,
             "cursor_column": "whenmodified",
-            "schedule_tier": "nightly",
+            "intraday": False,
+            "nightly": True,
         }
     for name in NIGHTLY_NO_CURSOR:
         assert by_name[name] == {
             "table_name": name,
             "cursor_column": None,
-            "schedule_tier": "nightly",
+            "intraday": True,
+            "nightly": True,
         }
 
 
-def test_schedules_subset_by_tier():
-    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
-        powerschool_dlt_intraday_asset_job_schedule as intraday,
-    )
+def test_nightly_schedule_and_intraday_sensor():
     from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
         powerschool_dlt_nightly_asset_job_schedule as nightly,
     )
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
+        schedules,
+    )
+    from teamster.code_locations.kipppaterson.powerschool.sis.dlt.sensors import (
+        sensors,
+    )
 
-    assert intraday.cron_schedule == "*/15 * * * *"
+    assert schedules == [nightly]
     assert nightly.cron_schedule == "0 2 * * *"
-    assert intraday.tags == {"dagster/max_runtime": "3600"}
     assert nightly.tags == {"dagster/max_runtime": "3600"}
+    assert sensors[0].name == "kipppaterson__powerschool__dlt__intraday_sensor"
+    assert sensors[0].minimum_interval_seconds == 900
 
 
 def test_assets_module_exposes_single_def():
@@ -221,21 +229,18 @@ def test_assets_module_exposes_single_def():
     assert len(list(assets[0].keys)) == 48
 
 
-def test_tier_targets_sis_keys_and_counts():
+def test_nightly_targets_sis_keys_and_counts():
     from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import (
-        _tier_targets,
+        _nightly_targets,
     )
 
-    intraday = _tier_targets("intraday")
-    nightly = _tier_targets("nightly")
+    nightly = _nightly_targets()
 
-    assert len(intraday) == 23
     assert len(nightly) == 25
-    assert all(
-        t.startswith("kipppaterson/powerschool/sis/") for t in intraday + nightly
-    )
-    assert "kipppaterson/powerschool/sis/students" in intraday
+    assert all(t.startswith("kipppaterson/powerschool/sis/") for t in nightly)
     assert "kipppaterson/powerschool/sis/teachercategory" in nightly
+    assert "kipppaterson/powerschool/sis/test" in nightly
+    assert "kipppaterson/powerschool/sis/students" not in nightly
 
 
 def test_compute_changed_no_cursor_count_drift_included():

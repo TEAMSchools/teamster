@@ -15,35 +15,36 @@ def test_paterson_powerschool_dlt_asset_keys():
 
     keys = {key for a in assets.assets for key in a.keys}
     assert keys == {
-        AssetKey(["kipppaterson", "powerschool", a["table_name"]])
+        AssetKey(["kipppaterson", "powerschool", "sis", a["table_name"]])
         for a in config["assets"]
     }
 
 
-def test_paterson_powerschool_dlt_schedules():
+def test_paterson_powerschool_dlt_triggers():
     from teamster.code_locations.kipppaterson.powerschool.sis.dlt import (
         schedules,
+        sensors,
     )
 
     by_name = {s.name: s for s in schedules.schedules}
 
-    intraday = by_name["kipppaterson__powerschool__dlt__intraday_asset_job_schedule"]
     nightly = by_name["kipppaterson__powerschool__dlt__nightly_asset_job_schedule"]
 
-    assert isinstance(intraday, ScheduleDefinition)
-    assert intraday.cron_schedule == "*/15 * * * *"
+    assert isinstance(nightly, ScheduleDefinition)
     assert nightly.cron_schedule == "0 2 * * *"
+    assert len(schedules.schedules) == 1  # intraday schedule replaced by sensor
+
+    (sensor_def,) = sensors.sensors
+    assert sensor_def.name == "kipppaterson__powerschool__dlt__intraday_sensor"
 
 
-def test_paterson_powerschool_dlt_schedules_cover_every_table_exactly_once():
-    """Every configured table is scheduled in exactly one of the two tiers.
+def test_paterson_powerschool_dlt_triggers_cover_every_table():
+    """Every configured table belongs to at least one trigger.
 
-    `_tier_targets()` filters by exact-match `schedule_tier` — a misspelled
-    tier would silently drop a table from BOTH schedules, and since the dlt
-    assets carry no automation condition, it would never materialize (a
-    silent data gap). This asserts the union of the two schedules' resolved
-    asset selections equals the full configured asset-key set, with no
-    drops and no duplicates.
+    A table with both membership flags false would silently never
+    materialize (the dlt assets carry no automation condition). The overlap
+    between tiers must be exactly the no-cursor set: count-gated intraday,
+    authoritative overnight.
     """
     import yaml
 
@@ -55,14 +56,19 @@ def test_paterson_powerschool_dlt_schedules_cover_every_table_exactly_once():
     )
 
     config = yaml.safe_load(config_file.read_text())
-    expected = {f"kipppaterson/powerschool/{a['table_name']}" for a in config["assets"]}
 
-    # Resolve targets through the real scheduling function — the exact code a
-    # typo'd tier would silently route around.
-    intraday = schedules_module._tier_targets("intraday")
-    nightly = schedules_module._tier_targets("nightly")
+    def key(name):
+        return f"kipppaterson/powerschool/sis/{name}"
 
-    # No table dropped...
-    assert set(intraday) | set(nightly) == expected
-    # ...and no table scheduled in more than one tier.
-    assert len(intraday) + len(nightly) == len(expected)
+    expected = {key(a["table_name"]) for a in config["assets"]}
+    intraday = {key(a["table_name"]) for a in config["assets"] if a["intraday"]}
+    no_cursor = {
+        key(a["table_name"]) for a in config["assets"] if a["cursor_column"] is None
+    }
+
+    # Resolve nightly targets through the real scheduling function — the exact
+    # code an orphaned membership would route around.
+    nightly = set(schedules_module._nightly_targets())
+
+    assert intraday | nightly == expected
+    assert intraday & nightly == no_cursor
