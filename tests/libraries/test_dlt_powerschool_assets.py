@@ -358,3 +358,69 @@ def test_stored_signatures_first_run_empty_state():
     stored = _stored_signatures(pipeline, "powerschool")
 
     assert stored == {}
+
+
+def _resolved_probe_job(tables):
+    from dagster import Definitions, define_asset_job
+    from dagster_dlt import DagsterDltResource
+
+    from teamster.libraries.dlt.powerschool.resources import OracleResource
+    from teamster.libraries.ssh.resources import SSHResource
+
+    assets_def = build_powerschool_dlt_assets(
+        code_location="kipppaterson", tables=tables
+    )
+    defs = Definitions(
+        assets=[assets_def],
+        jobs=[define_asset_job("probe_job", selection=list(assets_def.keys))],
+        resources={
+            "dlt": DagsterDltResource(),
+            "ssh_powerschool": SSHResource(remote_host="localhost"),
+            "db_powerschool": OracleResource(
+                user="u", password="p", host="localhost", port="1521", service_name="s"
+            ),
+        },
+    )
+    return defs.resolve_job_def("probe_job")
+
+
+def test_run_config_schema_accepts_probe_payload():
+    job = _resolved_probe_job(
+        [
+            PowerSchoolTable(name="students", cursor_column="transaction_date"),
+            PowerSchoolTable(name="gen", cursor_column=None),
+        ]
+    )
+
+    from dagster import validate_run_config
+
+    validated = validate_run_config(
+        job,
+        {
+            "ops": {
+                "kipppaterson__powerschool": {
+                    "config": {
+                        "probe": {
+                            "students": {
+                                "count": 43,
+                                "max_cursor": "2026-07-16T00:00:00",
+                            },
+                            "gen": {"count": 10, "max_cursor": None},
+                        }
+                    }
+                }
+            }
+        },
+    )
+
+    assert validated
+
+
+def test_run_config_schema_accepts_empty_full_refresh():
+    job = _resolved_probe_job(
+        [PowerSchoolTable(name="students", cursor_column="transaction_date")]
+    )
+
+    from dagster import validate_run_config
+
+    assert validate_run_config(job, {})

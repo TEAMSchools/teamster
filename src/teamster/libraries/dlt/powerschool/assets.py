@@ -4,7 +4,7 @@ from datetime import date, datetime
 
 import dlt
 import sqlalchemy as sa
-from dagster import AssetExecutionContext, AssetKey, AssetSpec
+from dagster import AssetExecutionContext, AssetKey, AssetSpec, Config
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
@@ -113,6 +113,42 @@ def _resolve_extract_workers(tag_value: str | None, param: int | None) -> int | 
     return param
 
 
+class ProbeSignatureConfig(Config):
+    """One table's probed change signature, passed by the intraday sensor."""
+
+    count: int
+    max_cursor: str | None = None
+
+
+class PowerSchoolDltConfig(Config):
+    """Run config selecting the op's mode.
+
+    probe present (intraday sensor): the sensor already probed and gated —
+    load exactly the run's asset selection, persisting the passed signatures.
+    probe absent (nightly schedule / manual launch): full refresh — probe the
+    selection once, then load it all unconditionally with fresh baselines.
+    """
+
+    probe: dict[str, ProbeSignatureConfig] | None = None
+
+
+def build_powerschool_dlt_pipeline(code_location: str) -> dlt.Pipeline:
+    """The shared BigQuery pipeline for one district's PowerSchool source.
+
+    Used by the assets factory (loads) and the intraday sensor (baseline
+    reads via sync_destination + resource state).
+    """
+    return dlt.pipeline(
+        pipeline_name=_SOURCE_NAME,
+        # No `autodetect_schema=True`: oracle_number_adapter +
+        # full_with_precision reflection are the authoritative decimal schema
+        # (see oracle_number_adapter docstring).
+        destination=bigquery(),
+        dataset_name=f"dagster_{code_location}_dlt_{_SOURCE_NAME}",
+        progress=LogCollector(dump_system_stats=False),
+    )
+
+
 def oracle_number_adapter(col_type: TypeEngine) -> TypeEngine | None:
     """Keep Oracle NUMBER columns off FLOAT64 in BigQuery.
 
@@ -216,32 +252,25 @@ def build_powerschool_dlt_assets(
     op_tags: dict[str, object] | None = None,
     max_extract_workers: int | None = None,
 ):
-    """Build ONE probe-gated @dlt_assets over all PowerSchool tables.
+    """Build ONE two-mode @dlt_assets over all PowerSchool tables.
 
-    The op opens the SSH tunnel, restores prior per-table signatures from dlt
-    resource_state (persisted in the destination), probes each selected table's
-    COUNT(*)/MAX(cursor), and runs the pipeline over a source narrowed to only
-    the changed tables (`_powerschool_source(changed, current)`) — a full `replace`
-    load per changed table. Tables without a cursor_column are always loaded
-    when selected.
-    Unselected / unchanged tables are never in the run, so their destination
-    tables are untouched. Schedules subset the multi-asset per tier. See
-    docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md.
+    The selection decision belongs to the caller: the intraday sensor probes,
+    gates, and passes per-table signatures via run config (`probe`); the
+    nightly schedule and manual launches pass no config and get an
+    unconditional full refresh. In both modes the op opens the SSH tunnel and
+    runs the pipeline over a source narrowed to the run's asset selection — a
+    full `replace` load per table — persisting each table's signature to dlt
+    resource_state WITH the load (dlt commits state only from extracted
+    resources, so failures self-heal: the old baseline survives and the table
+    re-selects next tick). See
+    docs/superpowers/specs/2026-07-20-powerschool-dlt-intraday-sensor-design.md.
 
     `max_extract_workers` caps concurrent dlt extract workers to avoid
     saturating the single SSH tunnel (see DPY-4011); None leaves dlt's
     default (5). A per-run `dlt_extract_workers` tag overrides this param for
     a manual concurrency sweep.
     """
-    dlt_pipeline = dlt.pipeline(
-        pipeline_name=_SOURCE_NAME,
-        # No `autodetect_schema=True`: oracle_number_adapter +
-        # full_with_precision reflection are the authoritative decimal schema
-        # (see oracle_number_adapter docstring).
-        destination=bigquery(),
-        dataset_name=f"dagster_{code_location}_dlt_{_SOURCE_NAME}",
-        progress=LogCollector(dump_system_stats=False),
-    )
+    dlt_pipeline = build_powerschool_dlt_pipeline(code_location)
 
     translator = PowerSchoolDagsterDltTranslator(code_location)
     tables_by_key = {_asset_key(code_location, t.name): t for t in tables}
@@ -258,6 +287,7 @@ def build_powerschool_dlt_assets(
     )
     def _assets(
         context: AssetExecutionContext,
+        config: PowerSchoolDltConfig,
         dlt: DagsterDltResource,
         ssh_powerschool: SSHResource,
         db_powerschool: OracleResource,
@@ -286,42 +316,33 @@ def build_powerschool_dlt_assets(
         with ssh_powerschool.open_ssh_tunnel():
             connection_url = db_powerschool.connection_url()
 
-            # Restore prior signatures from the destination state table. On a
-            # truly first run (no dataset) this raises; treat as no prior state.
-            try:
-                dlt_pipeline.sync_destination()
-            except Exception as e:
+            if config.probe is not None:
+                # Intraday sensor mode: the sensor probed and gated already —
+                # persist its signatures with the load, no re-probe.
+                signatures: dict[str, dict] = {
+                    name: {"count": sig.count, "max_cursor": sig.max_cursor}
+                    for name, sig in config.probe.items()
+                }
                 context.log.info(
-                    f"dlt sync_destination failed ({e}); treating all selected "
-                    "as changed"
+                    f"powerschool sensor-selected load: {sorted(signatures)}"
                 )
-
-            stored = _stored_signatures(dlt_pipeline, _SOURCE_NAME)
-
-            # Probe every selected table that has a cursor column (one shared
-            # engine over the single tunnel).
-            engine = sa.create_engine(connection_url)
-            try:
-                with engine.connect() as connection:
-                    current: dict[str, dict] = {
-                        table.name: probe_signature(
-                            connection, table.name, table.cursor_column
-                        )
-                        for table in selected
-                        if table.cursor_column is not None
-                    }
-            finally:
-                engine.dispose()
-
-            changed = _compute_changed(selected, current, stored)
-
-            context.log.info(
-                f"powerschool probe: {len(changed)}/{len(selected)} changed; "
-                f"changed={sorted(t.name for t in changed)}"
-            )
-
-            if not changed:
-                return  # idle tick: nothing to load
+            else:
+                # Full-refresh mode (nightly schedule / manual launch): load the
+                # whole selection unconditionally. Probe FIRST so fresh baseline
+                # signatures persist WITH the load — dlt commits state only from
+                # extracted resources, so a post-load write would not round-trip.
+                engine = sa.create_engine(connection_url)
+                try:
+                    with engine.connect() as connection:
+                        signatures = {
+                            table.name: probe_signature(
+                                connection, table.name, table.cursor_column
+                            )
+                            for table in selected
+                        }
+                finally:
+                    engine.dispose()
+                context.log.info(f"powerschool full-refresh load: {sorted(signatures)}")
 
             # Stream dlt's periodic extract/normalize/load progress into the
             # Dagster event log. The factory-built collector defaults to
@@ -339,7 +360,7 @@ def build_powerschool_dlt_assets(
                 yield from dlt.run(
                     context=context,
                     dlt_source=_powerschool_source(
-                        changed, current, connection_url, arraysize
+                        selected, signatures, connection_url, arraysize
                     ),
                     dlt_pipeline=dlt_pipeline,
                     dagster_dlt_translator=translator,
