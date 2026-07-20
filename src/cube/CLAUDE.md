@@ -98,6 +98,16 @@ school_calendars) go in `cubes/conformed/`.
 - **Branch schema validation is manual.** Cube Cloud Staging Environments don't
   auto-create from pushes. Open Cube Cloud → Data Model → Dev Mode → add branch
   by name to spin up a per-branch staging instance.
+- **Partitioned pre-aggregations need explicit `build_range_start` /
+  `build_range_end`.** Without them Cube derives the range from the
+  `time_dimension` min/max — and a `dates.date_day` anchor routes through
+  `dim_dates` (calendar spine to 9999), so the refresh worker enumerates ~8,000
+  empty yearly partitions on the post-merge prod redeploy (incident: #4460 →
+  revert #4462 → bounded #4463). Bound to real data (`SELECT DATE('2015-07-01')`
+  to `CURRENT_DATE`). Cube rebuilds a changed pre-agg on merge to `main`, so
+  validate the build stays bounded on a branch staging deployment FIRST —
+  confirm the partition count via `JOBS_BY_PROJECT` for
+  `cube-cloud@teamster-332318`.
 
 ## View access policies
 
@@ -281,6 +291,16 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   `cube-*` group, access policies hide every cube — looks identical to an
   unpopulated branch. Compile a query via `/sql` to verify model presence before
   assuming the deployment is empty.
+- **Empty `/meta` (or `WHERE (1 = 0)` / `rlsAccessDenied`) can also mean
+  `resolveAccess` THREW and fail-closed to an empty context (`cube.js` `catch`),
+  not that the viewer legitimately has no scope.** A BigQuery error inside
+  `resolveAccess` (wrong billing project, missing `jobs.create`) default-denies
+  EVERY viewer at once. Check Cube Cloud logs for
+  `resolveAccess failed for <email>` before concluding it is an access-config
+  problem. (Root-caused this session: `new BigQuery()` with no `projectId` /
+  `credentials` billed the ambient-ADC project `cubejs-cloud`, where the
+  identity lacked `jobs.create` — the data connection is fine because it is
+  explicitly the `CUBEJS_DB_BQ_*` SA.)
 - `/sql` compiles queries even against `public: false` members; `/load` enforces
   hiding. A `/load` 500 "You requested hidden member" with `/sql` succeeding =
   security-context delta, not a schema bug.
@@ -288,6 +308,14 @@ The `cube` MCP wraps Cube Cloud's REST API. Auth path that works:
   the view) manifests as `WHERE (1 = 0)` plus `rlsAccessDenied` in
   `sortedDimensions` of `/sql` output — same diagnostic signature as the old
   `queryRewrite`-based deny.
+- **`/sql` reveals pre-aggregation coverage independent of access:** a covered
+  query compiles to `FROM prod_pre_aggregations.<rollup>` (vs the fact view),
+  and the access-deny `WHERE (1 = 0)` does not change the `FROM` — so you can
+  confirm a query hits a rollup even as a default-denied viewer. A partitioned
+  pre-agg has no base `prod_pre_aggregations.<name>` table (per-partition
+  suffixes; the BQ staging table is dropped after load into Cube Store), so
+  `count(*)` on it 404s — track builds via `JOBS_BY_PROJECT` for
+  `cube-cloud@teamster-332318` instead.
 - **Branch endpoints**: `/staging/<branch>/cubejs-api/v1` is the per-branch
   staging endpoint (stable, redeploys on push).
   `/user/<urlencoded-email>/<id>/cubejs-api/v1` is the per-developer Dev Mode
