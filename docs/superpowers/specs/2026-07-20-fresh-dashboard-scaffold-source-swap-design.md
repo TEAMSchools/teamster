@@ -294,15 +294,45 @@ troubleshooting section:
   currently valid academic year." These dates can be **overwritten** when
   someone edits/clicks the status in the Finalsite UI — they are not an
   immutable audit trail.
-- **`detailed_status_ranking` is a best-assumption ordering, not an enforced
-  one.** `status_crosswalk`'s ranking encodes the _typical_
-  recruitment→enrollment sequence, but real students can skip steps or move
-  backward through it. Anything built assuming strict monotonic progression
-  through statuses can be wrong for some students.
+- **`grouped_status_order` (the 8-stage funnel sequence) is a best-assumption
+  ordering, not an enforced one.** `status_crosswalk_unpivot`'s
+  `grouped_status_order` encodes the _typical_ Inquiries→...→Enrolled sequence,
+  but real students can skip steps or move backward through it. Anything built
+  assuming strict monotonic progression through statuses can be wrong for some
+  students.
+- **`detailed_status_ranking` (on the crosswalk sheet) is hand-duplicated into a
+  hardcoded `CASE` in code, and the two can silently drift out of sync.** It's
+  used as a tie-breaker when two statuses share the same update date
+  (`latest_status_calc`'s `order by status_start_date desc, status_order desc`
+  in `int_tableau__finalsite_student_scaffold.sql`) — but that tie-break
+  actually reads `status_order`, a separate 1–24 `CASE` hardcoded in
+  `int_finalsite__status_report_unpivot.sql`, keyed on `fs_status_field`. It's
+  hardcoded (not joined to the sheet) specifically per this repo's convention
+  against staging-layer joins to Google Sheets sources. Verified today: the two
+  are numerically identical for every status, uniformly across both
+  `enrollment_type` values. But nothing enforces they _stay_ identical — editing
+  the sheet's `detailed_status_ranking` (reordering, or adding a new status)
+  does **not** automatically update the hardcoded `CASE`, and there's no error
+  if they drift, only silently wrong tie-breaking. A new automated test guards
+  this — see "New test: status ranking sync check" below.
 - Comparing `status_crosswalk` against the raw Finalsite staging data
   (`stg_finalsite__status_report`) is the standard first troubleshooting move
   for a count discrepancy — the user will walk through concrete troubleshooting
   steps for this during the skill-writing phase.
+
+### New test: status ranking sync check
+
+A new singular test (`src/dbt/kipptaf/tests/`) guards the dual-maintenance risk
+above: for the current year's crosswalk config (scoped via
+`int_finalsite__current_academic_year`), compare
+`distinct fs_status_field, detailed_status_ranking` from
+`stg_google_sheets__finalsite__status_crosswalk` against
+`distinct fs_status_field, status_order` from
+`int_finalsite__status_report_unpivot` (both are real, materialized, queryable
+columns — this doesn't require parsing SQL source). Any `fs_status_field` whose
+ranking differs between the two, or that's present in one but missing from the
+other, fails the test. This turns a previously invisible drift into a loud,
+actionable CI failure instead of a silent tie-breaking bug.
 
 ## Downstream changes
 
@@ -318,8 +348,10 @@ troubleshooting section:
 - `int_tableau__finalsite_student_scaffold` → its hardcoded `2026` in
   `latest_status_calc` replaced the same way. (Only this one line changes; its
   status/goal-type logic is otherwise untouched, per Non-goals.)
-- `rpt_tableau__fresh_dashboard_aggregated` → no direct change (consumes the
-  renamed intermediate, not the sheet).
+- `rpt_tableau__fresh_dashboard_aggregated` → its
+  `ref("int_google_sheets__finalsite__scaffold")` call updates to
+  `ref("int_finalsite__goals_scaffold")` (the rename above); no logic change
+  otherwise.
 - `models/exposures/tableau.yml` → `fresh_dashboard` exposure's `depends_on`
   list updated for the renamed/new model refs.
 - `models/google/sheets/sources-external.yml` → the `school_scaffold` source
@@ -338,12 +370,42 @@ Mirroring the `gradebook-audit` pattern established in this repo
   "Known data model caveats" section above, and an explicit "Open Questions"
   section covering historical/multi-year reporting. Nav entry added to
   `mkdocs.yml`.
-- **Goal definitions** (what "Seat Target", "FDOS Target", "New Student Target",
-  etc. each mean) are documented in **both** the reference doc and as
+- **Goal definitions** — documented in **both** the reference doc and as
   `description:` fields on the relevant columns in
-  `stg_google_sheets__finalsite__goals.yml` / the goals-pivot properties yml —
+  `stg_google_sheets__finalsite__goals.yml` / the goals-pivot properties yml,
   per this repo's convention that yml is the analyst-facing documentation
-  mechanism. Content to be captured during the doc-writing phase.
+  mechanism. Confirmed content:
+
+  The `Enrollment` goal_type group is **not** computed via `status_crosswalk` at
+  all — these are plain numeric targets entered directly on the goals sheet, no
+  funnel logic involved:
+
+  | `goal_name`            | Definition                                                                                                                                                                                                            |
+  | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | `Seat Target`          | Total seats/capacity the school is targeting for the year.                                                                                                                                                            |
+  | `FDOS Target`          | Enrollment target as of First Day of School.                                                                                                                                                                          |
+  | `New Student Target`   | Target count of new (not returning) students to enroll.                                                                                                                                                               |
+  | `Budget Target`        | The enrollment number the school's budget was built against.                                                                                                                                                          |
+  | `Re-Enroll Projection` | Projected count of currently-enrolled students expected to persist (return) — **"persistence," not "retention"; retention refers to grade repetition in this org's vocabulary and is a distinct, unrelated concept.** |
+
+  Everything else is a computed roll-up of the Finalsite recruitment funnel, via
+  `status_crosswalk`'s `status_group_value` mapping and
+  `grouped_status_timeframe` (`Ever` = cumulative, counts a student who ever
+  reached this status even if they later moved past or reversed; `Current` =
+  point-in-time, latest status only):
+
+  | `goal_name` (`goal_type`)                                                           | Timeframe | Definition                                                                                                                      |
+  | ----------------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+  | `Inquiries`                                                                         | Ever      | Family ever submitted an inquiry.                                                                                               |
+  | `App Target` (`Applications`)                                                       | Ever      | Family ever completed/submitted an application.                                                                                 |
+  | `Offers Target` (`Offers`)                                                          | Ever      | Student was ever offered a seat.                                                                                                |
+  | `Accepted`                                                                          | Ever      | Family ever accepted an offered seat.                                                                                           |
+  | `Waitlisted`                                                                        | Current   | Student's current status is waitlisted.                                                                                         |
+  | `Deferred`                                                                          | Current   | Student's current status is deferred.                                                                                           |
+  | `Enrollment In Progress`                                                            | Current   | Student is currently mid-enrollment paperwork/process.                                                                          |
+  | `Pending Offers` (+ `<= 4 Days` / `>= 5 & <= 10 Days` / `> 10 Days`)                | Current   | Student has an outstanding offer awaiting a family response, bucketed by days pending — an SLA/staleness tracker for follow-up. |
+  | `Conversion` — `Accepted to Enrolled` / `Offers to Accepted` / `Offers to Enrolled` | Ever      | Funnel conversion-rate metrics between two funnel stages.                                                                       |
+
 - **`.claude/skills/fresh-dashboard/`** — a tiered skill:
   - A plain-language section for non-engineer (Ops/Analyst) self-serve: explains
     the data flow, walks through "why does this number look wrong" (referencing
