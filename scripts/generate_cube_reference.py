@@ -2,6 +2,8 @@
 # requires-python = ">=3.13"
 # dependencies = [
 #   "pyyaml>=6.0",
+#   "pyjwt>=2.8",
+#   "httpx>=0.27",
 # ]
 # ///
 
@@ -28,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import os
 import re
 import sys
 from pathlib import Path
@@ -411,9 +414,81 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def verify_against_meta(cubes_dir: Path, views_dir: Path) -> int:
-    print("ERROR: --verify-against-meta not implemented yet", file=sys.stderr)
-    return 2
+def fetch_meta(base_url: str, secret: str, email: str) -> dict:
+    """GET {base_url}/meta as `email`, signing an HS256 JWT with `secret`.
+
+    The identity must resolve to broad access or /meta hides views (access
+    policies filter /meta). Raw token in Authorization — no `Bearer` prefix.
+    """
+    import httpx
+    import jwt
+
+    token = jwt.encode({"email": email}, secret, algorithm="HS256")
+    resp = httpx.get(
+        f"{base_url.rstrip('/')}/meta",
+        headers={"Authorization": token},
+        timeout=30.0,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def meta_member_types(meta: dict) -> dict[str, dict[str, str]]:
+    """{view_name: {bare_member_name: type}} from a /meta payload.
+
+    /meta names members `<view>.<member>`; strip the leading view prefix.
+    """
+    result: dict[str, dict[str, str]] = {}
+    for cube in meta.get("cubes", []):
+        view = cube["name"]
+        members: dict[str, str] = {}
+        for kind in ("measures", "dimensions"):
+            for m in cube.get(kind, []):
+                bare = m["name"].split(".", 1)[1] if "." in m["name"] else m["name"]
+                members[bare] = m.get("type")
+        result[view] = members
+    return result
+
+
+def verify_against_meta(cubes_dir: Path, views_dir: Path, *, fetch=None) -> int:
+    """Cross-check YAML-resolved members against the live /meta contract.
+
+    Returns 0 on agreement, 1 on any discrepancy. `fetch` is injectable for
+    tests; by default it reads CUBE_META_URL, CUBE_API_SECRET, CUBE_META_EMAIL.
+    """
+    if fetch is None:
+        base_url = os.environ["CUBE_META_URL"]
+        secret = os.environ["CUBE_API_SECRET"]
+        email = os.environ["CUBE_META_EMAIL"]
+
+        def _default_fetch() -> dict:
+            return fetch_meta(base_url, secret, email)
+
+        fetch = _default_fetch
+
+    meta_types = meta_member_types(fetch())
+    cubes = parse_cubes(cubes_dir)
+    views = parse_views(views_dir, cubes)
+
+    problems: list[str] = []
+    for view in views:
+        meta_members = meta_types.get(view.name)
+        if meta_members is None:
+            problems.append(f"{view.name}: absent from /meta (access or deploy?)")
+            continue
+        for m in view.members:
+            if m.exposed_name not in meta_members:
+                problems.append(
+                    f"{view.name}.{m.exposed_name}: resolved from YAML but absent "
+                    f"from /meta"
+                )
+
+    for problem in problems:
+        print(f"META MISMATCH: {problem}", file=sys.stderr)
+    if problems:
+        return 1
+    print(f"/meta verification passed for {len(views)} views")
+    return 0
 
 
 if __name__ == "__main__":

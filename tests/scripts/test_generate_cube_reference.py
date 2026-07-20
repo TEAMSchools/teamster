@@ -178,3 +178,47 @@ def test_main_writes_output(tmp_path) -> None:
     )
     assert rc == 0
     assert "## sample_view" in out.read_text(encoding="utf-8")
+
+
+def _fake_meta() -> dict:
+    return {
+        "cubes": [
+            {
+                "name": "sample_view",
+                "measures": [{"name": "sample_view.count_rows", "type": "count"}],
+                "dimensions": [
+                    {"name": "sample_view.grade_level", "type": "number"},
+                    {"name": "sample_view.no_desc_dim", "type": "string"},
+                    {"name": "sample_view.sample_dim_region_name", "type": "string"},
+                    {"name": "sample_view.base_key", "type": "string"},
+                ],
+            }
+        ]
+    }
+
+
+def test_meta_member_types_strips_view_prefix() -> None:
+    types = gen.meta_member_types(_fake_meta())
+    assert types["sample_view"]["grade_level"] == "number"
+    assert types["sample_view"]["count_rows"] == "count"
+
+
+def test_verify_against_meta_passes_when_matching() -> None:
+    rc = gen.verify_against_meta(
+        FIXTURE_DIR / "cubes",
+        FIXTURE_DIR / "views",
+        fetch=lambda: _fake_meta(),
+    )
+    assert rc == 0
+
+
+def test_verify_against_meta_fails_on_missing_member(capsys) -> None:
+    meta = _fake_meta()
+    meta["cubes"][0]["dimensions"] = [
+        d for d in meta["cubes"][0]["dimensions"] if d["name"] != "sample_view.base_key"
+    ]
+    rc = gen.verify_against_meta(
+        FIXTURE_DIR / "cubes", FIXTURE_DIR / "views", fetch=lambda: meta
+    )
+    assert rc == 1
+    assert "base_key" in capsys.readouterr().err
