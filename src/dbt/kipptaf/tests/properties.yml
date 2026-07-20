@@ -1,4 +1,19 @@
 data_tests:
+  - name: test_stg_google_sheets__finalsite__status_crosswalk_single_year
+    description: >-
+      status_crosswalk must hold config for exactly one academic year at a time
+      (a documented convention, not an enforced constraint) --
+      int_finalsite__current_academic_year derives "the current Finalsite cycle"
+      via max(file_year), which silently returns NULL if the table is empty and
+      silently favors the wrong year if two years' config accumulate. Both
+      failure modes must fail loudly here instead.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__finalsite__status_crosswalk
+
   - name: test_int_surveys__manager_survey_details__terms_coverage
     description: >-
       Warns when int_surveys__manager_survey_details has a
