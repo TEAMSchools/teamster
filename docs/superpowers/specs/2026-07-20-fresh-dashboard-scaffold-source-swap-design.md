@@ -147,7 +147,18 @@ updated ahead of a school's planned expansion into a new grade. So a school's
 first year offering a new grade still won't appear here; that case is covered by
 the sheet, per the blend logic below.)
 
-Expand each school's grade span into one row per grade
+**Filter to `where state_excludefromreporting = 0` first.**
+`stg_powerschool__schools` includes non-reporting/administrative rows — verified
+today: 11 of ~32 rows have `state_excludefromreporting = 1`, including the
+`999999` "Graduated Students" sentinel (a separately documented gotcha elsewhere
+in this repo) and other admin/summer-school entries. Without this filter, the
+builder would generate garbage scaffold rows for these. (`issummerschool` is
+redundant with this filter in today's data — every summer-school row is already
+`state_excludefromreporting = 1` — but nothing guarantees that stays true, so
+the filter is on `state_excludefromreporting` specifically, not assumed to also
+catch summer schools some other way.)
+
+Expand each remaining school's grade span into one row per grade
 (`generate_array(low_grade, high_grade)` + `unnest`), then attach:
 
 - `region` — `{{ extract_region("<alias>") }}` (existing macro,
@@ -170,7 +181,10 @@ summary row is, by design, always sourced from the sheet — see below.
 
 ### Sheet-side builder
 
-`stg_google_sheets__finalsite__school_scaffold`, unchanged in structure, but its
+`stg_google_sheets__finalsite__school_scaffold`, unchanged in structure, but
+**filtered to the current cycle** —
+`where academic_year = <current Finalsite academic year>` (same derived value as
+everywhere else, via `int_finalsite__current_academic_year`) — and its
 **required contents change**: instead of holding a full spine, it now only needs
 to hold:
 
@@ -185,6 +199,17 @@ PowerSchool, the analyst never re-types its per-grade rows — only the `-1` row
 (a fixed, small, and mechanically generatable list) and true net-new entries.
 See "Documentation & skill" below for the tooling that generates the `-1`
 candidate list.
+
+**Why the `academic_year` filter matters**: without it, a stale row from a prior
+cycle (a school that's since closed, or a grade that's been dropped) would look
+identical to "PowerSchool doesn't have this yet" from blend's point of view, and
+get silently resurrected forever. Scoping the sheet builder to the current year
+alone eliminates that risk **across cycles** — last year's rows simply stop
+being read once the year rolls over, with no need to ever delete them. The one
+residual case this doesn't cover: a school/grade that closes **mid-cycle** (same
+`academic_year` as everything else that year) — its sheet row would still match
+the year filter and still get blended in. That's rare enough to be a
+documentation note in the skill, not a design requirement.
 
 ### Blend mode — simplified by the `-1` exclusion
 
@@ -257,14 +282,19 @@ A bare `select max(file_year)` always physically returns one row regardless of
 how many years are present upstream, so the "one year only" convention needs its
 test on the upstream side, not on `int_finalsite__current_academic_year` itself:
 add a test on `stg_google_sheets__finalsite__status_crosswalk` asserting
-`count(distinct file_year) <= 1`, so a violation of the convention (e.g. someone
-forgetting to remove the prior year's config rows) fails loudly instead of
-silently resolving via `max()`. If a transition period ever does leave both the
-outgoing and incoming year's rows present simultaneously, `max(file_year)`
-degrades gracefully on its own — it favors the newer (incoming) year, which is
-the direction the sheet is moving anyway — but the test still belongs there to
-catch a genuine accumulation bug rather than assuming the convention always
-holds.
+`count(distinct file_year) = 1` — **exactly one, not "at most one."** An empty
+`status_crosswalk` (a fresh environment, or a gap between removing last year's
+config and adding this year's) would otherwise pass a `<= 1` test silently while
+`max(file_year)` returns `NULL` — and every downstream
+`cross join ... where x = cy.academic_year` comparison against a `NULL`
+evaluates to unknown (not true), so the _entire_ pipeline would silently return
+zero rows network-wide, with no error anywhere. Asserting `= 1` catches both
+directions: a genuine accumulation bug (someone forgetting to remove the prior
+year's config rows) and this empty-table case, instead of assuming the
+convention always holds. If a transition period ever does leave both the
+outgoing and incoming year's rows present simultaneously, `max(file_year)` would
+still degrade gracefully on its own (favors the newer year) — but the test
+should still fail loudly rather than rely on that.
 
 **Why fixing it once at `int_tableau__finalsite_student_scaffold` is sufficient
 for both `rpt_` views**: `rpt_tableau__fresh_dashboard_aggregated` never
@@ -512,9 +542,12 @@ Mirroring the `gradebook-audit` pattern established in this repo
       aggregate per `(school, granularity)`, not grade-by-grade. Verify during
       implementation.
     - **`Region/Grade Level` rows** (Inquiries, Applications, Deferred,
-      Waitlisted, etc.) — keyed by **region alone**, independent of the
-      scaffold's `schoolid`/`grade_level` dimensions entirely. One row-set per
-      active region.
+      Waitlisted, etc.) — keyed by `(region, grade_level)`, independent of the
+      scaffold's `schoolid` dimension (no specific school), but **not**
+      independent of `grade_level` — verified against real data: every active
+      region carries one row per grade (0–12ish, varying slightly by region),
+      not a single collapsed region-wide row. Corrects an earlier pass at this
+      design, which mistakenly described it as "region alone."
     - **Template source is each school's/region's most recent existing year in
       the goals sheet**, not necessarily "the current year" — this lets the same
       generator serve both a full annual rollover (a brand new year with nothing
