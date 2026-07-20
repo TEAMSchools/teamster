@@ -37,3 +37,8 @@ dlt-state baseline); the nightly schedule full-refreshes its targets
 unconditionally and re-baselines. Resources `ssh_powerschool` (paramiko tunnel)
 and `db_powerschool` (Oracle creds) are built by the shared `core/resources.py`
 factories. Writes directly to BigQuery — no GCS IO manager.
+
+The `dlt_powerschool_kippnewark` pool must stay at limit 1 (Dagster+ deployment
+setting) — it is the backstop against a manually-launched run overlapping a
+sensor/nightly load (the in-flight guard only sees sensor- and schedule-launched
+runs), and two concurrent full-`replace` loads of one table would corrupt it.

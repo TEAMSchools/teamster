@@ -193,6 +193,13 @@ at least one of `intraday`/`nightly`.
   swap (one insert + one delete) and in-place edits. The nightly full-refresh is
   the authoritative backstop, so no-cursor freshness is "best-effort intraday,
   authoritative overnight."
+- **Cursor trust for intraday-only tables.** Intraday-only cursor tables
+  (`intraday: true, nightly: false` — the bulk of the config) have **no**
+  nightly backstop: a change that advances neither `COUNT(*)` nor `MAX(cursor)`
+  is invisible. This is an accepted trust assumption — PowerSchool advances
+  `whenmodified`/`transaction_date` on every edit — not a gap the design closes.
+  A table that needs a periodic authoritative sweep should be marked
+  `nightly: true` as well.
 - **Signature freshness.** The sensor probes at tick time (`T0`); the op stores
   those signatures at load time (`T0 + lag`). A source change in that gap causes
   at most one redundant reload next tick — benign for full-replace.

@@ -1,6 +1,8 @@
 import sqlalchemy as sa
 from dagster import (
+    DagsterInstance,
     DagsterRunStatus,
+    RunRecord,
     RunRequest,
     RunsFilter,
     SensorDefinition,
@@ -30,7 +32,9 @@ _IN_FLIGHT_STATUSES = [
 ]
 
 
-def _in_flight_run(instance, sensor_name: str, nightly_schedule_name: str):
+def _in_flight_run(
+    instance: DagsterInstance, sensor_name: str, nightly_schedule_name: str
+) -> RunRecord | None:
     """Return the first in-flight run launched by this sensor or the nightly
     schedule, or None.
 
@@ -122,8 +126,12 @@ def build_powerschool_dlt_intraday_sensor(
             try:
                 dlt_pipeline.sync_destination()
             except Exception as e:
-                context.log.info(
-                    f"dlt sync_destination failed ({e}); treating all tables as changed"
+                # Expected only on the first tick / a brand-new dataset. A
+                # persistent failure here (bad perms, wrong dataset) would
+                # full-reload every table every tick, so surface it at warning.
+                context.log.warning(
+                    f"dlt sync_destination failed ({e}); treating all tables as "
+                    "changed (expected only on first run / new dataset)"
                 )
 
             stored = _stored_signatures(dlt_pipeline, _SOURCE_NAME)
