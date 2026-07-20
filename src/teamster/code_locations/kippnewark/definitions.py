@@ -80,6 +80,7 @@ defs = Definitions(
         *couchdrop.sensors,
         *edplan.sensors,
         *iready.sensors,
+        *powerschool.sensors,
         *renlearn.sensors,
         *titan.sensors,
         AutomationConditionSensorDefinition(

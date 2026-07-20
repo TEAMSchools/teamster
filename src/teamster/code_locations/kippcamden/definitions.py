@@ -69,6 +69,7 @@ defs = Definitions(
     sensors=[
         *couchdrop.sensors,
         *edplan.sensors,
+        *powerschool.sensors,
         *titan.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
