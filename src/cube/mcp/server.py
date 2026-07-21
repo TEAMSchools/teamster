@@ -454,8 +454,11 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     PII: student view results carry row-level student identifiers alongside
     aggregate-safe dimensions — avoid pulling identifier fields (student_key,
     full_name, birth_date, state/lea IDs) unless drill-down is explicitly
-    requested, and keep any identifying values in the local conversation only
-    (never to PR comments, issues, Slack, or scheduled-agent outputs).
+    requested. Staff sensitive fields (personal contact, birth date,
+    demographics) live in `staff_pii`, gated separately from the open
+    `staff_directory` roster. Keep any identifying values — student or staff —
+    in the local conversation only, never to PR comments, issues, Slack, or
+    scheduled-agent outputs.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
