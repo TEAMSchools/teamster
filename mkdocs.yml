@@ -58,6 +58,7 @@ nav:
       - Finalsite to Focus Import: reference/finalsite-focus-import.md
       - Marts Data Models: reference/marts-data-models.md
       - Automation Conditions: reference/automation-conditions.md
+      - Gradebook Audit Data Model: reference/gradebook-audit-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:
