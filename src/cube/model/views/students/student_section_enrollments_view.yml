@@ -21,7 +21,7 @@ views:
           - is_dropped_section
           - is_dropped_course
           - is_homeroom
-          - teacher_role
+          - is_current_section_enrollment
           - lead_teacher_staff_key
 
       - join_path: student_section_enrollments.staff_lead_teacher
@@ -93,7 +93,6 @@ views:
         - name: Teacher
           members:
             - lead_teacher_staff_key
-            - teacher_role
             - staff_lead_teacher_full_name
             - staff_lead_teacher_first_name
             - staff_lead_teacher_last_name
@@ -141,6 +140,7 @@ views:
             - entry_date
             - exit_date
             - is_homeroom
+            - is_current_section_enrollment
             - is_dropped_section
             - is_dropped_course
             - grade_level

@@ -26,7 +26,8 @@ with
             cc.region,
             cc.is_dropped_section,
             cc.is_dropped_course,
-            cc.courses_credittype,
+            cc.cc_course_number,
+            cc.teachernumber,
 
             enr._dbt_source_project as enr_source_project,
             enr.student_number as enr_student_number,
@@ -70,7 +71,8 @@ with
             er.cc_dateleft,
             er.is_dropped_section,
             er.is_dropped_course,
-            er.courses_credittype,
+            er.cc_course_number,
+            er.teachernumber,
             er.enr_source_project,
             er.enr_student_number,
             er.enr_academic_year,
@@ -78,7 +80,7 @@ with
 
             rt.`type` as rt_type,
             rt.code as rt_code,
-            rt.name as rt_name,
+            rt.`name` as rt_name,
             rt.start_date as rt_start_date,
             rt.region as rt_region,
             rt.school_id as rt_school_id,
@@ -91,6 +93,7 @@ with
             and rt.`type` = 'RT'
     ),
 
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     section_enrollments as (
         select
             cc_academic_year as academic_year,
@@ -98,7 +101,12 @@ with
             cc_dateleft as exit_date,
             is_dropped_section,
             is_dropped_course,
-            courses_credittype,
+            cc_course_number,
+            teachernumber,
+            enr_source_project,
+            enr_student_number,
+
+            coalesce(cc_course_number like 'HR%', false) as is_homeroom,
 
             {{ dbt_utils.generate_surrogate_key(["cc_dcid", "_dbt_source_project"]) }}
             as student_section_enrollment_key,
@@ -143,58 +151,84 @@ with
         from course_enrollments_joined
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    lead_teacher_overlap as (
-        select
-            se.student_section_enrollment_key,
-
-            bcst.staff_key as lead_teacher_staff_key,
-            bcst.`role` as teacher_role,
-            bcst.effective_start_date,
-        from section_enrollments as se
-        left join
-            {{ ref("bridge_course_section_teachers") }} as bcst
-            on se.course_section_key = bcst.course_section_key
-            and bcst.`role` = 'Lead Teacher'
-            and bcst.effective_start_date
-            < coalesce(se.exit_date, cast('9999-12-31' as date))
-            and se.entry_date
-            < coalesce(bcst.effective_end_date, cast('9999-12-31' as date))
-    ),
-
-    lead_teacher_resolved as (
+    -- Reporting terms are not unique on (powerschool_term_id, school, region) —
+    -- one term id maps to several reporting quarters — so the term join fans a
+    -- section enrollment across quarters. Collapse to one row per PK (the model
+    -- grain); term_key resolves to a single deterministic quarter, as before.
+    -- TODO(#4484): resolve term_key to the enrollment's actual quarter by date.
+    section_enrollments_deduped as (
         {{
             dbt_utils.deduplicate(
-                relation="lead_teacher_overlap",
+                relation="section_enrollments",
                 partition_by="student_section_enrollment_key",
-                order_by="effective_start_date desc, lead_teacher_staff_key asc",
+                order_by="term_key asc",
             )
         }}
+    ),
+
+    section_enrollments_resolved as (
+        select
+            se.academic_year,
+            se.entry_date,
+            se.exit_date,
+            se.is_dropped_section,
+            se.is_dropped_course,
+            se.is_homeroom,
+            se.student_section_enrollment_key,
+            se.course_section_key,
+            se.student_enrollment_key,
+            se.term_key,
+
+            if(
+                sr.employee_number is not null,
+                {{ dbt_utils.generate_surrogate_key(["sr.employee_number"]) }},
+                cast(null as string)
+            ) as lead_teacher_staff_key,
+
+            row_number() over (
+                partition by
+                    se.enr_student_number,
+                    se.enr_source_project,
+                    se.academic_year,
+                    se.cc_course_number
+                order by
+                    (se.is_dropped_section or se.is_dropped_course) asc,
+                    coalesce(se.exit_date, cast('9999-12-31' as date)) desc,
+                    se.entry_date desc,
+                    se.student_section_enrollment_key asc
+            ) as course_enrollment_rank,
+
+            -- The current homeroom section per stint: rank homeroom rows within
+            -- the enrollment stint and keep the most recent, so at most one
+            -- current homeroom exists per stint even when a student carries
+            -- concurrent HR sections (a data-quality case; deduped to latest).
+            row_number() over (
+                partition by se.student_enrollment_key, se.is_homeroom
+                order by
+                    (se.is_dropped_section or se.is_dropped_course) asc,
+                    coalesce(se.exit_date, cast('9999-12-31' as date)) desc,
+                    se.entry_date desc,
+                    se.student_section_enrollment_key asc
+            ) as homeroom_rank,
+        from section_enrollments_deduped as se
+        left join
+            {{ ref("int_people__staff_roster") }} as sr
+            on se.teachernumber = sr.powerschool_teacher_number
     )
 
 select
-    se.academic_year,
-    se.entry_date,
-    se.exit_date,
-    se.is_dropped_section,
-    se.is_dropped_course,
-    se.student_section_enrollment_key,
-    se.course_section_key,
-    se.student_enrollment_key,
-    se.term_key,
+    academic_year,
+    entry_date,
+    exit_date,
+    is_dropped_section,
+    is_dropped_course,
+    is_homeroom,
+    student_section_enrollment_key,
+    course_section_key,
+    student_enrollment_key,
+    term_key,
+    lead_teacher_staff_key,
 
-    ltr.lead_teacher_staff_key,
-    ltr.teacher_role,
-
-    -- Credit-type test is duplicated in dim_student_enrollments.sql
-    -- (homeroom_sections CTE), which resolves the homeroom teacher independently
-    -- to avoid a build cycle. Both read the var("homeroom_credit_types") list.
-    coalesce(
-        se.courses_credittype
-        in ({{ "'" ~ (var("homeroom_credit_types") | join("', '")) ~ "'" }}),
-        false
-    ) as is_homeroom,
-from section_enrollments as se
-left join
-    lead_teacher_resolved as ltr
-    on se.student_section_enrollment_key = ltr.student_section_enrollment_key
+    (course_enrollment_rank = 1) as is_current_section_enrollment,
+    (is_homeroom and homeroom_rank = 1) as is_current_homeroom,
+from section_enrollments_resolved

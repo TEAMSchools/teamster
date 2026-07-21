@@ -65,9 +65,8 @@ views:
           - grade_level
           - graduation_year
           - is_retained_year
-          - homeroom_teacher_staff_key
 
-      - join_path: student_enrollments.student_school_enrollments.staff_homeroom_teacher
+      - join_path: student_enrollments.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
         prefix: true
         includes:
           - full_name
@@ -142,7 +141,6 @@ views:
             - is_latest_record
         - name: Teacher
           members:
-            - homeroom_teacher_staff_key
             - staff_homeroom_teacher_full_name
             - staff_homeroom_teacher_first_name
             - staff_homeroom_teacher_last_name
@@ -152,8 +150,8 @@ views:
       # holds exactly one student-<scope> group (buildGroups); none => no group =>
       # default-deny. row_level uses this view's flat location member names (see
       # the includes/folders below), not cube-qualified paths.
-      # Teacher fields (staff_homeroom_teacher_* names, homeroom_teacher_staff_key)
-      # ride the wildcard include — staff-directory-tier info, not student PII.
+      # Teacher fields (staff_homeroom_teacher_* names) ride the wildcard
+      # include — staff-directory-tier info, not student PII.
       - group: student-region
         member_level:
           includes: "*"

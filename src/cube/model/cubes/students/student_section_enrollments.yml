@@ -100,15 +100,19 @@ cubes:
         sql: lead_teacher_staff_key
         type: string
 
-      - name: teacher_role
-        description: Role of the resolved teacher (always Lead Teacher here).
-        sql: teacher_role
-        type: string
+      - name: is_homeroom
+        description:
+          TRUE when this is a homeroom section (HR course-number prefix).
+        sql: is_homeroom
+        type: boolean
         public: true
 
-      - name: is_homeroom
-        description: TRUE when this is an HR-credit (homeroom/advisory) section.
-        sql: is_homeroom
+      - name: is_current_section_enrollment
+        description: >-
+          TRUE for the most-recent section enrollment among a student's
+          sequential enrollments in the same course within an academic year.
+          Filter with is_homeroom to select the current homeroom section.
+        sql: is_current_section_enrollment
         type: boolean
         public: true
 
