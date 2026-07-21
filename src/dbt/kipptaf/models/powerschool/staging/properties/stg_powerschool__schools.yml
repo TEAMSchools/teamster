@@ -32,3 +32,7 @@ models:
                 field: powerschool_school_id
               config:
                 where: state_excludefromreporting = 0
+          - unique:
+              config:
+                where: state_excludefromreporting = 0
+                severity: error

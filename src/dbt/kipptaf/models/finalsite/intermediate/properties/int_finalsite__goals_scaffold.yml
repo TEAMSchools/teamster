@@ -1,5 +1,16 @@
 models:
   - name: int_finalsite__goals_scaffold
+    description: >
+      int_finalsite__enrollment_scaffold's school x grade spine inner-joined to
+      the goals sheet (stg_google_sheets__finalsite__goals), excluding goal_type
+      = 'Enrollment' (the plain manually-entered targets --
+      seat/FDOS/budget/new-student/re-enroll -- live on
+      int_google_sheets__finalsite__goals_pivot instead, consumed directly by
+      the rpt_ models). Feeds rpt_tableau__fresh_dashboard_aggregated. Join is
+      on (academic_year, region, schoolid, grade_level) -- a goals-sheet row
+      whose region doesn't match the scaffold's region for that
+      schoolid/grade_level is silently dropped by this inner join (see
+      test_int_finalsite__goals_scaffold_region_matches_scaffold).
     config:
       contract:
         enforced: true
@@ -21,26 +32,55 @@ models:
     columns:
       - name: academic_year
         data_type: int64
+        description: >
+          The current Finalsite recruitment cycle -- always
+          int_finalsite__enrollment_scaffold's academic_year value.
       - name: org
         data_type: string
+        description: Always "KTAF" (verified constant, network-wide).
       - name: region
         data_type: string
+        description: One of "Newark", "Camden", "Miami", "Paterson".
       - name: schoolid
         data_type: int64
+        description: PowerSchool school_number.
       - name: school
         data_type: string
+        description: Short school abbreviation (e.g. "KURA", "Legacy ES").
       - name: grade_level
         data_type: int64
+        description: >
+          -1 = whole-school total row, else 0-12. See
+          int_finalsite__enrollment_scaffold for the -1 sentinel's provenance.
       - name: school_level
         data_type: string
+        description: ES / MS / HS, as entered on the goals sheet.
       - name: goal_granularity
         data_type: string
+        description: >
+          "School" (whole-school total, grade_level = -1), "School/Grade Level",
+          or "Region/Grade Level" (Inquiries/Applications/Deferred/ Waitlisted
+          -- not tied to a specific school).
       - name: goal_type
         data_type: string
+        description: >
+          Every goal_type here is a computed roll-up of the Finalsite
+          recruitment funnel via status_crosswalk (Inquiries, Applications,
+          Offers, Waitlisted, Deferred, Accepted, Conversion, etc.) -- goal_type
+          = 'Enrollment' rows are excluded from this model (see model
+          description). See docs/reference/fresh-dashboard-data-model.md for
+          full definitions.
       - name: goal_name
         data_type: string
+        description: >
+          See docs/reference/fresh-dashboard-data-model.md for the full
+          goal_name glossary (Inquiries, App Target, Offers Target, Accepted,
+          Waitlisted, Deferred, Enrollment In Progress, Pending Offers [+
+          day-bucket splits], Conversion sub-types).
       - name: goal_value
         data_type: numeric
+        description:
+          The goal target/actual value, as entered on the goals sheet.
       - name: grouped_status_timeframe
         data_type: string
         description: Categorical mapping of goal_type.

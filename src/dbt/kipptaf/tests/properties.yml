@@ -20,6 +20,28 @@ data_tests:
           ref:
             name: int_finalsite__status_report_unpivot
 
+  - name: test_int_finalsite__goals_scaffold_region_matches_scaffold
+    description: >-
+      int_finalsite__goals_scaffold's inner join to the goals sheet keys on
+      (schoolid, grade_level, academic_year) and region -- for any
+      PowerSchool-sourced scaffold row, region comes from extract_region(), not
+      the same hand-typed sheet the goals data comes from, so the match is
+      coincidental rather than guaranteed. Scoped to real schools (schoolid !=
+      0) -- the schoolid = 0 "Region/Grade Level" sentinel is intentionally
+      shared across all four regions, so joining on schoolid alone (without
+      region) fans this test out across regions for that sentinel; the real join
+      in int_finalsite__goals_scaffold already scopes on region too and handles
+      it correctly. Warns (not errors) on any goals-sheet row for a real school
+      whose typed region doesn't match the scaffold's derived region for the
+      same school/grade -- that row is being silently dropped from
+      int_finalsite__goals_scaffold's inner join.
+    config:
+      severity: warn
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__goals_scaffold
+
   - name: test_stg_google_sheets__finalsite__status_crosswalk_single_year
     description: >-
       status_crosswalk must hold config for exactly one academic year at a time

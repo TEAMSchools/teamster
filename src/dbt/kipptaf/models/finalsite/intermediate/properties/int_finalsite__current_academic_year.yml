@@ -12,7 +12,13 @@ models:
       non-standardized per-region rollover cadence -- status_crosswalk's
       single-active-year convention is the reliable anchor instead. Every model
       needing "the current Finalsite cycle" cross joins this model rather than
-      hardcoding a year or reading a var.
+      hardcoding a year or reading a var. Materialized as a table (not the
+      default view) so every one of those cross joins reads one resolved value
+      instead of re-triggering a live read of the underlying Google Sheet --
+      status_crosswalk's sheet is edited during rollover, so a view here could
+      let two branches of the same query resolve to different years mid-edit.
+    config:
+      materialized: table
     columns:
       - name: academic_year
         data_type: int64

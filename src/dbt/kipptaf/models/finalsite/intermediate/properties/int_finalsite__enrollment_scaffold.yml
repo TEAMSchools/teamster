@@ -19,7 +19,15 @@ models:
       yet). In blend mode, PowerSchool wins on any overlapping (schoolid,
       grade_level) key; the sheet fills everything else -- the same single rule
       naturally covers -1 rows, genuinely-new grades/schools, and the entire
-      Miami region, with no special-casing.
+      Miami region, with no special-casing. 'powerschool' mode is NOT a complete
+      standalone source and isn't meant to be used in production as currently
+      deployed (the default, only currently-deployed mode is 'blend') -- the -1
+      whole-school row and all of Miami are structurally never derivable from
+      PowerSchool, so selecting 'powerschool' alone drops both entirely, with
+      nothing else backfilling them. Treat it as a debug/comparison mode (e.g.
+      to inspect PowerSchool's own coverage in isolation), not a production
+      toggle, unless a future change gives PowerSchool a way to supply -1 rows
+      and Miami data.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
