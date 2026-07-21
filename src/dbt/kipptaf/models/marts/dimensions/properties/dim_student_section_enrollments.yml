@@ -38,7 +38,9 @@ models:
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
           - not_null
 
       - name: student_enrollment_key
@@ -133,15 +135,27 @@ models:
         data_type: boolean
         description: >-
           TRUE when the section is a homeroom section, identified by an HR
-          course-number prefix. Never null — any other course is FALSE. Combine
-          with is_current_section_enrollment to resolve a student's single
-          current homeroom teacher.
+          course-number prefix. Never null — any other course is FALSE. To
+          resolve a student's single current homeroom section and its teacher,
+          use is_current_homeroom.
 
       - name: is_current_section_enrollment
         data_type: boolean
         description: >-
           TRUE for the current section enrollment among a student's sequential
           enrollments in the same course within an academic year — the
-          most-recent, non-dropped enrollment. Never null. For homeroom, combine
-          with is_homeroom to select the student's single current homeroom
-          section and its lead teacher.
+          most-recent enrollment, ranking active enrollments ahead of dropped
+          ones. Never null; an all-dropped course still resolves one current
+          row. General across all courses — for the homeroom teacher use
+          is_current_homeroom, which collapses concurrent homerooms to one per
+          stint.
+
+      - name: is_current_homeroom
+        data_type: boolean
+        description: >-
+          TRUE for the student's single current homeroom section within an
+          enrollment stint — the most-recent homeroom among any sequential or
+          concurrent homeroom enrollments. Never null; FALSE for non-homeroom
+          sections. Guarantees one homeroom section per stint, so the homeroom
+          teacher resolves without fan-out even in the rare data-quality case of
+          concurrent homerooms (deduped to the most recent).

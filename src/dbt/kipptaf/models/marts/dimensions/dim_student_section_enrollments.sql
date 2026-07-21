@@ -106,6 +106,8 @@ with
             enr_source_project,
             enr_student_number,
 
+            coalesce(cc_course_number like 'HR%', false) as is_homeroom,
+
             {{ dbt_utils.generate_surrogate_key(["cc_dcid", "_dbt_source_project"]) }}
             as student_section_enrollment_key,
 
@@ -153,6 +155,7 @@ with
     -- one term id maps to several reporting quarters — so the term join fans a
     -- section enrollment across quarters. Collapse to one row per PK (the model
     -- grain); term_key resolves to a single deterministic quarter, as before.
+    -- TODO(#4484): resolve term_key to the enrollment's actual quarter by date.
     section_enrollments_deduped as (
         {{
             dbt_utils.deduplicate(
@@ -170,7 +173,7 @@ with
             se.exit_date,
             se.is_dropped_section,
             se.is_dropped_course,
-            se.cc_course_number,
+            se.is_homeroom,
             se.student_section_enrollment_key,
             se.course_section_key,
             se.student_enrollment_key,
@@ -194,6 +197,19 @@ with
                     se.entry_date desc,
                     se.student_section_enrollment_key asc
             ) as course_enrollment_rank,
+
+            -- The current homeroom section per stint: rank homeroom rows within
+            -- the enrollment stint and keep the most recent, so at most one
+            -- current homeroom exists per stint even when a student carries
+            -- concurrent HR sections (a data-quality case; deduped to latest).
+            row_number() over (
+                partition by se.student_enrollment_key, se.is_homeroom
+                order by
+                    (se.is_dropped_section or se.is_dropped_course) asc,
+                    coalesce(se.exit_date, cast('9999-12-31' as date)) desc,
+                    se.entry_date desc,
+                    se.student_section_enrollment_key asc
+            ) as homeroom_rank,
         from section_enrollments_deduped as se
         left join
             {{ ref("int_people__staff_roster") }} as sr
@@ -206,12 +222,13 @@ select
     exit_date,
     is_dropped_section,
     is_dropped_course,
+    is_homeroom,
     student_section_enrollment_key,
     course_section_key,
     student_enrollment_key,
     term_key,
     lead_teacher_staff_key,
 
-    coalesce(cc_course_number like 'HR%', false) as is_homeroom,
     (course_enrollment_rank = 1) as is_current_section_enrollment,
+    (is_homeroom and homeroom_rank = 1) as is_current_homeroom,
 from section_enrollments_resolved

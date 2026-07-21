@@ -20,16 +20,15 @@ cubes:
 
       # Homeroom teacher, via the student's current homeroom section. Joins
       # student_homeroom_section (a role alias of student_section_enrollments)
-      # filtered to the current homeroom (is_homeroom AND
-      # is_current_section_enrollment => one section per stint), so the homeroom
-      # teacher surfaces without fanning out across the student's other classes.
-      # The teacher name comes from that cube's staff_homeroom_teacher join.
+      # filtered to the current homeroom (is_current_homeroom => one section per
+      # stint), so the homeroom teacher surfaces without fanning out across the
+      # student's other classes. The teacher name comes from that cube's
+      # staff_homeroom_teacher join.
       - name: student_homeroom_section
         sql: >
           {student_homeroom_section.student_enrollment_key} =
           {CUBE}.student_enrollment_key AND
-          {student_homeroom_section.is_homeroom} AND
-          {student_homeroom_section.is_current_section_enrollment}
+          {student_homeroom_section.is_current_homeroom}
         relationship: one_to_one
 
     dimensions:
