@@ -100,11 +100,15 @@ kipptaf `union_relations` views over per-region finalsite sources.
   `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
   and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
   Newark rows (null prefix) never reach the Focus feeds.
-- **Asymmetric source schema**: `sources-kippmiami.yml` finalsite carries a
-  `staging`→`zz_stg_` branch (single-PR pattern, needs a staged copy for CI),
-  while `sources-kippnewark.yml` is dev-only (staging→prod). A cross-region
-  finalsite union pulls a `zz_stg` seeding dependency from Miami but reads prod
-  for Newark — a Newark-only union is CI-safe without staging.
+- **Source schema staging branch**: all four regions' finalsite sources
+  (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
+  `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
+  pattern — a cross-region finalsite union needs the staged copies for CI).
+  Newark gained it in #4400 (DeansList contacts) alongside a column add to
+  `int_finalsite__student_contacts`; before pushing any finalsite column-adding
+  PR, seed the staged copies per district (`dbt clone --target staging` +
+  `dbt build --select <model> --target staging`) so CI's union-wrapper rebuild
+  sees the new columns.
 
 ### `extracts/powerschool/` special case
 
@@ -250,6 +254,42 @@ holds long-form entity names (`TEAM Academy Charter School`,
 short canonical names (`Newark` / `Camden` / `Miami` / `Paterson`). For region
 lookups by short name, use `city`. For mapping `_dbt_source_project` to region,
 use `dim_regions.dagster_code_location`.
+
+**`dim_staff` is all-time staff (~4,600), not active-only.** For an active-staff
+grain, spine on `dim_staff_work_assignments` where `is_current` (which already
+excludes terminated staff via termination date). Do NOT filter
+`dim_work_assignment_status.status_name != 'Terminated'` to get "active" — that
+assignment-status field is misaligned with the roster's `worker_status_code` and
+over-drops (~100 roster-active staff). The roster active+primary set (~1,526)
+runs ~30 larger than the marts' current-primary set (hire/term timing). `entity`
+(KTAF vs Region) derives from `business_unit_name`
+(`KIPP TEAM and Family Schools Inc.` = KTAF, else Region).
+
+**`stg_renlearn__star` is the consolidated STAR model** — the Nov-2025
+"consolidate star calcs" refactor disabled `int_renlearn__star_rollup`
+(`config: enabled: false`; leave it) and folded the derived columns
+(`academic_year`, `star_subject`/`star_discipline`, `administration_window`
+Fall/Winter/Spring→BOY/MOY/EOY, benchmark int-flags, `rn_subject_*`) into this
+kipptaf-level `union_relations` view (materialized table). All STAR consumers
+read it. Edit/consume STAR here, not the rollup.
+
+**`stg_adp_workforce_now__workers` has no SCD2 tombstone for disappearance.** A
+worker hard-deleted or merged in ADP (vanishes from the daily `asOfDate`
+snapshots with no `Terminated` status row) keeps its final row open at
+`9999-12-31` / `is_current_record = true` indefinitely — a ghost that flows into
+`stg_people__employee_numbers` (`is_active`), `int_people__staff_roster`, and
+the `rpt_idauto__staff_roster` (RapidIdentity login) feed, causing
+phantom-identity login issues. Fix by rematerializing the ADP `workers`
+partitions spanning the record's active dates (the `asOfDate` re-pull drops it);
+downstream tables rebuild via automation. Detection check tracked in
+[#4407](https://github.com/TEAMSchools/teamster/issues/4407).
+
+**`stg_people__employee_numbers` assigns one number per ADP `associate_id` in
+first-appearance order** (`max(employee_number) + row_number`). A lower number
+means the associate was seen in ADP earlier, NOT an earlier hire date
+(`worker_original_hire_date` is editable). One person with duplicate ADP worker
+records gets multiple active employee numbers, and the LDAP UPN attaches only to
+whichever `employee_number` the account was provisioned under.
 
 ## Exposures
 

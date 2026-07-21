@@ -144,7 +144,13 @@ def _mint_token(email: str) -> str:
     if cached and cached[1] - now > _TOKEN_REFRESH_BUFFER_SECONDS:
         return cached[0]
     exp = now + TOKEN_TTL_SECONDS
-    token = jwt.encode({"email": email, "exp": exp}, CUBE_API_SECRET, algorithm="HS256")
+    # `iat` is required by cube.js's `jwt.verify(..., { maxAge: "12h" })` —
+    # PyJWT does not add it automatically. `exp` alone is not enough: maxAge
+    # derives its cutoff from `iat`, not `exp`, so a token minted without it
+    # would fail `checkAuth` with "iat required when maxAge is specified".
+    token = jwt.encode(
+        {"email": email, "iat": now, "exp": exp}, CUBE_API_SECRET, algorithm="HS256"
+    )
     _token_cache[email] = (token, exp)
     return token
 
@@ -221,15 +227,19 @@ mcp = FastMCP(
     instructions=(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
         "and views) via Cube Cloud's REST API.\n\n"
-        "Workflow: (1) call `meta` to discover available views, measures, and "
-        "dimensions — analyst-facing surfaces are views named `<domain>_<grain>` "
-        "(e.g. `student_attendance_detail`, `student_attendance_summary`); (2) "
+        "Workflow: (1) call `meta` with no arguments once to discover available "
+        "view names — analyst-facing surfaces are views, e.g. `student_attendance_view` "
+        "(one view per student domain) or `staff_directory` / `staff_pii` (staff "
+        "domain, split by access tier); (2) call `meta` again with "
+        '`views=["<the-view-you-need>"]` to fetch just that view\'s measures '
+        "and dimensions — much smaller than the full catalog, prefer it once "
+        "you know which view(s) are relevant; (3) "
         "build a Cube "
         "query object (measures, dimensions, filters, timeDimensions, order, "
         "limit) and call `load` to execute, or `sql` to inspect the compiled "
         "SQL without running it. The query spec follows the Cube REST API.\n\n"
         "Member naming: every measure/dimension is dotted `<view>.<member>` "
-        "(e.g. `student_attendance_summary.count_students`). Bare names won't "
+        "(e.g. `student_attendance_view.count_students`). Bare names won't "
         "resolve.\n\n"
         "Filter operators are named, not SQL: `equals`, `notEquals`, `contains`, "
         "`gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`, "
@@ -264,12 +274,16 @@ mcp = FastMCP(
         "Numeric values come back as strings — cast to numeric before "
         "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
         "(`'10' < '9'`).\n\n"
-        "PII defaults: prefer summary views (`*_summary`) for aggregate "
-        "questions. Detail views (`*_detail`) carry row-level student "
-        "identifiers and should be used only when drill-down is explicitly "
-        "requested. Never emit detail-view values to PR comments, issues, "
-        "Slack, scheduled-agent outputs, or any external surface — only to "
-        "the local conversation.\n\n"
+        "PII defaults: student views (`student_attendance_view`, "
+        "`student_assessment_scores_view`, `student_enrollments_view`) carry "
+        "row-level student identifiers alongside aggregate-safe dimensions — "
+        "any scope-specific student group can see both; avoid pulling "
+        "identifier fields (student_key, full_name, birth_date, state/lea "
+        "IDs) unless drill-down is explicitly requested. Staff PII "
+        "(`staff_pii`, the six sensitive fields) is gated separately from "
+        "`staff_directory` (roster/employment). Never emit identifying "
+        "values to PR comments, issues, Slack, scheduled-agent outputs, or "
+        "any external surface — only to the local conversation.\n\n"
         "Access is group-driven and default-deny: empty `meta` results or "
         "`WHERE (1=0)` in `sql` output usually means the requester lacks the "
         "required `cube-*` Workspace group, not a missing model."
@@ -322,31 +336,35 @@ def _with_default_timezone(query: dict[str, Any]) -> dict[str, Any]:
     return {**query, "timezone": DEFAULT_QUERY_TIMEZONE}
 
 
-def _meta_cache_path(email: str) -> Path:
-    digest = hashlib.sha256(email.encode("utf-8")).hexdigest()[:16]
+def _meta_scope_key(views: list[str] | None) -> str:
+    """Distinguish a filtered fetch from the full `/meta` catalog in the cache
+    key — a filtered call must never read or write the full catalog's cache
+    entry, or another view-set's."""
+    if not views:
+        return "all"
+    return "views:" + ",".join(sorted(views))
+
+
+def _meta_cache_path(email: str, scope: str) -> Path:
+    digest = hashlib.sha256(f"{email}:{scope}".encode("utf-8")).hexdigest()[:16]
     return META_CACHE_DIR / f"cube-meta-{digest}.json"
 
 
-_meta_memory_cache: dict[str, tuple[int, dict[str, Any]]] = {}
+_meta_memory_cache: dict[tuple[str, str], tuple[int, dict[str, Any]]] = {}
 
 
-@mcp.tool()
-async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
-    """Discover available KIPP TEAM & Family data: students, attendance, grades,
-    assessments, enrollment, demographics, staff, schools, regions, terms.
-    Returns the catalog of views, measures, and dimensions queryable via `load`
-    or `sql`.
-
-    Cached per-email for one hour (in-memory, with disk fallback across process
-    restarts). Pass `force_refresh=True` after a model deploy.
-    """
-    email = await _get_user_email(ctx)
+def _read_meta_cache(
+    email: str, scope: str, force_refresh: bool
+) -> dict[str, Any] | None:
+    """Return a cached payload for (email, scope) if fresh, else None. Checks
+    the in-memory cache first, then falls back to disk (surviving process
+    restarts) — writing back through the disk hit to warm the memory cache."""
     now = int(time.time())
     if not force_refresh:
-        memory_hit = _meta_memory_cache.get(email)
+        memory_hit = _meta_memory_cache.get((email, scope))
         if memory_hit and memory_hit[0] > now:
             return memory_hit[1]
-    cache_path = _meta_cache_path(email)
+    cache_path = _meta_cache_path(email, scope)
     if not force_refresh and cache_path.exists():
         try:
             cached = json.loads(cache_path.read_text(encoding="utf-8"))
@@ -356,11 +374,15 @@ async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
             cache_path.unlink(missing_ok=True)
         else:
             if expires_at > now and "payload" in cached:
-                _meta_memory_cache[email] = (expires_at, cached["payload"])
+                _meta_memory_cache[(email, scope)] = (expires_at, cached["payload"])
                 return cached["payload"]
-    payload = await _request("GET", "/meta", email=email)
+    return None
+
+
+def _write_meta_cache(email: str, scope: str, payload: dict[str, Any]) -> None:
     expires_at = int(time.time()) + META_CACHE_TTL_SECONDS
-    _meta_memory_cache[email] = (expires_at, payload)
+    _meta_memory_cache[(email, scope)] = (expires_at, payload)
+    cache_path = _meta_cache_path(email, scope)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     # Atomic write: avoid corruption if two concurrent meta() calls race.
     tmp_path = cache_path.with_suffix(f".tmp.{os.getpid()}")
@@ -369,6 +391,64 @@ async def meta(ctx: Context, force_refresh: bool = False) -> dict[str, Any]:
         encoding="utf-8",
     )
     os.replace(tmp_path, cache_path)
+
+
+async def _fetch_full_meta(email: str, force_refresh: bool) -> dict[str, Any]:
+    """Fetch (or serve from cache) the full `/meta` catalog for `email`. A
+    private helper — not the `meta` tool itself — so the filtered-view path
+    below can reuse it without resolving the caller's email or hitting
+    `/meta` twice."""
+    cached = _read_meta_cache(email, "all", force_refresh)
+    if cached is not None:
+        return cached
+    payload = await _request("GET", "/meta", email=email)
+    _write_meta_cache(email, "all", payload)
+    return payload
+
+
+@mcp.tool()
+async def meta(
+    ctx: Context,
+    views: list[str] | None = None,
+    force_refresh: bool = False,
+) -> dict[str, Any]:
+    """Discover available KIPP TEAM & Family data: students, attendance, grades,
+    assessments, enrollment, demographics, staff, schools, regions, terms.
+    Returns the catalog of views, measures, and dimensions queryable via `load`
+    or `sql`.
+
+    Call with no arguments first to discover which views exist. Once you know
+    the view(s) you need, pass `views` to get back just their measures and
+    dimensions — a fraction of the full catalog's size, filtered client-side
+    from the same underlying `/meta` fetch (Cube's REST API doesn't take a
+    filter param, and its separate `/entities` endpoints need a differently
+    scoped token this server doesn't mint) — so it avoids exceeding a response
+    size budget on large models without any extra round trip once the full
+    catalog is cached.
+
+    Cached per (email, requested scope) for one hour (in-memory, with disk
+    fallback across process restarts) — a filtered call never reads or writes
+    the full-catalog cache entry, or another view-set's, though it does reuse
+    the full catalog's cached fetch to build its filtered result. Pass
+    `force_refresh=True` after a model deploy.
+    """
+    email = await _get_user_email(ctx)
+    scope = _meta_scope_key(views)
+    if scope == "all":
+        return await _fetch_full_meta(email, force_refresh)
+
+    cached = _read_meta_cache(email, scope, force_refresh)
+    if cached is not None:
+        return cached
+    full_payload = await _fetch_full_meta(email, force_refresh)
+    wanted = set(views or [])
+    payload = {
+        **full_payload,
+        "cubes": [
+            dict(c) for c in full_payload.get("cubes", []) if c.get("name") in wanted
+        ],
+    }
+    _write_meta_cache(email, scope, payload)
     return payload
 
 
@@ -384,8 +464,9 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     filters, timeDimensions, segments, order, limit, offset, total). Polls
     automatically on Cube's 'Continue wait' long-polling response.
 
-    PII: `*_detail` view results carry row-level student identifiers — keep
-    those values in the local conversation only.
+    PII: student view results carry row-level student identifiers alongside
+    aggregate-safe dimensions — keep identifying values (names, birth dates,
+    state/lea IDs) in the local conversation only.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.

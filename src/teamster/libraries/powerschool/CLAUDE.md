@@ -1,8 +1,14 @@
 # CLAUDE.md — `teamster/libraries/powerschool/`
 
+> **`sis/odbc/` is ARCHIVED (retired 2026-07; no importers).** All districts
+> migrated PowerSchool SIS ingestion to dlt (`libraries/dlt/powerschool/`) or,
+> for Miami, to Focus. The odbc code and this section are kept for reference
+> only. `sis/sftp/` and `enrollment/` are unaffected.
+
 Two separate PowerSchool integrations with different protocols:
 
-- `sis/odbc/` — Live Oracle ODBC queries via SSH tunnel (primary SIS data)
+- `sis/odbc/` — Oracle ODBC queries via SSH tunnel (ARCHIVED; was primary SIS
+  data)
 - `sis/sftp/` — SFTP file ingestion (schema only; used by Paterson)
 - `enrollment/` — PowerSchool Enrollment REST API
 
@@ -21,6 +27,15 @@ for large-table efficiency. Key parameters:
   etc.)
 - `partition_column` — column to filter by partition window
 - `partition_size` / `prefetch_rows` / `array_size` — Oracle cursor tuning knobs
+
+**Per-table cursor + key (not uniform).** The incremental cursor and merge key
+vary by table: `students`/`storedgrades` use `transaction_date` (no
+`whenmodified` column); `assignmentscore` uses `whenmodified` and keys on
+`assignmentscoreid` (no `dcid`). Source of truth:
+`code_locations/kippnewark/powerschool/assets.py` + `config/*.yaml`. Verify real
+Oracle column names/case without a tunnel by querying the landed
+`kippnewark_powerschool.src_powerschool__*` external tables via the BigQuery
+MCP.
 
 **`sensors.py`** (`build_powerschool_asset_sensor()`): Sensor that detects stale
 partitioned assets by comparing the last materialized partition's

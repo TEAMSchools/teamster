@@ -16,22 +16,15 @@ models/
     powerschool/ # PowerSchool autocomm extracts (teachers, students IEP)
 ```
 
-PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
-`sftp.+enabled: false`)
+PowerSchool data source: **dlt** (Oracle over SSH tunnel → BigQuery;
+`dlt.+enabled: true`, `odbc.+enabled: false`)
 
-## Active Source Packages
+## Source Packages
 
-All of the following are materialized as tables via cross-project `ref()`:
+Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`).
+District-specific notes:
 
-- `powerschool` (ODBC)
+- `iready` uses `iready_schema: kippnj_iready`; `renlearn` uses
+  `renlearn_schema: kippnj_renlearn`
 - `amplify` — products selectively enabled per `dbt_project.yml`
-- `deanslist`
-- `edplan`
-- `finalsite`
-- `iready` — uses `iready_schema: kippnj_iready`
-- `overgrad`
-- `pearson`
-- `renlearn` — uses `renlearn_schema: kippnj_renlearn`
-- `titan`
-
-Several models from each package are disabled (see `dbt_project.yml`).
+- Several models from each package are disabled (see `dbt_project.yml`)

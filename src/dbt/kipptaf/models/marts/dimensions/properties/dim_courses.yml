@@ -1,5 +1,7 @@
 models:
   - name: dim_courses
+    config:
+      materialized: table
     description: >-
       Course catalog dimension. One row per course per source region. Course
       numbers are not unique across regions, so the surrogate key includes the
@@ -15,6 +17,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
