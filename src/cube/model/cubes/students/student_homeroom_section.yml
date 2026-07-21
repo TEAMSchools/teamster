@@ -1,0 +1,44 @@
+cubes:
+  # Role alias of student_section_enrollments used to attach the homeroom
+  # teacher to the stint grain. student_school_enrollments joins this cube
+  # filtered to the student's current homeroom section (is_homeroom AND
+  # is_current_section_enrollment => one row per stint), so attendance and
+  # enrollment views surface the homeroom teacher without fanning out across a
+  # student's other classes. Kept separate from student_section_enrollments (not
+  # extends) so it carries no reverse join back to the stint — avoiding a join
+  # cycle — and so its staff_homeroom_teacher member names stay distinct from the
+  # section-grain lead-teacher join.
+  - name: student_homeroom_section
+    public: false
+    sql_table: kipptaf_marts.dim_student_section_enrollments
+
+    joins:
+      - name: staff_homeroom_teacher
+        sql:
+          "{staff_homeroom_teacher.staff_key} = {CUBE}.lead_teacher_staff_key"
+        relationship: many_to_one
+
+    dimensions:
+      - name: student_enrollment_key
+        description:
+          FK to student_school_enrollments — the stint this section is in.
+        sql: student_enrollment_key
+        type: string
+
+      - name: lead_teacher_staff_key
+        description: FK to staff — the homeroom section's teacher.
+        sql: lead_teacher_staff_key
+        type: string
+
+      - name: is_homeroom
+        description:
+          TRUE when this is a homeroom section (HR course-number prefix).
+        sql: is_homeroom
+        type: boolean
+
+      - name: is_current_section_enrollment
+        description: >-
+          TRUE for the current section enrollment among a student's sequential
+          same-course enrollments within an academic year.
+        sql: is_current_section_enrollment
+        type: boolean

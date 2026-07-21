@@ -30,7 +30,6 @@ vars:
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
   current_academic_year: 2026
   current_fiscal_year: 2027
-  homeroom_credit_types: [HR, Advisory]
 
 models:
   kipptaf:
