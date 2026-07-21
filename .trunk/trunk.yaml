@@ -44,11 +44,6 @@ lint:
         - sqlfluff
         - sqlfmt
     - paths:
-        - .claude/skills/**/*.sql
-      linters:
-        - sqlfluff
-        - sqlfmt
-    - paths:
         - src/teamster/libraries/dlt_sources/**
       linters:
         - pyright
