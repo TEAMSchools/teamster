@@ -1,5 +1,7 @@
 models:
   - name: dim_regions
+    config:
+      materialized: table
     description: >-
       Region reference dimension. One row per KIPP region. Conformed dimension
       joinable from any fact or dimension that carries a region context.

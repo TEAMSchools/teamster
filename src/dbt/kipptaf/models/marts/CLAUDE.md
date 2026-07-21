@@ -207,6 +207,13 @@ Net mart row-count delta is typically `+N` where N is the residual fan-out — n
 `-N`. Adding an upstream `where` filter alongside doesn't drop PKs; it changes
 which rows the surviving PK joins to.
 
+The same applies to a final `dbt_utils.deduplicate` partitioned by the PK: it
+silently collapses ANY mid-chain fan-out (e.g. a coarse-key join to a non-unique
+lookup — the reporting-terms sheet isn't unique on `powerschool_term_id`), so
+removing or replacing it can surface a latent PK-uniqueness break from a source
+other than upstream dupes. Audit every join between the dedupe and the model
+grain before removing it.
+
 ## Verify source precision before R9 drops
 
 Staging cast chains (`cast(x as datetime)` → `cast(as date)`) and field names
@@ -244,6 +251,12 @@ Marts inherit `contract: enforced: true` and `materialized: view` from
 explicit uniqueness test on its PK (`unique` on a single column, or
 `dbt_utils.unique_combination_of_columns` for composite).
 
+Exception: the assessment-scores star (`fct_assessment_scores_enrollment_scoped`
+plus its FK-closure dims) and the three assessment intermediates are
+`materialized: table` for Cube query performance
+([#4464](https://github.com/TEAMSchools/teamster/issues/4464)) — don't revert to
+view without re-profiling Cube's BigQuery spend.
+
 Drop model-level `dbt_utils.unique_combination_of_columns` when its column set
 equals the surrogate-key hash inputs — `unique` on the PK detects the same
 violations.
@@ -259,8 +272,33 @@ still good to keep for orphan detection, but it does not feed the diagram.
 
 A `config.materialized: table` mart renders `constraints:` into CREATE TABLE DDL
 (inert on the default view marts). On a table mart, add `warn_unenforced: false`
-(not just `warn_unsupported: false`) on the `primary_key` constraint to clear
-the parse warning.
+(not just `warn_unsupported: false`) on EVERY constraint — primary_key AND
+foreign_key both render into DDL and warn otherwise.
+
+## Converting a view mart to a table
+
+- BigQuery FK DDL requires every referenced relation to be a TABLE with a PK
+  constraint. Convert the full FK closure (walk `to: ref(...)` edges) in one PR
+  — a table mart FK'ing a still-view mart fails the build.
+- Under `--defer` (local dev AND dbt Cloud CI), dbt resolves FK constraint refs
+  to the DEFERRED relation unconditionally — even for models rebuilt in the same
+  run (dbt-core `compilation.py`). CI fails against still-view `zz_stg` copies
+  no matter what the PR schema builds. Before pushing, pre-seed staging as
+  tables: `dbt run --select <closure> --target staging` (shared `zz_stg` — needs
+  direct user authorization). BQ table clones preserve PK constraints, so
+  `Clone - Staging` keeps CI healthy afterward.
+- Code-complete closure ≠ safe prod deploy. The prod automation-condition sensor
+  materializes assets one-at-a-time OUT of FK order, and a config-only
+  `materialized: table` YAML change does NOT bump the dagster-dbt code version
+  (SQL-checksum-derived) — so SQL-unchanged leaf dims (e.g. `dim_regions`,
+  `dim_locations`) are never auto-selected and the migration wedges. Because
+  view→table DROPS the view before CREATE, out-of-order dependents drop-fail
+  every tick and are left MISSING from prod (a hole, not stale — signature is
+  absence from `<schema>.__TABLES__`). Finish the migration post-merge with ONE
+  ordered run of the whole closure — a single Dagster `launch_run` selecting all
+  closure assets is one `dbt build` that dbt topologically sorts — not the
+  sensor. `git grep -l 'materialized: table' marts/*/properties` lists the
+  current closure.
 
 ## Constraints are informational (views)
 

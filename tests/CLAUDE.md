@@ -59,9 +59,18 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`
   with a `_FakeResponse` stub, and assert call counts for retry/no-retry paths.
   Reference harness: `tests/resources/test_resource_adp_workforce_now.py`.
-- **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
-  by default (`test=False`). Integration tests must set `test=True` and pass
-  `password` directly so each district uses its own credentials.
+- **SSH `test`**: vestigial config. It formerly switched the sshpass tunnel's
+  password source (secret file vs. the `password` field); that tunnel was
+  removed in #4442, so no method on `SSHResource` reads it now.
+  `tests/resources/test_resource_ssh_rekey.py` still sets `test=True` —
+  harmless, pending a later cleanup once fixtures drop it.
+- **SSH-tunnel / powerschool-odbc suites take ~2-3 min** (loopback ssh-rsa
+  servers in `test_ssh_paramiko_tunnel.py` / `test_resource_ssh_rekey.py`) —
+  they exceed the 120s Bash timeout; run them with `run_in_background`. Do NOT
+  chain `git stash` with a long-running verify in one command: a timeout can
+  leave the changes stashed and the `stash pop` unrun. To confirm a failure is
+  pre-existing, check the test is in an untouched dir and doesn't reference your
+  changed symbols, rather than stash-comparing.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.

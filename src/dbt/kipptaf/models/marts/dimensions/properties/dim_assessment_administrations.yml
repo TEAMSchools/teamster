@@ -12,6 +12,8 @@ models:
       scheduling column carry a typed NULL for that column (e.g. Illuminate and
       AP carry NULL administration_period; state branches carry NULL
       source_assessment_id).
+    config:
+      materialized: table
     columns:
       - name: assessment_administration_key
         data_type: string

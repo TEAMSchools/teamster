@@ -1,5 +1,7 @@
 models:
   - name: dim_locations
+    config:
+      materialized: table
     description: >-
       School and office location dimension. One row per school or office.
       Conformed dimension. Region context is reached via the region_key FK to

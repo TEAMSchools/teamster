@@ -18,6 +18,8 @@ models:
         land in the same bucket (e.g., SAT EBRW and ACT Reading combine to
         EBRW/Reading). Use this for apples-to-oranges comparisons across
         test families.
+    config:
+      materialized: table
     columns:
       - name: assessment_key
         data_type: string

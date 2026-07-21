@@ -1,5 +1,7 @@
 models:
   - name: dim_course_sections
+    config:
+      materialized: table
     description: >-
       Course section dimension. One row per section instance per source region.
       Sections are discrete scheduled offerings of a course at a school. Teacher

@@ -246,6 +246,27 @@ Set `contract: enforced: false` on the model and keep `relationships`/uniqueness
 data tests for coverage. A bounded Jinja unroll is the alternative but hits
 "query is too complex" when it re-expands view upstreams once per level.
 
+## Counting package-variant models enabled in a consuming district
+
+`dbt ls --select "path:models/sis/staging/<variant>"` returns **0** in a
+consuming district — the variant's models live in the _package_ dir, not the
+district's `models/` path, so `path:` (relative to the project-dir) misses them.
+Count with
+`dbt ls --resource-type model --output path | grep 'sis/staging/<variant>/'`. A
+package's own `dbt_project.yml` `+enabled: false` (models AND sources) applies
+to every consumer — no per-district override needed (see the powerschool
+odbc/sftp variants).
+
+## dbt Cloud CI builds only kipptaf
+
+The dbt Cloud CI job (`Build - CI (Modified)`, dbt Cloud project 211862) runs
+against the `kipptaf` project alone. A PR confined to a district project
+(`kipp{newark,camden,miami,paterson}`) or a source-system package selects zero
+models under `state:modified+` unless it changes a kipptaf-consumed `source()`
+schema (column set) — so the dbt Cloud check goes green **trivially, not as
+validation** (a ~30s no-op run). Those models are first exercised by Dagster's
+dbt step (branch deployment / prod automation), not dbt Cloud CI.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
@@ -270,6 +291,18 @@ Source-system package models (`focus`, `amplify`, etc.) have no resolvable vars
 standalone — build/test them via a **consuming district** project-dir with that
 district's prod manifest for `--defer` (e.g. focus → kippmiami):
 `uv run dbt build --select <model> --project-dir src/dbt/kippmiami --defer --state src/dbt/kippmiami/target/prod --target dev`.
+
+**A contract-enforced change needs a real `dbt build` to verify, not a prod
+SELECT** — `assert_columns_equivalent` runs only inside `dbt build`/CTAS, so a
+SELECT against the prod external validates data/logic but NOT the column set,
+and an all-NULL new source column that `select *` passes through slips past
+(this shipped a 2nd prod contract failure a build would have caught). For an
+Avro/GCS-source model, the dev source copy
+`zz_<GITHUB_USER>_<district>_<source>` may be stale/missing the new column —
+re-stage YOUR copy first:
+`dbt run-operation stage_external_sources --args "select: <source>.<table>" --vars '{ext_full_refresh: true}' --target dev --project-dir src/dbt/<district>`
+(personal schema, NOT classifier-blocked, unlike `--target staging`), then
+`dbt build --select <model> --target dev`.
 
 ## Local dev schema naming
 
@@ -302,6 +335,13 @@ manifest is refreshed by `post-merge`.
 Validate a newly-added data test against prod before pushing:
 `dbt test --select <model> --target dev --defer --state <prod manifest>` runs
 the compiled test SQL against the deferred prod relation — no dev build needed.
+
+A dev `--defer` build of a **table-materialized** mart can fail on a cross-mart
+`foreign_key` constraint ("Table X does not have Primary Key constraints") when
+the deferred prod parent's DDL lacks the rendered PK. To validate the model's
+logic (PK uniqueness, row counts) without building the parent, run its compiled
+SQL (`target/compiled/...`, refs already prod-resolved under `--favor-state`)
+against prod via the BQ MCP.
 
 ## Multi-line SQL in YAML `data_tests:` expressions
 

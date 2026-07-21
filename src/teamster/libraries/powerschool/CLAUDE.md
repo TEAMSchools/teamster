@@ -1,8 +1,14 @@
 # CLAUDE.md — `teamster/libraries/powerschool/`
 
+> **`sis/odbc/` is ARCHIVED (retired 2026-07; no importers).** All districts
+> migrated PowerSchool SIS ingestion to dlt (`libraries/dlt/powerschool/`) or,
+> for Miami, to Focus. The odbc code and this section are kept for reference
+> only. `sis/sftp/` and `enrollment/` are unaffected.
+
 Two separate PowerSchool integrations with different protocols:
 
-- `sis/odbc/` — Live Oracle ODBC queries via SSH tunnel (primary SIS data)
+- `sis/odbc/` — Oracle ODBC queries via SSH tunnel (ARCHIVED; was primary SIS
+  data)
 - `sis/sftp/` — SFTP file ingestion (schema only; used by Paterson)
 - `enrollment/` — PowerSchool Enrollment REST API
 

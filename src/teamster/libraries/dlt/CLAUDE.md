@@ -46,6 +46,52 @@ using a vendored DLT Zendesk pipeline.
 - Vendored pipeline in `zendesk/pipeline/` handles auth via
   `TZendeskCredentials` and API pagination
 
+### `powerschool/`
+
+Loads PowerSchool SIS Oracle tables to BigQuery over an SSH tunnel
+(`table_rows` + PyArrow), full-replace. Change detection lives in the intraday
+sensor, not the op. Factories:
+`build_powerschool_dlt_assets(code_location, tables, op_tags=None, max_extract_workers=None)`
+and
+`build_powerschool_dlt_intraday_sensor(code_location, tables, nightly_schedule_name, minimum_interval_seconds=900)`
+(`sensors.py`); asset keys `[code_location, "powerschool", "sis", table]`.
+
+- **Op run-config contract** (`PowerSchoolDltConfig`): `probe` present (intraday
+  sensor) → load exactly the run's asset selection with the passed per-table
+  signatures — no re-probe, no gate. `probe` absent (nightly schedule / manual
+  launch) → probe the selection once BEFORE the load (count-only for no-cursor
+  tables), then load it all unconditionally. Signatures always persist WITH the
+  load via `resource_state` (dlt commits state only from extracted resources —
+  post-load writes never round-trip), so a failed load keeps the old baseline
+  and the table re-selects next tick.
+- **Signature shape is normalized**: `probe_signature` always returns
+  `{"count": n, "max_cursor": value-or-None}` — a count-only dict would never
+  compare equal to the run-config round-trip (which defaults `max_cursor` to
+  None) and no-cursor tables would reload every tick.
+- **Sensor tick**: skip if a sensor-launched or nightly-schedule run is in
+  flight (via `dagster/sensor_name` / `dagster/schedule_name` run tags); probe
+  every intraday table over one engine; compare to the dlt-state baseline
+  (`sync_destination()` + `_stored_signatures`); request only changed tables
+  with the probe payload in run config. Idle ticks launch nothing, so unchanged
+  tables are never planned (no `ASSET_FAILED_TO_MATERIALIZE`).
+- **`DPY-4011` at ~512 MiB was a paramiko rekey bug, now fixed (not a volume
+  cap)**: a large pull (`assignmentscore` ~19M) died with `oracledb DPY-4011`
+  (connection closed) at a consistent **~8.6M rows** regardless of throughput
+  (`arraysize=10k`→245s, `50k`→158s, same rows) or `EXTRACT__WORKERS` (5→1 all
+  failed). That ~8.6M rows × ~60 B/row ≈ 512 MiB = paramiko's
+  `Packetizer.REKEY_BYTES`: at 512 MiB received, paramiko renegotiates keys, and
+  `SSHResource.get_connection` had reverted its `ssh-rsa` patch right after the
+  handshake, so the rekey KEXINIT no longer offered `ssh-rsa` and the
+  ssh-rsa-only server (GlobalSCAPE) dropped the transport. Fixed in
+  `libraries/ssh/resources.py` (`_persist_legacy_rsa`): ssh-rsa is now persisted
+  per-transport and auto-rekey disabled. **No windowing/partitioning needed** —
+  naive full-replace works at any table size; `assignmentscore` (19M) completes
+  as one query. Set dlt extract concurrency from the op via
+  `dlt.config["extract.workers"] = N` (a writable in-memory provider that
+  `pipeline.extract()` resolves `workers=ConfigValue` from) — preferred over the
+  `EXTRACT__WORKERS` env var so the op doesn't mutate the process environment.
+  `pipeline.run()` accepts no `workers` arg.
+
 ## Notes
 
 All DLT assets use `DagsterDltResource` (from `dagster-dlt`) and write directly

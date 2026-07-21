@@ -1,5 +1,7 @@
 models:
   - name: dim_students
+    config:
+      materialized: table
     description: >-
       Student person dimension. One row per student. Contains stable
       person-level attributes only. Enrollment history is in

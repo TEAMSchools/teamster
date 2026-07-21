@@ -124,6 +124,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
 
+- **Subagent worktree dispatches must spell out the absolute worktree path**: a
+  subagent starts in the MAIN checkout, so the dispatch prompt must give the
+  worktree path and mandate `git -C <worktree>` + `uv run` from it (bare edits
+  hit `main` silently), and state that IDE Pyright errors on worktree files
+  (`reportMissingImports`, "not accessed", "not iterable") are expected false
+  positives — trust `uv run` inside the worktree, not the IDE.
+
 - **The `Workflow`-tool orchestrator is unreliable for long fan-outs in this
   Codespace** — it stalled/died mid-run repeatedly (not OOM; 11Gi free), and a
   window reload left a prior run orphaned-but-alive that kept spawning
@@ -179,7 +186,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   after "yes"/"resume" and an agent plain-text re-confirm — the USER's message
   must name the specific operation + target ("delete rows where X from
   `dataset.table`"). Draft the exact statement and have them restate it, or hand
-  it to their terminal.
+  it to their terminal. For `launch_multiple_runs` the block fires even at
+  `confirm=False` (preview), and the dagster MCP has no `create_backfill` — hand
+  a partition-range backfill to the user to launch from the Dagster UI
+  (splitting into per-partition `launch_run`s to dodge the bulk classifier
+  bypasses intent — don't).
 
 - **`git push origin main` is hard-blocked by the classifier** regardless of
   in-conversation consent (AskUserQuestion answers or plain-text
@@ -238,6 +249,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   comment — and the stub can stay stuck mid-render even after the check-run
   reports `success`. Fetch ALL issue comments and read the newest / longest, not
   the first.
+
+- **`dagster-cloud-deploy / deploy` emits one same-named check-run per code
+  location** (~5) — `get_check_runs` returns duplicates; wait for ALL to reach a
+  terminal conclusion before calling the deploy green. A shared-library change
+  (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
+  whose config you edited.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -534,7 +551,8 @@ the allowlist.
   additive label add. `mcp__github__issue_write` with `labels` REPLACES the full
   set; passing one label drops the rest.
 - GitHub Search API caps at 5 OR/AND/NOT operators per query (422 otherwise).
-  Loop per-term via `gh api search/issues -f q='...'` for larger searches.
+  Loop per-term via `gh api -X GET search/issues -f q='...'` for larger searches
+  — without `-X GET`, `-f` turns the request into a POST and 404s.
 - `mcp__github__search_issues` returns full issue **bodies** — a broad query
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.
@@ -559,11 +577,13 @@ opaque token.
   `get_run_compute_logs`, and `terminate_runs` all accept `deployment=<name>`
   (omit for prod). `list_deployments` may return only `prod` — recover a PR's
   branch-deployment name (an opaque hash) from its `deploy` job log line
-  `Deploying to branch deployment <hash>`. A dormant branch deployment throws
-  `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on the first call —
-  retry after ~90s to let the code location warm. BigQuery/GCS reads are
-  deployment-agnostic, so downstream data validation via the BigQuery MCP works
-  regardless of which deployment wrote the data.
+  `Deploying to branch deployment <hash>` (job id from the
+  `dagster-cloud-deploy / deploy` check-run `details_url` `/job/<id>`, then
+  `gh api repos/<owner>/<repo>/actions/jobs/<id>/logs`). A dormant branch
+  deployment throws `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on
+  the first call — retry after ~90s to let the code location warm. BigQuery/GCS
+  reads are deployment-agnostic, so downstream data validation via the BigQuery
+  MCP works regardless of which deployment wrote the data.
 - **Prod dbt models are materialized by `<loc>__automation_condition_sensor`
   runs** (job `__ASSET_JOB`, tag `dagster/from_automation_condition`), NOT dbt
   Cloud (CI-only) or crons. A merged model SQL change goes stale on CODE and is
@@ -578,6 +598,10 @@ opaque token.
   failure-triage groupings keyed on `assetSelection` silently drop these.
 - `mcp__dagster__list_runs` caps at `limit=100` with no truncation signal;
   paginate via `cursor` for incident triage that may exceed 100 runs.
+- A running backfill's `get_backfill` `status` can read `REQUESTED` with empty
+  `partitionStatusCounts` while its partition runs already execute — use
+  `list_runs(tags={"dagster/backfill": "<id>"})` for real per-partition
+  progress.
 - `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
   jobName alone won't queue. Resolve null-`assetSelection` failures to asset
   keys first.

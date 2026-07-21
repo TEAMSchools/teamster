@@ -9,21 +9,10 @@ locations:
     container_context:
       k8s:
         volume_mounts:
-          - name: secret-volume
-            readOnly: true
-            mountPath: /etc/secret-volume
           - name: deanslist-keys
             readOnly: true
             mountPath: /etc/deanslist
         volumes:
-          - name: secret-volume
-            projected:
-              sources:
-                - secret:
-                    name: op-ps-ssh-kippcamden
-                    items:
-                      - key: password
-                        path: powerschool_ssh_password.txt
           - name: deanslist-keys
             projected:
               sources:
@@ -67,6 +56,11 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-ps-db-kippcamden
+                    key: password
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kippcamden
                     key: password
               - name: PS_SSH_PORT
                 valueFrom:

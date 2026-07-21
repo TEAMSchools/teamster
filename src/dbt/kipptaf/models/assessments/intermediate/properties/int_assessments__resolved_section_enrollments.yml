@@ -14,6 +14,8 @@ models:
       homeroom section active on the same anchor date. Scores with no matching
       section in either tier are dropped. The resolution_type column identifies
       which tier resolved the row.
+    config:
+      materialized: table
     columns:
       - name: source_type
         data_type: string

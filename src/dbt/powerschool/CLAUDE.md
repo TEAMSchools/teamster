@@ -1,8 +1,9 @@
 # CLAUDE.md — `dbt/powerschool/`
 
 Source-system staging project for **PowerSchool SIS** data. Produces clean,
-contract-enforced staging models consumed by all district-specific dbt projects
-(`kippnewark`, `kippcamden`, `kippmiami`, `kipppaterson`) and `kipptaf`.
+contract-enforced staging models consumed by the NJ district dbt projects
+(`kippnewark`, `kippcamden`, `kipppaterson`) and `kipptaf`. `kippmiami` no
+longer consumes it — its SIS moved to Focus (#4441).
 
 ## Model Structure
 
@@ -11,15 +12,16 @@ models/
   sis/
     base/        # base models (light renaming, no logic)
     staging/
-      odbc/      # models sourced from live Oracle ODBC connection (enabled by default)
-      sftp/      # models sourced from SFTP file extracts (disabled by default)
-      dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); disabled by default
+      dlt/       # models sourced from dlt (Oracle over SSH tunnel → BigQuery); ENABLED by default — the live SIS path
+      odbc/      # models sourced from live Oracle ODBC connection (ARCHIVED - disabled by default; no district builds it)
+      sftp/      # models sourced from SFTP file extracts (disabled by default; unused)
     intermediate/
 ```
 
-All staging models have `contract: enforced: true`. Each district project
-overrides `odbc.+enabled` and `sftp.+enabled` in its own `dbt_project.yml` to
-select the ingestion method.
+All staging models have `contract: enforced: true`. The `dlt` variant is enabled
+by default (every consuming district ingests PowerSchool via dlt); `odbc` and
+`sftp` default off. A district only overrides these flags to disable specific
+`dlt` tables it does not populate (e.g. `kipppaterson`).
 
 ## Key Variables
 
@@ -46,15 +48,44 @@ tunnel → BigQuery). Only one variant is enabled per district.
 migrating the ODBC districts. A dlt model = its **odbc** sibling minus the
 struct-unwrap: dlt lands raw Oracle scalars, so drop the
 `.int_value`/`.double_value`/`coalesce(... .bytes_decimal_value ...)` accessors,
-the `dbt_utils.deduplicate` (native table, no `_file_name` dupes), and any
-`_dagster_partition_*`; explicitly project the shared contract columns and cast
-to the contract type (`NUMERIC(10)`→int, `NUMERIC(38,9)`→float64,
-`TIMESTAMP`→date, `STRING`→bare). Watch native-type divergence per column: a
-date Oracle stores as DATE lands `TIMESTAMP` (use `cast(x as date)`), one stored
-as text lands `STRING` (keep the odbc `parse_date`) — check the landed type,
-don't assume. Source is `sources-bigquery.yml` schema
-`dagster_<district>_dlt_powerschool`, read in every target (dlt writes the prod
-dataset even on branch deploys).
+the `_file_name`-snapshot `dbt_utils.deduplicate` (native table, no file dupes)
+— but KEEP a business-grain dedup the odbc model already had (e.g.
+`u_clg_et_stu`/`u_clg_et_stu_alt` on `(studentsdcid, exit_date)`, which guards a
+downstream LEFT JOIN from fan-out), and any `_dagster_partition_*`; explicitly
+project the shared contract columns and cast to the contract type
+(`NUMERIC(10)`→int, `NUMERIC(38,9)`→float64, `TIMESTAMP`→date, `STRING`→bare).
+Watch native-type divergence per column: a date Oracle stores as DATE lands
+`TIMESTAMP` (use `cast(x as date)`), one stored as text lands `STRING` (keep the
+odbc `parse_date`) — check the landed type, don't assume. Source is
+`sources-bigquery.yml` schema `dagster_<district>_dlt_powerschool`, read in
+every target (dlt writes the prod dataset even on branch deploys).
+
+## Validating an ODBC→dlt cutover
+
+Compare the dlt landing table to prod `stg_powerschool__<t>` (native, deduped) —
+NOT `src_powerschool__<t>` (snapshot-accumulating external, dup-laden). Cast dlt
+raw scalars to the staging contract types first. Expect sub-1e-10 float epsilon
+on `.double_value`-derived numeric columns (`points`, `percent`, `gpa_points`):
+dlt reads the raw Oracle `NUMBER`, ODBC stored a lossy double — benign, not a
+defect. Key-set differences are extract-time drift (dlt lands a clean subset of
+prod). The migration PR's dbt Cloud CI stays **red until the dlt landing tables
+exist** — trigger a branch-deployment load of the `@dlt_assets` first (they
+write the non-branch-isolated prod dataset), then CI can build the staging
+models.
+
+## ODBC source schema drift (recurring on `s_nj_stu_x`)
+
+The odbc Avro schema is inferred from the Oracle cursor type
+(`libraries/powerschool/sis/odbc/schema.py` `ORACLE_AVRO_SCHEMA_TYPES`): NUMBER
+→ `STRUCT<int_value, double_value, bytes_decimal_value>`, VARCHAR/CHAR → STRING.
+Two drift modes both surface as failed `stg_powerschool__*` builds: (1)
+PowerSchool retypes a column NUMBER→VARCHAR → the `.int_value` unwrap fails
+"Cannot access field int_value on a value with type STRING" — fix by casting
+(`cast(col as int)`, matching the sftp/dlt variants); (2) PowerSchool adds a new
+column → `select *` passes it through and the enforced contract fails "missing
+in contract" — fix by declaring it in `properties.yml`. Diff the full source
+column set (`INFORMATION_SCHEMA.COLUMNS`) against the contract to catch ALL new
+columns at once — dbt reports only the first.
 
 ## GPA Gotchas
 

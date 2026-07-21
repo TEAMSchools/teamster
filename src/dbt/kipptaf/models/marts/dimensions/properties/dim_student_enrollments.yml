@@ -1,5 +1,7 @@
 models:
   - name: dim_student_enrollments
+    config:
+      materialized: table
     description: >-
       Student enrollment dimension. One row per student x school x academic year
       enrollment record. Each re-enrollment within a year is a distinct record

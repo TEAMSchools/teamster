@@ -1,5 +1,7 @@
 models:
   - name: dim_student_section_enrollments
+    config:
+      materialized: table
     description: >-
       Student section enrollment dimension. One row per CC record — each
       enrollment of a student into a section. Multiple rows per student x

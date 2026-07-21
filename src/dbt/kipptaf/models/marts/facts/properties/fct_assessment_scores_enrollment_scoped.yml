@@ -8,6 +8,8 @@ models:
       assessment administration (via assessment_administration_key) and to the
       student's resolved section enrollment (via student_section_enrollment_key
       and enrollment_resolution).
+    config:
+      materialized: table
     columns:
       - name: assessment_score_key
         data_type: string

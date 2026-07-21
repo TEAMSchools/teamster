@@ -1,11 +1,3 @@
-/*
- * kipppaterson_powerschool is intentionally absent —
- * Paterson lacks the GradeBook plugin deployment required to
- * populate assignment data. Paterson teacher rows flow through
- * the gradebook audit scaffold but will have zero assignment
- * counts and null max score flags until the plugin is deployed.
- * Tracked: https://github.com/TEAMSchools/teamster/issues/3908
- */
 with
     union_relations as (
         {{
@@ -21,6 +13,10 @@ with
                     ),
                     source(
                         "kippmiami_powerschool",
+                        "int_powerschool__gradebook_assignments",
+                    ),
+                    source(
+                        "kipppaterson_powerschool",
                         "int_powerschool__gradebook_assignments",
                     ),
                 ]

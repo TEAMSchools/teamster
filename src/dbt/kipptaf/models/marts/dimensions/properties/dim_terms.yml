@@ -1,5 +1,7 @@
 models:
   - name: dim_terms
+    config:
+      materialized: table
     description: >-
       Generalized term/period dimension. One row per named period per region.
       Covers academic terms, performance management rounds, survey windows,

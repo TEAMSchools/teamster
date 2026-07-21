@@ -19,10 +19,7 @@ from teamster.code_locations.kipppaterson import (
     pearson,
     powerschool,
 )
-from teamster.code_locations.kipppaterson.resources import (
-    FINALSITE_RESOURCE,
-    SSH_POWERSCHOOL,
-)
+from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
@@ -34,6 +31,8 @@ from teamster.core.resources import (
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
+    get_powerschool_oracle_resource,
+    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
@@ -58,6 +57,7 @@ defs = Definitions(
     sensors=[
         *amplify.sensors,
         *couchdrop.sensors,
+        *powerschool.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
@@ -65,6 +65,7 @@ defs = Definitions(
     ],
     resources={
         "db_bigquery": BIGQUERY_RESOURCE,
+        "db_powerschool": get_powerschool_oracle_resource(),
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
         "dlt": DagsterDltResource(),
@@ -76,6 +77,6 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
-        "ssh_powerschool": SSH_POWERSCHOOL,
+        "ssh_powerschool": get_powerschool_ssh_resource(),
     },
 )
