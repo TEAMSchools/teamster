@@ -20,6 +20,8 @@ with
             if(
                 status_detail in ('New Hire', 'Transfer In'), true, false
             ) as is_new_hire,
+
+            true as is_from_snapshot,
         from {{ ref("snapshot_seat_tracker__seats") }}
         /* hardcoded date for last day of manual snapshot from appsheet */
         where dbt_updated_at >= '2024-08-08'
@@ -47,7 +49,15 @@ with
             is_staffed,
             is_active,
             is_new_hire,
+
+            false as is_from_snapshot,
         from {{ ref("stg_google_appsheet__seat_tracker__log_archive") }}
+    ),
+
+    live_keys as (
+        -- grain projection: one row per seat key; not a mask for upstream dups
+        select distinct academic_year, staffing_model_id,
+        from {{ ref("stg_google_appsheet__seat_tracker__seats") }}
     ),
 
     ordered_snapshot as (
@@ -76,13 +86,17 @@ select
     os1.is_new_hire,
     os1.valid_from,
 
+    loc.location_key,
+
     if(
         coalesce(os1.valid_to, os2.valid_from - 1) is null,
         '{{ var("current_fiscal_year") }}-06-30',
         coalesce(os1.valid_to, os2.valid_from - 1)
     ) as valid_to,
 
-    loc.location_key,
+    if(
+        os1.is_from_snapshot and lk.staffing_model_id is null, true, false
+    ) as is_deleted,
 from ordered_snapshot as os1
 left join
     ordered_snapshot as os2
@@ -93,3 +107,7 @@ left join
     on os1.adp_location = loc.location_name
     and not loc.location_is_pathways
     and loc.location_clean_name <> 'KIPP Whittier Elementary'
+left join
+    live_keys as lk
+    on os1.academic_year = lk.academic_year
+    and os1.staffing_model_id = lk.staffing_model_id
