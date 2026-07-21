@@ -267,6 +267,7 @@ sources:
             sheet_range: src_google_sheets__gradebook_flags
             skip_leading_rows: 1
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
@@ -283,6 +284,7 @@ sources:
             sheet_range: src_google_sheets__gradebook_exceptions
             skip_leading_rows: 1
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
@@ -1775,3 +1777,97 @@ sources:
                 - sheets
                 - focus
                 - language_code_crosswalk
+      - name: src_google_sheets__people__cube_access_role
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TuH7e2AuxP-_dUImtHrWCXJ_S_KD_eYCRqWhbGcD2V4
+            sheet_range: cube_access_role
+            skip_leading_rows: 1
+        columns:
+          - name: job_function_code
+            data_type: string
+          - name: entity
+            data_type: string
+          - name: job_function_level
+            data_type: int64
+          - name: student_location_scope
+            data_type: string
+          - name: staff_location_scope
+            data_type: string
+          - name: staff_department_scope
+            data_type: string
+          - name: staff_pii_scope
+            data_type: string
+          - name: staff_compensation_scope
+            data_type: string
+          - name: staff_observations_scope
+            data_type: string
+          - name: staff_benefits_scope
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - cube_access_role
+      - name: src_google_sheets__people__cube_access_department_override
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TuH7e2AuxP-_dUImtHrWCXJ_S_KD_eYCRqWhbGcD2V4
+            sheet_range: cube_access_department_override
+            skip_leading_rows: 1
+        columns:
+          - name: department
+            data_type: string
+          - name: student_location_scope
+            data_type: string
+          - name: staff_location_scope
+            data_type: string
+          - name: staff_department_scope
+            data_type: string
+          - name: staff_pii_scope
+            data_type: string
+          - name: staff_compensation_scope
+            data_type: string
+          - name: staff_observations_scope
+            data_type: string
+          - name: staff_benefits_scope
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - cube_access_department_override
+      - name: src_google_sheets__people__cube_access_department_rollup
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1TuH7e2AuxP-_dUImtHrWCXJ_S_KD_eYCRqWhbGcD2V4
+            sheet_range: cube_access_department_rollup
+            skip_leading_rows: 1
+        columns:
+          - name: department_name
+            data_type: string
+          - name: department_group
+            data_type: string
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - people
+                - cube_access_department_rollup

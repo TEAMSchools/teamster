@@ -146,22 +146,6 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
-  name: op-ps-db-kippmiami
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/PowerSchool DB - Miami
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
-  name: op-ps-ssh-kippmiami
-  namespace: dagster-cloud
-spec:
-  itemPath: vaults/Data Team/items/PowerSchool SSH - Miami
----
-apiVersion: onepassword.com/v1
-kind: OnePasswordItem
-metadata:
   name: op-renlearn-sftp-kippmiami
   namespace: dagster-cloud
 spec:
@@ -438,3 +422,19 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/Finalsite API - Paterson
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-ps-db-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/PowerSchool DB - Paterson
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-ps-ssh-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/PowerSchool SSH - Paterson

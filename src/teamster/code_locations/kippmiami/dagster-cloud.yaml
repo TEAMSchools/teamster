@@ -9,21 +9,10 @@ locations:
     container_context:
       k8s:
         volume_mounts:
-          - name: secret-volume
-            readOnly: true
-            mountPath: /etc/secret-volume
           - name: deanslist-keys
             readOnly: true
             mountPath: /etc/deanslist
         volumes:
-          - name: secret-volume
-            projected:
-              sources:
-                - secret:
-                    name: op-ps-ssh-kippmiami
-                    items:
-                      - key: password
-                        path: powerschool_ssh_password.txt
           - name: deanslist-keys
             projected:
               sources:
@@ -63,31 +52,6 @@ locations:
                   secretKeyRef:
                     name: op-iready-sftp
                     key: username
-              - name: PS_DB_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: password
-              - name: PS_SSH_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: password
-              - name: PS_SSH_PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: port
-              - name: PS_SSH_REMOTE_BIND_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: remote-bind-host
-              - name: PS_SSH_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: username
               - name: RENLEARN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -113,31 +77,6 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: URL
-              - name: PS_DB_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: server
-              - name: PS_DB_DATABASE
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: database
-              - name: PS_DB_PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: port
-              - name: PS_DB_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: username
-              - name: PS_SSH_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: host
               - name: FOCUS_DB__CREDENTIALS__DRIVERNAME
                 valueFrom:
                   secretKeyRef:
@@ -243,26 +182,6 @@ locations:
                   secretKeyRef:
                     name: op-iready-sftp
                     key: username
-              - name: PS_DB_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: password
-              - name: PS_SSH_PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: port
-              - name: PS_SSH_REMOTE_BIND_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: remote-bind-host
-              - name: PS_SSH_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: username
               - name: RENLEARN_SFTP_PASSWORD
                 valueFrom:
                   secretKeyRef:
@@ -288,31 +207,6 @@ locations:
                   secretKeyRef:
                     name: op-couchdrop-sftp
                     key: URL
-              - name: PS_DB_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: server
-              - name: PS_DB_DATABASE
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: database
-              - name: PS_DB_PORT
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: port
-              - name: PS_DB_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-db-kippmiami
-                    key: username
-              - name: PS_SSH_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-ps-ssh-kippmiami
-                    key: host
               - name: FOCUS_DB__CREDENTIALS__DRIVERNAME
                 valueFrom:
                   secretKeyRef:

@@ -1,0 +1,64 @@
+models:
+  - name: dim_staff_reporting_chain
+    description: >-
+      Transitive closure of the current organizational reporting tree, keyed on
+      staff_key. One row per (manager_staff_key, reportee_staff_key) pair
+      reachable through the chain of current primary reporting relationships,
+      plus a depth-0 self-pair for every staff member so a manager's own row is
+      returned by a single reportee filter. Consumed by the Cube semantic layer
+      to grant a manager detail-level access to their own downline. Reflects the
+      present org only — built from current primary assignments.
+    config:
+      # WITH RECURSIVE is incompatible with the contract-validation subquery
+      # wrapper; orphan detection is preserved via the relationships tests below.
+      contract:
+        enforced: false
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - manager_staff_key
+              - reportee_staff_key
+    columns:
+      - name: manager_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff — a staff member at or above the reportee in
+          the reporting tree. Equals reportee_staff_key on the depth-0
+          self-pair.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: reportee_staff_key
+        data_type: string
+        description: >-
+          Foreign key to dim_staff — the direct or indirect report.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_staff')
+            to_columns: [staff_key]
+            warn_unsupported: false
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: depth
+        data_type: int64
+        description: >-
+          Minimum number of hops from manager to reportee through the reporting
+          tree — 0 for the self-pair, 1 for a direct report, increasing with
+          organizational distance.
+        data_tests:
+          - not_null

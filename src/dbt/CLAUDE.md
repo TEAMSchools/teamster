@@ -237,6 +237,36 @@ conversions with either an explicit
 `DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
 `dbt build --select <model> --full-refresh` once after merge.
 
+## `WITH RECURSIVE` needs `contract: enforced: false`
+
+BigQuery allows `WITH RECURSIVE` only at the top level of a statement, but dbt's
+contract validation (and the table CTAS) wrap the model SQL in a subquery — so a
+recursive model fails with "WITH RECURSIVE is only allowed at the top level".
+Set `contract: enforced: false` on the model and keep `relationships`/uniqueness
+data tests for coverage. A bounded Jinja unroll is the alternative but hits
+"query is too complex" when it re-expands view upstreams once per level.
+
+## Counting package-variant models enabled in a consuming district
+
+`dbt ls --select "path:models/sis/staging/<variant>"` returns **0** in a
+consuming district — the variant's models live in the _package_ dir, not the
+district's `models/` path, so `path:` (relative to the project-dir) misses them.
+Count with
+`dbt ls --resource-type model --output path | grep 'sis/staging/<variant>/'`. A
+package's own `dbt_project.yml` `+enabled: false` (models AND sources) applies
+to every consumer — no per-district override needed (see the powerschool
+odbc/sftp variants).
+
+## dbt Cloud CI builds only kipptaf
+
+The dbt Cloud CI job (`Build - CI (Modified)`, dbt Cloud project 211862) runs
+against the `kipptaf` project alone. A PR confined to a district project
+(`kipp{newark,camden,miami,paterson}`) or a source-system package selects zero
+models under `state:modified+` unless it changes a kipptaf-consumed `source()`
+schema (column set) — so the dbt Cloud check goes green **trivially, not as
+validation** (a ~30s no-op run). Those models are first exercised by Dagster's
+dbt step (branch deployment / prod automation), not dbt Cloud CI.
+
 ## dbt Cloud CI state comparison
 
 `state:modified+` hashes every source node through `{{ target.name }}`
@@ -261,6 +291,18 @@ Source-system package models (`focus`, `amplify`, etc.) have no resolvable vars
 standalone — build/test them via a **consuming district** project-dir with that
 district's prod manifest for `--defer` (e.g. focus → kippmiami):
 `uv run dbt build --select <model> --project-dir src/dbt/kippmiami --defer --state src/dbt/kippmiami/target/prod --target dev`.
+
+**A contract-enforced change needs a real `dbt build` to verify, not a prod
+SELECT** — `assert_columns_equivalent` runs only inside `dbt build`/CTAS, so a
+SELECT against the prod external validates data/logic but NOT the column set,
+and an all-NULL new source column that `select *` passes through slips past
+(this shipped a 2nd prod contract failure a build would have caught). For an
+Avro/GCS-source model, the dev source copy
+`zz_<GITHUB_USER>_<district>_<source>` may be stale/missing the new column —
+re-stage YOUR copy first:
+`dbt run-operation stage_external_sources --args "select: <source>.<table>" --vars '{ext_full_refresh: true}' --target dev --project-dir src/dbt/<district>`
+(personal schema, NOT classifier-blocked, unlike `--target staging`), then
+`dbt build --select <model> --target dev`.
 
 ## Local dev schema naming
 
@@ -293,6 +335,13 @@ manifest is refreshed by `post-merge`.
 Validate a newly-added data test against prod before pushing:
 `dbt test --select <model> --target dev --defer --state <prod manifest>` runs
 the compiled test SQL against the deferred prod relation — no dev build needed.
+
+A dev `--defer` build of a **table-materialized** mart can fail on a cross-mart
+`foreign_key` constraint ("Table X does not have Primary Key constraints") when
+the deferred prod parent's DDL lacks the rendered PK. To validate the model's
+logic (PK uniqueness, row counts) without building the parent, run its compiled
+SQL (`target/compiled/...`, refs already prod-resolved under `--favor-state`)
+against prod via the BQ MCP.
 
 ## Multi-line SQL in YAML `data_tests:` expressions
 
@@ -365,6 +414,28 @@ a dev relationships warning on a FK, include the parent in `--select` or
 Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
 date-range join. Query prod before filing upstream bugs or adding defensive
 dedupe from a dev mart-test failure.
+
+A stale dev copy missing a NEW column breaks the BUILD too ("Name <col> not
+found inside <alias>"), not just relationships tests.
+`dbt build --favor-state --defer --state <prod>` resolves every unselected
+upstream to prod regardless of stale dev copies — cleaner than enumerating
+parents in `--select`.
+
+Also manifests as false row-count / row-presence deltas (not just
+`relationships`/PK tests): a stale dev `int_people__staff_roster` missing recent
+hires makes a dev-built rpt look like it dropped rows. Confirm which upstreams
+resolved to dev by grepping the compiled SQL (`target/compiled/.../<model>.sql`)
+for `zz_<user>_` refs — dev-schema refs mean `--defer` was shadowed; validate
+against prod (or an ad-hoc prod query) instead.
+
+To validate a MODIFIED `rpt_`/view against prod (the deployed view is still the
+OLD code, and a dev build is stale-shadowed), rewrite its compiled SQL
+(`target/compiled/.../<model>.sql`): `zz_<user>_` refs → prod schemas, and
+inline any `stg_` you changed from its `source()` (prod lacks the new column);
+run via `bq`. Tell live drift from a real logic change with distinct-key counts
+(`total - dup`) vs a FRESH same-moment prod baseline — an unchanged distinct set
+means the row delta is fan-out/drift (warehouse tables rematerialize
+mid-session), not your change.
 
 ## Column-rename refactors strand dependent prod views
 
@@ -515,6 +586,12 @@ without it being real drift — normalize before comparing.
 
 1. Have `contract: enforced: true`
 2. Have a uniqueness test
+
+**Exception** — thin cross-project wrapper `rpt_` models (a district
+`rpt_powerschool__autocomm_*` or other `extracts/` wrapper sourcing
+`kipptaf_extracts`) are contract-columns-only: NO uniqueness test or
+descriptions, which live on the kipptaf source view. See `kipptaf/CLAUDE.md` →
+`extracts/powerschool/` special case before adding either.
 
 ### Uniqueness test examples
 
@@ -753,6 +830,11 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   where the raw value first appears, as a named column. Downstream expressions
   operate on already-typed columns — never nest `cast()` inside another
   function.
+- **`cast(col as type)` needs an explicit alias** — unaliased, BigQuery names
+  the column `f0_`, not `col`, so a contracted / explicitly-projected `select`
+  gets the wrong column name and fails. Write `cast(col as type) as col`; the
+  matching alias on a function-wrapped expression is NOT an AL09 self-alias
+  (it's the repo norm).
 - **No subqueries against tables or CTEs** — no `in (select ...)`, scalar
   lookups, or correlated subqueries; restructure as a CTE and join it.
   Carve-out: a scalar _aggregate_ over `unnest` of an array

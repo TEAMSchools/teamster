@@ -1,7 +1,14 @@
 models:
   - name: int_powerschool__gradebook_assignments_scores
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - assignmentsectionid
+              - students_dcid
     columns:
-      - name: _dbt_source_relation
+      - name: _dbt_source_project
         data_type: string
       - name: assignmentsectionid
         data_type: int64
@@ -102,7 +109,7 @@ models:
             source_column: actualscoreentered
       - name: students_dcid
         data_type: int64
-      - name: school_level
+      - name: school_level_alt
         data_type: string
       - name: is_late
         data_type: int64
@@ -112,6 +119,9 @@ models:
         data_type: int64
       - name: is_expected
         data_type: boolean
+        description: >
+          True when the student is expected to have a score for this assignment:
+          not exempt and counted in final grade. False otherwise.
       - name: score_entered
         data_type: float64
       - name: points_earned
@@ -141,25 +151,14 @@ models:
         data_type: float64
       - name: half_total_point_value
         data_type: float64
-      - name: is_zero
-        data_type: int64
-        description: Conditional on score_entered.
-      - name: is_academic_dishonesty
-        data_type: int64
-        description: Conditional on is_missing, school_level, score_entered.
-      - name: is_null
-        data_type: int64
-        description: Conditional on score_entered.
-      - name: is_scored
-        data_type: int64
-        description: Conditional on score_entered.
       - name: is_expected_zero
         data_type: int64
         description: Conditional on is_expected, score_entered.
       - name: is_expected_academic_dishonesty
         data_type: int64
         description:
-          Conditional on is_expected, is_missing, school_level, score_entered.
+          Conditional on is_expected, is_missing, school_level_alt,
+          score_entered.
       - name: is_expected_null
         data_type: int64
         description: Conditional on is_expected, score_entered.
@@ -172,3 +171,36 @@ models:
       - name: is_expected_scored
         data_type: boolean
         description: Conditional on is_expected, score_entered.
+      - name: assign_score_above_max
+        data_type: boolean
+        description: True when score_entered exceeds totalpointvalue.
+      - name: assign_mh_hwf_score_less_5
+        data_type: boolean
+        description: >-
+          H, W, or F category assignment where is_expected_missing = 0 and
+          score_entered < 5. Consolidates the three per-category flags
+          assign_w_score_less_5, assign_h_score_less_5, and
+          assign_f_score_less_5.
+      - name: assign_ms_hwf_missing_score_not_5
+        data_type: boolean
+        description: >-
+          H, W, or F category MS assignment marked missing where score_entered
+          != 5. Consolidates assign_w_missing_score_not_5,
+          assign_h_missing_score_not_5, and assign_f_missing_score_not_5.
+      - name: assign_hs_hwfs_missing_score_not_0
+        data_type: boolean
+        description: >-
+          H, W, F, or S category HS assignment marked missing where
+          score_entered != 0. Consolidates assign_w_missing_score_not_0,
+          assign_h_missing_score_not_0, assign_f_missing_score_not_0, and
+          assign_s_missing_score_not_0.
+      - name: assign_ms_s_score_less_50p
+        data_type: boolean
+        description: >-
+          S category MS assignment where score_entered < half_total_point_value.
+          Renamed from assign_s_score_less_50p, now explicitly MS-scoped.
+      - name: assign_hs_s_score_less_50p
+        data_type: boolean
+        description: >-
+          S category HS assignment, not missing, where score_entered <
+          half_total_point_value. Renamed from assign_s_hs_score_less_50p.

@@ -121,6 +121,26 @@ if echo "${no_content}" | grep -qE '/proc/[^[:space:]]*/environ|/proc/[^[:space:
 fi
 
 # ═══════════════════════════════════════════════════════════════════
+# Section 1d: Filesystem MCP — protected-config write guard
+# ═══════════════════════════════════════════════════════════════════
+# The filesystem MCP's mutating tools (write_file/edit_file/move_file/
+# create_directory) are not Bash, so Rule 2 (Bash-only) never fires for them.
+# Without this they could rewrite settings.json, the hook scripts, the
+# .devcontainer/scripts, .git/hooks, or .trunk config — i.e. edit the sole
+# enforcement layer. Scoped to the mutating tools only (read-only filesystem
+# tools may read these paths). Path set = path + source + destination; body
+# fields (content/edits) are excluded so a file body that mentions one of
+# these paths does not false-positive. Pattern mirrors Rule 2.
+if [[ ${tool_name} =~ ^mcp__filesystem__(write_file|edit_file|move_file|create_directory)$ ]]; then
+  fs_target=$(jq -r '[.tool_input | (.path?, .source?, .destination?) | strings] | join(" ")' <<<"${input}")
+  fs_target=$(echo "${fs_target}" | _normalize)
+  fs_target=${fs_target//[\"\'\\]/}
+  if echo "${fs_target}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/[^[:space:]]*\.sh|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
+    deny
+  fi
+fi
+
+# ═══════════════════════════════════════════════════════════════════
 # Section 2: Bash only — command-pattern protection
 # ═══════════════════════════════════════════════════════════════════
 if [[ ${tool_name} == "bash" ]]; then

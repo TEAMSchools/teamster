@@ -4,6 +4,7 @@ from dagster import (
     Definitions,
     load_assets_from_modules,
 )
+from dagster_dlt import DagsterDltResource
 from dagster_k8s import k8s_job_executor
 
 from teamster.code_locations.kipppaterson import (
@@ -13,12 +14,14 @@ from teamster.code_locations.kipppaterson import (
     couchdrop,
     dbt,
     deanslist,
+    extracts,
     finalsite,
     pearson,
     powerschool,
 )
 from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
 from teamster.core.resources import (
+    BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
     GCS_RESOURCE,
     GOOGLE_DRIVE_RESOURCE,
@@ -28,6 +31,8 @@ from teamster.core.resources import (
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
     get_io_manager_gcs_pickle,
+    get_powerschool_oracle_resource,
+    get_powerschool_ssh_resource,
 )
 
 defs = Definitions(
@@ -37,6 +42,7 @@ defs = Definitions(
             dbt,
             amplify,
             deanslist,
+            extracts,
             finalsite,
             pearson,
             powerschool,
@@ -44,19 +50,25 @@ defs = Definitions(
     ),
     schedules=[
         *deanslist.schedules,
+        *extracts.schedules,
         *finalsite.schedules,
+        *powerschool.schedules,
     ],
     sensors=[
         *amplify.sensors,
         *couchdrop.sensors,
+        *powerschool.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
         ),
     ],
     resources={
+        "db_bigquery": BIGQUERY_RESOURCE,
+        "db_powerschool": get_powerschool_oracle_resource(),
         "dbt_cli": get_dbt_cli_resource(DBT_PROJECT),
         "deanslist": DEANSLIST_RESOURCE,
+        "dlt": DagsterDltResource(),
         "finalsite": FINALSITE_RESOURCE,
         "gcs": GCS_RESOURCE,
         "google_drive": GOOGLE_DRIVE_RESOURCE,
@@ -65,5 +77,6 @@ defs = Definitions(
         "io_manager": get_io_manager_gcs_pickle(CODE_LOCATION),
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
+        "ssh_powerschool": get_powerschool_ssh_resource(),
     },
 )

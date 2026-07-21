@@ -2,11 +2,14 @@ models:
   - name: fct_assessment_scores_enrollment_scoped
     description: >-
       Enrollment-scoped assessment score fact table. One row per student x
-      assessment x administration. Covers internal Illuminate assessments and
-      state assessments (NJSLA, NJGPA, FAST). Each row is linked to an
+      assessment x administration. Covers internal Illuminate assessments, state
+      assessments (NJSLA, NJGPA, FAST), and vendor benchmark assessments
+      (i-Ready Diagnostic, STAR, DIBELS Composite). Each row is linked to an
       assessment administration (via assessment_administration_key) and to the
       student's resolved section enrollment (via student_section_enrollment_key
       and enrollment_resolution).
+    config:
+      materialized: table
     columns:
       - name: assessment_score_key
         data_type: string
@@ -15,6 +18,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -30,6 +34,7 @@ models:
             to: ref('dim_assessment_administrations')
             to_columns: [assessment_administration_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -62,6 +67,7 @@ models:
             to: ref('dim_student_section_enrollments')
             to_columns: [student_section_enrollment_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -79,6 +85,7 @@ models:
             to: ref('dim_dates')
             to_columns: [date_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -95,6 +102,14 @@ models:
         data_type: numeric
         description: >-
           Percent of questions answered correctly. Null for state assessments.
+
+      - name: national_percentile
+        data_type: numeric
+        description: >-
+          National norm-referenced percentile rank for the attempt where the
+          vendor provides one (i-Ready percentile, STAR percentile rank, DIBELS
+          measure percentile). This is an achievement percentile, not a growth
+          percentile. Null for internal and state assessments.
 
       - name: proficiency_level
         data_type: string

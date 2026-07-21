@@ -1,5 +1,7 @@
 models:
   - name: dim_locations
+    config:
+      materialized: table
     description: >-
       School and office location dimension. One row per school or office.
       Conformed dimension. Region context is reached via the region_key FK to
@@ -21,6 +23,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -37,6 +40,7 @@ models:
             to: ref('dim_regions')
             to_columns: [region_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

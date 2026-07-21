@@ -22,7 +22,7 @@ with
             r.sam_account_name as teacher_tableau_username,
 
             if(
-                s.school_name = 'KIPP Sumner Elementary' and s.sections_grade_level = 5,
+                s.school_abbreviation = 'Sumner' and s.sections_grade_level >= 5,
                 'MS',
                 null
             ) as school_level_alt,
