@@ -89,6 +89,18 @@ school_calendars) go in `cubes/conformed/`.
 - **`meta.folders` is the only Cube-rendered `meta.*` key.** Put guidance in
   `description:`, not `meta.usage` / `meta.synonyms` / etc. — those land in
   `/v1/meta` but Cube Cloud and the chat agent don't read them.
+- **Measure grain: query-time vs pre-agg.** At query time Cube recomputes every
+  measure fresh at the requested grain — including `count_distinct` (a valid
+  distinct count at any grain). A description's "non-additive" note is a
+  **pre-aggregation rollup** property, NOT a query-time-grain hazard; don't let
+  it read as "unsafe to drop a dimension." The real drop-a-dimension trap is
+  **semantic**: measures that recompute mathematically but are meaningful only
+  within a comparable scope (`avg_scale_score` / `avg_percent_correct` pooled
+  across incompatible assessment sources). Give such scope-bound measures a
+  leading `Grain: ... meaningful only within {scope} ... silent-failure trap`
+  clause in `description:` (#4476). No schema field enforces this — a
+  `reaggregatable` boolean was rejected because "scope-bound" isn't
+  machine-detectable; it's a review-checked convention.
 - **Folders group dimensions only.** Cube Cloud separates measures natively;
   don't list measures under `members:`.
 - **Folder member naming.** Bare for top-cube members; `<prefix>_<member>` for

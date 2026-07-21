@@ -226,67 +226,14 @@ mcp = FastMCP(
     "cube",
     instructions=(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
-        "and views) via Cube Cloud's REST API.\n\n"
-        "Workflow: (1) call `meta` with no arguments once to discover available "
-        "view names — analyst-facing surfaces are views, e.g. `student_attendance_view` "
-        "(one view per student domain) or `staff_directory` / `staff_pii` (staff "
-        "domain, split by access tier); (2) call `meta` again with "
-        '`views=["<the-view-you-need>"]` to fetch just that view\'s measures '
-        "and dimensions — much smaller than the full catalog, prefer it once "
-        "you know which view(s) are relevant; (3) "
-        "build a Cube "
-        "query object (measures, dimensions, filters, timeDimensions, order, "
-        "limit) and call `load` to execute, or `sql` to inspect the compiled "
-        "SQL without running it. The query spec follows the Cube REST API.\n\n"
-        "Member naming: every measure/dimension is dotted `<view>.<member>` "
-        "(e.g. `student_attendance_view.count_students`). Bare names won't "
-        "resolve.\n\n"
-        "Filter operators are named, not SQL: `equals`, `notEquals`, `contains`, "
-        "`gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`, "
-        "`afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse. See "
-        "https://cube.dev/docs/product/apis-integrations/rest-api/query-format#filters-operators "
-        "for the full list.\n\n"
-        "Date dimensions: for a single date use `filters` with `equals`; for a "
-        "range or when you need `granularity` (day/week/month/etc.), use "
-        "`timeDimensions` with `dateRange`. Putting a date in the wrong place "
-        "either fails or silently drops the granularity.\n\n"
-        "Academic year convention: an academic_year value of 2025 means the "
-        "2025–26 school year (July 2025 – June 2026), not the year ending in "
-        "2025. This is the opposite of typical fiscal-year conventions where "
-        "FY2025 ends in 2025. When a user says 'this year' or 'current year', "
-        "use the academic_year value whose start year matches the current "
-        "calendar year (e.g. if today is May 2026, current academic_year = "
-        "2025). In attendance views, the academic year is exposed as "
-        "dates_academic_year (integer) and dates_academic_year_label "
-        "(string, e.g. '2025-2026'), both sourced from the date dimension.\n\n"
-        "ACADEMIC YEAR — resolve it yourself before building any query that "
-        "names a year:\n"
-        "- academic_year is the START year; 'SY' notation uses the END year.\n"
-        "- 'SY26' -> academic_year 2025, label '2025-2026' (SY end year minus "
-        "1).\n"
-        "- '2025-26', '2025-2026', 'AY2025' -> academic_year 2025, label "
-        "'2025-2026'.\n"
-        "- bare '2026' -> treat as the START year (academic_year 2026, label "
-        "'2026-2027'); if the user's wording implies SY / end-year, note the "
-        "other reading.\n"
-        "State your interpretation inline (e.g. 'Interpreting as the 2025-2026 "
-        "school year') before showing results, then proceed.\n\n"
-        "Numeric values come back as strings — cast to numeric before "
-        "comparing or arithmetic. Raw `==` / `<` compare lexicographically "
-        "(`'10' < '9'`).\n\n"
-        "PII defaults: student views (`student_attendance_view`, "
-        "`student_assessment_scores_view`, `student_enrollments_view`) carry "
-        "row-level student identifiers alongside aggregate-safe dimensions — "
-        "any scope-specific student group can see both; avoid pulling "
-        "identifier fields (student_key, full_name, birth_date, state/lea "
-        "IDs) unless drill-down is explicitly requested. Staff PII "
-        "(`staff_pii`, the six sensitive fields) is gated separately from "
-        "`staff_directory` (roster/employment). Never emit identifying "
-        "values to PR comments, issues, Slack, scheduled-agent outputs, or "
-        "any external surface — only to the local conversation.\n\n"
-        "Access is group-driven and default-deny: empty `meta` results or "
-        "`WHERE (1=0)` in `sql` output usually means the requester lacks the "
-        "required `cube-*` Workspace group, not a missing model."
+        "and views) via Cube Cloud's REST API. Start with the `meta` tool to "
+        "discover views, then build a query and call `load` to execute (or "
+        "`sql` to inspect the compiled SQL). The load-bearing query-construction "
+        "guidance — member naming, filter operators, date handling, the "
+        "academic-year convention, and PII handling — lives in the individual "
+        "`meta`/`load`/`sql` tool descriptions, which reach the model reliably "
+        "on every surface (unlike this instructions block, which some clients "
+        "drop or truncate)."
     ),
     **_fastmcp_kwargs,
 )
@@ -417,14 +364,27 @@ async def meta(
     Returns the catalog of views, measures, and dimensions queryable via `load`
     or `sql`.
 
-    Call with no arguments first to discover which views exist. Once you know
-    the view(s) you need, pass `views` to get back just their measures and
-    dimensions — a fraction of the full catalog's size, filtered client-side
-    from the same underlying `/meta` fetch (Cube's REST API doesn't take a
-    filter param, and its separate `/entities` endpoints need a differently
-    scoped token this server doesn't mint) — so it avoids exceeding a response
-    size budget on large models without any extra round trip once the full
-    catalog is cached.
+    Call with no arguments first to discover which views exist — analyst-facing
+    surfaces are views (e.g. `student_attendance_view`,
+    `student_assessment_scores_view`; staff is split into `staff_directory` and
+    `staff_pii` by access tier). Once you know the view(s) you need, pass
+    `views` to get back just their measures and dimensions — a fraction of the
+    full catalog's size, filtered client-side from the same underlying `/meta`
+    fetch (Cube's REST API doesn't take a filter param, and its separate
+    `/entities` endpoints need a differently scoped token this server doesn't
+    mint) — so it avoids exceeding a response size budget on large models
+    without any extra round trip once the full catalog is cached.
+
+    Access is group-driven and default-deny: an empty catalog (`cubes: []`)
+    usually means the requester lacks the required `cube-*` Workspace group, not
+    a missing model.
+
+    Grain/scope: each measure's description states any scope it must stay within
+    to remain meaningful. Some measures recompute at any query grain but are only
+    meaningful pooled within a comparable scope (e.g. one assessment source);
+    coarsening past that silently returns a valid-looking but meaningless value
+    (not an error) — see the `load` tool's grain rule before dropping a
+    dimension.
 
     Cached per (email, requested scope) for one hour (in-memory, with disk
     fallback across process restarts) — a filtered call never reads or writes
@@ -462,11 +422,73 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
 
     The query object follows the Cube REST API spec (measures, dimensions,
     filters, timeDimensions, segments, order, limit, offset, total). Polls
-    automatically on Cube's 'Continue wait' long-polling response.
+    automatically on Cube's 'Continue wait' long-polling response. Discover
+    member names with the `meta` tool first.
+
+    Grain: the dimensions you pass set the aggregation grain, and every measure
+    is recomputed fresh at that grain — it is NOT a finer result with columns
+    hidden. Dropping a dimension from a previous query re-aggregates the measure
+    over everything the filters still match, changing what the number means, not
+    just which columns come back. (This includes count_distinct measures like
+    count_students: at a coarser grain Cube computes a correct distinct count
+    for that grain — the "non-additive" note on some measures refers to
+    pre-aggregation rollup, not query-time grain.)
+
+    Example — same filters and measure (pct_proficient), two grains: dimensions
+    [is_iep, module_code, academic_year] returns one proficiency rate per (IEP
+    status x module x year) cell; dropping to dimensions [is_iep] returns one
+    pooled rate per IEP status across every module and year the filters matched.
+    Same underlying rows, re-aggregated — not the first result with columns
+    removed.
+
+    Silent-failure risk: a few measures recompute mathematically at any grain
+    but are meaningful only within a comparable scope — e.g. avg_scale_score and
+    avg_percent_correct pool across incompatible assessment sources/subjects to
+    produce a valid-looking but meaningless number. This does not raise an
+    error; check the measure's own description for the scope it is valid within
+    before coarsening.
+
+    Member naming: every measure/dimension is dotted `view.member` (e.g.
+    `student_attendance_view.count_students`). Bare names won't resolve.
+
+    Filter operators are named, not SQL: `equals`, `notEquals`, `contains`,
+    `gt`/`gte`/`lt`/`lte`, `set`/`notSet`, `inDateRange`, `beforeDate`,
+    `afterDate`. SQL-style `=`/`IN`/`LIKE` won't parse.
+
+    Date dimensions: for a single date use `filters` with `equals`; for a range
+    or when you need `granularity` (day/week/month/etc.), use `timeDimensions`
+    with `dateRange`. Putting a date in the wrong place either fails or silently
+    drops the granularity.
+
+    Academic year: an academic_year value of 2025 means the 2025-26 school year
+    (July 2025 - June 2026), not the year ending in 2025 — the opposite of
+    fiscal-year convention. When a user says 'this year'/'current year', use the
+    academic_year whose start year matches the current calendar year (e.g. in
+    May 2026, current academic_year = 2025). Exposed as `dates_academic_year`
+    (integer) and `dates_academic_year_label` (string, e.g. '2025-2026').
+
+    ACADEMIC YEAR — resolve it yourself before building any query that names a
+    year:
+    - academic_year is the START year; 'SY' notation uses the END year.
+    - 'SY26' -> academic_year 2025, label '2025-2026' (SY end year minus 1).
+    - '2025-26', '2025-2026', 'AY2025' -> academic_year 2025, label '2025-2026'.
+    - bare '2026' -> treat as the START year (academic_year 2026, label
+      '2026-2027'); if the user's wording implies SY / end-year, note the other
+      reading.
+    State your interpretation inline (e.g. 'Interpreting as the 2025-2026 school
+    year') before showing results, then proceed.
+
+    Numeric values come back as strings — cast to numeric before comparing or
+    doing arithmetic. Raw `==`/`<` compare lexicographically (`'10' < '9'`).
 
     PII: student view results carry row-level student identifiers alongside
-    aggregate-safe dimensions — keep identifying values (names, birth dates,
-    state/lea IDs) in the local conversation only.
+    aggregate-safe dimensions — avoid pulling identifier fields (student_key,
+    full_name, birth_date, state/lea IDs) unless drill-down is explicitly
+    requested. Staff sensitive fields (personal contact, birth date,
+    demographics) live in `staff_pii`, gated separately from the open
+    `staff_directory` roster. Keep any identifying values — student or staff —
+    in the local conversation only, never to PR comments, issues, Slack, or
+    scheduled-agent outputs.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
@@ -487,7 +509,14 @@ async def sql(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     analytics query, without running it. Useful for debugging query shape,
     verifying access policies, or reviewing the compiled SQL before `load`.
 
+    Takes the same query object as `load` — see the `load` tool description for
+    member naming, filter operators, date handling, and the academic-year
+    convention.
+
     Response is wrapped: {"sql": {"status", "sql": [query-string, [params]], "query_type"}}.
+    A default-deny access result compiles to `WHERE (1 = 0)` plus
+    `rlsAccessDenied` — usually a missing `cube-*` Workspace group, not a schema
+    bug.
 
     Queries default to timezone UTC (mart dates are date-grain UTC); pass an
     explicit `timezone` only when wall-clock conversion is intended.
