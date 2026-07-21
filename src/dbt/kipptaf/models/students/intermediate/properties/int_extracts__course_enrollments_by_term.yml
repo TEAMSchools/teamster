@@ -1,0 +1,1232 @@
+models:
+  - name: int_extracts__course_enrollments_by_term
+    description: >
+      One row per student per academic year per course per quarter based on
+      course enrollment overlap with term dates. Students who re-enrolled in the
+      same course within a quarter are deduped to the most recent stint.
+    config:
+      schema: extracts
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - academic_year
+              - studentid
+              - course_number
+              - quarter
+          config:
+            severity: error
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+      - name: studentid
+        data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: studentid
+            column_role: foreign_key
+      - name: students_dcid
+        data_type: int64
+      - name: student_number
+        data_type: int64
+        description: Student number assigned by the school. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_number
+            contains_pii: true
+      - name: reenrollments_dcid
+        data_type: int64
+      - name: grade_level
+        data_type: int64
+        description: >
+          The grade the student is in. Since this is an integer: 0=Kindergarten,
+          -2=Preschool. Indexed.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: grade_level
+      - name: schoolid
+        data_type: int64
+        description: The School_Number of the associated Schools record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: schoolid
+      - name: entrydate
+        data_type: date
+        description:
+          The date the student enrolled in school for the current enrollment.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrydate
+      - name: exitdate
+        data_type: date
+        description: >
+          The date the student exited for the current/last enrollment. This is
+          the day after the student's last attended class.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitdate
+      - name: entrycode
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: entrycode
+      - name: exitcode
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitcode
+      - name: exitcomment
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: exitcomment
+      - name: fteid
+        data_type: int64
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: fteid
+      - name: enroll_status
+        data_type: int64
+        description: The enrollment status of the student.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: enroll_status
+      - name: dob
+        data_type: date
+        description: Date of birth.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: dob
+            contains_pii: true
+      - name: street
+        data_type: string
+        description: Student's street address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: street
+            contains_pii: true
+      - name: city
+        data_type: string
+        description: City element of the student's address.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: city
+            contains_pii: true
+      - name: zip
+        data_type: string
+        description: Student's zip code.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: zip
+            contains_pii: true
+      - name: home_phone
+        data_type: string
+        description: Home phone number for the student.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: home_phone
+            contains_pii: true
+      - name: fedethnicity
+        data_type: int64
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: fedethnicity
+      - name: next_school
+        data_type: int64
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: next_school
+      - name: sched_nextyeargrade
+        data_type: int64
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: sched_nextyeargrade
+      - name: highest_grade_level_achieved
+        data_type: int64
+      - name: gender
+        data_type: string
+        description: M=Male F=Female.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: gender
+      - name: ethnicity
+        data_type: string
+        description: Heritage background of a student.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: ethnicity
+      - name: yearid
+        data_type: int64
+        description: >
+          A number representing which year the term belongs to (e.g. 13 for
+          2003-2004). Equal to the ID of the year term divided by 100.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__gradeschoolconfig
+            source_column: yearid
+      - name: academic_year
+        data_type: int64
+        description: >
+          Starting calendar year of the school year (e.g. 2025 for 2025-2026).
+      - name: track
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: track
+      - name: cohort_primary
+        data_type: int64
+      - name: rn_all
+        data_type: int64
+      - name: rn_year
+        data_type: int64
+      - name: rn_school
+        data_type: int64
+      - name: grade_level_prev
+        data_type: int64
+      - name: yearid_prev
+        data_type: int64
+      - name: rn_undergrad
+        data_type: int64
+      - name: year_in_school
+        data_type: int64
+      - name: year_in_network
+        data_type: int64
+      - name: is_enrolled_y1
+        data_type: boolean
+      - name: is_enrolled_oct01
+        data_type: boolean
+      - name: is_enrolled_oct15
+        data_type: boolean
+      - name: is_enrolled_mar15
+        data_type: boolean
+      - name: is_enrolled_recent
+        data_type: boolean
+      - name: is_enrolled_fdos
+        data_type: boolean
+      - name: is_retained_year
+        data_type: boolean
+      - name: cohort_graduated
+        data_type: int64
+      - name: is_retained_ever
+        data_type: boolean
+      - name: boy_status
+        data_type: string
+      - name: cohort_secondary
+        data_type: int64
+      - name: entry_schoolid
+        data_type: int64
+      - name: entry_grade_level
+        data_type: int64
+      - name: school_name
+        data_type: string
+      - name: is_homeless
+        data_type: boolean
+      - name: advisory_name
+        data_type: string
+      - name: advisor_teachernumber
+        data_type: string
+      - name: advisor_lastfirst
+        data_type: string
+      - name: contact_1_address_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_email_current
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_phone_daytime
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_phone_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_phone_mobile
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_phone_primary
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_phone_work
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_relationship
+        data_type: string
+      - name: contact_2_address_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_email_current
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_phone_daytime
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_phone_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_phone_mobile
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_phone_primary
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_phone_work
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_relationship
+        data_type: string
+      - name: emergency_1_address_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_1_email_current
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_1_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_1_phone_daytime
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_1_phone_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_1_phone_mobile
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_1_phone_primary
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_1_phone_work
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_1_relationship
+        data_type: string
+      - name: emergency_2_address_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_2_email_current
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_2_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_2_phone_daytime
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_2_phone_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_2_phone_mobile
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_2_phone_primary
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_2_phone_work
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_2_relationship
+        data_type: string
+      - name: emergency_3_address_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_3_email_current
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_3_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_3_phone_daytime
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_3_phone_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_3_phone_mobile
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_3_phone_primary
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_3_phone_work
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: emergency_3_relationship
+        data_type: string
+      - name: pickup_1_address_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_1_email_current
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_1_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_1_phone_daytime
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_1_phone_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_1_phone_mobile
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_1_phone_primary
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_1_phone_work
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_1_relationship
+        data_type: string
+      - name: pickup_2_address_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_2_email_current
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_2_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_2_phone_daytime
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_2_phone_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_2_phone_mobile
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_2_phone_primary
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_2_phone_work
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_2_relationship
+        data_type: string
+      - name: pickup_3_address_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_3_email_current
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_3_name
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_3_phone_daytime
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_3_phone_home
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_3_phone_mobile
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_3_phone_primary
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_3_phone_work
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: pickup_3_relationship
+        data_type: string
+      - name: exit_code_kf
+        data_type: string
+      - name: exit_code_ts
+        data_type: string
+      - name: is_self_contained
+        data_type: boolean
+      - name: is_out_of_district
+        data_type: boolean
+      - name: reporting_schoolid
+        data_type: int64
+      - name: reporting_school_name
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: cohort
+        data_type: int64
+      - name: code_location
+        data_type: string
+      - name: region
+        data_type: string
+      - name: fleid
+        data_type: string
+      - name: newark_enrollment_number
+        data_type: string
+      - name: infosnap_id
+        data_type: string
+      - name: infosnap_opt_in
+        data_type: string
+      - name: media_release
+        data_type: string
+      - name: rides_staff
+        data_type: string
+      - name: districtcoderesident
+        data_type: string
+      - name: referral_date
+        data_type: date
+      - name: parental_consent_eval_date
+        data_type: date
+      - name: eligibility_determ_date
+        data_type: date
+      - name: initial_iep_meeting_date
+        data_type: date
+      - name: parent_consent_intial_iep_date
+        data_type: date
+      - name: annual_iep_review_meeting_date
+        data_type: date
+      - name: reevaluation_date
+        data_type: date
+      - name: parent_consent_obtain_code
+        data_type: string
+      - name: initial_process_delay_reason
+        data_type: string
+      - name: special_education_placement
+        data_type: string
+      - name: time_in_regular_program
+        data_type: string
+      - name: early_intervention_yn
+        data_type: string
+      - name: determined_ineligible_yn
+        data_type: string
+      - name: counseling_services_yn
+        data_type: string
+      - name: occupational_therapy_serv_yn
+        data_type: string
+      - name: physical_therapy_services_yn
+        data_type: string
+      - name: speech_lang_theapy_services_yn
+        data_type: string
+      - name: other_related_services_yn
+        data_type: string
+      - name: lepbegindate
+        data_type: date
+      - name: lependdate
+        data_type: date
+      - name: lep_tf
+        data_type: int64
+      - name: liep_parent_refusal_date
+        data_type: date
+      - name: programtypecode
+        data_type: string
+      - name: home_language
+        data_type: string
+      - name: advisor_email
+        data_type: string
+      - name: advisor_phone
+        data_type: string
+      - name: lunch_balance
+        data_type: numeric
+      - name: salesforce_contact_kipp_hs_class
+        data_type: int64
+      - name: salesforce_contact_owner_id
+        data_type: string
+      - name: graduation_year
+        data_type: int64
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: graduation_year
+      - name: salesforce_contact_owner_phone
+        data_type: string
+      - name: salesforce_contact_owner_email
+        data_type: string
+      - name: illuminate_student_id
+        data_type: int64
+      - name: gifted_and_talented
+        data_type: string
+      - name: is_504
+        data_type: boolean
+      - name: ktc_cohort
+        data_type: int64
+      - name: student_web_id
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_web_id
+      - name: student_web_password
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: student_web_password
+            contains_pii: true
+      - name: is_fldoe_fte_2
+        data_type: boolean
+      - name: is_fldoe_fte_3
+        data_type: boolean
+      - name: is_fldoe_fte_all
+        data_type: boolean
+      - name: special_education_code
+        data_type: string
+      - name: spedlep
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: spedlep
+      - name: lep_status
+        data_type: boolean
+        description: Student Limited English Proficiency status.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__studentcorefields
+            source_column: lep_status
+      - name: lunch_status
+        data_type: string
+      - name: lunch_application_status
+        data_type: string
+      - name: salesforce_graduation_year
+        data_type: int64
+      - name: pearson_local_student_identifier
+        data_type: int64
+      - name: student_name
+        data_type: string
+        description: Last, First, Mi.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: lastfirst
+            contains_pii: true
+      - name: student_last_name
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: last_name
+            contains_pii: true
+      - name: student_first_name
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: first_name
+            contains_pii: true
+      - name: student_middle_name
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: middle_name
+            contains_pii: true
+      - name: school
+        data_type: string
+      - name: team
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: team
+      - name: student_email
+        data_type: string
+      - name: salesforce_id
+        data_type: string
+      - name: has_fafsa
+        data_type: string
+      - name: college_match_gpa
+        data_type: numeric
+      - name: college_match_gpa_bands
+        data_type: string
+      - name: contact_owner_name
+        data_type: string
+      - name: region_official_name
+        data_type: string
+      - name: deanslist_school_id
+        data_type: int64
+      - name: ms_attended
+        data_type: string
+      - name: es_attended
+        data_type: string
+      - name: es_graduated
+        data_type: string
+      - name: territory
+        data_type: string
+      - name: home_instruction_enter_date
+        data_type: date
+      - name: home_instruction_exit_date
+        data_type: date
+      - name: home_instruction_sp_comment
+        data_type: string
+      - name: hos
+        data_type: string
+      - name: school_leader
+        data_type: string
+      - name: school_leader_tableau_username
+        data_type: string
+      - name: best_guess_pathway
+        data_type: string
+      - name: ada_unweighted_term_q1
+        data_type: float64
+      - name: ada_unweighted_semester_s1
+        data_type: float64
+      - name: unweighted_ada
+        data_type: float64
+      - name: ada_weighted_term_q1
+        data_type: float64
+      - name: ada_weighted_semester_s1
+        data_type: float64
+      - name: weighted_ada
+        data_type: float64
+      - name: absences_unexcused_year
+        data_type: float64
+      - name: ada_unweighted_year_prev
+        data_type: float64
+      - name: ada_weighted_year_prev
+        data_type: float64
+      - name: cumulative_y1_gpa
+        data_type: float64
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float64
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+      - name: earned_credits_cum
+        data_type: float64
+      - name: earned_credits_cum_projected
+        data_type: float64
+      - name: potential_credits_cum
+        data_type: float64
+      - name: next_year_school
+        data_type: string
+      - name: next_year_schoolid
+        data_type: int64
+      - name: finalsite_student_id
+        data_type: string
+      - name: district
+        data_type: string
+      - name: region_school_level
+        data_type: string
+      - name: region_school_level_alt
+        data_type: string
+        description: >
+          Region concatenated with school_level_alt. Differs from
+          region_school_level only for KIPP Sumner G5, where school_level_alt =
+          'MS' instead of 'ES' (e.g. CamdenMS instead of CamdenES).
+      - name: guardian_email
+        data_type: string
+      - name: academic_year_display
+        data_type: string
+      - name: next_year_enrollment_history
+        data_type: string
+      - name: overgrad_fafsa_opt_out
+        data_type: string
+      - name: grad_iep_exempt_status_overall
+        data_type: string
+      - name: iep_status
+        data_type: string
+      - name: ml_status
+        data_type: string
+      - name: status_504
+        data_type: string
+      - name: self_contained_status
+        data_type: string
+      - name: state_studentnumber
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state_studentnumber
+            contains_pii: true
+      - name: secondary_state_studentnumber
+        data_type: string
+      - name: ada
+        data_type: float64
+      - name: met_fafsa_requirement
+        data_type: boolean
+      - name: is_counseling_services
+        data_type: int64
+      - name: is_student_athlete
+        data_type: int64
+      - name: is_tutoring
+        data_type: boolean
+      - name: is_sipps
+        data_type: boolean
+      - name: student_slideback
+        data_type: boolean
+      - name: is_ada_above_or_at_80_cum_gpa_less_2
+        data_type: boolean
+      - name: aligned_gender
+        data_type: string
+      - name: enroll_status_string
+        data_type: string
+      - name: race_ethnicity
+        data_type: string
+      - name: school_level_alt
+        data_type: string
+      - name: advisory
+        data_type: string
+      - name: state
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: stg_powerschool__students
+            source_column: state
+      - name: ada_above_or_at_80
+        data_type: boolean
+      - name: fafsa_status_mismatch_category
+        data_type: string
+      - name: sectionid
+        data_type: int64
+        description: Internal ID of the course section.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: cc_sectionid
+      - name: course_number
+        data_type: string
+        description: Course number from the PS Courses table.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: cc_course_number
+      - name: sections_dcid
+        data_type: int64
+        description: DCID of the associated Sections record.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_dcid
+      - name: section_number
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_section_number
+      - name: external_expression
+        data_type: string
+        description: Period/day expression for the section (e.g. A(A)).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_external_expression
+      - name: credit_type
+        data_type: string
+        description: Credit type of the course (e.g. MATH, ENG).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: courses_credittype
+      - name: course_name
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: courses_course_name
+      - name: exclude_from_gpa
+        data_type: int64
+        description:
+          1 if this course is excluded from GPA calculations, 0 otherwise.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: courses_excludefromgpa
+      - name: teacher_number
+        data_type: string
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: teachernumber
+      - name: teacher_name
+        data_type: string
+        description: Teacher last name, first name.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: teacher_lastfirst
+      - name: teacher_employee_number
+        data_type: int64
+        description: Employee number of the teacher.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: employee_number
+      - name: teacher_tableau_username
+        data_type: string
+        description: Teacher's Tableau username (SAM account name).
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: sam_account_name
+      - name: manager_employee_number
+        data_type: int64
+        description: Employee number of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_employee_number
+      - name: manager_name
+        data_type: string
+        description: Formatted name of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_formatted_name
+      - name: manager_tableau_username
+        data_type: string
+        description: Tableau username of the teacher's direct manager.
+        config:
+          meta:
+            source_system: People
+            source_model: int_people__staff_roster
+            source_column: reports_to_sam_account_name
+      - name: termid
+        data_type: int64
+        description: Internal ID of the term the section belongs to.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: sections_termid
+      - name: is_ap_course
+        data_type: boolean
+        description: True if the course is an AP course.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: is_ap_course
+      - name: quarter
+        data_type: string
+        description: Term storecode (Q1, Q2, Q3, Q4).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term
+      - name: semester
+        data_type: string
+        description: Semester (S1, S2).
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: semester
+      - name: quarter_start_date
+        data_type: date
+        description: First day of the quarter term.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term_start_date
+      - name: quarter_end_date
+        data_type: date
+        description: Last day of the quarter term.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__terms
+            source_column: term_end_date
+      - name: quarter_start_date_alt
+        data_type: date
+        description: >
+          Adjusted quarter start date. Clamps Q1 start to the first day of
+          school when the PS term start predates it.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: first_day_school_year
+      - name: quarter_end_date_alt
+        data_type: date
+        description: >
+          Adjusted quarter end date. Clamps Q4 end to the last day of school
+          when the PS term end falls after it.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: last_day_school_year
+      - name: is_current_quarter
+        data_type: boolean
+        description: True if today falls within this quarter's date range.
+      - name: dateenrolled
+        data_type: date
+        description: Raw cc_dateenrolled for the enrolled course section stint.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: cc_dateenrolled
+      - name: dateleft
+        data_type: date
+        description: Raw cc_dateleft for the enrolled course section stint.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: cc_dateleft
+      - name: dateenrolled_alt
+        data_type: date
+        description: >
+          Effective enrollment start date. Clamps cc_dateenrolled to
+          first_day_school_year when the raw value predates the school year.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: first_day_school_year
+      - name: dateleft_alt
+        data_type: date
+        description: >
+          Effective enrollment end date. Clamps cc_dateleft to
+          last_day_school_year when the raw value extends past the school year.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: last_day_school_year
+      - name: days_in_quarter
+        data_type: int64
+        description:
+          Total instructional school days in the quarter for this school.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: date_count
+      - name: days_course_enrolled
+        data_type: int64
+        description: >
+          Instructional school days the student was enrolled in this course
+          section during the quarter, based on overlap between enrollment dates
+          and school calendar weeks.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: int_powerschool__calendar_week
+            source_column: date_count
+      - name: section_or_period
+        data_type: string
+        description: >
+          Period expression for HS students (external_expression); section
+          number for non-HS students (section_number).
+      - name: pct_enrolled_in_quarter
+        data_type: float64
+        description: >
+          Ratio of days_course_enrolled to days_in_quarter. Null when
+          days_in_quarter is zero.
+      - name: rn
+        data_type: int64
+        description: >
+          Row number within (project, academic_year, studentid, course_number,
+          quarter), ordered by school exitdate desc then CC dateleft desc.
+          Always 1 in this model's output — filtered by a WHERE clause after
+          computing the window, not QUALIFY. Retained for downstream reference.
