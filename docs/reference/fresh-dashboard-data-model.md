@@ -221,3 +221,19 @@ numbers and the dashboard:
 - **Whether the Miami/Focus carve-out can be removed** depends entirely on
   Focus's readiness as a data source — not yet determined as of this writing
   (2026-07-20).
+- **Pinned: the Miami scaffold sheet is missing two real, currently-operating
+  schools** -- Liberty Academy (PowerSchool `school_number` 30200802) and
+  Sunrise Academy (30200801) -- confirmed against
+  `int_people__location_crosswalk`, which has valid `location_focus_school_id`
+  values for both. PowerSchool can't backstop this gap either: those two rows
+  exist in `stg_powerschool__schools` but with `state_excludefromreporting = 1`
+  (excluded), and three OTHER Miami schools (Legacy ES, Legacy MS, MTH) are
+  missing from `stg_powerschool__schools` entirely -- confirming PowerSchool's
+  Miami data is a stale, incomplete post-Focus-cutover snapshot, not just for
+  the scaffold but for any PowerSchool-sourced Miami model (e.g.
+  `int_extracts__student_enrollments`). Fixing the sheet gap is intentionally
+  deferred until there's clarity on where Miami data should come from now that
+  the region is moving to Focus (pending follow-up with Walters and Charlie) --
+  in the meantime, blend mode's existing rule (a sheet row always survives
+  unless a PowerSchool row already covers that `schoolid`/`grade_level`)
+  requires no code change to preserve whatever the sheet currently has.

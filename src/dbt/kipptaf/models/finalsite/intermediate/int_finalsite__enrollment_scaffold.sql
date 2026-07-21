@@ -13,12 +13,7 @@
 with
     powerschool_region as (
         select
-            sps.school_number,
-            sps.abbreviation,
-            sps.low_grade,
-            sps.high_grade,
-
-            {{ extract_region("sps") }} as region,
+            sps.school_number, sps.abbreviation, {{ extract_region("sps") }} as region,
 
         from {{ ref("stg_powerschool__schools") }} as sps
         where sps.state_excludefromreporting = 0
@@ -31,31 +26,45 @@ with
     -- until Focus is ready as a scaffold source. Remove this filter (and
     -- update the sheet-side builder's Miami note below) once that happens.
     powerschool_schools as (
-        select school_number, abbreviation, low_grade, high_grade, region,
+        select school_number, abbreviation, region,
         from powerschool_region
         where region != 'Miami'
     ),
 
-    -- Filters out any negative grade_level (PowerSchool's own domain for
-    -- pre-registration / pre-K, a different, real meaning) before it can
-    -- ever reach the scaffold's grade_level = -1 "whole school total"
-    -- sentinel -- without this, a school with a negative low_grade would
-    -- produce a real PowerSchool-sourced -1 row indistinguishable from
-    -- that sentinel. The -1 row always comes from gsheet_scaffold below.
-    grade_expansion as (
-        select school_number, abbreviation, region, grade_level,
+    -- Grade membership comes from actual current enrollment, not
+    -- stg_powerschool__schools.low_grade/high_grade -- that field encodes a
+    -- school's eventual, fully-built-out grade span, not what it currently
+    -- serves (verified: growing schools like Hatch/Rise/Purpose carry a
+    -- low_grade years below any student they've ever enrolled). enroll_status
+    -- = 0 is "Currently Enrolled" -- this table has no academic_year column,
+    -- so status (not a date range) is what scopes it to now. Also filters
+    -- out negative grade_level (PowerSchool's own domain for
+    -- pre-registration / pre-K, a different, real meaning) so it can never
+    -- collide with the scaffold's grade_level = -1 "whole school total"
+    -- sentinel, which always comes from gsheet_scaffold below.
+    -- Known caveat: a school's very first student in a newly-opening grade
+    -- may not be entered in PowerSchool yet even though Finalsite is already
+    -- recruiting for that grade -- this scaffold won't carry that grade
+    -- until PowerSchool has at least one enrolled student in it.
+    current_grade_levels as (
+        select distinct schoolid, grade_level,
+        from {{ ref("stg_powerschool__students") }}
+        where enroll_status = 0 and grade_level >= 0
+    ),
 
-        from powerschool_schools
-        cross join unnest(generate_array(low_grade, high_grade)) as grade_level
-        where grade_level >= 0
+    grade_membership as (
+        select ps.school_number, ps.abbreviation, ps.region, cgl.grade_level,
+
+        from powerschool_schools as ps
+        inner join current_grade_levels as cgl on ps.school_number = cgl.schoolid
     ),
 
     powerschool_scaffold as (
         select
-            ge.school_number as schoolid,
-            ge.abbreviation as school,
-            ge.region,
-            ge.grade_level,
+            gm.school_number as schoolid,
+            gm.abbreviation as school,
+            gm.region,
+            gm.grade_level,
 
             cy.academic_year,
 
@@ -63,14 +72,14 @@ with
             'powerschool' as scaffold_source,
 
             case
-                when ge.grade_level >= 9
+                when gm.grade_level >= 9
                 then 'HS'
-                when ge.grade_level >= 5
+                when gm.grade_level >= 5
                 then 'MS'
                 else 'ES'
             end as school_level,
 
-        from grade_expansion as ge
+        from grade_membership as gm
         cross join {{ ref("int_finalsite__current_academic_year") }} as cy
     )
 
