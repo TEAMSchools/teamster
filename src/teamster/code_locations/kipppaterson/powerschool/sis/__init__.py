@@ -4,7 +4,10 @@ assets = [*dlt.assets.assets]
 
 schedules = [*dlt.schedules.schedules]
 
+sensors = [*dlt.sensors.sensors]
+
 __all__ = [
     "assets",
     "schedules",
+    "sensors",
 ]

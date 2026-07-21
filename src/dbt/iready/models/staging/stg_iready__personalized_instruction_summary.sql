@@ -105,6 +105,28 @@ select
         i_ready_pro_geometric_measurement_and_figures_skills_successful as int
     ) as geometric_measurement_and_figures_skills_successful,
     cast(
+        -- trunk-ignore(sqlfluff/LT05): vendor column name exceeds 88 chars
+        i_ready_pro_number_relationships_and_operation_concepts_percent_k_2_skills_successful
+        as int
+    ) as number_relationships_and_operation_concepts_percent_k_2_skills_successful,
+    cast(
+        i_ready_pro_number_relationships_and_operation_concepts_k_2_skills_completed
+        as int
+    ) as number_relationships_and_operation_concepts_k_2_skills_completed,
+    cast(
+        i_ready_pro_number_relationships_and_operation_concepts_k_2_skills_successful
+        as int
+    ) as number_relationships_and_operation_concepts_k_2_skills_successful,
+    cast(
+        i_ready_pro_number_sense_percent_k_2_skills_successful as int
+    ) as number_sense_percent_k_2_skills_successful,
+    cast(
+        i_ready_pro_number_sense_k_2_skills_completed as int
+    ) as number_sense_k_2_skills_completed,
+    cast(
+        i_ready_pro_number_sense_k_2_skills_successful as int
+    ) as number_sense_k_2_skills_successful,
+    cast(
         i_ready_pro_rational_numbers_and_operations_percent_skills_successful as int
     ) as rational_numbers_and_operations_percent_skills_successful,
     cast(

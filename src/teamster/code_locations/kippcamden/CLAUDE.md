@@ -11,26 +11,34 @@ GCS bucket: `teamster-kippcamden`
 
 ## Active Integrations
 
-| Module        | Type              | Trigger                                               |
-| ------------- | ----------------- | ----------------------------------------------------- |
-| `dbt`         | dbt assets        | `AutomationConditionSensor`                           |
-| `powerschool` | dlt assets        | schedules (intraday 15-min + nightly 2am)             |
-| `deanslist`   | API assets        | schedule (nightly)                                    |
-| `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                   |
-| `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`) |
-| `overgrad`    | API assets        | schedule                                              |
-| `pearson`     | SFTP assets       | `AutomationConditionSensor`                           |
-| `titan`       | SFTP assets       | sensor (`build_titan_sftp_sensor`)                    |
-| `extracts`    | BigQuery→SFTP     | schedule (nightly, 3am)                               |
-| `couchdrop`   | sensor only       | sensor (Google Drive watcher)                         |
+| Module        | Type              | Trigger                                                               |
+| ------------- | ----------------- | --------------------------------------------------------------------- |
+| `dbt`         | dbt assets        | `AutomationConditionSensor`                                           |
+| `powerschool` | dlt assets        | sensor (intraday probe, 15-min) + schedule (nightly 2am full-refresh) |
+| `deanslist`   | API assets        | schedule (nightly)                                                    |
+| `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                                   |
+| `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
+| `overgrad`    | API assets        | schedule                                                              |
+| `pearson`     | SFTP assets       | `AutomationConditionSensor`                                           |
+| `titan`       | SFTP assets       | sensor (`build_titan_sftp_sensor`)                                    |
+| `extracts`    | BigQuery→SFTP     | schedule (nightly, 3am)                                               |
+| `couchdrop`   | sensor only       | sensor (Google Drive watcher)                                         |
 
 ## PowerSchool Configuration
 
-Uses **dlt** (probe-gated, full-replace ingestion over 57 tables), not ODBC.
-Config at `powerschool/sis/dlt/config/assets.yaml` (per-table `cursor_column` +
-`schedule_tier`). Resources `ssh_powerschool` (paramiko tunnel) and
-`db_powerschool` (Oracle creds) are built by the shared `core/resources.py`
+Uses **dlt** (sensor-gated intraday + unconditional nightly full-refresh, over
+57 tables), not ODBC. Config at `powerschool/sis/dlt/config/assets.yaml`
+(per-table `cursor_column` + `intraday`/`nightly` membership booleans). Intraday
+selection is decided by `kippcamden__powerschool__dlt__intraday_sensor` (probe +
+dlt-state baseline); the nightly schedule full-refreshes its targets
+unconditionally and re-baselines. Resources `ssh_powerschool` (paramiko tunnel)
+and `db_powerschool` (Oracle creds) are built by the shared `core/resources.py`
 factories. Writes directly to BigQuery — no GCS IO manager.
+
+The `dlt_powerschool_kippcamden` pool must stay at limit 1 (Dagster+ deployment
+setting) — it is the backstop against a manually-launched run overlapping a
+sensor/nightly load (the in-flight guard only sees sensor- and schedule-launched
+runs), and two concurrent full-`replace` loads of one table would corrupt it.
 
 ## Extracts
 

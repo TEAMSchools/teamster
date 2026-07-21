@@ -8,6 +8,8 @@ models:
       assessment administration (via assessment_administration_key) and to the
       student's resolved section enrollment (via student_section_enrollment_key
       and enrollment_resolution).
+    config:
+      materialized: table
     columns:
       - name: assessment_score_key
         data_type: string
@@ -16,6 +18,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -31,6 +34,7 @@ models:
             to: ref('dim_assessment_administrations')
             to_columns: [assessment_administration_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -63,6 +67,7 @@ models:
             to: ref('dim_student_section_enrollments')
             to_columns: [student_section_enrollment_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -80,6 +85,7 @@ models:
             to: ref('dim_dates')
             to_columns: [date_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
