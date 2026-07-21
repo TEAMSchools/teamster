@@ -29,6 +29,11 @@ select
     db.is_goal_met,
     db.goal_difference_percent,
     db.progress_to_goal_pct,
+    db.goal_difference,
+    db.goal_difference_numeric,
+    db.goal_difference_integer,
+    db.metric_numerator,
+    db.metric_denominator,
     db.region,
 
     lc.mdso_preferred_name_lastfirst as mdso_name,
