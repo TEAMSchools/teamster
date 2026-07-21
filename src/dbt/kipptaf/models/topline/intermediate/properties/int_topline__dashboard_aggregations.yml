@@ -167,3 +167,33 @@ models:
           Progress toward the goal as a 0-1 ratio, capped at 1; null when
           has_goal is false.
         data_type: float64
+      - name: goal_difference
+        data_type: float64
+        description:
+          Direction-aware difference between the aggregate value and the
+          resolved goal, in the metric's own units — positive means ahead of
+          goal. baseball (higher is better) is value minus goal; golf (lower is
+          better) is goal minus value. Null when the row has no goal or no
+          direction.
+      - name: goal_difference_numeric
+        data_type: float64
+        description:
+          goal_difference for proportion (Numeric) indicators, else null — a
+          proportion delta Tableau formats as percentage points. Mirrors the
+          metric_aggregate_value_numeric routing.
+      - name: goal_difference_integer
+        data_type: float64
+        description:
+          goal_difference for count (Integer) indicators, else null — a
+          whole-number difference. Mirrors the metric_aggregate_value_integer
+          routing.
+      - name: metric_numerator
+        data_type: numeric
+        description:
+          Raw numerator behind a ratio row — the enrolled count on Seat Target /
+          Budget Target rows; null for every other indicator.
+      - name: metric_denominator
+        data_type: numeric
+        description:
+          Raw denominator behind a ratio row — the seat or budget target integer
+          on Seat Target / Budget Target rows; null for every other indicator.

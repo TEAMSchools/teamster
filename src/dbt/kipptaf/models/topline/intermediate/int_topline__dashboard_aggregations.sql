@@ -919,6 +919,9 @@ with
             tu.is_current_period,
             tu.is_most_recent_complete_period,
 
+            cast(tu.metric_aggregate_value as numeric) as metric_numerator,
+            cast(tu.goal as numeric) as metric_denominator,
+
             tg.indicator_display,
             tg.org_level,
             tg.has_goal,
@@ -971,6 +974,9 @@ with
             aggregation_display,
             goal,
             metric_aggregate_value,
+
+            cast(null as numeric) as metric_numerator,
+            cast(null as numeric) as metric_denominator,
         from all_rows
 
         union all
@@ -1003,6 +1009,8 @@ with
             aggregation_display,
             goal,
             metric_aggregate_value,
+            metric_numerator,
+            metric_denominator,
         from target_goals
     ),
 
@@ -1048,6 +1056,21 @@ with
             and pg4.period_label is null
             and pg4.academic_year is null
             and r.has_goal
+    ),
+
+    resolved_with_diff as (
+        select
+            *,
+
+            case
+                when not has_goal
+                then null
+                when goal_direction = 'baseball'
+                then metric_aggregate_value - goal_resolved
+                when goal_direction = 'golf'
+                then goal_resolved - metric_aggregate_value
+            end as goal_difference,
+        from resolved_goals
     )
 
 select
@@ -1075,6 +1098,9 @@ select
     aggregation_hash,
     aggregation_display,
     metric_aggregate_value,
+    goal_difference,
+    metric_numerator,
+    metric_denominator,
 
     goal_resolved as goal,
 
@@ -1086,6 +1112,12 @@ select
     if(
         aggregation_data_type = 'Integer', metric_aggregate_value, null
     ) as metric_aggregate_value_integer,
+    if(
+        aggregation_data_type = 'Numeric', goal_difference, null
+    ) as goal_difference_numeric,
+    if(
+        aggregation_data_type = 'Integer', goal_difference, null
+    ) as goal_difference_integer,
 
     case
         when not has_goal
@@ -1126,5 +1158,5 @@ select
             then greatest(0, safe_divide(goal_resolved, metric_aggregate_value))
         end
     ) as progress_to_goal_pct,
-from resolved_goals
+from resolved_with_diff
 where term <= current_date('{{ var("local_timezone") }}')
