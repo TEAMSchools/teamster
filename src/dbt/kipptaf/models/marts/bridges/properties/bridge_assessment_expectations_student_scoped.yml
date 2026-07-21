@@ -15,7 +15,6 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -28,7 +27,6 @@ models:
             to: ref('dim_students')
             to_columns: [student_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -43,7 +41,6 @@ models:
             to: ref('dim_assessment_administrations')
             to_columns: [assessment_administration_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -60,7 +57,6 @@ models:
             to: ref('dim_terms')
             to_columns: [term_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

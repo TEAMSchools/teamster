@@ -18,7 +18,6 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -30,7 +29,6 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - not_null
           - relationships:
@@ -47,7 +45,6 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

@@ -15,7 +15,6 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -30,7 +29,6 @@ models:
             to: ref('fct_staff_observations')
             to_columns: [staff_observation_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - not_null
           - relationships:
@@ -49,7 +47,6 @@ models:
             to: ref('dim_staff_observation_rubric_measurements')
             to_columns: [staff_observation_rubric_measurement_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

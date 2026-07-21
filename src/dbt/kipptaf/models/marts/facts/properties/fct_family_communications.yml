@@ -15,7 +15,6 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -30,7 +29,6 @@ models:
             to: ref('dim_student_enrollments')
             to_columns: [student_enrollment_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - not_null
 
@@ -50,7 +48,6 @@ models:
             to: ref('dim_staff')
             to_columns: [staff_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
@@ -67,7 +64,6 @@ models:
             to: ref('dim_dates')
             to_columns: [date_key]
             warn_unsupported: false
-            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:
