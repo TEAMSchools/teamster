@@ -434,11 +434,12 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     for that grain — the "non-additive" note on some measures refers to
     pre-aggregation rollup, not query-time grain.)
 
-    Example — same filters, two grains: dimensions [is_iep, module_code,
-    academic_year] returns one mastery rate per (IEP status x module x year)
-    cell; dropping to dimensions [is_iep] returns one pooled rate per IEP status
-    across every module and year the filters matched. Same underlying rows,
-    re-aggregated — not the first result with columns removed.
+    Example — same filters and measure (pct_proficient), two grains: dimensions
+    [is_iep, module_code, academic_year] returns one proficiency rate per (IEP
+    status x module x year) cell; dropping to dimensions [is_iep] returns one
+    pooled rate per IEP status across every module and year the filters matched.
+    Same underlying rows, re-aggregated — not the first result with columns
+    removed.
 
     Silent-failure risk: a few measures recompute mathematically at any grain
     but are meaningful only within a comparable scope — e.g. avg_scale_score and
