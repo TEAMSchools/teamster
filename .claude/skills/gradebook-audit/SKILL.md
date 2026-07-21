@@ -17,7 +17,7 @@ is the authoritative source for lineage, flag definitions, scaffold structure,
 and configuration behavior. The spec covers AY 2026-2027 design decisions.
 
 - Reference doc:
-  [`docs/reference/gradebook-audit-data-model.md`](../../../docs/reference/gradebook-audit-data-model.md)
+  [`docs/models/gradebook-audit-data-model.md`](../../../docs/models/gradebook-audit-data-model.md)
 - Design spec:
   [`docs/superpowers/specs/2026-05-14-gradebook-audit-ay2627-design.md`](../../../docs/superpowers/specs/2026-05-14-gradebook-audit-ay2627-design.md)
 - Implementation plan:
@@ -270,7 +270,7 @@ views this summer"
 _expectations_ for the new year is a separate task owned by the academics team,
 done in PowerSchool via the `U_EXPECTATIONS` plugin — not a dbt change. For
 that, see "Start-of-year procedure" (Step 1) in the
-[reference doc](../../../docs/reference/gradebook-audit-data-model.md), which
+[reference doc](../../../docs/models/gradebook-audit-data-model.md), which
 carries the plugin repo link and ownership. The steps below cover only the
 dbt-side year / grade-source toggle.
 

@@ -121,8 +121,8 @@ changes.
 2025 data with deprecated flags excluded and Paterson rows derived from Newark.
 Copy the table in step 1.0 and paste directly into the Google Sheet — do not
 manually copy rows. The query that produced this table is documented in the
-[Start-of-year procedure](../../reference/gradebook-audit-data-model.md) section
-of the reference doc for future years.
+[Start-of-year procedure](../../models/gradebook-audit-data-model.md) section of
+the reference doc for future years.
 
 **Files:** Google Sheets only (external — not in git)
 
