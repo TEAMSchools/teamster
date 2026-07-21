@@ -21,9 +21,7 @@ with
             ) as date_week
     ),
 
-    seats_snapshot as (
-        select *, from {{ ref("int_seat_tracker__snapshot") }} where not is_deleted
-    ),
+    seats_snapshot as (select *, from {{ ref("int_seat_tracker__snapshot") }}),
 
     seats_detail as (
         select *, from {{ ref("stg_google_appsheet__seat_tracker__seats") }}
