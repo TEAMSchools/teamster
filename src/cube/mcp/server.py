@@ -379,6 +379,13 @@ async def meta(
     usually means the requester lacks the required `cube-*` Workspace group, not
     a missing model.
 
+    Grain/scope: each measure's description states any scope it must stay within
+    to remain meaningful. Some measures recompute at any query grain but are only
+    meaningful pooled within a comparable scope (e.g. one assessment source);
+    coarsening past that silently returns a valid-looking but meaningless value
+    (not an error) — see the `load` tool's grain rule before dropping a
+    dimension.
+
     Cached per (email, requested scope) for one hour (in-memory, with disk
     fallback across process restarts) — a filtered call never reads or writes
     the full-catalog cache entry, or another view-set's, though it does reuse
@@ -417,6 +424,28 @@ async def load(ctx: Context, query: dict[str, Any]) -> dict[str, Any]:
     filters, timeDimensions, segments, order, limit, offset, total). Polls
     automatically on Cube's 'Continue wait' long-polling response. Discover
     member names with the `meta` tool first.
+
+    Grain: the dimensions you pass set the aggregation grain, and every measure
+    is recomputed fresh at that grain — it is NOT a finer result with columns
+    hidden. Dropping a dimension from a previous query re-aggregates the measure
+    over everything the filters still match, changing what the number means, not
+    just which columns come back. (This includes count_distinct measures like
+    count_students: at a coarser grain Cube computes a correct distinct count
+    for that grain — the "non-additive" note on some measures refers to
+    pre-aggregation rollup, not query-time grain.)
+
+    Example — same filters, two grains: dimensions [is_iep, module_code,
+    academic_year] returns one mastery rate per (IEP status x module x year)
+    cell; dropping to dimensions [is_iep] returns one pooled rate per IEP status
+    across every module and year the filters matched. Same underlying rows,
+    re-aggregated — not the first result with columns removed.
+
+    Silent-failure risk: a few measures recompute mathematically at any grain
+    but are meaningful only within a comparable scope — e.g. avg_scale_score and
+    avg_percent_correct pool across incompatible assessment sources/subjects to
+    produce a valid-looking but meaningless number. This does not raise an
+    error; check the measure's own description for the scope it is valid within
+    before coarsening.
 
     Member naming: every measure/dimension is dotted `view.member` (e.g.
     `student_attendance_view.count_students`). Bare names won't resolve.
