@@ -70,7 +70,12 @@ Only proceed to Phase 2 once staging is confirmed fresh.
 
 ## Phase 2: Codes completeness check
 
-Run [`queries/01-codes-completeness.sql`](queries/01-codes-completeness.sql).
+Compile
+[`src/dbt/kipptaf/analyses/collegeboard_ap_codes_completeness.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_codes_completeness.sql)
+(`uv run dbt compile --select "path:analyses/collegeboard_ap_codes_completeness.sql" --project-dir src/dbt/kipptaf --target prod`)
+and run the compiled SQL
+(`target/compiled/kipptaf/analyses/collegeboard_ap_codes_completeness.sql`) via
+the BigQuery MCP.
 
 If it returns any rows: for each missing code, look up its meaning by fetching
 (reading the actual document, not trusting a search-result summary) the current
@@ -83,7 +88,10 @@ access here.
 
 ## Phase 3: AP course tagging check
 
-Run [`queries/02-ap-course-tagging.sql`](queries/02-ap-course-tagging.sql).
+Compile
+[`src/dbt/kipptaf/analyses/collegeboard_ap_course_tagging.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_course_tagging.sql)
+(`uv run dbt compile --select "path:analyses/collegeboard_ap_course_tagging.sql" --project-dir src/dbt/kipptaf --target prod`)
+and run the compiled SQL via the BigQuery MCP.
 
 Any row returned is a PowerSchool course-setup gap — flag it unconditionally
 (regardless of whether it happens to matter to this cycle's matching). If found,
@@ -116,11 +124,13 @@ PowerSchool?" **Don't proceed without confirmation.**
 
 ## Phase 5: Run the tiered match
 
-Run
-[`queries/03-tiered-crosswalk-match.sql`](queries/03-tiered-crosswalk-match.sql)
-once approved. This already includes the Tier C/D corroboration checks (gender
-hard-gate, course-enrollment informational annotation) — see the comments in
-that file for the full tier/corroboration logic.
+Once approved, compile
+[`src/dbt/kipptaf/analyses/collegeboard_ap_tiered_crosswalk_match.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_tiered_crosswalk_match.sql)
+(`uv run dbt compile --select "path:analyses/collegeboard_ap_tiered_crosswalk_match.sql" --project-dir src/dbt/kipptaf --target prod`)
+and run the compiled SQL via the BigQuery MCP. This already includes the Tier
+C/D corroboration checks (gender hard-gate, course-enrollment informational
+annotation) — see the comments in that file for the full tier/corroboration
+logic.
 
 ## Phase 6: Tier breakdown
 
@@ -175,14 +185,28 @@ rows in that table:
 
 ## Phase 10: Downstream lineage verification
 
-Once the sheet reconciles cleanly, run
-[`queries/04-downstream-lineage.sql`](queries/04-downstream-lineage.sql)
-(substituting the target academic year) and present the before/after count
-summary across crosswalk sheet → `int_collegeboard__ap_unpivot` → dashboard. If
-counts don't reconcile, use the file's follow-up queries to find exactly which
-rows are missing and why (a PowerSchool tagging gap vs. the known dashboard
+Once the sheet reconciles cleanly, compile and run (via the BigQuery MCP)
+[`src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_summary.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_summary.sql):
+
+```bash
+uv run dbt compile --select "path:analyses/collegeboard_ap_downstream_lineage_summary.sql" \
+  --project-dir src/dbt/kipptaf --target prod \
+  --vars '{current_academic_year: <target_year>}'
+```
+
+(omit `--vars` to default to the network's current cycle) and present the
+before/after count summary across crosswalk sheet →
+`int_collegeboard__ap_unpivot` → dashboard.
+
+If counts don't reconcile, compile and run
+[`collegeboard_ap_downstream_lineage_missing_rows.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_missing_rows.sql)
+(same `--vars` pattern) to find exactly which rows are missing, then
+[`collegeboard_ap_downstream_lineage_root_cause.sql`](../../../src/dbt/kipptaf/analyses/collegeboard_ap_downstream_lineage_root_cause.sql)
+-- passing the missing student numbers it surfaced via
+`--vars '{missing_student_numbers: [...], current_academic_year: <target_year>}'`
+-- to distinguish a PowerSchool tagging gap from the known dashboard
 join-structure limitation, tracked in
-[#4391](https://github.com/TEAMSchools/teamster/issues/4391)).
+[#4391](https://github.com/TEAMSchools/teamster/issues/4391).
 
 ## Phase 11: Final gap recount
 
@@ -201,9 +225,10 @@ it didn't match, in chat only (never write real names/DOB to a committed file):
 2. Loosen the last_name constraint (same DOB, any last_name in the same year) —
    reveals a name recorded very differently.
 3. If a case reveals a new deterministic, generalizable pattern (not one-off
-   noise), that's a signal a new tier belongs in `03-tiered-crosswalk-match.sql`
-   — the same way Tiers C and D were derived during design. Genuinely one-off
-   cases (student really isn't in PowerSchool) stay manual.
+   noise), that's a signal a new tier belongs in
+   `collegeboard_ap_tiered_crosswalk_match.sql` — the same way Tiers C and D
+   were derived during design. Genuinely one-off cases (student really isn't in
+   PowerSchool) stay manual.
 
 This is diagnostic, not a promise to keep expanding tiers forever — the goal is
 a small manual-review bucket and evidence-based future additions.
