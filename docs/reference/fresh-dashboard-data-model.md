@@ -237,3 +237,17 @@ numbers and the dashboard:
   in the meantime, blend mode's existing rule (a sheet row always survives
   unless a PowerSchool row already covers that `schoolid`/`grade_level`)
   requires no code change to preserve whatever the sheet currently has.
+- **If/when a Focus-based Miami builder is built, it needs an id translation
+  step -- Focus school ids are not PowerSchool school numbers.** The scaffold's
+  `schoolid` column is `int64`, matching PowerSchool's `school_number` format
+  (e.g. `30200803`). Focus's own school ids are alphanumeric strings (e.g.
+  `"2332B"`, `"2008A"`) --
+  `int_people__location_crosswalk.location_focus_school_id` is `STRING`. Focus's
+  native id cannot be cast directly into `schoolid`. The crosswalk already has a
+  clean mapping for all 7 real Miami schools between `location_focus_school_id`
+  and `location_powerschool_school_id` (the same integer id every other region's
+  scaffold already uses), so a Focus builder should translate through that
+  crosswalk rather than changing the scaffold's schema -- whatever Focus feed
+  eventually lands needs to carry either the Focus school id itself or a
+  matching school name to join back to it. Worth raising with whoever scopes the
+  Focus extract so this isn't a surprise later.
