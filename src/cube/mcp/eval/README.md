@@ -1,7 +1,7 @@
 # Academic-year eval
 
-Measures whether the academic-year crosswalk in the FastMCP `instructions`
-string keeps the **wrong-year rate** near zero on Sonnet/Haiku, on top of the
+Measures whether the academic-year crosswalk in the `load` tool description
+keeps the **wrong-year rate** near zero on Sonnet/Haiku, on top of the
 `academic_year_label` dimension.
 
 The unit tests in `tests/cube/test_mcp_server.py` cover the dimensions and view
@@ -17,20 +17,23 @@ reps × 3 arms) the tool **never beat arm B**, and on the Family-2 trap it
 produced the off-by-one it existed to prevent — fed the bare end-year integer
 `2026`, it returned `SY27 (2026-2027)`, and only the model overriding the tool
 avoided a wrong answer. The tool was dropped (issue #4084 proposal #4, PR
-#4125); the crosswalk now lives inline in `instructions=`. This harness is
-retained as the A-vs-B regression guard for that crosswalk.
+#4125). The crosswalk lived inline in `instructions=` until #4473 moved it into
+the `load` tool description — a channel that reaches the model on every surface,
+where `instructions=` is dropped by the claude.ai connector and truncated in
+Claude Code. This harness is retained as the A-vs-B regression guard for that
+crosswalk.
 
 ## What it compares
 
-Two arms, holding the `meta` catalog (and its dimension descriptions) constant;
-only the academic-year crosswalk paragraph in the FastMCP `instructions` string
-changes. The instructions string is read from the real
-[`server.py`](../server.py), so the eval measures the shipped surface.
+Two arms, holding the `meta` catalog (and its dimension descriptions) and the
+slim `instructions` string constant; only the academic-year crosswalk paragraph
+in the `load` tool description changes. The tool descriptions are read from the
+real [`server.py`](../server.py), so the eval measures the shipped surface.
 
-| Arm              | instructions                                | isolates                   |
+| Arm              | `load` description                          | isolates                   |
 | ---------------- | ------------------------------------------- | -------------------------- |
 | `A_baseline`     | shipped, minus the crosswalk paragraph      | floor — descriptions alone |
-| `B_instructions` | the shipped branch as-is (inline crosswalk) | does the crosswalk help?   |
+| `B_descriptions` | the shipped branch as-is (inline crosswalk) | does the crosswalk help?   |
 
 `A` vs `B` shows whether the crosswalk paragraph buys correctness over the
 dimension descriptions alone.
@@ -66,7 +69,10 @@ they drive the model.
 | `run_eval_cc.py` | Claude Code subscription (logged-in `claude` binary) | Claude Agent SDK, run **hermetic** — cube instructions as the full system prompt, `tools=[]`, `strict_mcp_config=True`, `setting_sources=[]` |
 
 The two runners are methodologically equivalent (same clean "model + cube
-instructions + only cube tools" surface); they differ only in auth. The CC
+instructions + only cube tools" surface); they differ only in auth. The
+academic-year crosswalk under test rides in the `load` tool description (not the
+slim `instructions` system prompt), so both runners vary it per arm via the tool
+schema — the CC runner builds one in-process SDK server per arm for this. The CC
 runner **must** be hermetic: an earlier append-to-`claude_code`-preset version
 leaked into Bash, `ToolSearch`, sub-agents, and the **live claude.ai Cube
 connector** (it queried production Cube and returned pre-rename member names),
@@ -113,8 +119,8 @@ usage draws from a separate monthly Agent-SDK credit pool.
 
 ## Fidelity caveats
 
-- Drives the in-process tool schemas + instructions from `server.py`, not the
-  live Cloud Run connector. They share `server.py`, so behavior should match,
-  but the MCP transport itself is not exercised.
+- Drives the in-process tool descriptions + instructions from `server.py`, not
+  the live Cloud Run connector. They share `server.py`, so behavior should
+  match, but the MCP transport itself is not exercised.
 - The human Superset path (no model in the loop) is out of scope by construction
   — that is a data-model question, not an MCP one.
