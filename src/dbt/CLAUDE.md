@@ -336,6 +336,13 @@ Validate a newly-added data test against prod before pushing:
 `dbt test --select <model> --target dev --defer --state <prod manifest>` runs
 the compiled test SQL against the deferred prod relation — no dev build needed.
 
+A dev `--defer` build of a **table-materialized** mart can fail on a cross-mart
+`foreign_key` constraint ("Table X does not have Primary Key constraints") when
+the deferred prod parent's DDL lacks the rendered PK. To validate the model's
+logic (PK uniqueness, row counts) without building the parent, run its compiled
+SQL (`target/compiled/...`, refs already prod-resolved under `--favor-state`)
+against prod via the BQ MCP.
+
 ## Multi-line SQL in YAML `data_tests:` expressions
 
 Use literal block (`|`), not folded (`>-`). trunk-fmt reflows past 80 chars and

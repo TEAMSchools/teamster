@@ -207,6 +207,13 @@ Net mart row-count delta is typically `+N` where N is the residual fan-out — n
 `-N`. Adding an upstream `where` filter alongside doesn't drop PKs; it changes
 which rows the surviving PK joins to.
 
+The same applies to a final `dbt_utils.deduplicate` partitioned by the PK: it
+silently collapses ANY mid-chain fan-out (e.g. a coarse-key join to a non-unique
+lookup — the reporting-terms sheet isn't unique on `powerschool_term_id`), so
+removing or replacing it can surface a latent PK-uniqueness break from a source
+other than upstream dupes. Audit every join between the dedupe and the model
+grain before removing it.
+
 ## Verify source precision before R9 drops
 
 Staging cast chains (`cast(x as datetime)` → `cast(as date)`) and field names
