@@ -16,6 +16,16 @@ from tenacity import (
 )
 
 
+def _is_transient_status(status_code: int) -> bool:
+    """Return True for HTTP status codes treated as transient (worth retrying).
+
+    A bare gateway ``403`` (the shared-egress throttle signature) and any ``5xx``
+    gateway/upstream fault. Centralized so the retry decision (``_is_retryable``)
+    and the log-severity decision (``_request``'s error handler) cannot drift.
+    """
+    return status_code == 403 or status_code >= 500
+
+
 def _is_retryable(exception: BaseException) -> bool:
     """Return True for transient faults worth a bounded retry.
 
@@ -41,10 +51,7 @@ def _is_retryable(exception: BaseException) -> bool:
     return (
         isinstance(exception, HTTPError)
         and exception.response is not None
-        and (
-            exception.response.status_code == 403
-            or exception.response.status_code >= 500
-        )
+        and _is_transient_status(exception.response.status_code)
     )
 
 
@@ -113,7 +120,7 @@ class FinalsiteResource(ConfigurableResource):
             # log at WARNING, not ERROR, so the retry layer's recovered attempts
             # don't file false-positive GCP Error Reporting groups, then re-raise
             # for tenacity to retry with backoff.
-            if response.status_code == 403 or response.status_code >= 500:
+            if _is_transient_status(response.status_code):
                 self._log.warning(
                     f"Transient {response.status_code} on {method} {path}: "
                     f"{response.text.strip()[:200]}"
