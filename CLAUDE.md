@@ -842,9 +842,12 @@ block; only `DBT_TOKEN` is fetched per-launch. `list_jobs` is hard-filtered to
 `DBT_PROD_ENV_ID`, currently staging (70403104014899); per-call `environment_id`
 / `project_id` args exposed by the schema are ignored. Run-inspection tools
 (`list_jobs_runs`, `get_job_run_details`, `get_job_run_error`) ignore env scope
-and work across environments by `job_id` / `run_id`. For successful runs, call
-`get_job_run_error` with `warning_only=true` to surface test warnings —
-status=Success does not mean warning-free.
+and work across environments by `job_id` / `run_id`. `list_jobs_runs` for the
+shared CI job (`Build - CI (Modified)`) interleaves runs from ALL open PRs with
+`git_branch=null` — cross-check a run's `git_sha` against your branch
+(`git branch -r --contains <sha>`) before attributing a run or its failure to
+your PR. For successful runs, call `get_job_run_error` with `warning_only=true`
+to surface test warnings — status=Success does not mean warning-free.
 
 For job inspection, query Staging env (70403104014899) by job id — Production
 env (70403104000025) has no scheduled dbt Cloud jobs.
