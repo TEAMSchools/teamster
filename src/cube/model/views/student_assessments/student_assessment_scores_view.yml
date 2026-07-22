@@ -81,6 +81,14 @@ views:
           - exit_date
           - is_dropped_section
           - is_dropped_course
+          - lead_teacher_staff_key
+
+      - join_path: student_assessment_scores.student_section_enrollments.staff_lead_teacher
+        prefix: true
+        includes:
+          - full_name
+          - first_name
+          - last_name
 
       - join_path: student_assessment_scores.student_section_enrollments.student_school_enrollments
         includes:
@@ -233,12 +241,20 @@ views:
             - is_retained_year
             - is_dropped_section
             - is_dropped_course
+        - name: Teacher
+          members:
+            - lead_teacher_staff_key
+            - staff_lead_teacher_full_name
+            - staff_lead_teacher_first_name
+            - staff_lead_teacher_last_name
 
     access_policy:
       # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
       # holds exactly one student-<scope> group (buildGroups); none => no group =>
       # default-deny. row_level uses this view's flat location member names (see
       # the includes/folders below), not cube-qualified paths.
+      # Teacher fields (staff_lead_teacher_* names, lead_teacher_staff_key) ride
+      # the wildcard include — staff-directory-tier info, not student PII.
       - group: student-region
         member_level:
           includes: "*"

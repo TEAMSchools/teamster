@@ -2,11 +2,22 @@ models:
   - name: rpt_deanslist__family_contacts
     description:
       DeansList nightly Family Contacts import (`contacts.txt`) for the NJ
-      regions — one row per currently enrolled student carrying their single
-      Finalsite parent contact (`contact_1` — the relationship flagged primary,
-      falling back to financial). Emergency contacts are excluded. Column names
-      match the DeansList import template headers exactly. Delivered by the
-      Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
+      regions — one row per Finalsite contact for each currently enrolled
+      student, covering the primary parent (`contact_1`, the relationship
+      flagged primary, falling back to financial) plus emergency contacts
+      (`emergency_1` through `emergency_4`). Emergency contacts carry a numbered
+      `Emergency N` relationship so Ops can exclude them from DeansList guardian
+      messaging; the primary parent keeps its real Finalsite relationship.
+      Column names match the DeansList import template headers exactly.
+      Delivered by the Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - StudentID
+              - Relationship
+          config:
+            severity: error
     columns:
       - name: StudentID
         data_type: int64
@@ -14,9 +25,6 @@ models:
           PowerSchool student number, from the Finalsite contact's
           `powerschool_student_number` id attribute.
         data_tests:
-          - unique:
-              config:
-                severity: error
           - not_null:
               config:
                 severity: error
@@ -39,8 +47,11 @@ models:
       - name: Relationship
         data_type: string
         description:
-          Relationship to the student (`parent`, `stepparent`, `guardian`,
-          `grandparent`, etc.) — Finalsite `rel_type`.
+          Relationship of the contact to the student. For the primary parent
+          (`contact_1`) this is the Finalsite `rel_type` (`parent`,
+          `stepparent`, `guardian`, `grandparent`, etc.). For emergency contacts
+          this is `Emergency N`, numbered by the Finalsite emergency slot
+          (`emergency_1` through `emergency_4`).
         data_tests:
           - not_null
       - name: HomePhone
@@ -73,3 +84,193 @@ models:
           Always null — the header is required by the DeansList template, but
           Finalsite parent-language data is not maintained reliably enough to
           send.
+
+unit_tests:
+  - name: test_family_contacts_emergency_numbering
+    description:
+      One enrolled student with a primary parent plus all four emergency slots.
+      Asserts the primary parent keeps its Finalsite relationship and each
+      emergency slot is relabeled Emergency N by slot number (exercising every
+      case branch).
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_finalsite__student_contacts')
+        format: sql
+        rows: |
+          select
+            'enr-001' as finalsite_enrollment_id,
+            'kippnewark' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'parent' as relationship,
+            'Alice' as contact_first_name,
+            'Johnson' as contact_last_name,
+            'alice@example.com' as email,
+            '305-555-0100' as phone_home,
+            cast(null as string) as phone_work,
+            '305-555-0101' as phone_mobile
+          union all
+          select
+            'enr-001', 'kippnewark', 'emergency_1', 'grandparent',
+            'Bob', 'Smith', cast(null as string), cast(null as string),
+            cast(null as string), '305-555-0200'
+          union all
+          select
+            'enr-001', 'kippnewark', 'emergency_2', 'aunt',
+            'Carol', 'Diaz', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select
+            'enr-001', 'kippnewark', 'emergency_3', 'uncle',
+            'Dan', 'Evans', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select
+            'enr-001', 'kippnewark', 'emergency_4', 'neighbor',
+            'Erin', 'Fox', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-001' as finalsite_enrollment_id,
+            'kippnewark' as _dbt_source_project,
+            '123456' as powerschool_student_number
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            123456 as student_number,
+            0 as enroll_status,
+            'kippnewark' as _dbt_source_project
+    expect:
+      rows:
+        - {
+            StudentID: 123456,
+            ParentFirstName: Alice,
+            ParentLastName: Johnson,
+            HomePhone: 305-555-0100,
+            WorkPhone: null,
+            CellPhone: 305-555-0101,
+            Email: alice@example.com,
+            Relationship: parent,
+            Language: null,
+          }
+        - {
+            StudentID: 123456,
+            ParentFirstName: Bob,
+            ParentLastName: Smith,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: 305-555-0200,
+            Email: null,
+            Relationship: Emergency 1,
+            Language: null,
+          }
+        - {
+            StudentID: 123456,
+            ParentFirstName: Carol,
+            ParentLastName: Diaz,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: Emergency 2,
+            Language: null,
+          }
+        - {
+            StudentID: 123456,
+            ParentFirstName: Dan,
+            ParentLastName: Evans,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: Emergency 3,
+            Language: null,
+          }
+        - {
+            StudentID: 123456,
+            ParentFirstName: Erin,
+            ParentLastName: Fox,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: Emergency 4,
+            Language: null,
+          }
+
+  - name: test_family_contacts_excludes_ineligible
+    description:
+      Locks the eligibility filters. Three primary-parent contacts, each valid
+      but for one disqualifier — a non-NJ region (Miami), a non-enrolled student
+      (enroll_status != 0), and a null PowerSchool crosswalk — plus one fully
+      eligible NJ student. Only the eligible student is emitted.
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_finalsite__student_contacts')
+        format: sql
+        rows: |
+          select
+            'enr-ok' as finalsite_enrollment_id,
+            'kippnewark' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'parent' as relationship,
+            'Gina' as contact_first_name,
+            'Hill' as contact_last_name,
+            cast(null as string) as email,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_mobile
+          union all
+          select
+            'enr-mia', 'kippmiami', 'contact_1', 'parent',
+            'Hank', 'Ito', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select
+            'enr-unenr', 'kippnewark', 'contact_1', 'parent',
+            'Ivy', 'Jones', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select
+            'enr-noxwalk', 'kippnewark', 'contact_1', 'parent',
+            'Kim', 'Lee', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-ok' as finalsite_enrollment_id,
+            'kippnewark' as _dbt_source_project,
+            '200001' as powerschool_student_number
+          union all
+          select 'enr-mia', 'kippmiami', '200002'
+          union all
+          select 'enr-unenr', 'kippnewark', '200003'
+          union all
+          select 'enr-noxwalk', 'kippnewark', cast(null as string)
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            200001 as student_number,
+            0 as enroll_status,
+            'kippnewark' as _dbt_source_project
+          union all
+          select 200002, 0, 'kippmiami'
+          union all
+          select 200003, 2, 'kippnewark'
+    expect:
+      rows:
+        - {
+            StudentID: 200001,
+            ParentFirstName: Gina,
+            ParentLastName: Hill,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: parent,
+            Language: null,
+          }
