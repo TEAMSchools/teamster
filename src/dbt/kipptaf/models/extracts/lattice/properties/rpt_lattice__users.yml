@@ -7,7 +7,8 @@ models:
       Camden staff in select Operations director roles or in the Technology or
       Marketing, Comms, and Enrollment departments. Interns are excluded. Covers
       staff who are Active or on Leave, plus any staff who met those same
-      criteria and were terminated within the past 30 days.
+      criteria and were terminated within the past 30 days. Includes staff
+      gender identity and race/ethnicity reporting category for Lattice.
     columns:
       - name: external_user_id
         description: ADP employee number used as the Lattice external user ID.
@@ -36,6 +37,21 @@ models:
       - name: department
         description: Employee home department name.
         data_type: string
+      - name: gender
+        description: >
+          Employee self-reported gender identity from ADP, passed through
+          verbatim. The Lattice field options must match these source values.
+          Blank when the employee has no recorded gender identity.
+        data_type: string
+      - name: ethnicity
+        description: >
+          Employee race and ethnicity reporting category from ADP (a single
+          canonical value), passed through verbatim. The Lattice field options
+          must match these source values. Blank when none is recorded.
+        data_type: string
+      - name: birthdate
+        description: Employee date of birth from ADP.
+        data_type: date
       - name: manager_email
         description: Work email address of the employee's direct manager.
         data_type: string
