@@ -137,6 +137,16 @@ calm translucent-blue style; the **sensitive** tag is the single exception,
 rendered in the warning orange. Rows default to domain-then-field order. The
 full description is shown (not truncated) so the filter can match on its text.
 
+**Sensitivity is per member, not per view.** The `sensitive` tag is driven by
+the generator's curated `SENSITIVE_MEMBERS` set (personal contact, DOB,
+demographics, student identifiers) matched against each member's exposed name —
+NOT by the member's view. Blanketing a whole view is wrong: `staff_pii` pulls in
+non-PII join dimensions (e.g. `dates_academic_year`, locations) that must not be
+tagged. The set deliberately excludes directory-public names like `full_name`
+(the `staff_directory` roster is open). This is a hint, not authoritative (the
+access policy is), and it matches bare names only — a follow-up (#4450-style)
+should source per-member sensitivity from model metadata for full fidelity.
+
 **Rendering approach.** Per-tag styling needs `<span>` chips, so the generator
 emits the finder as an HTML `<table>` rather than a Markdown table. Inline HTML
 is scoped-allowed for this one generated file (markdownlint `MD033` disabled via
