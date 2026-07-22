@@ -9,7 +9,10 @@ models:
       students via `int_finalsite__enrollment_lifecycle`. The student's Focus id
       (`student_id`) is inner-joined from
       `int_finalsite__contact_id_attributes`, excluding students without a
-      minted Focus id. Produces 50 columns in `CONTACTS_LAYOUT` order.
+      minted Focus id. A second join to `stg_finalsite__contacts` on the
+      student's own `finalsite_enrollment_id` restricts the feed to guardians of
+      students whose own `status` is `enrolled` — the guardian's own status is
+      not considered. Produces 50 columns in `CONTACTS_LAYOUT` order.
       `SORT_ORDER` ranks guardians per student by `is_primary desc` so the
       primary contact sorts first. Phone slots `CONTACT1_*` and `CONTACT2_*` map
       the guardian's two phones; `CONTACT3` through `CONTACT7` are always null.
@@ -261,12 +264,15 @@ unit_tests:
       relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2.
       Asserts STUDENT_RELATION, FIRST_NAME, LAST_NAME, and CONTACT1_VALUE.
       STUDENT_ID is sourced from int_finalsite__contact_id_attributes for the
-      student and is identical across both guardian rows.
+      student and is identical across both guardian rows. A second student whose
+      own `stg_finalsite__contacts.status` is not `enrolled` is included to
+      assert their guardian is excluded from the feed.
     model: rpt_focus__contacts
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-stu-001 }
+          - { finalsite_enrollment_id: enr-stu-002 }
       - input: ref('stg_finalsite__contact_relationships')
         rows:
           - {
@@ -289,8 +295,19 @@ unit_tests:
               is_financial: false,
               has_portal_access: false,
             }
+          - {
+              finalsite_enrollment_id: enr-stu-002,
+              relationship_id: rel-003,
+              rel_id: enr-grd-003,
+              rel_name: Carol Davis,
+              rel_type: parent,
+              is_primary: true,
+              is_financial: true,
+              has_portal_access: true,
+            }
       - input: ref('stg_finalsite__contacts')
         rows:
+          - { finalsite_enrollment_id: enr-stu-001, status: enrolled }
           - {
               finalsite_enrollment_id: enr-grd-pri,
               first_name: Alice,
@@ -323,12 +340,33 @@ unit_tests:
               state: FL,
               zip: "33102",
             }
+          - { finalsite_enrollment_id: enr-stu-002, status: applied }
+          - {
+              finalsite_enrollment_id: enr-grd-003,
+              first_name: Carol,
+              middle_name: null,
+              last_name: Davis,
+              email: carol@example.com,
+              phone_1_type: Home,
+              phone_1_number: 305-555-0300,
+              phone_2_type: null,
+              phone_2_number: null,
+              address_1: 300 Palm Rd,
+              address_2: null,
+              city: Miami,
+              state: FL,
+              zip: "33103",
+            }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
           select
             'enr-stu-001' as finalsite_enrollment_id,
             '84002002002' as focus_student_id_prefixed
+          union all
+          select
+            'enr-stu-002' as finalsite_enrollment_id,
+            '84003003003' as focus_student_id_prefixed
     expect:
       rows:
         - {
