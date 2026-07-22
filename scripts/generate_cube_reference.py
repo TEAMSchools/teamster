@@ -374,8 +374,24 @@ def render_view(view: ResolvedView) -> str:
     return "\n".join(parts).rstrip()
 
 
+def _summary(view: ResolvedView) -> str:
+    if not view.description:
+        return ""
+    first = re.split(r"(?<=[.])\s", view.description.strip(), maxsplit=1)[0]
+    return _cell(first)
+
+
 def render_domain_index(by_domain: dict[str, list[ResolvedView]]) -> str:
-    return "## Views by domain"
+    parts = ["## Views by domain", ""]
+    for domain in sorted(by_domain):
+        parts.append(f"### {friendly_name(domain)}")
+        parts.append("")
+        for v in sorted(by_domain[domain], key=lambda v: v.name):
+            summary = _summary(v)
+            tail = f" — {summary}" if summary else ""
+            parts.append(f"- [{v.title}](#{view_id(v.name)}) (`{v.name}`){tail}")
+        parts.append("")
+    return "\n".join(parts).rstrip()
 
 
 def render_finder(views: list[ResolvedView]) -> str:

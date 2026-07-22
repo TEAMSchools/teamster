@@ -189,6 +189,19 @@ def test_render_view_block_has_code_name_and_tables() -> None:
     assert "| `no_desc_dim` | string | _No description._ |" in block
 
 
+def test_domain_index_lists_views_with_links() -> None:
+    cubes = gen.parse_cubes(FIXTURE_DIR / "cubes")
+    views = gen.parse_views(FIXTURE_DIR / "views", cubes)
+    by_domain = {"sample_domain": views}
+    idx = gen.render_domain_index(by_domain)
+
+    assert idx.startswith("## Views by domain")
+    assert "### Sample Domain" in idx
+    # fixture view "sample_view" titles to "Sample" (trailing _view dropped)
+    assert "[Sample](#view-sample-view)" in idx
+    assert "`sample_view`" in idx
+
+
 def test_normalize_neutralizes_table_padding() -> None:
     compact = "| Name | Type |\n| --- | --- |\n| `a` | number |\n"
     padded = "| Name  | Type   |\n| ----- | ------ |\n| `a`   | number |\n"
