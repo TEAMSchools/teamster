@@ -81,7 +81,11 @@ Regenerate only in a full environment where all locations load.
 (`src/cube/model/`). Never edit it directly. Regenerate after adding or changing
 a cube or view; the `Cube Docs Freshness` CI workflow fails PRs whose committed
 catalog is stale. Only members a view exposes are documented — private cubes
-never surface.
+never surface. Views are grouped by domain (the first `views/<domain>/` folder
+segment) with a "Views by domain" jump index and a "Find a field" finder table.
+The finder's runtime chips/filter/Measures-toggle come from
+`javascripts/cube-catalog.js` + `stylesheets/cube-catalog.css` (wired in
+`mkdocs.yml`) — these are NOT part of the freshness check.
 
 ## `superpowers/` Directory
 

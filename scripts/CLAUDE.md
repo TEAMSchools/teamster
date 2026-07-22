@@ -76,7 +76,11 @@ uv run dbt run-operation stage_external_sources \
   `automations.md`, commit the prettier-padded output — table-padding churn
   between run and commit is expected. `--verify-against-meta` additionally needs
   `CUBE_META_URL`, `CUBE_API_SECRET`, and `CUBE_META_EMAIL` (a broad-access
-  identity) and reaches the live `/meta` endpoint.
+  identity) and reaches the live `/meta` endpoint. The catalog's domain grouping
+  is folder-derived (`views/<domain>/`); the "Find a field" finder's runtime
+  chips/filter live in `docs/javascripts/cube-catalog.js` +
+  `docs/stylesheets/cube-catalog.css` (wired in `mkdocs.yml`), which are NOT
+  part of the freshness check.
 
 ## Caveats
 
