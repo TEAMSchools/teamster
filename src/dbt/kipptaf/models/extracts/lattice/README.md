@@ -1,4 +1,4 @@
-# Lattice User Extract — Who's Included
+# Lattice Extract
 
 This feed (`rpt_lattice__users`) decides which employees get a Lattice account.
 It draws from the staff roster (`int_people__staff_roster`) and applies the
@@ -6,7 +6,9 @@ rules below. **An employee must clear _every_ gate to be included.**
 
 Keep this doc in sync with the model whenever the criteria change.
 
-## High level summary
+## Lattice User Extract — Who's Included
+
+### High level summary
 
 - **KTAF central and Paterson include everyone** — no role filter.
 - **Newark and Camden are treated identically** — the same operations-title list
@@ -20,12 +22,12 @@ Keep this doc in sync with the model whenever the criteria change.
   exclude on the "Temporary" worker type right now, because full-time-temporary
   might be mislabels in ADP — so a temp is dropped only if their title says so.
 
-## Current inclusion criteria
+### Current inclusion criteria
 
 Included = a current (or just-departed) employee, in an eligible business unit,
 who is **not** an intern, a temp, or a part-timer.
 
-### 1. Not an intern, part-timer, or title-flagged temp
+#### 1. Not an intern, part-timer, or title-flagged temp
 
 - Their job title is not "Intern."
 - Their worker type is not a "Part Time" classification.
@@ -37,7 +39,7 @@ who is **not** an intern, a temp, or a part-timer.
 - Employees with a **blank worker type are kept** — in practice these are
   legitimate full-time staff, so we don't drop them.
 
-### 2. They belong to an eligible group
+#### 2. They belong to an eligible group
 
 Any one of these qualifies:
 
@@ -54,7 +56,7 @@ Any one of these qualifies:
 - **Newark or Camden** — anyone in the **Technology** or **Marketing, Comms, and
   Enrollment** department.
 
-### 3. Currently employed, or very recently departed
+#### 3. Currently employed, or very recently departed
 
 Either one:
 
@@ -67,13 +69,19 @@ The file is a CSV; each column header is the field name Lattice reads.
 
 - `external_user_id` — ADP employee number (the Lattice user ID)
 - `status` — Active or Inactive
-- `work_email`, `manager_email`
+- `work_email`,
+- `manager_email`
 - `first_name`, `last_name`
 - `job_title`, `department`, `location`, `business_unit`
 - `start_date`
 - `gender` — self-reported gender identity from ADP
 - `ethnicity` — race/ethnicity reporting category from ADP
 - `birthdate` — employee date of birth from ADP
+
+Not included:
+
+- `tenure` - is a calculated field in Lattice
+- `pronouns` - not currently collected from staff
 
 **Gender and ethnicity** are sent verbatim from ADP, so the field options set up
 in Lattice must match the source values exactly (e.g.
