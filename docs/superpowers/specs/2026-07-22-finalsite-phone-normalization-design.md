@@ -82,9 +82,19 @@ downstream consumer inherits normalized phones (DeansList
 `stg_finalsite__contacts` fix cannot reach the emergency phones — they live
 inside its `custom_attributes` array, not as scalar columns.
 
-Consumers that need a different presentation (e.g. DeansList strictly "numbers
-or x", or a display format) format from this E.164 canonical at their own
-extract layer.
+Consumers that need a different presentation format from this E.164 canonical at
+their own extract layer (see DeansList below).
+
+### DeansList extract formatting
+
+`rpt_deanslist__family_contacts` applies a final transform to its `HomePhone`,
+`WorkPhone`, and `CellPhone` columns: strip everything except digits and the
+extension marker `x` (`regexp_replace(lower(phone), r'[^0-9x]', '')`),
+satisfying the DeansList template's "Only numbers or x" rule. This keeps the US
+country-code `1` (`+18623007240` → `18623007240`), keeps extensions (`…x216`),
+and leaves international numbers as their country-code + national digits. It is
+a thin per-consumer format step over the shared E.164 canonical, not a second
+normalization.
 
 ## Data profile (rationale)
 
@@ -108,10 +118,12 @@ through by design.
 
 ## Rollout
 
-Value-only change to a finalsite package model (no column added / renamed), so
-kipptaf CI compiles unchanged and normalized values land after the next Dagster
-prod rebuild of the district `int_finalsite__student_contacts` tables. Validate
-locally via a consuming district build (e.g. `kippnewark`) with `--defer`.
+The `int_finalsite__student_contacts` change is value-only (no column added /
+renamed), so kipptaf CI compiles unchanged and normalized values land after the
+next Dagster prod rebuild of the district tables; validate locally via a
+consuming district build (e.g. `kippnewark`) with `--defer`. The
+`rpt_deanslist__family_contacts` formatting change is a kipptaf model, so dbt
+Cloud CI exercises it directly.
 
 ## Validation
 
@@ -126,12 +138,15 @@ locally via a consuming district build (e.g. `kippnewark`) with `--defer`.
 - Confirm downstream consumers still build (`rpt_focus__*`,
   `rpt_clever__students`, `int_students__contacts`,
   `rpt_deanslist__family_contacts`).
+- Confirm `rpt_deanslist__family_contacts` phone columns emit only digits and
+  `x` (no `+`, parens, or spaces) — the DeansList "numbers or x" requirement.
 
 ## Out of scope
 
 - Repairing malformed numbers (typo'd extra digits, concatenations) or adding a
   `+` to unmarked international numbers — passed through visibly for a consumer
   to flag.
-- Per-consumer display formatting (each extract formats from the E.164
-  canonical).
+- Reformatting phones for consumers other than DeansList (Focus, Clever, the
+  contacts dimension read the E.164 canonical as-is; they can format at their
+  own extract later if needed).
 - Fixing the data at the Finalsite source / data-entry side.
