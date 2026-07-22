@@ -147,13 +147,16 @@ tagged. The set deliberately excludes directory-public names like `full_name`
 access policy is), and it matches bare names only — a follow-up (#4450-style)
 should source per-member sensitivity from model metadata for full fidelity.
 
-**Rendering approach.** Per-tag styling needs `<span>` chips, so the generator
-emits the finder as an HTML `<table>` rather than a Markdown table. Inline HTML
-is scoped-allowed for this one generated file (markdownlint `MD033` disabled via
-a directive the generator writes at the top of the page, or a path scope in the
-trunk markdownlint config); the per-view member tables stay pure Markdown. The
-freshness check compares normalized output regardless of Markdown-vs-HTML, and
-Material's search still indexes the visible text.
+**Rendering approach.** The finder is emitted as a **pure-Markdown table**
+(`| Field | Details |`), NOT raw HTML — keeping the generated file free of
+inline HTML avoids markdownlint `MD033` and, crucially, keeps prettier and the
+`_normalize` freshness comparison working exactly as they do for the per-view
+tables. Per-tag styling is applied at runtime: the Details cell carries the view
+link plus the tags as backtick code spans (`` `staff` `` `` `dimension` ``
+`` `string` `` and, when sensitive, `` `sensitive` ``) followed by the
+description; the JS enhancer classifies those code spans by content and restyles
+them as chips. Before JS runs they degrade gracefully to inline code. Material's
+search indexes the visible text either way.
 
 ### Interactivity — self-contained vanilla JS
 
