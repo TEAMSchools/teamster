@@ -194,15 +194,15 @@ student identifiers — see access_policy for PII gating.
 
 ### Measures
 
-| Name                       | Type           | Description                                                                                                                                                                                                                                                                                                         |
-| -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `avg_percent_correct`      | number         | Average percent correct. Internal-effective (null for state) — filter by subject/standard for a meaningful value. Built from additive primitives so pre-aggregations roll it up.                                                                                                                                    |
-| `avg_scale_score`          | number         | Average scale score. Only meaningful within a single assessment/subject/grade/source — scales are not comparable across sources. Built from additive primitives so pre-aggregations roll it up.                                                                                                                     |
-| `count_scores`             | count          | Scored-response count. COUNT(*) over the unique PK (assessment_score_key) — additive, so pre-aggregations roll it up to any grain.                                                                                                                                                                                  |
-| `count_students`           | count_distinct | Distinct students (per student-year) with a score in the filtered slice. Exact count_distinct — non-additive, so a rollup pre-aggregation cannot re-aggregate it to a coarser grain; switch to count_distinct_approx (HLL) if/when this is pre-aggregated and an approximate distinct is acceptable.                |
-| `pct_proficient`           | number         | Proficiency/mastery rate — proficient scores / total scores. The headline, source-agnostic metric (the only score measure comparable across the incompatible scales of internal vs state assessments). Built from additive primitives (_sum_proficient / count_scores) so pre-aggregations roll it up to any grain. |
-| `pct_proficient_crq`       | number         | Proficiency rate for Constructed Response Questions (CRQ) across all regions. CRQ is a subset of pct_proficient_formative. Built from additive primitives so pre-aggregations roll it up.                                                                                                                           |
-| `pct_proficient_formative` | number         | Proficiency rate across all formative module types (Quick Assessments, Multiple-Choice Quick Questions, and Constructed Response Questions). CRQ is included and also available as the standalone pct_proficient_crq measure. Built from additive primitives so pre-aggregations roll it up.                        |
+| Name                       | Type           | Description                                                                                                                                                                                                                                                                                                                                  |
+| -------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `avg_percent_correct`      | number         | Grain: recomputes at any query grain, but meaningful only within a single subject/standard — pooling percent-correct across assessments is a silent-failure trap (numerically valid, semantically meaningless). Average percent correct, internal-effective (null for state), built from additive primitives so pre-aggregations roll it up. |
+| `avg_scale_score`          | number         | Grain: recomputes at any query grain, but meaningful only within a single assessment source/subject/grade — scale scores are not comparable across sources, so pooling them is a silent-failure trap (numerically valid, semantically meaningless). Average scale score, built from additive primitives so pre-aggregations roll it up.      |
+| `count_scores`             | count          | Scored-response count. COUNT(*) over the unique PK (assessment_score_key) — additive, so pre-aggregations roll it up to any grain.                                                                                                                                                                                                           |
+| `count_students`           | count_distinct | Distinct students (per student-year) with a score in the filtered slice. Exact count_distinct — non-additive, so a rollup pre-aggregation cannot re-aggregate it to a coarser grain; switch to count_distinct_approx (HLL) if/when this is pre-aggregated and an approximate distinct is acceptable.                                         |
+| `pct_proficient`           | number         | Proficiency/mastery rate — proficient scores / total scores. The headline, source-agnostic metric (the only score measure comparable across the incompatible scales of internal vs state assessments). Built from additive primitives (_sum_proficient / count_scores) so pre-aggregations roll it up to any grain.                          |
+| `pct_proficient_crq`       | number         | Proficiency rate for Constructed Response Questions (CRQ) across all regions. CRQ is a subset of pct_proficient_formative. Built from additive primitives so pre-aggregations roll it up.                                                                                                                                                    |
+| `pct_proficient_formative` | number         | Proficiency rate across all formative module types (Quick Assessments, Multiple-Choice Quick Questions, and Constructed Response Questions). CRQ is included and also available as the standalone pct_proficient_crq measure. Built from additive primitives so pre-aggregations roll it up.                                                 |
 
 ### Dimensions
 
@@ -270,6 +270,15 @@ student identifiers — see access_policy for PII gating.
 | `student_enrollment_key`         | string  | FK to student_school_enrollments (resolved school enrollment stint).                                                                                                     |
 | `student_section_enrollment_key` | string  | Surrogate key (cc_dcid, _dbt_source_project). Primary key — one row per CC record.                                                                                       |
 | `year_in_network`                | number  | Count of years the student has been enrolled in the network. Populated on the student's primary enrollment stint per academic year; null on additional same-year stints. |
+
+#### Teacher
+
+| Name                            | Type   | Description                                                 |
+| ------------------------------- | ------ | ----------------------------------------------------------- |
+| `lead_teacher_staff_key`        | string | FK to staff — the section's Lead Teacher.                   |
+| `staff_lead_teacher_first_name` | string | Staff member's preferred first name.                        |
+| `staff_lead_teacher_full_name`  | string | Staff member's preferred name in Last, First Middle format. |
+| `staff_lead_teacher_last_name`  | string | Staff member's preferred last name.                         |
 
 #### Status
 
@@ -460,6 +469,14 @@ absences for the year.
 | `is_retained_year`       | boolean | TRUE if the student repeated this grade level in the same school compared to the prior academic year.                                                                                                     |
 | `student_enrollment_key` | string  | Surrogate key derived from student_number, _dbt_source_project, academic_year, and entrydate. Primary key for this dimension — matches the uniqueness grain on int_powerschool__student_enrollment_union. |
 
+#### Teacher
+
+| Name                                | Type   | Description                                                 |
+| ----------------------------------- | ------ | ----------------------------------------------------------- |
+| `staff_homeroom_teacher_first_name` | string | Staff member's preferred first name.                        |
+| `staff_homeroom_teacher_full_name`  | string | Staff member's preferred name in Last, First Middle format. |
+| `staff_homeroom_teacher_last_name`  | string | Staff member's preferred last name.                         |
+
 #### Status
 
 | Name                          | Type    | Description                                                                                                                                                                                                                                                  |
@@ -585,6 +602,14 @@ day in the query, or the pinned date).
 | `state_student_identifier` | string  | The state-assigned student number for the student. In most cases, this number should stay the same from school to school.                                                                                                                                                                                                                                                                     |
 | `student_key`              | string  | Surrogate key derived from student_number. Primary key for the student dimension.                                                                                                                                                                                                                                                                                                             |
 
+#### Teacher
+
+| Name                                | Type   | Description                                                 |
+| ----------------------------------- | ------ | ----------------------------------------------------------- |
+| `staff_homeroom_teacher_first_name` | string | Staff member's preferred first name.                        |
+| `staff_homeroom_teacher_full_name`  | string | Staff member's preferred name in Last, First Middle format. |
+| `staff_homeroom_teacher_last_name`  | string | Staff member's preferred last name.                         |
+
 #### Status
 
 | Name                          | Type    | Description                                                                                                                                                                                                                                                  |
@@ -597,3 +622,104 @@ day in the query, or the pinned date).
 | `special_education_code`      | string  | NJ state special education code (Newark and Camden only; NULL for Miami and Paterson).                                                                                                                                                                       |
 | `special_education_name`      | string  | Human-readable label for the NJ special education code (Newark and Camden only; NULL for Miami and Paterson).                                                                                                                                                |
 | `special_education_placement` | string  | NJ special education placement category (Newark and Camden only; NULL for Miami and Paterson).                                                                                                                                                               |
+
+## student_section_enrollments_view
+
+Student section enrollments — row-level (one row per student x section
+enrollment) and aggregate headcounts in a single view. Use for per-teacher class
+rosters (filter to a lead teacher) and section drill-down. count_students is a
+distinct-student headcount, correct per teacher — grouped by lead teacher it
+answers "how many students does this teacher teach?". Contains direct student
+identifiers — see access_policy for PII gating.
+
+### Access
+
+**Reader groups:** `student-region`, `student-school`, `student-network`
+
+**Row-level scoping on:** `locations_region_key`, `locations_abbreviation`
+
+**Contains sensitive / PII fields** — see access policy in
+[cube.md](../guides/cube.md#admin-setup).
+
+### Measures
+
+| Name             | Type           | Description                                                                                                                                                                                                 |
+| ---------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `count_students` | count_distinct | Distinct students with a section enrollment in the filtered slice. Answers "how many students does this teacher teach?" when grouped by the lead teacher. count_distinct on the student, so it is fan-safe. |
+
+### Dimensions
+
+#### Enrollment
+
+| Name                             | Type    | Description                                                                                                                                                                                                |
+| -------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `academic_year`                  | number  | KIPP academic year (July start) the section enrollment falls in. The calendar year the academic year begins (e.g., 2025 for 2025-26). This is the canonical academic_year for the assessment-scores views. |
+| `entry_date`                     | time    | Date the student enrolled in this section. Cast to TIMESTAMP for Cube time joins.                                                                                                                          |
+| `exit_date`                      | time    | Date the student left this section. Cast to TIMESTAMP for Cube time joins.                                                                                                                                 |
+| `grade_level`                    | number  | The grade the student is in. Since this is an integer: 0=Kindergarten, -2=Preschool.                                                                                                                       |
+| `graduation_year`                | number  | Student graduation year.                                                                                                                                                                                   |
+| `is_current_section_enrollment`  | boolean | TRUE for the most-recent section enrollment among a student's sequential enrollments in the same course within an academic year. Filter with is_homeroom to select the current homeroom section.           |
+| `is_dropped_course`              | boolean | TRUE if all enrollments for this student x course x year were dropped.                                                                                                                                     |
+| `is_dropped_section`             | boolean | TRUE if this section enrollment was dropped mid-term (negative section id + early exit).                                                                                                                   |
+| `is_homeroom`                    | boolean | TRUE when this is a homeroom section (HR course-number prefix).                                                                                                                                            |
+| `is_retained_year`               | boolean | TRUE if the student repeated this grade level in the same school compared to the prior academic year.                                                                                                      |
+| `student_enrollment_key`         | string  | FK to student_school_enrollments (resolved school enrollment stint).                                                                                                                                       |
+| `student_section_enrollment_key` | string  | Surrogate key (cc_dcid, _dbt_source_project). Primary key — one row per CC record.                                                                                                                         |
+| `year_in_network`                | number  | Count of years the student has been enrolled in the network. Populated on the student's primary enrollment stint per academic year; null on additional same-year stints.                                   |
+
+#### Teacher
+
+| Name                            | Type   | Description                                                 |
+| ------------------------------- | ------ | ----------------------------------------------------------- |
+| `lead_teacher_staff_key`        | string | FK to staff — the section's Lead Teacher.                   |
+| `staff_lead_teacher_first_name` | string | Staff member's preferred first name.                        |
+| `staff_lead_teacher_full_name`  | string | Staff member's preferred name in Last, First Middle format. |
+| `staff_lead_teacher_last_name`  | string | Staff member's preferred last name.                         |
+
+#### Course
+
+| Name             | Type    | Description                                                                                                                                                                                                                                                                           |
+| ---------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `course_code`    | string  | PowerSchool course number.                                                                                                                                                                                                                                                            |
+| `course_title`   | string  | Course name.                                                                                                                                                                                                                                                                          |
+| `credit_type`    | string  | Credit type for the course.                                                                                                                                                                                                                                                           |
+| `discipline`     | string  | Course discipline from the course-subject crosswalk — broad grouping (ELA, Math, Science, Social Studies, CCR, World Language). Distinct from the assessment's academic_subject, which is the granular subject tested. (dim_courses.academic_subject is sourced from csc.discipline.) |
+| `identifier`     | string  | Section number for this class.                                                                                                                                                                                                                                                        |
+| `is_foundations` | boolean | TRUE if this is a Foundations (intervention) course, per the course-subject crosswalk.                                                                                                                                                                                                |
+| `period`         | string  | Period expression encoding the days/periods the section meets (e.g., '1(A-F)').                                                                                                                                                                                                       |
+
+#### Term
+
+| Name        | Type   | Description                                                                                                            |
+| ----------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `semester`  | string | Semester this period falls within. S1 for term_name Q1/Q2, S2 for Q3/Q4. NULL for periods that don't map to a quarter. |
+| `term_code` | string | Short code for the period (e.g., Q1, Q2, PM1, Fall).                                                                   |
+| `term_name` | string | Display name for the period.                                                                                           |
+| `term_type` | string | Category of period (e.g., academic, PM, survey, assessment, fiscal).                                                   |
+
+#### Student
+
+| Name                       | Type    | Description                                                                                                                                                                                                                                                                                                                                                                                   |
+| -------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `birth_date`               | time    | _No description._                                                                                                                                                                                                                                                                                                                                                                             |
+| `enrollment_status`        | string  | Current enrollment status of the student. Values: Currently Enrolled, Pre-registered, Inactive, Transferred Out, Graduated, Imported as Historical.                                                                                                                                                                                                                                           |
+| `full_name`                | string  | Student's full name in "Last, First, Mi." format. Matches dim_staff.full_name naming.                                                                                                                                                                                                                                                                                                         |
+| `gender_identity`          | string  | Self-identified gender for the student (e.g., M=Male F=Female). Matches Ed-Fi's genderIdentity attribute (modern inclusive naming).                                                                                                                                                                                                                                                           |
+| `is_gifted`                | boolean | TRUE if the student has a gifted-and-talented identification on either the PowerSchool NJ extension or Miami user-fields extension.                                                                                                                                                                                                                                                           |
+| `lea_student_identifier`   | number  | KIPP's own SIS identifier for the student. KIPP is a charter Local Education Agency (LEA) operating within a host public school district; this column is the identifier issued by KIPP as the LEA. Sourced from the SIS student number for NJ regions (and Focus local ID for Miami once Focus lands). Maps to Ed-Fi District / CEDS District-assigned number from KIPP-as-LEA's perspective. |
+| `race`                     | string  | Racial category for the student. Decoded from PowerSchool ethnicity code to a full category label (e.g., Black/African American, Hispanic or Latino, Not Hispanic or Latino, Two or More Races, White). Cross-model consistency with dim_staff.race.                                                                                                                                          |
+| `state_student_identifier` | string  | The state-assigned student number for the student. In most cases, this number should stay the same from school to school.                                                                                                                                                                                                                                                                     |
+| `student_key`              | string  | Surrogate key derived from student_number. Primary key for the student dimension.                                                                                                                                                                                                                                                                                                             |
+
+#### Location
+
+| Name                      | Type   | Description                                                                                                                                                                                               |
+| ------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `locations_abbreviation`  | string | Short display name for the location.                                                                                                                                                                      |
+| `locations_campus`        | string | Physical campus name. Multiple schools may share a campus.                                                                                                                                                |
+| `locations_city`          | string | City. Nullable for non-physical rows (e.g., campus rollups).                                                                                                                                              |
+| `locations_grade_band`    | string | Grade band served (ES, MS, HS).                                                                                                                                                                           |
+| `locations_location_name` | string | Canonical location name.                                                                                                                                                                                  |
+| `locations_region_key`    | string | Foreign key to regions. Surrogate key derived from `business_unit_code` so this column hashes exactly the keys produced by `regions.region_key`. Network-level locations (e.g., KIPP NJ) map to KIPP_TAF. |
+| `regions_region_name`     | string | Region name (Camden, Miami, Newark, Paterson, TAF).                                                                                                                                                       |
+| `regions_state`           | string | US state (NJ or FL).                                                                                                                                                                                      |
