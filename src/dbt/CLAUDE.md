@@ -739,17 +739,23 @@ in every row, `null` for empties.
 
 ### Date-range joins
 
-Use half-open intervals for enrollment date-range joins — `BETWEEN` causes
-fan-out when consecutive enrollments share a boundary date:
+Use half-open intervals when joining a point date to intervals that can **abut
+or overlap**. Consecutive student enrollment stints share a boundary date (a
+stint's `exitdate` equals the next stint's `entrydate`), so `BETWEEN` matches
+both and fans out:
 
 ```sql
--- wrong: matches both enrollments on the shared boundary
+-- wrong: matches both stints on the shared boundary
 and cc.dateenrolled between enr.entrydate and enr.exitdate
 
 -- right: half-open interval
 and enr.entrydate <= cc.dateenrolled
 and enr.exitdate > cc.dateenrolled
 ```
+
+`BETWEEN` is fine — and is the repo norm — for joins to **non-overlapping,
+non-abutting** windows (calendar weeks, reporting terms, topline period rows),
+where a point date matches at most one interval.
 
 ### Row picking, dedup & surrogate keys
 
