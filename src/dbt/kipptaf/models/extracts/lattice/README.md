@@ -49,6 +49,25 @@ Either one:
 - Their assignment status is "Active" or "Leave," **or**
 - They were terminated within the last 30 days.
 
+## What each row sends to Lattice
+
+The file is a CSV; each column header is the field name Lattice reads.
+
+- `external_user_id` — ADP employee number (the Lattice user ID)
+- `status` — Active or Inactive
+- `work_email`, `manager_email`
+- `first_name`, `last_name`
+- `job_title`, `department`, `location`, `business_unit`
+- `start_date`
+- `gender` — self-reported gender identity from ADP
+- `ethnicity` — race/ethnicity reporting category from ADP
+
+**Gender and ethnicity** are sent verbatim from ADP, so the field options set up
+in Lattice must match the source values exactly (e.g.
+"Latinx/Hispanic/Chicana(o)", "Cis Woman"). A value can be blank when the
+employee has none recorded. These are sensitive demographic attributes — changes
+to what we send should have People Ops sign-off.
+
 ## Things worth remembering
 
 - **Newark and Camden are treated identically** — the same operations-title list
