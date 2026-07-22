@@ -4,15 +4,13 @@ with
         from {{ ref("int_people__staff_roster") }}
         where
             job_title <> 'Intern'
-            -- exclude temps and part-timers: worker_type_code is the primary
-            -- signal (nulls kept -- they are legitimate full-time staff); the
-            -- job_title checks are a fallback for HR mislabeling of the type
+            -- exclude part-timers plus anyone whose title names temp/part-time
+            -- work. Full Time - Temporary staff are kept pending an ADP review
+            -- (that worker type is frequently a mislabel); nulls kept as
+            -- legitimate full-time staff
             and (
                 worker_type_code is null
-                or not (
-                    contains_substr(worker_type_code, 'Temporary')
-                    or contains_substr(worker_type_code, 'Part Time')
-                )
+                or not contains_substr(worker_type_code, 'Part Time')
             )
             and not contains_substr(job_title, 'Temporary')
             and not contains_substr(job_title, 'Part Time')

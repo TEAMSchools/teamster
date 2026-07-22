@@ -13,12 +13,15 @@ who is **not** an intern, a temp, or a part-timer.
 
 ## The gates in plain language
 
-### 1. Not an intern, temp, or part-timer
+### 1. Not an intern, part-timer, or title-flagged temp
 
 - Their job title is not "Intern."
-- Their worker type is not a "Temporary" or "Part Time" classification.
-- As a backstop for mislabeling, anyone whose **job title** contains
-  "Temporary," "Part Time," or "Part-Time" is also excluded.
+- Their worker type is not a "Part Time" classification.
+- Anyone whose **job title** contains "Temporary," "Part Time," or "Part-Time"
+  is excluded — this catches temps regardless of their worker type.
+- **Full-time temporary staff are currently kept**, pending a review of their
+  ADP records — that worker type is frequently a mislabel, so we don't
+  auto-remove them.
 - Employees with a **blank worker type are kept** — in practice these are
   legitimate full-time staff, so we don't drop them.
 
@@ -56,7 +59,7 @@ Either one:
   list.
 - **KTAF central and Paterson are wide open** — no role filter, so those two
   always contribute the most people.
-- **Worker type is the primary signal for temps and part-timers**, not job
-  title. Most part-timers and temps have ordinary titles (Teacher, Counselor,
-  Registered Nurse, Office Manager), so the title check alone would miss them —
-  it is only a safety net.
+- **Part-timers are caught by worker type; temps are caught by job title.** We
+  intentionally do not exclude on the "Temporary" worker type right now, because
+  full-time-temporary is frequently a mislabel in ADP — so a temp is dropped
+  only if their title says so. Revisit once the ADP records are cleaned up.
