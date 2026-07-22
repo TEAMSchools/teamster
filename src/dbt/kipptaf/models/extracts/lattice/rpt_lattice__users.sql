@@ -4,6 +4,19 @@ with
         from {{ ref("int_people__staff_roster") }}
         where
             job_title <> 'Intern'
+            -- exclude temps and part-timers: worker_type_code is the primary
+            -- signal (nulls kept -- they are legitimate full-time staff); the
+            -- job_title checks are a fallback for HR mislabeling of the type
+            and (
+                worker_type_code is null
+                or not (
+                    contains_substr(worker_type_code, 'Temporary')
+                    or contains_substr(worker_type_code, 'Part Time')
+                )
+            )
+            and not contains_substr(job_title, 'Temporary')
+            and not contains_substr(job_title, 'Part Time')
+            and not contains_substr(job_title, 'Part-Time')
             and (
                 home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
                 or home_business_unit_name = 'KIPP Paterson'
