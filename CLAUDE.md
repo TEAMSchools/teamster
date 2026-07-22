@@ -248,7 +248,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   comments — an initial "Reviewing…" status stub and a separate final findings
   comment — and the stub can stay stuck mid-render even after the check-run
   reports `success`. Fetch ALL issue comments and read the newest / longest, not
-  the first.
+  the first. It may instead EDIT its checklist stub comment in place with the
+  findings, minutes AFTER the check-run reports `success` — so a findings-poll
+  must gate on the comment's `updated_at` / body growing, not the check-run
+  conclusion or a naive length threshold (the ~500-char checklist stub trips
+  it).
 
 - **`dagster-cloud-deploy / deploy` emits one same-named check-run per code
   location** (~5) — `get_check_runs` returns duplicates; wait for ALL to reach a
@@ -292,7 +296,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   check-only linters fire at `pre-push` and in CI. If a session reports "trunk
   clean" on a SQL/YAML change based on commit hooks alone, run
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
-  change is lint-clean. Run from inside the worktree —
+  change is lint-clean. A clean pre-PUSH `trunk-check-pre-push` is not
+  sufficient either — it is git-diff-scoped (no `--force`) and can MISS a
+  sqlfluff violation (e.g. ST06) on already-committed lines that CI's full check
+  flags, so a push succeeds and CI still fails on lint; `trunk check --force`
+  the changed SQL before pushing. Run from inside the worktree —
   `trunk check --force <abs-worktree-paths>` from the main repo silently returns
   "no applicable linters". The `trunk` binary lives only in the main repo
   (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
