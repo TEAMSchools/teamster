@@ -4,10 +4,12 @@ with
     focus_enrollment as (
         select
             syear,
-            cast(student_id as string) as student_id,
-            format_date('%Y%m%d', start_date) as start_date,
             end_date,
             drop_code,
+
+            cast(student_id as string) as student_id,
+
+            format_date('%Y%m%d', start_date) as start_date,
         from {{ ref("stg_focus__student_enrollment") }}
     ),
 
