@@ -1,17 +1,29 @@
 # Lattice User Extract — Who's Included
 
-This feed (`rpt_lattice__users`) decides which KTAF employees get a Lattice
-account. It draws from the staff roster (`int_people__staff_roster`) and applies
-the rules below. **An employee must clear _every_ gate to be included.**
+This feed (`rpt_lattice__users`) decides which employees get a Lattice account.
+It draws from the staff roster (`int_people__staff_roster`) and applies the
+rules below. **An employee must clear _every_ gate to be included.**
 
 Keep this doc in sync with the model whenever the criteria change.
 
-## The short version
+## High level summary
+
+- **KTAF central and Paterson include everyone** — no role filter.
+- **Newark and Camden are treated identically** — the same operations-title list
+  and the same two departments apply to both. They are the only regions with
+  role or department restrictions of that kind.
+- **Miami is the exception** — it is gated on a title keyword match plus one
+  hardcoded location ("Room 11"), rather than an explicit title or department
+  list.
+- **Part-timers and temporary workers are excluded** - part-timers are excluded
+  on ADP worker type; temps are excluded by job title. We intentionally do not
+  exclude on the "Temporary" worker type right now, because full-time-temporary
+  might be mislabels in ADP — so a temp is dropped only if their title says so.
+
+## Current inclusion criteria
 
 Included = a current (or just-departed) employee, in an eligible business unit,
 who is **not** an intern, a temp, or a part-timer.
-
-## The gates in plain language
 
 ### 1. Not an intern, part-timer, or title-flagged temp
 
@@ -49,7 +61,7 @@ Either one:
 - Their assignment status is "Active" or "Leave," **or**
 - They were terminated within the last 30 days.
 
-## What each row sends to Lattice
+## Lattice Fields Extract - What's Included
 
 The file is a CSV; each column header is the field name Lattice reads.
 
@@ -61,22 +73,9 @@ The file is a CSV; each column header is the field name Lattice reads.
 - `start_date`
 - `gender` — self-reported gender identity from ADP
 - `ethnicity` — race/ethnicity reporting category from ADP
+- `birthdate` — employee date of birth from ADP
 
 **Gender and ethnicity** are sent verbatim from ADP, so the field options set up
 in Lattice must match the source values exactly (e.g.
 "Latinx/Hispanic/Chicana(o)", "Cis Woman"). A value can be blank when the
 employee has none recorded.
-
-## Things worth remembering
-
-- **Newark and Camden are treated identically** — the same operations-title list
-  and the same two departments apply to both. They are the only regions with
-  role or department restrictions of that kind.
-- **Miami is the exception** — it is gated on a title keyword match plus one
-  hardcoded location ("Room 11"), rather than an explicit title or department
-  list.
-- **KTAF central and Paterson include everyone** — no role filter.
-- **Part-timers are caught by worker type; temps are caught by job title.** We
-  intentionally do not exclude on the "Temporary" worker type right now, because
-  full-time-temporary might be mislabels in ADP — so a temp is dropped only if
-  their title says so.

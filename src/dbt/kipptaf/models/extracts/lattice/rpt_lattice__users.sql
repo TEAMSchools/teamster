@@ -65,6 +65,7 @@ select
     s.home_department_name as department,
     s.gender_identity as gender,
     s.race_ethnicity_reporting as ethnicity,
+    s.birth_date as birthdate,
 
     m.work_email as manager_email,
 

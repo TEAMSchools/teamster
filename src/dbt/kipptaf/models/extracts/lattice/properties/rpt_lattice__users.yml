@@ -49,6 +49,9 @@ models:
           canonical value), passed through verbatim. The Lattice field options
           must match these source values. Blank when none is recorded.
         data_type: string
+      - name: birthdate
+        description: Employee date of birth from ADP.
+        data_type: date
       - name: manager_email
         description: Work email address of the employee's direct manager.
         data_type: string
