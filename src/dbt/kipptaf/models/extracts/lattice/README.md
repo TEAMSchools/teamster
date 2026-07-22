@@ -20,8 +20,8 @@ who is **not** an intern, a temp, or a part-timer.
 - Anyone whose **job title** contains "Temporary," "Part Time," or "Part-Time"
   is excluded — this catches temps regardless of their worker type.
 - **Full-time temporary staff are currently kept**, pending a review of their
-  ADP records — that worker type is frequently a mislabel, so we don't
-  auto-remove them.
+  ADP records — that worker type might be a mislabel, so we don't auto-remove
+  them.
 - Employees with a **blank worker type are kept** — in practice these are
   legitimate full-time staff, so we don't drop them.
 
@@ -65,8 +65,7 @@ The file is a CSV; each column header is the field name Lattice reads.
 **Gender and ethnicity** are sent verbatim from ADP, so the field options set up
 in Lattice must match the source values exactly (e.g.
 "Latinx/Hispanic/Chicana(o)", "Cis Woman"). A value can be blank when the
-employee has none recorded. These are sensitive demographic attributes — changes
-to what we send should have People Ops sign-off.
+employee has none recorded.
 
 ## Things worth remembering
 
@@ -76,9 +75,8 @@ to what we send should have People Ops sign-off.
 - **Miami is the exception** — it is gated on a title keyword match plus one
   hardcoded location ("Room 11"), rather than an explicit title or department
   list.
-- **KTAF central and Paterson are wide open** — no role filter, so those two
-  always contribute the most people.
+- **KTAF central and Paterson include everyone** — no role filter.
 - **Part-timers are caught by worker type; temps are caught by job title.** We
   intentionally do not exclude on the "Temporary" worker type right now, because
-  full-time-temporary is frequently a mislabel in ADP — so a temp is dropped
-  only if their title says so. Revisit once the ADP records are cleaned up.
+  full-time-temporary might be mislabels in ADP — so a temp is dropped only if
+  their title says so.
