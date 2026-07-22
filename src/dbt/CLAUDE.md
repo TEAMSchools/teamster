@@ -394,6 +394,20 @@ stale from the CI error's `compiled_code` `from` clause: a ref resolving to
 `zz_stg_*` was deferred to the stale staging copy; one resolving to
 `dbt_cloud_pr_*` was rebuilt on the PR branch.
 
+A value-only change that alters a value's **format** (e.g. raw phone → E.164) is
+schema-safe but can silently break downstream extracts with positional / format
+assumptions — the shared `int_finalsite__student_contacts` E.164 change broke
+`rpt_clever__students`' `left(regexp_replace(phone, '\W'), 10)` (it truncated
+the 11-digit `+1…`). Before reformatting a value at a shared model, grep
+consumers for `left(` / `substr(` / digit-count assumptions on that column — CI
+won't catch it (compiles fine; no error).
+
+A doc-only inline SQL comment on a heavily-consumed intermediate still marks it
+`state:modified`, fanning CI's `state:modified+` rebuild across its whole
+descendant graph and surfacing unrelated pre-existing warn-tests as noise. Put
+documentation notes in the properties `description` (doesn't mark modified), not
+an inline SQL comment, on hub models.
+
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 
 Changing a source's schema (e.g. adding a `target=staging` branch) marks the
