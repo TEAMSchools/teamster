@@ -414,6 +414,11 @@ found inside <alias>"), not just relationships tests.
 upstream to prod regardless of stale dev copies — cleaner than enumerating
 parents in `--select`.
 
+Conversely, to validate a consumer of a NEW column on an unmerged upstream,
+`--select` BOTH: `--favor-state` resolves the unselected upstream to prod (which
+lacks the column) and the consumer build fails; selecting the upstream builds it
+into dev with the column first.
+
 Also manifests as false row-count / row-presence deltas (not just
 `relationships`/PK tests): a stale dev `int_people__staff_roster` missing recent
 hires makes a dev-built rpt look like it dropped rows. Confirm which upstreams
@@ -705,6 +710,11 @@ After a column/contract rename, run the WHOLE directory's unit tests
 not just the changed model — sibling models mock the same `ref()`/`source()`, so
 their `given`/`expect` rows break on the same rename and CI catches what a
 single-model run misses.
+
+Every `expect` row must list the **same columns** — dbt builds them as
+`UNION ALL` and does NOT null-fill omitted keys, so uneven rows fail with
+`Queries in UNION ALL have mismatched column count`. Put every asserted column
+in every row, `null` for empties.
 
 ### Date-range joins
 
