@@ -295,7 +295,13 @@ cubes:
       # Rollup on the additive proficiency primitives for the standard-level
       # proficiency-by-demographic hot path. Includes the RLS scoping keys
       # (locations.region_key / locations.abbreviation) so region/school viewers
-      # hit the rollup rather than falling back to the fact.
+      # hit the rollup rather than falling back to the fact. Also includes the
+      # lead teacher (key + name) so "proficiency by teacher" queries — grouped
+      # by lead_teacher_staff_key or staff_lead_teacher.full_name — hit the
+      # rollup. A rollup only serves a query whose grouped members are all in
+      # it, so the name must be here (and exposed on the view) or a name-grouped
+      # query falls back to the fact. The key adds cardinality; the name is 1:1
+      # with the key (adds width, not rows).
       - name: proficiency_rollup
         measures:
           - student_assessment_scores.count_scores
@@ -329,6 +335,11 @@ cubes:
           # region_name is functionally determined by region_key above (zero
           # added rows) — supports region-name filter phrasing (e.g. "Newark").
           - regions.region_name
+          # lead teacher (key + name) so proficiency-by-teacher queries hit the
+          # rollup rather than the ~14.2M-row fact; the key adds cardinality,
+          # the name is 1:1 with the key (width, not rows).
+          - student_section_enrollments.lead_teacher_staff_key
+          - staff_lead_teacher.full_name
         # Partitioned refresh: without a time_dimension, Cube rebuilds this
         # entire rollup from the ~14.2M-row fact on every refresh_key check,
         # regardless of what changed. dates.date_day (via
