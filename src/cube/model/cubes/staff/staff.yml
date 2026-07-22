@@ -49,7 +49,7 @@ cubes:
       # Gated to staff-pii — date of birth.
       - name: birth_date
         description: Staff member's date of birth.
-        sql: CAST(birth_date AS TIMESTAMP)
+        sql: CAST({CUBE}.birth_date AS TIMESTAMP)
         type: time
         public: true
 
