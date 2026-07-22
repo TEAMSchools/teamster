@@ -98,6 +98,69 @@ def test_derive_access_reads_groups_and_row_level() -> None:
     assert access.exposes_pii is False
 
 
+def test_sensitive_members_excludes_directory_public_names() -> None:
+    # full_name is directory-public (staff_directory) and must not drive the flag
+    assert "full_name" not in gen.SENSITIVE_MEMBERS
+    assert "personal_email" in gen.SENSITIVE_MEMBERS
+
+
+def test_derive_access_recurses_nested_or_and_filters() -> None:
+    # a member referenced only inside a nested or/and must still be collected
+    view = {
+        "name": "v",
+        "access_policy": [
+            {
+                "group": "g",
+                "row_level": {
+                    "filters": [
+                        {"member": "top_level", "operator": "equals", "values": ["x"]},
+                        {
+                            "or": [
+                                {"member": "nested_a", "operator": "set"},
+                                {
+                                    "and": [
+                                        {"member": "deep_b", "operator": "set"},
+                                    ]
+                                },
+                            ]
+                        },
+                    ]
+                },
+            }
+        ],
+    }
+    access = gen.derive_access(view, [])
+    assert access.row_level_members == ["top_level", "nested_a", "deep_b"]
+
+
+def test_resolve_view_wildcard_excludes_underscore_helpers() -> None:
+    cubes = {
+        "c": {
+            "count_rows": gen.CubeMember(
+                name="count_rows",
+                kind="measure",
+                type="count",
+                description=None,
+                primary_key=False,
+                public=True,
+            ),
+            "_sum_helper": gen.CubeMember(
+                name="_sum_helper",
+                kind="measure",
+                type="sum",
+                description=None,
+                primary_key=False,
+                public=False,
+            ),
+        }
+    }
+    view = {"name": "v", "cubes": [{"join_path": "c", "includes": "*"}]}
+    resolved = gen.resolve_view(view, cubes)
+    names = {m.exposed_name for m in resolved.members}
+    assert "count_rows" in names
+    assert "_sum_helper" not in names
+
+
 def test_render_page_has_banner_and_one_h2_per_view() -> None:
     cubes = gen.parse_cubes(FIXTURE_DIR / "cubes")
     views = gen.parse_views(FIXTURE_DIR / "views", cubes)

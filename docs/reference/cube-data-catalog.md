@@ -26,9 +26,6 @@ filters to active employees (excludes Leave). Use count_employees
 
 **Reader groups:** `staff-directory`
 
-**Contains sensitive / PII fields** — see access policy in
-[cube.md](../guides/cube.md#admin-setup).
-
 ### Measures
 
 | Name              | Type           | Description                                                                                                                                                                                      |
@@ -125,7 +122,7 @@ is person-level, not period-accurate.
 `staff-pii-reporting_chain`, `staff-pii-reporting_chain_or_below_rank`
 
 **Row-level scoping on:** `locations_abbreviation`, `department_group`,
-`job_function_code`, `staff_key`
+`job_function_code`, `staff_key`, `job_function_level`
 
 **Contains sensitive / PII fields** — see access policy in
 [cube.md](../guides/cube.md#admin-setup).

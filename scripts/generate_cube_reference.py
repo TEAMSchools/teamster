@@ -143,9 +143,13 @@ def _folder_map(view: dict) -> dict[str, str]:
     return mapping
 
 
-# Known sensitive member names (FERPA direct/indirect identifiers). Used only
-# to flag "exposes PII" in the access summary; the authoritative access model
-# is each view's access_policy and docs/guides/cube.md.
+# Curated sensitive member names (FERPA personal contact, DOB, demographics,
+# and student identifiers). A per-member HINT for the "exposes PII" flag only —
+# the authoritative access model is each view's access_policy and
+# docs/guides/cube.md. Deliberately excludes directory-public names like
+# `full_name` (the staff_directory roster is intentionally open), and matches
+# bare exposed names only (a prefixed variant such as `staff_personal_email`
+# would not match — see #4450 follow-up to source this from model metadata).
 SENSITIVE_MEMBERS = frozenset(
     {
         "personal_email",
@@ -154,11 +158,22 @@ SENSITIVE_MEMBERS = frozenset(
         "gender_identity",
         "race",
         "is_hispanic",
-        "full_name",
         "lea_student_identifier",
         "state_student_identifier",
     }
 )
+
+
+def _collect_row_level_members(filters: list, acc: list[str]) -> None:
+    """Collect `member` names from row_level filters, recursing into or/and."""
+    for flt in filters:
+        member = flt.get("member")
+        if member and member not in acc:
+            acc.append(member)
+        for group_key in ("and", "or"):
+            nested = flt.get(group_key)
+            if nested:
+                _collect_row_level_members(nested, acc)
 
 
 def derive_access(view: dict, members: list[ResolvedMember]) -> AccessSummary:
@@ -168,10 +183,9 @@ def derive_access(view: dict, members: list[ResolvedMember]) -> AccessSummary:
         group = policy.get("group")
         if group and group not in groups:
             groups.append(group)
-        for flt in policy.get("row_level", {}).get("filters", []):
-            member = flt.get("member")
-            if member and member not in row_level:
-                row_level.append(member)
+        _collect_row_level_members(
+            policy.get("row_level", {}).get("filters", []), row_level
+        )
     exposes_pii = any(m.exposed_name in SENSITIVE_MEMBERS for m in members)
     return AccessSummary(
         groups=groups, row_level_members=row_level, exposes_pii=exposes_pii
@@ -190,7 +204,9 @@ def resolve_view(view: dict, cubes: dict[str, dict[str, CubeMember]]) -> Resolve
 
         includes = include.get("includes", [])
         if includes == "*":
-            includes = list(cube_members)
+            # Never surface private helper members (e.g. `_sum_attendance_value`)
+            # if a view ever wildcards a cube block.
+            includes = [n for n in cube_members if not n.startswith("_")]
 
         for raw_member in includes:
             member_name = (
