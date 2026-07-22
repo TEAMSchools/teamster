@@ -11,12 +11,11 @@ Keep this doc in sync with the model whenever the criteria change.
 ### High level summary
 
 - **KTAF central and Paterson include everyone** — no role filter.
-- **Newark and Camden are treated identically** — the same operations-title list
-  and the same two departments apply to both. They are the only regions with
-  role or department restrictions of that kind.
-- **Miami is the exception** — it is gated on a title keyword match plus one
-  hardcoded location ("Room 11"), rather than an explicit title or department
-  list.
+- **Newark and Camden are treated identically** — operations leaders and two
+  departments (**Technology** or **Marketing, Comms, and Enrollment**) included.
+- **Miami includes additional leader roles** — gated on a title keyword match
+  plus one hardcoded location ("Room 11"), rather than an explicit title or
+  department list.
 - **Part-timers and temporary workers are excluded** - part-timers are excluded
   on ADP worker type; temps are excluded by job title. We intentionally do not
   exclude on the "Temporary" worker type right now, because full-time-temporary
@@ -61,29 +60,33 @@ Any one of these qualifies:
 Either one:
 
 - Their assignment status is "Active" or "Leave," **or**
-- They were terminated within the last 30 days.
+- They were terminated within the last 30 days. This is to deactivate terminated
+  users in Lattice, after 30 days they are dropped from the extract entirely.
 
 ## Lattice Fields Extract - What's Included
 
-The file is a CSV; each column header is the field name Lattice reads.
+The file is a CSV; each column header is the field name Lattice reads. **Gender
+and ethnicity** are sent verbatim from ADP, so the field options set up in
+Lattice must match the source values exactly (e.g. "Latinx/Hispanic/Chicana(o)",
+"Cis Woman"). A value can be blank when the employee has none recorded.
 
 - `external_user_id` — ADP employee number (the Lattice user ID)
 - `status` — Active or Inactive
-- `work_email`,
+- `work_email`
 - `manager_email`
-- `first_name`, `last_name`
-- `job_title`, `department`, `location`, `business_unit`
+- `first_name`
+- `last_name`
+- `job_title`
+- `department`
+- `location`
+- `business_unit`
 - `start_date`
-- `gender` — self-reported gender identity from ADP
-- `ethnicity` — race/ethnicity reporting category from ADP
+- `gender` — self-reported gender identity from ADP, only visible to admins
+- `ethnicity` — race/ethnicity reporting category from ADP, only visible to
+  admins
 - `birthdate` — employee date of birth from ADP
 
 Not included:
 
 - `tenure` - is a calculated field in Lattice
-- `pronouns` - not currently collected from staff
-
-**Gender and ethnicity** are sent verbatim from ADP, so the field options set up
-in Lattice must match the source values exactly (e.g.
-"Latinx/Hispanic/Chicana(o)", "Cis Woman"). A value can be blank when the
-employee has none recorded.
+- `pronouns` - not currently collected from staff, incomplete in ADP
