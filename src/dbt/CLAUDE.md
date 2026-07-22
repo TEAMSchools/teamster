@@ -336,6 +336,13 @@ Validate a newly-added data test against prod before pushing:
 `dbt test --select <model> --target dev --defer --state <prod manifest>` runs
 the compiled test SQL against the deferred prod relation — no dev build needed.
 
+A dev `--defer` build of a **table-materialized** mart can fail on a cross-mart
+`foreign_key` constraint ("Table X does not have Primary Key constraints") when
+the deferred prod parent's DDL lacks the rendered PK. To validate the model's
+logic (PK uniqueness, row counts) without building the parent, run its compiled
+SQL (`target/compiled/...`, refs already prod-resolved under `--favor-state`)
+against prod via the BQ MCP.
+
 ## Multi-line SQL in YAML `data_tests:` expressions
 
 Use literal block (`|`), not folded (`>-`). trunk-fmt reflows past 80 chars and
@@ -413,6 +420,11 @@ found inside <alias>"), not just relationships tests.
 `dbt build --favor-state --defer --state <prod>` resolves every unselected
 upstream to prod regardless of stale dev copies — cleaner than enumerating
 parents in `--select`.
+
+Conversely, to validate a consumer of a NEW column on an unmerged upstream,
+`--select` BOTH: `--favor-state` resolves the unselected upstream to prod (which
+lacks the column) and the consumer build fails; selecting the upstream builds it
+into dev with the column first.
 
 Also manifests as false row-count / row-presence deltas (not just
 `relationships`/PK tests): a stale dev `int_people__staff_roster` missing recent
@@ -705,6 +717,11 @@ After a column/contract rename, run the WHOLE directory's unit tests
 not just the changed model — sibling models mock the same `ref()`/`source()`, so
 their `given`/`expect` rows break on the same rename and CI catches what a
 single-model run misses.
+
+Every `expect` row must list the **same columns** — dbt builds them as
+`UNION ALL` and does NOT null-fill omitted keys, so uneven rows fail with
+`Queries in UNION ALL have mismatched column count`. Put every asserted column
+in every row, `null` for empties.
 
 ### Date-range joins
 

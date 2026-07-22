@@ -17,9 +17,13 @@ docs/
     io-managers.md
     fiscal-year-partitioning.md
     dbt-conventions.md
+    finalsite-focus-import.md
+    marts-data-models.md
     automation-conditions.md
     automations.md         # GENERATED — do not edit manually
     claude-code-security-hooks.md  # Not in nav
+  models/                  # Per-dashboard/pipeline data-model reference docs
+    gradebook-audit-data-model.md
   guides/                  # Task-focused walkthroughs
     index.md               # Account setup + guide routing table (section landing)
     adp-location-renames.md
@@ -97,6 +101,8 @@ Update docs for engineering-level changes:
 - New or changed schedule/sensor → regenerate `reference/automations.md`
 - New core pattern (IO manager, automation condition, partitioning) → update the
   relevant `reference/` page
+- New or reworked dashboard/pipeline data model → add or update its page under
+  `models/`, and add a `mkdocs.yml` nav entry under `Models`
 
 Do **not** update docs for analyst-level dbt model changes — dbt YAML is the
 documentation mechanism for that work.

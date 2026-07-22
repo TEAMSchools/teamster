@@ -124,6 +124,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
 
+- **Subagent worktree dispatches must spell out the absolute worktree path**: a
+  subagent starts in the MAIN checkout, so the dispatch prompt must give the
+  worktree path and mandate `git -C <worktree>` + `uv run` from it (bare edits
+  hit `main` silently), and state that IDE Pyright errors on worktree files
+  (`reportMissingImports`, "not accessed", "not iterable") are expected false
+  positives — trust `uv run` inside the worktree, not the IDE.
+
 - **The `Workflow`-tool orchestrator is unreliable for long fan-outs in this
   Codespace** — it stalled/died mid-run repeatedly (not OOM; 11Gi free), and a
   window reload left a prior run orphaned-but-alive that kept spawning
@@ -241,7 +248,17 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   comments — an initial "Reviewing…" status stub and a separate final findings
   comment — and the stub can stay stuck mid-render even after the check-run
   reports `success`. Fetch ALL issue comments and read the newest / longest, not
-  the first.
+  the first. It may instead EDIT its checklist stub comment in place with the
+  findings, minutes AFTER the check-run reports `success` — so a findings-poll
+  must gate on the comment's `updated_at` / body growing, not the check-run
+  conclusion or a naive length threshold (the ~500-char checklist stub trips
+  it).
+
+- **`dagster-cloud-deploy / deploy` emits one same-named check-run per code
+  location** (~5) — `get_check_runs` returns duplicates; wait for ALL to reach a
+  terminal conclusion before calling the deploy green. A shared-library change
+  (e.g. `libraries/dlt/`) redeploys every consuming location, not just the ones
+  whose config you edited.
 
 - **Python**: Always `uv run` — never bare `python`, `python3`, or
   venv-installed tools (`dbt`, `dagster`, etc.).
@@ -279,7 +296,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   check-only linters fire at `pre-push` and in CI. If a session reports "trunk
   clean" on a SQL/YAML change based on commit hooks alone, run
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
-  change is lint-clean. Run from inside the worktree —
+  change is lint-clean. A clean pre-PUSH `trunk-check-pre-push` is not
+  sufficient either — it is git-diff-scoped (no `--force`) and can MISS a
+  sqlfluff violation (e.g. ST06) on already-committed lines that CI's full check
+  flags, so a push succeeds and CI still fails on lint; `trunk check --force`
+  the changed SQL before pushing. Run from inside the worktree —
   `trunk check --force <abs-worktree-paths>` from the main repo silently returns
   "no applicable linters". The `trunk` binary lives only in the main repo
   (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
@@ -538,7 +559,8 @@ the allowlist.
   additive label add. `mcp__github__issue_write` with `labels` REPLACES the full
   set; passing one label drops the rest.
 - GitHub Search API caps at 5 OR/AND/NOT operators per query (422 otherwise).
-  Loop per-term via `gh api search/issues -f q='...'` for larger searches.
+  Loop per-term via `gh api -X GET search/issues -f q='...'` for larger searches
+  — without `-X GET`, `-f` turns the request into a POST and 404s.
 - `mcp__github__search_issues` returns full issue **bodies** — a broad query
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.
@@ -828,9 +850,12 @@ block; only `DBT_TOKEN` is fetched per-launch. `list_jobs` is hard-filtered to
 `DBT_PROD_ENV_ID`, currently staging (70403104014899); per-call `environment_id`
 / `project_id` args exposed by the schema are ignored. Run-inspection tools
 (`list_jobs_runs`, `get_job_run_details`, `get_job_run_error`) ignore env scope
-and work across environments by `job_id` / `run_id`. For successful runs, call
-`get_job_run_error` with `warning_only=true` to surface test warnings —
-status=Success does not mean warning-free.
+and work across environments by `job_id` / `run_id`. `list_jobs_runs` for the
+shared CI job (`Build - CI (Modified)`) interleaves runs from ALL open PRs with
+`git_branch=null` — cross-check a run's `git_sha` against your branch
+(`git branch -r --contains <sha>`) before attributing a run or its failure to
+your PR. For successful runs, call `get_job_run_error` with `warning_only=true`
+to surface test warnings — status=Success does not mean warning-free.
 
 For job inspection, query Staging env (70403104014899) by job id — Production
 env (70403104000025) has no scheduled dbt Cloud jobs.

@@ -70,6 +70,13 @@ Produce `_dbt_source_project` on a union model with
 `from union_relations` (the `union_relations` CTE wrapping
 `dbt_utils.union_relations`).
 
+Prefer inline `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` over the
+`extract_code_location` macro when the union view is `select *` with an `AM04`
+trunk-ignore, or is mocked in a dbt unit test: the macro form makes AM04 stop
+firing (`trunk/ignore-does-nothing`), and its table-name qualifier breaks unit
+tests (`Unrecognized name` after dbt renames the mocked ref). Siblings
+`stg_powerschool__courses` / `stg_powerschool__studentcorefields` use inline.
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not

@@ -57,6 +57,7 @@ defs = Definitions(
     sensors=[
         *amplify.sensors,
         *couchdrop.sensors,
+        *powerschool.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),

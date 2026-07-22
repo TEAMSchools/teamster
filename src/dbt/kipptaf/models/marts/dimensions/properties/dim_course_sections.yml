@@ -1,5 +1,7 @@
 models:
   - name: dim_course_sections
+    config:
+      materialized: table
     description: >-
       Course section dimension. One row per section instance per source region.
       Sections are discrete scheduled offerings of a course at a school. Teacher
@@ -14,6 +16,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null
@@ -28,6 +31,7 @@ models:
             to: ref('dim_courses')
             to_columns: [course_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - not_null
 
@@ -47,6 +51,7 @@ models:
             to: ref('dim_locations')
             to_columns: [location_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

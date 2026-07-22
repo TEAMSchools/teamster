@@ -25,7 +25,11 @@
   (e.g. to test a change before merge), open the PR ready-for-review, not draft.
   A change to a shared `pull_request`-path file (`uv.lock`, `Dockerfile`,
   `src/teamster/core/**`) fans a branch-deploy build out to ALL five locations,
-  not just the one you touched.
+  not just the one you touched — including when that shared change arrives via a
+  `main`-merge commit on the branch: the `pull_request`/`synchronize` `paths`
+  filter matches the pushed delta (which includes the merge commit), NOT the net
+  three-dot PR diff (where the merged-in files, now equal to main, don't
+  appear).
 - **Each `deploy-prod-<location>.yaml` push-`paths` must list every dbt package
   in that district's `src/dbt/<district>/packages.yml`** (`src/dbt/pearson/**`,
   etc.). Drift silently skips that district's prod deploy on a shared

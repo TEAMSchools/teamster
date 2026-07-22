@@ -60,6 +60,8 @@ nav:
       - Marts Data Models: reference/marts-data-models.md
       - Cube Data Catalog: reference/cube-data-catalog.md
       - Automation Conditions: reference/automation-conditions.md
+  - Models:
+      - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:
