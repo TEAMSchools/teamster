@@ -84,7 +84,7 @@ Lattice must match the source values exactly (e.g. "Latinx/Hispanic/Chicana(o)",
 - `gender` — self-reported gender identity from ADP, only visible to admins
 - `ethnicity` — race/ethnicity reporting category from ADP, only visible to
   admins
-- `birthdate` — employee date of birth from ADP
+- `birthdate` — employee date of birth from ADP, only visible to admins
 
 Not included:
 
