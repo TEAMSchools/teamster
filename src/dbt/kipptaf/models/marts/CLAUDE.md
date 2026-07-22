@@ -286,7 +286,10 @@ foreign_key both render into DDL and warn otherwise.
   no matter what the PR schema builds. Before pushing, pre-seed staging as
   tables: `dbt run --select <closure> --target staging` (shared `zz_stg` — needs
   direct user authorization). BQ table clones preserve PK constraints, so
-  `Clone - Staging` keeps CI healthy afterward.
+  `Clone - Staging` keeps CI healthy afterward. Verify the pre-seed took before
+  re-triggering CI — the `zz_stg` copy must be a `BASE TABLE` with a
+  `PRIMARY KEY` (`INFORMATION_SCHEMA.TABLE_CONSTRAINTS`), not a view (a pre-seed
+  run against `main` code rebuilds it as a view and CI fails again).
 - Code-complete closure ≠ safe prod deploy. The prod automation-condition sensor
   materializes assets one-at-a-time OUT of FK order, and a config-only
   `materialized: table` YAML change does NOT bump the dagster-dbt code version

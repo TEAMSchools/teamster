@@ -36,7 +36,7 @@ cubes:
         public: true
 
       - name: birth_date
-        sql: CAST(birth_date AS TIMESTAMP)
+        sql: "CAST({CUBE}.birth_date AS TIMESTAMP)"
         type: time
         public: true
 

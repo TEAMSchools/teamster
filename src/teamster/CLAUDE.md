@@ -191,10 +191,14 @@ Match on a specific exception class (define one if the upstream code raises bare
 the init path (`fetch_token` / `connect` in `setup_for_execution`) too, not just
 the request method. For network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
-`ConnectTimeout`. For runtime-parameterized retry loops (e.g.
-`with_powerschool_retry`), use `tenacity.Retrying` — a manual
-`for attempt in range(...)` has no backoff. Avoid broad base classes whose
-subclasses include deterministic config errors (e.g.
+`ConnectTimeout`. The `tableau` sign-in path is the exception:
+`tableauserverclient` raises its own errors, not `requests.HTTPError`, so its
+predicate is `(RequestsConnectionError, Timeout, InternalServerError)`
+(`InternalServerError` wraps a 5xx) and it fails fast on `FailedSignInError`
+(401) / `ServerResponseError` (other 4xx) — do not "restore" `HTTPError` there.
+For runtime-parameterized retry loops (e.g. `with_powerschool_retry`), use
+`tenacity.Retrying` — a manual `for attempt in range(...)` has no backoff. Avoid
+broad base classes whose subclasses include deterministic config errors (e.g.
 `paramiko.ssh_exception.SSHException` covers `IncompatiblePeer`,
 `BadHostKeyException`, `BadAuthenticationType`). List transient subclasses
 explicitly.
