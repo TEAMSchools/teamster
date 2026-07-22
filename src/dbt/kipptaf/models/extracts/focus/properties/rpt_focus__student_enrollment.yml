@@ -45,7 +45,7 @@ models:
                 severity: error
       - name: syear
         data_type: int64
-        description: School year start year (e.g. 2025 for the 2025-26 year).
+        description: School year start year (e.g. 2026 for the 2026-27 year).
         data_tests:
           - not_null:
               config:

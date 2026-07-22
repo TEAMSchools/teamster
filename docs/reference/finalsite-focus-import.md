@@ -78,12 +78,12 @@ in Focus's own withdrawal-code list and sends the matching short code in the
 `DROP_CODE` column.
 
 Like everything else, a withdrawal is a **one-time push** — and it only ever
-lands on an enrollment Focus still shows as **open**. The pipeline fills in an
-end date and drop code only when the student's open Focus enrollment for that
-school year has neither yet. If Focus has already closed that enrollment (it
-already carries an end date or drop code), the pipeline leaves it alone and will
-not add or correct one — even a wrong or missing drop code on an already-closed
-enrollment has to be fixed in Focus directly.
+lands on an enrollment Focus still shows as **open**, meaning it has no end date
+yet. The pipeline fills in the end date and drop code only when that open
+enrollment doesn't already have a drop code of its own. If Focus has already
+closed the enrollment with an end date, or the open enrollment already carries a
+drop code, the pipeline leaves it alone and will not add or correct one — even a
+wrong or missing drop code has to be fixed in Focus directly.
 
 ### Enrollment feed — current year, enrolled students only
 
@@ -126,7 +126,7 @@ yet leaves its start dates unchanged.
 ### How the pipeline knows Focus already has an enrollment
 
 An enrollment counts as "already in Focus" when Focus has a record for the same
-**student and school year** — those two values alone are the match; the
+**student and academic year** — those two values alone are the match; the
 enrollment's start date is not part of it. That's deliberate: once an enrollment
 lands in Focus, the registrar team may need to correct its start date there, and
 the pipeline should not mistake that corrected enrollment for a brand-new one.
@@ -141,11 +141,12 @@ same school and grade — comparing them would make every record look new.
 The one thing that will still be sent for a matched student-year is a **new
 withdrawal** — and only onto that student-year's currently **open** Focus
 enrollment (the one Focus has not yet closed with an end date). If the extract
-now has an end date or drop code and that open enrollment has neither, the exit
-is filled in against whatever start date Focus currently shows for it — so an
-ops correction to the Focus start date does not stop the withdrawal from
-landing. See Withdraw / drop codes above for what happens when Focus has already
-closed the enrollment.
+now has an end date and drop code, and that open enrollment doesn't already have
+a drop code of its own, the exit is filled in against whatever start date Focus
+currently shows for it — so an ops correction to the Focus start date does not
+stop the withdrawal from landing. See Withdraw / drop codes above for what
+happens when Focus has already closed the enrollment or the open enrollment
+already has a drop code.
 
 ### What gets sent
 
@@ -156,8 +157,8 @@ does not already have it, and nothing is ever overwritten:
   the student **enrolled** and the student is not yet in Focus. A student who is
   still accepted, in progress, or only assigned a school does not flow.
 - **Student enrollment** — an enrollment is sent when the student's **(student,
-  school year)** is new to Focus, the student is enrolled (has a start date),
-  **and** that school year is the **current academic year**; a prior-year or
+  academic year)** is new to Focus, the student is enrolled (has a start date),
+  **and** that academic year is the **current** one; a prior-year or
   not-yet-current next-year enrollment is held back. A withdrawal (end date +
   drop code) is filled in once onto that student-year's **open** Focus
   enrollment when it has neither yet — never onto one Focus already shows as
@@ -253,8 +254,8 @@ pipeline will not reconcile them for you.
   records without one are skipped.
 - **An enrollment needs a start date, in the current academic year.** A student
   reaches Focus's Student Enrollment file only once Finalsite has an enrollment
-  start date for the school year that's currently active; accepted, in-progress,
-  or not-yet-current-year students wait until then.
+  start date for the academic year that's currently active; accepted,
+  in-progress, or not-yet-current-year students wait until then.
 - **Demographics, Address, and Contacts wait for enrolled status too.** All four
   feeds now require Finalsite to mark the student **enrolled** — a student who
   is only accepted, in progress, or assigned a school does not appear in any of
