@@ -12,6 +12,14 @@ models:
       student-year whose open row already has a drop_code, or that has no open
       row (already closed), emits nothing. Decodes the raw drop_code label to
       the Focus short_name via stg_focus__student_enrollment_codes.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - syear
+          config:
+            severity: error
     columns:
       - name: syear
         data_type: int64
