@@ -27,23 +27,65 @@
   background: var(--md-primary-fg-color);
   color: var(--md-primary-bg-color);
 }
+
+/* Capped, vertical-only scroll — no horizontal scrollbar. */
 .cube-finder-scroll {
   max-height: 34rem;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
-.cube-finder-scroll table {
+
+/* Fixed layout so the Description column takes the slack and wraps, instead of
+   the table growing wider than the page. The `.cube-finder-table` class (added
+   by the enhancer) also opts the table out of Material's default table styling
+   and its runtime scroll-wrap. */
+.cube-finder-table {
   width: 100%;
+  table-layout: fixed;
+  display: table;
+  border-collapse: collapse;
+  font-size: 0.72rem;
 }
-.cube-finder-scroll thead th {
+.cube-finder-table th,
+.cube-finder-table td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.cube-finder-table thead th {
   position: sticky;
   top: 0;
-  background: var(--md-default-bg-color);
   z-index: 1;
+  background: var(--md-default-bg-color);
+  border-bottom: 1px solid var(--md-default-fg-color--lighter);
 }
+.cube-finder-table tbody td {
+  border-bottom: 1px solid var(--md-default-fg-color--lightest);
+}
+/* Field 24% · View 18% · Tags 16% · Description 42% */
+.cube-finder-table th:nth-child(1),
+.cube-finder-table td:nth-child(1) {
+  width: 24%;
+}
+.cube-finder-table th:nth-child(2),
+.cube-finder-table td:nth-child(2) {
+  width: 18%;
+}
+.cube-finder-table th:nth-child(3),
+.cube-finder-table td:nth-child(3) {
+  width: 16%;
+}
+.cube-finder-table th:nth-child(4),
+.cube-finder-table td:nth-child(4) {
+  width: 42%;
+}
+
 .cube-chip {
   display: inline-block;
   font-size: 0.72rem;
   padding: 0.05rem 0.45rem;
+  margin: 0 0.15rem 0.15rem 0;
   border-radius: 10px;
   white-space: nowrap;
   background: color-mix(in srgb, var(--md-primary-fg-color) 14%, transparent);

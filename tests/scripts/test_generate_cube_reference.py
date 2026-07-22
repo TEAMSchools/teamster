@@ -208,11 +208,13 @@ def test_finder_table_row_shape_and_sensitive() -> None:
     finder = gen.render_finder(views)
 
     assert finder.startswith("## Find a field")
-    assert "| Field | Details |" in finder
-    # a benign member: view link + tags, no `sensitive` span
+    assert "| Field | View | Tags | Description |" in finder
+    # a benign member: field, view link, kind tag in their own columns
     assert "`grade_level`" in finder
     assert "[Sample](#view-sample-view)" in finder
     assert "`dimension`" in finder
+    # domain is not a chip (kept out of the Tags column to keep it narrow)
+    assert "`sample_domain`" not in finder
     # no member in the fixture is sensitive
     assert "`sensitive`" not in finder
 

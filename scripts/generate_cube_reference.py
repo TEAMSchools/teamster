@@ -396,9 +396,8 @@ def render_domain_index(by_domain: dict[str, list[ResolvedView]]) -> str:
 
 FINDER_INTRO = (
     "One row per field across every view. Filtering matches the field name, "
-    "its tags, and the description; each row links to a domain section with the "
-    "full per-view field lists. (Tags render as chips once the page's script "
-    "loads.)"
+    "the view, the tags, and the description; each row links to the view's full "
+    "field list. (Tags render as chips once the page's script loads.)"
 )
 
 
@@ -411,22 +410,24 @@ def _finder_rows(views: list[ResolvedView]) -> list[str]:
 
     lines: list[str] = []
     for _domain, _name, v, m in rows:
-        tags = [f"`{v.domain}`", f"`{m.kind}`"]
+        # Tags kept narrow — kind, type, and the sensitive flag only. Domain is
+        # not a chip; it stays filterable via the view title (which carries the
+        # domain word) and the rows remain domain-grouped.
+        tags = [f"`{m.kind}`"]
         if m.type:
             tags.append(f"`{_cell(m.type)}`")
         if m.sensitive:
             tags.append("`sensitive`")
-        link = f"[{v.title}](#{view_id(v.name)})"
+        view = f"[{v.title}](#{view_id(v.name)})"
         desc = _cell(m.description) if m.description else PLACEHOLDER
-        details = f"{link} {' '.join(tags)} — {desc}"
-        lines.append(f"| `{m.exposed_name}` | {details} |")
+        lines.append(f"| `{m.exposed_name}` | {view} | {' '.join(tags)} | {desc} |")
     return lines
 
 
 def render_finder(views: list[ResolvedView]) -> str:
     parts = ["## Find a field", "", FINDER_INTRO, ""]
-    parts.append("| Field | Details |")
-    parts.append("| --- | --- |")
+    parts.append("| Field | View | Tags | Description |")
+    parts.append("| --- | --- | --- | --- |")
     parts += _finder_rows(views)
     return "\n".join(parts).rstrip()
 
