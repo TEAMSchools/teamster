@@ -1,0 +1,55 @@
+/* Find-a-field finder: chips + filter + capped scroll */
+.cube-finder-controls {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.6rem 0;
+}
+.cube-finder-controls input[type="search"] {
+  flex: 1;
+  min-width: 240px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: 4px;
+  font: inherit;
+}
+.cube-finder-measures {
+  border: 1px solid var(--md-default-fg-color--lighter);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  color: var(--md-primary-fg-color);
+}
+.cube-finder-measures[aria-pressed="true"] {
+  background: var(--md-primary-fg-color);
+  color: var(--md-primary-bg-color);
+}
+.cube-finder-scroll {
+  max-height: 34rem;
+  overflow: auto;
+}
+.cube-finder-scroll table {
+  width: 100%;
+}
+.cube-finder-scroll thead th {
+  position: sticky;
+  top: 0;
+  background: var(--md-default-bg-color);
+  z-index: 1;
+}
+.cube-chip {
+  display: inline-block;
+  font-size: 0.72rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 10px;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--md-primary-fg-color) 14%, transparent);
+  color: var(--md-primary-fg-color);
+}
+.cube-chip--sensitive {
+  background: color-mix(in srgb, #c65a20 16%, transparent);
+  color: #c65a20;
+}
