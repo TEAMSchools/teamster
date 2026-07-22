@@ -1,0 +1,277 @@
+views:
+  - name: student_assessment_scores_view
+    description: >-
+      Assessment scores across internal Illuminate interims and NJ/FL state
+      assessments — row-level (one row per student x assessment x administration
+      x response type) and aggregate breakdowns in a single view. pct_proficient
+      (mastery rate) is the source-agnostic headline; scale_score is null for
+      internal rows and percent_correct is null for state rows. response_type /
+      response_type_code carry the standard/skill breakdown. State rows have
+      null administration dates by design (no exact administered date). Contains
+      direct student identifiers — see access_policy for PII gating.
+
+    cubes:
+      - join_path: student_assessment_scores
+        includes:
+          - count_scores
+          - count_students
+          - pct_proficient
+          - pct_proficient_formative
+          - pct_proficient_crq
+          - avg_percent_correct
+          - avg_scale_score
+          - assessment_score_key
+          - date_taken
+          - enrollment_resolution
+          - proficiency_level
+          - performance_band_label_number
+          - is_mastery
+          - scale_score
+          - percent_correct
+          - response_type
+          - response_type_code
+          - response_type_description
+          - response_type_root_description
+          - is_replacement
+
+      - join_path: student_assessment_scores.student_assessment_administrations.student_assessments
+        includes:
+          - title
+          - academic_subject
+          - assessment_type
+          - category
+          - module_code
+          - module_type
+          - grade_level_tested
+          - scope
+          - is_internal_assessment
+
+      - join_path: student_assessment_scores.student_assessment_administrations
+        includes:
+          - administration_period
+          - test_type
+          - source_assessment_id
+
+      - join_path: >-
+          student_assessment_scores.student_assessment_administrations.dates
+        includes:
+          - date_day
+          - academic_year
+          - month_number
+          - month_name
+
+      - join_path: student_assessment_scores.student_section_enrollments.course_sections.courses
+        includes:
+          - discipline
+          - course_title
+          - course_code
+          - credit_type
+          - is_foundations
+
+      - join_path: student_assessment_scores.student_section_enrollments.course_sections
+        includes:
+          - identifier
+          - period
+
+      - join_path: student_assessment_scores.student_section_enrollments
+        includes:
+          - student_section_enrollment_key
+          - student_enrollment_key
+          - entry_date
+          - exit_date
+          - is_dropped_section
+          - is_dropped_course
+          - lead_teacher_staff_key
+
+      - join_path: student_assessment_scores.student_section_enrollments.staff_lead_teacher
+        prefix: true
+        includes:
+          - full_name
+          - first_name
+          - last_name
+
+      - join_path: student_assessment_scores.student_section_enrollments.student_school_enrollments
+        includes:
+          - grade_level
+          - graduation_year
+          - year_in_network
+          - is_retained_year
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_school_enrollments.student_enrollment_status
+        includes:
+          - is_ell
+          - is_iep
+          - iep_classification
+          - special_education_code
+          - special_education_name
+          - special_education_placement
+          - is_meal_eligible
+          - meal_eligibility
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_school_enrollments.students
+        includes:
+          - student_key
+          - full_name
+          - birth_date
+          - lea_student_identifier
+          - state_student_identifier
+          - district_student_identifier
+          - salesforce_contact_id
+          - gender_identity
+          - race
+          - enrollment_status
+          - is_gifted
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_school_enrollments.locations
+        includes:
+          - location_name
+          - abbreviation
+          - region_key
+          - grade_band
+          - campus
+          - city
+
+      - join_path: >-
+          student_assessment_scores.student_section_enrollments.student_school_enrollments.locations.regions
+        includes:
+          - region_name
+          - state
+
+      - join_path: student_assessment_scores.student_section_enrollments.terms
+        includes:
+          - semester
+          - term_name
+          - term_code
+          - term_type
+
+    meta:
+      folders:
+        - name: Assessment
+          members:
+            - title
+            - academic_subject
+            - assessment_type
+            - category
+            - module_code
+            - module_type
+            - grade_level_tested
+            - scope
+            - is_internal_assessment
+            - administration_period
+            - test_type
+            - source_assessment_id
+            - date_taken
+            - enrollment_resolution
+            - proficiency_level
+            - performance_band_label_number
+            - is_mastery
+            - scale_score
+            - percent_correct
+            - response_type
+            - response_type_code
+            - response_type_description
+            - response_type_root_description
+            - is_replacement
+        - name: Date
+          members:
+            - date_day
+            - academic_year
+            - month_number
+            - month_name
+        - name: Course
+          members:
+            - discipline
+            - course_title
+            - course_code
+            - credit_type
+            - is_foundations
+            - identifier
+            - period
+        - name: Term
+          members:
+            - semester
+            - term_name
+            - term_code
+            - term_type
+        - name: Location
+          members:
+            - location_name
+            - abbreviation
+            - region_key
+            - grade_band
+            - campus
+            - city
+            - region_name
+            - state
+        - name: Student
+          members:
+            - student_key
+            - full_name
+            - birth_date
+            - lea_student_identifier
+            - state_student_identifier
+            - district_student_identifier
+            - salesforce_contact_id
+            - gender_identity
+            - race
+            - enrollment_status
+            - is_gifted
+        - name: Status
+          members:
+            - is_ell
+            - is_iep
+            - iep_classification
+            - special_education_code
+            - special_education_name
+            - special_education_placement
+            - is_meal_eligible
+            - meal_eligibility
+        - name: Enrollment
+          members:
+            - student_section_enrollment_key
+            - student_enrollment_key
+            - entry_date
+            - exit_date
+            - grade_level
+            - graduation_year
+            - year_in_network
+            - is_retained_year
+            - is_dropped_section
+            - is_dropped_course
+        - name: Teacher
+          members:
+            - lead_teacher_staff_key
+            - staff_lead_teacher_full_name
+            - staff_lead_teacher_first_name
+            - staff_lead_teacher_last_name
+
+    access_policy:
+      # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
+      # holds exactly one student-<scope> group (buildGroups); none => no group =>
+      # default-deny. row_level uses this view's flat location member names (see
+      # the includes/folders below), not cube-qualified paths.
+      # Teacher fields (staff_lead_teacher_* names, lead_teacher_staff_key) ride
+      # the wildcard include — staff-directory-tier info, not student PII.
+      - group: student-region
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: region_key
+              operator: equals
+              values: ["{ securityContext.region_key }"]
+      - group: student-school
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: abbreviation
+              operator: equals
+              values: ["{ securityContext.location_abbreviation }"]
+      - group: student-network
+        member_level:
+          includes: "*"
+        # network: no row_level (sees all locations)

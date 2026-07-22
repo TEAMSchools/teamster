@@ -1,0 +1,410 @@
+models:
+  - name: rpt_tableau__student_course_grades
+    description: >-
+      Grades and GPA extract for the rebuilt gradebook Tableau dashboard — one
+      row per student, term, course, and gradebook category for the current and
+      prior academic year. Decoupled from the gradebook-audit lineage: no
+      assignment-level data, audit flags, comments, or citizenship.
+      Student-grain as-of-today measures (cumulative GPA, needed-GPA, 1/2/4-week
+      lookbacks) populate current-year rows only. Students filtered to
+      is_enrolled_recent — the year was completed or the enrollment is currently
+      active, so mid-year withdrawals drop. Newark and Camden only — Miami is
+      hard-excluded (region unsupported in the rebuilt dashboard) and Paterson
+      is pending gradebook data.
+    data_tests:
+      # TODO(#3915): returns to error when the storedgrades double-write cleanup
+      # completes. All duplicates are prior-year storedgrades rows; current-year
+      # branches are structurally disjoint (base_powerschool__final_grades holds
+      # only Q/E storecodes, so the explicit Y1 branch is the sole Y1 emitter,
+      # and E rows never match the term spine).
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_relation
+              - studentid
+              - academic_year
+              - quarter
+              - course_number
+              - category_name_code
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: Source relation identifier from dbt_utils.union_relations.
+      - name: academic_year
+        data_type: int64
+        description: Academic year, start-year convention (2025 = SY25-26).
+      - name: academic_year_display
+        data_type: string
+        description: Display form of the academic year (e.g. 2025-26).
+      - name: region
+        data_type: string
+        description: District region (Newark or Camden; see model description).
+      - name: school_level
+        data_type: string
+        description: School level (ES/MS/HS) from the year's enrollment.
+      - name: schoolid
+        data_type: int64
+        description: School_Number of the year's primary enrollment school.
+      - name: school
+        data_type: string
+        description: School name.
+      - name: studentid
+        data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+      - name: student_number
+        data_type: int64
+        description: District student number.
+      - name: student_name
+        data_type: string
+        description: Student full name (last, first).
+      - name: grade_level
+        data_type: int64
+        description: Grade level in the row's academic year.
+      - name: salesforce_id
+        data_type: string
+        description: KIPP Forward Salesforce contact id.
+      - name: ktc_cohort
+        data_type: int64
+        description: KIPP Through College cohort year.
+      - name: enroll_status
+        data_type: int64
+        description:
+          Current PowerSchool enroll_status (student-level, not per-year).
+      - name: cohort
+        data_type: int64
+        description: Graduation cohort year.
+      - name: graduation_year
+        data_type: int64
+        description: Expected graduation year.
+      - name: gender
+        data_type: string
+        description: Student gender code.
+      - name: ethnicity
+        data_type: string
+        description: Student ethnicity code.
+      - name: advisory
+        data_type: string
+        description: Advisory/homeroom name for the year.
+      - name: hos
+        data_type: string
+        description: Head of school name.
+      - name: school_leader
+        data_type: string
+        description: School leader name.
+      - name: school_leader_tableau_username
+        data_type: string
+        description: School leader Tableau username (row-level security).
+      - name: year_in_school
+        data_type: int64
+        description: Number of years enrolled at the school.
+      - name: year_in_network
+        data_type: int64
+        description: Number of years enrolled in the network.
+      - name: rn_undergrad
+        data_type: int64
+        description: Row number over undergrad enrollments (1 = most recent).
+      - name: is_out_of_district
+        data_type: boolean
+        description:
+          Out-of-district placement flag (always false here; filtered).
+      - name: is_pathways
+        data_type: boolean
+        description: Self-contained (Pathways) program flag.
+      - name: is_retained_year
+        data_type: boolean
+        description: Retained in the row's academic year.
+      - name: is_retained_ever
+        data_type: boolean
+        description: Ever retained.
+      - name: student_slideback
+        data_type: boolean
+        description: Student slideback flag from enrollment reporting.
+      - name: lunch_status
+        data_type: string
+        description: Free/reduced lunch status code.
+      - name: gifted_and_talented
+        data_type: string
+        description: Gifted and talented status.
+      - name: iep_status
+        data_type: string
+        description: IEP status label.
+      - name: lep_status
+        data_type: boolean
+        description: English learner status.
+      - name: is_504
+        data_type: boolean
+        description: Section 504 plan flag.
+      - name: is_counseling_services
+        data_type: int64
+        description: Counseling services flag.
+      - name: is_student_athlete
+        data_type: int64
+        description: Student athlete flag.
+      - name: ada
+        data_type: float64
+        description: Average daily attendance for the year.
+      - name: ada_above_or_at_80
+        data_type: boolean
+        description: ADA at or above 80 percent.
+      - name: quarter
+        data_type: string
+        quote: true
+        description: Reporting term (Q1-Q4) or Y1 for the year row.
+      - name: semester
+        data_type: string
+        description: Semester of the term (S1/S2; S# on Y1 rows).
+      - name: quarter_start_date
+        data_type: date
+        description: Term start date.
+      - name: quarter_end_date
+        data_type: date
+        description: Term end date.
+      - name: is_current_quarter
+        data_type: boolean
+        description: Term is the school's current term (false on Y1 rows).
+      - name: is_current_academic_year
+        data_type: boolean
+        description: >-
+          Row belongs to the current academic year. False marks prior-year rows,
+          where every as-of-today column group (cumulative, needed-GPA,
+          lookback, need_*, in-progress Y1) is NULL by construction.
+      - name: gpa_for_quarter
+        data_type: float64
+        description: Term GPA for the row's term (Y1 GPA on Y1 rows).
+      - name: gpa_semester
+        data_type: float64
+        description: Semester GPA for the row's term. NULL on Y1 rows.
+      - name: gpa_y1
+        data_type: float64
+        description: Y1 GPA as of the row's term.
+      - name: gpa_y1_unweighted
+        data_type: float64
+        description: Unweighted Y1 GPA as of the row's term.
+      - name: gpa_total_credit_hours
+        data_type: float64
+        description: Total Y1 GPA credit hours for the year. NULL on Y1 rows.
+      - name: gpa_n_failing_y1
+        data_type: int64
+        description:
+          Count of failing Y1 grades as of the row's term. NULL on Y1 rows.
+      - name: gpa_y1_1_week_prior
+        data_type: float64
+        description: >-
+          Weighted Y1 GPA in effect 7 days ago (current-year rows only; NULL
+          when the boundary predates the year's first snapshot version).
+      - name: gpa_y1_2_week_prior
+        data_type: float64
+        description:
+          Weighted Y1 GPA in effect 14 days ago (current-year rows only).
+      - name: gpa_y1_4_week_prior
+        data_type: float64
+        description:
+          Weighted Y1 GPA in effect 28 days ago (current-year rows only).
+      - name: gpa_y1_unweighted_1_week_prior
+        data_type: float64
+        description:
+          Unweighted Y1 GPA in effect 7 days ago (current-year rows only).
+      - name: gpa_y1_unweighted_2_week_prior
+        data_type: float64
+        description:
+          Unweighted Y1 GPA in effect 14 days ago (current-year rows only).
+      - name: gpa_y1_unweighted_4_week_prior
+        data_type: float64
+        description:
+          Unweighted Y1 GPA in effect 28 days ago (current-year rows only).
+      - name: n_failing_y1_1_week_prior
+        data_type: int64
+        description: Failing Y1 grade count 7 days ago (current-year rows only).
+      - name: n_failing_y1_2_week_prior
+        data_type: int64
+        description:
+          Failing Y1 grade count 14 days ago (current-year rows only).
+      - name: n_failing_y1_4_week_prior
+        data_type: int64
+        description:
+          Failing Y1 grade count 28 days ago (current-year rows only).
+      - name: gpa_y1_prior_quarter
+        data_type: float64
+        description: >-
+          Weighted Y1 GPA as of the previous quarter (a Q3 row shows the Q2
+          value). Current-year quarter rows only — NULL on Q1, Y1, and
+          prior-year rows.
+      - name: gpa_y1_prior_year
+        data_type: float64
+        description: >-
+          The student's final weighted Y1 GPA from the prior academic year,
+          repeated on every current-year row (PowerSchool stores only
+          end-of-year Y1 grades, so no as-of-quarter prior-year value exists).
+          Credit-hour weighted across schools when the student attended more
+          than one school that year. NULL on prior-year rows and for students
+          without a prior-year record.
+      - name: cumulative_y1_gpa
+        data_type: float64
+        description: Cumulative weighted Y1 GPA (current-year rows only).
+      - name: cumulative_y1_gpa_unweighted
+        data_type: float64
+        description: Cumulative unweighted Y1 GPA (current-year rows only).
+      - name: cumulative_y1_gpa_projected
+        data_type: float64
+        description:
+          Projected cumulative weighted Y1 GPA (current-year rows only).
+      - name: cumulative_y1_gpa_projected_unweighted
+        data_type: float64
+        description:
+          Projected cumulative unweighted Y1 GPA (current-year rows only).
+      - name: cumulative_y1_gpa_projected_s1
+        data_type: float64
+        description:
+          S1-basis projected cumulative Y1 GPA (current-year rows only).
+      - name: cumulative_y1_gpa_projected_s1_unweighted
+        data_type: float64
+        description: >-
+          S1-basis projected cumulative unweighted Y1 GPA (current-year rows
+          only).
+      - name: core_cumulative_y1_gpa
+        data_type: float64
+        description:
+          Cumulative Y1 GPA over core courses (current-year rows only).
+      - name: potential_gpa_credits_cum_projected
+        data_type: float64
+        description: >-
+          Cumulative potential GPA credit hours including in-progress
+          current-year courses (current-year rows only).
+      - name: potential_gpa_credits_current_year
+        data_type: float64
+        description: >-
+          Potential GPA credit hours enrolled this year (current-year rows
+          only).
+      - name: gpa_needed_for_cumulative_3_0
+        data_type: float64
+        description: >-
+          Weighted Y1 GPA needed across current-year GPA credits to finish with
+          a 3.00 projected cumulative (current-year rows only; negative means
+          already guaranteed).
+      - name: is_cumulative_3_0_attainable
+        data_type: boolean
+        description: >-
+          True when `gpa_needed_for_cumulative_3_0` is at or below the
+          credit-weighted max achievable this year (current-year rows only).
+      - name: sectionid
+        data_type: int64
+        description: PowerSchool section id of the course enrollment.
+      - name: sections_dcid
+        data_type: int64
+        description: PowerSchool sections DCID.
+      - name: section_number
+        data_type: string
+        description: Section number.
+      - name: external_expression
+        data_type: string
+        description: Section period expression (HS scheduling).
+      - name: date_enrolled
+        data_type: date
+        description: Course enrollment start date.
+      - name: credit_type
+        data_type: string
+        description: Course credit type (subject area).
+      - name: course_number
+        data_type: string
+        description: Course number.
+      - name: course_name
+        data_type: string
+        description: Course name.
+      - name: exclude_from_gpa
+        data_type: int64
+        description: Course excluded from GPA (1) or included (0).
+      - name: teacher_number
+        data_type: string
+        description: Teacher number of the section's teacher.
+      - name: teacher_name
+        data_type: string
+        description: Teacher name (last, first).
+      - name: teacher_tableau_username
+        data_type: string
+        description: Teacher Tableau username (row-level security).
+      - name: tutoring_nj
+        data_type: boolean
+        description:
+          NJ tutoring program flag for the subject (NULL outside NJ scope).
+      - name: nj_student_tier
+        data_type: string
+        description: NJ student tier for the subject.
+      - name: y1_course_final_percent_grade_adjusted
+        data_type: float64
+        description: Final stored Y1 percent grade (Y1 rows only).
+      - name: y1_course_final_letter_grade_adjusted
+        data_type: string
+        description: Final stored Y1 letter grade (Y1 rows only).
+      - name: y1_course_final_earned_credits
+        data_type: float64
+        description: Credits earned for the course (Y1 rows only).
+      - name: y1_course_final_potential_credit_hours
+        data_type: float64
+        description: Potential credit hours for the course (Y1 rows only).
+      - name: y1_course_final_grade_points
+        data_type: float64
+        description: Final stored Y1 grade points (Y1 rows only).
+      - name: quarter_course_percent_grade
+        data_type: float64
+        description: >-
+          Course percent grade for the row's term. Y1 rows carry the in-progress
+          (current year) or stored (prior year) Y1 percent.
+      - name: quarter_course_letter_grade
+        data_type: string
+        description: Course letter grade for the row's term.
+      - name: quarter_course_grade_points
+        data_type: float64
+        description: Course grade points for the row's term.
+      - name: y1_course_in_progress_percent_grade_adjusted
+        data_type: float64
+        description: In-progress Y1 percent grade (current-year rows only).
+      - name: y1_course_in_progress_letter_grade_adjusted
+        data_type: string
+        description: In-progress Y1 letter grade (current-year rows only).
+      - name: y1_course_in_progress_grade_points
+        data_type: float64
+        description: In-progress Y1 grade points (current-year rows only).
+      - name: y1_course_in_progress_grade_points_unweighted
+        data_type: float64
+        description: >-
+          In-progress unweighted Y1 grade points (current-year rows only).
+      - name: need_60
+        data_type: float64
+        description: >-
+          Percent needed on remaining work to reach a 60 course grade
+          (current-year rows only).
+      - name: need_70
+        data_type: float64
+        description: Percent needed to reach a 70 (current-year rows only).
+      - name: need_80
+        data_type: float64
+        description: Percent needed to reach an 80 (current-year rows only).
+      - name: need_90
+        data_type: float64
+        description: Percent needed to reach a 90 (current-year rows only).
+      - name: category_name_code
+        data_type: string
+        description: Gradebook category code (e.g. F/S/W; NULL on Y1 rows).
+      - name: category_quarter_code
+        data_type: string
+        description: Category term code (e.g. Q1).
+      - name: category_quarter_percent_grade
+        data_type: float64
+        description: Category percent grade for the term.
+      - name: category_y1_percent_grade_running
+        data_type: float64
+        description: Running Y1 category percent grade through the term.
+      - name: category_y1_percent_grade_current
+        data_type: float64
+        description: >-
+          Y1 running category percent as of the current term (current-year rows
+          only).
+      - name: category_quarter_average_all_courses
+        data_type: float64
+        description: >-
+          Student's average percent across all courses for the category-term.
+      - name: section_or_period
+        data_type: string
+        description: >-
+          Section number below grade 9, period expression at grade 9 and above.

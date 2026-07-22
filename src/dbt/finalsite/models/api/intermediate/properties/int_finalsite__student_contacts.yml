@@ -1,0 +1,156 @@
+models:
+  - name: int_finalsite__student_contacts
+    description:
+      SIS-agnostic long-format contact list for Finalsite student records — one
+      row per (student, contact slot), grain `(finalsite_enrollment_id,
+      contact_slot)`. `contact_slot` is `contact_1` (the student's single
+      reportable parent contact — the relationship flagged `primary` in
+      Finalsite, or the one flagged `financial` when no primary is set, resolved
+      to that person's own Finalsite contact record; absent when the student has
+      neither a primary nor a financial relationship) or `emergency_1` through
+      `emergency_4` (the `custom_attributes` `emrg_N` sets mapped positionally —
+      `emergency_N` is `emrg_N` as-is, with no priority re-sort and no
+      gap-filling). Sparse — a slot row is emitted only when that slot has data,
+      so emergency slots may have gaps. Feeds the downstream PowerSchool/Focus
+      contact receivers built on top of this model.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+              - contact_slot
+          config:
+            severity: error
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description:
+          Finalsite contact UUID of the student this contact belongs to.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: contact_slot
+        data_type: string
+        description:
+          Which contact this row represents — `contact_1` or `emergency_1`
+          through `emergency_4`.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - contact_1
+                  - emergency_1
+                  - emergency_2
+                  - emergency_3
+                  - emergency_4
+              config:
+                severity: error
+      - name: finalsite_contact_id
+        data_type: string
+        description:
+          The contact person's own Finalsite contact UUID (their
+          `finalsite_enrollment_id`), resolved through the selected
+          relationship's `rel_id`. Populated for `contact_1`; null for
+          `emergency_*` slots, which are free-text custom-field sets with no
+          linked contact record.
+      - name: contact_name
+        data_type: string
+        description:
+          Contact's name — the relationship's `rel_name` for `contact_1`, or the
+          concatenated first/last name from the matching `emrg_N_name_*` fields
+          for an emergency slot.
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_first_name
+        data_type: string
+        description:
+          Contact's first name — the related person's Finalsite `first_name` for
+          `contact_1`, or `emrg_N_name_first_name` for an emergency slot.
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_last_name
+        data_type: string
+        description:
+          Contact's last name — the related person's Finalsite `last_name` for
+          `contact_1`, or `emrg_N_name_last_name` for an emergency slot.
+        config:
+          meta:
+            contains_pii: true
+      - name: relationship
+        data_type: string
+        description:
+          Relationship to the student — the relationship's `rel_type` for
+          `contact_1`, or `emrg_N_relationship_ss` (falling back to
+          `emrg_N_relationship_txt`) for an emergency slot.
+      - name: email
+        data_type: string
+        description:
+          Contact's email address, from the related person's Finalsite contact
+          record for `contact_1` or `emrg_N_email` for an emergency slot.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_mobile
+        data_type: string
+        description: The contact's phone number typed `Cell`, if any.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_home
+        data_type: string
+        description: The contact's phone number typed `Home`, if any.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_work
+        data_type: string
+        description: The contact's phone number typed `Work`, if any.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_daytime
+        data_type: string
+        description:
+          Always null — Finalsite has no equivalent phone type; carried for
+          downstream SIS receiver shape parity.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_primary
+        data_type: string
+        description:
+          The contact's first phone number regardless of type — a fallback for
+          phones with a blank `_type` that the typed columns miss.
+        config:
+          meta:
+            contains_pii: true
+      - name: home_address
+        data_type: string
+        description:
+          Comma-joined household address (`address_1, address_2, city, state,
+          zip`) from the related person's Finalsite contact record. Always null
+          for `emergency_*` slots — emergency sets carry no address.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_pickup
+        data_type: boolean
+        description:
+          Whether the contact is authorized for pickup. Always null for
+          `contact_1`; `emrg_N_pickup_yn` for an emergency slot.
+      - name: is_custodial
+        data_type: boolean
+        description:
+          Whether the contact has custody. Always null for `contact_1`;
+          `emrg_N_custody_yn` for an emergency slot.
+      - name: is_household_member
+        data_type: boolean
+        description:
+          Whether the contact lives with the student. Always null for
+          `contact_1`; `emrg_N_lives_with_yn` for an emergency slot.
+      - name: is_emergency
+        data_type: boolean
+        description: False for `contact_1`; true for every `emergency_*` slot.

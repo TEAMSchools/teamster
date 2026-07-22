@@ -1,6 +1,6 @@
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus DEMOGRAPHICS contract
 select
-    ida.focus_student_id as stdt_id,
+    ida.focus_student_id_prefixed as stdt_id,
 
     c.last_name,
     c.first_name,
@@ -77,12 +77,14 @@ from {{ ref("stg_finalsite__contacts") }} as c
 inner join
     {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     on c.finalsite_enrollment_id = l.finalsite_enrollment_id
-left join
+inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on c.finalsite_enrollment_id = ida.finalsite_enrollment_id
+    and ida.focus_student_id_prefixed is not null
 left join
     {{ ref("int_finalsite__contact_custom_attributes") }} as cca
     on c.finalsite_enrollment_id = cca.finalsite_enrollment_id
 left join
     {{ ref("stg_google_sheets__focus__language_code_crosswalk") }} as lcc
     on cca.lang_parent_ss = lcc.finalsite_language
+where c.status = 'enrolled'

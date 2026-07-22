@@ -23,8 +23,8 @@ data_tests:
 
 vars:
   local_timezone: America/New_York
-  current_academic_year: 2025
-  current_fiscal_year: 2026
+  current_academic_year: 2026
+  current_fiscal_year: 2027
   cloud_storage_uri_base: gs://teamster-kippcamden/dagster/kippcamden
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
 
@@ -43,7 +43,7 @@ models:
             enforced: true
   finalsite:
     api:
-      +enabled: false
+      +enabled: true
   deanslist:
     +materialized: table
     staging:
@@ -66,41 +66,11 @@ models:
   powerschool:
     +materialized: table
     sis:
-      staging:
-        sftp:
+      intermediate:
+        int_powerschool__contacts:
           +enabled: false
-        odbc:
-          +enabled: true
-          stg_powerschool__gpprogresssubjectrequested:
-            +enabled: false
-          stg_powerschool__gpprogresssubjectwaived:
-            +enabled: false
-          stg_powerschool__gpprogresssubjwaivedapplied:
-            +enabled: false
-          stg_powerschool__gpselectedcrs:
-            +enabled: false
-          stg_powerschool__gpselectedcrtype:
-            +enabled: false
-          stg_powerschool__gpselector:
-            +enabled: false
-          stg_powerschool__gpstudentwaiver:
-            +enabled: false
-          stg_powerschool__gptarget:
-            +enabled: false
-          stg_powerschool__gpversion:
-            +enabled: false
-          stg_powerschool__gradplan:
-            +enabled: false
-          stg_powerschool__period:
-            +enabled: false
-          stg_powerschool__prefs:
-            +enabled: false
-          stg_powerschool__s_nj_usr_x:
-            +enabled: false
-          stg_powerschool__sced_code_mapping:
-            +enabled: false
-          stg_powerschool__u_def_ext_students:
-            +enabled: false
+        int_powerschool__person_contacts:
+          +enabled: false
   titan:
     +materialized: table
     staging:
@@ -111,44 +81,7 @@ sources:
   finalsite:
     finalsite:
       contacts:
-        +enabled: false
-  powerschool:
-    sis:
-      staging:
-        sftp:
-          +enabled: false
-        odbc:
-          powerschool_odbc:
-            src_powerschool__gpprogresssubjectrequested:
-              +enabled: false
-            src_powerschool__gpprogresssubjectwaived:
-              +enabled: false
-            src_powerschool__gpprogresssubjwaivedapplied:
-              +enabled: false
-            src_powerschool__gpselectedcrs:
-              +enabled: false
-            src_powerschool__gpselectedcrtype:
-              +enabled: false
-            src_powerschool__gpselector:
-              +enabled: false
-            src_powerschool__gpstudentwaiver:
-              +enabled: false
-            src_powerschool__gptarget:
-              +enabled: false
-            src_powerschool__gpversion:
-              +enabled: false
-            src_powerschool__gradplan:
-              +enabled: false
-            src_powerschool__period:
-              +enabled: false
-            src_powerschool__prefs:
-              +enabled: false
-            src_powerschool__s_nj_usr_x:
-              +enabled: false
-            src_powerschool__sced_code_mapping:
-              +enabled: false
-            src_powerschool__u_def_ext_students:
-              +enabled: false
+        +enabled: true
   titan:
     titan:
       src_titan__income_form_data:

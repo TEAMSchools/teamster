@@ -104,7 +104,8 @@ evidence in `.claude/scratch/` and reference it. For non-Bash tools only Section
 **Non-Bash tool inputs are path-scanned too:** `TodoWrite` / `AskUserQuestion`
 text containing a bare `env` (or other sensitive-path token) trips "Cannot
 access sensitive path". Reword (`environment variable`; avoid cred-suffix tokens
-like `_KIPPMIAMI`).
+like `_KIPPMIAMI`). Also fires on `mcp__github__*` PR / issue bodies — prose
+like "staging env" / "dev env" is denied; write "environment".
 
 **Your own ad-hoc Bash self-blocks on `$UPPER_CASE`:** Rule 7 denies any Bash
 command expanding a non-allowlisted uppercase var — including one you define in
@@ -112,7 +113,10 @@ that same command (`sc=$(...); echo "${SC}"`). Use lowercase names
 (`sc=...; echo "${sc}"`) in throwaway commands.
 
 **BigQuery MCP** — queries must start with SELECT/SHOW/DESCRIBE/WITH; embedded
-DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked.
+DML/DDL (INSERT, UPDATE, DELETE, CREATE, DROP, etc.) is blocked. The block
+matches the keyword as a substring — including inside a string literal
+(`where type = 'Drop'`), which is denied with the misleading "Cannot access
+sensitive path" message. Reword to avoid the literal (`like 'Dr%'`).
 
 **Output scanning** (PostToolUse) — blocks tool results containing secret
 material (keys, tokens, connection strings, high-entropy strings). Fires for

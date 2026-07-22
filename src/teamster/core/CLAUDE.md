@@ -34,7 +34,6 @@ in full deployments — always check `== "1"`, never truthy.
 - `BIGQUERY_RESOURCE`, `GCS_RESOURCE`, `DLT_RESOURCE`
 - `DEANSLIST_RESOURCE`, `OVERGRAD_RESOURCE`, `ZENDESK_RESOURCE`
 - `GOOGLE_DRIVE_RESOURCE`, `GOOGLE_FORMS_RESOURCE`
-- `DB_POWERSCHOOL` — Oracle ODBC resource (shared env vars)
 - `SSH_COUCHDROP`, `SSH_EDPLAN`, `SSH_IREADY`, `SSH_RENLEARN`, `SSH_TITAN`,
   `SSH_RESOURCE_AMPLIFY` — SFTP resources
 
@@ -119,6 +118,16 @@ built-in Dagster API to suppress this per-asset.
 deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
+
+**`union_relations` wrapper can freeze on a deploy race** (#4290): its condition
+fires on ancestor `code_version_changed`, not `any_deps_updated`. If the wrapper
+materializes at deploy BEFORE its (often cross-code-location) upstream table
+rebuilds with a new schema, `.since(newly_updated)` consumes the trigger and the
+wrapper stays compiled against the OLD column set — downstream reads then fail
+`... failed to parse view` at query time and it does NOT self-heal.
+Rematerialize the wrapper + its consumers via `launch_run`. Diagnose by
+comparing the wrapper's stored `input_data_version/<upstream>` materialization
+tag to the upstream's current `data_version`.
 
 **No dep-code-version gate**: `_build_dbt_condition()` does NOT block
 materialization when a direct dep has

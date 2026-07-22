@@ -33,10 +33,14 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
-- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields inside
-  `build_resources()`. For non-`str` fields (e.g. `int` ports), use
-  `int(check.not_none(EnvVar("X").get_value()))` — `EnvVar` resolves lazily, so
-  `int(EnvVar("X"))` casts the marker object, not the value.
+- **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields and
+  `EnvVar.int("X")` for `int` fields (e.g. ports) inside `build_resources()` —
+  both resolve lazily at resource init and never read the environment at
+  construction. Prefer these over `int(EnvVar("X").get_value())`: `.get_value()`
+  reads eagerly, which is harmless when a test always sets the var but crashes
+  module-load construction in production `resources.py` when it is unset (e.g. a
+  codespace) — so never copy that idiom there. Plain `int(EnvVar("X"))` casts
+  the marker object, not the value.
 - **Worktree tests**: VS Code doesn't discover tests in worktrees. Run manually
   ensuring `OP_SERVICE_ACCOUNT_TOKEN` is set, then
   `cd .worktrees/<branch> && uv run pytest ...`.
@@ -45,14 +49,28 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `build_resources()` context manager to instantiate, then call methods on
   `resources.<name>`. `PrivateAttr` fields (`_log`, `_service`) accept direct
   assignment; use `object.__setattr__` to monkey-patch methods.
+- **Testing env-var resolution offline**:
+  `resource.process_config_and_initialize()` returns an initialized copy with
+  `EnvVar` / `EnvVar.int` fields resolved but WITHOUT running
+  `setup_for_execution` — no live connection or secret file needed. Ideal for
+  asserting a config field resolves to the right value/type.
 - **Testing resource retry offline**: monkeypatch
   `<Resource>._request.retry.wait = wait_none()` (tenacity) to kill backoff,
   inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`
   with a `_FakeResponse` stub, and assert call counts for retry/no-retry paths.
   Reference harness: `tests/resources/test_resource_adp_workforce_now.py`.
-- **SSH `test=True`**: `SSHResource` reads the SSH password from a secret file
-  by default (`test=False`). Integration tests must set `test=True` and pass
-  `password` directly so each district uses its own credentials.
+- **SSH `test`**: vestigial config. It formerly switched the sshpass tunnel's
+  password source (secret file vs. the `password` field); that tunnel was
+  removed in #4442, so no method on `SSHResource` reads it now.
+  `tests/resources/test_resource_ssh_rekey.py` still sets `test=True` —
+  harmless, pending a later cleanup once fixtures drop it.
+- **SSH-tunnel / powerschool-odbc suites take ~2-3 min** (loopback ssh-rsa
+  servers in `test_ssh_paramiko_tunnel.py` / `test_resource_ssh_rekey.py`) —
+  they exceed the 120s Bash timeout; run them with `run_in_background`. Do NOT
+  chain `git stash` with a long-running verify in one command: a timeout can
+  leave the changes stashed and the `stash pop` unrun. To confirm a failure is
+  pre-existing, check the test is in an untouched dir and doesn't reference your
+  changed symbols, rather than stash-comparing.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.

@@ -60,6 +60,13 @@ default "one short line max" rule.
 `check.not_none()` from `dagster_shared` — never `assert isinstance(...)`
 (`assert` is stripped by `-O`).
 
+**Int env-var config**: use `EnvVar.int("NAME")` for `int`-typed resource fields
+(e.g. ports) — it stays lazy and resolves at resource init like a string
+`EnvVar`. Never `int(EnvVar("NAME").get_value())`: `.get_value()` reads eagerly
+at construction and crashes module-load resource wiring when the var is unset
+(e.g. a codespace). `IntEnvVar` is not exported from `dagster` — reach it via
+`EnvVar.int`.
+
 ## Library Categories
 
 Libraries fall into four patterns based on how they ingest data:
@@ -69,7 +76,7 @@ Libraries fall into four patterns based on how they ingest data:
 | **SFTP file drop** | collegeboard, edplan, fldoe, iready, nsc, pearson, performance_management, renlearn, titan | `build_sftp_*_asset()` from `libraries/sftp/` + Avro schemas    |
 | **REST API**       | coupa, deanslist, knowbe4, level_data, overgrad, smartrecruiters                           | Custom `build_*_asset()` factory + resource class               |
 | **Framework**      | dbt, dlt, google, airbyte, fivetran                                                        | Dagster-native integration (`dagster-dbt`, `dagster-dlt`, etc.) |
-| **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (ODBC + SFTP + API)                    | Multiple factories per product line                             |
+| **Multi-access**   | adp (API + SFTP), amplify (API + SFTP), powerschool (dlt + SFTP + API; ODBC archived)      | Multiple factories per product line                             |
 
 Schema-only libraries (collegeboard, dayforce, fldoe, nsc, pearson,
 performance_management) contain only Avro schemas — the asset is built in the
@@ -77,9 +84,9 @@ code location using the generic SFTP factory.
 
 ## Code Location Structure
 
-`kippnewark` is the most complete district code location — it uses every
-available integration. Use it as the reference implementation when adding new
-integrations to other districts.
+`kippnewark` has the widest set of district-level integrations (many
+integrations — adp, google, ldap, tableau, etc. — are kipptaf-only). Use it as
+the reference implementation when adding new integrations to other districts.
 
 Each code location follows the same layout:
 
@@ -115,10 +122,21 @@ Resources are defined in two places:
   kipptaf defines ADP WFN, Airbyte, Coupa, LDAP, Tableau, etc.). Only exists
   when a code location needs resources beyond the shared set.
 
+**`EnvVar`-backed resource config resolves in TWO places** under
+`k8s_job_executor`: execution-plan build (code server) AND step-pod resource
+init (run pod). A field like `password=EnvVar("PS_SSH_PASSWORD")` needs that var
+in BOTH `dagster-cloud.yaml` blocks — `container_context` (server) and
+`run_k8s_config` (run pod). Missing server-side fails at launch
+(`PostProcessingError: ... not set`); missing run-pod-side fails at step init.
+
 ## Asset Key Convention
 
 `[code_location, integration, ...]` — e.g., `kippnewark/powerschool/students`,
 `kipptaf/extracts/tableau/attendance_dashboard`.
+
+In Python, get this slash form with `key.to_user_string()` —
+`str(AssetKey([...]))` returns the `AssetKey([...])` repr, not
+`code_location/integration/name` (bites asset-key assertions in import checks).
 
 ## Automation Conditions
 
@@ -173,10 +191,14 @@ Match on a specific exception class (define one if the upstream code raises bare
 the init path (`fetch_token` / `connect` in `setup_for_execution`) too, not just
 the request method. For network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
-`ConnectTimeout`. For runtime-parameterized retry loops (e.g.
-`with_powerschool_retry`), use `tenacity.Retrying` — a manual
-`for attempt in range(...)` has no backoff. Avoid broad base classes whose
-subclasses include deterministic config errors (e.g.
+`ConnectTimeout`. The `tableau` sign-in path is the exception:
+`tableauserverclient` raises its own errors, not `requests.HTTPError`, so its
+predicate is `(RequestsConnectionError, Timeout, InternalServerError)`
+(`InternalServerError` wraps a 5xx) and it fails fast on `FailedSignInError`
+(401) / `ServerResponseError` (other 4xx) — do not "restore" `HTTPError` there.
+For runtime-parameterized retry loops (e.g. `with_powerschool_retry`), use
+`tenacity.Retrying` — a manual `for attempt in range(...)` has no backoff. Avoid
+broad base classes whose subclasses include deterministic config errors (e.g.
 `paramiko.ssh_exception.SSHException` covers `IncompatiblePeer`,
 `BadHostKeyException`, `BadAuthenticationType`). List transient subclasses
 explicitly.
@@ -212,3 +234,15 @@ uv run dagster-dbt project prepare-and-package --file src/teamster/code_location
 codespace cause false errors unrelated to production failures. Fall back to
 `uv run python -c "import <module>"` for syntactic checks when validate fails on
 missing manifest or env vars.
+
+In the codespace, importing a district `definitions.py` first needs the dbt
+manifest (`dagster-dbt project prepare-and-package`, above). With the manifest,
+`kippnewark` and `kippcamden` import cleanly. `kipptaf.definitions` AND
+`kippmiami.definitions` fail at module load: kipptaf on the Illuminate/Zendesk
+dlt credential specs, kippmiami on the Focus dlt spec
+(`resolve_configuration(ConnectionStringCredentials(), sections=("FOCUS_DB",))`
+in `dlt/focus/assets.py`) — both call the credential resolver eagerly (unset in
+the codespace). For a change to either, `py_compile` the edited files and import
+the affected submodule alone (e.g.
+`import teamster.code_locations.kipptaf.finalsite` or
+`teamster.code_locations.kippmiami.extracts`), not the `definitions` module.

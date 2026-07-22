@@ -184,9 +184,11 @@ cubes:
 
       - name: avg_percent_correct
         description: >-
-          Average percent correct. Internal-effective (null for state) — filter
-          by subject/standard for a meaningful value. Built from additive
-          primitives so pre-aggregations roll it up.
+          Grain: recomputes at any query grain, but meaningful only within a
+          single subject/standard — pooling percent-correct across assessments
+          is a silent-failure trap (numerically valid, semantically
+          meaningless). Average percent correct, internal-effective (null for
+          state), built from additive primitives so pre-aggregations roll it up.
         sql: "{_sum_percent_correct} / NULLIF({_count_percent_correct}, 0)"
         type: number
         public: true
@@ -210,10 +212,11 @@ cubes:
 
       - name: avg_scale_score
         description: >-
-          Average scale score. Only meaningful within a single
-          assessment/subject/grade/source — scales are not comparable across
-          sources. Built from additive primitives so pre-aggregations roll it
-          up.
+          Grain: recomputes at any query grain, but meaningful only within a
+          single assessment source/subject/grade — scale scores are not
+          comparable across sources, so pooling them is a silent-failure trap
+          (numerically valid, semantically meaningless). Average scale score,
+          built from additive primitives so pre-aggregations roll it up.
         sql: "{_sum_scale_score} / NULLIF({_count_scale_score}, 0)"
         type: number
         public: true
@@ -287,3 +290,83 @@ cubes:
         type: number
         format: percent
         public: true
+
+    pre_aggregations:
+      # Rollup on the additive proficiency primitives for the standard-level
+      # proficiency-by-demographic hot path. Includes the RLS scoping keys
+      # (locations.region_key / locations.abbreviation) so region/school viewers
+      # hit the rollup rather than falling back to the fact. Also includes the
+      # lead teacher (key + name) so "proficiency by teacher" queries — grouped
+      # by lead_teacher_staff_key or staff_lead_teacher.full_name — hit the
+      # rollup. A rollup only serves a query whose grouped members are all in
+      # it, so the name must be here (and exposed on the view) or a name-grouped
+      # query falls back to the fact. The key adds cardinality; the name is 1:1
+      # with the key (adds width, not rows).
+      - name: proficiency_rollup
+        measures:
+          - student_assessment_scores.count_scores
+          - student_assessment_scores._sum_proficient
+        dimensions:
+          - dates.academic_year
+          - student_assessments.module_code
+          # module_type is functionally determined by module_code above, so it
+          # adds no rollup rows; it lets queries filter by the coarser
+          # QA / MQQ / CRQ grouping.
+          - student_assessments.module_type
+          - student_assessments.academic_subject
+          - student_assessments.grade_level_tested
+          - student_assessment_administrations.administration_period
+          - student_assessment_scores.response_type_code
+          # response_type (overall / strand / standard) and its human-readable
+          # description are both functionally determined by response_type_code
+          # above (zero added rows). They serve standard-level cuts: filter
+          # response_type = 'standard' and break out by response_type_description
+          # (the IEP-vs-gen-ed-by-standard pilot pattern, WG 2026-07-02).
+          - student_assessment_scores.response_type
+          - student_assessment_scores.response_type_description
+          - students.race
+          - students.gender_identity
+          - student_school_enrollments.grade_level
+          # is_iep is the one independent addition (binary, so at most 2x rows);
+          # it serves the IEP-vs-gen-ed disparity cut.
+          - student_enrollment_status.is_iep
+          - locations.region_key
+          - locations.abbreviation
+          # region_name is functionally determined by region_key above (zero
+          # added rows) — supports region-name filter phrasing (e.g. "Newark").
+          - regions.region_name
+          # lead teacher (key + name) so proficiency-by-teacher queries hit the
+          # rollup rather than the ~14.2M-row fact; the key adds cardinality,
+          # the name is 1:1 with the key (width, not rows).
+          - student_section_enrollments.lead_teacher_staff_key
+          - staff_lead_teacher.full_name
+        # Partitioned refresh: without a time_dimension, Cube rebuilds this
+        # entire rollup from the ~14.2M-row fact on every refresh_key check,
+        # regardless of what changed. dates.date_day (via
+        # student_assessment_administrations -> dates), not the cube's own
+        # date_taken, is the time anchor — date_taken is documented above as
+        # corrupt for a small share of rows and its own description says
+        # calendar rollups belong on the administration date. Year
+        # partitioning (not day/month) matches how corrections actually land:
+        # restatements replace a whole academic year at a time, so a
+        # correction only invalidates the partition(s) touching that year,
+        # not the full history.
+        time_dimension: dates.date_day
+        granularity: year
+        partition_granularity: year
+        # Bound the build range to real assessment history. Without this, Cube
+        # derives the range from the time_dimension's min/max — and
+        # dates.date_day resolves through dim_dates, whose calendar spine runs
+        # to 9999, so the scheduled-refresh worker enumerates ~8,000 empty
+        # yearly partitions (this is why #4460 was reverted). Floor is set below
+        # the earliest administration date carrying a score (2015-08-14,
+        # verified against the fact 2026-07-20); the end tracks today. Yields
+        # ~12 partitions. ~2.9% of score rows have a null administration date
+        # and are not covered by this partitioned rollup — those queries fall
+        # back to the fact, which is correct.
+        build_range_start:
+          sql: SELECT DATE('2015-07-01')
+        build_range_end:
+          sql: SELECT CURRENT_DATE('America/New_York')
+        refresh_key:
+          every: 1 day

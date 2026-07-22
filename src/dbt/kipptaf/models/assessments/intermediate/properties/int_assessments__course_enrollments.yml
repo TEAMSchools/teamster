@@ -6,8 +6,8 @@ models:
       Illuminate assessments are joined against. One row per (student, academic
       year, subject area, date enrolled), deduplicated to the latest exit per
       enrollment span.
-    # config:
-    #   materialized: table
+    config:
+      materialized: table
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

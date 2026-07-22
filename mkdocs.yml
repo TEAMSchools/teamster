@@ -55,8 +55,11 @@ nav:
       - IO Managers: reference/io-managers.md
       - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
       - dbt Conventions: reference/dbt-conventions.md
+      - Finalsite to Focus Import: reference/finalsite-focus-import.md
       - Marts Data Models: reference/marts-data-models.md
       - Automation Conditions: reference/automation-conditions.md
+  - Models:
+      - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
   - Automations: reference/automations.md
 
 markdown_extensions:

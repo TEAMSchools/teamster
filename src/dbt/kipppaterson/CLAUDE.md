@@ -14,21 +14,27 @@ models/
     intermediate/
 ```
 
-PowerSchool data source: **SFTP** (`sftp.+enabled: true`,
-`odbc.+enabled: false`)
+PowerSchool data source: **dlt** (the package default; `odbc` and `sftp` are
+off). Paterson disables a set of grad-plan and gradebook `stg_powerschool__*`
+dlt models its PowerSchool instance does not populate — see the
+`powerschool.sis.staging.dlt` block in `dbt_project.yml`.
 
-This is the only NJ district using SFTP instead of ODBC for PowerSchool. Many
-gradebook-related models (GPA, category grades, assignments) are explicitly
-disabled.
+## Source Packages
 
-## Active Source Packages
+Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`).
+Endpoint-level notes:
 
-- `powerschool` (SFTP)
 - `pearson` — `stg_pearson__njsla` and `stg_pearson__njsla_science` enabled;
   `stg_pearson__njgpa`, `stg_pearson__parcc`, `stg_pearson__student_test_update`
   disabled in `dbt_project.yml`
 - `amplify` — both `dds` and `mclass/api` disabled
 - `finalsite`
+- `deanslist` — `behavior`, `comm_log`, `incidents`, `roster_assignments`,
+  `rosters`, `students`, `terms`, and `users` endpoints pulled. The
+  `stg_deanslist__dff_stats`, `stg_deanslist__followups`,
+  `stg_deanslist__homework`, and `stg_deanslist__lists` staging models (and
+  their `src_deanslist__*` sources) are disabled in `dbt_project.yml` — Paterson
+  does not pull those endpoints, so no Avro exists for them
 
 ## Models in package-named directories
 

@@ -1,11 +1,35 @@
 models:
   - name: int_surveys__kfwd_career_launch_reconciliation
+    description: >-
+      Career Launch survey reconciliation sourced from a Google Form. Maps a
+      Career Launch survey response to a Salesforce contact and records whether
+      the response should be reconciled (retained) or excluded from Career
+      Launch reporting. One row per survey response, keeping the most recent
+      submission.
     config:
       materialized: table
     columns:
       - name: survey_response_id
+        description: >-
+          Career Launch survey response ID being reconciled. Joins to the
+          response ID on the Career Launch survey.
         data_type: string
         data_tests:
           - unique
+      - name: reconcile_or_exclude
+        description: >-
+          Disposition selected in the reconciliation form. Exclude removes the
+          matching survey response from Career Launch reporting; NULL (legacy
+          responses submitted before this field existed) and Reconcile both
+          retain the response.
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Reconcile, Exclude]
+              config:
+                severity: warn
+                where: reconcile_or_exclude is not null
       - name: sf_contact_id
+        description: Salesforce contact ID the survey response is reconciled to.
         data_type: string

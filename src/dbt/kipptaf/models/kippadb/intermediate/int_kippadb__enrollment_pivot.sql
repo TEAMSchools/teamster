@@ -289,6 +289,19 @@ with
                 else e.aa_enrollment_id
             end as ugrad_enrollment_id,
 
+            -- pick the student's single best post-secondary enrollment:
+            -- completed (Graduated) first, then degree level (BA > AA > CTE).
+            -- coalesce returns the first non-null in priority order: graduated
+            -- BA/AA/CTE, then any BA/AA/CTE. null when the student has none.
+            coalesce(
+                if(ba.status = 'Graduated', e.ba_enrollment_id, null),
+                if(aa.status = 'Graduated', e.aa_enrollment_id, null),
+                if(cte.status = 'Graduated', e.vocational_enrollment_id, null),
+                e.ba_enrollment_id,
+                e.aa_enrollment_id,
+                e.vocational_enrollment_id
+            ) as postsec_completed_enrollment_id,
+
             coalesce(
                 emp.start_date, emp.enlist_date, emp.bmt_start_date, emp.meps_start_date
             ) as emp_start_date,
@@ -334,6 +347,7 @@ select
     ew.cte_enrollment_id,
     ew.graduate_enrollment_id,
     ew.ugrad_enrollment_id,
+    ew.postsec_completed_enrollment_id,
     ew.cur_enrollment_id,
     ew.ba_school_name,
     ew.ba_pursuing_degree_type,
@@ -441,6 +455,28 @@ select
     uga.adjusted_6_year_minority_graduation_rate
     as ugrad_adjusted_6_year_minority_graduation_rate,
 
+    pce.name as postsec_completed_school_name,
+    pce.pursuing_degree_type as postsec_completed_pursuing_degree_type,
+    pce.status as postsec_completed_status,
+    pce.start_date as postsec_completed_start_date,
+    pce.actual_end_date as postsec_completed_actual_end_date,
+    pce.anticipated_graduation as postsec_completed_anticipated_graduation,
+    pce.account_type as postsec_completed_account_type,
+    pce.major as postsec_completed_major,
+    pce.major_area as postsec_completed_major_area,
+    pce.college_major_declared as postsec_completed_college_major_declared,
+    pce.date_last_verified as postsec_completed_date_last_verified,
+    pce.of_credits_required_for_graduation
+    as postsec_completed_credits_required_for_graduation,
+
+    pcea.name as postsec_completed_account_name,
+    pcea.billing_state as postsec_completed_billing_state,
+    pcea.nces_id as postsec_completed_nces_id,
+    pcea.act_composite_25_75 as postsec_completed_act_composite_25_75,
+    pcea.competitiveness_ranking as postsec_completed_competitiveness_ranking,
+    pcea.adjusted_6_year_minority_graduation_rate
+    as postsec_completed_adjusted_6_year_minority_graduation_rate,
+
     if(
         ew.ba_enrollment_id is null
         and ew.aa_enrollment_id is null
@@ -451,3 +487,7 @@ select
 from enrollment_wide as ew
 left join {{ ref("stg_kippadb__enrollment") }} as ug on ew.ugrad_enrollment_id = ug.id
 left join {{ ref("stg_kippadb__account") }} as uga on ug.school = uga.id
+left join
+    {{ ref("stg_kippadb__enrollment") }} as pce
+    on ew.postsec_completed_enrollment_id = pce.id
+left join {{ ref("stg_kippadb__account") }} as pcea on pce.school = pcea.id

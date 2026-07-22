@@ -36,6 +36,20 @@ with
         group by p.student
     ),
 
+    career_conversations as (
+        select
+            contact_id,
+
+            sum(cc1) as cc1_count,
+            sum(cc2) as cc2_count,
+            sum(cc3) as cc3_count,
+            sum(cc4) as cc4_count,
+            sum(cc5) as cc5_count,
+            sum(cc1 + cc2 + cc3 + cc4 + cc5) as cc_total_count,
+        from {{ ref("int_kippadb__contact_note_rollup") }}
+        group by contact_id
+    ),
+
     roster as (
         select
             r.contact_id,
@@ -54,9 +68,18 @@ with
             r.contact_actual_college_graduation_date as actual_college_grad_date,
             r.contact_current_kipp_student as current_kipp_student,
             r.contact_owner_name,
+            r.contact_postsec_advisor as postsec_advisor,
             r.es_graduated,
             r.tier,
             r.contact_advising_provider as advising_provider,
+            r.contact_most_recent_iep_date as most_recent_iep_date,
+            r.contact_middle_school_attended as middle_school_attended,
+            r.contact_high_school_graduated_from as high_school_graduated_from,
+            r.ktc_cohort,
+            r.contact_currently_enrolled_school as currently_enrolled_school,
+            r.contact_current_college_cumulative_gpa as current_college_cumulative_gpa,
+            r.contact_mobile_phone as primary_phone,
+            r.contact_home_phone as secondary_phone,
 
             e.pursuing_degree_type,
             e.type,
@@ -72,6 +95,8 @@ with
 
             p.college_programs,
 
+            cc.notes as career_conversation_notes,
+
             lower(r.contact_email) as sf_email,
             lower(r.contact_secondary_email) as sf_secondary_email,
 
@@ -79,6 +104,49 @@ with
             coalesce(p.is_braven, false) as is_braven,
             coalesce(p.is_backrs, false) as is_backrs,
             coalesce(p.is_kippnj_internship, false) as is_kippnj_internship,
+            coalesce(cc.is_resume_score, false) as is_resume_score,
+            coalesce(cc.is_linkedin, false) as is_linkedin,
+            coalesce(cc.is_mock_interview_or_prep, false) as is_mock_interview_or_prep,
+            coalesce(
+                cc.is_professional_references_list, false
+            ) as is_professional_references_list,
+            coalesce(cc.is_job_search_template, false) as is_job_search_template,
+            coalesce(cc.is_cover_letter_template, false) as is_cover_letter_template,
+            coalesce(cc.is_work_samples, false) as is_work_samples,
+            coalesce(ccr.cc1_count, 0) as cc1_count,
+            coalesce(ccr.cc2_count, 0) as cc2_count,
+            coalesce(ccr.cc3_count, 0) as cc3_count,
+            coalesce(ccr.cc4_count, 0) as cc4_count,
+            coalesce(ccr.cc5_count, 0) as cc5_count,
+            coalesce(ccr.cc_total_count, 0) as cc_total_count,
+
+            (
+                select countif(item),
+                from
+                    unnest(
+                        [
+                            cc.is_resume_score,
+                            cc.is_linkedin,
+                            cc.is_mock_interview_or_prep,
+                            cc.is_professional_references_list,
+                            cc.is_job_search_template,
+                            cc.is_cover_letter_template,
+                            cc.is_work_samples
+                        ]
+                    ) as item
+            ) as career_conversation_items_complete_count,
+
+            if(
+                cc.is_resume_score
+                and cc.is_linkedin
+                and cc.is_mock_interview_or_prep
+                and cc.is_professional_references_list
+                and cc.is_job_search_template
+                and cc.is_cover_letter_template
+                and cc.is_work_samples,
+                true,
+                false
+            ) as is_career_conversation_complete,
 
             extract(
                 month from r.contact_expected_college_graduation
@@ -121,6 +189,10 @@ with
             {{ ref("int_surveys__kfwd_career_launch_reconciliation") }} as sr
             on r.contact_id = sr.sf_contact_id
         left join programs as p on r.contact_id = p.student
+        left join
+            {{ ref("stg_google_appsheet__kfwd_career_conversations__output") }} as cc
+            on r.contact_id = cc.contact_id
+        left join career_conversations as ccr on r.contact_id = ccr.contact_id
         where
             r.ktc_status in ('HSG', 'TAF')
             and r.ktc_cohort <= {{ var("current_academic_year") }}
@@ -213,6 +285,19 @@ with
                 ) as float64
             ) as annual_income_clean,
         from survey_pivot
+    ),
+
+    excluded_responses as (
+        select survey_response_id,
+        from {{ ref("int_surveys__kfwd_career_launch_reconciliation") }}
+        where reconcile_or_exclude = 'Exclude'
+    ),
+
+    survey_filtered as (
+        select sc.*,
+        from survey_clean as sc
+        left join excluded_responses as er on sc.response_id = er.survey_response_id
+        where er.survey_response_id is null
     )
 
 select
@@ -257,6 +342,31 @@ select
     r.es_graduated,
     r.tier,
     r.advising_provider,
+    r.postsec_advisor,
+    r.most_recent_iep_date,
+    r.middle_school_attended,
+    r.high_school_graduated_from,
+    r.ktc_cohort,
+    r.currently_enrolled_school,
+    r.current_college_cumulative_gpa,
+    r.primary_phone,
+    r.secondary_phone,
+    r.career_conversation_notes,
+    r.is_resume_score,
+    r.is_linkedin,
+    r.is_mock_interview_or_prep,
+    r.is_professional_references_list,
+    r.is_job_search_template,
+    r.is_cover_letter_template,
+    r.is_work_samples,
+    r.cc1_count,
+    r.cc2_count,
+    r.cc3_count,
+    r.cc4_count,
+    r.cc5_count,
+    r.cc_total_count,
+    r.career_conversation_items_complete_count,
+    r.is_career_conversation_complete,
 
     sp.survey_id,
     sp.survey_title,
@@ -290,7 +400,7 @@ select
     sp.annual_income_clean,
 
     if(
-        r.actual_end_date_month < 7,
+        r.expected_grad_date_month < 7,
         concat('Spring ', r.expected_grad_date_year),
         concat('Fall ', r.expected_grad_date_year)
     ) as season_label_expected,
@@ -302,6 +412,10 @@ select
     ) as season_label,
 
     if(r.contact_id is null, true, false) as is_unmatched_response,
+
+    if(r.most_recent_iep_date is not null, true, false) as is_special_education,
+
+    if(r.advising_provider = 'KIPP NYC', 'Collab', r.contact_owner_name) as advisor,
 
     if(
         r.contact_id is not null,
@@ -315,7 +429,7 @@ select
     ) as rn_respondent,
 from roster as r
 full join
-    survey_clean as sp
+    survey_filtered as sp
     on r.rn_graduated = 1
     and (
         r.sf_email = sp.respondent_user_principal_name

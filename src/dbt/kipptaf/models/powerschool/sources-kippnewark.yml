@@ -680,24 +680,6 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__spenrollments
-      - name: int_powerschool__student_contacts
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippnewark
-                - powerschool
-                - int_powerschool__student_contacts
-      - name: int_powerschool__student_contacts_pivot
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippnewark
-                - powerschool
-                - int_powerschool__student_contacts_pivot
       - name: int_powerschool__student_enrollment_union
         config:
           meta:
@@ -770,6 +752,15 @@ sources:
                 - kippnewark
                 - powerschool
                 - int_powerschool__gpa_cumulative
+      - name: int_powerschool__gpa_cumulative_year
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippnewark
+                - powerschool
+                - int_powerschool__gpa_cumulative_year
       - name: int_powerschool__gradebook_assignments
         config:
           meta:

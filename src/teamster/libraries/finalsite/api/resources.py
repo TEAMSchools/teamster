@@ -1,11 +1,58 @@
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import jwt
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import HTTPError, Response, Session
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import Timeout
+from tenacity import (
+    retry,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential_jitter,
+)
+
+
+def _is_transient_status(status_code: int) -> bool:
+    """Return True for HTTP status codes treated as transient (worth retrying).
+
+    A bare gateway ``403`` (the shared-egress throttle signature) and any ``5xx``
+    gateway/upstream fault. Centralized so the retry decision (``_is_retryable``)
+    and the log-severity decision (``_request``'s error handler) cannot drift.
+    """
+    return status_code == 403 or status_code >= 500
+
+
+def _is_retryable(exception: BaseException) -> bool:
+    """Return True for transient faults worth a bounded retry.
+
+    Retried cases:
+
+    - A connection error or connect/read timeout against the gateway.
+    - A bare gateway ``403``. All four districts' contacts pulls fire
+      simultaneously from one shared egress IP, so the Finalsite gateway returns
+      a ``403`` (not a ``429``) once the concurrent load trips its per-source
+      ceiling. The ``finalsite_api`` concurrency pool is the root-cause fix; this
+      is defense-in-depth for a transient ``403``.
+    - Any ``5xx``. Gateway/upstream faults (``502 Bad Gateway``,
+      ``503 Service Unavailable``, ``504 Gateway Timeout``) are transient and
+      clear on retry, so a single mid-pagination blip must not fail the whole
+      ~20-minute pull and force a full re-run.
+
+    A ``429`` never reaches here — it is handled in-band (sleep on ``Retry-After``
+    then retry). Other ``4xx`` are deterministic client errors and fail fast.
+    """
+    if isinstance(exception, (RequestsConnectionError, Timeout)):
+        return True
+
+    return (
+        isinstance(exception, HTTPError)
+        and exception.response is not None
+        and _is_transient_status(exception.response.status_code)
+    )
 
 
 class FinalsiteResource(ConfigurableResource):
@@ -13,6 +60,7 @@ class FinalsiteResource(ConfigurableResource):
     credential_id: str
     secret: str
     api_version: str = "1"
+    request_timeout: float = 60.0
 
     _service_root: str = PrivateAttr(
         default="https://{0}.fsenrollment.com/api/external"
@@ -29,7 +77,7 @@ class FinalsiteResource(ConfigurableResource):
             "name": "Dagster",
             # Finalsite rejects any exp more than 60 minutes out; 55 leaves a
             # clock-skew margin while maximizing the pagination window.
-            "exp": datetime.now() + timedelta(minutes=55),
+            "exp": datetime.now(tz=UTC) + timedelta(minutes=55),
         }
 
         token = jwt.encode(payload=payload, key=self.secret)
@@ -40,8 +88,15 @@ class FinalsiteResource(ConfigurableResource):
     def _get_url(self, path: str, id: str | None) -> str:
         return f"{self._service_root}/{path}" + (f"/{id}" if id else "")
 
+    @retry(
+        retry=retry_if_exception(_is_retryable),
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=2, max=60),
+        reraise=True,
+    )
     def _request(self, method: str, path: str, id: str | None, **kwargs) -> Response:
         url = self._get_url(path=path, id=id)
+        kwargs.setdefault("timeout", self.request_timeout)
 
         self._log.debug(msg=f"{method} {url}\n{kwargs}")
         response = self._session.request(method=method, url=url, **kwargs)
@@ -49,7 +104,7 @@ class FinalsiteResource(ConfigurableResource):
         try:
             response.raise_for_status()
             return response
-        except HTTPError as e:
+        except HTTPError:
             if response.status_code == 429:
                 retry_after = float(response.headers["Retry-After"])
 
@@ -60,9 +115,20 @@ class FinalsiteResource(ConfigurableResource):
                 time.sleep(retry_after)
 
                 return self._request(method=method, path=path, id=id, **kwargs)
-            else:
-                self._log.error(response.text)
-                raise e
+
+            # A shared-gateway 403 and any 5xx are transient (see _is_retryable):
+            # log at WARNING, not ERROR, so the retry layer's recovered attempts
+            # don't file false-positive GCP Error Reporting groups, then re-raise
+            # for tenacity to retry with backoff.
+            if _is_transient_status(response.status_code):
+                self._log.warning(
+                    f"Transient {response.status_code} on {method} {path}: "
+                    f"{response.text.strip()[:200]}"
+                )
+                raise
+
+            self._log.error(response.text)
+            raise
 
     def get(self, path: str, id: str | None = None, **kwargs) -> Response:
         return self._request(method="GET", path=path, id=id, **kwargs)

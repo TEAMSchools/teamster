@@ -4,6 +4,7 @@
             source("kippnewark_deanslist", model.name),
             source("kippcamden_deanslist", model.name),
             source("kippmiami_deanslist", model.name),
+            source("kipppaterson_deanslist", model.name),
         ]
     )
 }}

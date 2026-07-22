@@ -70,6 +70,13 @@ Produce `_dbt_source_project` on a union model with
 `from union_relations` (the `union_relations` CTE wrapping
 `dbt_utils.union_relations`).
 
+Prefer inline `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` over the
+`extract_code_location` macro when the union view is `select *` with an `AM04`
+trunk-ignore, or is mocked in a dbt unit test: the macro form makes AM04 stop
+firing (`trunk/ignore-does-nothing`), and its table-name qualifier breaks unit
+tests (`Unrecognized name` after dbt renames the mocked ref). Siblings
+`stg_powerschool__courses` / `stg_powerschool__studentcorefields` use inline.
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
@@ -88,6 +95,28 @@ are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
 
+### Finalsite contact unions
+
+`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` are
+kipptaf `union_relations` views over per-region finalsite sources.
+
+- **Union CUTOVER regions, not merely api-enabled ones.** Miami has the
+  finalsite api enabled with contacts data AND `powerschool_student_number`s, so
+  unioning it into `int_finalsite__student_contacts` double-counts against the
+  PowerSchool branch of `int_students__contacts` (the grain test catches it).
+  `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
+  and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
+  Newark rows (null prefix) never reach the Focus feeds.
+- **Source schema staging branch**: all four regions' finalsite sources
+  (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
+  `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
+  pattern — a cross-region finalsite union needs the staged copies for CI).
+  Newark gained it in #4400 (DeansList contacts) alongside a column add to
+  `int_finalsite__student_contacts`; before pushing any finalsite column-adding
+  PR, seed the staged copies per district (`dbt clone --target staging` +
+  `dbt build --select <model> --target staging`) so CI's union-wrapper rebuild
+  sees the new columns.
+
 ### `extracts/powerschool/` special case
 
 `rpt_powerschool__autocomm_*` models define a shared export format but are
@@ -102,6 +131,15 @@ contract-columns-only — NO data tests or descriptions (those live on the kippt
 view). A new kipptaf region source (`sources-kipp*.yml`) needs the
 `dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
 can't read it.
+
+**finalsite→focus exception**: the kippmiami `rpt_focus__*` are NOT thin
+pass-throughs — they are the reconciliation layer (import-once / diff against
+current Focus via the `focus` package, which only kippmiami has). kipptaf
+`rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
+actual SFTP feed. Per feed: addresses/contacts/demographics import-once
+(presence anti-join, with a null/completeness gate #4320); enrollment diffs and
+additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
+`docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 
 ## `dbt_project.yml` Inherited Defaults
 
@@ -224,6 +262,42 @@ short canonical names (`Newark` / `Camden` / `Miami` / `Paterson`). For region
 lookups by short name, use `city`. For mapping `_dbt_source_project` to region,
 use `dim_regions.dagster_code_location`.
 
+**`dim_staff` is all-time staff (~4,600), not active-only.** For an active-staff
+grain, spine on `dim_staff_work_assignments` where `is_current` (which already
+excludes terminated staff via termination date). Do NOT filter
+`dim_work_assignment_status.status_name != 'Terminated'` to get "active" — that
+assignment-status field is misaligned with the roster's `worker_status_code` and
+over-drops (~100 roster-active staff). The roster active+primary set (~1,526)
+runs ~30 larger than the marts' current-primary set (hire/term timing). `entity`
+(KTAF vs Region) derives from `business_unit_name`
+(`KIPP TEAM and Family Schools Inc.` = KTAF, else Region).
+
+**`stg_renlearn__star` is the consolidated STAR model** — the Nov-2025
+"consolidate star calcs" refactor disabled `int_renlearn__star_rollup`
+(`config: enabled: false`; leave it) and folded the derived columns
+(`academic_year`, `star_subject`/`star_discipline`, `administration_window`
+Fall/Winter/Spring→BOY/MOY/EOY, benchmark int-flags, `rn_subject_*`) into this
+kipptaf-level `union_relations` view (materialized table). All STAR consumers
+read it. Edit/consume STAR here, not the rollup.
+
+**`stg_adp_workforce_now__workers` has no SCD2 tombstone for disappearance.** A
+worker hard-deleted or merged in ADP (vanishes from the daily `asOfDate`
+snapshots with no `Terminated` status row) keeps its final row open at
+`9999-12-31` / `is_current_record = true` indefinitely — a ghost that flows into
+`stg_people__employee_numbers` (`is_active`), `int_people__staff_roster`, and
+the `rpt_idauto__staff_roster` (RapidIdentity login) feed, causing
+phantom-identity login issues. Fix by rematerializing the ADP `workers`
+partitions spanning the record's active dates (the `asOfDate` re-pull drops it);
+downstream tables rebuild via automation. Detection check tracked in
+[#4407](https://github.com/TEAMSchools/teamster/issues/4407).
+
+**`stg_people__employee_numbers` assigns one number per ADP `associate_id` in
+first-appearance order** (`max(employee_number) + row_number`). A lower number
+means the associate was seen in ADP earlier, NOT an earlier hire date
+(`worker_original_hire_date` is editable). One person with duplicate ADP worker
+records gets multiple active employee numbers, and the LDAP UPN attaches only to
+whichever `employee_number` the account was provisioned under.
+
 ## Exposures
 
 Every external consumer **must** have a dbt exposure in `models/exposures/`.
@@ -313,6 +387,16 @@ from there. Seed EVERY district that unions into the kipptaf model (e.g.
 `int_pearson__*`, not the package `stg_*`).
 
 Alternative to the two-PR pattern in `src/dbt/CLAUDE.md`.
+
+## Stale-wide `zz_stg` union defer copy
+
+When a kipptaf `union_relations` wrapper's `zz_stg` defer copy is wider than
+current (e.g. a district lags a column-drop rollout, so the prod-cloned copy
+still carries the dropped column), rebuild the wrapper `--target staging`:
+`union_relations` recomputes the column intersection from the CURRENT district
+`zz_stg` sources, yielding a corrected (narrow) copy — no prod rematerialization
+and no waiting on the lagging district. Used to unblock CI on a downstream
+consumer that fails on the stale wide column.
 
 ## Verifying a coalesce/override layer is vestigial
 

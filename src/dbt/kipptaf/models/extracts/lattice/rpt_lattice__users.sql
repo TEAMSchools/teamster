@@ -4,6 +4,17 @@ with
         from {{ ref("int_people__staff_roster") }}
         where
             job_title <> 'Intern'
+            -- exclude part-timers plus anyone whose title names temp/part-time
+            -- work. Full Time - Temporary staff are kept pending an ADP review
+            -- (that worker type is frequently a mislabel); nulls kept as
+            -- legitimate full-time staff
+            and (
+                worker_type_code is null
+                or not contains_substr(worker_type_code, 'Part Time')
+            )
+            and not contains_substr(job_title, 'Temporary')
+            and not contains_substr(job_title, 'Part Time')
+            and not contains_substr(job_title, 'Part-Time')
             and (
                 home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
                 or home_business_unit_name = 'KIPP Paterson'
@@ -52,6 +63,9 @@ select
     s.job_title,
     s.worker_hire_date_recent as `start_date`,
     s.home_department_name as department,
+    s.gender_identity as gender,
+    s.race_ethnicity_reporting as ethnicity,
+    s.birth_date as birthdate,
 
     m.work_email as manager_email,
 

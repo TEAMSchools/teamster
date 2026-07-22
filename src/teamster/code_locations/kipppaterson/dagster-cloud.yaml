@@ -8,6 +8,16 @@ locations:
     working_directory: /app
     container_context:
       k8s:
+        volume_mounts:
+          - name: deanslist-keys
+            readOnly: true
+            mountPath: /etc/deanslist
+        volumes:
+          - name: deanslist-keys
+            projected:
+              sources:
+                - secret:
+                    name: op-deanslist-api-kipppaterson
         server_k8s_config:
           pod_spec_config:
             affinity:
@@ -52,6 +62,66 @@ locations:
                   secretKeyRef:
                     name: op-amplify-sftp-kipppaterson
                     key: username
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kipppaterson
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kipppaterson
+                    key: password
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: username
+              - name: PS_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: password
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: server
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: port
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: database
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: host
+              - name: PS_SSH_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: port
+              - name: PS_SSH_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: username
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: password
+              - name: PS_SSH_REMOTE_BIND_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: remote-bind-host
         run_k8s_config:
           container_config:
             env:
@@ -85,3 +155,63 @@ locations:
                   secretKeyRef:
                     name: op-amplify-sftp-kipppaterson
                     key: username
+              - name: FINALSITE_CREDENTIAL_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kipppaterson
+                    key: username
+              - name: FINALSITE_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: op-finalsite-api-kipppaterson
+                    key: password
+              - name: PS_DB_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: username
+              - name: PS_DB_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: password
+              - name: PS_DB_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: server
+              - name: PS_DB_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: port
+              - name: PS_DB_DATABASE
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-db-kipppaterson
+                    key: database
+              - name: PS_SSH_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: host
+              - name: PS_SSH_PORT
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: port
+              - name: PS_SSH_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: username
+              - name: PS_SSH_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: password
+              - name: PS_SSH_REMOTE_BIND_HOST
+                valueFrom:
+                  secretKeyRef:
+                    name: op-ps-ssh-kipppaterson
+                    key: remote-bind-host
