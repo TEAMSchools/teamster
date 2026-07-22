@@ -31,18 +31,6 @@ with
         where
             sc._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
             and xw.powerschool_student_number is not null
-    ),
-
-    enrolled_students as (
-        -- _dbt_source_project derived inline rather than via extract_code_location
-        -- so this CTE stays unit-testable: the macro qualifies _dbt_source_relation
-        -- by table name, which dbt unit tests rename to the mock relation.
-        select
-            student_number,
-
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-        from {{ ref("stg_powerschool__students") }}
-        where enroll_status = 0
     )
 
 select
@@ -58,6 +46,7 @@ select
     cast(null as string) as `Language`,
 from contacts as c
 inner join
-    enrolled_students as s
+    {{ ref("stg_powerschool__students") }} as s
     on c.student_number = s.student_number
     and c._dbt_source_project = s._dbt_source_project
+    and s.enroll_status = 0

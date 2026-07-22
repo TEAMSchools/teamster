@@ -141,7 +141,7 @@ unit_tests:
           select
             123456 as student_number,
             0 as enroll_status,
-            'kippnewark_powerschool' as _dbt_source_relation
+            'kippnewark' as _dbt_source_project
     expect:
       rows:
         - {
@@ -256,11 +256,11 @@ unit_tests:
           select
             200001 as student_number,
             0 as enroll_status,
-            'kippnewark_powerschool' as _dbt_source_relation
+            'kippnewark' as _dbt_source_project
           union all
-          select 200002, 0, 'kippmiami_powerschool'
+          select 200002, 0, 'kippmiami'
           union all
-          select 200003, 2, 'kippnewark_powerschool'
+          select 200003, 2, 'kippnewark'
     expect:
       rows:
         - {
