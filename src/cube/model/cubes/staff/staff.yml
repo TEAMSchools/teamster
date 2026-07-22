@@ -49,7 +49,7 @@ cubes:
       # Gated to staff-pii — date of birth.
       - name: birth_date
         description: Staff member's date of birth.
-        sql: CAST({CUBE}.birth_date AS TIMESTAMP)
+        sql: "CAST({CUBE}.birth_date AS TIMESTAMP)"
         type: time
         public: true
 
@@ -121,7 +121,7 @@ cubes:
         description:
           The date the staff member was originally hired at KIPP, from
           worker_dates in ADP.
-        sql: CAST(original_hire_date AS TIMESTAMP)
+        sql: "CAST({CUBE}.original_hire_date AS TIMESTAMP)"
         type: time
         public: true
 
@@ -129,6 +129,6 @@ cubes:
         description: >-
           The most recent rehire date for the staff member, if rehired, from
           worker_dates in ADP.
-        sql: CAST(rehire_date AS TIMESTAMP)
+        sql: "CAST({CUBE}.rehire_date AS TIMESTAMP)"
         type: time
         public: true
