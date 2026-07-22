@@ -3,6 +3,7 @@ from pydantic import PrivateAttr
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import Timeout
 from tableauserverclient.models.tableau_auth import PersonalAccessTokenAuth
+from tableauserverclient.server.endpoint.exceptions import InternalServerError
 from tableauserverclient.server.server import Server
 from tenacity import (
     retry,
@@ -28,7 +29,9 @@ class TableauServerResource(ConfigurableResource):
         self._sign_in()
 
     @retry(
-        retry=retry_if_exception_type((RequestsConnectionError, Timeout)),
+        retry=retry_if_exception_type(
+            (RequestsConnectionError, Timeout, InternalServerError)
+        ),
         stop=stop_after_attempt(5),
         wait=wait_exponential_jitter(initial=2, max=60),
         reraise=True,
@@ -39,10 +42,13 @@ class TableauServerResource(ConfigurableResource):
         Regression for prod run 136d2259: the server dropped the TCP connection
         mid-TLS-handshake during sign-in, raising a
         ``requests.exceptions.ConnectionError``. Resource init has no other retry
-        layer, so a single blip failed the step and the run. Only network faults
-        (``ConnectionError``/``Timeout``) are retried — an ``HTTPError`` here
-        means a deterministic auth failure (invalid or expired PAT) that must
-        fail fast rather than burn retries.
+        layer, so a single blip failed the step and the run.
+
+        ``tableauserverclient`` raises its own errors, not ``requests.HTTPError``:
+        a 5xx becomes ``InternalServerError`` (transient, retried alongside the
+        transport-level ``ConnectionError`` / ``Timeout``), while a
+        ``FailedSignInError`` (401) or ``ServerResponseError`` (other 4xx) is a
+        deterministic credential/request failure left to fail fast.
         """
         self._server.auth.sign_in(
             PersonalAccessTokenAuth(

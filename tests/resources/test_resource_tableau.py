@@ -4,6 +4,10 @@ import pytest
 from dagster import EnvVar, build_init_resource_context, build_resources
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import Timeout
+from tableauserverclient.server.endpoint.exceptions import (
+    FailedSignInError,
+    InternalServerError,
+)
 from tenacity import wait_none
 
 from teamster.libraries.tableau.resources import TableauServerResource
@@ -86,6 +90,14 @@ def _build_offline_resource(sign_in_fn) -> TableauServerResource:
     return tableau
 
 
+def _internal_server_error(status_code: int) -> InternalServerError:
+    """Build a TSC ``InternalServerError`` as ``sign_in`` raises it on a 5xx."""
+    return InternalServerError(
+        types.SimpleNamespace(status_code=status_code, content=b"gateway error"),
+        "https://tableau.example.com/auth/signin",
+    )
+
+
 def test_sign_in_retries_on_network_faults(monkeypatch: pytest.MonkeyPatch):
     """A connection reset or timeout during PAT sign-in is transient and retried.
 
@@ -106,6 +118,30 @@ def test_sign_in_retries_on_network_faults(monkeypatch: pytest.MonkeyPatch):
             raise RequestsConnectionError("Connection reset by peer")
         if calls["n"] == 2:
             raise Timeout("read timed out")
+
+    tableau = _build_offline_resource(sign_in_fn)
+
+    tableau._sign_in()
+
+    assert calls["n"] == 3
+
+
+def test_sign_in_retries_on_internal_server_error(monkeypatch: pytest.MonkeyPatch):
+    """A transient 5xx during sign-in is retried.
+
+    ``tableauserverclient`` wraps a 5xx response in ``InternalServerError`` (not
+    ``requests.HTTPError``). A gateway blip -- e.g. the server briefly having no
+    healthy backend during a top-of-hour deploy -- is transient like a connection
+    reset, so a bounded backoff must recover it rather than fail the run.
+    """
+    monkeypatch.setattr(TableauServerResource._sign_in.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def sign_in_fn(_auth) -> None:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise _internal_server_error(503)
 
     tableau = _build_offline_resource(sign_in_fn)
 
@@ -139,10 +175,10 @@ def test_sign_in_exhausts_on_persistent_connection_error(
 
 
 def test_sign_in_does_not_retry_on_auth_error(monkeypatch: pytest.MonkeyPatch):
-    """A deterministic sign-in failure (e.g. an invalid or expired PAT) fails fast.
+    """A deterministic sign-in failure (an invalid or expired PAT) fails fast.
 
-    Such a failure surfaces as a non-network error, so the retry predicate must
-    not match it — retrying a bad credential wastes time and never recovers.
+    ``tableauserverclient`` raises ``FailedSignInError`` on a 401. It is outside
+    the retry predicate, so retrying it would only waste time and never recover.
     """
     monkeypatch.setattr(TableauServerResource._sign_in.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
 
@@ -150,11 +186,40 @@ def test_sign_in_does_not_retry_on_auth_error(monkeypatch: pytest.MonkeyPatch):
 
     def sign_in_fn(_auth) -> None:
         calls["n"] += 1
-        raise RuntimeError("401 Unauthorized")
+        raise FailedSignInError(
+            "401001", "Signin Error", "Invalid or expired token", "url"
+        )
 
     tableau = _build_offline_resource(sign_in_fn)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(FailedSignInError):
         tableau._sign_in()
 
     assert calls["n"] == 1
+
+
+def test_setup_for_execution_invokes_sign_in(monkeypatch: pytest.MonkeyPatch):
+    """``setup_for_execution`` must call ``_sign_in`` (and pin the API version).
+
+    The retry tests call ``_sign_in`` directly, so a regression that drops the
+    ``self._sign_in()`` call in ``setup_for_execution`` would pass all of them.
+    This closes that gap without a live connection.
+    """
+    calls = {"n": 0}
+
+    def fake_sign_in(self) -> None:
+        calls["n"] += 1
+
+    monkeypatch.setattr(TableauServerResource, "_sign_in", fake_sign_in)
+
+    tableau = TableauServerResource(
+        server_address="https://tableau.example.com",
+        token_name="x",
+        personal_access_token="x",
+        site_id="x",
+    )
+
+    tableau.setup_for_execution(context=build_init_resource_context())
+
+    assert calls["n"] == 1
+    assert tableau._server.version == "3.25"
