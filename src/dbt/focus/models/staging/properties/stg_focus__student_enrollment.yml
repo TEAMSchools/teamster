@@ -9,6 +9,15 @@ models:
       select-type custom values stored as encoded option codes — code-to-label
       decoding is a deferred follow-up. Unpopulated custom fields are out of
       scope for this batch.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - syear
+          config:
+            where: end_date is null
+            severity: warn
     columns:
       - name: id
         description: Primary key — Focus student enrollment id.
