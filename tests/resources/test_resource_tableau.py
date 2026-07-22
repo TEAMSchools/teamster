@@ -1,4 +1,10 @@
+import types
+
+import pytest
 from dagster import EnvVar, build_init_resource_context, build_resources
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import Timeout
+from tenacity import wait_none
 
 from teamster.libraries.tableau.resources import TableauServerResource
 
@@ -60,3 +66,95 @@ def test_tableau_add_group_users():
     ]
 
     tableau._server.groups.add_users(group_item=group_item, users=users)
+
+
+def _build_offline_resource(sign_in_fn) -> TableauServerResource:
+    """Instantiate the resource with a fake server, bypassing the network path."""
+    tableau = TableauServerResource(
+        server_address="https://tableau.example.com",
+        token_name="x",
+        personal_access_token="x",
+        site_id="x",
+    )
+
+    object.__setattr__(
+        tableau,
+        "_server",
+        types.SimpleNamespace(auth=types.SimpleNamespace(sign_in=sign_in_fn)),
+    )
+
+    return tableau
+
+
+def test_sign_in_retries_on_network_faults(monkeypatch: pytest.MonkeyPatch):
+    """A connection reset or timeout during PAT sign-in is transient and retried.
+
+    Regression for prod run 136d2259: the Tableau Server dropped the TCP
+    connection mid-TLS-handshake during ``auth.sign_in``, surfacing as a
+    ``requests.exceptions.ConnectionError``. The unprotected init path failed the
+    resource, the step, and (after the run-level auto-retry hit the same window)
+    the whole run. A bounded backoff must recover a single blip instead.
+    """
+    # make tenacity backoff instant for the test
+    monkeypatch.setattr(TableauServerResource._sign_in.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def sign_in_fn(_auth) -> None:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RequestsConnectionError("Connection reset by peer")
+        if calls["n"] == 2:
+            raise Timeout("read timed out")
+
+    tableau = _build_offline_resource(sign_in_fn)
+
+    tableau._sign_in()
+
+    assert calls["n"] == 3
+
+
+def test_sign_in_exhausts_on_persistent_connection_error(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """A persistent connection error is retried to the cap, then re-raised.
+
+    A fault that never clears must still surface the original
+    ``ConnectionError`` and fail the run rather than retry unbounded.
+    """
+    monkeypatch.setattr(TableauServerResource._sign_in.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def sign_in_fn(_auth) -> None:
+        calls["n"] += 1
+        raise RequestsConnectionError("Connection reset by peer")
+
+    tableau = _build_offline_resource(sign_in_fn)
+
+    with pytest.raises(RequestsConnectionError):
+        tableau._sign_in()
+
+    assert calls["n"] == 5
+
+
+def test_sign_in_does_not_retry_on_auth_error(monkeypatch: pytest.MonkeyPatch):
+    """A deterministic sign-in failure (e.g. an invalid or expired PAT) fails fast.
+
+    Such a failure surfaces as a non-network error, so the retry predicate must
+    not match it — retrying a bad credential wastes time and never recovers.
+    """
+    monkeypatch.setattr(TableauServerResource._sign_in.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def sign_in_fn(_auth) -> None:
+        calls["n"] += 1
+        raise RuntimeError("401 Unauthorized")
+
+    tableau = _build_offline_resource(sign_in_fn)
+
+    with pytest.raises(RuntimeError):
+        tableau._sign_in()
+
+    assert calls["n"] == 1
