@@ -14,9 +14,9 @@ models:
           arguments:
             combination_of_columns:
               - student_id
-              - syear
+              - start_date
+              - end_date
           config:
-            where: end_date is null
             severity: warn
     columns:
       - name: id
