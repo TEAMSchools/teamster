@@ -254,6 +254,41 @@ Do not assert third-party behavior:
 - `canSwitchSqlUser` unchanged (SQL super-user impersonation guard).
 - A leaked key's blast radius is limited to its own scope.
 
+## Alternatives considered — why not a Cube-native token
+
+Cube Cloud has **no native scoped, revocable API key for data queries with
+row-level access** (verified against current Cube docs). What exists and why
+none of it replaces this design:
+
+- **Org / control-plane API keys** — creatable and revocable, and can be scoped,
+  but only to **deployments**, for the control-plane (managing deployments, CI).
+  They do not map to a `securityContext` or RLS. Wrong layer.
+- **`tokens-for-meta-sync`** (control-plane API) — server-mints a JWT with an
+  embedded security context, but is **metadata-only** ("cannot be used to query
+  data via the REST API"). Built for data-catalog / lineage tools. Wrong
+  surface.
+- **Native JWT-as-security-context** — Cube's default model injects a token's
+  claims directly into the `securityContext`. So a long-lived JWT with scope
+  baked into claims, signed once with the secret (the vendor holds only the
+  token, never the master secret), is the closest native "scoped token." Two
+  blockers stop it from replacing the build:
+  - Our custom `checkAuth` **overrides it** — it reads only the `email` claim
+    and rebuilds context from HR, so a scope-baked JWT's claims are ignored
+    today. Honoring an embedded external scope needs a `checkAuth` change anyway
+    — the same routing branch this design adds, just scope-in-token instead of
+    scope-in-registry.
+  - **No native revocation** — a signed JWT is valid until it expires; killing a
+    leaked one early means rotating `CUBEJS_API_SECRET` (invalidates every
+    token, internal included) or maintaining a denylist (which is a registry).
+
+**Conclusion:** the resolver + registry is the price of the two things Cube does
+not give natively for a data-query token — **per-key revocation** and binding a
+credential to the HR-derived scope model. The scope-in-JWT variant is the only
+real simplification, but it trades away revocation (leaning on short expiry +
+re-minting, which pushes a token-refresh flow onto the vendor). For row-level
+PII to an outside party under a DPA, fast revocation is required, so this design
+keeps the registry.
+
 ## Open questions / verification items
 
 - The four Cube Cloud config questions in 2.3 (spike).
