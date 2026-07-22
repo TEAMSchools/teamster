@@ -202,6 +202,48 @@ def test_domain_index_lists_views_with_links() -> None:
     assert "`sample_view`" in idx
 
 
+def test_finder_table_row_shape_and_sensitive() -> None:
+    cubes = gen.parse_cubes(FIXTURE_DIR / "cubes")
+    views = gen.parse_views(FIXTURE_DIR / "views", cubes)
+    finder = gen.render_finder(views)
+
+    assert finder.startswith("## Find a field")
+    assert "| Field | Details |" in finder
+    # a benign member: view link + tags, no `sensitive` span
+    assert "`grade_level`" in finder
+    assert "[Sample](#view-sample-view)" in finder
+    assert "`dimension`" in finder
+    # no member in the fixture is sensitive
+    assert "`sensitive`" not in finder
+
+
+def test_finder_row_includes_sensitive_span_when_flagged() -> None:
+    cubes = {
+        "c": {
+            "personal_email": gen.CubeMember(
+                name="personal_email",
+                kind="dimension",
+                type="string",
+                description="Personal email.",
+                primary_key=False,
+                public=True,
+            ),
+        }
+    }
+    view = gen.resolve_view(
+        {
+            "name": "staff_pii",
+            "cubes": [{"join_path": "c", "includes": ["personal_email"]}],
+        },
+        cubes,
+        domain="staff",
+    )
+    finder = gen.render_finder([view])
+    # the sensitive tag rides in the row for a flagged member
+    assert "`personal_email`" in finder
+    assert "`sensitive`" in finder
+
+
 def test_normalize_neutralizes_table_padding() -> None:
     compact = "| Name | Type |\n| --- | --- |\n| `a` | number |\n"
     padded = "| Name  | Type   |\n| ----- | ------ |\n| `a`   | number |\n"

@@ -394,8 +394,41 @@ def render_domain_index(by_domain: dict[str, list[ResolvedView]]) -> str:
     return "\n".join(parts).rstrip()
 
 
+FINDER_INTRO = (
+    "One row per field across every view. Filtering matches the field name, "
+    "its tags, and the description; each row links to a domain section with the "
+    "full per-view field lists. (Tags render as chips once the page's script "
+    "loads.)"
+)
+
+
+def _finder_rows(views: list[ResolvedView]) -> list[str]:
+    rows: list[tuple[str, str, ResolvedView, ResolvedMember]] = []
+    for v in views:
+        for m in v.members:
+            rows.append((v.domain, m.exposed_name, v, m))
+    rows.sort(key=lambda r: (r[0], r[1]))
+
+    lines: list[str] = []
+    for _domain, _name, v, m in rows:
+        tags = [f"`{v.domain}`", f"`{m.kind}`"]
+        if m.type:
+            tags.append(f"`{_cell(m.type)}`")
+        if m.sensitive:
+            tags.append("`sensitive`")
+        link = f"[{v.title}](#{view_id(v.name)})"
+        desc = _cell(m.description) if m.description else PLACEHOLDER
+        details = f"{link} {' '.join(tags)} — {desc}"
+        lines.append(f"| `{m.exposed_name}` | {details} |")
+    return lines
+
+
 def render_finder(views: list[ResolvedView]) -> str:
-    return "## Find a field"
+    parts = ["## Find a field", "", FINDER_INTRO, ""]
+    parts.append("| Field | Details |")
+    parts.append("| --- | --- |")
+    parts += _finder_rows(views)
+    return "\n".join(parts).rstrip()
 
 
 def render_page(views: list[ResolvedView]) -> str:
