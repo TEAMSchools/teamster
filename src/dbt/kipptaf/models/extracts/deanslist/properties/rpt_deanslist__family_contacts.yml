@@ -105,14 +105,14 @@ unit_tests:
             'Alice' as contact_first_name,
             'Johnson' as contact_last_name,
             'alice@example.com' as email,
-            '305-555-0100' as phone_home,
+            '+19292255670' as phone_home,
             cast(null as string) as phone_work,
-            '305-555-0101' as phone_mobile
+            '+18623007240x216' as phone_mobile
           union all
           select
             'enr-001', 'kippnewark', 'emergency_1', 'grandparent',
             'Bob', 'Smith', cast(null as string), cast(null as string),
-            cast(null as string), '305-555-0200'
+            cast(null as string), '+13055550200'
           union all
           select
             'enr-001', 'kippnewark', 'emergency_2', 'aunt',
@@ -148,9 +148,9 @@ unit_tests:
             StudentID: 123456,
             ParentFirstName: Alice,
             ParentLastName: Johnson,
-            HomePhone: 305-555-0100,
+            HomePhone: "19292255670",
             WorkPhone: null,
-            CellPhone: 305-555-0101,
+            CellPhone: 18623007240x216,
             Email: alice@example.com,
             Relationship: parent,
             Language: null,
@@ -161,7 +161,7 @@ unit_tests:
             ParentLastName: Smith,
             HomePhone: null,
             WorkPhone: null,
-            CellPhone: 305-555-0200,
+            CellPhone: "13055550200",
             Email: null,
             Relationship: Emergency 1,
             Language: null,
