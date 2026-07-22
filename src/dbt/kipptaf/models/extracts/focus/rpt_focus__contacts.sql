@@ -71,6 +71,10 @@ inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on rel.finalsite_enrollment_id = ida.finalsite_enrollment_id
     and ida.focus_student_id_prefixed is not null
+inner join
+    {{ ref("stg_finalsite__contacts") }} as stu
+    on rel.finalsite_enrollment_id = stu.finalsite_enrollment_id
 where
     rel.rel_type
     in ('parent', 'guardian', 'grandparent', 'stepparent', 'relative', 'aunt/uncle')
+    and stu.status = 'enrolled'
