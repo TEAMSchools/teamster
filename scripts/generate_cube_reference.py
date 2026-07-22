@@ -351,29 +351,50 @@ def _folder_order(view: ResolvedView) -> list[str]:
 
 
 def render_view(view: ResolvedView) -> str:
-    parts = [f"## {view.name}", ""]
+    parts = [
+        f"### {view.title} {{#{view_id(view.name)}}}",
+        "",
+        f"`{view.name}`",
+        "",
+    ]
     if view.description:
         parts += [_cell(view.description), ""]
-    parts += ["### Access", "", _access_block(view.access), ""]
+    parts += ["#### Access", "", _access_block(view.access), ""]
 
     measures = [m for m in view.members if m.kind == "measure"]
     if measures:
-        parts += ["### Measures", "", _member_table(measures), ""]
+        parts += ["#### Measures", "", _member_table(measures), ""]
 
     dims = [m for m in view.members if m.kind == "dimension"]
     if dims:
-        parts += ["### Dimensions", ""]
+        parts += ["#### Dimensions", ""]
         for folder in _folder_order(view):
             in_folder = [m for m in dims if m.folder == folder]
-            parts += [f"#### {folder}", "", _member_table(in_folder), ""]
+            parts += [f"##### {folder}", "", _member_table(in_folder), ""]
     return "\n".join(parts).rstrip()
 
 
+def render_domain_index(by_domain: dict[str, list[ResolvedView]]) -> str:
+    return "## Views by domain"
+
+
+def render_finder(views: list[ResolvedView]) -> str:
+    return "## Find a field"
+
+
 def render_page(views: list[ResolvedView]) -> str:
-    body = "\n\n".join(
-        ["# Cube data catalog", BANNER, INTRO, *(render_view(v) for v in views)]
-    )
-    return body + "\n"
+    by_domain: dict[str, list[ResolvedView]] = {}
+    for v in sorted(views, key=lambda v: v.name):
+        by_domain.setdefault(v.domain, []).append(v)
+
+    sections: list[str] = ["# Cube data catalog", BANNER, INTRO]
+    sections.append(render_domain_index(by_domain))
+    sections.append(render_finder(views))
+    for domain in sorted(by_domain):
+        sections.append(f"## {friendly_name(domain)}")
+        for v in by_domain[domain]:
+            sections.append(render_view(v))
+    return "\n\n".join(sections) + "\n"
 
 
 def _normalize_table_row(stripped: str) -> str:

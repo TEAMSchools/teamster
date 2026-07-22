@@ -161,34 +161,32 @@ def test_resolve_view_wildcard_excludes_underscore_helpers() -> None:
     assert "_sum_helper" not in names
 
 
-def test_render_page_has_banner_and_one_h2_per_view() -> None:
+def test_render_page_groups_views_under_domain_h2() -> None:
     cubes = gen.parse_cubes(FIXTURE_DIR / "cubes")
     views = gen.parse_views(FIXTURE_DIR / "views", cubes)
     page = gen.render_page(views)
 
     assert page.startswith("# Cube data catalog\n")
     assert gen.BANNER in page
-    assert page.count("\n## ") == 1
-    assert "## sample_view" in page
+    # one H2 per domain (plus the two fixed sections), one H3 per view.
+    # The fixture view "sample_view" titles to "Sample" (trailing _view dropped).
+    assert "## Sample Domain" in page
+    assert "### Sample {#view-sample-view}" in page
+    assert "## Views by domain" in page
+    assert "## Find a field" in page
 
 
-def test_render_view_tables_and_placeholder() -> None:
+def test_render_view_block_has_code_name_and_tables() -> None:
     view = _resolved_view()
     block = gen.render_view(view)
 
-    # measures section + a measure row
-    assert "### Measures" in block
-    assert "| `count_rows` | count | Row count. |" in block
-    # dimensions grouped by folder heading
-    assert "#### Sample" in block
-    assert "#### Region" in block
-    assert "#### Other" in block
-    assert "| `grade_level` | number | Student grade level. |" in block
-    # missing description -> visible placeholder, not blank
+    assert block.startswith("### Sample {#view-sample-view}")
+    assert "`sample_view`" in block  # exact query name shown as code
+    assert "#### Access" in block
+    assert "#### Measures" in block
+    assert "#### Dimensions" in block
+    assert "##### Sample" in block  # folder now H5
     assert "| `no_desc_dim` | string | _No description._ |" in block
-    # access summary line
-    assert "sample-network" in block
-    assert "sample-region" in block
 
 
 def test_normalize_neutralizes_table_padding() -> None:
@@ -240,7 +238,9 @@ def test_main_writes_output(tmp_path) -> None:
         ]
     )
     assert rc == 0
-    assert "## sample_view" in out.read_text(encoding="utf-8")
+    written = out.read_text(encoding="utf-8")
+    assert "## Sample Domain" in written
+    assert "### Sample {#view-sample-view}" in written
 
 
 def _fake_meta() -> dict:
