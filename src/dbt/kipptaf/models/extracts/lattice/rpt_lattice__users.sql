@@ -63,6 +63,8 @@ select
     s.job_title,
     s.worker_hire_date_recent as `start_date`,
     s.home_department_name as department,
+    s.gender_identity as gender,
+    s.race_ethnicity_reporting as ethnicity,
 
     m.work_email as manager_email,
 
