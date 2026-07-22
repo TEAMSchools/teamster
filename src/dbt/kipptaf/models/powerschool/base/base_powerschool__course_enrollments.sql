@@ -25,7 +25,7 @@ with
     ),
 
     add_dbt_field as (
-        select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+        select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
         from union_relations as ur
     )
 

@@ -14,7 +14,7 @@ with
 select
     ur.*,
 
-    {{ extract_code_location("ur") }} as _dbt_source_project,
+    {{ extract_source_project("ur") }} as _dbt_source_project,
 
     case
         when ur.cumulative_y1_gpa_unweighted >= 3.00

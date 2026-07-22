@@ -26,7 +26,7 @@ models:
       - name: _dbt_source_project
         data_type: string
         description: >-
-          Dagster code-location identifier derived via extract_code_location()
+          Dagster code-location identifier derived via extract_source_project()
           from _dbt_source_relation; identifies the district source project
           (e.g. kippmiami).
 
