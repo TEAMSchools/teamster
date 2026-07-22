@@ -8,7 +8,9 @@ models:
       remaining region (Miami) sources from PowerSchool, mapping the priority-1
       contact to `contact_1` and the priority-3-and-higher emergency contacts to
       `emergency_1` through `emergency_4`. Feeds the contact pivot,
-      `dim_student_contact_persons`, and `bridge_student_contacts`.
+      `dim_student_contact_persons`, and `bridge_student_contacts`. Phone
+      columns carry E.164-normalized values from the Finalsite branch and raw
+      PowerSchool values from the Miami branch — mixed format by source region.
     config:
       materialized: table
     data_tests:

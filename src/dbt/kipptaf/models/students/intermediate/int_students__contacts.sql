@@ -5,9 +5,6 @@ with
     -- to a PowerSchool student number. The crosswalk union also carries Miami's
     -- Focus contacts, but they never match here because
     -- int_finalsite__student_contacts unions only cutover regions.
-    -- Phone columns here are E.164-normalized upstream (clean_phone); the
-    -- powerschool branch below passes phones through raw, so this model's phone
-    -- columns are mixed-format by source region.
     finalsite as (
         select
             fc.contact_slot,
