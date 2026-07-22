@@ -1,0 +1,7 @@
+models:
+  - name: stg_focus__schools
+    description: >-
+      Kipptaf-level passthrough of kippmiami's stg_focus__schools. Focus is
+      Miami-only, so no cross-district union is needed here (contrast with the
+      powerschool kipptaf staging models, which union all four districts).
+      Column docs/tests live on the kippmiami source model.

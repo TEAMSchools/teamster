@@ -1,0 +1,60 @@
+sources:
+  - name: kippmiami_focus
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippmiami_focus"
+    tables:
+      - name: stg_focus__schools
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - stg_focus__schools
+      - name: stg_focus__students
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - stg_focus__students
+      - name: stg_focus__student_enrollment
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - stg_focus__student_enrollment
+      - name: stg_focus__attendance_calendars
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - stg_focus__attendance_calendars
+      - name: stg_focus__attendance_calendar
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - stg_focus__attendance_calendar
+      - name: int_focus__school_year_first_day
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__school_year_first_day
