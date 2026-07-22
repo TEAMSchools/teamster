@@ -23,32 +23,16 @@ with
         left join
             {{ ref("int_focus__school_year_first_day") }} as fd
             on l.school_year_start = fd.syear
-        -- enrolled-only: pre-enrollment statuses (enrollment_in_progress,
-        -- assigned_school) carry no enrolled_date; Focus enrollment records
-        -- require an entry date, so defer these students until Finalsite mints
-        -- enrollment_start_date. See #4291. A freshly enrolled student can also
-        -- carry an enrollment_start_date before Finalsite assigns a school
-        -- (assigned_school null, in the gap between enrollment and school
-        -- assignment); Focus needs a school id, so likewise defer until
-        -- assigned_school is populated (else school_id is null and the not_null
-        -- test fails).
-        where l.enrollment_start_date is not null and l.assigned_school is not null
-    ),
-
-    -- Enrollments already loaded into Focus, deduped to one row per
-    -- (student_id, syear, start_date) so the anti-join below cannot fan out.
-    -- has_drop_code / has_end_date flag whether Focus has already recorded an
-    -- exit for that enrollment.
-    focus_enrollments as (
-        select
-            cast(student_id as string) as focus_student_id,
-            syear as focus_syear,
-            start_date as focus_start_date,
-
-            logical_or(drop_code is not null) as has_drop_code,
-            logical_or(end_date is not null) as has_end_date,
-        from {{ source("kippmiami_dlt_focus", "student_enrollment") }}
-        group by student_id, syear, start_date
+        -- enrolled-only + current-academic-year desired state. Pre-enrollment
+        -- statuses carry no enrolled_date and are deferred until Finalsite mints
+        -- enrollment_start_date; a freshly enrolled student with no school
+        -- assignment yet is likewise deferred (Focus needs a school id). Prior
+        -- and future school years are out of scope — the kippmiami wrapper
+        -- reconciles this desired state against live Focus.
+        where
+            l.enrollment_start_date is not null
+            and l.assigned_school is not null
+            and l.school_year_start = {{ var("current_academic_year") }}
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract
@@ -122,24 +106,3 @@ left join
 left join
     {{ ref("int_people__location_crosswalk") }} as sch
     on e.assigned_school = sch.location_name
-left join
-    focus_enrollments as fe
-    on ida.focus_student_id_prefixed = fe.focus_student_id
-    and e.school_year_start = fe.focus_syear
-    and e.start_date = fe.focus_start_date
--- delta feed: suppress rows Focus already holds identically. Keep a row when it
--- is absent from Focus (new enrollment), or when it carries an exit the matched
--- Focus row has not recorded. end_date and drop_code are gated independently:
--- drop_code is a raw Finalsite custom attribute not tied to enrollment_end_date,
--- so the two exit fields can arrive in separate runs — a drop_code that lands
--- after Focus already has the end_date (or vice versa) must still sync.
--- school_id / grade_id / enrollment_code are import codes translated by Focus on
--- load, so they are not comparable and are not used to detect changes.
-where
-    fe.focus_student_id is null
-    or (e.enrollment_end_date is not null and not fe.has_end_date)
-    or (
-        e.is_transfer_out
-        and cca.fl_state_withdraw_codes_ss is not null
-        and not fe.has_drop_code
-    )
