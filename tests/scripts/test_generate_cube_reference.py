@@ -260,6 +260,59 @@ def _fake_meta() -> dict:
     }
 
 
+def test_friendly_name_titlecases_and_keeps_acronyms() -> None:
+    assert gen.friendly_name("student_attendance") == "Student Attendance"
+    assert gen.friendly_name("staff_pii") == "Staff PII"
+
+
+def test_view_title_strips_view_suffix() -> None:
+    assert gen.view_title("student_assessment_scores_view") == (
+        "Student Assessment Scores"
+    )
+    assert gen.view_title("staff_directory") == "Staff Directory"
+
+
+def test_parse_views_sets_domain_from_folder() -> None:
+    cubes = gen.parse_cubes(FIXTURE_DIR / "cubes")
+    view = next(
+        v
+        for v in gen.parse_views(FIXTURE_DIR / "views", cubes)
+        if v.name == "sample_view"
+    )
+    assert view.domain == "sample_domain"
+
+
+def test_resolve_view_flags_sensitive_members() -> None:
+    # inline: a cube with a sensitive dim (personal_email) and a benign one
+    cubes = {
+        "c": {
+            "personal_email": gen.CubeMember(
+                name="personal_email",
+                kind="dimension",
+                type="string",
+                description=None,
+                primary_key=False,
+                public=True,
+            ),
+            "grade_level": gen.CubeMember(
+                name="grade_level",
+                kind="dimension",
+                type="number",
+                description=None,
+                primary_key=False,
+                public=True,
+            ),
+        }
+    }
+    view = {
+        "name": "v",
+        "cubes": [{"join_path": "c", "includes": ["personal_email", "grade_level"]}],
+    }
+    members = {m.exposed_name: m for m in gen.resolve_view(view, cubes).members}
+    assert members["personal_email"].sensitive is True
+    assert members["grade_level"].sensitive is False
+
+
 def test_meta_member_types_strips_view_prefix() -> None:
     types = gen.meta_member_types(_fake_meta())
     assert types["sample_view"]["grade_level"] == "number"

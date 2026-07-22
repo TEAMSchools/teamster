@@ -44,6 +44,27 @@ VIEWS_DIR = MODEL_DIR / "views"
 DEFAULT_OUTPUT = REPO_ROOT / "docs/reference/cube-data-catalog.md"
 
 
+_ACRONYMS = {"pii": "PII"}
+
+
+def friendly_name(slug: str) -> str:
+    """Human title from a snake_case slug; known acronyms stay uppercase."""
+    return " ".join(
+        _ACRONYMS.get(w.lower(), w.capitalize()) for w in slug.replace("_", " ").split()
+    )
+
+
+def view_title(name: str) -> str:
+    """Friendly view title; a trailing `_view` is dropped first."""
+    base = name[:-5] if name.endswith("_view") else name
+    return friendly_name(base)
+
+
+def view_id(name: str) -> str:
+    """Stable, collision-free heading id for a view (view names are unique)."""
+    return "view-" + name.replace("_", "-")
+
+
 @dataclasses.dataclass(frozen=True)
 class CubeMember:
     """A single dimension or measure defined on a cube."""
@@ -117,6 +138,7 @@ class ResolvedMember:
     description: str | None
     folder: str
     source: str
+    sensitive: bool = False
 
 
 @dataclasses.dataclass
@@ -132,6 +154,15 @@ class ResolvedView:
     description: str | None
     members: list[ResolvedMember]
     access: AccessSummary
+    domain: str = "other"
+
+    @property
+    def title(self) -> str:
+        return view_title(self.name)
+
+    @property
+    def domain_title(self) -> str:
+        return friendly_name(self.domain)
 
 
 def _folder_map(view: dict) -> dict[str, str]:
@@ -192,7 +223,9 @@ def derive_access(view: dict, members: list[ResolvedMember]) -> AccessSummary:
     )
 
 
-def resolve_view(view: dict, cubes: dict[str, dict[str, CubeMember]]) -> ResolvedView:
+def resolve_view(
+    view: dict, cubes: dict[str, dict[str, CubeMember]], domain: str = "other"
+) -> ResolvedView:
     folders = _folder_map(view)
     members: list[ResolvedMember] = []
 
@@ -232,6 +265,7 @@ def resolve_view(view: dict, cubes: dict[str, dict[str, CubeMember]]) -> Resolve
                     description=info.description,
                     folder=folder,
                     source=f"{segment}.{member_name}",
+                    sensitive=exposed in SENSITIVE_MEMBERS,
                 )
             )
 
@@ -242,6 +276,7 @@ def resolve_view(view: dict, cubes: dict[str, dict[str, CubeMember]]) -> Resolve
         ),
         members=members,
         access=derive_access(view, members),
+        domain=domain,
     )
 
 
@@ -250,9 +285,11 @@ def parse_views(
 ) -> list[ResolvedView]:
     views: list[ResolvedView] = []
     for path in sorted(views_dir.rglob("*.yml")):
+        rel = path.relative_to(views_dir)
+        domain = rel.parts[0] if len(rel.parts) > 1 else "other"
         doc = _load_yaml(path)
         for view in doc.get("views", []):
-            views.append(resolve_view(view, cubes))
+            views.append(resolve_view(view, cubes, domain=domain))
     return sorted(views, key=lambda v: v.name)
 
 
