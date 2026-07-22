@@ -71,7 +71,9 @@ unit_tests:
     description:
       Verifies the 12-column ADDRESS layout for a single student — STUDENT_ID is
       sourced from int_finalsite__contact_id_attributes, address columns map
-      from contacts, mailing columns are always null.
+      from contacts, mailing columns are always null. A second student has
+      status 'applied' (not 'enrolled') and a minted Focus id, confirming the
+      enrolled-only filter excludes them from the extract.
     model: rpt_focus__addresses
     given:
       - input: ref('stg_finalsite__contacts')
@@ -84,16 +86,30 @@ unit_tests:
               state: FL,
               zip: "33101",
               phone_1_number: 305-555-0100,
+              status: enrolled,
+            }
+          - {
+              finalsite_enrollment_id: enr-002,
+              address_1: 456 Oak Ave,
+              address_2: null,
+              city: Miami,
+              state: FL,
+              zip: "33102",
+              phone_1_number: 305-555-0200,
+              status: applied,
             }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
+          - { finalsite_enrollment_id: enr-002 }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
           select
             'enr-001' as finalsite_enrollment_id,
             '84004004004' as focus_student_id_prefixed
+          union all
+          select 'enr-002', '84004004005'
     expect:
       rows:
         - {

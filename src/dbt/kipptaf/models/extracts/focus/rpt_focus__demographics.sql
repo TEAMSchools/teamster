@@ -87,3 +87,4 @@ left join
 left join
     {{ ref("stg_google_sheets__focus__language_code_crosswalk") }} as lcc
     on cca.lang_parent_ss = lcc.finalsite_language
+where c.status = 'enrolled'
