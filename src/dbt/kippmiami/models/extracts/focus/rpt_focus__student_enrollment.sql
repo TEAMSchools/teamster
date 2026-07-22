@@ -34,8 +34,8 @@ with
         group by syear, student_id
     ),
 
-    -- desired state from kipptaf with the raw drop_code label decoded to the
-    -- Focus short_name
+    -- desired state from kipptaf, scoped to the current academic year, with the
+    -- raw drop_code label decoded to the Focus short_name
     desired as (
         select d.*, dc.short_name as drop_code_decoded,
         from {{ source("kipptaf_extracts", "rpt_focus__student_enrollment") }} as d
@@ -43,6 +43,7 @@ with
             {{ ref("stg_focus__student_enrollment_codes") }} as dc
             on d.drop_code = dc.title
             and dc.type = 'Drop'
+        where d.syear = {{ var("current_academic_year") }}
     ),
 
     -- entry branch: student-year absent from Focus -> send the full entry row

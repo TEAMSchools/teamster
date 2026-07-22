@@ -74,7 +74,7 @@ inner join
 inner join
     {{ ref("stg_finalsite__contacts") }} as stu
     on rel.finalsite_enrollment_id = stu.finalsite_enrollment_id
+    and stu.status = 'enrolled'
 where
     rel.rel_type
     in ('parent', 'guardian', 'grandparent', 'stepparent', 'relative', 'aunt/uncle')
-    and stu.status = 'enrolled'

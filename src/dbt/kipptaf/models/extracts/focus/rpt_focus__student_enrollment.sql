@@ -23,16 +23,13 @@ with
         left join
             {{ ref("int_focus__school_year_first_day") }} as fd
             on l.school_year_start = fd.syear
-        -- enrolled-only + current-academic-year desired state. Pre-enrollment
+        -- enrolled-only desired state, all in-scope school years. Pre-enrollment
         -- statuses carry no enrolled_date and are deferred until Finalsite mints
         -- enrollment_start_date; a freshly enrolled student with no school
-        -- assignment yet is likewise deferred (Focus needs a school id). Prior
-        -- and future school years are out of scope — the kippmiami wrapper
-        -- reconciles this desired state against live Focus.
-        where
-            l.enrollment_start_date is not null
-            and l.assigned_school is not null
-            and l.school_year_start = {{ var("current_academic_year") }}
+        -- assignment yet is likewise deferred (Focus needs a school id). The
+        -- kippmiami wrapper scopes this to the current academic year and
+        -- reconciles it against live Focus.
+        where l.enrollment_start_date is not null and l.assigned_school is not null
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus STUDENT_ENROLLMENT contract

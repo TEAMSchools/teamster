@@ -19,12 +19,12 @@ models:
       lowercase snake_case. `end_date`, `drop_code`, and `moved_to` populate
       only for transfer-out rows
       (`int_finalsite__enrollment_lifecycle.is_transfer_out`). This is the
-      network desired-state feed — one row per current-academic-year in-scope
-      enrollment, filtered to `school_year_start =
-      var("current_academic_year")`. No reconciliation against live Focus
-      happens here; the kippmiami wrapper reconciles this desired state against
-      Focus `student_enrollment` before import. `school_id`, `grade_id`, and
-      `enrollment_code` are Focus import codes translated on load.
+      network desired-state feed — one row per in-scope enrollment across all
+      school years. No reconciliation against live Focus happens here; the
+      kippmiami wrapper scopes this to the current academic year and reconciles
+      it against Focus `student_enrollment` before import. `school_id`,
+      `grade_id`, and `enrollment_code` are Focus import codes translated on
+      load.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
