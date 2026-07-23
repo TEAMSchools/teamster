@@ -20,8 +20,9 @@ internal emulation only. It stays source-compatible with that external layer
 work can fold in later without rework.
 
 The design is **staged** so the pilot-critical piece ships first and the larger
-build is gated behind a cheap verification spike — the spike may show that no
-new server code is needed for the Cube Cloud surface.
+build is gated behind a cheap verification spike — the 2026-07-23 session
+already answered most of that spike (see below): the true cross-surface blocker
+is the `checkAuth` `maxAge` token-age cap, not a dev-mode auth-skip.
 
 ## Background — current architecture (post PR #4269)
 
@@ -37,7 +38,8 @@ Everything downstream reads only the _shape_ of the security context, not how it
 was produced. Grounded in code:
 
 - [`cube.js`](../../../src/cube/cube.js) `checkAuth` verifies the bearer token
-  (HS256 against `CUBEJS_API_SECRET`), reads the `email` claim, and sets
+  (HS256 against `CUBEJS_API_SECRET`, with a `maxAge: "12h"` cap on the token's
+  `iat`), reads the `email` claim, and sets
   `req.securityContext = await resolveAccess(email)`. It **ignores any
   caller-supplied context** — the entire context is rebuilt from the email.
 - `checkSqlAuth` resolves identity from the connecting SQL `user` (or
@@ -53,14 +55,14 @@ was produced. Grounded in code:
   `computeAllowedDepartmentGroups`).
 
 **The gap:** because the context is derived only from the caller's own resolved
-email, there is no way to say "act as user X." Every native emulation surface
-falls to default-deny:
+email, there is no first-class "act as user X" path, and two mechanics get in
+the way of even self-emulation:
 
-| Surface                         | Hook           | State      | Why                                                                                                                                                       |
-| ------------------------------- | -------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Local SQL API                   | `checkSqlAuth` | **Works**  | Connect as the viewer email in `user`; runs even in dev mode                                                                                              |
-| Cube Cloud Playground / Explore | `checkAuth`    | **Denied** | Requests arrive with no resolvable `email` → empty context → views hidden (`/meta` empty, only source tables show) and queries compile to `WHERE (1 = 0)` |
-| Local Playground (REST)         | `checkAuth`    | **Denied** | Cube dev mode skips `checkAuth` entirely → default-deny for every gated view                                                                              |
+| Surface                         | Hook           | State                        | Notes                                                                                                                                                                                                    |
+| ------------------------------- | -------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local SQL API                   | `checkSqlAuth` | **Works**                    | Connect as the viewer email in `user`; runs even in dev mode. Ground-truth validation surface                                                                                                            |
+| Local Playground (REST)         | `checkAuth`    | **Works**                    | `checkAuth` DOES run in dev mode (Cube 1.6.59); paste `{"email": "target"}` with a **freshly minted** token. Earlier "denied" was the `maxAge` cap rejecting a stale cached token, not an auth-skip      |
+| Cube Cloud Playground / Explore | `checkAuth`    | **Denied (likely `maxAge`)** | Same `checkAuth` runs; denial is the `maxAge` cap rejecting the console-minted token and/or no resolvable `email` → empty context → views hidden (`/meta` empty, only source tables) and `WHERE (1 = 0)` |
 
 ### Validated facts from the 2026-07-23 session
 
@@ -70,13 +72,22 @@ falls to default-deny:
   current ground-truth validation tool.
 - The **REST `checkAuth` + email-JWT path resolves correctly on prod Cube
   Cloud**: the `cube` MCP mints an `email`-claim JWT and gets full network
-  scope. So `checkAuth` is not broken — the Cloud Playground/Explore UI simply
-  is not putting an `email` into its requests.
+  scope.
 - A **local-dev blocker was found and patched (scaffold)**: with
   `CUBEJS_DB_BQ_CREDENTIALS` unset ("uses ADC locally"), `resolveAccess`'s
   hand-rolled BigQuery client runs `JSON.parse("")` at `cube.js:99`, throws, and
   fail-closes to deny-all for every viewer. The driver itself falls back to ADC;
-  `resolveAccess` does not. This must be fixed for any local emulation to work.
+  `resolveAccess` does not. Fixed by an ADC fallback (Phase 0).
+- **`checkAuth` runs in dev mode (Cube 1.6.59), and the real Playground/Explore
+  blocker is the `maxAge` cap.** A stack trace on `/cubejs-api/v1/meta` showed
+  `checkAuth` firing in dev mode and throwing
+  `TokenExpiredError: maxAge exceeded` (`cube.js:227`) on a Playground token
+  whose `iat` was ~5 weeks stale. Pasting `{"email": "target"}` into the
+  Playground Security Context with a freshly minted token then resolves the
+  target correctly. So: (a) the CLAUDE.md "dev mode skips checkAuth" note is
+  **wrong for this version**; (b) **local email-emulation works** via a fresh
+  `{email}` paste — no full-context helper needed; (c) the cross-surface blocker
+  is the `maxAge: "12h"` cap (added in #4269), not auth-skip or a missing email.
 
 ## Goals
 
@@ -123,37 +134,57 @@ falls to default-deny:
 1. **Document the local SQL API validation matrix** as the official pre-pilot
    tool (the `.claude/scratch/rls_matrix.py` harness pattern: reconnect per
    viewer email, assert scope). Capture it in `src/cube/CLAUDE.md` and
-   `docs/guides/cube.md`.
+   `docs/guides/cube.md`, alongside the local-Playground `{email}`-paste method.
 
 This alone lets the team sign off each pilot user's scope, so **the pilot is not
 blocked on the phases below**.
 
-### Phase 1 — Cube Cloud verification spike (before any `act_as` build)
+### Phase 1 — verification spike (mostly answered on 2026-07-23)
 
-Reuse #4501 Part 2.3 verbatim (shared work). Run against a live staging
-deployment; do not assert third-party behavior:
+The original spike (reused from #4501 Part 2.3) asked whether `checkAuth` runs
+and whether an `{email}` paste resolves. The local repro answered the core of
+it:
 
-1. Does **"Enable Cloud Auth Integration"** (Settings → Configuration) make
-   Explore/Playground pass the logged-in console user's identity to our custom
-   hooks?
-1. What SQL `user` does **Explore** connect as? (If not the console user's
-   `@apps.teamschools.org` email, that is the denial cause.)
-1. Does `__user` impersonation work in Explore for `CUBEJS_SQL_SUPER_USER`,
-   given `canSwitchSqlUser` limits the target to `@apps.teamschools.org`?
-1. Does a **Playground security-context paste** of `{"email": "<target>"}` get
-   signed with `CUBEJS_API_SECRET` so our `jwt.verify` accepts it and
-   `resolveAccess` runs?
+- **Answered:** `checkAuth` runs in dev mode; an `{email}` paste with a fresh
+  token resolves the target; the wall is the `maxAge` cap. The full-context
+  helper is therefore unnecessary for the Playground.
+- **Still to verify on Cube Cloud (staging):**
+  1. Does **"Enable Cloud Auth Integration"** (Settings → Configuration) pass
+     the logged-in console user's identity to our hooks?
+  1. What SQL `user` does **Explore** connect as? (If not the console user's
+     `@apps.teamschools.org` email, that is a denial cause.)
+  1. Does `__user` impersonation work in Explore for `CUBEJS_SQL_SUPER_USER`,
+     given `canSwitchSqlUser` limits the target to `@apps.teamschools.org`?
+  1. Confirm the **`maxAge` cap** is what rejects the console-minted token
+     (strongly expected, matching the local repro) and whether the console token
+     is short- or long-lived.
 
-**Decision gate:** if Q4 (and/or Q1) is yes, internal cloud emulation is solved
-with **zero new server code** — a self-serve viewer sets/pastes an email and
-sees that user's scope. Phase 2 then shrinks to just the Explore SQL pane, or
-drops entirely. Only a proven gap justifies building `act_as`.
+**Decision gate:** because `checkAuth` already resolves `{email}`, fixing the
+`maxAge` control (below) most likely unblocks cloud emulation with **no new
+resolver code** — a data-team console admin sets/pastes the target email and
+sees that scope. Explicit `act_as` is then needed only where there is no console
+(API/MCP) or where emulation must be gated **more tightly** than Cube Cloud
+console access.
 
-### Phase 2 — admin-gated `act_as` (conditional on the spike)
+### Phase 2 — the `maxAge` control + admin-gated `act_as`
 
-Add an explicit impersonation path to the REST hook.
+**The `maxAge` control (primary blocker; a security decision, not a snap
+change).** `checkAuth`'s `maxAge: "12h"` (`cube.js:227`) rejects any token whose
+`iat` is over 12h old — which breaks the Playground (stale cached token) and,
+almost certainly, Cube Cloud Explore (console-minted token). Options, to decide
+with the analytics-engineer code owners:
 
-**`checkAuth` flow:**
+- Raise/remove `maxAge` and rely on the token's own `exp`.
+- Scope `maxAge` to only the short-lived MCP-minted tokens (which set a 5-min
+  `exp`), exempting interactive Playground/console tokens.
+- Keep it and document a "re-mint a fresh token" step per surface — fragile, and
+  does not fix Cloud if the console token is long-lived.
+
+Weigh against the #4269 rationale for `maxAge` (a compromised minter cannot
+extend a token's life by inflating `exp` alone).
+
+**Admin-gated `act_as` (for the API/MCP surface and tighter gating).** Add an
+explicit impersonation path to the REST hook:
 
 ```js
 const callerEmail = payload.email;
@@ -175,16 +206,15 @@ so it is unforgeable — a token cannot self-assign impersonator rights.
   `isImpersonator(email)` = membership test.
 - **Later — warehouse column** (`is_cube_impersonator` in
   `dim_staff_cube_access`), surfaced by `buildSecurityContext` as
-  `can_impersonate`. HR-governed, consistent with the model; migrate post-pilot.
-  The `isImpersonator(email, ctx)` signature accommodates both so the migration
-  is internal.
+  `can_impersonate`. HR-governed; migrate post-pilot. The
+  `isImpersonator(email, ctx)` signature accommodates both.
 
 **SQL API / Explore:** impersonation there is already expressible via the
-existing `canSwitchSqlUser` super-user + `__user` mechanism; no change unless
-the spike shows Explore needs more. Do **not** broaden `canSwitchSqlUser`.
+existing `canSwitchSqlUser` super-user + `__user` mechanism; do **not** broaden
+`canSwitchSqlUser`.
 
-**MCP:** the current `cube` MCP mints an `email`-only JWT. Emulation via MCP
-would require it to pass an `act_as` claim — noted as a follow-up, not v1.
+**MCP:** the `cube` MCP mints an `email`-only JWT; `act_as` support there is a
+follow-up, not v1.
 
 ### Audit
 
@@ -210,17 +240,19 @@ requires retention.
   `act_as` → fail-closed; `isImpersonator` membership.
 - **Regression:** the internal `resolveAccess` path is byte-for-byte unchanged
   when no `act_as` is present; existing `student-*` / `staff-directory` /
-  `staff-pii` behavior unchanged.
+  `staff-pii` behavior unchanged. Confirm any `maxAge` change does not accept an
+  expired short-lived MCP token.
 - **Local RLS:** the SQL API viewer-loop matrix (ground truth), plus a
-  REST-auth-on run (`NODE_ENV=production`) exercising `act_as`.
-- **Cloud:** per the Phase 1 spike outcome — either document the paste/console
-  path or smoke-test `act_as` over REST against staging.
+  Playground `{email}`-paste check and a REST-auth-on run
+  (`NODE_ENV=production`) exercising `act_as`.
+- **Cloud:** per the Phase 1 items — confirm the `maxAge` fix unblocks the
+  console, then smoke-test scope on staging.
 
 ## Invariants preserved
 
 - Cubes private, views public; fail-closed default-deny.
 - Real end-users cannot self-elevate — `act_as` is honored only for an already
-  admin-gated caller.
+  admin-gated caller, and cloud console emulation is gated by console access.
 - Internal identity resolution and existing internal view policies are
   unchanged.
 - `canSwitchSqlUser` unchanged.
@@ -231,19 +263,24 @@ requires retention.
 - **Test-persona API keys (from #4501 Part 2.2).** They emulate the
   **external-\*** path only (explicit school list, no staff PII, no network), so
   they cannot reproduce an internal user's real HR-derived scope. Complementary,
-  not a substitute for internal emulation.
-- **Paste a full `securityContext` in the dev Playground.** Works in dev mode
-  (which skips `checkAuth`) but requires hand-crafting groups + `region_key` +
-  allow-lists — error-prone and not faithful. The context-dump-from-email helper
-  is a milder version; superseded if the Phase 1 spike shows email-paste
-  resolves.
+  not a substitute.
+- **Full-`securityContext` paste helper**
+  (`.claude/scratch/dump_security_context.js`). **Superseded** for the
+  Playground: since `checkAuth` runs in dev mode and resolves `{email}`, a plain
+  `{email}` paste is enough. The helper remains useful only as an offline
+  resolver cross-check.
 - **Non-prod-only emulation.** Rejected: the chosen trust model is admin-gated
   on **any** deployment, so emulation must be able to run against prod for a
   trusted admin.
 
 ## Open questions / verification items
 
-- The four Cube Cloud config questions in Phase 1 (spike) — gate Phase 2.
+- The `maxAge` control decision (raise / scope-to-MCP / keep) — gates the cloud
+  fix; needs code-owner sign-off.
+- The remaining Cube Cloud config items in Phase 1 (Cloud Auth Integration,
+  Explore's SQL `user`, `__user`), and whether Cube Cloud console access is
+  already scoped to the intended admin set (if so, console `{email}` paste is
+  the admin-gated cloud emulation and `act_as` shrinks to API/MCP only).
 - Final impersonator source for v1 (`CUBE_IMPERSONATORS` list assumed; confirm
   the data-team email set).
 - Native Cube Cloud audit capability and log retention.
@@ -265,7 +302,7 @@ requires retention.
   [#4501](https://github.com/TEAMSchools/teamster/pull/4501) — external-vendor
   API-key access + cloud emulation (sibling; folds in later).
 - [#4269](https://github.com/TEAMSchools/teamster/pull/4269) — the HR-derived
-  security redesign this builds on.
+  security redesign this builds on (added the `maxAge` cap).
 - [#4333](https://github.com/TEAMSchools/teamster/issues/4333) /
   [#4460](https://github.com/TEAMSchools/teamster/pull/4460) — assessment
   materialization + `proficiency_rollup` pre-agg (the RLS validation that
