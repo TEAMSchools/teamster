@@ -18,6 +18,7 @@ with
             s.is_ap_course,
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
+            s._dbt_source_project,
 
             r.sam_account_name as teacher_tableau_username,
 
@@ -68,6 +69,7 @@ with
             t.term_start_date as quarter_start_date,
             t.term_end_date as quarter_end_date,
             t.is_current_term,
+            t._dbt_source_project,
 
             sch.abbreviation as school,
 
@@ -97,13 +99,13 @@ with
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on t.schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="sch") }}
+            and t._dbt_source_project = sch._dbt_source_project
         inner join
             {{ ref("int_powerschool__calendar_week") }} as cw
             on t.yearid = cw.yearid
             and t.schoolid = cw.schoolid
             and t.term = cw.quarter
-            and {{ union_dataset_join_clause(left_alias="t", right_alias="cw") }}
+            and t._dbt_source_project = cw._dbt_source_project
         left join
             {{ ref("int_people__leadership_crosswalk") }} as l
             on t.schoolid = l.home_work_location_powerschool_school_id
@@ -137,6 +139,7 @@ with
             tw.hos,
             tw.school_leader,
             tw.school_leader_tableau_username,
+            tw._dbt_source_project,
 
             sec.sections_dcid,
             sec.sectionid,
@@ -207,7 +210,7 @@ with
             on tw.schoolid = sec.schoolid
             and tw.yearid = sec.terms_yearid
             and tw.week_end_date between sec.terms_firstday and sec.terms_lastday
-            and {{ union_dataset_join_clause(left_alias="tw", right_alias="sec") }}
+            and tw._dbt_source_project = sec._dbt_source_project
         where sec.academic_year = {{ var("current_academic_year") }}
     ),
 
