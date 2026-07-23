@@ -94,15 +94,20 @@ async function resolveAccess(email) {
     // where this identity has no bigquery.jobs.create — so every identity read
     // throws, resolveAccess fails closed, and the whole network is denied
     // (#4466). Pin the project + credentials to the driver's own config.
-    const bq = new BigQuery({
-      projectId: process.env.CUBEJS_DB_BQ_PROJECT_ID,
-      credentials: JSON.parse(
-        Buffer.from(
-          process.env.CUBEJS_DB_BQ_CREDENTIALS ?? "",
-          "base64",
-        ).toString("utf8"),
-      ),
-    });
+    // When CUBEJS_DB_BQ_CREDENTIALS is unset (e.g. local dev on ADC), fall back
+    // to ADC like the BigQuery driver does, instead of JSON.parse("") throwing
+    // and failing closed — which denies every viewer (#4526). Keep the projectId
+    // pin so ADC bills teamster-332318, not the ambient Cube Cloud host project
+    // (#4466).
+    const bqOptions = { projectId: process.env.CUBEJS_DB_BQ_PROJECT_ID };
+    if (process.env.CUBEJS_DB_BQ_CREDENTIALS) {
+      bqOptions.credentials = JSON.parse(
+        Buffer.from(process.env.CUBEJS_DB_BQ_CREDENTIALS, "base64").toString(
+          "utf8",
+        ),
+      );
+    }
+    const bq = new BigQuery(bqOptions);
     const [rows] = await bq.query({
       query:
         "SELECT * FROM `kipptaf_marts.dim_staff_cube_access` WHERE google_email = @email ORDER BY staff_key LIMIT 1",
