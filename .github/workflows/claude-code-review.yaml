@@ -49,15 +49,28 @@ jobs:
             dbt@dbt-agent-marketplace
           track_progress: true
           prompt: >-
-            /requesting-code-review ${{ github.repository }}/pull/${{
-            github.event.pull_request.number }}.
-
+            /superpowers:requesting-code-review ${{ github.repository
+            }}/pull/${{ github.event.pull_request.number }}.
 
             Apply dignified-python for Python standards, dagster-expert for
             Dagster assets and pipelines, and
             dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
 
+            Also evaluate the changed code through the /simplify lens: reuse
+            (prefer existing macros, models, and helpers over reinventing),
+            simplification, efficiency, and altitude and dead-code cleanup. This
+            job has read-only repo access, so report these as review findings
+            only; do not apply or commit fixes.
+
+            For SQL and dbt changes, read src/dbt/CLAUDE.md (and the nearest
+            per-project CLAUDE.md) and verify the code follows its SQL
+            conventions, SQL column ordering (ST06), and SQL formatting
+            sections. Examples: max one level of function nesting, no QUALIFY,
+            no ORDER BY in models, no SELECT DISTINCT or row_number() = 1 to
+            mask upstream duplicates, no subqueries against tables or CTEs, cast
+            early and once, correct ON vs WHERE placement, and no pass-through
+            import CTEs. Cite the specific convention for each violation.
 
             Environment: you run in GitHub Actions with NO warehouse or data
             access. No BigQuery connection, and none of the cube, dbt, dagster,
@@ -67,7 +80,6 @@ jobs:
             or duplicate violations, value distributions) as fact. When a
             finding depends on the data, label it "needs local verification" and
             give the exact query or dbt command the author should run.
-
 
             Review what is checkable statically: SQL and Jinja logic,
             ref()/source() wiring, incremental and materialization config, join
