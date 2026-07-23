@@ -149,6 +149,7 @@ with
             lb.n_failing_y1_4_week_prior,
 
             gpq.gpa_y1 as gpa_y1_prior_quarter,
+            gpq.n_failing_y1 as n_failing_y1_prior_quarter,
 
             pyg.gpa_y1_prior_year,
 
@@ -498,6 +499,7 @@ select
     s.n_failing_y1_4_week_prior,
 
     s.gpa_y1_prior_quarter,
+    s.n_failing_y1_prior_quarter,
     s.gpa_y1_prior_year,
 
     s.cumulative_y1_gpa,
