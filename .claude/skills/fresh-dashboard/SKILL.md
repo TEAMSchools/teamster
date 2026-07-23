@@ -121,21 +121,17 @@ Miami note above).
 
 ```sql
 select distinct
-  cy.academic_year,
+  2026 as academic_year, -- finalsite year toggle: see skill
   ps.region,
   ps.abbreviation as school,
   ps.school_number as schoolid,
   -1 as grade_level,
   'KTAF' as org,
 from `teamster-332318`.kipptaf_powerschool.stg_powerschool__schools as ps
-cross join (
-  select distinct finalsite_current_academic_year as academic_year
-  from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__status_crosswalk
-) as cy
 left join `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__school_scaffold as s
   on ps.school_number = s.schoolid
   and s.grade_level = -1
-  and s.academic_year = cy.academic_year
+  and s.academic_year = 2026 -- finalsite year toggle: see skill
 where
   ps.state_excludefromreporting = 0
   -- extract_region logic inline since this is an ad hoc query, not a dbt model:
@@ -173,6 +169,109 @@ skipping it.
 `status_crosswalk`'s own annual rollover stays a documented manual process, not
 a generated one — there is no source of truth to derive its content from (the
 Finalsite-status → category mapping is institutional judgment, not computable).
+
+## Procedure: Update the Finalsite recruitment year
+
+**Trigger phrases:** "SRE's cycle has rolled over, update FRESH for the new
+year", "bump the Finalsite recruitment year", "the goals sheet is now on [year],
+update the dashboard"
+
+**Why this is hardcoded, not derived:** two separate attempts to compute "the
+current Finalsite cycle" automatically were built and then reverted (see
+`git log` on `int_tableau__finalsite_student_scaffold.sql` for both). Finalsite
+can carry two concurrent academic years of live student data at once — students
+and regions roll over on their own uncoordinated timeline — so there's no
+reliable signal in the ingested data itself for "which year is current now."
+Unlike PowerSchool's `var("current_academic_year")`, which bumps on a
+predictable July 1 cadence, SRE's recruitment-cycle timeline is fluid — there is
+no fixed date to key an automatic bump off of. **Always confirm the new year
+with SRE (or by reading the goals sheet directly) before changing anything below
+— don't infer it from a calendar date or from ingestion data.**
+
+**Step 0 — pre-flight: confirm the sheets are actually ready for the new year.**
+Toggling the literal before the source sheets carry the new year's data doesn't
+error — it silently zeroes out or truncates the pipeline (an `inner join` scoped
+to a year with no rows just returns nothing). Check both, and don't proceed
+until both are resolved:
+
+1. **`status_crosswalk` has config for the new year:**
+
+   ```sql
+   select count(*) as row_count
+   from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__status_crosswalk
+   where file_year = <new_year>
+   ```
+
+   If `0`, **stop** — the crosswalk sheet's detailed-status → category mapping
+   is institutional judgment with no source of truth to derive it from (same
+   reason its own rollover is a manual process, not a generator — see the note
+   at the end of "Rollover / maintenance generators" above). An analyst must add
+   the new year's rows to the sheet before the toggle proceeds; toggling first
+   would make `latest_status_calc`'s `inner join` (and every other site below)
+   silently return zero rows for the new year.
+
+2. **`school_scaffold` has its `-1` rows for the new year, for every
+   currently-existing non-Miami school:** run the `-1` candidate-row generator
+   above, but with `<new_year>` substituted for `2026` in both places (the
+   generator's own hardcoded year is a pre-toggle artifact — it's still pointed
+   at the outgoing year until you do this substitution). For a brand-new
+   academic year the sheet typically has **zero** rows yet, so this isn't a
+   partial-gap check — the generator's full output _is_ the complete `-1` row
+   set the new year needs. Since the PowerSchool builder can never produce `-1`
+   rows (structural, not a gap that closes on its own), don't just report that
+   gaps exist: **run the query now and hand the user its full result as a
+   ready-to-paste block** (plain delimited rows in a fenced code block, one row
+   per line, matching the "Goals-sheet gap-row generator" batch-delivery
+   convention — not a markdown table), so they can paste it directly into
+   `stg_google_sheets__finalsite__school_scaffold` before or alongside the
+   toggle. Leaving this until "later" means every affected school's
+   `School`-granularity goal rollup goes silently missing from the scaffold the
+   moment the toggle lands.
+
+Only once both checks are clean — status_crosswalk has real rows for
+`<new_year>`, and the pasted `-1` rows are confirmed in the sheet — proceed to
+the file edits below.
+
+**Files to edit** — every occurrence is marked
+`-- finalsite year toggle: see skill` (or the block-comment form) immediately
+above or beside the literal:
+
+- `src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__enrollment_scaffold.sql`
+  (2 occurrences — `powerschool_scaffold`'s `academic_year` literal and
+  `gsheet_scaffold`'s `where` filter)
+- `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__finalsite_student_scaffold.sql`
+  (1 occurrence — `latest_status_calc`'s `where` filter)
+- `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__fresh_dashboard_progress_to_goals.sql`
+  (2 occurrences — the `School` and `School/Grade Level` goal CTEs)
+- `src/dbt/kipptaf/tests/test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
+  (1 occurrence — `crosswalk_ranking`'s `where` filter)
+- This file (1 occurrence — the `-1` candidate-row generator query above)
+
+In each, replace the old year literal with the new one (e.g. `2026` → `2027`).
+None of these read from a shared var — each is an independent literal, by design
+(see "Why this is hardcoded" above), so every site must be changed individually.
+Grep to confirm you found them all:
+
+```bash
+grep -rn "finalsite year toggle" src/dbt/kipptaf .claude/skills/fresh-dashboard
+```
+
+Build and verify after all changes:
+
+```bash
+uv run dbt build \
+  --select int_finalsite__enrollment_scaffold int_tableau__finalsite_student_scaffold \
+    rpt_tableau__fresh_dashboard_progress_to_goals \
+    test_int_finalsite__status_order_matches_crosswalk_ranking \
+  --project-dir src/dbt/kipptaf \
+  --defer \
+  --state target/prod
+```
+
+**When to make the change:** whenever SRE says the recruitment cycle has rolled
+over — not on a fixed schedule. There is no "revert" step the way
+gradebook-audit's summer toggle has; this is a one-directional bump forward each
+time SRE's cycle advances.
 
 ## Verified facts (don't re-derive these — reference them)
 

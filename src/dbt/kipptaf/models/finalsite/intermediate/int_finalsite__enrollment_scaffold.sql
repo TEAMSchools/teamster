@@ -11,11 +11,6 @@
 {% endif %}
 
 with
-    current_academic_year as (
-        select distinct finalsite_current_academic_year as academic_year,
-        from {{ ref("stg_google_sheets__finalsite__status_crosswalk") }}
-    ),
-
     powerschool_region as (
         select
             sps.school_number, sps.abbreviation, {{ extract_region("sps") }} as region,
@@ -71,7 +66,8 @@ with
             gm.region,
             gm.grade_level,
 
-            cy.academic_year,
+            -- finalsite year toggle: see skill
+            2026 as academic_year,
 
             'KTAF' as org,
             'powerschool' as scaffold_source,
@@ -85,7 +81,6 @@ with
             end as school_level,
 
         from grade_membership as gm
-        cross join current_academic_year as cy
     )
 
     {% if scaffold_source_mode in ("gsheet", "blend") %}
@@ -110,7 +105,8 @@ with
                 'gsheet' as scaffold_source,
 
             from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
-            inner join current_academic_year as cy on s.academic_year = cy.academic_year
+            -- finalsite year toggle: see skill
+            where s.academic_year = 2026
         )
     {% endif %}
 

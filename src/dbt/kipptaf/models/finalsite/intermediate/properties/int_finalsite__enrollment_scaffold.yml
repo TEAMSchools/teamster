@@ -42,10 +42,10 @@ models:
       - name: academic_year
         data_type: int64
         description: >
-          The current Finalsite recruitment cycle -- always
-          stg_google_sheets__finalsite__status_crosswalk.finalsite_current_academic_year's
-          value, never a historical year (stg_powerschool__students is
-          current-state only, no academic_year column).
+          The current Finalsite recruitment cycle. Hardcoded (2026 as of this
+          writing) rather than derived -- SRE's own cycle timeline is too fluid
+          to reliably compute from ingestion data; see the fresh-dashboard
+          skill's year-toggle procedure for how this gets updated.
       - name: region
         data_type: string
         description: One of "Newark", "Camden", "Miami", "Paterson".

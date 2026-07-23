@@ -25,7 +25,7 @@ stg_google_sheets__finalsite__status_crosswalk ─▶ int_google_sheets__finalsi
                                                                                                                                   │
 int_extracts__student_enrollments (PowerSchool-only, zero Miami rows) ──────────────────────────────────────────────────────────┘
 
-stg_google_sheets__finalsite__status_crosswalk.finalsite_current_academic_year ─▶ (collapsed to one row and cross-joined by every model above needing "the current cycle")
+"the current cycle" ─▶ hardcoded literal at each model above needing it (not derived -- see "The current academic year" section below)
 ```
 
 The **scaffold** (school × grade spine) and the **goals** (numeric targets) are
@@ -71,12 +71,11 @@ the sheet only where PowerSchool doesn't have it.
   (pre-registration/pre-K), and must never produce a `grade_level = -1` row
   indistinguishable from the scaffold's own `-1` sentinel (see below).
 - **Sheet builder** — `stg_google_sheets__finalsite__school_scaffold`, filtered
-  to the current academic year (via
-  `stg_google_sheets__finalsite__status_crosswalk.finalsite_current_academic_year`,
-  so a stale row from a prior, closed cycle can never look like "PowerSchool
-  doesn't have this yet"). Supplies what PowerSchool structurally can't: every
-  school's `grade_level = -1` whole-school-total row, and genuinely new
-  schools/grades not yet live in PowerSchool.
+  to the current academic year (a hardcoded literal -- see "The current academic
+  year" section below -- so a stale row from a prior, closed cycle can never
+  look like "PowerSchool doesn't have this yet"). Supplies what PowerSchool
+  structurally can't: every school's `grade_level = -1` whole-school-total row,
+  and genuinely new schools/grades not yet live in PowerSchool.
 
 **Important: `grade_level = -1` means "whole-school total row" in this
 scaffold's convention** — a reporting convenience, not a PowerSchool concept.
@@ -110,29 +109,31 @@ downstream models that need that override). Because this scaffold computes
 `school_level` fresh, per grade, it already gets Sumner right (`ES` for grades
 0–4, `MS` for grades 5/6) with zero special-casing.
 
-## The current academic year: `finalsite_current_academic_year`
+## The current academic year: hardcoded, not derived
 
-A column on `stg_google_sheets__finalsite__status_crosswalk` itself:
-`max(file_year) over ()`, computed once at the staging layer rather than in a
-separate model. Every row in the table carries the same value (see below), so a
-consumer needing "the current Finalsite cycle" collapses it to one row —
-`select distinct finalsite_current_academic_year` — before cross-joining, rather
-than hardcoding a year. This intentionally lives on the staging model, not a
-`var()` — distinct from `var('current_academic_year')`, which is the
-PowerSchool/network year, not the Finalsite cycle year.
+"The current Finalsite recruitment cycle" is a **hardcoded literal** (`2026` as
+of this writing) at each site that needs it, not a column, var, or joined value.
+Two attempts to derive it automatically were built and reverted (see `git log`
+on `int_tableau__finalsite_student_scaffold.sql`): Finalsite can carry **two
+concurrent academic years of live student data at once** during a transition
+period — individual students and regions roll over on their own uncoordinated
+timeline, with no standardized cadence — so there's no reliable signal in the
+ingested data for "which year is current now." SRE's own recruitment-cycle
+timeline is similarly fluid, with no fixed date (unlike PowerSchool's
+`var('current_academic_year')`, which bumps on a predictable July 1 cadence) to
+key an automatic bump off of.
 
-Why not derive it from raw Finalsite ingestion instead? Finalsite can carry
-**two concurrent academic years of live student data at once** during a
-transition period — individual students and regions roll over on their own
-uncoordinated timeline, with no standardized cadence. So "which year has the
-newest raw data" isn't reliable. `status_crosswalk` holds config for **exactly
-one academic year at a time** by convention, guarded by
+Every hardcode site is marked `-- finalsite year toggle: see skill` (or the
+block-comment form). See the fresh-dashboard skill's "Procedure: Update the
+Finalsite recruitment year" section for the full file list and update steps —
+always confirm the new year with SRE before changing any of them.
+
+`status_crosswalk` still holds config for **exactly one academic year at a
+time** by convention, guarded by
 `test_stg_google_sheets__finalsite__status_crosswalk_single_year` (asserting
-`count(distinct file_year) = 1` — exactly one, not "at most one," since an empty
-table would otherwise silently null out `finalsite_current_academic_year`, and
-every downstream `cross join ... where x = cy.academic_year` comparison against
-`NULL` evaluates to unknown, quietly zeroing out the entire pipeline with no
-error).
+`count(distinct file_year) = 1`) — this guards against the sheet's config ever
+drifting out of sync with whatever year is currently hardcoded across the
+consumers above.
 
 ## Goal definitions
 
@@ -163,6 +164,32 @@ later moved past or reversed; `Current` = point-in-time, latest status only):
 | `Enrollment In Progress`                                                            | Current   | Student is currently mid-enrollment paperwork/process.                                                                          |
 | `Pending Offers` (+ `<= 4 Days` / `>= 5 & <= 10 Days` / `> 10 Days`)                | Current   | Student has an outstanding offer awaiting a family response, bucketed by days pending — an SLA/staleness tracker for follow-up. |
 | `Conversion` — `Accepted to Enrolled` / `Offers to Accepted` / `Offers to Enrolled` | Ever      | Funnel conversion-rate metrics between two funnel stages.                                                                       |
+
+`int_finalsite__status_report_unpivot.sql` resolves each row's `assigned_school`
+to a PowerSchool `schoolid`/`school` abbreviation via
+`int_people__location_crosswalk`. `assigned_school` is null for enrollment
+stages tracked only at region/grade-level granularity (e.g. `Inquiries`,
+`Applications` -- before Finalsite has assigned a school), so those rows fall
+back to `schoolid = 0` / `school = 'No School Assigned'`. `schoolid = 0` is the
+sentinel the goals join keys on to connect these rows to a Region/Grade Level
+goals-sheet row instead of a specific school's goals; `'No School Assigned'` is
+the same condition reflected on the `school` label.
+
+For the same reason, `int_tableau__finalsite_student_scaffold.sql`'s
+`latest_status_calc` CTE overrides `school` to the row's `region` (instead of
+its real `school`) when `status_group_value` is `Inquiries` or `Applications` --
+those two funnel stages are only ever tracked at region/grade-level granularity,
+so `school` carries the region for them instead of a specific (and structurally
+absent, at that funnel stage) school.
+
+`int_tableau__finalsite_student_scaffold.sql` also stamps every row with
+`aligned_enrollment_type = 'All'` (a constant, alongside the row's real
+`enrollment_type` of `New`/`Returning`).
+`rpt_tableau__fresh_dashboard_progress_to_goals.sql` unions the actuals twice
+per scaffold row -- once keyed on the real `enrollment_type`, once keyed on
+`aligned_enrollment_type` -- so a school/grade's `New` and `Returning` counts
+combine into a single `All` bucket, matching the scaffold's own
+`cross join unnest(['All', 'New', 'Returning'])` `enrollment_type` dimension.
 
 ## Known data model caveats
 
@@ -244,6 +271,17 @@ numbers and the dashboard:
 
 ## Open questions
 
+- **`stg_finalsite__status_report.active_school_year` could give the blend a
+  finer per-record rollover signal.** Format is `YYYY-YYYY` (e.g. `2026-2027`)
+  -- it's the school year a given student's Finalsite record is currently active
+  under, and it's genuinely mixed at any moment (verified: as of this writing
+  27,511 rows sit on `2026-2027`, 1,492 are still on the prior `2025-2026`, and
+  a handful are already on `2027-2028`/`2028-2029`). Comparing this per-record
+  value against the current hardcoded year (see "The current academic year"
+  section above) could give `int_finalsite__enrollment_scaffold`'s blend mode a
+  per-student or per-school rollover signal, instead of relying solely on the
+  single network-wide current-year anchor. Not yet designed or implemented -- an
+  idea to explore, not a decision.
 - **Historical / multi-year scaffold reporting is not solved by this model.**
   `stg_powerschool__schools` is current-state only, and the scaffold sheet has
   never carried prior-year rows in practice. Needs a dedicated design discussion

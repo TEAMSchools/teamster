@@ -1,9 +1,4 @@
 with
-    current_academic_year as (
-        select distinct finalsite_current_academic_year as academic_year,
-        from {{ ref("stg_google_sheets__finalsite__status_crosswalk") }}
-    ),
-
     latest_status_calc as (
         select
             r.enrollment_academic_year,
@@ -42,8 +37,10 @@ with
                 order by r.status_start_date desc, r.status_order desc
             ) as latest_status,
 
+            count(*) over (partition by r.finalsite_enrollment_id, r.status_start_date)
+            > 1 as is_same_day_status_duplicate,
+
         from {{ ref("int_finalsite__status_report_unpivot") }} as r
-        cross join current_academic_year as cy
         inner join
             {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
             on r._dagster_partition_key = x._dagster_partition_key
@@ -51,7 +48,8 @@ with
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
             and not x.qa_flag
-        where r.enrollment_academic_year = cy.academic_year
+        -- finalsite year toggle: see skill
+        where r.enrollment_academic_year = 2026
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -77,6 +75,7 @@ with
             grouped_status_order,
             grouped_status_timeframe,
             latest_status,
+            is_same_day_status_duplicate,
 
             max(status_start_date) over (
                 partition by finalsite_id, status_group_value
@@ -115,6 +114,7 @@ with
             enrollment_type,
             grouped_status,
             latest_status,
+            is_same_day_status_duplicate,
             aligned_enrollment_type,
             grouped_status_order,
             grouped_status_timeframe,
@@ -164,6 +164,7 @@ with
             r.enrollment_type,
             r.grouped_status,
             r.latest_status,
+            r.is_same_day_status_duplicate,
             r.aligned_enrollment_type,
             r.grouped_status_order,
             r.grouped_status_timeframe,
@@ -300,6 +301,7 @@ with
             self_contained,
             enrollment_type,
             latest_status,
+            is_same_day_status_duplicate,
             aligned_enrollment_type,
             grouped_status_timeframe,
 
@@ -329,6 +331,7 @@ with
             d.self_contained,
             d.enrollment_type,
             d.latest_status,
+            d.is_same_day_status_duplicate,
             d.aligned_enrollment_type,
             d.grouped_status_timeframe,
 
@@ -364,6 +367,7 @@ select
     r.self_contained,
     r.enrollment_type,
     r.latest_status,
+    r.is_same_day_status_duplicate,
     r.aligned_enrollment_type,
     r.grouped_status_timeframe,
     r.goal_name,
@@ -410,6 +414,7 @@ select
     r.self_contained,
     r.enrollment_type,
     r.latest_status,
+    r.is_same_day_status_duplicate,
     r.aligned_enrollment_type,
     r.grouped_status_timeframe,
     r.goal_name,

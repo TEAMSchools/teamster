@@ -45,11 +45,13 @@ data_tests:
   - name: test_stg_google_sheets__finalsite__status_crosswalk_single_year
     description: >-
       status_crosswalk must hold config for exactly one academic year at a time
-      (a documented convention, not an enforced constraint) --
-      finalsite_current_academic_year derives "the current Finalsite cycle" via
-      max(file_year) over every row, which silently returns NULL if the table is
-      empty and silently favors the wrong year if two years' config accumulate.
-      Both failure modes must fail loudly here instead.
+      (a documented convention, not an enforced constraint). Several FRESH
+      dashboard models/tests hardcode "the current Finalsite cycle" as a literal
+      year (see the fresh-dashboard skill's year-toggle procedure) that must
+      match whichever year the sheet is actually configured for -- if two years'
+      config ever accumulates, joins scoped to that literal would silently miss
+      or double-count rows with no error. This test fails loudly on that
+      condition instead.
     config:
       severity: error
       meta:
