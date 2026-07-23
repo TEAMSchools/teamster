@@ -230,6 +230,12 @@ models:
           Weighted Y1 GPA as of the previous quarter (a Q3 row shows the Q2
           value). Current-year quarter rows only — NULL on Q1, Y1, and
           prior-year rows.
+      - name: n_failing_y1_prior_quarter
+        data_type: int64
+        description: >-
+          Count of failing Y1 grades as of the previous quarter (a Q3 row shows
+          the Q2 value). Current-year quarter rows only — NULL on Q1, Y1, and
+          prior-year rows.
       - name: gpa_y1_prior_year
         data_type: float64
         description: >-
@@ -404,6 +410,12 @@ models:
         data_type: float64
         description: >-
           Student's average percent across all courses for the category-term.
+      - name: y1_course_letter_grade_adjusted
+        data_type: string
+        description: >-
+          Best-available adjusted Y1 course letter grade — the final stored Y1
+          grade once the year is complete, falling back to the in-progress Y1
+          grade for the current year.
       - name: section_or_period
         data_type: string
         description: >-

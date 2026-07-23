@@ -149,6 +149,7 @@ with
             lb.n_failing_y1_4_week_prior,
 
             gpq.gpa_y1 as gpa_y1_prior_quarter,
+            gpq.n_failing_y1 as n_failing_y1_prior_quarter,
 
             pyg.gpa_y1_prior_year,
 
@@ -498,6 +499,7 @@ select
     s.n_failing_y1_4_week_prior,
 
     s.gpa_y1_prior_quarter,
+    s.n_failing_y1_prior_quarter,
     s.gpa_y1_prior_year,
 
     s.cumulative_y1_gpa,
@@ -551,6 +553,11 @@ select
     c.category_y1_percent_grade_running,
     c.category_y1_percent_grade_current,
     c.category_quarter_average_all_courses,
+
+    coalesce(
+        y1f.y1_course_final_letter_grade_adjusted,
+        qg.y1_course_in_progress_letter_grade_adjusted
+    ) as y1_course_letter_grade_adjusted,
 
     if(
         s.grade_level < 9, ce.section_number, ce.external_expression
