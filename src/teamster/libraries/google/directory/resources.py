@@ -432,7 +432,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             # _execute_batch_with_retry, so logging a traceback at ERROR here
             # would file false-positive GCP Error Reporting groups for transient
             # failures the retry layer recovers from.
-            self._log.warning(msg=(id, exception))
+            self._log.warning(msg=f"batch sub-request {id} failed: {exception}")
             self._exceptions.append((int(id) - 1, exception))
         else:
             self._log.info(
@@ -529,7 +529,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             One ``{"primaryEmail": ..., "error": ...}`` dict per user whose
             creation ultimately failed (empty if all succeeded).
         """
-        errors = []
+        exceptions = []
 
         # You cannot create more than 10 users per domain per second using the
         # Directory API
@@ -545,7 +545,7 @@ class GoogleDirectoryResource(ConfigurableResource):
                 request_factory=lambda user: self._resource.users().insert(body=user),
             )
 
-            errors.extend(
+            exceptions.extend(
                 {"primaryEmail": item["primaryEmail"], "error": str(e)}
                 for item, e in failures
             )
@@ -553,7 +553,7 @@ class GoogleDirectoryResource(ConfigurableResource):
             if i < len(batches) - 1:
                 time.sleep(1)
 
-        return errors
+        return exceptions
 
     def _retry_update_user(self, user: dict) -> None:
         """Retry a single user update after a 409 conflict response."""

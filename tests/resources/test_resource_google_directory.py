@@ -186,6 +186,8 @@ def test_batch_insert_users_collects_exception_from_failed_request():
     assert len(exceptions) == 1
     assert exceptions[0]["primaryEmail"] == "a@b.com"
     assert "error" in exceptions[0]
+    # 409 is non-transient: collected without a wasted follow-up batch.
+    assert mock_api.new_batch_http_request.call_count == 1
 
 
 def test_batch_insert_users_error_dict_omits_user_payload():
@@ -267,6 +269,45 @@ def test_batch_insert_users_records_transient_subrequest_after_exhausting_retrie
     assert len(exceptions) == 1
     assert exceptions[0]["primaryEmail"] == "a@b.com"
     assert 1 < mock_api.new_batch_http_request.call_count < 10
+
+
+def test_batch_insert_users_retries_only_the_failed_subrequest_in_a_mixed_batch():
+    # Item 0 succeeds and item 1 gets a transient 503: the retry batch must be
+    # built with only the failed item, never re-sending the succeeded one (which
+    # would 409 on recreate).
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    batches_built = []
+
+    responses_per_batch = [
+        [({"primaryEmail": "a@b.com"}, None), (None, transient)],  # attempt 1
+        [({"primaryEmail": "b@b.com"}, None)],  # retry: only the failed item
+    ]
+    batch_idx = [-1]
+
+    def new_batch(callback):
+        batch_idx[0] += 1
+        batch_responses = responses_per_batch[batch_idx[0]]
+        mock_batch = MagicMock()
+
+        def execute():
+            for i, (response, exception) in enumerate(batch_responses):
+                callback(str(i + 1), response, exception)
+
+        mock_batch.execute.side_effect = execute
+        batches_built.append(mock_batch)
+        return mock_batch
+
+    mock_api.new_batch_http_request.side_effect = new_batch
+
+    users = [{"primaryEmail": "a@b.com"}, {"primaryEmail": "b@b.com"}]
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_users(users)
+
+    assert exceptions == []
+    assert len(batches_built) == 2
+    assert batches_built[0].add.call_count == 2  # both items on the first attempt
+    assert batches_built[1].add.call_count == 1  # only the failed item retried
 
 
 # ── batch_update_users ────────────────────────────────────────────────────────
