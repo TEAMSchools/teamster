@@ -12,6 +12,8 @@ models:
                 field: name
       - name: _dbt_source_relation
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
       - name: assignment
         data_type: string
       - name: behavior
