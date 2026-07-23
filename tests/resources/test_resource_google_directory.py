@@ -216,6 +216,40 @@ def test_batch_insert_users_sleeps_between_batches_not_after_last():
     mock_sleep.assert_called_once_with(1)
 
 
+def test_batch_insert_users_retries_transient_subrequest_and_succeeds():
+    # A transient 503 on an individual sub-request must be retried, not recorded
+    # as a permanent error. Regression: only the outer batch envelope was wrapped
+    # in backoff, but a sub-request failure is delivered to the callback and never
+    # raised out of execute(), so it was never retried.
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [
+            [(None, transient)],  # attempt 1: sub-request 503
+            [({"primaryEmail": "a@b.com"}, None)],  # retry: success
+        ]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_users([{"primaryEmail": "a@b.com"}])
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 2
+
+
+def test_batch_insert_users_records_transient_subrequest_after_exhausting_retries():
+    # More failing attempts available than the retry budget; the helper must stop
+    # retrying and record the failure rather than loop forever.
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[(None, transient)] for _ in range(10)]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_users([{"primaryEmail": "a@b.com"}])
+    assert len(exceptions) == 1
+    assert "a@b.com" in exceptions[0]
+    assert 1 < mock_api.new_batch_http_request.call_count < 10
+
+
 # ── batch_update_users ────────────────────────────────────────────────────────
 
 
@@ -266,6 +300,23 @@ def test_batch_update_users_collects_exception_when_409_retry_also_fails():
     assert "a@b.com" in exceptions[0]
 
 
+def test_batch_update_users_retries_transient_subrequest_and_succeeds():
+    # Distinct from the 409 path: a transient 5xx on a sub-request is retried in
+    # a follow-up batch, not routed through the single-user 409 retry.
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [
+            [(None, transient)],
+            [({"primaryEmail": "a@b.com"}, None)],
+        ]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_update_users([{"primaryEmail": "a@b.com"}])
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 2
+
+
 # ── batch_insert_members ──────────────────────────────────────────────────────
 
 
@@ -278,6 +329,23 @@ def test_batch_insert_members_returns_empty_on_all_success():
         resource.batch_insert_members([{"groupKey": "g@b.com", "email": "a@b.com"}])
         == []
     )
+
+
+def test_batch_insert_members_retries_transient_subrequest_and_succeeds():
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [
+            [(None, transient)],
+            [({"email": "a@b.com"}, None)],
+        ]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_members(
+            [{"groupKey": "g@b.com", "email": "a@b.com"}]
+        )
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 2
 
 
 # ── batch_insert_role_assignments ─────────────────────────────────────────────
@@ -294,6 +362,23 @@ def test_batch_insert_role_assignments_returns_empty_on_all_success():
         )
         == []
     )
+
+
+def test_batch_insert_role_assignments_retries_transient_subrequest_and_succeeds():
+    resource, mock_api = _make_resource()
+    transient = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [
+            [(None, transient)],
+            [({"roleAssignmentId": "ra1"}, None)],
+        ]
+    )
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_role_assignments(
+            [{"assignedTo": "uid", "roleId": "rid", "scopeType": "CUSTOMER"}]
+        )
+    assert exceptions == []
+    assert mock_api.new_batch_http_request.call_count == 2
 
 
 # ── list_roles / list_role_assignments default params ─────────────────────────
