@@ -21,6 +21,8 @@ select
 
     initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
 
+    {{ extract_source_project() }} as _dbt_source_project,
+
     if(
         application_grade in ('K', 'Kindergarten'),
         0,
