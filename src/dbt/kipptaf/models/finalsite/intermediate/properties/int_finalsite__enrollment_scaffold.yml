@@ -43,9 +43,9 @@ models:
         data_type: int64
         description: >
           The current Finalsite recruitment cycle -- always
-          int_finalsite__current_academic_year's value, never a historical year
-          (stg_powerschool__students is current-state only, no academic_year
-          column).
+          stg_google_sheets__finalsite__status_crosswalk.finalsite_current_academic_year's
+          value, never a historical year (stg_powerschool__students is
+          current-state only, no academic_year column).
       - name: region
         data_type: string
         description: One of "Newark", "Camden", "Miami", "Paterson".

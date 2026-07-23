@@ -1,4 +1,9 @@
 with
+    current_academic_year as (
+        select distinct finalsite_current_academic_year as academic_year,
+        from {{ ref("stg_google_sheets__finalsite__status_crosswalk") }}
+    ),
+
     latest_status_calc as (
         select
             r.enrollment_academic_year,
@@ -38,7 +43,7 @@ with
             ) as latest_status,
 
         from {{ ref("int_finalsite__status_report_unpivot") }} as r
-        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
+        cross join current_academic_year as cy
         inner join
             {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
             on r._dagster_partition_key = x._dagster_partition_key

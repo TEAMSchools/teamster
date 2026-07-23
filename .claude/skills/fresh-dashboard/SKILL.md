@@ -129,8 +129,8 @@ select distinct
   'KTAF' as org,
 from `teamster-332318`.kipptaf_powerschool.stg_powerschool__schools as ps
 cross join (
-  select academic_year
-  from `teamster-332318`.kipptaf_finalsite.int_finalsite__current_academic_year
+  select distinct finalsite_current_academic_year as academic_year
+  from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__status_crosswalk
 ) as cy
 left join `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__school_scaffold as s
   on ps.school_number = s.schoolid

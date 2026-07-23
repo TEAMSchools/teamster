@@ -25,7 +25,7 @@ stg_google_sheets__finalsite__status_crosswalk ─▶ int_google_sheets__finalsi
                                                                                                                                   │
 int_extracts__student_enrollments (PowerSchool-only, zero Miami rows) ──────────────────────────────────────────────────────────┘
 
-stg_google_sheets__finalsite__status_crosswalk ─▶ int_finalsite__current_academic_year ─▶ (cross-joined by every model above needing "the current cycle")
+stg_google_sheets__finalsite__status_crosswalk.finalsite_current_academic_year ─▶ (collapsed to one row and cross-joined by every model above needing "the current cycle")
 ```
 
 The **scaffold** (school × grade spine) and the **goals** (numeric targets) are
@@ -71,11 +71,12 @@ the sheet only where PowerSchool doesn't have it.
   (pre-registration/pre-K), and must never produce a `grade_level = -1` row
   indistinguishable from the scaffold's own `-1` sentinel (see below).
 - **Sheet builder** — `stg_google_sheets__finalsite__school_scaffold`, filtered
-  to the current academic year (via `int_finalsite__current_academic_year`, so a
-  stale row from a prior, closed cycle can never look like "PowerSchool doesn't
-  have this yet"). Supplies what PowerSchool structurally can't: every school's
-  `grade_level = -1` whole-school-total row, and genuinely new schools/grades
-  not yet live in PowerSchool.
+  to the current academic year (via
+  `stg_google_sheets__finalsite__status_crosswalk.finalsite_current_academic_year`,
+  so a stale row from a prior, closed cycle can never look like "PowerSchool
+  doesn't have this yet"). Supplies what PowerSchool structurally can't: every
+  school's `grade_level = -1` whole-school-total row, and genuinely new
+  schools/grades not yet live in PowerSchool.
 
 **Important: `grade_level = -1` means "whole-school total row" in this
 scaffold's convention** — a reporting convenience, not a PowerSchool concept.
@@ -109,12 +110,16 @@ downstream models that need that override). Because this scaffold computes
 `school_level` fresh, per grade, it already gets Sumner right (`ES` for grades
 0–4, `MS` for grades 5/6) with zero special-casing.
 
-## The current academic year: `int_finalsite__current_academic_year`
+## The current academic year: `finalsite_current_academic_year`
 
-A single-row model:
-`select max(file_year) as academic_year from stg_google_sheets__finalsite__status_crosswalk`.
-Every model needing "the current Finalsite cycle" cross joins this instead of
-hardcoding a year.
+A column on `stg_google_sheets__finalsite__status_crosswalk` itself:
+`max(file_year) over ()`, computed once at the staging layer rather than in a
+separate model. Every row in the table carries the same value (see below), so a
+consumer needing "the current Finalsite cycle" collapses it to one row —
+`select distinct finalsite_current_academic_year` — before cross-joining, rather
+than hardcoding a year. This intentionally lives on the staging model, not a
+`var()` — distinct from `var('current_academic_year')`, which is the
+PowerSchool/network year, not the Finalsite cycle year.
 
 Why not derive it from raw Finalsite ingestion instead? Finalsite can carry
 **two concurrent academic years of live student data at once** during a
@@ -124,9 +129,10 @@ newest raw data" isn't reliable. `status_crosswalk` holds config for **exactly
 one academic year at a time** by convention, guarded by
 `test_stg_google_sheets__finalsite__status_crosswalk_single_year` (asserting
 `count(distinct file_year) = 1` — exactly one, not "at most one," since an empty
-table would otherwise silently null out this whole model, and every downstream
-`cross join ... where x = cy.academic_year` comparison against `NULL` evaluates
-to unknown, quietly zeroing out the entire pipeline with no error).
+table would otherwise silently null out `finalsite_current_academic_year`, and
+every downstream `cross join ... where x = cy.academic_year` comparison against
+`NULL` evaluates to unknown, quietly zeroing out the entire pipeline with no
+error).
 
 ## Goal definitions
 

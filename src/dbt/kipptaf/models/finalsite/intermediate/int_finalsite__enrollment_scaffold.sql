@@ -11,6 +11,11 @@
 {% endif %}
 
 with
+    current_academic_year as (
+        select distinct finalsite_current_academic_year as academic_year,
+        from {{ ref("stg_google_sheets__finalsite__status_crosswalk") }}
+    ),
+
     powerschool_region as (
         select
             sps.school_number, sps.abbreviation, {{ extract_region("sps") }} as region,
@@ -80,7 +85,7 @@ with
             end as school_level,
 
         from grade_membership as gm
-        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
+        cross join current_academic_year as cy
     )
 
     {% if scaffold_source_mode in ("gsheet", "blend") %}
@@ -105,9 +110,7 @@ with
                 'gsheet' as scaffold_source,
 
             from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
-            inner join
-                {{ ref("int_finalsite__current_academic_year") }} as cy
-                on s.academic_year = cy.academic_year
+            inner join current_academic_year as cy on s.academic_year = cy.academic_year
         )
     {% endif %}
 

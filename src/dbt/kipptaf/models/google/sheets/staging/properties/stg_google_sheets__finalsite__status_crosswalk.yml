@@ -44,3 +44,22 @@ models:
         data_type: string
       - name: file_year
         data_type: int64
+      - name: finalsite_current_academic_year
+        data_type: int64
+        description: >-
+          The currently valid Finalsite academic year (start-year form, e.g.
+          2026 for AY2026-2027), derived as max(file_year) over every row.
+          Distinct from the var('current_academic_year') network year -- raw
+          Finalsite ingestion timing isn't a reliable signal for "the current
+          year" since two academic years' student data can be live
+          simultaneously with a non-standardized per-region rollover cadence;
+          status_crosswalk's single-active-year convention (guarded by
+          test_stg_google_sheets__finalsite__status_crosswalk_single_year) is
+          the reliable anchor instead, so this resolves to that single year on
+          every row. Consumers needing "the current Finalsite cycle" collapse to
+          one row (select distinct finalsite_current_academic_year) rather than
+          hardcoding a year or reading a var.
+        data_tests:
+          - not_null:
+              config:
+                severity: error

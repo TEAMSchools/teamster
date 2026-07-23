@@ -1,4 +1,9 @@
 with
+    current_academic_year as (
+        select distinct finalsite_current_academic_year as academic_year,
+        from {{ ref("stg_google_sheets__finalsite__status_crosswalk") }}
+    ),
+
     scaffold as (
         /* dont have a better location where only one schoolid matches a single school
            name */
@@ -157,7 +162,7 @@ with
             gp.enrollment_type,
 
         from {{ ref("int_google_sheets__finalsite__goals_pivot") }} as gp
-        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
+        cross join current_academic_year as cy
         where
             gp.goal_granularity = 'School'
             and gp.goal_type = 'Enrollment'
@@ -275,7 +280,7 @@ with
             gp.enrollment_type,
 
         from {{ ref("int_google_sheets__finalsite__goals_pivot") }} as gp
-        cross join {{ ref("int_finalsite__current_academic_year") }} as cy
+        cross join current_academic_year as cy
         where
             gp.goal_granularity = 'School/Grade Level'
             and gp.goal_type = 'Enrollment'

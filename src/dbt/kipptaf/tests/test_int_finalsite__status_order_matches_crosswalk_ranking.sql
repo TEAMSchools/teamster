@@ -1,10 +1,13 @@
 with
+    current_academic_year as (
+        select distinct finalsite_current_academic_year as academic_year,
+        from {{ ref("stg_google_sheets__finalsite__status_crosswalk") }}
+    ),
+
     crosswalk_ranking as (
         select distinct x.fs_status_field, x.detailed_status_ranking,
         from {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
-        inner join
-            {{ ref("int_finalsite__current_academic_year") }} as cy
-            on x.file_year = cy.academic_year
+        inner join current_academic_year as cy on x.file_year = cy.academic_year
     ),
 
     -- Mirrors the hardcoded status_order CASE in
