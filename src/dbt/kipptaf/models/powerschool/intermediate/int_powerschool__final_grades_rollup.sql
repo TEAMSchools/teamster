@@ -4,8 +4,7 @@ select
     academic_year,
     schoolid,
     storecode,
-
-    {{ extract_source_project() }} as _dbt_source_project,
+    _dbt_source_project,
 
     sum(potential_credit_hours) as enrolled_credit_hours,
 
@@ -23,4 +22,10 @@ select
         if(y1_letter_grade_adjusted not in ('F', 'F*'), potential_credit_hours, null)
     ) as projected_credits_y1_term,
 from {{ ref("base_powerschool__final_grades") }}
-group by _dbt_source_relation, studentid, academic_year, schoolid, storecode
+group by
+    _dbt_source_relation,
+    studentid,
+    academic_year,
+    schoolid,
+    storecode,
+    _dbt_source_project

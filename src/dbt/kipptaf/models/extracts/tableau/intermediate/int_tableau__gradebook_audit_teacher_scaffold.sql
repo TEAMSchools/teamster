@@ -18,10 +18,9 @@ with
             s.is_ap_course,
             s.teachernumber as teacher_number,
             s.teacher_lastfirst as teacher_name,
+            s._dbt_source_project,
 
             r.sam_account_name as teacher_tableau_username,
-
-            {{ extract_source_project("s") }} as _dbt_source_project,
 
             if(
                 s.school_abbreviation = 'Sumner' and s.sections_grade_level >= 5,
@@ -70,6 +69,7 @@ with
             t.term_start_date as quarter_start_date,
             t.term_end_date as quarter_end_date,
             t.is_current_term,
+            t._dbt_source_project,
 
             sch.abbreviation as school,
 
@@ -86,8 +86,6 @@ with
             l.head_of_school_preferred_name_lastfirst as hos,
             l.school_leader_preferred_name_lastfirst as school_leader,
             l.school_leader_sam_account_name as school_leader_tableau_username,
-
-            {{ extract_source_project("t") }} as _dbt_source_project,
 
             cast(t.academic_year as string)
             || '-'
@@ -141,6 +139,7 @@ with
             tw.hos,
             tw.school_leader,
             tw.school_leader_tableau_username,
+            tw._dbt_source_project,
 
             sec.sections_dcid,
             sec.sectionid,
@@ -154,8 +153,6 @@ with
             sec.teacher_number,
             sec.teacher_name,
             sec.teacher_tableau_username,
-
-            {{ extract_source_project("tw") }} as _dbt_source_project,
 
             concat(
                 tw.region, coalesce(sec.school_level_alt, tw.school_level)

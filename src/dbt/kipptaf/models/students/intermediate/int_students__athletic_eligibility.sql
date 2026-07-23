@@ -4,8 +4,7 @@ with
             _dbt_source_relation,
             yearid,
             studentid,
-
-            {{ extract_source_project() }} as _dbt_source_project,
+            _dbt_source_project,
 
             sum(earnedcrhrs) as py_credits,
 
@@ -14,7 +13,7 @@ with
         from {{ ref("stg_powerschool__storedgrades") }}
         where
             storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
-        group by _dbt_source_relation, yearid, studentid
+        group by _dbt_source_relation, yearid, studentid, _dbt_source_project
     ),
 
     cy_credits as (
@@ -22,8 +21,7 @@ with
             _dbt_source_relation,
             yearid,
             studentid,
-
-            {{ extract_source_project() }} as _dbt_source_project,
+            _dbt_source_project,
 
             if(
                 sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) = 0, true, false
@@ -31,7 +29,7 @@ with
 
         from {{ ref("base_powerschool__final_grades") }}
         where storecode = 'Q2'
-        group by _dbt_source_relation, yearid, studentid
+        group by _dbt_source_relation, yearid, studentid, _dbt_source_project
     ),
 
     base as (
@@ -53,6 +51,7 @@ with
             e.ada_weighted_semester_s1 as cy_weighted_s1_ada,
             e.ada_unweighted_year_prev as py_y1_unweighted_ada,
             e.ada_weighted_year_prev as py_y1_weighted_ada,
+            e._dbt_source_project,
 
             gpa.gpa_term_q1 as cy_q1_gpa,
             gpa.gpa_y1_q2 as cy_s1_gpa,
@@ -133,8 +132,7 @@ select
     met_cy_credits,
     is_first_time_ninth,
     is_age_eligible,
-
-    {{ extract_source_project() }} as _dbt_source_project,
+    _dbt_source_project,
 
     case
         when not is_age_eligible

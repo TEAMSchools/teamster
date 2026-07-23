@@ -7,8 +7,7 @@ with
             sectionid,
             storecode,
             percent_grade as category_quarter_percent_grade,
-
-            {{ extract_source_project() }} as _dbt_source_project,
+            _dbt_source_project,
 
             round(
                 avg(percent_grade) over (
@@ -32,13 +31,12 @@ with
             studentid,
             sectionid,
             storecode,
+            _dbt_source_project,
             termbin_start_date,
             term_percent_grade_adjusted as quarter_course_percent_grade,
             term_grade_points as quarter_course_grade_points,
             citizenship as quarter_conduct,
             comment_value as quarter_comment_value,
-
-            {{ extract_source_project() }} as _dbt_source_project,
 
             'current_year' as grades_type,
 
@@ -53,13 +51,12 @@ with
             studentid,
             sectionid,
             storecode,
+            _dbt_source_project,
             null as termbin_start_date,
             `percent` as quarter_course_percent_grade,
             gpa_points as quarter_course_grade_points,
             behavior as quarter_conduct,
             comment_value as quarter_comment_value,
-
-            {{ extract_source_project() }} as _dbt_source_project,
 
             'last_year' as grades_type,
 
@@ -108,6 +105,7 @@ select
     s.is_student_athlete,
     s.`ada`,
     s.ada_above_or_at_80,
+    s._dbt_source_project,
 
     ce.cc_sectionid as sectionid,
     ce.cc_course_number as course_number,
@@ -148,8 +146,6 @@ select
     qg.quarter_course_grade_points,
     qg.quarter_conduct,
     qg.quarter_comment_value,
-
-    {{ extract_source_project("s") }} as _dbt_source_project,
 
     'student_scaffold' as scaffold_name,
 
@@ -329,6 +325,7 @@ select
     s.is_student_athlete,
     s.`ada`,
     s.ada_above_or_at_80,
+    s._dbt_source_project,
 
     ce.cc_sectionid as sectionid,
     ce.cc_course_number as course_number,
@@ -368,8 +365,6 @@ select
     qg.quarter_course_grade_points,
     qg.quarter_conduct,
     qg.quarter_comment_value,
-
-    {{ extract_source_project("s") }} as _dbt_source_project,
 
     'student_category_scaffold' as scaffold_name,
 

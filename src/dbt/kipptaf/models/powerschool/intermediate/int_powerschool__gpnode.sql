@@ -5,14 +5,13 @@ select
     p.gpversionid as plan_gpversionid,
     p.parentid as plan_parentid,
     p.name as plan_name,
+    p._dbt_source_project,
 
     o.creditcapacity as plan_credit_capacity,
 
     d.id as discipline_id,
     d.name as discipline_name,
     d.creditcapacity as discipline_credit_capacity,
-
-    {{ extract_source_project("p") }} as _dbt_source_project,
 
     coalesce(s.id, d.id) as subject_id,
     coalesce(s.name, d.name) as subject_name,

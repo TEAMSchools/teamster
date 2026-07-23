@@ -11,6 +11,7 @@ with
             gpn.plan_credit_capacity,
             gpn.discipline_credit_capacity,
             gpn.subject_credit_capacity,
+            gpn._dbt_source_project,
 
             sub.studentsdcid,
 
@@ -27,8 +28,6 @@ with
             sg.potentialcrhrs as official_potential_credits,
             sg.potentialcrhrs as potential_credits,
             sg.is_transfer_grade,
-
-            {{ extract_source_project("gpn") }} as _dbt_source_project,
 
             'Earned' as credit_status,
 
@@ -63,6 +62,7 @@ with
             gpn.plan_credit_capacity,
             gpn.discipline_credit_capacity,
             gpn.subject_credit_capacity,
+            gpn._dbt_source_project,
 
             sub.studentsdcid,
 
@@ -80,8 +80,6 @@ with
             sub.enrolledcredits as potential_credits,
 
             false as is_transfer_grade,
-
-            {{ extract_source_project("gpn") }} as _dbt_source_project,
 
             'Enrolled' as credit_status,
 
@@ -134,6 +132,7 @@ select
     g.is_transfer_grade,
     g.credit_status,
     g.earned_credits,
+    g._dbt_source_project,
 
     sp.enrolledcredits as plan_enrolled_credits,
     sp.requestedcredits as plan_requested_credits,
@@ -149,8 +148,6 @@ select
     ss.requestedcredits as subject_requested_credits,
     ss.earnedcredits as subject_earned_credits,
     ss.waivedcredits as subject_waived_credits,
-
-    {{ extract_source_project("g") }} as _dbt_source_project,
 
     coalesce(sp.requiredcredits, g.plan_credit_capacity) as plan_required_credits,
     coalesce(

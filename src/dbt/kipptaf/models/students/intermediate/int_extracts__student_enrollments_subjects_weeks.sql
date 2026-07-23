@@ -294,6 +294,7 @@ select
     co.is_low_25_fl,
     co.is_exempt_state_testing,
     co.mtss_enrollment,
+    co._dbt_source_project,
 
     cw.week_start_monday,
     cw.week_end_sunday,
@@ -305,8 +306,6 @@ select
     cw.week_number_quarter,
     cw.is_current_week_mon_sun,
     cw.date_count,
-
-    {{ extract_source_project("co") }} as _dbt_source_project,
 
     if(
         cw.week_start_monday between co.entrydate and co.exitdate, true, false
