@@ -21,5 +21,5 @@ with
 select
     *,
     initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-    {{ extract_code_location("union_relations") }} as _dbt_source_project,
+    {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations
