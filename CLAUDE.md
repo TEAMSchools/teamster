@@ -82,6 +82,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   path breaks — pass an absolute script path or run it from the main repo.
   Otherwise prefer absolute paths.
 
+- **Bash cwd does NOT persist across calls** — every Bash command (including
+  `run_in_background`) starts at the main repo root, so a prior `cd <worktree>`
+  does not carry over. Tools that resolve relative paths from cwd (`trunk check`
+  with relative paths, `pytest`) must include `cd <worktree> &&` in the SAME
+  command, or they silently operate on the main checkout's (unmodified) copies
+  and report a false "clean". Prefix with `pwd &&` to confirm the directory.
+
 - **Worktree Read/Edit/Write must target the worktree path**, not the main
   checkout: editing `/workspaces/teamster/<path>` instead of
   `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
