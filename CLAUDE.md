@@ -438,7 +438,9 @@ launcher. Package internals: see
 
 - **MCP outages**: If an MCP tool returns "server disconnected" or clearly
   impaired responses, surface to the user before working around with raw `gh` /
-  BigQuery calls.
+  BigQuery calls. Same if an EXPECTED MCP tool is absent from the deferred-tools
+  list (ToolSearch returns "No matching deferred tools") — flag it immediately
+  so the user can reconnect; do not silently fall back.
 
 - **MCP subprocess logs**: stdio MCP stderr captured at
   `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`.
