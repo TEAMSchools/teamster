@@ -5,8 +5,8 @@ with
         where
             job_title <> 'Intern'
             -- exclude part-timers plus anyone whose title names temp/part-time
-            -- work. Full Time - Temporary staff are kept pending an ADP review
-            -- (that worker type is frequently a mislabel); nulls kept as
+            -- work. Full Time - Temporary staff are kept (HR confirmed they are
+            -- correctly classified and belong in Lattice); nulls kept as
             -- legitimate full-time staff
             and (
                 worker_type_code is null
