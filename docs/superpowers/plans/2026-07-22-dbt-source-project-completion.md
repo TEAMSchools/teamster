@@ -462,16 +462,21 @@ _non-region_ dimension must be **excluded** — a region regex would yield null.
 - **schoolmint_grow** (`stg_schoolmint_grow__generic_tags`) — unions tag-types.
 - **adp / illuminate Fivetran** — disabled integrations.
 - **renlearn** `stg_renlearn__fast_star`,
-  `stg_renlearn__star_dashboard_standards` — shared `kippnj_renlearn` schema AND
-  no school/location column, so region is unresolvable (only `school_year`
-  exists). Not region-joined.
+  `stg_renlearn__star_dashboard_standards` — union `kippmiami_renlearn` ONLY
+  (FAST is a Florida assessment, Miami-only), so `_dbt_source_project` would be
+  a constant `kippmiami` with nothing to disambiguate; they also lack a
+  school/location column (only `school_year`). Not region-joined (`fast_star`
+  has no consumers; `star_dashboard_standards` joins its STAR subquery on
+  `assessment_id`). (The shared `kippnj_renlearn` schema applies to
+  `stg_renlearn__star`, which is a different, already-resolved model.)
 - **iReady** secondary models (`int_iready__instruction_by_lesson`(`_pro`),
   `int_iready__instructional_usage_data`,
   `int_iready__personalized_instruction_unpivot`,
   `stg_iready__personalized_instruction_summary`) — none use
-  `union_dataset_join_clause` or `_dbt_source_project`; only
-  `int_iready__diagnostic_results` resolves region (rewrite + crosswalk) and it
-  already has the column.
+  `union_dataset_join_clause` or expose `_dbt_source_project` (some
+  crosswalk-rewrite `_dbt_source_relation` internally but do not project the
+  column); only `int_iready__diagnostic_results` projects it, and it already has
+  it.
 - **amplify mClass sftp staging** — region is resolved one level up in
   `int_amplify__mclass__benchmark_student_summary` /
   `int_amplify__mclass__pm_student_summary` (crosswalk), which already have it.
