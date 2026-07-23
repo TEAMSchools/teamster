@@ -14,6 +14,8 @@ with
 select
     *,
 
+    {{ extract_source_project() }} as _dbt_source_project,
+
     {{
         date_to_fiscal_year(
             date_field="entry_date", start_month=7, year_source="start"
