@@ -433,24 +433,33 @@ RLS lives in per-view `access_policy` driven by the `securityContext` that
 `resolveAccess` builds inside the auth hooks — so the setup below is REQUIRED to
 exercise it; a plain dev server silently default-denies every gated view.
 
-- **Testing RLS locally — prefer the SQL API.** `checkSqlAuth` (SQL API) runs
-  even in dev mode; `checkAuth` (REST) does NOT — with `CUBEJS_DEV_MODE=true`
-  REST skips auth, so `resolveAccess` never runs and every gated view zero-rows
-  for ALL REST viewers. So validate over the SQL API via `psycopg2`: set
-  `CUBEJS_PG_SQL_PORT` + `CUBEJS_SQL_USER`/`_PASSWORD`, then connect as the
-  viewer's email in the SQL `user` — identity resolves from the connecting user,
-  so switch viewers per connection with no restart.
-  (`CUBE_SQL_DEV_EMAIL=<viewer>` optionally pins every connection to one alias,
-  overriding the connecting user — change + restart to switch.) No `NODE_ENV`
-  flip, and it's the prod BI/Superset surface. Tesseract
+- **Testing RLS locally — SQL API is ground truth; the REST Playground also
+  works in dev mode.** `checkSqlAuth` resolves identity from the connecting
+  `user`: set `CUBEJS_PG_SQL_PORT` + `CUBEJS_SQL_USER`/`_PASSWORD`, connect via
+  `psycopg2` as the viewer's email in the SQL `user`, switch viewers per
+  connection with no restart. (`CUBE_SQL_DEV_EMAIL=<viewer>` optionally pins
+  every connection to one alias, overriding the connecting user — change +
+  restart to switch.) It's the prod BI/Superset surface. Tesseract
   (`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on both APIs
-  and joining views is a supported SQL-API feature (multi-fact views); the old
-  `JoinDefinitionStatic` note was a Playground (REST) observation, not a SQL-API
-  limit — verified: `student_attendance_view` / `staff_directory` /
-  `student_assessment_scores_view` query cleanly on the SQL API under Tesseract.
-  REST `/load` also works but needs auth on (`NODE_ENV=production`, drop
-  `CUBEJS_DEV_MODE`) + an HS256 JWT with the viewer's `email` claim signed with
-  `CUBEJS_API_SECRET`.
+  and joining views is supported (multi-fact views); the old
+  `JoinDefinitionStatic` note was a Playground observation, not a SQL-API limit
+  — verified `student_attendance_view` / `staff_directory` /
+  `student_assessment_scores_view` query cleanly. **`checkAuth` DOES run in dev
+  mode (Cube 1.6.59)** — the prior "REST skips auth in dev mode / needs
+  `NODE_ENV=production`" claim was WRONG. To emulate over the REST Playground,
+  paste `{"email": "<viewer>"}` into its Security Context editor and
+  `resolveAccess` enriches it. Two gotchas: (1) a stale cached Playground token
+  trips `checkAuth`'s `maxAge: "12h"` cap (`TokenExpiredError: maxAge exceeded`)
+  — clear `localhost` local storage / re-save the context to re-mint a fresh
+  token; (2) `resolveAccess` fail-closes to deny-all locally unless
+  `CUBEJS_DB_BQ_CREDENTIALS` is set or the ADC fallback is present (a bare
+  `JSON.parse("")` throws on the unset var). See #4526.
+- **Cube Cloud emulation is not fixed yet (#4526).** Cube Cloud injects its own
+  security context (top-level `email`, `cubeCloud.username`, `iss: "cubecloud"`,
+  no `iat`) and **bypasses `checkAuth`**, so `resolveAccess` never runs and
+  `contextToGroups` default-denies (`WHERE (1=0)`, views hidden = only source
+  tables). Server-side enrichment of that context is the pending fix; until then
+  emulate via the local SQL API / REST Playground.
 - **`CUBE_GROUP_MAP` cannot validate `row_level`** — it supplies `groups` only,
   not the `region_key` / `allowed_abbreviations` / `reportee_staff_keys` the
   filters interpolate. Worse, `.env.example`'s placeholder value uses stale
