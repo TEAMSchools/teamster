@@ -508,20 +508,28 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         return failures
 
-    def batch_insert_users(self, users: list[dict]) -> list[str]:
+    def batch_insert_users(self, users: list[dict]) -> list[dict]:
         """Create multiple users in batches of 10.
 
         Respects the 10-users-per-domain-per-second API limit. Each batch — and
         each individual sub-request within it — is retried on transient errors
         (5xx, 429) with backoff.
 
+        Unlike the sibling batch helpers (which return error strings), this
+        returns structured per-user errors. Callers use the returned emails to
+        skip follow-on group membership for users that were not created (see
+        ``members_for_created_users``), and the structured form keeps the create
+        payload — which includes the password hash — out of logs and
+        asset-check metadata.
+
         Args:
             users: User resource dicts to create.
 
         Returns:
-            Error strings for any failed requests.
+            One ``{"primaryEmail": ..., "error": ...}`` dict per user whose
+            creation ultimately failed (empty if all succeeded).
         """
-        exceptions = []
+        errors = []
 
         # You cannot create more than 10 users per domain per second using the
         # Directory API
@@ -537,12 +545,15 @@ class GoogleDirectoryResource(ConfigurableResource):
                 request_factory=lambda user: self._resource.users().insert(body=user),
             )
 
-            exceptions.extend(f"{item} {e}" for item, e in failures)
+            errors.extend(
+                {"primaryEmail": item["primaryEmail"], "error": str(e)}
+                for item, e in failures
+            )
 
             if i < len(batches) - 1:
                 time.sleep(1)
 
-        return exceptions
+        return errors
 
     def _retry_update_user(self, user: dict) -> None:
         """Retry a single user update after a 409 conflict response."""
@@ -680,3 +691,36 @@ class GoogleDirectoryResource(ConfigurableResource):
                 time.sleep(1)
 
         return exceptions
+
+
+def members_for_created_users(
+    users: list[dict], create_errors: list[dict]
+) -> list[dict]:
+    """Build group-membership payloads for users whose creation did not fail.
+
+    A user's group membership can only be added once the account exists, so a
+    user whose ``batch_insert_users`` call failed must be excluded — otherwise
+    the membership insert is guaranteed to fail with "resource not found".
+
+    Args:
+        users: The users passed to
+            :meth:`GoogleDirectoryResource.batch_insert_users`.
+        create_errors: The ``{"primaryEmail", "error"}`` dicts it returned for
+            users whose creation ultimately failed.
+
+    Returns:
+        :meth:`GoogleDirectoryResource.batch_insert_members` payloads
+        (``groupKey`` / ``email`` / ``delivery_settings``) for the users NOT
+        present in ``create_errors``.
+    """
+    failed_emails = {e["primaryEmail"] for e in create_errors}
+
+    return [
+        {
+            "groupKey": u["groupKey"],
+            "email": u["primaryEmail"],
+            "delivery_settings": "DISABLED",
+        }
+        for u in users
+        if u["primaryEmail"] not in failed_emails
+    ]

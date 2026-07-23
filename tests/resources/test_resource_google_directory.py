@@ -10,6 +10,7 @@ from teamster.libraries.google.directory.resources import (
     GoogleDirectoryResource,
     _retryable_execute,
     _TransientHttpError,
+    members_for_created_users,
 )
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -183,7 +184,25 @@ def test_batch_insert_users_collects_exception_from_failed_request():
     )
     exceptions = resource.batch_insert_users([{"primaryEmail": "a@b.com"}])
     assert len(exceptions) == 1
-    assert "a@b.com" in exceptions[0]
+    assert exceptions[0]["primaryEmail"] == "a@b.com"
+    assert "error" in exceptions[0]
+
+
+def test_batch_insert_users_error_dict_omits_user_payload():
+    # The returned error must not carry the user payload (e.g. the password
+    # hash) into logs / asset-check metadata — only the email and the message.
+    resource, mock_api = _make_resource()
+    err = _http_error(503, b"Backend Error")
+    mock_api.new_batch_http_request.side_effect = _make_batch_side_effect(
+        [[(None, err)] for _ in range(10)]
+    )
+    user = {"primaryEmail": "a@b.com", "password": "deadbeefsecrethash"}
+    with patch("teamster.libraries.google.directory.resources.time.sleep"):
+        exceptions = resource.batch_insert_users([user])
+    assert len(exceptions) == 1
+    assert set(exceptions[0].keys()) == {"primaryEmail", "error"}
+    assert exceptions[0]["primaryEmail"] == "a@b.com"
+    assert "deadbeefsecrethash" not in str(exceptions[0])
 
 
 def test_batch_insert_users_collects_all_exceptions_from_multi_failure_batch():
@@ -246,7 +265,7 @@ def test_batch_insert_users_records_transient_subrequest_after_exhausting_retrie
     with patch("teamster.libraries.google.directory.resources.time.sleep"):
         exceptions = resource.batch_insert_users([{"primaryEmail": "a@b.com"}])
     assert len(exceptions) == 1
-    assert "a@b.com" in exceptions[0]
+    assert exceptions[0]["primaryEmail"] == "a@b.com"
     assert 1 < mock_api.new_batch_http_request.call_count < 10
 
 
@@ -404,6 +423,37 @@ def test_list_role_assignments_uses_max_results_200_and_items_key():
     assert data == [{"roleAssignmentId": "ra1"}]
     _, call_kwargs = mock_api.roleAssignments.return_value.list.call_args
     assert call_kwargs["maxResults"] == 200
+
+
+# ── members_for_created_users ─────────────────────────────────────────────────
+
+
+def _created_user(email: str) -> dict:
+    return {"primaryEmail": email, "groupKey": "g@x.org"}
+
+
+def _member(email: str) -> dict:
+    return {"groupKey": "g@x.org", "email": email, "delivery_settings": "DISABLED"}
+
+
+def test_members_for_created_users_all_succeeded():
+    users = [_created_user("a@x.org"), _created_user("b@x.org")]
+    assert members_for_created_users(users, []) == [
+        _member("a@x.org"),
+        _member("b@x.org"),
+    ]
+
+
+def test_members_for_created_users_skips_failed_create():
+    users = [_created_user("a@x.org"), _created_user("b@x.org")]
+    create_errors = [{"primaryEmail": "b@x.org", "error": "boom"}]
+    assert members_for_created_users(users, create_errors) == [_member("a@x.org")]
+
+
+def test_members_for_created_users_all_failed_returns_empty():
+    users = [_created_user("a@x.org")]
+    create_errors = [{"primaryEmail": "a@x.org", "error": "boom"}]
+    assert members_for_created_users(users, create_errors) == []
 
 
 def get_google_directory_resource() -> GoogleDirectoryResource:

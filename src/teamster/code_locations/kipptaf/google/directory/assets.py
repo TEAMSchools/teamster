@@ -20,7 +20,10 @@ from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
     check_avro_schema_valid,
 )
-from teamster.libraries.google.directory.resources import GoogleDirectoryResource
+from teamster.libraries.google.directory.resources import (
+    GoogleDirectoryResource,
+    members_for_created_users,
+)
 
 key_prefix = [CODE_LOCATION, "google", "directory"]
 
@@ -202,20 +205,17 @@ def google_directory_user_create(
                 context.log.error(msg=ce)
                 errors.append(ce)
 
-            members_data = [
-                {
-                    "groupKey": u["groupKey"],
-                    "email": u["primaryEmail"],
-                    "delivery_settings": "DISABLED",
-                }
-                for u in valid_users
-            ]
+            # Only add users whose creation succeeded — a failed create leaves
+            # no account, so its member insert would fail with "resource not
+            # found" and double-count the same student in the error check.
+            members_data = members_for_created_users(valid_users, create_errors)
 
-            members_errors = google_directory.batch_insert_members(members_data)
+            if members_data:
+                members_errors = google_directory.batch_insert_members(members_data)
 
-            for me in members_errors:
-                context.log.error(msg=me)
-                errors.append(me)
+                for me in members_errors:
+                    context.log.error(msg=me)
+                    errors.append(me)
 
     yield Output(value=None)
     yield AssetCheckResult(
