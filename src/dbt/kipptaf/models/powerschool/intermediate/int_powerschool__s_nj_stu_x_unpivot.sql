@@ -4,6 +4,8 @@ select
     name_column,
     values_column,
 
+    {{ extract_source_project() }} as _dbt_source_project,
+
     if(values_column = 'N', true, false) as is_portfolio_eligible,
     if(values_column = 'M', true, false) as is_iep_eligible,
     if(values_column in ('M', 'N'), true, false) as met_requirement,

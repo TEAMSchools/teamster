@@ -5,6 +5,8 @@ select
     schoolid,
     storecode,
 
+    {{ extract_source_project() }} as _dbt_source_project,
+
     sum(potential_credit_hours) as enrolled_credit_hours,
 
     sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) as n_failing,

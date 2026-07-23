@@ -306,6 +306,8 @@ select
     cw.is_current_week_mon_sun,
     cw.date_count,
 
+    {{ extract_source_project("co") }} as _dbt_source_project,
+
     if(
         cw.week_start_monday between co.entrydate and co.exitdate, true, false
     ) as is_enrolled_week,

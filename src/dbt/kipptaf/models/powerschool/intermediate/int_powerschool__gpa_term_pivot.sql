@@ -32,6 +32,8 @@ select
     gpa_y1_q2,
     gpa_y1_q3,
     gpa_y1_q4,
+
+    {{ extract_source_project() }} as _dbt_source_project,
 from
     gpa pivot (
         max(gpa_term) as gpa_term,
