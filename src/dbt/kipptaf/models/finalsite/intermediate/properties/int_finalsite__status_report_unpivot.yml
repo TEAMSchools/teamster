@@ -1,2 +1,93 @@
 models:
   - name: int_finalsite__status_report_unpivot
+    description: >
+      Unpivots stg_finalsite__status_report's wide status-date columns
+      (inquiry_date, applicant_date, ... enrolled_date, etc.) into long form via
+      a BigQuery UNPIVOT, which drops nulls automatically -- so a row exists
+      only for a status transition that actually happened for a given
+      enrollment. Joins to int_people__location_crosswalk on assigned_school to
+      resolve a PowerSchool schoolid/abbreviation.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+              - fs_status_field
+              - _dagster_partition_key
+          config:
+            severity: error
+    columns:
+      - name: _dagster_partition_key
+        data_type: string
+        description: >
+          Source SFTP load partition key. Part of this model's grain -- the same
+          enrollment can appear under more than one loaded partition.
+      - name: region
+        data_type: string
+        description: One of "Newark", "Camden", "Miami", "Paterson".
+      - name: assigned_school
+        data_type: string
+        description: Raw Finalsite school string.
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact/enrollment UUID.
+      - name: powerschool_student_number
+        data_type: int64
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: enrollment_type
+        data_type: string
+      - name: self_contained
+        data_type: string
+      - name: gender
+        data_type: string
+      - name: birthdate
+        data_type: date
+      - name: enrollment_academic_year
+        data_type: int64
+        description: >
+          The academic year this enrollment record is currently active under
+          (stg_finalsite__status_report.active_school_year_int) -- not
+          necessarily the current Finalsite recruitment cycle; see
+          fresh-dashboard-data-model.md's notes on active_school_year.
+      - name: enrollment_academic_year_display
+        data_type: string
+      - name: fs_status_field
+        data_type: string
+        description: >
+          Raw Finalsite date column name this row was unpivoted from (e.g.
+          'inquiry_date').
+      - name: status_start_date
+        data_type: date
+        description: The unpivoted date value for fs_status_field.
+      - name: file_year
+        data_type: int64
+        description: Source file year, parsed from _dagster_partition_key.
+      - name: detailed_status
+        data_type: string
+        description: Humanized form of fs_status_field (e.g. "Inquiry").
+      - name: org
+        data_type: string
+        description: Always "KTAF" (constant, network-wide).
+      - name: schoolid
+        data_type: int64
+        description: >
+          coalesce(location_powerschool_school_id, 0) -- PowerSchool
+          school_number.
+      - name: school
+        data_type: string
+        description: >
+          coalesce(location_abbreviation, 'No School Assigned') -- short school
+          abbreviation (e.g. "KURA").
+      - name: status_order
+        data_type: int64
+        description: >
+          Hand-maintained ranking used to break ties among same-day statuses
+          (e.g. latest_status in int_tableau__finalsite_student_scaffold). Must
+          be kept in sync with status_crosswalk's detailed_status_ranking -- see
+          the inline comment above the CASE and
+          test_int_finalsite__status_order_matches_crosswalk_ranking.

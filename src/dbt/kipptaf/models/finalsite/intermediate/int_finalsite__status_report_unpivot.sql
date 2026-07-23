@@ -82,10 +82,8 @@ select
     coalesce(x.location_powerschool_school_id, 0) as schoolid,
     coalesce(x.location_abbreviation, 'No School Assigned') as school,
 
-    -- keep in sync with the status_crosswalk sheet's detailed_status_ranking:
-    -- test_int_finalsite__status_order_matches_crosswalk_ranking guards drift,
-    -- but only against its own hardcoded copy of this list, not this CASE
-    -- directly, so update both together.
+    /* keep in sync with status_crosswalk's detailed_status_ranking -- the
+       guard test mirrors this list by hand, so update both together. */
     case
         u.fs_status_field
         when 'inquiry_date'
