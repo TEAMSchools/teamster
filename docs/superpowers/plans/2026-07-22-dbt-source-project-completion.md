@@ -444,3 +444,54 @@ Expected: **0** results.
   check.
 - **Disabled integrations** (adp/illuminate Fivetran) flagged as
   apply-but-unverifiable, not silently skipped.
+
+---
+
+## Execution findings — scope refinement (discovered during Batch 1)
+
+The plan's "backfill 63 producers" over-counted. The real rule is **backfill
+every _cross-district (region)_ union view**, not literally every
+`union_relations` view. A union view whose `_dbt_source_relation` encodes a
+_non-region_ dimension must be **excluded** — a region regex would yield null.
+
+**Excluded (non-region unions), verified during execution:**
+
+- **illuminate** — unions response-types (`_standard`/`_group`), repository ids,
+  and assessment years, never districts.
+- **zendesk** (`int_zendesk__ticket_metrics_union`) — unions current + archive.
+- **schoolmint_grow** (`stg_schoolmint_grow__generic_tags`) — unions tag-types.
+- **adp / illuminate Fivetran** — disabled integrations.
+- **renlearn** `stg_renlearn__fast_star`,
+  `stg_renlearn__star_dashboard_standards` — shared `kippnj_renlearn` schema AND
+  no school/location column, so region is unresolvable (only `school_year`
+  exists). Not region-joined.
+- **iReady** secondary models (`int_iready__instruction_by_lesson`(`_pro`),
+  `int_iready__instructional_usage_data`,
+  `int_iready__personalized_instruction_unpivot`,
+  `stg_iready__personalized_instruction_summary`) — none use
+  `union_dataset_join_clause` or `_dbt_source_project`; only
+  `int_iready__diagnostic_results` resolves region (rewrite + crosswalk) and it
+  already has the column.
+- **amplify mClass sftp staging** — region is resolved one level up in
+  `int_amplify__mclass__benchmark_student_summary` /
+  `int_amplify__mclass__pm_student_summary` (crosswalk), which already have it.
+
+**Batch 1c is therefore a no-op for code.** The carve-out sources'
+region-relevant models (`stg_renlearn__star`, `int_iready__diagnostic_results`,
+`int_amplify__mclass__*`) already carry `_dbt_source_project` from PR #4024.
+
+**Batch 1 (producer backfill) is complete** across PRs #4503 / #4504 / #4505.
+
+**Batch 2 gating (stronger than stated):** a consumer whose join alias reads a
+**snapshot** (e.g. `int_topline__gpa_term_weekly` reads
+`snapshot_powerschool__gpa_term`) cannot expose `_dbt_source_project` on that
+side until the producer PR **merges and the snapshot re-runs in prod** — so
+Batch 2 is gated on Batch 1 _merging_, not just the branch carrying the columns.
+
+**Two recurring build-only bugs** (both lint/parse-clean, fail at BigQuery
+build):
+
+- bare `extract_source_project()` without `{{ }}` → "Function not found".
+- per-model `contract: enforced: true` set in `properties.yml` (not the
+  directory default) → a `select *` wrap breaks the contract unless the column
+  is added to the yml. Check per file.
