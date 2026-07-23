@@ -58,25 +58,37 @@ computed on unweighted prior points compared against a weighted ceiling would
 mix bases and produce a nonsense attainability flag. Column names and types are
 unchanged, so this is a value-only edit.
 
-Edits, all on existing inputs:
+The internal weighted needed/attainability chain — `weighted_points_prior`, the
+per-row `gpa_points_projected_max`, and its
+`weighted_points_projected_max_current` / `potentialcrhrs_current_max_known`
+rollups — is used **only** by these two output columns (verified by grep). So it
+is **repointed** to unweighted, not duplicated: repointing avoids leaving dead
+CTE columns behind. The unweighted per-row points (`unweighted_points`) and the
+unweighted gradescale id (`courses_gradescaleid_unweighted`) already exist;
+nothing new is plumbed.
 
-1. **`grades_union`, branch 2 (projected current year)** — add the unweighted
-   ceiling per course by joining the existing `gradescale_max` CTE a second time
-   on `fg.courses_gradescaleid_unweighted`:
+Edits:
 
-   ```text
-   if(fg.y1_letter_grade is null, null, gsm_u.max_grade_points)
-       as gpa_points_projected_max_unweighted
-   ```
+1. **`grades_union`** — repoint the max-ceiling column to the unweighted scale
+   and rename it `gpa_points_projected_max_unweighted`:
 
-   Set it `null` in the other two UNION branches (mirroring how the existing
-   weighted `gpa_points_projected_max` is null outside branch 2).
+   - Branch 1 (stored): source the locked max from the unweighted lookup already
+     joined as `su` — `if(sg.excludefromgpa = 0, su.grade_points, null)` (an
+     already-stored grade's max achievable is its actual points).
+   - Branch 2 (projected current): repoint the `gradescale_max` join from
+     `fg.courses_gradescaleid` to `fg.courses_gradescaleid_unweighted` (alias
+     `gsm_u`), then
+     `if(fg.y1_letter_grade is null, null, gsm_u.max_grade_points)`.
+   - Branch 3: `null`.
 
-1. **`with_weighted_points`** — add
+1. **`with_weighted_points`** — rename the per-row product to the unweighted
+   source:
    `potentialcrhrs_projected * gpa_points_projected_max_unweighted as unweighted_points_projected_max`.
 
-1. **`points_rollup`** — add three prior/current sums mirroring the weighted
-   ones:
+1. **`points_rollup`** — replace the weighted prior/max rollups with unweighted
+   ones (the existing all-years `sum(unweighted_points) as unweighted_points`
+   stays — it feeds `cumulative_y1_gpa_unweighted`; these are prior/current
+   splits):
 
    ```text
    sum(if(academic_year < current, unweighted_points, null))
@@ -109,9 +121,8 @@ Edits, all on existing inputs:
    unresolvable, rather than understate it) is preserved — just evaluated
    against the unweighted join.
 
-The weighted `weighted_points_prior` / `weighted_points_projected_max_current`
-rollups stay in the model (they feed other existing columns); only the two
-`needed`/`attainable` output expressions stop referencing them.
+Other weighted columns (`cumulative_y1_gpa`, `weighted_points_projected`, etc.)
+are untouched — only the needed/attainability chain moves to unweighted.
 
 ### Change B — add per-student display columns to `rpt_tableau__student_course_grades`
 
