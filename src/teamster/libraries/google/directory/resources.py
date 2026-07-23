@@ -16,6 +16,10 @@ from teamster.core.utils.functions import chunk
 
 _TRANSIENT_HTTP_CODES: frozenset[int] = frozenset({429, 500, 502, 503, 504})
 
+# Total attempts per batch (1 initial + retries) for sub-requests that fail with
+# a transient code. Matches dagster.backoff's default retry budget (1 + 4).
+_MAX_BATCH_ATTEMPTS: int = 5
+
 
 class _TransientHttpError(errors.HttpError):
     """``HttpError`` subclass raised only for retryable (5xx, 429) responses.
@@ -424,24 +428,106 @@ class GoogleDirectoryResource(ConfigurableResource):
             exception: Raised exception; ``None`` on success.
         """
         if exception is not None:
-            self._log.exception(msg=(id, exception))
+            # WARNING, not exception: batch sub-request failures are retried by
+            # _execute_batch_with_retry, so logging a traceback at ERROR here
+            # would file false-positive GCP Error Reporting groups for transient
+            # failures the retry layer recovers from.
+            self._log.warning(msg=f"batch sub-request {id} failed: {exception}")
             self._exceptions.append((int(id) - 1, exception))
         else:
             self._log.info(
                 msg=" ".join([f"{k}={v}" for k, v in check.not_none(response).items()])
             )
 
-    def batch_insert_users(self, users: list[dict]) -> list[str]:
+    def _execute_batch_with_retry(
+        self,
+        items: list[dict],
+        request_factory: Callable[[dict], object],
+    ) -> list[tuple[dict, Exception]]:
+        """Execute one batch, retrying only sub-requests that fail transiently.
+
+        A ``BatchHttpRequest`` never raises for an individual sub-request
+        failure — the result is delivered to :meth:`callback` and ``execute()``
+        returns normally — so wrapping ``execute()`` in :func:`backoff` retries
+        only a failure of the whole batch envelope, not a per-sub-request 5xx.
+        This helper adds sub-request-level retry: after each batch, sub-requests
+        that failed with a transient code (429, 5xx) are re-submitted in a
+        follow-up batch with exponential backoff, up to ``_MAX_BATCH_ATTEMPTS``
+        total attempts. Already-succeeded sub-requests are not re-sent.
+
+        Args:
+            items: Resource dicts for the batch.
+            request_factory: Builds the API request object for a single item.
+
+        Returns:
+            ``(item, exception)`` for each sub-request that ultimately failed —
+            either non-transient, or transient after exhausting retries.
+        """
+        pending = list(items)
+        failures: list[tuple[dict, Exception]] = []
+        delays = exponential_delay_generator()
+
+        for attempt in range(1, _MAX_BATCH_ATTEMPTS + 1):
+            self._exceptions = []
+
+            # trunk-ignore(pyright/reportAttributeAccessIssue)
+            batch_request = self._resource.new_batch_http_request(
+                callback=self.callback
+            )
+
+            for item in pending:
+                batch_request.add(request_factory(item))
+
+            # Retries a transient failure of the whole batch envelope; individual
+            # sub-request failures come back through self._exceptions below.
+            backoff(
+                fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
+            )
+
+            if not self._exceptions:
+                return failures
+
+            retryable = []
+            for ix, exc in self._exceptions:
+                item = pending[ix]
+
+                if (
+                    attempt < _MAX_BATCH_ATTEMPTS
+                    and isinstance(exc, errors.HttpError)
+                    and exc.resp.status in _TRANSIENT_HTTP_CODES
+                ):
+                    retryable.append(item)
+                else:
+                    failures.append((item, exc))
+
+            pending = retryable
+            if not pending:
+                break
+
+            time.sleep(next(delays))
+
+        return failures
+
+    def batch_insert_users(self, users: list[dict]) -> list[dict]:
         """Create multiple users in batches of 10.
 
-        Respects the 10-users-per-domain-per-second API limit. Each batch is
-        retried on transient errors (5xx, 429) with backoff.
+        Respects the 10-users-per-domain-per-second API limit. Each batch — and
+        each individual sub-request within it — is retried on transient errors
+        (5xx, 429) with backoff.
+
+        Unlike the sibling batch helpers (which return error strings), this
+        returns structured per-user errors. Callers use the returned emails to
+        skip follow-on group membership for users that were not created (see
+        ``members_for_created_users``), and the structured form keeps the create
+        payload — which includes the password hash — out of logs and
+        asset-check metadata.
 
         Args:
             users: User resource dicts to create.
 
         Returns:
-            Error strings for any failed requests.
+            One ``{"primaryEmail": ..., "error": ...}`` dict per user whose
+            creation ultimately failed (empty if all succeeded).
         """
         exceptions = []
 
@@ -453,22 +539,16 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
 
-            self._exceptions = []
-
-            # trunk-ignore(pyright/reportAttributeAccessIssue)
-            batch_request = self._resource.new_batch_http_request(
-                callback=self.callback
-            )
-
-            for user in batch:
+            failures = self._execute_batch_with_retry(
+                items=batch,
                 # trunk-ignore(pyright/reportAttributeAccessIssue)
-                batch_request.add(self._resource.users().insert(body=user))
-
-            backoff(
-                fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
+                request_factory=lambda user: self._resource.users().insert(body=user),
             )
 
-            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
+            exceptions.extend(
+                {"primaryEmail": item["primaryEmail"], "error": str(e)}
+                for item, e in failures
+            )
 
             if i < len(batches) - 1:
                 time.sleep(1)
@@ -509,28 +589,17 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
 
-            self._exceptions = []
-
-            # trunk-ignore(pyright/reportAttributeAccessIssue)
-            batch_request = self._resource.new_batch_http_request(
-                callback=self.callback
-            )
-
-            for user in batch:
-                batch_request.add(
+            failures = self._execute_batch_with_retry(
+                items=batch,
+                request_factory=lambda user: (
                     # trunk-ignore(pyright/reportAttributeAccessIssue)
                     self._resource.users().update(
                         userKey=user["primaryEmail"], body=user
                     )
-                )
-
-            backoff(
-                fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
+                ),
             )
 
-            for ix, e in self._exceptions:
-                user = batch[ix]
-
+            for user, e in failures:
                 if isinstance(e, errors.HttpError) and e.resp.status == 409:
                     try:
                         self._retry_update_user(user)
@@ -547,6 +616,9 @@ class GoogleDirectoryResource(ConfigurableResource):
     def batch_insert_members(self, members: list[dict]) -> list[str]:
         """Add multiple members to groups in batches of 40.
 
+        Each batch — and each individual sub-request within it — is retried on
+        transient errors (5xx, 429) with backoff.
+
         Args:
             members: Member resource dicts; each must include ``groupKey`` and
                 ``email``.
@@ -562,26 +634,17 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
 
-            self._exceptions = []
-
-            # trunk-ignore(pyright/reportAttributeAccessIssue)
-            batch_request = self._resource.new_batch_http_request(
-                callback=self.callback
-            )
-
-            for member in batch:
-                batch_request.add(
+            failures = self._execute_batch_with_retry(
+                items=batch,
+                request_factory=lambda member: (
                     # trunk-ignore(pyright/reportAttributeAccessIssue)
                     self._resource.members().insert(
                         groupKey=member["groupKey"], body=member
                     )
-                )
-
-            backoff(
-                fn=_retryable_execute(batch_request), retry_on=(_TransientHttpError,)
+                ),
             )
 
-            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
+            exceptions.extend(f"{item} {e}" for item, e in failures)
 
             if i < len(batches) - 1:
                 time.sleep(1)
@@ -593,8 +656,9 @@ class GoogleDirectoryResource(ConfigurableResource):
     ) -> list[str]:
         """Create multiple role assignments in batches of 10.
 
-        Uses exponential backoff (rather than the default fixed delay) on
-        ``HttpError`` to handle quota exhaustion more gracefully.
+        Each batch — and each individual sub-request within it — is retried on
+        transient errors (5xx, 429) with exponential backoff to handle quota
+        exhaustion gracefully.
 
         Args:
             role_assignments: Role assignment resource dicts.
@@ -610,31 +674,53 @@ class GoogleDirectoryResource(ConfigurableResource):
         for i, batch in enumerate(batches):
             self._log.info(msg=f"Processing batch {i + 1}")
 
-            self._exceptions = []
-
-            # trunk-ignore(pyright/reportAttributeAccessIssue)
-            batch_request = self._resource.new_batch_http_request(
-                callback=self.callback
-            )
-
-            for role_assignment in batch:
-                batch_request.add(
+            failures = self._execute_batch_with_retry(
+                items=batch,
+                request_factory=lambda role_assignment: (
                     # trunk-ignore(pyright/reportAttributeAccessIssue)
                     self._resource.roleAssignments().insert(
                         customer=(customer or self.customer_id),
                         body=role_assignment,
                     )
-                )
-
-            backoff(
-                fn=_retryable_execute(batch_request),
-                retry_on=(_TransientHttpError,),
-                delay_generator=exponential_delay_generator(),
+                ),
             )
 
-            exceptions.extend([f"{batch[ix]} {e}" for ix, e in self._exceptions])
+            exceptions.extend(f"{item} {e}" for item, e in failures)
 
             if i < len(batches) - 1:
                 time.sleep(1)
 
         return exceptions
+
+
+def members_for_created_users(
+    users: list[dict], create_errors: list[dict]
+) -> list[dict]:
+    """Build group-membership payloads for users whose creation did not fail.
+
+    A user's group membership can only be added once the account exists, so a
+    user whose ``batch_insert_users`` call failed must be excluded — otherwise
+    the membership insert is guaranteed to fail with "resource not found".
+
+    Args:
+        users: The users passed to
+            :meth:`GoogleDirectoryResource.batch_insert_users`.
+        create_errors: The ``{"primaryEmail", "error"}`` dicts it returned for
+            users whose creation ultimately failed.
+
+    Returns:
+        :meth:`GoogleDirectoryResource.batch_insert_members` payloads
+        (``groupKey`` / ``email`` / ``delivery_settings``) for the users NOT
+        present in ``create_errors``.
+    """
+    failed_emails = {e["primaryEmail"] for e in create_errors}
+
+    return [
+        {
+            "groupKey": u["groupKey"],
+            "email": u["primaryEmail"],
+            "delivery_settings": "DISABLED",
+        }
+        for u in users
+        if u["primaryEmail"] not in failed_emails
+    ]

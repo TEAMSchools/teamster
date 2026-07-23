@@ -77,6 +77,17 @@ firing (`trunk/ignore-does-nothing`), and its table-name qualifier breaks unit
 tests (`Unrecognized name` after dbt renames the mocked ref). Siblings
 `stg_powerschool__courses` / `stg_powerschool__studentcorefields` use inline.
 
+### `_dbt_source_relation` does not always encode region
+
+`_dbt_source_relation` from `union_relations` encodes whatever the union is OVER
+— it is region ONLY for cross-district unions (`kipp<region>_<source>`). Unions
+over years / repository ids / sftp-vs-api method / current+archive (illuminate,
+zendesk, `stg_schoolmint_grow__generic_tags`, amplify mClass) are NOT region, so
+the region regex `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` yields
+null — keep them out of `_dbt_source_project` joins. Shared NJ schemas
+(`kippnj_iready`, `kippnj_renlearn` for STAR) prefix `kippnj` ≠ home region;
+resolve region from `int_people__location_crosswalk`, not the regex.
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
@@ -94,6 +105,13 @@ Pure `union_relations()` views over per-region district staging tables (e.g.
 are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
+
+Contract-enforcement here is per-model, NOT directory-wide: the `powerschool:`
+block in `dbt_project.yml` sets only `+schema:` (no `staging: +contract`), so
+powerschool `staging/` union views are contract-enforced only where a model sets
+it in its own `properties.yml` (e.g. `stg_powerschool__users`,
+`stg_powerschool__log`). Check the model's `properties.yml` before assuming a
+`select *` union view is or isn't contracted.
 
 ### Finalsite contact unions
 

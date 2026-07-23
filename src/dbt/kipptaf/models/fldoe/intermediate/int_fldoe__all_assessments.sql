@@ -60,7 +60,7 @@ select
     fl.test_date,
     fl.student_number,
 
-    {{ extract_code_location("fl") }} as _dbt_source_project,
+    {{ extract_source_project("fl") }} as _dbt_source_project,
 
     cw1.sublevel_number,
     cw1.sublevel_name,

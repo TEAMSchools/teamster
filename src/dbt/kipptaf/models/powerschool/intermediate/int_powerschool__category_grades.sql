@@ -28,7 +28,7 @@ with
 select
     ur.*,
 
-    {{ extract_code_location("ur") }} as _dbt_source_project,
+    {{ extract_source_project("ur") }} as _dbt_source_project,
 
     ur.yearid + 1990 as academic_year,
 

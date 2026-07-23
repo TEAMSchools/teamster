@@ -82,6 +82,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   path breaks — pass an absolute script path or run it from the main repo.
   Otherwise prefer absolute paths.
 
+- **Bash cwd does NOT persist across calls** — every Bash command (including
+  `run_in_background`) starts at the main repo root, so a prior `cd <worktree>`
+  does not carry over. Tools that resolve relative paths from cwd (`trunk check`
+  with relative paths, `pytest`) must include `cd <worktree> &&` in the SAME
+  command, or they silently operate on the main checkout's (unmodified) copies
+  and report a false "clean". Prefix with `pwd &&` to confirm the directory.
+
 - **Worktree Read/Edit/Write must target the worktree path**, not the main
   checkout: editing `/workspaces/teamster/<path>` instead of
   `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
@@ -438,7 +445,9 @@ launcher. Package internals: see
 
 - **MCP outages**: If an MCP tool returns "server disconnected" or clearly
   impaired responses, surface to the user before working around with raw `gh` /
-  BigQuery calls.
+  BigQuery calls. Same if an EXPECTED MCP tool is absent from the deferred-tools
+  list (ToolSearch returns "No matching deferred tools") — flag it immediately
+  so the user can reconnect; do not silently fall back.
 
 - **MCP subprocess logs**: stdio MCP stderr captured at
   `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`.

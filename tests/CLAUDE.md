@@ -82,6 +82,14 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   (BigQuery/GCS) auth is independent of 1Password and always works (dbt CLI, BQ
   client). `dagster definitions validate` likewise relies on the conftest
   bootstrap.
+- **Mixed live + mocked test files**:
+  `tests/resources/test_resource_google_directory.py` interleaves mocked unit
+  tests with **live-API** integration tests (bare names —
+  `test_batch_insert_users`, `test_list_users`, etc.) that mutate the REAL
+  Google directory (conftest bootstraps creds). Select mocked tests with
+  positive `-k` on suffix fragments; `pytest --deselect <file>::<bare>`
+  PREFIX-matches (silently drops same-prefix unit tests too), and
+  `-k "not <bare>"` substring-matches them.
 
 ## Hook security tests (`tests/hooks/`)
 

@@ -1,0 +1,58 @@
+models:
+  - name: int_powerschool__final_grades_rollup
+    description:
+      Per-student, per-store-code rollup of final grades from
+      `base_powerschool__final_grades`, aggregating enrolled credit hours and
+      failing-grade counts (overall and core-subject) used by downstream
+      promotion and GPA reporting.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - studentid
+              - academic_year
+              - schoolid
+              - storecode
+    columns:
+      - name: _dbt_source_relation
+        data_type: string
+        description: Source relation identifier for union models.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.
+      - name: studentid
+        data_type: int64
+        description:
+          The internal number and ID of the associated Students record.
+      - name: academic_year
+        data_type: int64
+        description: The academic year the final grades were stored in.
+      - name: schoolid
+        data_type: int64
+        description: The School_Number of the associated Schools record.
+      - name: storecode
+        data_type: string
+        description:
+          The stored final-grade term identifier (for example Q1 or Y1) the
+          grades roll up to.
+      - name: enrolled_credit_hours
+        data_type: float64
+        description:
+          Total potential credit hours across the student's stored grades for
+          the store code.
+      - name: n_failing
+        data_type: int64
+        description:
+          Count of stored grades with a failing adjusted Y1 letter grade (F or
+          F*).
+      - name: n_failing_core
+        data_type: int64
+        description:
+          Count of failing stored grades limited to core credit types (ENG,
+          MATH, SCI, and SOC).
+      - name: projected_credits_y1_term
+        data_type: float64
+        description:
+          Sum of potential credit hours for stored grades that are not failing,
+          used to project credits earned.

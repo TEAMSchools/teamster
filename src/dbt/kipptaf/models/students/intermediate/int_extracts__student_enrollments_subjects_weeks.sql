@@ -294,6 +294,7 @@ select
     co.is_low_25_fl,
     co.is_exempt_state_testing,
     co.mtss_enrollment,
+    co._dbt_source_project,
 
     cw.week_start_monday,
     cw.week_end_sunday,

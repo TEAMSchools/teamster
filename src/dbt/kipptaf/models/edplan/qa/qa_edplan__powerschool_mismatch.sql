@@ -36,7 +36,7 @@ with
 
             ep.nj_se_parentalconsentobtained,
 
-            {{ extract_code_location(table="s") }} as code_location,
+            {{ extract_source_project(relation="s") }} as code_location,
         from {{ ref("stg_powerschool__students") }} as s
         inner join
             {{ ref("stg_powerschool__studentcorefields") }} as scf
@@ -64,7 +64,7 @@ with
 
             ep.nj_se_parentalconsentobtained,
 
-            {{ extract_code_location(table="ep") }} as code_location,
+            {{ extract_source_project(relation="ep") }} as code_location,
         from edplan_deduplicate as ep
         left join
             {{ ref("stg_powerschool__students") }} as s

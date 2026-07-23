@@ -304,6 +304,11 @@ re-stage YOUR copy first:
 (personal schema, NOT classifier-blocked, unlike `--target staging`), then
 `dbt build --select <model> --target dev`.
 
+**A macro call missing its `{{ }}` fails only at build.** A bare `my_macro()`
+instead of `{{ my_macro() }}` is valid SQL — it passes `dbt parse` and sqlfluff,
+then fails at BigQuery build with `Function not found`. Build the model to catch
+it; parse/lint won't.
+
 ## Local dev schema naming
 
 Local dev builds land in `zz_<GITHUB_USER>_<district>[_<source>]` (repo
