@@ -88,6 +88,24 @@ null — keep them out of `_dbt_source_project` joins. Shared NJ schemas
 (`kippnj_iready`, `kippnj_renlearn` for STAR) prefix `kippnj` ≠ home region;
 resolve region from `int_people__location_crosswalk`, not the regex.
 
+### `_dbt_source_project` is pass-through, derived only at the union view
+
+`extract_source_project()` (the `regexp_extract`) belongs ONLY on the
+`union_relations` view that creates `_dbt_source_relation`. Every downstream
+join-target selects the materialized `_dbt_source_project` column THROUGH from
+its upstream producer — never re-derive it downstream.
+
+- **Snapshot-fed models are the exception — they derive** from
+  `_dbt_source_relation`: the snapshot doesn't carry `_dbt_source_project` (e.g.
+  `snapshot_powerschool__gpa_term`, whose source
+  `int_powerschool__gpa_term_current` re-selects columns and drops it), and
+  adding it to the snapshot's source model leaves it ~99% NULL — the `check`
+  strategy only backfills touched rows.
+- Adding the column to a (non-contracted) intermediate still needs a
+  `properties.yml` column entry
+  (`description: District code location derived from _dbt_source_relation.`) —
+  the doc convention applies regardless of contract enforcement.
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not

@@ -100,6 +100,18 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   changes surface phantom `unknown import` / `no parameter named X` errors.
   Trust `uv run` executed inside the worktree, not the IDE.
 
+- **Worktree file Read/Edit and Bash `cd <worktree>` re-inject that worktree's
+  CLAUDE.md files (~40KB each) into context on every call**; `git -C <worktree>`
+  and `uv run dbt --project-dir <abs-worktree>` from the MAIN cwd, and `Write`
+  (content-exempt), do NOT. For a large multi-file worktree refactor, delegate
+  the edits to subagents (their context absorbs the injection) and verify via
+  `git -C <worktree> diff` from the main repo.
+
+- **`git worktree add` with a RELATIVE path resolves against the shell cwd**,
+  which drifts after a foreground `cd` into another worktree — pass an ABSOLUTE
+  path (`git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`) or
+  it nests one worktree inside another.
+
 - **Branch switch**: with an issue,
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
   declined an issue, `git checkout -b <branch>`.
