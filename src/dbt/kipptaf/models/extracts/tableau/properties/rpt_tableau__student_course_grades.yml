@@ -410,6 +410,12 @@ models:
         data_type: float64
         description: >-
           Student's average percent across all courses for the category-term.
+      - name: y1_course_letter_grade_adjusted
+        data_type: string
+        description: >-
+          Best-available adjusted Y1 course letter grade — the final stored Y1
+          grade once the year is complete, falling back to the in-progress Y1
+          grade for the current year.
       - name: section_or_period
         data_type: string
         description: >-

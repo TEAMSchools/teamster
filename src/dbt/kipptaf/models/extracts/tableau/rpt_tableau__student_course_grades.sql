@@ -554,6 +554,11 @@ select
     c.category_y1_percent_grade_current,
     c.category_quarter_average_all_courses,
 
+    coalesce(
+        y1f.y1_course_final_letter_grade_adjusted,
+        qg.y1_course_in_progress_letter_grade_adjusted
+    ) as y1_course_letter_grade_adjusted,
+
     if(
         s.grade_level < 9, ce.section_number, ce.external_expression
     ) as section_or_period,
