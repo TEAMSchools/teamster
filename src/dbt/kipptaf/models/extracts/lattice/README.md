@@ -16,11 +16,8 @@ Keep this doc in sync with the model whenever the criteria change.
 - **Miami includes additional leader roles** — gated on a title keyword match
   plus one hardcoded location ("Room 11"), rather than an explicit title or
   department list.
-- **Part-timers are excluded; full-time temporary staff are included.**
-  Part-timers are dropped on ADP worker type. Full-time temporary workers are
-  kept — HR confirmed they are correctly classified and belong in Lattice — so
-  the "Temporary" worker type is not used to exclude. A job title that literally
-  names temporary or part-time work is still dropped as a backstop.
+- **Part-time permanent and temporary workers are excluded; full-time temporary
+  staff are included.**
 
 ### Current inclusion criteria
 
@@ -33,10 +30,9 @@ who is **not** an intern, a temp, or a part-timer.
 - Their worker type is not a "Part Time" classification.
 - Anyone whose **job title** contains "Temporary," "Part Time," or "Part-Time"
   is excluded — this catches temps regardless of their worker type.
-- **Full-time temporary staff are included** — HR confirmed they are correctly
-  classified, so the "Temporary" worker type is not used to exclude. (The
-  job-title backstop above still applies, but no full-time temporary staff
-  currently carry such a title.)
+- **Full-time temporary staff are included** — Managers confirmed they should be
+  included, so the "Temporary" worker type is not used to exclude (the job title
+  exclusion above still applies as a backstop).
 - Employees with a **blank worker type are kept** — in practice these are
   legitimate full-time staff, so we don't drop them.
 
