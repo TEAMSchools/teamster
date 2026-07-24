@@ -1,5 +1,5 @@
 #!/bin/bash
-# Generate prod manifests for Power User --defer
+# Generate prod manifests for dbt --defer
 # Runs in parallel — dbt parse is CPU-only (no DB access)
 
 toplevel="$(git rev-parse --show-toplevel)" || {
