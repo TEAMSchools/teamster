@@ -165,6 +165,51 @@ later moved past or reversed; `Current` = point-in-time, latest status only):
 | `Pending Offers` (+ `<= 4 Days` / `>= 5 & <= 10 Days` / `> 10 Days`)                | Current   | Student has an outstanding offer awaiting a family response, bucketed by days pending — an SLA/staleness tracker for follow-up. |
 | `Conversion` — `Accepted to Enrolled` / `Offers to Accepted` / `Offers to Enrolled` | Ever      | Funnel conversion-rate metrics between two funnel stages.                                                                       |
 
+### Full `grouped_status` → `goal_type` / `goal_name` crosswalk
+
+`grouped_status` (the crosswalk sheet's `status_group_value`) is the thing
+`roster`'s `CASE` logic in `int_tableau__finalsite_student_scaffold.sql`
+actually renames -- everything above is the human-readable summary. The table
+below is the complete, verified mapping (every distinct `grouped_status` the
+crosswalk sheet currently defines, AY2026): only `Applications` → `App Target`
+and `Offers` → `Offers Target` (both `Ever`-only) and the three
+`Accepted to Enrolled(*)`/`Offers to Accepted(*)`/`Offers to Enrolled(*)` pairs
+(→ `Conversion`) get renamed -- every other `grouped_status` passes through
+unchanged as both `goal_type` and `goal_name`. `Current`-timeframe `goal_name`
+never gets renamed at all (`goal_name` = `grouped_status` verbatim); the
+`Applications`/`Offers` rename only applies to `Ever`. `Pending Offers`
+(`Current`) additionally splits into `<= 4 Days` / `>= 5 & <= 10 Days` /
+`> 10 Days` sub-buckets via `filter_days_in_status`, not reflected in this table
+(see the row above).
+
+| Timeframe | `grouped_status` (status_group_value) | `goal_type`                 | `goal_name`                 |
+| --------- | ------------------------------------- | --------------------------- | --------------------------- |
+| Current   | `Academic Hold`                       | `Academic Hold`             | `Academic Hold`             |
+| Current   | `Accepted to Enrolled Num`            | `Conversion`                | `Accepted to Enrolled Num`  |
+| Current   | `Campus Transfer Requested`           | `Campus Transfer Requested` | `Campus Transfer Requested` |
+| Current   | `Currently Accepted`                  | `Currently Accepted`        | `Currently Accepted`        |
+| Current   | `Deferred`                            | `Deferred`                  | `Deferred`                  |
+| Current   | `Enrolled`                            | `Enrolled`                  | `Enrolled`                  |
+| Current   | `Enrollment In Progress`              | `Enrollment In Progress`    | `Enrollment In Progress`    |
+| Current   | `Financial Hold`                      | `Financial Hold`            | `Financial Hold`            |
+| Current   | `Mid Year Withdrawal`                 | `Mid Year Withdrawal`       | `Mid Year Withdrawal`       |
+| Current   | `Never Attended`                      | `Never Attended`            | `Never Attended`            |
+| Current   | `Not Enrolling`                       | `Not Enrolling`             | `Not Enrolling`             |
+| Current   | `Offers to Accepted Num`              | `Conversion`                | `Offers to Accepted Num`    |
+| Current   | `Offers to Enrolled Num`              | `Conversion`                | `Offers to Enrolled Num`    |
+| Current   | `Parent Declined`                     | `Parent Declined`           | `Parent Declined`           |
+| Current   | `Pending Offers`                      | `Pending Offers`            | `Pending Offers`            |
+| Current   | `Retained Date`                       | `Retained Date`             | `Retained Date`             |
+| Current   | `Summer Withdraw`                     | `Summer Withdraw`           | `Summer Withdraw`           |
+| Current   | `Waitlisted`                          | `Waitlisted`                | `Waitlisted`                |
+| Ever      | `Accepted`                            | `Accepted`                  | `Accepted`                  |
+| Ever      | `Accepted to Enrolled`                | `Conversion`                | `Accepted to Enrolled`      |
+| Ever      | `Applications`                        | `Applications`              | `App Target`                |
+| Ever      | `Inquiries`                           | `Inquiries`                 | `Inquiries`                 |
+| Ever      | `Offers`                              | `Offers`                    | `Offers Target`             |
+| Ever      | `Offers to Accepted`                  | `Conversion`                | `Offers to Accepted`        |
+| Ever      | `Offers to Enrolled`                  | `Conversion`                | `Offers to Enrolled`        |
+
 `int_finalsite__status_report_unpivot.sql` resolves each row's `assigned_school`
 to a PowerSchool `schoolid`/`school` abbreviation via
 `int_people__location_crosswalk`. `assigned_school` is null for enrollment
@@ -247,6 +292,17 @@ numbers and the dashboard:
   these 5 fields. Fixing this needs the same Focus-sourced data as the scaffold
   carve-out, plus this specific field set, joinable by `infosnap_id` -- see the
   Open Questions entry below.
+- **All regions' point-in-time enrollment flags go NULL for a while right after
+  the Finalsite recruitment year is toggled forward (separate from the
+  Miami-specific gap above).** `enrollment_lookup` scopes
+  `int_extracts__student_enrollments` to the Finalsite recruitment year rather
+  than `var("current_academic_year")` -- these two only match once PowerSchool
+  independently rolls over to the new year, which happens later, on its own
+  schedule. Until then PowerSchool has no real enrollment rows for that year at
+  all, so
+  `enroll_status`/`is_enrolled_fdos`/`is_enrolled_oct01`/`is_enrolled_oct15`/`is_enrolled_mar15`
+  are NULL for every student, network-wide. Expected, not fixable by the toggle
+  -- see the fresh-dashboard skill's year-toggle procedure.
 - **Fake/test Finalsite records not yet excluded inflate counts, at any time,
   not just at year rollover.** `stg_google_sheets__finalsite__exclude_ids` is
   enforced upstream of everything FRESH touches, but a test record created today

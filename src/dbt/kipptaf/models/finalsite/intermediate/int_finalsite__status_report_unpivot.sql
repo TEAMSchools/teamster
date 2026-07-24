@@ -55,88 +55,121 @@ with
                     summer_withdraw_date
                 )
             )
+    ),
+
+    unpivot_final as (
+        select
+            u._dagster_partition_key,
+            u.region,
+            u.assigned_school,
+            u.finalsite_enrollment_id,
+            u.powerschool_student_number,
+            u.first_name,
+            u.last_name,
+            u.grade_level,
+            u.enrollment_type,
+            u.self_contained,
+            u.gender,
+            u.birthdate,
+            u.enrollment_academic_year,
+            u.enrollment_academic_year_display,
+            u.fs_status_field,
+            u.status_start_date,
+            u.file_year,
+            u.detailed_status,
+
+            'KTAF' as org,
+
+            coalesce(x.location_powerschool_school_id, 0) as schoolid,
+            coalesce(x.location_abbreviation, 'No School Assigned') as school,
+
+            /* keep in sync with status_crosswalk's detailed_status_ranking -- the
+               guard test mirrors this list by hand, so update both together. */
+            case
+                u.fs_status_field
+                when 'inquiry_date'
+                then 1
+                when 'inquiry_completed_date'
+                then 2
+                when 'inactive_inquiry_date'
+                then 3
+                when 'applicant_date'
+                then 4
+                when 'application_withdrawn_date'
+                then 5
+                when 'deferred_date'
+                then 6
+                when 'application_complete_date'
+                then 7
+                when 'review_in_progress_date'
+                then 8
+                when 'waitlisted_date'
+                then 9
+                when 'denied_date'
+                then 10
+                when 'accepted_date'
+                then 11
+                when 'assigned_school_date'
+                then 12
+                when 'did_not_enroll_date'
+                then 13
+                when 'campus_transfer_requested_date'
+                then 14
+                when 'parent_declined_date'
+                then 15
+                when 'enrollment_in_progress_date'
+                then 16
+                when 'academic_hold_date'
+                then 17
+                when 'financial_hold_date'
+                then 18
+                when 'not_enrolling_date'
+                then 19
+                when 'enrolled_date'
+                then 20
+                when 'mid_year_withdrawal_date'
+                then 21
+                when 'never_attended_date'
+                then 22
+                when 'retained_date'
+                then 23
+                when 'summer_withdraw_date'
+                then 24
+            end as status_order,
+
+        from unpivot_data as u
+        left join
+            {{ ref("int_people__location_crosswalk") }} as x
+            on u.assigned_school = x.location_name
     )
 
 select
-    u._dagster_partition_key,
-    u.region,
-    u.assigned_school,
-    u.finalsite_enrollment_id,
-    u.powerschool_student_number,
-    u.first_name,
-    u.last_name,
-    u.grade_level,
-    u.enrollment_type,
-    u.self_contained,
-    u.gender,
-    u.birthdate,
-    u.enrollment_academic_year,
-    u.enrollment_academic_year_display,
-    u.fs_status_field,
-    u.status_start_date,
-    u.file_year,
-    u.detailed_status,
+    _dagster_partition_key,
+    region,
+    assigned_school,
+    finalsite_enrollment_id,
+    powerschool_student_number,
+    first_name,
+    last_name,
+    grade_level,
+    enrollment_type,
+    self_contained,
+    gender,
+    birthdate,
+    enrollment_academic_year,
+    enrollment_academic_year_display,
+    fs_status_field,
+    status_start_date,
+    file_year,
+    detailed_status,
+    org,
+    schoolid,
+    school,
+    status_order,
 
-    'KTAF' as org,
+    first_value(status_start_date) over (
+        partition by finalsite_enrollment_id, enrollment_academic_year
+        order by status_start_date desc, status_order desc
+    ) as latest_status_date,
 
-    coalesce(x.location_powerschool_school_id, 0) as schoolid,
-    coalesce(x.location_abbreviation, 'No School Assigned') as school,
-
-    /* keep in sync with status_crosswalk's detailed_status_ranking -- the
-       guard test mirrors this list by hand, so update both together. */
-    case
-        u.fs_status_field
-        when 'inquiry_date'
-        then 1
-        when 'inquiry_completed_date'
-        then 2
-        when 'inactive_inquiry_date'
-        then 3
-        when 'applicant_date'
-        then 4
-        when 'application_withdrawn_date'
-        then 5
-        when 'deferred_date'
-        then 6
-        when 'application_complete_date'
-        then 7
-        when 'review_in_progress_date'
-        then 8
-        when 'waitlisted_date'
-        then 9
-        when 'denied_date'
-        then 10
-        when 'accepted_date'
-        then 11
-        when 'assigned_school_date'
-        then 12
-        when 'did_not_enroll_date'
-        then 13
-        when 'campus_transfer_requested_date'
-        then 14
-        when 'parent_declined_date'
-        then 15
-        when 'enrollment_in_progress_date'
-        then 16
-        when 'academic_hold_date'
-        then 17
-        when 'financial_hold_date'
-        then 18
-        when 'not_enrolling_date'
-        then 19
-        when 'enrolled_date'
-        then 20
-        when 'mid_year_withdrawal_date'
-        then 21
-        when 'never_attended_date'
-        then 22
-        when 'retained_date'
-        then 23
-        when 'summer_withdraw_date'
-        then 24
-    end as status_order,
-
-from unpivot_data as u
-left join
-    {{ ref("int_people__location_crosswalk") }} as x
-    on u.assigned_school = x.location_name
+from unpivot_final

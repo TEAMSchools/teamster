@@ -18,6 +18,7 @@ with
             r.detailed_status,
             r.status_start_date,
             r.status_order,
+            r.latest_status_date,
 
             x.status_group_name,
             x.status_group_value,
@@ -37,7 +38,9 @@ with
                 order by r.status_start_date desc, r.status_order desc
             ) as latest_status,
 
-            count(*) over (partition by r.finalsite_enrollment_id, r.status_start_date)
+            countif(r.status_start_date = r.latest_status_date) over (
+                partition by r.finalsite_enrollment_id
+            )
             > 1 as is_same_day_status_duplicate,
 
         from {{ ref("int_finalsite__status_report_unpivot") }} as r
@@ -258,15 +261,20 @@ with
     enrollment_lookup as (
         select
             academic_year,
+            schoolid,
+            school,
             infosnap_id,
             student_number,
+            grade_level,
             enroll_status,
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
             is_enrolled_mar15,
+
         from {{ ref("int_extracts__student_enrollments") }}
-        where rn_year = 1 and infosnap_id is not null
+        -- finalsite year toggle: see skill
+        where rn_year = 1 and infosnap_id is not null and academic_year = 2026
     ),
 
     -- rn_year is computed per student, so two PowerSchool records sharing one
@@ -381,6 +389,15 @@ select
     e.is_enrolled_oct15,
     e.is_enrolled_mar15,
 
+    case
+        when r.latest_status = 'Enrolled'
+        then 0
+        when
+            r.latest_status
+            in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
+        then 1
+    end as ps_enroll_status,
+
 from final_roster as r
 left join
     filter_days_in_status as d
@@ -427,6 +444,15 @@ select
     e.is_enrolled_oct01,
     e.is_enrolled_oct15,
     e.is_enrolled_mar15,
+
+    case
+        when r.latest_status = 'Enrolled'
+        then 0
+        when
+            r.latest_status
+            in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
+        then 1
+    end as ps_enroll_status,
 
 from final_roster as r
 inner join

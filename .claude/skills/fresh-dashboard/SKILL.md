@@ -240,7 +240,8 @@ above or beside the literal:
   (2 occurrences — `powerschool_scaffold`'s `academic_year` literal and
   `gsheet_scaffold`'s `where` filter)
 - `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__finalsite_student_scaffold.sql`
-  (1 occurrence — `latest_status_calc`'s `where` filter)
+  (2 occurrences — `latest_status_calc`'s `where` filter, and
+  `enrollment_lookup`'s `where` filter)
 - `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__fresh_dashboard_progress_to_goals.sql`
   (2 occurrences — the `School` and `School/Grade Level` goal CTEs)
 - `src/dbt/kipptaf/tests/test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
@@ -272,6 +273,18 @@ uv run dbt build \
 over — not on a fixed schedule. There is no "revert" step the way
 gradebook-audit's summer toggle has; this is a one-directional bump forward each
 time SRE's cycle advances.
+
+**Expect `enrollment_lookup`'s PS/FS quality-check columns to go null for a
+while after this toggle.** `enrollment_lookup` (in
+`int_tableau__finalsite_student_scaffold.sql`) scopes
+`int_extracts__student_enrollments` to the Finalsite recruitment year, not
+`var("current_academic_year")` -- these two only match once PowerSchool's own
+rollover independently catches up to the new year, which happens later and on
+its own schedule. Until then, PowerSchool has no real enrollment rows for that
+year, so the whole CTE -- and every `enroll_status`/`is_enrolled_*` column it
+feeds -- is empty/null network-wide. This is expected, not a bug, and not
+fixable by any part of this toggle; it resolves on its own once PowerSchool
+catches up, with no further action needed.
 
 ## Verified facts (don't re-derive these — reference them)
 
