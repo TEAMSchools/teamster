@@ -181,22 +181,6 @@ data_tests:
           ref:
             name: int_collegeboard__ap_unpivot
 
-  - name: int_finance__enrollment_targets__schoolid_resolves
-    description: >-
-      Returns one row per `stg_google_sheets__finance__enrollment_targets`
-      record whose `schoolid` has no matching `school_number` in
-      `stg_powerschool__schools`. Each row is a sheet target silently dropped by
-      the inner join in `int_finance__enrollment_targets`. Ops signal to correct
-      the school number on the finance sheet; failure rows persist in
-      `kipptaf_dbt_test__audit` for direct query. Two historical rows for a
-      closed school currently fail, so this warns rather than errors until the
-      sheet is cleaned up.
-    config:
-      meta:
-        dagster:
-          ref:
-            name: int_finance__enrollment_targets
-
   - name: rpt_focus__demographics__language_crosswalk_resolves
     description: >-
       Returns one row per `int_finalsite__contact_custom_attributes` record

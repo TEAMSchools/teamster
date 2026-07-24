@@ -6,10 +6,12 @@ models:
       to PowerSchool schools to resolve the source district. The join is an
       inner join, so a sheet row whose `schoolid` does not match a PowerSchool
       school is dropped rather than carried through unattributed — the
-      `int_finance__enrollment_targets__schoolid_resolves` test reports those
-      rows. Five factor columns — `grade_band_ratio`, `at_risk_and_lep_ratio`,
-      `at_risk_only_ratio`, `lep_only_ratio`, and `sped_ratio` — pass through
-      from the sheet untouched, and their definitions are maintained there.
+      `Schoolid` relationships test on
+      `stg_google_sheets__finance__enrollment_targets` reports those rows before
+      they are lost here. Five factor columns — `grade_band_ratio`,
+      `at_risk_and_lep_ratio`, `at_risk_only_ratio`, `lep_only_ratio`, and
+      `sped_ratio` — pass through from the sheet untouched, and their
+      definitions are maintained there.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
