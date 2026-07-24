@@ -47,10 +47,12 @@ consumed by reporting tools and applications.
   left_cte._dbt_source_project = right_cte._dbt_source_project
   ```
 
-  Each union view materializes the column once via the
-  `extract_source_project()` macro; downstream models select it through rather
-  than re-deriving it. The old `union_dataset_join_clause()` macro, which re-ran
-  `regexp_extract` on `_dbt_source_relation` at every call site, was removed in
+  Each union view materializes the column once — inline `regexp_extract` on a
+  bare `select *` view, or the `extract_source_project()` macro otherwise; see
+  `src/dbt/kipptaf/CLAUDE.md` for which form applies. Downstream models select
+  it through rather than re-deriving it. The old `union_dataset_join_clause()`
+  macro, which re-ran `regexp_extract` on `_dbt_source_relation` at every call
+  site, was removed in
   [#3142](https://github.com/TEAMSchools/teamster/issues/3142).
 
   To extract a human-readable region label, use the `extract_region()` macro:
@@ -116,20 +118,23 @@ declared in a `sources:` YAML file:
 
 Shared UDFs in the `functions` dataset:
 
-| Function                                     | Returns                                                    |
-| -------------------------------------------- | ---------------------------------------------------------- |
-| `functions.current_academic_year()`          | Current academic year integer                              |
-| `functions.date_to_sy(date_col)`             | Academic year of a given date                              |
-| `functions.region_join(left_col, right_col)` | True when two `_dbt_source_relation` values share a region |
+| Function                                     | Returns                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| `functions.current_academic_year()`          | Current academic year integer                                    |
+| `functions.date_to_sy(date_col)`             | Academic year of a given date                                    |
+| `functions.region_join(left_col, right_col)` | Deprecated — no call sites remain; join on `_dbt_source_project` |
 
 ```sql
 select
     functions.current_academic_year() as academic_year,
     functions.date_to_sy(att_date) as att_academic_year,
 from my_table
-where
-    functions.region_join(co._dbt_source_relation, gpa._dbt_source_relation)
 ```
+
+`functions.region_join` is the SQL-UDF twin of the retired
+`union_dataset_join_clause` macro — it compares two `_dbt_source_relation`
+values, the predicate this page now tells you not to write. It still exists in
+the `functions` dataset but has no call sites in this repo.
 
 ## Model properties file
 

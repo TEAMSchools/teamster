@@ -63,8 +63,8 @@ The `union_dataset_join_clause` macro that wrapped this comparison was deleted
 in [#3142](https://github.com/TEAMSchools/teamster/issues/3142). Five stale
 calls remain in the disabled pre-AY2627 gradebook-audit cluster
 (`int_tableau__gradebook_audit_assignments_teacher` / `_categories_teacher` /
-`_assignments_student`) — dbt never resolves macros in `manifest.disabled`, so
-they parse fine, but re-enabling any of those models means swapping them first.
+`_assignments_student`). Disabled models are never compiled, so the calls are
+inert — but re-enabling any of those models means swapping them first.
 
 Produce `_dbt_source_project` on a union model with
 `select *, {{ extract_source_project() }} as _dbt_source_project`

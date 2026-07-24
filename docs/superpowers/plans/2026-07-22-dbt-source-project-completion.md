@@ -519,8 +519,10 @@ Expected: 5 results, all in the disabled pre-AY2627 gradebook-audit cluster
       to the long-deleted `extract_code_location` macro.
 - [x] **Step 4: Fold in the queued expression-duplication cleanups** (see _Batch
       3 execution findings_ below).
-- [x] **Step 5: Compile** (`dbt parse --no-partial-parse`) — no
-      `union_dataset_join_clause` resolution errors, disabled callers included.
+- [x] **Step 5: Compile** — `grep` for zero ENABLED call sites plus
+      `dbt build --empty` over the affected graph (195 models, 0 failures). Note
+      that `dbt parse` does NOT verify this; see _Batch 3 execution findings_
+      below.
 - [x] **Step 6: Lint** (include the `*.md`:
       `trunk check --force --no-fix </dev/null <files>`).
 - [x] **Step 7: Commit + push + PR**
@@ -632,10 +634,21 @@ with the crosswalk region before any consumer reads it.
 
 **Disabled callers do not gate the macro removal.** An earlier revision of this
 plan claimed Batch 3 was blocked until the disabled gradebook-audit cluster was
-migrated. That is wrong. dbt parses disabled models into `manifest.disabled` but
-never renders their Jinja deeply enough to resolve macros, so
-`dbt parse --no-partial-parse` exits 0 with the macro deleted and all five stale
-calls present.
+migrated. That is wrong — but the first justification offered for it was also
+wrong, and the distinction matters for future macro removals.
+
+The bad reasoning was "`dbt parse --no-partial-parse` exits 0 with the macro
+deleted and all five stale calls present, therefore disabled callers are
+harmless." A probe settles it: adding a temporary **enabled** model that calls
+the deleted macro **also** parses clean. `dbt parse` renders Jinja only far
+enough to capture `ref`/`source`/`config`; it never resolves macros at all. So a
+clean parse says nothing about whether a macro still has callers.
+
+The real reasoning is two-part: `grep` proves zero ENABLED call sites, and
+compilation — not parse — is where a missing macro fails. The
+`dbt build --empty` over 195 models is the actual evidence. Disabled models are
+never compiled, so their stale calls cannot break a build; they surface only on
+re-enable.
 
 **The five stale calls were left in place** by explicit decision — the cluster
 is the pre-AY2627 lineage superseded by `rpt_tableau__gradebook_audit`, nothing
@@ -660,10 +673,29 @@ rather than an unexplained compile failure.
   `select`. BigQuery cannot reference a select alias within the same `SELECT`,
   so `code_location` moved to the final `select` as
   `ar._dbt_source_project as code_location`. That reorders `code_location` after
-  `region` in the output schema; the model has no enforced contract and every
-  downstream consumer names columns explicitly, so the reorder is inert.
+  `region` in the output schema, and the shift propagates: the immediate
+  consumer `int_extracts__student_enrollments` is `select e.* except (...)`, so
+  four further `int_extracts__*` models inherit the new position. It is still
+  inert, but not because consumers enumerate columns — most of that chain does
+  not. It is inert because nothing in the chain depends on ordinal position: dbt
+  contracts match columns by name, and the one order-sensitive SQL construct,
+  `UNION ALL`, appears in four models reachable from the base model
+  (`int_extracts__student_enrollments_subjects`,
+  `int_assessments__course_enrollments`, `rpt_gsheets__gpa_flags_report`,
+  `rpt_gsheets__award_ceremony_gpa`) — every branch of all four enumerates its
+  columns, with zero wildcard selects among them.
 
-**Still queued, deliberately not in this PR:** CRLF normalization on
-`tests/test_incorrect_student_number_pearson.sql`, the
-`int_finance__enrollment_targets` yml column descriptions, and the disabled
-`models/kippadb/qa/` directory.
+**Not in this PR:** the `int_finance__enrollment_targets` yml column
+descriptions and the disabled `models/kippadb/qa/` directory ship in #4555. CRLF
+normalization was dropped — it is 70 tracked `.sql` files with no
+`.gitattributes`, and normalizing bumps every model's checksum, so a full pass
+would trigger a near-total kipptaf rebuild and prod rematerialization for zero
+behavior change (rationale recorded in #4554).
+
+**Also surfaced, worth its own PR:** the duplicated _expression_ is gone but the
+duplicated _column_ survives. `code_location` and `_dbt_source_project` carry
+byte-identical values side by side from `base_powerschool__student_enrollments`
+through five `int_extracts__*` models into two `rpt_*` extracts, with the four
+district wrappers filtering on `code_location`. Retiring `code_location` means
+swapping those wrappers' `where` clauses and dropping the column — four district
+projects and a contract-enforced surface.

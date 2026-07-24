@@ -15,6 +15,8 @@ models:
         data_type: string
       - name: u_studentsuserfields__studentemail
         data_type: string
+      - name: code_location
+        data_type: string
       - name: s_nj_stu_x__graduation_pathway_math
         data_type: string
       - name: s_nj_stu_x__graduation_pathway_ela
@@ -26,8 +28,6 @@ models:
       - name: district_entry_date
         data_type: string
       - name: school_entry_date
-        data_type: string
-      - name: code_location
         data_type: string
       - name: student_allowwebaccess
         data_type: int64
