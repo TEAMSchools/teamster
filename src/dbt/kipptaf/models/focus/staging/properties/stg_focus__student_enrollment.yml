@@ -1,7 +1,11 @@
 models:
   - name: stg_focus__student_enrollment
     description: >-
-      Kipptaf-level passthrough of kippmiami's stg_focus__student_enrollment.
-      Focus is Miami-only, so no cross-district union is needed here (contrast
-      with the powerschool kipptaf staging models, which union all four
-      districts). Column docs/tests live on the kippmiami source model.
+      Kipptaf-level union_relations passthrough of kippmiami's
+      stg_focus__student_enrollment, following the same pattern as the finalsite
+      contact unions. Focus is Miami-only today; this shape lets a future
+      region's Focus ingestion union in without a rewrite. Column docs/tests
+      live on the kippmiami source model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.
