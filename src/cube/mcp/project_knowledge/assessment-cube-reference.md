@@ -25,7 +25,10 @@ Apply to every assessment source unless a source section overrides them.
   `standards` / `groups`). Not additive across types. Default to `overall`
   unless a standard- or group-level breakdown is explicitly requested. Only
   Illuminate populates `standard` / `group`; every other source is
-  `response_type = null` (overall only).
+  `response_type = null` (overall only). To isolate those null rows, filter with
+  operator `notSet` (or `set` for present) — `equals "null"` matches the literal
+  string, not SQL NULL, and silently returns zero rows. This holds for any NULL
+  filter.
 - **Headline metric: `pct_proficient`.** It is the one score measure comparable
   across the incompatible scales of all sources (proficient scores / total).
   `is_mastery` is the underlying per-score proficient flag. `scale_score`,
@@ -55,6 +58,11 @@ Apply to every assessment source unless a source section overrides them.
   (e.g., `Mathematics`, `English Language Arts`); `discipline` is the _course_
   subject from the course crosswalk (e.g., `Math`, `ELA`). They answer different
   questions — do not use one in place of the other.
+- **Three different grade fields.** `grade_band` is a school-level attribute
+  (the band a location serves — `ES` / `MS` / `HS`), not a per-student grade;
+  filtering `grade_band = 'MS'` is a school proxy, not a student-grade filter.
+  For a student's actual grade use `grade_level`; for the grade an assessment
+  targets use `grade_level_tested`.
 - **Section/teacher rollups: filter `enrollment_resolution = subject_section`**
   (`homeroom` rows also exist in the same field). Lead-teacher attribution is
   available via `staff_lead_teacher_full_name` / `lead_teacher_staff_key`,
