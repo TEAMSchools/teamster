@@ -10,7 +10,7 @@ cubes:
           {CUBE}.assessment_administration_key
         relationship: many_to_one
 
-      # Calendar / academic-year rollups join dates on calendar_date_key (the
+      # Calendar / academic-year rollups join dates on assessment_date_key (the
       # administration date where present, else the student's test date), NOT on
       # the administration's own date — that is null for state and vendor
       # sources, so joining there returned null academic_year for them (#4546).
@@ -19,7 +19,7 @@ cubes:
       # query-timezone convertTz inside join predicates, which zeroes the join
       # under any non-UTC timezone (#4298).
       - name: dates
-        sql: "{dates.date_key} = {CUBE}.calendar_date_key"
+        sql: "{dates.date_key} = {CUBE}.assessment_date_key"
         relationship: many_to_one
 
       - name: student_section_enrollments
@@ -40,7 +40,7 @@ cubes:
           Date the assessment was taken (completion date), as a standalone date
           dimension not joined to a calendar cube. For calendar and
           academic-year rollups use the date_day / academic_year members
-          instead: those are backed by calendar_date_key (the administration
+          instead: those are backed by assessment_date_key (the administration
           date where present, else this test date), which is populated for every
           source. Populated for state and vendor rows; nullable for a small
           share of internal rows lacking a recorded sitting.
@@ -360,10 +360,10 @@ cubes:
         # Partitioned refresh: without a time_dimension, Cube rebuilds this
         # entire rollup from the ~14.2M-row fact on every refresh_key check,
         # regardless of what changed. dates.date_day (via
-        # student_assessment_scores -> dates, keyed on calendar_date_key), not
+        # student_assessment_scores -> dates, keyed on assessment_date_key), not
         # the cube's own date_taken, is the time anchor — date_taken is
         # documented above as corrupt for a small share of rows, whereas
-        # calendar_date_key is the administration date where present, else the
+        # assessment_date_key is the administration date where present, else the
         # test date. Year partitioning (not day/month) matches how corrections
         # actually land: restatements replace a whole academic year at a time,
         # so a correction only invalidates the partition(s) touching that year,
@@ -376,9 +376,9 @@ cubes:
         # dates.date_day resolves through dim_dates, whose calendar spine runs
         # to 9999, so the scheduled-refresh worker enumerates ~8,000 empty
         # yearly partitions (this is why #4460 was reverted). Floor is set below
-        # the earliest calendar_date_key carrying a score (2015-08-14, verified
+        # the earliest assessment_date_key carrying a score (2015-08-14, verified
         # against the fact 2026-07-20); the end tracks today. Yields ~12
-        # partitions. calendar_date_key is populated for every row, so state and
+        # partitions. assessment_date_key is populated for every row, so state and
         # vendor scores (previously null on the administration date) are now
         # covered by this rollup too.
         build_range_start:

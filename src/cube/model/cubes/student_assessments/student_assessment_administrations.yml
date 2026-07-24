@@ -5,7 +5,7 @@ cubes:
 
     joins:
       # The calendar / dates join lives on student_assessment_scores (keyed on
-      # calendar_date_key), NOT here: state and vendor administrations carry a
+      # assessment_date_key), NOT here: state and vendor administrations carry a
       # null administered_date_key, so joining dates on it returned null
       # academic_year for every non-Illuminate source (#4546). The scores cube
       # joins dates on the coalesced calendar date instead, which is populated

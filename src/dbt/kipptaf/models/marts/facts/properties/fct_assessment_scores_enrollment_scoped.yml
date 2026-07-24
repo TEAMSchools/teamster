@@ -92,7 +92,7 @@ models:
                 to: ref('dim_dates')
                 field: date_key
 
-      - name: calendar_date_key
+      - name: assessment_date_key
         data_type: date
         description: >-
           FK to dim_dates for academic-year and calendar rollups. The
