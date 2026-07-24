@@ -48,6 +48,7 @@ jobs:
   prerun:
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     env:
       DAGSTER_CLOUD_API_TOKEN: ${{ secrets.DAGSTER_CLOUD_AGENT_TOKEN }}
     outputs:
@@ -70,6 +71,7 @@ jobs:
           - linux-amd64
           - linux-arm64
     runs-on: teamschools-${{ matrix.runner }}
+    timeout-minutes: 60
     steps:
       - name: Prepare
         run: |
@@ -133,6 +135,7 @@ jobs:
 
   merge:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     needs:
       - prerun
       - build
@@ -174,6 +177,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs:
       - prerun
       - build
