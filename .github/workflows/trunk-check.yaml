@@ -19,6 +19,7 @@ jobs:
     name: Trunk Check Runner
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       checks: write # For trunk to post annotations
       contents: read # For repo checkout
