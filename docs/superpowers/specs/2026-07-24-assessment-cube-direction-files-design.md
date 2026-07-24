@@ -2,7 +2,7 @@
 
 - **Date:** 2026-07-24
 - **Issue:** [#4534](https://github.com/TEAMSchools/teamster/issues/4534)
-- **Status:** Draft for review
+- **Status:** Implemented — see `src/cube/mcp/project_knowledge/`
 - **Author:** Anthony Walters (with Claude)
 
 ## 1. Purpose and context
@@ -43,7 +43,8 @@ on a real trigger — see Section 8):
    assessment section, and the session-log template.
 2. **Assessment reference** — settled Cube data-usage conventions, with sections
    for shared conventions, internal (Illuminate) assessments, NJ state
-   assessments, and FL state assessments.
+   assessments, FL state assessments, and three vendor normed diagnostics
+   (i-Ready, DIBELS, STAR) as their own reference sections.
 
 ## 3. Governing principle: settled-in, open-out, flag-don't-invent
 
@@ -152,6 +153,13 @@ director's session produces a consistent, self-documenting log:
 
 ## 6. File 2 — Assessment reference
 
+Scope expanded after initial drafting to also cover the three vendor normed
+diagnostics used across regions — i-Ready, DIBELS, and STAR — each as its own
+reference section alongside internal (Illuminate), NJ state, and FL state
+(§6.2–6.4). The reference file carries these sections; conventions specific to
+each vendor tool follow the same settled-mechanics-only rule as the rest of
+Section 6.
+
 ### 6.1 Shared conventions (settled mechanics)
 
 - **`response_type`** values are `overall`, `standard`, `group`, `null`
@@ -164,11 +172,10 @@ director's session produces a consistent, self-documenting log:
   `dim_student_enrollments` dependency); prefer `count_scores` as the fallback
   at fine grain. (Which measure is the _default_ for count/share questions is an
   open decision — flag it.)
-- **Performance bands.** Use the numeric `performance_band_label_number`; the
-  band-1 = "Far Below" / band-2 = "Below" abbreviations ("FB", "B", "B/FB" =
-  bands 1-2) must be **verified against the live label set before publishing**,
-  because `proficiency_level` label strings are inconsistent (a bucket-1
-  defect).
+- **Performance bands.** Use the numeric `performance_band_label_number`, never
+  the label text. Band 1 = "Far Below" / band 2 = "Below" is confirmed against
+  the live label set (see Section 9), because `proficiency_level` label strings
+  are inconsistent (a bucket-1 defect).
 - **Subject fields.** `discipline` is the course/section subject crosswalk
   (value `Math`); `academic_subject` is the tested subject (value `Mathematics`,
   full word). They answer different questions.
@@ -186,8 +193,8 @@ director's session produces a consistent, self-documenting log:
 ### 6.2 Internal (Illuminate)
 
 - Module types `QA` / `MQQ` / `CRQ` (`module_type`); `module_code` such as
-  `QA3`. Confirm the exact internal `assessment_type` enum value (see Section
-  9).
+  `QA3`. The internal `assessment_type` enum value is `illuminate`, confirmed
+  against the live connector (see Section 9).
 - Pooling QA/MQQ/CRQ mixes instruments of differing difficulty (CRQ was ~60% of
   one region's MS math records) — pooling vs per-instrument is an open decision.
 - `response_type_root_description` (CCSS domain rollup) is reliable here.
@@ -205,8 +212,8 @@ director's session produces a consistent, self-documenting log:
 - `academic_year` is unreliable/null for some state slices — filter school year
   via a `date_taken` window until the crosswalk exists.
 - Student identifier: for NJ the district ID is null; only
-  `lea_student_identifier` is populated (treat LEA as the working NJ student
-  number, pending confirmation — Section 9).
+  `lea_student_identifier` is populated. `lea_student_identifier` (the KIPP SIS
+  number) is the canonical NJ student identifier, confirmed — see Section 9.
 - `response_type_root_description` (CCSS) is reliable for NJ.
 
 ### 6.4 FL state
@@ -236,9 +243,11 @@ director's session produces a consistent, self-documenting log:
 
 ## 8. Distribution and version-control loop
 
-- Files live version-controlled in this repo (exact path decided in review — see
-  Section 9), and are synced into the shared claude.ai Project as project
-  knowledge.
+- Files live version-controlled in this repo at
+  `src/cube/mcp/project_knowledge/` (decided by the data engineer — see Section
+  9), and are synced into the shared claude.ai Project as project knowledge.
+  This is **not** the MkDocs docs site (`docs/`) — the files are not rendered
+  pages and there is no `mkdocs.yml` nav wiring for them.
 - **Update loop:** a session log surfaces a trip, an inference gap, or an open
   decision, which becomes either a PR to a direction file (settled mechanics) or
   an issue against the Cube model (bucket-1 defects) or an item for leadership
@@ -251,18 +260,29 @@ director's session produces a consistent, self-documenting log:
 
 ## 9. Open questions and dependencies to resolve before publishing
 
-1. **Exact repo home** for the two files (e.g., a dedicated `docs/` subfolder
-   rendered in the MkDocs site so the team can browse them, vs. a non-rendered
-   location). Decide in review.
-2. **Confirm the internal `assessment_type` enum value** for Illuminate.
+1. **Exact repo home** for the two files: resolved. They live in a new
+   directory, `src/cube/mcp/project_knowledge/`, decided by the data engineer —
+   not the MkDocs docs site.
+2. **Confirm the internal `assessment_type` enum value** for Illuminate:
+   resolved. The internal value is `illuminate`. The granular state values
+   (`state_nj_njsla`, `state_fl_fast`, `state_nj_njgpa`,
+   `state_nj_njsla_science`, `state_fl_science`, `state_fl_eoc`) are the
+   **real** `assessment_type` values, verified against the live connector. The
+   schema's field description — which lists coarse `state_nj` / `state_fl` /
+   `college` / `ap` — is stale; this is itself a bucket-1 defect to file (see
+   item 5).
 3. **Verify the performance-band number-to-abbreviation crosswalk** against the
    live label set before publishing (guards against the `proficiency_level`
-   label defect).
+   label defect): resolved and confirmed. Band 1 = "Far Below", band 2 =
+   "Below". The rule is to use the integer `performance_band_label_number`,
+   never the label text.
 4. **Confirm the canonical NJ student identifier** (LEA is populated; district
-   is null).
-5. **File the bucket-1 `src/cube/` issues** and **route the bucket-2 policy
-   decisions** to instructional leadership (parallel tracks, not blockers for
-   drafting the files).
+   is null): resolved. `lea_student_identifier` is the canonical NJ identifier
+   (the KIPP SIS number); `district_student_identifier` is null for NJ.
+5. **File the bucket-1 `src/cube/` issues** (including the stale
+   `assessment_type` description found in item 2) and **route the bucket-2
+   policy decisions** to instructional leadership (parallel tracks, not blockers
+   for drafting the files).
 
 ## 10. Success criteria
 

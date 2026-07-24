@@ -57,11 +57,12 @@ prose, this plan holds structure, rules, and verification.
 
 ## File Structure
 
-- Create: `docs/guides/assessment-cube-orchestrator.md` — session protocol (spec
-  §5.1), routing (§5.2), session-log template (§5.3). Cross-references the
-  reference file by its Project filename.
-- Create: `docs/guides/assessment-cube-reference.md` — shared conventions
-  (§6.1), internal/Illuminate (§6.2), NJ state (§6.3), FL state (§6.4).
+- Create: `src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md` —
+  session protocol (spec §5.1), routing (§5.2), session-log template (§5.3).
+  Cross-references the reference file by its Project filename.
+- Create: `src/cube/mcp/project_knowledge/assessment-cube-reference.md` — shared
+  conventions (§6.1), internal/Illuminate (§6.2), NJ state (§6.3), FL state
+  (§6.4).
 - Modify: `mkdocs.yml` — add an "Assessment Cube Project" subsection under
   `Guides`.
 
@@ -71,7 +72,7 @@ prose, this plan holds structure, rules, and verification.
 
 **Files:**
 
-- Create: `docs/guides/assessment-cube-orchestrator.md`
+- Create: `src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md`
 
 **Interfaces:**
 
@@ -115,14 +116,14 @@ Requirements:
 - [ ] **Step 3: Lint the file**
 
 Run:
-`cd /workspaces/teamster/.worktrees/cube-assessment-directions && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix docs/guides/assessment-cube-orchestrator.md </dev/null`
+`cd /workspaces/teamster/.worktrees/cube-assessment-directions && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md </dev/null`
 Expected: `No issues` (or only auto-fixable formatting, which the pre-commit
 `fmt` hook resolves).
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cube-assessment-directions add docs/guides/assessment-cube-orchestrator.md
+git -C /workspaces/teamster/.worktrees/cube-assessment-directions add src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md
 git -C /workspaces/teamster/.worktrees/cube-assessment-directions commit -m "docs: add assessment Cube session orchestrator" -m "Refs #4534"
 ```
 
@@ -132,7 +133,7 @@ git -C /workspaces/teamster/.worktrees/cube-assessment-directions commit -m "doc
 
 **Files:**
 
-- Create: `docs/guides/assessment-cube-reference.md`
+- Create: `src/cube/mcp/project_knowledge/assessment-cube-reference.md`
 
 **Interfaces:**
 
@@ -177,13 +178,13 @@ Requirements:
 - [ ] **Step 3: Lint the file**
 
 Run:
-`cd /workspaces/teamster/.worktrees/cube-assessment-directions && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix docs/guides/assessment-cube-reference.md </dev/null`
+`cd /workspaces/teamster/.worktrees/cube-assessment-directions && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/cube/mcp/project_knowledge/assessment-cube-reference.md </dev/null`
 Expected: `No issues`.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cube-assessment-directions add docs/guides/assessment-cube-reference.md
+git -C /workspaces/teamster/.worktrees/cube-assessment-directions add src/cube/mcp/project_knowledge/assessment-cube-reference.md
 git -C /workspaces/teamster/.worktrees/cube-assessment-directions commit -m "docs: add assessment Cube data-usage reference" -m "Refs #4534"
 ```
 
@@ -236,8 +237,8 @@ and is not reliably available to subagents. Do not delegate this task.
 
 **Files:**
 
-- Modify: `docs/guides/assessment-cube-reference.md` (resolve the three
-  `**[VERIFY]**` tags)
+- Modify: `src/cube/mcp/project_knowledge/assessment-cube-reference.md` (resolve
+  the three `**[VERIFY]**` tags)
 
 - [ ] **Step 1: Load the Cube tool schemas**
 
@@ -265,8 +266,8 @@ confirmed, leave a one-line explicit flag
 - [ ] **Step 4: Lint and commit**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cube-assessment-directions && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix docs/guides/assessment-cube-reference.md </dev/null
-git -C /workspaces/teamster/.worktrees/cube-assessment-directions add docs/guides/assessment-cube-reference.md
+cd /workspaces/teamster/.worktrees/cube-assessment-directions && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/cube/mcp/project_knowledge/assessment-cube-reference.md </dev/null
+git -C /workspaces/teamster/.worktrees/cube-assessment-directions add src/cube/mcp/project_knowledge/assessment-cube-reference.md
 git -C /workspaces/teamster/.worktrees/cube-assessment-directions commit -m "docs: confirm assessment reference facts against Cube" -m "Refs #4534"
 ```
 
@@ -287,13 +288,13 @@ it in the owning file.
 - [ ] **Step 2: Full lint sweep**
 
 Run:
-`cd /workspaces/teamster/.worktrees/cube-assessment-directions && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix docs/guides/assessment-cube-orchestrator.md docs/guides/assessment-cube-reference.md mkdocs.yml docs/superpowers/plans/2026-07-24-assessment-cube-direction-files.md </dev/null`
+`cd /workspaces/teamster/.worktrees/cube-assessment-directions && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md src/cube/mcp/project_knowledge/assessment-cube-reference.md mkdocs.yml docs/superpowers/plans/2026-07-24-assessment-cube-direction-files.md </dev/null`
 Expected: `No issues`.
 
 - [ ] **Step 3: Commit any fixes**
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cube-assessment-directions add docs/guides/assessment-cube-orchestrator.md docs/guides/assessment-cube-reference.md
+git -C /workspaces/teamster/.worktrees/cube-assessment-directions add src/cube/mcp/project_knowledge/assessment-cube-orchestrator.md src/cube/mcp/project_knowledge/assessment-cube-reference.md
 git -C /workspaces/teamster/.worktrees/cube-assessment-directions commit -m "docs: coverage and lint fixes for assessment Cube files" -m "Refs #4534"
 ```
 
@@ -306,12 +307,34 @@ git -C /workspaces/teamster/.worktrees/cube-assessment-directions commit -m "doc
 - **Spec coverage:** §5.1 → Task 1; §5.2 → Task 1; §5.3 → Task 1; §6.1 → Task 2;
   §6.2 → Task 2; §6.3 → Task 2; §6.4 → Task 2; §8 distribution/nav → Task 3; §9
   items 2-4 (factual confirmations) → Task 4; §9 item 1 (repo home) → resolved
-  to `docs/guides/`; §10 success criteria → Task 5. Buckets 1 and 2 (spec §4)
-  are deliberately out-of-file; the "flag and log" handling is enforced by
-  Global Constraints and checked in Task 5 Step 1.
+  to `src/cube/mcp/project_knowledge/` (see Execution deviations); §10 success
+  criteria → Task 5. Buckets 1 and 2 (spec §4) are deliberately out-of-file; the
+  "flag and log" handling is enforced by Global Constraints and checked in Task
+  5 Step 1.
 - **Placeholder scan:** the only intentional in-file markers are the
   `**[VERIFY]**` tags, which Task 4 resolves; no `TODO`/`TBD` remain after
   Task 4.
 - **Consistency:** the reference filename `assessment-cube-reference.md` is used
   identically in Task 1 (routing reference), Task 2 (create), Task 3 (nav), and
   Task 4 (modify).
+
+## Execution deviations
+
+Recorded after the fact. File-path references throughout the tasks above were
+updated in place to the actual location; the following are the substantive
+divergences from the original plan:
+
+- **File location.** Both files were relocated to
+  `src/cube/mcp/project_knowledge/` (decided by the data engineer) instead of
+  `docs/guides/`. They are Cube MCP project knowledge synced into the shared
+  claude.ai Project, not MkDocs-rendered pages.
+- **Task 3 dropped.** The MkDocs nav wiring task did not happen — the files are
+  not docs-site pages, so there is no `mkdocs.yml` nav entry for them.
+- **Scope expansion.** The assessment reference gained three additional sections
+  beyond the original spec's plan: i-Ready, DIBELS, and STAR, each its own
+  vendor normed-diagnostic reference section alongside internal (Illuminate), NJ
+  state, and FL state.
+- **Verification.** All facts flagged `**[VERIFY]**` in the original plan
+  (internal `assessment_type` enum value, performance-band crosswalk, canonical
+  NJ student identifier) were confirmed against the live Cube connector per
+  Task 4.
