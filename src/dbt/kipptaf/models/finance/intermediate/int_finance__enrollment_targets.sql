@@ -15,6 +15,8 @@ select
     et.lep_only_ratio,
     et.sped_ratio,
 
+    sch._dbt_source_project,
+
     '`{{ target.database }}`.`'
     || regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')
     || '_powerschool'
