@@ -382,6 +382,11 @@ or `dbt clone --select <upstream>` against staging. Trigger via
 `mcp__dbt__list_jobs` (~5 min run); after success, empty-commit + push
 re-triggers Build - CI.
 
+`Clone - Staging` refreshes only kipptaf-level relations — NOT district-level
+`zz_stg_kipp<district>_*`. A CI orphan / row-count delta that reconciles exactly
+against per-district prod-vs-`zz_stg` gaps is that staleness, not your change;
+re-running Clone - Staging won't fix it.
+
 Distinct from stale staging defer — **stale per-PR shadow**: a model that was
 `state:modified` in an earlier run (e.g. before the branch merged `main`) but is
 now unmodified leaves a stale copy in the per-PR schema

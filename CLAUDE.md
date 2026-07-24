@@ -606,6 +606,10 @@ the allowlist.
 - `mcp__github__search_issues` returns full issue **bodies** — a broad query
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.
+- `gh api` reporting `unexpected end of JSON input` means an empty response
+  body, not a bad request — re-run with `-i` to see the HTTP status. A 500 on
+  `POST /pulls` is usually a GitHub incident; check
+  `githubstatus.com/api/v2/incidents/unresolved.json` before bisecting.
 
 ### Dagster asset diagnosis
 
@@ -847,6 +851,12 @@ the dbt Cloud CI job ID (stable across runs); read from
 `state:modified+` models (often just the fact) — for unmodified dimensional
 context, join the PR-branch fact to PROD dims (`kipptaf_marts.dim_*`), which are
 absent from the PR schema and unchanged anyway.
+
+To prove a refactor behavior-preserving without a local build, compare the
+PR-branch build to prod: `count(*)` plus
+`count(distinct format("%T|%T", <key cols>))` on
+`dbt_cloud_pr_<job>_<pr>_<schema>.<model>` vs the prod schema. Identical counts
+are a value-level proof; `--empty` only proves column resolution.
 
 Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
