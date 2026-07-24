@@ -58,7 +58,7 @@ with
             on ad.studentid = co.studentid
             and ad.schoolid = co.schoolid
             and ad.calendardate between co.entrydate and co.exitdate
-            and {{ union_dataset_join_clause(left_alias="ad", right_alias="co") }}
+            and ad._dbt_source_project = co._dbt_source_project
         left join
             overall_filters as f
             on co.academic_year = f.academic_year

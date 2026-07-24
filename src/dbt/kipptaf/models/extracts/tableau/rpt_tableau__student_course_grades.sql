@@ -2,6 +2,7 @@ with
     term as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             schoolid,
             yearid,
 
@@ -23,6 +24,7 @@ with
 
         select
             _dbt_source_relation,
+            _dbt_source_project,
             schoolid,
             yearid,
 
@@ -76,6 +78,7 @@ with
     student_roster as (
         select
             enr._dbt_source_relation,
+            enr._dbt_source_project,
             enr.studentid,
             enr.student_number,
             enr.student_name,
@@ -169,21 +172,21 @@ with
             term
             on enr.schoolid = term.schoolid
             and enr.yearid = term.yearid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="term") }}
+            and enr._dbt_source_project = term._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_term") }} as gtq
             on enr.studentid = gtq.studentid
             and enr.yearid = gtq.yearid
             and enr.schoolid = gtq.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gtq") }}
+            and enr._dbt_source_project = gtq._dbt_source_project
             and term.quarter = gtq.term_name
-            and {{ union_dataset_join_clause(left_alias="term", right_alias="gtq") }}
+            and term._dbt_source_project = gtq._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
             on enr.studentid = gty.studentid
             and enr.yearid = gty.yearid
             and enr.schoolid = gty.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gty") }}
+            and enr._dbt_source_project = gty._dbt_source_project
             and gty.is_current
         /* gc join gated to the current year in ON: prior-year rows keep NULL
            cumulative/needed columns (as-of-today measures) */
@@ -191,7 +194,7 @@ with
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on enr.studentid = gc.studentid
             and enr.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gc") }}
+            and enr._dbt_source_project = gc._dbt_source_project
             and enr.academic_year = {{ var("current_academic_year") }}
         /* lookback is current-year only by construction (yearid in the join
            key), so prior-year rows read NULL naturally */
@@ -200,7 +203,7 @@ with
             on enr.studentid = lb.studentid
             and enr.schoolid = lb.schoolid
             and enr.yearid = lb.yearid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="lb") }}
+            and enr._dbt_source_project = lb._dbt_source_project
         /* both comparison joins are current-year-only (as-of columns), gated
            in ON so prior-year rows keep NULLs */
         left join
@@ -208,7 +211,7 @@ with
             on enr.studentid = gpq.studentid
             and enr.yearid = gpq.yearid
             and enr.schoolid = gpq.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="gpq") }}
+            and enr._dbt_source_project = gpq._dbt_source_project
             and term.prior_quarter = gpq.term_name
             and enr.academic_year = {{ var("current_academic_year") }}
         left join
@@ -236,6 +239,7 @@ with
     course_enrollments as (
         select
             m._dbt_source_relation,
+            m._dbt_source_project,
             m.cc_studentid as studentid,
             m.cc_yearid as yearid,
             m.cc_course_number as course_number,
@@ -260,7 +264,7 @@ with
             on m.cc_studentid = f.studentid
             and m.cc_academic_year = f.academic_year
             and m.courses_credittype = f.powerschool_credittype
-            and {{ union_dataset_join_clause(left_alias="m", right_alias="f") }}
+            and m._dbt_source_project = f._dbt_source_project
             and f.rn_year = 1
         left join
             {{ ref("int_people__staff_roster") }} as r
@@ -285,6 +289,7 @@ with
     y1_final_grades as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             yearid,
             course_number,
@@ -306,6 +311,7 @@ with
         /* current year: live gradebook */
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             yearid,
             course_number,
@@ -336,6 +342,7 @@ with
         /* current year: in-progress Y1 row */
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             yearid,
             course_number,
@@ -368,6 +375,7 @@ with
            branch does for the current year) */
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             yearid,
             course_number,
@@ -397,6 +405,7 @@ with
     category_grades as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             yearid,
             schoolid,
             studentid,
@@ -568,29 +577,29 @@ left join
     course_enrollments as ce
     on s.studentid = ce.studentid
     and s.yearid = ce.yearid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
+    and s._dbt_source_project = ce._dbt_source_project
 left join
     y1_final_grades as y1f
     on s.studentid = y1f.studentid
     and s.yearid = y1f.yearid
     and s.`quarter` = y1f.storecode
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="y1f") }}
+    and s._dbt_source_project = y1f._dbt_source_project
     and ce.course_number = y1f.course_number
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="y1f") }}
+    and ce._dbt_source_project = y1f._dbt_source_project
 left join
     quarter_grades as qg
     on s.studentid = qg.studentid
     and s.yearid = qg.yearid
     and s.`quarter` = qg.`quarter`
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="qg") }}
+    and s._dbt_source_project = qg._dbt_source_project
     and ce.course_number = qg.course_number
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
+    and ce._dbt_source_project = qg._dbt_source_project
 left join
     category_grades as c
     on s.studentid = c.studentid
     and s.yearid = c.yearid
     and s.`quarter` = c.term
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+    and s._dbt_source_project = c._dbt_source_project
     and ce.sectionid = c.sectionid
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="c") }}
+    and ce._dbt_source_project = c._dbt_source_project
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
