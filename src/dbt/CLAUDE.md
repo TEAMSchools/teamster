@@ -677,6 +677,13 @@ legitimately-superseded inactive rows that repeat the key.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 
+### An FK check belongs on the pre-join model, as a column `relationships` test
+
+A `relationships` test on a model built through an INNER JOIN to its parent is
+vacuous — the join already dropped every unmatched row. Put it on the staging
+model feeding the join, as a column-level generic (precedent:
+`stg_collegeboard__ap.yml`), not a bespoke `*_resolves` singular test.
+
 ### `dbt_utils.expression_is_true` window-function limit
 
 Compiles to `where not (<expression>)`. BigQuery rejects window functions in
