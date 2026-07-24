@@ -1,25 +1,6 @@
 models:
   - name: int_focus__school_year_first_day
     description: >-
-      First day of school per Focus school year, derived as the earliest
-      instructional date (minutes greater than zero) across that year's default
-      attendance calendars. This is the network-earliest first day across all
-      schools' default calendars (Miami schools currently share a single first
-      day); the value is joined on school year alone, so it is not per-school.
-      Sourced from the Focus dlt landing tables attendance_calendar (per-day
-      dates) and attendance_calendars (headers). Used to floor Finalsite-sourced
-      enrollment start dates to the first day of school so they match Focus
-      enrollment records.
-    columns:
-      - name: syear
-        description: Focus school year start year (e.g. 2026 = 2026-27).
-        data_tests:
-          - unique:
-              config:
-                severity: error
-          - not_null:
-              config:
-                severity: error
-      - name: first_day_of_school
-        description:
-          Earliest instructional date across the year's default calendars.
+      Kipptaf-level passthrough of kippmiami's int_focus__school_year_first_day.
+      Focus is Miami-only, so no cross-district union is needed here. Column
+      docs/tests live on the kippmiami source model.

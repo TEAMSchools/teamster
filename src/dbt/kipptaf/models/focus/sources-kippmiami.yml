@@ -1,0 +1,15 @@
+sources:
+  - name: kippmiami_focus
+    schema:
+      "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippmiami_focus"
+    tables:
+      - name: int_focus__school_year_first_day
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__school_year_first_day

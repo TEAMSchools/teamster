@@ -1,0 +1,53 @@
+models:
+  - name: stg_focus__attendance_calendar
+    description: >-
+      Focus per-day school calendar dates — one row per calendar day.
+    columns:
+      - name: id
+        description: Primary key — Focus attendance calendar day id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: calendar_id
+        description: Focus attendance calendar id (joins attendance_calendars).
+        data_type: int
+      - name: school_id
+        description: Focus school id the calendar day belongs to.
+        data_type: int
+      - name: syear
+        description: Focus school year (start year, e.g. 2025 = 2025-26).
+        data_type: int
+      - name: school_date
+        description: The calendar date.
+        data_type: date
+      - name: minutes
+        description: >-
+          Instructional minutes for the day; 0 (or null) marks a non-session day
+          (e.g. a break or non-attendance day on the calendar).
+        data_type: numeric
+      - name: block
+        description: Schedule block/period label for the calendar day.
+        data_type: string
+      - name: fte_period
+        description: FTE period the calendar day counts toward.
+        data_type: string
+      - name: bell_schedule_id
+        description: Bell schedule id in effect for the calendar day.
+        data_type: int
+      - name: imported
+        description: Y/N — whether the calendar day was imported.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
