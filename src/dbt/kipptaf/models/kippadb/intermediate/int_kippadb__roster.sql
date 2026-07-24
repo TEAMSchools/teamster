@@ -2,6 +2,7 @@ with
     es_grad as (
         select
             co._dbt_source_relation,
+            co._dbt_source_project,
             co.student_number,
 
             s.abbreviation as entry_school,
@@ -18,16 +19,25 @@ with
         inner join
             {{ ref("stg_powerschool__schools") }} as s
             on co.entry_schoolid = s.school_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
+            and co._dbt_source_project = s._dbt_source_project
         where co.rn_year = 1
-        group by co._dbt_source_relation, co.student_number, s.abbreviation
+        group by
+            co._dbt_source_relation,
+            co._dbt_source_project,
+            co.student_number,
+            s.abbreviation
     ),
 
     dlm as (
-        select _dbt_source_relation, student_number, max(pathway_option) as dlm,
+        select
+            _dbt_source_relation,
+            _dbt_source_project,
+            student_number,
+
+            max(pathway_option) as dlm,
         from {{ ref("int_students__graduation_path_codes") }}
         where rn_discipline_distinct = 1 and final_grad_path_code = 'M'
-        group by _dbt_source_relation, student_number
+        group by _dbt_source_relation, _dbt_source_project, student_number
     ),
 
     tier as (
@@ -334,15 +344,15 @@ with
         left join
             {{ ref("int_overgrad__students") }} as os
             on se.salesforce_id = os.external_student_id
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="os") }}
+            and se._dbt_source_project = os._dbt_source_project
         left join
             es_grad as e
             on se.student_number = e.student_number
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="e") }}
+            and se._dbt_source_project = e._dbt_source_project
         left join
             dlm as d
             on se.student_number = d.student_number
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="d") }}
+            and se._dbt_source_project = d._dbt_source_project
         left join tier as t on se.salesforce_id = t.contact and t.rn_tier_recent = 1
         left join
             military as mil on c.contact_id = mil.contact and mil.rn_enlistment = 1

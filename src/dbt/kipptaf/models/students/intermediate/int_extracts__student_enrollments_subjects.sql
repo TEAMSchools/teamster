@@ -37,6 +37,7 @@ with
     intervention_nj as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             academic_year,
 
@@ -51,6 +52,7 @@ with
     prev_yr_state_test as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             localstudentidentifier,
             is_proficient,
 
@@ -67,6 +69,7 @@ with
 
         select
             _dbt_source_relation,
+            _dbt_source_project,
 
             null as localstudentidentifier,
 
@@ -101,6 +104,7 @@ with
     magoosh_exempt as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             students_student_number as student_number,
             cc_academic_year as academic_year,
 
@@ -160,6 +164,7 @@ with
     bucket_programs as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             academic_year,
             enter_date,
@@ -185,6 +190,7 @@ with
     mtss as (
         select
             sp._dbt_source_relation,
+            sp._dbt_source_project,
             sp.studentid,
             sp.academic_year,
             sp.enter_date,
@@ -198,7 +204,7 @@ with
             on sp.enter_date = t.firstday
             and sp.exit_date = t.lastday
             and sp.academic_year = t.academic_year
-            and {{ union_dataset_join_clause(left_alias="sp", right_alias="t") }}
+            and sp._dbt_source_project = t._dbt_source_project
             and t.schoolid = 0
         where sp.specprog_name like 'MTSS%'
     ),
@@ -278,13 +284,13 @@ cross join subjects as sj
 left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as a
     on co.students_dcid = a.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="a") }}
+    and co._dbt_source_project = a._dbt_source_project
     and sj.discipline = a.discipline
     and a.value_type = 'Graduation Pathway'
 left join
     {{ ref("int_powerschool__s_nj_stu_x_unpivot") }} as se
     on co.students_dcid = se.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="se") }}
+    and co._dbt_source_project = se._dbt_source_project
     and sj.discipline = se.discipline
     and se.value_type = 'State Assessment Name'
 left join
@@ -297,7 +303,7 @@ left join
     /* TODO: find records that only match on SID */
     on co.state_studentnumber = py.statestudentidentifier
     and co.academic_year = py.academic_year_plus
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="py") }}
+    and co._dbt_source_project = py._dbt_source_project
     and sj.illuminate_subject_area = py.subject
 left join
     prev_yr_iready as pr
@@ -320,23 +326,23 @@ left join
     magoosh_exempt as ie
     on co.student_number = ie.student_number
     and co.academic_year = ie.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ie") }}
+    and co._dbt_source_project = ie._dbt_source_project
     and sj.iready_subject = ie.iready_subject
 left join
     intervention_nj as nj
     on co.studentid = nj.studentid
     and co.academic_year = nj.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+    and co._dbt_source_project = nj._dbt_source_project
     and sj.iready_subject = nj.iready_subject
 left join
     bucket_dedupe as b
     on co.studentid = b.studentid
     and co.academic_year = b.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and co._dbt_source_project = b._dbt_source_project
     and sj.discipline = b.discipline
 left join
     mtss_dedupe as mtss
     on co.studentid = mtss.studentid
     and co.academic_year = mtss.academic_year
     and sj.discipline = mtss.discipline
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="mtss") }}
+    and co._dbt_source_project = mtss._dbt_source_project

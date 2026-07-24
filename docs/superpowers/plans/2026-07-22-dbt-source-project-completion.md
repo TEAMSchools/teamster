@@ -398,6 +398,71 @@ non-producer `extract_source_project` filter/alias sites in
 `int_students__fldoe_fte` — done in 2e with `int_students__` — and
 `qa_edplan__powerschool_mismatch` to plain `_dbt_source_project` refs.)
 
+### Revised cut for the remaining work (2026-07-24)
+
+The directory cut above (`2a-1` … `2f`) is **superseded** for whatever is still
+unswapped. It was sized when Batch 1 producers had not merged and ~80 files were
+in flight; that ordering constraint is gone, so every remaining change is
+self-contained within its own file. The binding constraints now are (a) whether
+a file can be build-verified and (b) descendant fan-out, which sets CI cost.
+Counts below come from the prod manifest `child_map`.
+
+#### PR A — big-fanout intermediates
+
+`int_students__contacts`, `int_powerschool__ps_adaadm_daily_ctod`,
+`int_extracts__student_enrollments_subjects`, `int_kippadb__roster`,
+`int_reporting__promotional_status`, `base_powerschool__sections`.
+
+CTE threading plus two union-derive restructures (`base_powerschool__sections`,
+`int_powerschool__ps_adaadm_daily_ctod`) whose join alias reads the raw
+`union_relations` CTE, so `_dbt_source_project` must be derived in a CTE between
+the union and the join. Combined `state:modified+` is **174** models versus
+**410** split per-model — `int_powerschool__ps_adaadm_daily_ctod` (157) and
+`int_students__contacts` (155) alone share 151 descendants, so the other four
+cost `+17`.
+
+#### PR B — leaves (reports, marts, singular test)
+
+`rpt_deanslist__promo_status`, `rpt_powerschool__autocomm_students`,
+`rpt_tableau__state_assessments_dashboard`, `rpt_tableau__ops_dashboard`,
+`int_finance__enrollment_targets`, `bridge_course_section_teachers`,
+`dim_students`, `fct_family_communications`,
+`test_incorrect_student_number_pearson`.
+
+Combined `state:modified+` is **32** versus 35 split — the four reports have
+zero descendant models each. `rpt_tableau__ops_dashboard` additionally drops the
+synthetic `_dbt_source_relation` from `int_finance__enrollment_targets` and
+rewrites `target_union` / `targets` / the join to `_dbt_source_project`,
+including turning its regexp region filter into
+`_dbt_source_project in ('kippnewark', 'kippmiami')`; verify `cal` exposes the
+column first. Marts are contract-enforced — apply Pattern C.
+
+#### PR C — topline (snapshot-derive, not a swap)
+
+`int_topline__gpa_cumulative_weekly`, `int_topline__gpa_term_weekly`,
+`int_topline__iready_diagnostic_weekly`. Combined `state:modified+` is 7. Kept
+standalone because it is the only remaining group where correctness is not
+mechanical — see the corrected snapshot note below.
+
+#### PR D — unverifiable / stale pass
+
+`int_tableau__gradebook_audit_assignments_student`,
+`int_tableau__gradebook_audit_assignments_teacher`,
+`int_tableau__gradebook_audit_categories_teacher`,
+`qa_edplan__powerschool_mismatch`, `qa_powerschool__transfer_records`,
+`collegeboard_ap_tiered_crosswalk_match`,
+`collegeboard_ap_downstream_lineage_root_cause`.
+
+All seven are disabled models or analyses — no build-time column resolution, so
+a mechanical swap ships latent errors (this is how #4543 nearly shipped
+`asg._dbt_source_project` against a CTE carrying only `_dbt_source_relation`).
+The three gradebook models are additionally stale: their producer
+`int_powerschool__gradebook_assignments_scores` no longer exposes
+`_dbt_source_relation` at all. Investigate-or-delete, not swap. **This gates
+Batch 3.**
+
+PRs A, B and C touch disjoint files and can run in parallel.
+
 ---
 
 ## Batch 3 — Macro removal + docs (1 PR)
@@ -487,11 +552,22 @@ region-relevant models (`stg_renlearn__star`, `int_iready__diagnostic_results`,
 
 **Batch 1 (producer backfill) is complete** across PRs #4503 / #4504 / #4505.
 
-**Batch 2 gating (stronger than stated):** a consumer whose join alias reads a
-**snapshot** (e.g. `int_topline__gpa_term_weekly` reads
-`snapshot_powerschool__gpa_term`) cannot expose `_dbt_source_project` on that
-side until the producer PR **merges and the snapshot re-runs in prod** — so
-Batch 2 is gated on Batch 1 _merging_, not just the branch carrying the columns.
+**Batch 2 gating — CORRECTED 2026-07-24.** An earlier revision of this plan said
+a snapshot-fed consumer is merely gated on the producer PR merging and the
+snapshot re-running in prod. That is wrong, and waiting makes the failure
+_silent_ instead of loud. A `check`-strategy snapshot only writes columns onto
+rows it touches, so adding `_dbt_source_project` upstream never backfills
+history. Measured against prod: `snapshot_powerschool__gpa_term` does not carry
+the column at all (a swap there fails the build — loud), while
+`snapshot_powerschool__gpa_cumulative` does carry it with 2,151,864 of 2,178,255
+rows NULL (98.8%; only rows written since 2026-06-24 are populated). So a plain
+swap on `int_topline__gpa_cumulative_weekly` compiles, builds green, passes the
+`--empty` gate, and silently drops 98.8% of the join — the algebraic identity
+this migration rests on does not hold across snapshot history. Snapshot-fed
+consumers must **derive** `_dbt_source_project` from the snapshot's
+`_dbt_source_relation` in the CTE (the documented exception in
+`src/dbt/kipptaf/CLAUDE.md`). Only `int_topline__gpa_cumulative_weekly` and
+`int_topline__gpa_term_weekly` are snapshot-fed; no other remaining consumer is.
 
 **Two recurring build-only bugs** (both lint/parse-clean, fail at BigQuery
 build):
