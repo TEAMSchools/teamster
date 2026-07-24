@@ -40,22 +40,23 @@ consumed by reporting tools and applications.
 
 ## SQL conventions
 
-- **Use `union_dataset_join_clause()`** for any query that joins two CTEs built
-  from unioned regional datasets. Pass the CTE aliases to prevent cross-region
-  row matching:
+- **Join on `_dbt_source_project`** in any query that joins two CTEs built from
+  unioned regional datasets, to prevent cross-region row matching:
 
   ```sql
-  {{ union_dataset_join_clause(left_alias="left_cte", right_alias="right_cte") }}
-
-  -- expands to:
-  regexp_extract(left_cte._dbt_source_relation, r'(kipp\w+)_')
-      = regexp_extract(right_cte._dbt_source_relation, r'(kipp\w+)_')
+  left_cte._dbt_source_project = right_cte._dbt_source_project
   ```
 
-  To extract a human-readable region label from `_dbt_source_relation`:
+  Each union view materializes the column once via the
+  `extract_source_project()` macro; downstream models select it through rather
+  than re-deriving it. The old `union_dataset_join_clause()` macro, which re-ran
+  `regexp_extract` on `_dbt_source_relation` at every call site, was removed in
+  [#3142](https://github.com/TEAMSchools/teamster/issues/3142).
+
+  To extract a human-readable region label, use the `extract_region()` macro:
 
   ```sql
-  initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region
+  {{ extract_region("s") }} as region
   ```
 
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead.
@@ -115,11 +116,11 @@ declared in a `sources:` YAML file:
 
 Shared UDFs in the `functions` dataset:
 
-| Function                                     | Returns                                             |
-| -------------------------------------------- | --------------------------------------------------- |
-| `functions.current_academic_year()`          | Current academic year integer                       |
-| `functions.date_to_sy(date_col)`             | Academic year of a given date                       |
-| `functions.region_join(left_col, right_col)` | Boolean equivalent of `union_dataset_join_clause()` |
+| Function                                     | Returns                                                    |
+| -------------------------------------------- | ---------------------------------------------------------- |
+| `functions.current_academic_year()`          | Current academic year integer                              |
+| `functions.date_to_sy(date_col)`             | Academic year of a given date                              |
+| `functions.region_join(left_col, right_col)` | True when two `_dbt_source_relation` values share a region |
 
 ```sql
 select

@@ -4,10 +4,6 @@
     )
 {% endmacro %}
 
-{% macro union_dataset_join_clause(left_alias, right_alias) %}
-    {{ extract_source_project(left_alias) }} = {{ extract_source_project(right_alias) }}
-{% endmacro %}
-
 {% macro extract_region(table) %}
     initcap(regexp_extract({{ table }}._dbt_source_project, r'kipp(\w+)'))
 {% endmacro %}

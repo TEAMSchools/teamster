@@ -46,32 +46,33 @@ any tab change. Archive tabs must be converted to BQ-native sources.
 
 ## Key Rules
 
-### `union_dataset_join_clause` (critical)
+### Cross-region joins (critical)
 
 Union models carry `_dbt_source_relation` but values differ across models (they
 include schema + table name). **Never join on
-`a._dbt_source_relation = b._dbt_source_relation`** — use the macro:
+`a._dbt_source_relation = b._dbt_source_relation`** — join the materialized
+`_dbt_source_project` column:
 
 ```sql
 inner join {{ ref("other_union_model") }} as b
     on a.id = b.id
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="b") }}
+    and a._dbt_source_project = b._dbt_source_project
 ```
 
-Macro defined in `macros/utils.sql` — extracts school prefix via
-`regexp_extract(..., r'(kipp\w+)_')`.
-
-When both joined union models materialize `_dbt_source_project`, prefer
-`a._dbt_source_project = b._dbt_source_project` over the macro — same semantics,
-no `regexp_extract` per call.
+The `union_dataset_join_clause` macro that wrapped this comparison was deleted
+in [#3142](https://github.com/TEAMSchools/teamster/issues/3142). Five stale
+calls remain in the disabled pre-AY2627 gradebook-audit cluster
+(`int_tableau__gradebook_audit_assignments_teacher` / `_categories_teacher` /
+`_assignments_student`) — dbt never resolves macros in `manifest.disabled`, so
+they parse fine, but re-enabling any of those models means swapping them first.
 
 Produce `_dbt_source_project` on a union model with
-`select *, {{ extract_code_location("union_relations") }} as _dbt_source_project`
+`select *, {{ extract_source_project() }} as _dbt_source_project`
 `from union_relations` (the `union_relations` CTE wrapping
 `dbt_utils.union_relations`).
 
 Prefer inline `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` over the
-`extract_code_location` macro when the union view is `select *` with an `AM04`
+`extract_source_project` macro when the union view is `select *` with an `AM04`
 trunk-ignore, or is mocked in a dbt unit test: the macro form makes AM04 stop
 firing (`trunk/ignore-does-nothing`), and its table-name qualifier breaks unit
 tests (`Unrecognized name` after dbt renames the mocked ref). Siblings
@@ -200,7 +201,7 @@ Facebook, Illuminate Fivetran, Instagram.
 ## Known Upstream Issues
 
 **`int_people__location_crosswalk`** is NOT a union model — it has no
-`_dbt_source_relation`. Use `extract_code_location()` matched against
+`_dbt_source_relation`. Match the other side's `_dbt_source_project` against
 `location_dagster_code_location` for cross-region joins. Each row is one alias
 (alternate spelling of `location_name`) — consumers that join on an aliased name
 (e.g., `fct_staff_observations` on `gro.school_name`) must use this model.
