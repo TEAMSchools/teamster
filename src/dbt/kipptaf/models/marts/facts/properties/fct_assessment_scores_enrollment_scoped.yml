@@ -78,8 +78,11 @@ models:
         data_type: date
         description: >-
           FK to dim_dates. The date the assessment was taken. Populated for
-          state assessments (now threaded from source); nullable for internal
-          rows that lack a recorded sitting date upstream.
+          state and vendor assessments (threaded from source); nullable for
+          internal rows that lack a recorded sitting date upstream. Equal to
+          assessment_date_key for every state and vendor row (those have no
+          administration date); the two differ only for internal and college
+          rows, where assessment_date_key uses the administration date.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
@@ -109,6 +112,12 @@ models:
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
+          # not_null guards the invariant the #4546 fix rests on: the FK
+          # relationships test skips nulls and the constraint is not enforced,
+          # so neither catches a row where both administration and test date are
+          # null (academic_year would silently go null again). Project-default
+          # severity (warn) surfaces any regression in CI.
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_dates')

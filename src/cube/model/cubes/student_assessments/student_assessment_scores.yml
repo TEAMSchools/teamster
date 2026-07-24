@@ -38,12 +38,13 @@ cubes:
       - name: date_taken
         description: >-
           Date the assessment was taken (completion date), as a standalone date
-          dimension not joined to a calendar cube. For calendar and
-          academic-year rollups use the date_day / academic_year members
-          instead: those are backed by assessment_date_key (the administration
-          date where present, else this test date), which is populated for every
-          source. Populated for state and vendor rows; nullable for a small
-          share of internal rows lacking a recorded sitting.
+          dimension not joined to a calendar cube. date_taken is corrupt for a
+          small share of internal rows, so calendar and academic-year rollups
+          use the date_day / academic_year members instead (backed by
+          assessment_date_key: the administration date for internal and college,
+          the reliable test date for state and vendor). Populated for state and
+          vendor rows; nullable for a small share of internal rows lacking a
+          recorded sitting.
         sql: CAST(test_date_key AS TIMESTAMP)
         type: time
         public: true
@@ -377,10 +378,11 @@ cubes:
         # to 9999, so the scheduled-refresh worker enumerates ~8,000 empty
         # yearly partitions (this is why #4460 was reverted). Floor is set below
         # the earliest assessment_date_key carrying a score (2015-08-14, verified
-        # against the fact 2026-07-20); the end tracks today. Yields ~12
-        # partitions. assessment_date_key is populated for every row, so state and
-        # vendor scores (previously null on the administration date) are now
-        # covered by this rollup too.
+        # 2026-07-20 -- vendor test dates are all later, so the coalesced key's
+        # min is unchanged from the administration-date min); the end tracks
+        # today. Yields ~12 partitions. Rows outside [floor, today] fall back to
+        # the fact (currently none); state and vendor scores now fall in range,
+        # so they are covered by this rollup too.
         build_range_start:
           sql: SELECT DATE('2015-07-01')
         build_range_end:

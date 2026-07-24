@@ -29,12 +29,14 @@ cubes:
 
       - name: assessment_type
         description: >-
-          Source-system category. Values carrying scores on the
+          Source-system category. Values that currently carry scores on the
           assessment-scores view: illuminate (internal interims), iready,
           dibels, star, and the state assessments state_nj_njsla,
           state_nj_njsla_science, state_nj_njgpa, state_fl_fast,
-          state_fl_science, state_fl_eoc. (college and ap administrations exist
-          in this cube but have no scores on the assessment-scores view.)
+          state_fl_science, state_fl_eoc. Other categories exist upstream
+          (college, ap, state_nj_parcc, state_fl_fsa, plus _unknown fallbacks)
+          but carry no scores on this view today; treat this list as current,
+          not closed.
         sql: "{CUBE}.`type`"
         type: string
         public: true

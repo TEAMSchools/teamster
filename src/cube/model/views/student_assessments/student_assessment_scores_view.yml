@@ -8,10 +8,13 @@ views:
       the source-agnostic headline; scale_score is null for internal rows and
       percent_correct is null for state and vendor rows. response_type /
       response_type_code carry the standard/skill breakdown (Illuminate only).
-      State and vendor administrations have no single administered date, but
-      academic_year / academic_year_label still resolve for every source (scoped
-      by the test date). Contains direct student identifiers — see access_policy
-      for PII gating.
+      State and vendor administrations have no single administered date, so the
+      Date members (academic_year, academic_year_label, date_day, month_number,
+      month_name) resolve for every source but are scoped by different dates per
+      source: the administration date for Illuminate/college, the student's
+      completion (test) date for state/vendor. A cross-source date cut (e.g.
+      "scores in May") therefore mixes those two date concepts. Contains direct
+      student identifiers — see access_policy for PII gating.
 
     cubes:
       - join_path: student_assessment_scores
