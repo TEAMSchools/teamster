@@ -493,7 +493,6 @@ with
             and g.org_level = 'org'
         group by
             m.academic_year,
-            m.region,
             m.layer,
             m.indicator,
             m.term,
@@ -1133,9 +1132,9 @@ select
         when not has_goal
         then null
         when goal_direction = 'baseball'
-        then (goal_resolved - metric_aggregate_value) / goal_resolved
+        then safe_divide(goal_resolved - metric_aggregate_value, goal_resolved)
         when goal_direction = 'golf'
-        then (metric_aggregate_value - goal_resolved) / goal_resolved
+        then safe_divide(metric_aggregate_value - goal_resolved, goal_resolved)
     end as goal_difference_percent,
 
     if(

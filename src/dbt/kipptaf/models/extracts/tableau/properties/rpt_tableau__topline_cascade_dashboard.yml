@@ -4,6 +4,26 @@ models:
       Topline cascade dashboard extract for Tableau. Rows span four period
       grains (week, month, quarter, ytd) for the same metric/scope — every
       worksheet must filter on period_type, or its aggregates mix grains.
+      Composite-key uniqueness is enforced at error severity upstream on
+      `int_topline__dashboard_aggregations`; the mirrored test here is warn-only
+      because pre-existing duplicate-key rows already reach this extract.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - metric_type
+              - academic_year
+              - org_level
+              - region
+              - schoolid
+              - layer
+              - indicator
+              - discipline
+              - aggregation_hash
+              - period_type
+              - term
+          config:
+            severity: warn
     columns:
       - name: metric_type
         data_type: string
