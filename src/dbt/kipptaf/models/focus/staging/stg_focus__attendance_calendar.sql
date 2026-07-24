@@ -3,7 +3,7 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippmiami_focus", "int_focus__school_year_first_day"),
+                    source("kippmiami_focus", "stg_focus__attendance_calendar"),
                 ]
             )
         }}

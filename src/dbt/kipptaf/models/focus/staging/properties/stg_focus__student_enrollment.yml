@@ -1,0 +1,11 @@
+models:
+  - name: stg_focus__student_enrollment
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      stg_focus__student_enrollment, following the same pattern as the finalsite
+      contact unions. Focus is Miami-only today; this shape lets a future
+      region's Focus ingestion union in without a rewrite. Column docs/tests
+      live on the kippmiami source model.
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.
