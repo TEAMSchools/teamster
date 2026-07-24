@@ -267,8 +267,14 @@ if [[ ${tool_name} == mcp__bigquery__* ]]; then
   # LOAD DATA added (#10). Verbs require a trailing space so column names like
   # delete_flag / merge_count do not false-positive.
   _bq_has_write() {
-    # Newlines flattened to spaces via parameter expansion (no tr subshell)
-    echo "${1//$'\n'/ }" | grep -qiE '\bINSERT[[:space:]]|\bUPDATE[[:space:]]+.*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bLOAD[[:space:]]+DATA\b|\bTRUNCATE[[:space:]]|\bCREATE[[:space:]]|\bDROP[[:space:]]|\bALTER[[:space:]]|\bGRANT[[:space:]]|\bREVOKE[[:space:]]|\bCALL[[:space:]]'
+    # Newlines flattened to spaces via parameter expansion (no tr subshell).
+    # Match each write verb on a word boundary (\b…\b) instead of requiring a
+    # secondary keyword or a trailing space: GoogleSQL makes DELETE's FROM and
+    # MERGE's INTO optional and lets /* */ comments replace the whitespace, so
+    # `DELETE ds.t`, `MERGE ds.t …` and `DROP/**/TABLE t` must all still match.
+    # \b…\b keeps read-query identifiers like delete_flag / merge_count /
+    # create_ts from false-positiving (no boundary before the trailing _).
+    echo "${1//$'\n'/ }" | grep -qiE '\bINSERT\b|\bUPDATE\b.*\bSET\b|\bDELETE\b|\bMERGE\b|\bEXPORT\b.*\bDATA\b|\bLOAD\b.*\bDATA\b|\bTRUNCATE\b|\bCREATE\b|\bDROP\b|\bALTER\b|\bGRANT\b|\bREVOKE\b|\bCALL\b'
   }
   case ${tool_name} in
   mcp__bigquery__execute_sql)
