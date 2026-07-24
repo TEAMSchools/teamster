@@ -170,9 +170,15 @@ Replace `c.email as stdt_email` with the generated email joined from
 - **4 returning students missing first/last/dob** — no impact; they keep their
   migrated existing email.
 - **1 returning student where `powerschool_student_number` !=
-  `focus_student_id`** — the migration prefixes on the PS number (`8400` + PS#)
-  while the feed joins on `8400` + `focus_student_id`, so the keys will not
-  match and `stdt_email` will be null. Manual handling.
+  `focus_student_id`** — the mint guards check the bare and prefixed Focus id,
+  not the retired PowerSchool number, so this student passes both guards and is
+  minted a fresh `@teamstudents.org` email keyed to their new Focus identity.
+  The migration re-keys their old PowerSchool-numbered login to `8400` + PS#,
+  which is then orphaned (expected, since PowerSchool is retired).
+  - **Pre-merge gate:** Ops must reconcile the PS# ↔ `focus_student_id`
+    discrepancy in the source (Finalsite/Focus) before this PR merges; after the
+    manual backfill, dedup-check for any student holding two `8400`-prefixed
+    login rows.
 - **Duplicate-username hygiene** — none, because returning students are migrated
   (re-keyed) rather than duplicated. No new username-uniqueness test is added.
 

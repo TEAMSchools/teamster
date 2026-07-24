@@ -214,6 +214,8 @@
 {% endif %}
 
     -- depends_on: {{ ref("stg_powerschool__students") }}
+    -- depends_on: {{ ref("stg_finalsite__contacts") }}
+    -- depends_on: {{ ref("int_finalsite__contact_id_attributes") }}
     -- trunk-ignore(sqlfluff/LT05)
     -- depends_on: {{ source("google_sheets", "stg_google_sheets__people__student_logins_archive") }}
     -- depends_on: {{ source("people", "src_people__student_logins") }}

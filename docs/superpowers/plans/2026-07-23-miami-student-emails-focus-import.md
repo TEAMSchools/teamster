@@ -559,6 +559,9 @@ approved.
 These run against prod after the code deploys. Claude is DML-blocked; the user
 executes them. Order matters.
 
+**Pre-merge gate:** Do NOT merge until Ops reconciles the PS# ↔
+`focus_student_id` discrepancy in the source.
+
 - [ ] **Step 1: Confirm the code deploy landed**
 
 After merge, Dagster redeploys kipptaf and the
@@ -618,8 +621,9 @@ select
 from `teamster-332318.kipptaf_extracts.rpt_focus__demographics`
 ```
 
-Expected: `with_email` ≈ 1,495 (1,497 minus the ~2 edge students — 1 new missing
-first/last/dob, 1 returning with PS# ≠ focus_student_id); `distinct_emails` ≈
+Expected: `with_email` ≈ 1,496 (cohort − 1). The PS# ≠ `focus_student_id`
+student now receives a fresh mint and is no longer excluded; only the 1
+genuinely-new student missing first/last/dob stays null. `distinct_emails` ≈
 `with_email` (no duplicate emails).
 
 - [ ] **Step 5: Manual Focus backfill (user)**
@@ -646,7 +650,7 @@ email automatically through the unchanged kippmiami import-once wrapper.
   unchanged); backfill → Task 4 Step 5.
 - Spec sequencing → Task 3 (deploy) → Task 4 (migration → backfill).
 - Spec edge cases (5 missing-attr, 1 PS≠focus) → Task 4 Step 4 expected count
-  reflects the ~2 nulls.
+  reflects the 1 genuinely-new null (PS≠focus now mints fresh, no longer null).
 
 **Placeholder scan:** none — every code/SQL step is complete.
 
