@@ -505,27 +505,25 @@ PRs A, B and C touch disjoint files and can run in parallel.
 - Modify: `src/dbt/kipptaf/CLAUDE.md`, `src/dbt/kipptaf/models/marts/CLAUDE.md`
 - Verify: the 7 half-migrated files carry no residual macro call
 
-- [ ] **Step 1: Confirm 0 call sites**
+- [x] **Step 1: Confirm 0 ENABLED call sites**
 
 Run: `grep -rn 'union_dataset_join_clause' src/dbt/kipptaf --include='*.sql'`
-Expected: **0** results.
+Expected: 5 results, all in the disabled pre-AY2627 gradebook-audit cluster
+(`int_tableau__gradebook_audit_assignments_teacher` ×2, `_categories_teacher`
+×2, `_assignments_student` ×1). Zero enabled callers.
 
-- [ ] **Step 2: Delete the macro** from `utils.sql`.
-- [ ] **Step 3: Rewrite the docs** — in `kipptaf/CLAUDE.md`, replace the
-      `union_dataset_join_clause (critical)` section with the new rule: "Union
-      views expose `_dbt_source_project` via `extract_source_project()`; join on
-      it directly. Exception: crosswalk-resolved sources
-      (iReady/renlearn/amplify mClass) derive it from
-      `int_people__location_crosswalk`." Remove the "prefer inline" guidance.
-      Update the `marts/CLAUDE.md` hash-and-join note.
-- [ ] **Step 4: Reconcile half-migrated files** — grep the 7 files; ensure none
-      still calls the macro (all should have been swapped in Batch 2).
-- [ ] **Step 5: Compile** (`dbt parse --target dev`) — Expected: no
-      `union_dataset_join_clause` resolution errors (proves nothing still calls
-      it).
-- [ ] **Step 6: Lint** (include the `*.md`:
+- [x] **Step 2: Delete the macro** from `utils.sql`.
+- [x] **Step 3: Rewrite the docs** — `kipptaf/CLAUDE.md` (section retitled
+      _Cross-region joins (critical)_), `marts/CLAUDE.md`, and
+      `docs/reference/dbt-conventions.md`. Also corrected four stale references
+      to the long-deleted `extract_code_location` macro.
+- [x] **Step 4: Fold in the queued expression-duplication cleanups** (see _Batch
+      3 execution findings_ below).
+- [x] **Step 5: Compile** (`dbt parse --no-partial-parse`) — no
+      `union_dataset_join_clause` resolution errors, disabled callers included.
+- [x] **Step 6: Lint** (include the `*.md`:
       `trunk check --force --no-fix </dev/null <files>`).
-- [ ] **Step 7: Commit + push + PR**
+- [x] **Step 7: Commit + push + PR**
       (`refactor(dbt): remove union_dataset_join_clause macro; update docs (closes #3142)`).
 
 ---
@@ -607,3 +605,65 @@ build):
 - per-model `contract: enforced: true` set in `properties.yml` (not the
   directory default) → a `select *` wrap breaks the contract unless the column
   is added to the yml. Check per file.
+
+---
+
+## Relation → project is 1:1 by construction
+
+Several Batch 2 swaps were justified with a prod query showing one
+`_dbt_source_relation` value per `_dbt_source_project`. That evidence is
+point-in-time; the structural argument is stronger and needs no per-site
+re-verification.
+
+A cross-district union view unions exactly one `source()` per district.
+`_dbt_source_relation` therefore takes exactly four values, and
+`regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` maps them injectively onto
+the four project names. Relation → project is 1:1 **in every target**, not just
+in today's prod data — so the old macro's expansion and
+`a._dbt_source_project = b._dbt_source_project` are the same predicate whenever
+both sides materialize the column from their own union view.
+
+The two documented exceptions stay exceptions: non-region unions (listed under
+_Execution findings_ above), where the regex yields null; and
+crosswalk-rewritten sources, where the model overwrites `_dbt_source_relation`
+with the crosswalk region before any consumer reads it.
+
+## Batch 3 execution findings
+
+**Disabled callers do not gate the macro removal.** An earlier revision of this
+plan claimed Batch 3 was blocked until the disabled gradebook-audit cluster was
+migrated. That is wrong. dbt parses disabled models into `manifest.disabled` but
+never renders their Jinja deeply enough to resolve macros, so
+`dbt parse --no-partial-parse` exits 0 with the macro deleted and all five stale
+calls present.
+
+**The five stale calls were left in place** by explicit decision — the cluster
+is the pre-AY2627 lineage superseded by `rpt_tableau__gradebook_audit`, nothing
+outside it refs those models, and migrating or deleting it is a
+gradebook-audit-domain change that belongs in its own PR. The dangling calls are
+recorded in `kipptaf/CLAUDE.md` so a future re-enable meets a documented note
+rather than an unexplained compile failure.
+
+**Folded-in cleanups** (same expression-duplication theme):
+
+- `rpt_powerschool__autocomm_students` and
+  `rpt_powerschool__autocomm_students_iep` —
+  `regexp_extract(_dbt_source_relation, ...) as code_location` →
+  `_dbt_source_project as code_location`. The `_iep` sibling was not in the
+  original queue; it carries the identical expression and was included so the
+  pair stays consistent.
+- `dim_students` — hand-rolled
+  `initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_'))` →
+  `{{ extract_region("s") }}`.
+- `base_powerschool__student_enrollments` — `_dbt_source_project` and
+  `code_location` were two byte-identical `regexp_extract` calls in the same
+  `select`. BigQuery cannot reference a select alias within the same `SELECT`,
+  so `code_location` moved to the final `select` as
+  `ar._dbt_source_project as code_location`. That reorders `code_location` after
+  `region` in the output schema; the model has no enforced contract and every
+  downstream consumer names columns explicitly, so the reorder is inert.
+
+**Still queued, deliberately not in this PR:** CRLF normalization on
+`tests/test_incorrect_student_number_pearson.sql`, the
+`int_finance__enrollment_targets` yml column descriptions, and the disabled
+`models/kippadb/qa/` directory.

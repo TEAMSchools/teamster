@@ -1,8 +1,6 @@
 with
     students_with_region as (
-        select
-            s.*,
-            initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region,
+        select s.*, {{ extract_region("s") }} as region,
         from {{ ref("stg_powerschool__students") }} as s
     )
 
