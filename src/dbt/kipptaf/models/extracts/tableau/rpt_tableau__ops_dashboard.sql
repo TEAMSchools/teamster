@@ -39,9 +39,13 @@ with
 
             1 as target_enrollment,
             1 as target_enrollment_finance,
+
+            /* union all is positional — keep these five in the same order as
+               the targets branch above, or the values cross under each other's
+               aliases with no error */
             null as grade_band_ratio,
-            null as at_risk_and_lep_ratio,
             null as at_risk_only_ratio,
+            null as at_risk_and_lep_ratio,
             null as lep_only_ratio,
             null as sped_ratio,
 
