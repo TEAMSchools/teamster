@@ -31,7 +31,7 @@ select
 
     if(l.location_name is null, true, false) as is_transfer_grade,
 
-    {{ extract_code_location("u") }} as _dbt_source_project,
+    {{ extract_source_project("u") }} as _dbt_source_project,
 
 from union_relations as u
 left join

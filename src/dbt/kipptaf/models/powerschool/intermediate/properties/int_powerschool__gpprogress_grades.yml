@@ -22,6 +22,9 @@ models:
       - name: _dbt_source_relation
         description: Source relation identifier for union models.
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.
       - name: plan_id
         description: gpnode.id for the grad plan root node.
         data_type: int64

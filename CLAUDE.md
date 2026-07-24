@@ -82,6 +82,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   path breaks — pass an absolute script path or run it from the main repo.
   Otherwise prefer absolute paths.
 
+- **Bash cwd does NOT persist across calls** — every Bash command (including
+  `run_in_background`) starts at the main repo root, so a prior `cd <worktree>`
+  does not carry over. Tools that resolve relative paths from cwd (`trunk check`
+  with relative paths, `pytest`) must include `cd <worktree> &&` in the SAME
+  command, or they silently operate on the main checkout's (unmodified) copies
+  and report a false "clean". Prefix with `pwd &&` to confirm the directory.
+
 - **Worktree Read/Edit/Write must target the worktree path**, not the main
   checkout: editing `/workspaces/teamster/<path>` instead of
   `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
@@ -92,6 +99,18 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   resolves imports against the MAIN checkout, so worktree-only signature/symbol
   changes surface phantom `unknown import` / `no parameter named X` errors.
   Trust `uv run` executed inside the worktree, not the IDE.
+
+- **Worktree file Read/Edit and Bash `cd <worktree>` re-inject that worktree's
+  CLAUDE.md files (~40KB each) into context on every call**; `git -C <worktree>`
+  and `uv run dbt --project-dir <abs-worktree>` from the MAIN cwd, and `Write`
+  (content-exempt), do NOT. For a large multi-file worktree refactor, delegate
+  the edits to subagents (their context absorbs the injection) and verify via
+  `git -C <worktree> diff` from the main repo.
+
+- **`git worktree add` with a RELATIVE path resolves against the shell cwd**,
+  which drifts after a foreground `cd` into another worktree — pass an ABSOLUTE
+  path (`git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`) or
+  it nests one worktree inside another.
 
 - **Branch switch**: with an issue,
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
@@ -421,6 +440,27 @@ tagging.
   tracking issue, (b) creating a branch or worktree, (c) modifying protected
   files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
 
+## Compact Instructions
+
+When summarizing the conversation, always preserve:
+
+- The original task/request verbatim, plus constraints and scope decisions the
+  user stated ("don't touch X", "we decided against Y" — and why).
+- Worktree state: the absolute worktree path, branch name, and which checkout
+  (main vs worktree) each pending change lives in; what is committed vs
+  uncommitted; open PR/issue numbers.
+- Verification state: which tests/builds/lints ran and their results; what is
+  verified working vs not yet checked.
+- Unresolved items: open questions awaiting the user, known failures not yet
+  fixed, and the agreed next step.
+- Exact identifiers over descriptions: file paths, model/column names, run IDs,
+  verbatim error messages.
+- Dead ends already tried, gotchas discovered, and workarounds applied this
+  session.
+
+Discard freely: full file contents already on disk, verbose tool output, and
+exploration that led nowhere (keep only the conclusion).
+
 ## CLAUDE.md Editing Rules
 
 - **Before adding to any CLAUDE.md file**: beyond the skill's
@@ -438,7 +478,9 @@ launcher. Package internals: see
 
 - **MCP outages**: If an MCP tool returns "server disconnected" or clearly
   impaired responses, surface to the user before working around with raw `gh` /
-  BigQuery calls.
+  BigQuery calls. Same if an EXPECTED MCP tool is absent from the deferred-tools
+  list (ToolSearch returns "No matching deferred tools") — flag it immediately
+  so the user can reconnect; do not silently fall back.
 
 - **MCP subprocess logs**: stdio MCP stderr captured at
   `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`.
@@ -564,6 +606,10 @@ the allowlist.
 - `mcp__github__search_issues` returns full issue **bodies** — a broad query
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.
+- `gh api` reporting `unexpected end of JSON input` means an empty response
+  body, not a bad request — re-run with `-i` to see the HTTP status. A 500 on
+  `POST /pulls` is usually a GitHub incident; check
+  `githubstatus.com/api/v2/incidents/unresolved.json` before bisecting.
 
 ### Dagster asset diagnosis
 
@@ -805,6 +851,12 @@ the dbt Cloud CI job ID (stable across runs); read from
 `state:modified+` models (often just the fact) — for unmodified dimensional
 context, join the PR-branch fact to PROD dims (`kipptaf_marts.dim_*`), which are
 absent from the PR schema and unchanged anyway.
+
+To prove a refactor behavior-preserving without a local build, compare the
+PR-branch build to prod: `count(*)` plus
+`count(distinct format("%T|%T", <key cols>))` on
+`dbt_cloud_pr_<job>_<pr>_<schema>.<model>` vs the prod schema. Identical counts
+are a value-level proof; `--empty` only proves column resolution.
 
 Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
 hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or

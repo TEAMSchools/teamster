@@ -3,7 +3,7 @@ with
         select student_number, is_retained_year,
         from {{ ref("int_extracts__student_enrollments") }}
         where
-            /* submission is always for the previous school year, but retention is 
+            /* submission is always for the previous school year, but retention is
             tracked only on the submission year + 1 (current academic year) */
             academic_year = {{ var("current_academic_year") }}
             and rn_year = 1
@@ -15,6 +15,7 @@ with
     enrollment as (
         select
             e._dbt_source_relation,
+            e._dbt_source_project,
             e.academic_year,
             e.region,
             e.schoolid,
@@ -102,6 +103,7 @@ with
     custom_schedule as (
         select
             c._dbt_source_relation,
+            c._dbt_source_project,
             c.cc_academic_year,
             c.cc_schoolid,
 
@@ -171,7 +173,7 @@ with
             on c.cc_academic_year = g.academic_year
             and c.sections_id = g.sectionid
             and c.cc_studentid = g.studentid
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="g") }}
+            and c._dbt_source_project = g._dbt_source_project
             and g.storecode = 'Y1'
         left join
             {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x
@@ -186,6 +188,7 @@ with
         -- credit recovery courses, which only exist in storedgrades
         select
             _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             schoolid,
 
@@ -561,7 +564,7 @@ from enrollment as e
 inner join
     final_schedule as f
     on e.studentid = f.cc_studentid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="f") }}
+    and e._dbt_source_project = f._dbt_source_project
     and f.crdc_question_section = 'PENR-6'
 where
     -- timeframe is any part of the year + summer

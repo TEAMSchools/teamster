@@ -246,3 +246,10 @@ the codespace). For a change to either, `py_compile` the edited files and import
 the affected submodule alone (e.g.
 `import teamster.code_locations.kipptaf.finalsite` or
 `teamster.code_locations.kippmiami.extracts`), not the `definitions` module.
+
+Importing a kipptaf **asset submodule** (e.g.
+`teamster.code_locations.kipptaf.google.directory.assets`) transitively imports
+`kipptaf.dbt` and needs the dbt manifest — absent in a fresh worktree, so a unit
+test importing it errors at collection (`FileNotFoundError: .../manifest.json`).
+Put unit-testable pure helpers in `libraries/` (imports cleanly), not a
+code-location asset module.

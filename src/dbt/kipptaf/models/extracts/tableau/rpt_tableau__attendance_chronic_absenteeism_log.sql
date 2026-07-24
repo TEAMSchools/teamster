@@ -17,12 +17,12 @@ with
             {{ ref("stg_powerschool__attendance") }} as att
             on co.studentid = att.studentid
             and att.att_date between co.entrydate and co.exitdate
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
+            and co._dbt_source_project = att._dbt_source_project
             and att.att_mode_code = 'ATT_ModeDaily'
         inner join
             {{ ref("stg_powerschool__attendance_code") }} as ac
             on att.attendance_codeid = ac.id
-            and {{ union_dataset_join_clause(left_alias="att", right_alias="ac") }}
+            and att._dbt_source_project = ac._dbt_source_project
             and ac.att_code like 'A%'  -- change to exclude AE
         where
             co.academic_year = {{ var("current_academic_year") }}
@@ -65,5 +65,5 @@ left join
     {{ ref("int_deanslist__comm_log") }} as cl
     on ac.student_number = cl.student_school_id
     and ac.academic_year = cl.academic_year
-    and {{ union_dataset_join_clause(left_alias="ac", right_alias="cl") }}
+    and ac._dbt_source_project = cl._dbt_source_project
     and cl.reason like 'Chronic%'

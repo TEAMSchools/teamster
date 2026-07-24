@@ -49,6 +49,8 @@ select
     schoolid,
     yearid,
 
+    {{ extract_source_project() }} as _dbt_source_project,
+
     max(if(days_prior = 7, gpa_y1, null)) as gpa_y1_1_week_prior,
     max(if(days_prior = 14, gpa_y1, null)) as gpa_y1_2_week_prior,
     max(if(days_prior = 28, gpa_y1, null)) as gpa_y1_4_week_prior,

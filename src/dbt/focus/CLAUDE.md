@@ -11,7 +11,8 @@ Full Focus DB ERD reference: `docs/superpowers/specs/references/focus-db-erd.md`
 `attendance_calendar` (per-day school dates) vs `attendance_calendars` (calendar
 headers) distinction. First day of school = `min(school_date)` per `syear` over
 `default_calendar = 'Y'` calendars (`int_focus__school_year_first_day` — lives
-in kipptaf under `models/focus/intermediate/`, not in this package).
+in this package; kipptaf's copy of the same name is a thin passthrough
+`source()`-ing this package's built output, not a re-derivation).
 
 The kipptaf `rpt_focus__*` SFTP extracts keep a `trunk-ignore(sqlfluff/ST06)` —
 the Focus import column order is contract-fixed. ST06 firing is

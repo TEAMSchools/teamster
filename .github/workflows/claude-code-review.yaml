@@ -9,7 +9,6 @@ on:
       - src/**
       - tests/**
       - scripts/**
-      - mcp/**
       - "!**/*.md"
 
 jobs:
@@ -17,6 +16,7 @@ jobs:
     if: github.actor != 'dependabot[bot]' && !github.event.pull_request.draft
 
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       pull-requests: write
@@ -25,13 +25,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@f87768c6d25f92ae6efa7175e223ef77d4cbf97f # v1.0.166
+        uses: anthropics/claude-code-action@e0cf66d1d257526b5d07f141838c338921cb8455 # v1.0.182
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -41,23 +41,37 @@ jobs:
             https://github.com/anthropics/claude-plugins-official.git
             https://github.com/dbt-labs/dbt-agent-skills.git
             https://github.com/dagster-io/skills.git
+            https://github.com/obra/superpowers.git
           plugins: |
-            superpowers@claude-plugins-official
+            superpowers@superpowers-dev
             context7@claude-plugins-official
             dagster-expert@dagster
             dignified-python@dagster
             dbt@dbt-agent-marketplace
           track_progress: true
           prompt: >-
-            /requesting-code-review ${{ github.repository }}/pull/${{
-            github.event.pull_request.number }}.
-
+            /superpowers:requesting-code-review ${{ github.repository
+            }}/pull/${{ github.event.pull_request.number }}.
 
             Apply dignified-python for Python standards, dagster-expert for
             Dagster assets and pipelines, and
             dbt:using-dbt-for-analytics-engineering for dbt models and
             transformations.
 
+            Also evaluate the changed code through the /simplify lens: reuse
+            (prefer existing macros, models, and helpers over reinventing),
+            simplification, efficiency, and altitude and dead-code cleanup. This
+            job has read-only repo access, so report these as review findings
+            only; do not apply or commit fixes.
+
+            For SQL and dbt changes, read src/dbt/CLAUDE.md (and the nearest
+            per-project CLAUDE.md) and verify the code follows its SQL
+            conventions, SQL column ordering (ST06), and SQL formatting
+            sections. Examples: max one level of function nesting, no QUALIFY,
+            no ORDER BY in models, no SELECT DISTINCT or row_number() = 1 to
+            mask upstream duplicates, no subqueries against tables or CTEs, cast
+            early and once, correct ON vs WHERE placement, and no pass-through
+            import CTEs. Cite the specific convention for each violation.
 
             Environment: you run in GitHub Actions with NO warehouse or data
             access. No BigQuery connection, and none of the cube, dbt, dagster,
@@ -67,7 +81,6 @@ jobs:
             or duplicate violations, value distributions) as fact. When a
             finding depends on the data, label it "needs local verification" and
             give the exact query or dbt command the author should run.
-
 
             Review what is checkable statically: SQL and Jinja logic,
             ref()/source() wiring, incremental and materialization config, join

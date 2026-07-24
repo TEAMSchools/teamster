@@ -154,3 +154,69 @@ models:
       - name: is_emergency
         data_type: boolean
         description: False for `contact_1`; true for every `emergency_*` slot.
+
+unit_tests:
+  - name: test_student_contacts_phone_normalization
+    description:
+      A contact_1 row with a control-char-garbled cell phone and a bare-10 home
+      phone normalizes both to E.164 (+1XXXXXXXXXX).
+    model: int_finalsite__student_contacts
+    given:
+      - input: ref('stg_finalsite__contact_relationships')
+        format: sql
+        rows: |
+          select
+            'stu1' as finalsite_enrollment_id,
+            'rel1' as relationship_id,
+            'con1' as rel_id,
+            'Jane Doe' as rel_name,
+            'parent' as rel_type,
+            true as is_primary,
+            true as is_financial
+      - input: ref('stg_finalsite__contacts')
+        format: sql
+        rows: |
+          select
+            'con1' as finalsite_enrollment_id,
+            'jane@example.com' as email,
+            'Jane' as first_name,
+            'Doe' as last_name,
+            code_points_to_string([8234])
+              || '+1 (862) 300'
+              || code_points_to_string([8209])
+              || '7240'
+              || code_points_to_string([8236]) as phone_1_number,
+            'Cell' as phone_1_type,
+            '(929) 225-5670' as phone_2_number,
+            'Home' as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip
+      - input: ref('int_finalsite__contact_custom_attributes')
+        rows: []
+    expect:
+      format: sql
+      rows: |
+        select
+          'stu1' as finalsite_enrollment_id,
+          'contact_1' as contact_slot,
+          'con1' as finalsite_contact_id,
+          'Jane Doe' as contact_name,
+          'Jane' as contact_first_name,
+          'Doe' as contact_last_name,
+          'parent' as relationship,
+          'jane@example.com' as email,
+          cast(null as string) as phone_daytime,
+          cast(null as string) as home_address,
+          cast(null as boolean) as is_pickup,
+          cast(null as boolean) as is_custodial,
+          cast(null as boolean) as is_household_member,
+          false as is_emergency,
+          '+18623007240' as phone_mobile,
+          '+19292255670' as phone_home,
+          cast(null as string) as phone_work,
+          '+18623007240' as phone_primary

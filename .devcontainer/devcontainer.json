@@ -30,10 +30,9 @@
     "vscode": {
       "extensions": [
         "Anthropic.claude-code",
-        "innoverio.vscode-dbt-power-user",
-        "trunk.io",
         "ms-python.python",
-        "redhat.vscode-yaml"
+        "TEAMSchools.dbt-core-tools",
+        "trunk.io"
       ]
     }
   }

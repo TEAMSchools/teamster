@@ -97,5 +97,7 @@ select
     u.status as university_status,
     u.city as university_city,
     u.state as university_state,
+
+    {{ extract_source_project("ur") }} as _dbt_source_project,
 from union_relations as ur
 inner join {{ ref("stg_overgrad__universities") }} as u on ur.university__id = u.id

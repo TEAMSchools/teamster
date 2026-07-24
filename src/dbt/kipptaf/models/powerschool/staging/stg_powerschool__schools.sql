@@ -12,7 +12,7 @@ with
         }}
     )
 
-select u.*, {{ extract_code_location("u") }} as _dbt_source_project, loc.location_key,
+select u.*, {{ extract_source_project("u") }} as _dbt_source_project, loc.location_key,
 from unioned as u
 left join
     {{ ref("stg_google_sheets__people__locations") }} as loc

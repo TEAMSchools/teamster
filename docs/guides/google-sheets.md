@@ -86,10 +86,10 @@
 
 ### Verifying changes against production
 
-Power User's `--defer` mode automatically resolves unchanged upstream models to
-production. Build your modified staging model and downstream consumers will
-reference prod data for anything you haven't changed. See the
-[dbt Development guide](dbt-development.md#power-user-defer) for details.
+The dbt Core Tools extension's `--defer` mode automatically resolves unchanged
+upstream models to production. Build your modified staging model and downstream
+consumers will reference prod data for anything you haven't changed. See the
+[dbt Development guide](dbt-development.md#defer-to-production) for details.
 
 ## Updating a Google Sheets source
 

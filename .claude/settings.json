@@ -200,7 +200,7 @@
     "dignified-python@dagster": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
+    "superpowers@superpowers-dev": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -219,6 +219,12 @@
       "source": {
         "source": "github",
         "repo": "dbt-labs/dbt-agent-skills"
+      }
+    },
+    "superpowers-dev": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers"
       }
     }
   },

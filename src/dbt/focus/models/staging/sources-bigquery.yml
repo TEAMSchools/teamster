@@ -158,6 +158,15 @@ sources:
                 - dlt
                 - focus
                 - attendance_calendars
+      - name: attendance_calendar
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - "{{ project_name }}"
+                - dlt
+                - focus
+                - attendance_calendar
       - name: grad_subject_programs
         config:
           meta:

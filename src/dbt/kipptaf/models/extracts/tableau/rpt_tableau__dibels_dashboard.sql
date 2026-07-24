@@ -137,7 +137,7 @@ left join
     on s.academic_year = c.cc_academic_year
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+    and s._dbt_source_project = c._dbt_source_project
     and c.rn_course_number_year = 1
     and not c.is_dropped_section
     and c.cc_section_number not like '%SC%'
@@ -324,7 +324,7 @@ left join
     on s.academic_year = c.cc_academic_year
     and s.schoolid = c.cc_schoolid
     and s.student_number = c.students_student_number
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+    and s._dbt_source_project = c._dbt_source_project
     and c.rn_course_number_year = 1
     and not c.is_dropped_section
     and c.cc_section_number not like '%SC%'

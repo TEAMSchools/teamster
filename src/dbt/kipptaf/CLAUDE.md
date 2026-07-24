@@ -77,6 +77,35 @@ firing (`trunk/ignore-does-nothing`), and its table-name qualifier breaks unit
 tests (`Unrecognized name` after dbt renames the mocked ref). Siblings
 `stg_powerschool__courses` / `stg_powerschool__studentcorefields` use inline.
 
+### `_dbt_source_relation` does not always encode region
+
+`_dbt_source_relation` from `union_relations` encodes whatever the union is OVER
+— it is region ONLY for cross-district unions (`kipp<region>_<source>`). Unions
+over years / repository ids / sftp-vs-api method / current+archive (illuminate,
+zendesk, `stg_schoolmint_grow__generic_tags`, amplify mClass) are NOT region, so
+the region regex `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` yields
+null — keep them out of `_dbt_source_project` joins. Shared NJ schemas
+(`kippnj_iready`, `kippnj_renlearn` for STAR) prefix `kippnj` ≠ home region;
+resolve region from `int_people__location_crosswalk`, not the regex.
+
+### `_dbt_source_project` is pass-through, derived only at the union view
+
+`extract_source_project()` (the `regexp_extract`) belongs ONLY on the
+`union_relations` view that creates `_dbt_source_relation`. Every downstream
+join-target selects the materialized `_dbt_source_project` column THROUGH from
+its upstream producer — never re-derive it downstream.
+
+- **Snapshot-fed models are the exception — they derive** from
+  `_dbt_source_relation`: the snapshot doesn't carry `_dbt_source_project` (e.g.
+  `snapshot_powerschool__gpa_term`, whose source
+  `int_powerschool__gpa_term_current` re-selects columns and drops it), and
+  adding it to the snapshot's source model leaves it ~99% NULL — the `check`
+  strategy only backfills touched rows.
+- Adding the column to a (non-contracted) intermediate still needs a
+  `properties.yml` column entry
+  (`description: District code location derived from _dbt_source_relation.`) —
+  the doc convention applies regardless of contract enforcement.
+
 ### Selecting from `dbt_utils.star()` models
 
 `base_` models using `star()` resolve columns from BigQuery at run time, not
@@ -94,6 +123,13 @@ Pure `union_relations()` views over per-region district staging tables (e.g.
 are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
+
+Contract-enforcement here is per-model, NOT directory-wide: the `powerschool:`
+block in `dbt_project.yml` sets only `+schema:` (no `staging: +contract`), so
+powerschool `staging/` union views are contract-enforced only where a model sets
+it in its own `properties.yml` (e.g. `stg_powerschool__users`,
+`stg_powerschool__log`). Check the model's `properties.yml` before assuming a
+`select *` union view is or isn't contracted.
 
 ### Finalsite contact unions
 
@@ -345,6 +381,11 @@ or `dbt clone --select <upstream>` against staging. Trigger via
 `mcp__dbt__trigger_job_run` with the `Clone - Staging (On-Demand)` job ID from
 `mcp__dbt__list_jobs` (~5 min run); after success, empty-commit + push
 re-triggers Build - CI.
+
+`Clone - Staging` refreshes only kipptaf-level relations — NOT district-level
+`zz_stg_kipp<district>_*`. A CI orphan / row-count delta that reconciles exactly
+against per-district prod-vs-`zz_stg` gaps is that staleness, not your change;
+re-running Clone - Staging won't fix it.
 
 Distinct from stale staging defer — **stale per-PR shadow**: a model that was
 `state:modified` in an earlier run (e.g. before the branch merged `main`) but is

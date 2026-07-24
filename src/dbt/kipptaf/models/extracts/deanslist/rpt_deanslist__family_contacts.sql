@@ -4,12 +4,15 @@ with
             sc.contact_first_name,
             sc.contact_last_name,
             sc.email,
-            sc.phone_home,
-            sc.phone_work,
-            sc.phone_mobile,
             sc._dbt_source_project,
 
             safe_cast(xw.powerschool_student_number as int64) as student_number,
+
+            -- DeansList phone fields accept only digits and `x` (extension); strip
+            -- the E.164 canonical (leading `+`, etc.) to that shape.
+            regexp_replace(lower(sc.phone_home), r'[^0-9x]', '') as phone_home,
+            regexp_replace(lower(sc.phone_work), r'[^0-9x]', '') as phone_work,
+            regexp_replace(lower(sc.phone_mobile), r'[^0-9x]', '') as phone_mobile,
 
             case
                 sc.contact_slot
