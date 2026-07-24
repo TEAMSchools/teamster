@@ -2,6 +2,7 @@ with
     scores as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             state_student_identifier,
             local_student_identifier,
