@@ -53,7 +53,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Worktree**: with an issue, `gh issue develop <number> --name <branch>` (no
   `--checkout`), then `git worktree add .worktrees/<branch> <branch>`. If the
   user explicitly declined an issue, skip `gh issue develop` and create the
-  branch directly: `git worktree add -b <branch> .worktrees/<branch>`.
+  branch directly: `git worktree add -b <branch> <abs-path> origin/main` (name
+  the base — local `main` is often behind).
 
 - **Stacked branch** (build on an unmerged branch):
   `gh issue develop <num> --name <branch> --base <parent-branch>` links a branch
@@ -273,6 +274,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   conclusion or a naive length threshold (the ~500-char checklist stub trips
   it).
 
+- **A merged PR's CI status is not evidence the change was validated** — a PR
+  merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
+  not a build failure (mechanics in `.claude/context/dbt.md`).
+
 - **`dagster-cloud-deploy / deploy` emits one same-named check-run per code
   location** (~5) — `get_check_runs` returns duplicates; wait for ALL to reach a
   terminal conclusion before calling the deploy green. A shared-library change
@@ -325,7 +330,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
   path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the worktree;
   relative paths run from the main repo check the main-repo copies, not your
-  worktree edits.
+  worktree edits. A `--force` check over
+  `git diff --name-only origin/main...HEAD` hard-errors with
+  `'<path>' does not exist` when the PR deletes files — filter to existing paths
+  first.
 
 - **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
@@ -355,6 +363,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `trunk fmt` renumbers items sequentially (1, 2, 3), but each fence restarts
   the list so an item numbered >1 is invalid. Use `1.` for every item. Fires at
   CI only.
+
+- **Widening a markdown table cell trips markdownlint MD060** (table column
+  style) until `trunk fmt` re-pads the table. Commit and let the fmt hook fix it
+  — don't hand-align.
 
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
