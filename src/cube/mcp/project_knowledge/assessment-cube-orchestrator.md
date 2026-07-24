@@ -31,7 +31,8 @@ apply to every query in the session, not only the first.
    `is_week_end_record = true`, most recent `dates_school_week_start_date`).
    Confirm connectivity and data currency, and sanity-check the value against a
    known figure. An end-of-year ADA drop-off is an expected seasonal pattern,
-   not a data problem — do not treat it as a defect.
+   and a zero-row / empty result in summer (no active school week) is likewise
+   expected — neither is a connectivity failure or a defect.
 2. **Force-refresh `meta` at session start.** The cached catalog can be stale; a
    stale catalog has already produced a confident-but-wrong "unanswerable" in a
    prior session. If a field or view you need appears to be missing, refresh

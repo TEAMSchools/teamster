@@ -39,6 +39,10 @@ Apply to every assessment source unless a source section overrides them.
   (timeouts, and an intermittent location-`US` 400 on the
   `dim_student_enrollments` dependency); `count_scores` is the reliable fallback
   there.
+- **A dimension-only pull silently de-duplicates.** A query with no measure
+  collapses identical rows and hides true row counts; add a measure (e.g.
+  `count_scores`) or the primary key (`assessment_score_key`) to see the real
+  count. This is how the i-Ready row duplication (below) was found.
 - **Performance bands are Illuminate-only.** `performance_band_label_number`
   (integer 1–5) is populated only for Illuminate; it is null for state and for
   i-Ready/DIBELS/STAR. Where it applies, band 1 = the "Far Below" tier and band
@@ -104,8 +108,17 @@ Apply to every assessment source unless a source section overrides them.
   `is_mastery` is populated. `performance_band_label_number` is null (band
   shorthand does not apply).
 - **Time:** `academic_year` is null — filter the school year via `date_taken`.
-- Not exercised in the working-group sessions; documented from the live schema —
-  confirm interpretations before external use.
+- **Known duplication (handle before counting).** i-Ready score rows are
+  currently duplicated roughly 2x per student per administration — identical in
+  every field except the `assessment_score_key` surrogate key (a suspected
+  ingestion fan-out, tracked as a Cube-model defect). De-duplicate on
+  `assessment_score_key`, or use `count_students` rather than `count_scores`,
+  until it is fixed.
+- **Authoritative attempt.** `is_replacement` is not populated for i-Ready, so
+  when a student has genuine multiple attempts in a window, pick the
+  authoritative score by most recent `date_taken`.
+- Documented from the live schema and one working-group session (Camden ES ELA
+  DIBELS-vs-i-Ready concordance) — confirm interpretations before external use.
 
 ## Vendor normed diagnostics — DIBELS
 
@@ -116,8 +129,9 @@ Apply to every assessment source unless a source section overrides them.
   `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
   `is_mastery` is populated. `performance_band_label_number` is null.
 - **Time:** `academic_year` is null — filter via `date_taken`.
-- Not exercised in the working-group sessions; documented from the live schema —
-  confirm before external use.
+- Documented from the live schema and one working-group session (used as the
+  comparison instrument in a Camden ES ELA concordance) — confirm before
+  external use.
 
 ## Vendor normed diagnostics — STAR
 
