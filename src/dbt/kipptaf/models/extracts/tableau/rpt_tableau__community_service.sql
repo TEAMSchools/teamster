@@ -29,7 +29,7 @@ from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     {{ ref("stg_deanslist__behavior") }} as b
     on co.student_number = b.student_school_id
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and co._dbt_source_project = b._dbt_source_project
     and b.behavior_category in ('Community Service', 'Community Service Hours')
     and b.behavior_date between co.entrydate and co.exitdate
 left join

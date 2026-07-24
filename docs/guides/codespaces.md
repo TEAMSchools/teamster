@@ -63,12 +63,6 @@ skips anything already configured.
 configured in `devcontainer.json`; dismiss any extension install prompts VS Code
 shows.
 
-**Wait for dbt Power User to finish parsing** — the extension parses all
-projects in the background, which pegs CPU and makes the extension unresponsive
-until complete. Use `htop` to monitor; wait for CPU to settle before using the
-extension. This is also the most common cause of "extension not responding"
-errors.
-
 **Reload the window** once background processes finish (++ctrl+shift+p++ →
 **Developer: Reload Window**) for a clean editor state.
 
@@ -215,14 +209,6 @@ To grant a new developer access: add them to
   mount options were not used — they are not supported on all Codespaces hosts.
 - **`--cap-add` stripped**: Codespaces silently strips `--cap-add` from
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work.
-- **dbt Power User extension**: activates on
-  `workspaceContains:**/dbt_project.yml` and auto-runs `dbt deps` (controlled by
-  `dbt.installDepsOnProjectInitialization`, default `true`) and `dbt parse` (not
-  configurable) on startup. Risk: extension may activate before `uv sync`
-  installs dbt-core. If `dbt deps` runs in `postCreate.sh`, set
-  `dbt.installDepsOnProjectInitialization` to `false` to avoid duplicate work.
-- **dbt Power User project scanning**: `dbt.allowListFolders` restricts which
-  paths the extension scans for `dbt_project.yml` — uses `startsWith` matching.
-  The extension also has a built-in `notInDBtPackages` filter. Manifest is read
-  from `target/` via Python bridge, not VS Code file watcher, so
-  `files.watcherExclude` on `target/` doesn't break it.
+- **dbt Core Tools extension**: activates on
+  `workspaceContains:**/dbt_project.yml` and parses projects on startup. Risk:
+  extension may activate before `uv sync` installs dbt-core.

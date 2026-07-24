@@ -2,6 +2,7 @@ with
     suspension as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             student_school_id,
             create_ts_academic_year,
 
@@ -9,7 +10,11 @@ with
             sum(num_days) as suspension_days,
         from {{ ref("int_deanslist__incidents__penalties") }}
         where is_suspension
-        group by student_school_id, create_ts_academic_year, _dbt_source_relation
+        group by
+            student_school_id,
+            create_ts_academic_year,
+            _dbt_source_relation,
+            _dbt_source_project
     )
 
 select
@@ -80,24 +85,24 @@ left join
     {{ ref("base_powerschool__final_grades") }} as gr
     on co.studentid = gr.studentid
     and co.yearid = gr.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gr") }}
+    and co._dbt_source_project = gr._dbt_source_project
     and dt.name = gr.storecode
     and gr.exclude_from_gpa = 0
 left join
     {{ ref("base_powerschool__sections") }} as si
     on gr.sectionid = si.sections_id
-    and {{ union_dataset_join_clause(left_alias="gr", right_alias="si") }}
+    and gr._dbt_source_project = si._dbt_source_project
 left join
     {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid
     and co.yearid = gpa.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+    and co._dbt_source_project = gpa._dbt_source_project
     and dt.name = gpa.term_name
 left join
     suspension as sus
     on co.student_number = sus.student_school_id
     and co.academic_year = sus.create_ts_academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sus") }}
+    and co._dbt_source_project = sus._dbt_source_project
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1

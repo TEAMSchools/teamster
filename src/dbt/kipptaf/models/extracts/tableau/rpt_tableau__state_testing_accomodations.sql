@@ -2,6 +2,7 @@ with
     accommodations_unpivot as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentsdcid,
             asmt_exclude_ela,
             asmt_exclude_math,
@@ -82,7 +83,7 @@ from {{ ref("int_extracts__student_enrollments") }} as co
 left join
     accommodations_unpivot as ac
     on co.students_dcid = ac.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ac") }}
+    and co._dbt_source_project = ac._dbt_source_project
 where
     co.academic_year = {{ var("current_academic_year") }}
     and co.rn_year = 1

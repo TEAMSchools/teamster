@@ -143,7 +143,7 @@ with
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
             and r.subject_area = cc.illuminate_subject_area
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
+            and co._dbt_source_project = cc._dbt_source_project
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
         left join

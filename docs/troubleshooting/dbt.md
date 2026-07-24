@@ -77,26 +77,6 @@ Always prefix dbt commands with `uv run` and pass `--project-dir`:
 uv run dbt build --select {model} --project-dir=src/dbt/kipptaf
 ```
 
-## dbt Power User extension
-
-**"dbt installation or Python environment is not properly configured"** — if
-`deferToProduction` is `true` in `.vscode/settings.json`, Power User v0.60.1
-crashes with dbt 1.11.7 during manifest merge. Set `deferToProduction: false` in
-`dbt.deferConfigPerProject` and use CLI `--defer` instead.
-
-**"No dbt project found"** — the extension needs the project directory set
-explicitly. Open the VS Code command palette and run
-`dbt Power User: Select dbt project`. Choose the project directory under
-`src/dbt/`.
-
-**Lineage panel is blank** — the manifest may be stale. Run
-`uv run dbt parse --project-dir=src/dbt/{project}` to regenerate it, then reload
-the lineage panel.
-
-**Extension not activating** — confirm `innoverio.vscode-dbt-power-user` is
-installed. In the devcontainer it is installed automatically; outside the
-devcontainer you must install it manually.
-
 ---
 
 **See also:** [dbt Conventions](../reference/dbt-conventions.md) ·
