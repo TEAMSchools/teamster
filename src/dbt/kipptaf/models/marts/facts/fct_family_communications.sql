@@ -54,7 +54,7 @@ inner join
     enrollments as enr
     on c.student_school_id = enr.student_number
     and c.academic_year = enr.academic_year
-    and {{ union_dataset_join_clause(left_alias="c", right_alias="enr") }}
+    and c._dbt_source_project = enr._dbt_source_project
     and enr.rn = 1
 left join {{ ref("stg_deanslist__users") }} as u on c.user_id_str = u.dl_user_id
 left join {{ ref("int_people__staff_roster") }} as sr on u.email = sr.work_email

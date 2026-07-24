@@ -70,7 +70,7 @@ with
 
     schedules as (
         select
-            e._dbt_source_relation,
+            e._dbt_source_project,
             e.cc_academic_year,
             e.students_student_number,
             e.teachernumber,
@@ -140,7 +140,7 @@ with
 
     assessment_scores as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             localstudentidentifier,
             statestudentidentifier as state_id,
@@ -173,7 +173,7 @@ with
         union all
 
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
 
             null as localstudentidentifier,
@@ -208,7 +208,7 @@ with
         union all
 
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             local_student_identifier as localstudentidentifier,
             cast(state_student_identifier as string) as state_id,
@@ -336,7 +336,7 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.localstudentidentifier = e.pearson_local_student_identifier
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+    and a._dbt_source_project = e._dbt_source_project
     and e.rn_year = 1
     and a.results_type = 'Actual'
     and a.academic_year >= {{ var("current_academic_year") - 7 }}
@@ -358,21 +358,21 @@ left join
     schedules as m
     on a.academic_year = m.cc_academic_year
     and a.discipline = m.discipline
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
+    and a._dbt_source_project = m._dbt_source_project
     and e.student_number = m.students_student_number
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on a.academic_year = sf.academic_year
     and a.discipline = sf.discipline
     and a.localstudentidentifier = sf.pearson_local_student_identifier
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
+    and a._dbt_source_project = sf._dbt_source_project
     and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on a.academic_year = (sf2.academic_year - 1)
     and a.discipline = sf2.discipline
     and a.localstudentidentifier = sf2.pearson_local_student_identifier
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
+    and a._dbt_source_project = sf2._dbt_source_project
     and sf2.rn_year = 1
 
 union all
@@ -468,7 +468,7 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+    and a._dbt_source_project = e._dbt_source_project
     and a.results_type = 'Actual'
     and e.region = 'Miami'
     and e.rn_year = 1
@@ -491,21 +491,21 @@ left join
     schedules as m
     on a.academic_year = m.cc_academic_year
     and a.discipline = m.discipline
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
+    and a._dbt_source_project = m._dbt_source_project
     and e.student_number = m.students_student_number
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on a.academic_year = sf.academic_year
     and a.discipline = sf.discipline
     and a.state_id = sf.state_studentnumber
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
+    and a._dbt_source_project = sf._dbt_source_project
     and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on a.academic_year = sf2.academic_year - 1
     and a.discipline = sf2.discipline
     and a.state_id = sf2.state_studentnumber
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
+    and a._dbt_source_project = sf2._dbt_source_project
     and sf2.rn_year = 1
 
 union all
@@ -601,7 +601,7 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as e
     on a.academic_year = e.academic_year
     and a.state_id = e.state_studentnumber
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+    and a._dbt_source_project = e._dbt_source_project
     -- 2024: first year we track preliminary scores for comparison
     and a.academic_year >= 2024
     and a.results_type = 'Preliminary'
@@ -629,18 +629,18 @@ left join
     on a.academic_year = m.cc_academic_year
     and a.localstudentidentifier = m.students_student_number
     and a.discipline = m.discipline
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="m") }}
+    and a._dbt_source_project = m._dbt_source_project
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf
     on a.academic_year = sf.academic_year
     and a.discipline = sf.discipline
     and a.localstudentidentifier = sf.student_number
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf") }}
+    and a._dbt_source_project = sf._dbt_source_project
     and sf.rn_year = 1
 left join
     {{ ref("int_extracts__student_enrollments_subjects") }} as sf2
     on a.academic_year = sf2.academic_year - 1
     and a.discipline = sf2.discipline
     and a.localstudentidentifier = sf2.student_number
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="sf2") }}
+    and a._dbt_source_project = sf2._dbt_source_project
     and sf2.rn_year = 1

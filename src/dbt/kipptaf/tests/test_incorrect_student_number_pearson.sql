@@ -13,7 +13,7 @@ left join
     {{ ref("base_powerschool__student_enrollments") }} as e
     on a.localstudentidentifier = e.student_number
     and a.academic_year = e.academic_year
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="e") }}
+    and a._dbt_source_project = e._dbt_source_project
     and e.rn_year = 1
 where
     /* we only report on SY 2017+ scores */
