@@ -440,6 +440,27 @@ tagging.
   tracking issue, (b) creating a branch or worktree, (c) modifying protected
   files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
 
+## Compact Instructions
+
+When summarizing the conversation, always preserve:
+
+- The original task/request verbatim, plus constraints and scope decisions the
+  user stated ("don't touch X", "we decided against Y" — and why).
+- Worktree state: the absolute worktree path, branch name, and which checkout
+  (main vs worktree) each pending change lives in; what is committed vs
+  uncommitted; open PR/issue numbers.
+- Verification state: which tests/builds/lints ran and their results; what is
+  verified working vs not yet checked.
+- Unresolved items: open questions awaiting the user, known failures not yet
+  fixed, and the agreed next step.
+- Exact identifiers over descriptions: file paths, model/column names, run IDs,
+  verbatim error messages.
+- Dead ends already tried, gotchas discovered, and workarounds applied this
+  session.
+
+Discard freely: full file contents already on disk, verbose tool output, and
+exploration that led nowhere (keep only the conclusion).
+
 ## CLAUDE.md Editing Rules
 
 - **Before adding to any CLAUDE.md file**: beyond the skill's
