@@ -19,7 +19,7 @@ with
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
             on sg.studentid = co.studentid
-            and {{ union_dataset_join_clause(left_alias="sg", right_alias="co") }}
+            and sg._dbt_source_project = co._dbt_source_project
             and sg.schoolid = co.schoolid
             and co.grade_level >= 9
             and co.rn_year = 1
@@ -53,7 +53,7 @@ with
         inner join
             {{ ref("base_powerschool__student_enrollments") }} as co
             on fg.studentid = co.studentid
-            and {{ union_dataset_join_clause(left_alias="fg", right_alias="co") }}
+            and fg._dbt_source_project = co._dbt_source_project
             and fg.schoolid = co.schoolid
             and fg.academic_year = co.academic_year
             and co.grade_level >= 9

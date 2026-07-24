@@ -46,5 +46,5 @@ from {{ ref("stg_powerschool__students") }} as co
 inner join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
     on co.dcid = suf.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="suf") }}
+    and co._dbt_source_project = suf._dbt_source_project
 inner join {{ ref("stg_fldoe__fast") }} as fl on suf.fleid = fl.student_id
