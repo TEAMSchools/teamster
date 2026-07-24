@@ -449,8 +449,11 @@ select
     -- `academic_year` is intentionally not exposed in the final SELECT —
     -- it's a hash input only. The canonical-grain dim represents an
     -- administration scoped by `_dbt_source_project` + `administered_date_key`
-    -- + `administration_period`; analysts derive academic year from
-    -- `administered_date_key` via `dim_dates`.
+    -- + `administration_period`. Academic year is resolved downstream on
+    -- `fct_assessment_scores_enrollment_scoped.assessment_date_key` via
+    -- `dim_dates`, NOT on `administered_date_key` — which is null for state and
+    -- vendor administrations, so deriving academic year from it there yields
+    -- null (#4546).
     administered_date as administered_date_key,
 
     _dbt_source_project,

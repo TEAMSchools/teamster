@@ -78,8 +78,11 @@ models:
         data_type: date
         description: >-
           FK to dim_dates. The date the assessment was taken. Populated for
-          state assessments (now threaded from source); nullable for internal
-          rows that lack a recorded sitting date upstream.
+          state and vendor assessments (threaded from source); nullable for
+          internal rows that lack a recorded sitting date upstream. Equal to
+          assessment_date_key for every state and vendor row (those have no
+          administration date); the two differ only for internal and college
+          rows, where assessment_date_key uses the administration date.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
@@ -87,6 +90,34 @@ models:
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_dates')
+                field: date_key
+
+      - name: assessment_date_key
+        data_type: date
+        description: >-
+          FK to dim_dates for academic-year and calendar rollups. The
+          administration date where the administration records one (internal
+          Illuminate and college), otherwise the student's test date (state and
+          vendor administrations span a window and carry no single date).
+          Populated for every row, so academic year resolves for all sources —
+          unlike the administration date alone, which is null for state and
+          vendor rows.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_dates')
+            to_columns: [date_key]
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          # not_null guards the invariant the #4546 fix rests on: the FK
+          # relationships test skips nulls and the constraint is not enforced,
+          # so neither catches a row where both administration and test date are
+          # null (academic_year would silently go null again). Project-default
+          # severity (warn) surfaces any regression in CI.
+          - not_null
           - relationships:
               arguments:
                 to: ref('dim_dates')
@@ -149,8 +180,10 @@ models:
       - name: is_replacement
         data_type: boolean
         description: >-
-          TRUE if this score is a replacement score superseding an earlier
-          attempt. Null for state assessments.
+          Illuminate-only flag. TRUE when a K-8 student sat a
+          replacement-curriculum assessment off their enrolled grade level. Null
+          for all non-Illuminate sources (state and vendor), which have no
+          replacement-curriculum concept.
 
       - name: performance_band_label_number
         data_type: numeric
