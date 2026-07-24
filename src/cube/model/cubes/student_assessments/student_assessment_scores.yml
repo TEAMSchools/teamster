@@ -369,6 +369,11 @@ cubes:
         # actually land: restatements replace a whole academic year at a time,
         # so a correction only invalidates the partition(s) touching that year,
         # not the full history.
+        # State/vendor administrations are diagnostic windows, not single days,
+        # so one straddling July 1 lands its scores across two academic_year
+        # partitions here, by each score's own test date. That is correct
+        # per-score attribution, not a fan-out: 0 state administrations split
+        # today, only a handful of iReady/DIBELS windows do (#4546 finding 3).
         time_dimension: dates.date_day
         granularity: year
         partition_granularity: year
