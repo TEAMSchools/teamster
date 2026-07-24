@@ -64,6 +64,13 @@ cubes:
         type: string
         primary_key: true
 
+      # Backing key — not analyst-facing; enables point-in-time joins from
+      # other staff-domain cubes (e.g. staff_attrition) and the count measure.
+      - name: staff_key
+        description: Surrogate key to dim_staff for the work assignment holder.
+        sql: staff_key
+        type: string
+
       - name: status_name
         description: >-
           Assignment-level employment status during this period (Active, Leave,
@@ -164,6 +171,14 @@ cubes:
         sql: CAST(effective_start_date AS TIMESTAMP)
         type: time
         public: true
+
+      # Backing member for point-in-time joins (e.g. staff_attrition). Not
+      # public — exposed only where a view explicitly needs the period end.
+      - name: effective_end_date
+        description:
+          End of the contiguous period (intersection of all SCD2 children).
+        sql: CAST(effective_end_date AS TIMESTAMP)
+        type: time
 
     measures:
       - name: count_employees
