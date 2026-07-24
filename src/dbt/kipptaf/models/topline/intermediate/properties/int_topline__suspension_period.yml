@@ -1,0 +1,42 @@
+models:
+  - name: int_topline__suspension_period
+    description:
+      Student-level suspension flag recomputed within exact non-week period
+      windows for the topline cascade dashboard. 1 when the student received any
+      qualifying suspension penalty (is_suspension, non-behavioral and
+      social-work referral tiers excluded) with a start date inside the window.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - schoolid
+              - period_type
+              - period_label
+    columns:
+      - name: student_number
+        description: PowerSchool student number.
+        data_type: int64
+      - name: academic_year
+        description: Academic year (start year).
+        data_type: int64
+      - name: schoolid
+        description: PowerSchool school id.
+        data_type: int64
+      - name: period_type
+        description: Grain of the row — month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description: Period instance label from the periods dimension.
+        data_type: string
+      - name: period_start
+        description: First date of the period window.
+        data_type: date
+      - name: period_end
+        description: Last date of the period window.
+        data_type: date
+      - name: is_suspended_period_int
+        description:
+          1 when any qualifying suspension penalty started inside the window.
+        data_type: int64

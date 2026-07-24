@@ -1,5 +1,9 @@
 models:
   - name: rpt_tableau__topline_cascade_dashboard
+    description:
+      Topline cascade dashboard extract for Tableau. Rows span four period
+      grains (week, month, quarter, ytd) for the same metric/scope — every
+      worksheet must filter on period_type, or its aggregates mix grains.
     columns:
       - name: metric_type
         data_type: string
@@ -20,6 +24,23 @@ models:
       - name: term_end
         data_type: date
       - name: is_current_week
+        data_type: boolean
+      - name: period_type
+        description: Grain of the row — week, month, quarter, or ytd.
+        data_type: string
+      - name: period_label
+        description:
+          Period instance label — ISO week, full month name, Q1-Q4, or YTD.
+        data_type: string
+      - name: is_current_period
+        description:
+          True when today falls inside the row's period window, for the row's
+          scope and grain.
+        data_type: boolean
+      - name: is_most_recent_complete_period
+        description:
+          True for the latest fully-elapsed period of the row's grain and scope
+          in the current academic year.
         data_type: boolean
       - name: indicator_display
         data_type: string
@@ -53,6 +74,29 @@ models:
         data_type: float64
       - name: progress_to_goal_pct
         data_type: float64
+      - name: goal_difference
+        description:
+          Direction-aware difference from the resolved goal (positive means
+          ahead of goal), in the metric's own units.
+        data_type: float64
+      - name: goal_difference_numeric
+        description:
+          goal_difference for proportion indicators, else null — formats as
+          percentage points in Tableau.
+        data_type: float64
+      - name: goal_difference_integer
+        description: goal_difference for count indicators, else null.
+        data_type: float64
+      - name: metric_numerator
+        description:
+          Enrolled count behind the Seat Target / Budget Target ratio; null for
+          other indicators.
+        data_type: numeric
+      - name: metric_denominator
+        description:
+          Seat or budget target integer behind the ratio; null for other
+          indicators.
+        data_type: numeric
       - name: region
         data_type: string
       - name: hos_name

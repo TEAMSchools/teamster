@@ -1,6 +1,7 @@
 select
     co.student_number,
     co.academic_year,
+    co.schoolid,
     co.week_start_monday,
     co.week_end_sunday,
     co.discipline,

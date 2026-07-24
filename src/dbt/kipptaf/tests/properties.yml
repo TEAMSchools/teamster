@@ -209,3 +209,20 @@ data_tests:
         dagster:
           ref:
             name: dim_student_section_enrollments
+
+  - name: int_topline__student_metrics_periods__rollup_config_is_period
+    description: >-
+      Returns one row per (layer, indicator) emitted by
+      `int_topline__student_metrics_periods` that lacks a `period_rollup =
+      'period'` row in `seed_topline_period_rollup`.
+      `int_topline__dashboard_aggregations` treats unconfigured indicators as
+      as-of, so a coverage gap silently double-represents the indicator at
+      month/quarter/ytd grains — once from its recomputed period rows and once
+      from relabeled week rows. Guard fires before the sheet cutover makes the
+      config Ops-editable.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_topline__student_metrics_periods

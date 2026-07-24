@@ -1,0 +1,10 @@
+models:
+  - name: int_topline__staff_metrics
+    description: >-
+      Weekly staff-level topline metrics (microgoals assigned, staff retention)
+      unioned from the ADP people spine.
+    columns:
+      - name: region
+        description: >-
+          Region as city name, normalized from the ADP business unit — TAF for
+          central office.
