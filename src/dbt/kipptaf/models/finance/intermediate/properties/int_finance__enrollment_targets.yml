@@ -5,7 +5,11 @@ models:
       year, sourced from the finance enrollment-targets Google Sheet and joined
       to PowerSchool schools to resolve the source district. The join is an
       inner join, so a sheet row whose `schoolid` does not match a PowerSchool
-      school is dropped rather than carried through unattributed.
+      school is dropped rather than carried through unattributed — the
+      `int_finance__enrollment_targets__schoolid_resolves` test reports those
+      rows. Five factor columns — `grade_band_ratio`, `at_risk_and_lep_ratio`,
+      `at_risk_only_ratio`, `lep_only_ratio`, and `sped_ratio` — pass through
+      from the sheet untouched, and their definitions are maintained there.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -34,7 +38,7 @@ models:
       - name: region
         data_type: string
         description: >-
-          Region label as typed on the finance sheet. Blank on many rows and not
+          Region label as typed on the finance sheet. Optional, and not
           authoritative — attribute a row to a district with
           `_dbt_source_project` instead.
       - name: schoolid
@@ -59,14 +63,13 @@ models:
       - name: adjustment
         data_type: int64
         description: >-
-          Manual correction the finance team recorded against
-          `target_enrollment`. Blank on the large majority of rows, and a
-          reduction on nearly every row where it is present.
+          Optional manual correction the finance team recorded against
+          `target_enrollment`. Blank when no correction was recorded.
       - name: attrition_factor
         data_type: float64
         description: >-
-          Attrition allowance the financial model carries for the row, as
-          entered on the finance sheet. Blank on a substantial minority of rows.
+          Optional attrition allowance the financial model carries for the row.
+          Blank when the finance team did not record one.
       - name: financial_model_enrollment
         data_type: float64
         description: >-
@@ -78,30 +81,23 @@ models:
       - name: grade_band_ratio
         data_type: float64
         description: >-
-          Grade-band factor carried by the financial model. Populated on only a
-          handful of rows, all from a single early academic year. The derivation
-          lives in the finance sheet and is not documented in this repo.
+          Grade-band factor from the financial model. Optional sheet input.
       - name: at_risk_and_lep_ratio
         data_type: float64
         description: >-
-          Combined at-risk and limited-English-proficient factor carried by the
-          financial model. Populated on the same small set of rows as
-          `grade_band_ratio`. These factors are not disjoint shares of
-          enrollment — they sum to well above one — and the derivation is not
-          documented in this repo.
+          Combined at-risk and limited-English-proficient factor from the
+          financial model. Optional sheet input.
       - name: at_risk_only_ratio
         data_type: float64
         description: >-
-          At-risk-only factor carried by the financial model. Same sparsity and
-          documentation gap as `at_risk_and_lep_ratio`.
+          At-risk-only factor from the financial model. Optional sheet input.
       - name: lep_only_ratio
         data_type: float64
         description: >-
-          Limited-English-proficient-only factor carried by the financial model.
-          Same sparsity and documentation gap as `at_risk_and_lep_ratio`.
+          Limited-English-proficient-only factor from the financial model.
+          Optional sheet input.
       - name: sped_ratio
         data_type: float64
         description: >-
-          Special-education factor carried by the financial model. Same sparsity
-          and documentation gap as `at_risk_and_lep_ratio`, and it holds a
-          single constant value across every row where it is present.
+          Special-education factor from the financial model. Optional sheet
+          input.
