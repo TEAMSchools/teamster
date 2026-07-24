@@ -52,16 +52,10 @@
    from {{ source("{SOURCE_NAME}", "{SOURCE_TABLE_NAME}") }}
    ```
 
-6. Generate the properties file scaffold:
-
-   ```bash
-   uv run dbt run-operation generate_model_yaml \
-     --args '{"model_names": ["{STAGING_MODEL_NAME}"]}'
-   ```
-
-   Save the output as `../properties/{STAGING_MODEL_NAME}.yml`. Staging models
-   inherit `contract: enforced: true` from `dbt_project.yml`, so every column
-   must have a `data_type`:
+6. Write the properties file by hand as
+   `../properties/{STAGING_MODEL_NAME}.yml`. Staging models inherit
+   `contract: enforced: true` from `dbt_project.yml`, so every column must have
+   a `data_type`:
 
    ```yaml
    models:

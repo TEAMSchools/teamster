@@ -138,24 +138,18 @@ the `functions` dataset but has no call sites in this repo.
 
 ## Model properties file
 
-Every model must have a corresponding `[model_name].yml` properties file. Use
-the `scripts/dbt-yaml.py` wrapper to generate and update model YAML — it handles
-column ordering and data type inference automatically:
+Every model must have a corresponding `[model_name].yml` properties file. Write
+it by hand — there is no scaffold generator in this repo. Column names and types
+come from `INFORMATION_SCHEMA.COLUMNS` on the built relation:
 
-```bash
-uv run scripts/dbt-yaml.py --select stg_my_model kipptaf
-# add --dev to target your personal dev dataset instead of prod
+```sql
+select column_name, data_type
+from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+where table_name = '<model_name>'
+order by ordinal_position
 ```
 
-Or generate the raw scaffold manually and save the console output as the `.yml`
-file:
-
-```bash
-uv run dbt run-operation generate_model_yaml \
-  --args '{"model_names": ["model_name"]}'
-```
-
-Fill in the scaffold:
+The shape:
 
 ```yaml
 models:
