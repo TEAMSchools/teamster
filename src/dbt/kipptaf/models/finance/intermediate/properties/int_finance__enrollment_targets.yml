@@ -3,7 +3,9 @@ models:
     description: >-
       Financial-model enrollment targets by school, grade level, and academic
       year, sourced from the finance enrollment-targets Google Sheet and joined
-      to PowerSchool schools to resolve the source district.
+      to PowerSchool schools to resolve the source district. The join is an
+      inner join, so a sheet row whose `schoolid` does not match a PowerSchool
+      school is dropped rather than carried through unattributed.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -20,31 +22,86 @@ models:
           district-scoped models.
       - name: fiscal_year
         data_type: int64
+        description: >-
+          Fiscal year the target was budgeted under, as entered on the finance
+          sheet. Always one greater than `academic_year`.
       - name: academic_year
         data_type: int64
+        description: >-
+          Academic year the target applies to, derived upstream as `fiscal_year`
+          minus one. Stores the starting year, so the 2026-2027 school year is
+          2026.
       - name: region
         data_type: string
+        description: >-
+          Region label as typed on the finance sheet. Blank on many rows and not
+          authoritative — attribute a row to a district with
+          `_dbt_source_project` instead.
       - name: schoolid
         data_type: int64
+        description: >-
+          PowerSchool school number the target applies to. Join key to
+          `stg_powerschool__schools`.
       - name: school_name
         data_type: string
+        description: >-
+          School name as typed on the finance sheet. Not reconciled against the
+          matched PowerSchool school record.
       - name: grade_level
         data_type: int64
+        description: >-
+          Grade level the target applies to, where 0 is kindergarten.
       - name: target_enrollment
         data_type: int64
+        description: >-
+          Planned enrollment for the school, grade level, and year, as entered
+          on the finance sheet.
       - name: adjustment
         data_type: int64
+        description: >-
+          Manual correction the finance team recorded against
+          `target_enrollment`. Blank on the large majority of rows, and a
+          reduction on nearly every row where it is present.
       - name: attrition_factor
         data_type: float64
+        description: >-
+          Attrition allowance the financial model carries for the row, as
+          entered on the finance sheet. Blank on a substantial minority of rows.
       - name: financial_model_enrollment
         data_type: float64
+        description: >-
+          Enrollment figure the financial model carries for the school, grade
+          level, and year. Entered on the sheet rather than computed here, and
+          it does not consistently equal `target_enrollment` plus `adjustment`
+          net of `attrition_factor` — treat it as its own input, not a derived
+          total.
       - name: grade_band_ratio
         data_type: float64
+        description: >-
+          Grade-band factor carried by the financial model. Populated on only a
+          handful of rows, all from a single early academic year. The derivation
+          lives in the finance sheet and is not documented in this repo.
       - name: at_risk_and_lep_ratio
         data_type: float64
+        description: >-
+          Combined at-risk and limited-English-proficient factor carried by the
+          financial model. Populated on the same small set of rows as
+          `grade_band_ratio`. These factors are not disjoint shares of
+          enrollment — they sum to well above one — and the derivation is not
+          documented in this repo.
       - name: at_risk_only_ratio
         data_type: float64
+        description: >-
+          At-risk-only factor carried by the financial model. Same sparsity and
+          documentation gap as `at_risk_and_lep_ratio`.
       - name: lep_only_ratio
         data_type: float64
+        description: >-
+          Limited-English-proficient-only factor carried by the financial model.
+          Same sparsity and documentation gap as `at_risk_and_lep_ratio`.
       - name: sped_ratio
         data_type: float64
+        description: >-
+          Special-education factor carried by the financial model. Same sparsity
+          and documentation gap as `at_risk_and_lep_ratio`, and it holds a
+          single constant value across every row where it is present.
