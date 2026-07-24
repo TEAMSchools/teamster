@@ -1,0 +1,11 @@
+cubes:
+  - name: sample_base
+    public: false
+    sql_table: kipptaf_marts.dim_base
+    dimensions:
+      - name: base_key
+        description: Base key.
+        sql: base_key
+        type: string
+        primary_key: true
+        public: true

@@ -27,6 +27,7 @@ theme:
     - search.highlight
     - search.suggest
     - toc.follow
+    - toc.integrate
 
 hooks:
   - docs/hooks.py
@@ -57,6 +58,7 @@ nav:
       - dbt Conventions: reference/dbt-conventions.md
       - Finalsite to Focus Import: reference/finalsite-focus-import.md
       - Marts Data Models: reference/marts-data-models.md
+      - Cube Data Catalog: reference/cube-data-catalog.md
       - Automation Conditions: reference/automation-conditions.md
   - Models:
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
@@ -77,3 +79,9 @@ markdown_extensions:
       emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.tasklist:
       custom_checkbox: true
+
+extra_css:
+  - stylesheets/cube-catalog.css
+
+extra_javascript:
+  - javascripts/cube-catalog.js
