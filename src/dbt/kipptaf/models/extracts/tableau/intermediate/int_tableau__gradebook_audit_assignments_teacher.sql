@@ -101,11 +101,11 @@ left join
     on sec.sections_dcid = a.sectionsdcid
     and sec.assignment_category_name = a.category_name
     and a.duedate between sec.week_start_monday and sec.week_end_sunday
-    and sec._dbt_source_project = a._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="sec", right_alias="a") }}
 left join
     assignment_score_rollup as asg
     on a.assignmentsectionid = asg.assignmentsectionid
-    and a._dbt_source_project = asg._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="a", right_alias="asg") }}
 -- temporarily remove rows for assignmnent_rollup calcs during non-eoq times
 left join
     {{ ref("stg_google_sheets__gradebook_exceptions") }} as e

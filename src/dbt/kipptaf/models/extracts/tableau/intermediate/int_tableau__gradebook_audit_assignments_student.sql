@@ -164,7 +164,7 @@ left join
     and ce.assignment_category_code = a.category_code
     and a.duedate between ce.week_start_date and ce.week_end_date
     and ce.date_enrolled <= a.duedate
-    and ce._dbt_source_project = a._dbt_source_project
+    and {{ union_dataset_join_clause(left_alias="ce", right_alias="a") }}
     and a.iscountedinfinalgrade = 1
     and a.scoretype in ('POINTS', 'PERCENT')
 where ce.scaffold_name = 'student_category_scaffold'
