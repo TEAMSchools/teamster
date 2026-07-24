@@ -1,0 +1,2306 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>PR batch A (terms) Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pr-batch-a-terms-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              PR batch A (terms) Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-fix-fct_grades_assignmentssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Fix fct_grades_assignments.sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-fix-fct_grades_categorysql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Fix fct_grades_category.sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-fix-fct_grades_termsql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Fix fct_grades_term.sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-wrap-term_key-on-fct_staff_observationssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Wrap term_key on fct_staff_observations.sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-wrap-term_key-on-dim_student_section_enrollmentssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Wrap term_key on dim_student_section_enrollments.sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-wrap-term_key-on-dim_student_assessment_expectationssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Wrap term_key on dim_student_assessment_expectations.sql
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-7-drop-region_key-from-dim_terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Drop region_key from dim_terms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-8-append-surrogate-key-audit-entry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: Append surrogate-key audit entry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-9-trunk-check-and-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Trunk check and push
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-10-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Open the PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-11-post-pr-follow-up-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Post-PR follow-up issues
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-execution-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-execution notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-04-24-terms-pr-batch-a-plan.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="pr-batch-a-terms-implementation-plan">PR batch A (terms) Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Eliminate 37M null-composite <code>term_key</code> orphans across six <code>marts/</code>
+consumers of <code>stg_google_sheets__reporting__terms</code>, drop <code>dim_terms.region_key</code>
+diamond FK, and close #3677 / #3717.</p>
+<p><strong>Architecture:</strong> Five targeted dbt model edits (SQL + YAML). Correct a bad
+filter literal and broken join predicates in two grades facts, add the
+nullable-FK wrapper around every <code>term_key</code> derivation, remove the <code>region_key</code>
+diamond from <code>dim_terms</code>. No schema migrations, no new intermediates.</p>
+<p><strong>Tech Stack:</strong> dbt 1.11 (BigQuery adapter), <code>dbt_utils.generate_surrogate_key</code>,
+dbt relationships/unique tests, dbt Cloud CI
+(<code>dbt build --select state:modified+ --full-refresh</code>, target <code>staging</code>).</p>
+<p><strong>Spec:</strong>
+<a href="../../specs/2026-04-24-terms-pr-batch-a-design/"><code>docs/superpowers/specs/2026-04-24-terms-pr-batch-a-design.md</code></a></p>
+<p><strong>Branch / worktree:</strong> <code>cbini/fix/claude-dim-terms-orphans</code> at
+<code>.worktrees/cbini/fix/claude-dim-terms-orphans/</code>. All paths in this plan are
+relative to that worktree root. Run all commands from there.</p>
+<hr />
+<h2 id="task-1-fix-fct_grades_assignmentssql">Task 1: Fix <code>fct_grades_assignments.sql</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/fct_grades_assignments.sql:41, 69-80</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the <code>'quarter'</code> filter with <code>'RT'</code></strong></p>
+</li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_grades_assignments.sql:41</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="o">`</span><span class="k">type</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;quarter&#39;</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="o">`</span><span class="k">type</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;RT&#39;</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wrap <code>term_key</code> in nullable-FK pattern</strong></li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_grades_assignments.sql:69-80</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span>
+<span class="w">                </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">                </span><span class="p">[</span>
+<span class="w">                    </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse-check the model</strong></li>
+</ul>
+<p>Run: <code>cd src/dbt/kipptaf &amp;&amp; uv run dbt parse</code> Expected: exits 0 with no error
+for <code>fct_grades_assignments</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/fct_grades_assignments.sql
+git<span class="w"> </span>-c<span class="w"> </span>commit.gpgsign<span class="o">=</span><span class="nb">false</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt): correct fct_grades_assignments term join (refs #3717)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-fix-fct_grades_categorysql">Task 2: Fix <code>fct_grades_category.sql</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/fct_grades_category.sql:27, 45-56, 79-82</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the <code>'quarter'</code> filter with <code>'RT'</code></strong></p>
+</li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_grades_category.sql:27</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="o">`</span><span class="k">type</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;quarter&#39;</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="o">`</span><span class="k">type</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;RT&#39;</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wrap <code>term_key</code> in nullable-FK pattern</strong></li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_grades_category.sql:45-56</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span>
+<span class="w">                </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">                </span><span class="p">[</span>
+<span class="w">                    </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Fix the <code>storecode</code> and <code>yearid</code> join predicates</strong></li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_grades_category.sql:78-82</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">reporting_terms</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">cg</span><span class="p">.</span><span class="n">storecode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">cg</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">school_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">region</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">cg</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">powerschool_year_id</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1990</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">reporting_terms</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">cg</span><span class="p">.</span><span class="n">storecode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">name</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">cg</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">school_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">region</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">region</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">cg</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">powerschool_year_id</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Parse-check the model</strong></li>
+</ul>
+<p>Run: <code>cd src/dbt/kipptaf &amp;&amp; uv run dbt parse</code> Expected: exits 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/fct_grades_category.sql
+git<span class="w"> </span>-c<span class="w"> </span>commit.gpgsign<span class="o">=</span><span class="nb">false</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt): correct fct_grades_category term join (refs #3717)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-fix-fct_grades_termsql">Task 3: Fix <code>fct_grades_term.sql</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/facts/fct_grades_term.sql:24, 48-59, 93-98</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the <code>'quarter'</code> filter with <code>'RT'</code></strong></p>
+</li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_grades_term.sql:24</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="o">`</span><span class="k">type</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;quarter&#39;</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__reporting__terms&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="o">`</span><span class="k">type</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;RT&#39;</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wrap <code>term_key</code> in nullable-FK pattern</strong></li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_grades_term.sql:48-59</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span>
+<span class="w">                </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">                </span><span class="p">[</span>
+<span class="w">                    </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Fix the <code>storecode</code> and <code>yearid</code> join predicates</strong></li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_grades_term.sql:93-98</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">reporting_terms</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">fg</span><span class="p">.</span><span class="n">storecode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">fg</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">school_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">fg</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">))</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">region</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">fg</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">powerschool_year_id</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1990</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">reporting_terms</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">rt</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">fg</span><span class="p">.</span><span class="n">storecode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">name</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">fg</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">school_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">fg</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">))</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">region</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">fg</span><span class="p">.</span><span class="n">yearid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rt</span><span class="p">.</span><span class="n">powerschool_year_id</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Parse-check the model</strong></li>
+</ul>
+<p>Run: <code>cd src/dbt/kipptaf &amp;&amp; uv run dbt parse</code> Expected: exits 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/fct_grades_term.sql
+git<span class="w"> </span>-c<span class="w"> </span>commit.gpgsign<span class="o">=</span><span class="nb">false</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt): correct fct_grades_term term join (refs #3717)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-wrap-term_key-on-fct_staff_observationssql">Task 4: Wrap <code>term_key</code> on <code>fct_staff_observations.sql</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql:65-76</code></li>
+</ul>
+<p>This model assigns per-row <code>t_*</code> variables from the LEFT JOIN in its CTE, so the
+guard column is <code>t_code</code> (not <code>rt.code</code>). Preserve the existing alias scheme —
+do not rename <code>t_*</code> to <code>rt.*</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Wrap <code>term_key</code> in nullable-FK pattern</strong></li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql:65-76</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span>
+<span class="w">                </span><span class="ss">&quot;t_type&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;t_code&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;t_name&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;t_start_date&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;t_region&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;t_school_id&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">t_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">                </span><span class="p">[</span>
+<span class="w">                    </span><span class="ss">&quot;t_type&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;t_code&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;t_name&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;t_start_date&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;t_region&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;t_school_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Parse-check the model</strong></li>
+</ul>
+<p>Run: <code>cd src/dbt/kipptaf &amp;&amp; uv run dbt parse</code> Expected: exits 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/facts/fct_staff_observations.sql
+git<span class="w"> </span>-c<span class="w"> </span>commit.gpgsign<span class="o">=</span><span class="nb">false</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt): wrap fct_staff_observations term_key nullable (refs #3717)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-wrap-term_key-on-dim_student_section_enrollmentssql">Task 5: Wrap <code>term_key</code> on <code>dim_student_section_enrollments.sql</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/dim_student_section_enrollments.sql:35-46</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Wrap <code>term_key</code> in nullable-FK pattern</strong></p>
+</li>
+</ul>
+<p>Edit
+<code>src/dbt/kipptaf/models/marts/dimensions/dim_student_section_enrollments.sql:35-46</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span>
+<span class="w">                </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">                </span><span class="p">[</span>
+<span class="w">                    </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Parse-check the model</strong></li>
+</ul>
+<p>Run: <code>cd src/dbt/kipptaf &amp;&amp; uv run dbt parse</code> Expected: exits 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/dimensions/dim_student_section_enrollments.sql
+git<span class="w"> </span>-c<span class="w"> </span>commit.gpgsign<span class="o">=</span><span class="nb">false</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt): wrap dim_student_section_enrollments term_key nullable (refs #3717)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-6-wrap-term_key-on-dim_student_assessment_expectationssql">Task 6: Wrap <code>term_key</code> on <code>dim_student_assessment_expectations.sql</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/dim_student_assessment_expectations.sql:44-55</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Wrap <code>term_key</code> in nullable-FK pattern</strong></p>
+</li>
+</ul>
+<p>Edit
+<code>src/dbt/kipptaf/models/marts/dimensions/dim_student_assessment_expectations.sql:44-55</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">{{</span>
+<span class="w">        </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">            </span><span class="p">[</span>
+<span class="w">                </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">            </span><span class="p">]</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">rt</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">(</span>
+<span class="w">                </span><span class="p">[</span>
+<span class="w">                    </span><span class="ss">&quot;rt.type&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.code&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.name&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.start_date&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.region&quot;</span><span class="p">,</span>
+<span class="w">                    </span><span class="ss">&quot;rt.school_id&quot;</span><span class="p">,</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Parse-check the model</strong></li>
+</ul>
+<p>Run: <code>cd src/dbt/kipptaf &amp;&amp; uv run dbt parse</code> Expected: exits 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/dimensions/dim_student_assessment_expectations.sql
+git<span class="w"> </span>-c<span class="w"> </span>commit.gpgsign<span class="o">=</span><span class="nb">false</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix(dbt): wrap dim_student_assessment_expectations term_key nullable (refs #3717)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-7-drop-region_key-from-dim_terms">Task 7: Drop <code>region_key</code> from <code>dim_terms</code></h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>src/dbt/kipptaf/models/marts/dimensions/dim_terms.sql:26-30</code></li>
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_terms.yml:12-40</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Remove the <code>region_key</code> SELECT block</strong></p>
+</li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/dimensions/dim_terms.sql:26-30</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">t</span><span class="p">.</span><span class="n">city</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;t.city&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region_key</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">ll</span><span class="p">.</span><span class="n">location_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;ll.location_name&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">location_key</span><span class="p">,</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">term_key</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">ll</span><span class="p">.</span><span class="n">location_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;ll.location_name&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">location_key</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Remove the <code>region_key</code> YAML entry and update the <code>term_key</code>
+      description</strong></li>
+</ul>
+<p>Edit <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_terms.yml:11-40</code>:</p>
+<p>Old:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">term_key</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Surrogate key for this dimension. Hash composition uses term type, code,</span>
+<span class="w">    </span><span class="no">name, start date, region, and school ID as internal inputs; region and</span>
+<span class="w">    </span><span class="no">school ID are not exposed as mart columns (reachable via region_key and</span>
+<span class="w">    </span><span class="no">location_key FK traversal).</span>
+<span class="w">  </span><span class="nt">constraints</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primary_key</span>
+<span class="w">      </span><span class="nt">warn_unsupported</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unique</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">not_null</span>
+
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">region_key</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Foreign key to dim_regions. Surrogate key derived from the canonical region.</span>
+<span class="w">    </span><span class="no">Nullable for org-wide periods and for terms whose school is not mapped to a</span>
+<span class="w">    </span><span class="no">region.</span>
+<span class="w">  </span><span class="nt">constraints</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foreign_key</span>
+<span class="w">      </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;dim_regions&#39;)</span>
+<span class="w">      </span><span class="nt">to_columns</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">region_key</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">warn_unsupported</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">relationships</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">to</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;dim_regions&#39;)</span>
+<span class="w">          </span><span class="nt">field</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">region_key</span>
+</code></pre></div>
+<p>New:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">term_key</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">    </span><span class="no">Surrogate key for this dimension. Hash composition uses term type, code,</span>
+<span class="w">    </span><span class="no">name, start date, region, and school ID as internal inputs; region and</span>
+<span class="w">    </span><span class="no">school ID are not exposed as mart columns. Region attributes reach via</span>
+<span class="w">    </span><span class="no">dim_terms → dim_locations → dim_regions.</span>
+<span class="w">  </span><span class="nt">constraints</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primary_key</span>
+<span class="w">      </span><span class="nt">warn_unsupported</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">  </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">unique</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">not_null</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Parse-check</strong></li>
+</ul>
+<p>Run: <code>cd src/dbt/kipptaf &amp;&amp; uv run dbt parse</code> Expected: exits 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Confirm no mart consumes <code>dim_terms.region_key</code></strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;dim_terms&quot;</span><span class="w"> </span>src/dbt/kipptaf/models<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-i<span class="w"> </span>region_key
+</code></pre></div>
+<p>Expected: no output. (If any file matches, halt and flag to the user.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/dimensions/dim_terms.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/dimensions/properties/dim_terms.yml
+git<span class="w"> </span>-c<span class="w"> </span>commit.gpgsign<span class="o">=</span><span class="nb">false</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): drop dim_terms.region_key diamond FK (refs #3717)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-8-append-surrogate-key-audit-entry">Task 8: Append surrogate-key audit entry</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>docs/superpowers/specs/2026-04-15-column-naming-audit.md:364</code> (append
+  row after <code>fct_grades_gpa.term_key</code>)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Append a new row to the surrogate-key changes table</strong></p>
+</li>
+</ul>
+<p>Edit <code>docs/superpowers/specs/2026-04-15-column-naming-audit.md</code> — append a row
+directly below the existing <code>fct_grades_gpa.term_key</code> row:</p>
+<p>Insert after the line beginning <code>`|</code>fct_grades_gpa.term_key```:</p>
+<div class="highlight"><pre><span></span><code>| <span class="sb">`fct_grades_assignments.term_key`</span> / <span class="sb">`fct_grades_category.term_key`</span> /
+<span class="sb">`fct_grades_term.term_key`</span> / <span class="sb">`fct_staff_observations.term_key`</span> /
+<span class="sb">`dim_student_section_enrollments.term_key`</span> /
+<span class="sb">`dim_student_assessment_expectations.term_key`</span> |
+<span class="sb">`generate_surrogate_key([...6-tuple...])`</span> — unwrapped; all unmatched LEFT JOIN
+rows hashed to the all-NULLs placeholder (<span class="sb">`eb66153e09d138b38fc979bff5b437d5`</span>),
+producing ~37M relationships-test orphans across the six consumers | Same
+derivation, wrapped:
+<span class="sb">`if(rt.code is not null, generate_surrogate_key([...6-tuple...]), cast(null as string))`</span>.
+Grades facts also corrected: <span class="sb">`fct_grades_assignments`</span> filter <span class="sb">`type=&#39;quarter&#39;`</span> →
+<span class="sb">`&#39;RT&#39;`</span>; <span class="sb">`fct_grades_category`</span> and <span class="sb">`fct_grades_term`</span> filter <span class="sb">`&#39;quarter&#39;`</span> → <span class="sb">`&#39;RT&#39;`</span>,
+join <span class="sb">`storecode=rt.name`</span> (was <span class="sb">`rt.code`</span>), <span class="sb">`yearid=rt.powerschool_year_id`</span> (was
+<span class="sb">`powerschool_year_id - 1990`</span>) | Null handling changes (rule 4) — plus predicate
+corrections that migrate grades-facts rows from placeholder-hash to real
+<span class="sb">`term_key`</span> |
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add a bullet to "Unchanged surrogate keys (explicit
+      confirmation)"</strong></li>
+</ul>
+<p>Edit <code>docs/superpowers/specs/2026-04-15-column-naming-audit.md</code> around line 379
+(the existing bullet list). Append a bullet at the end of the list:</p>
+<div class="highlight"><pre><span></span><code><span class="k">-</span><span class="w"> </span><span class="sb">`dim_terms.term_key`</span> — hash inputs and derivation unchanged. The <span class="sb">`region_key`</span>
+  FK was dropped from <span class="sb">`dim_terms`</span> in this batch per the strict-chain traversal
+  rule, but <span class="sb">`term_key`</span> composition is untouched.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/superpowers/specs/2026-04-15-column-naming-audit.md
+git<span class="w"> </span>-c<span class="w"> </span>commit.gpgsign<span class="o">=</span><span class="nb">false</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(spec): log term_key nullable-wrap in surrogate-key audit&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-9-trunk-check-and-push">Task 9: Trunk check and push</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Run trunk check in CI mode</strong></li>
+</ul>
+<p>Trunk git hooks aren't installed in worktrees, so lint manually before push.</p>
+<p>Run: <code>/workspaces/teamster/.trunk/tools/trunk check --ci</code> Expected: exits 0 with
+no issues. If sqlfluff flags ST06 column ordering or line length &gt;88, fix inline
+and re-run until clean.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Push the branch</strong></li>
+</ul>
+<p>Run: <code>git push</code> Expected: <code>remote: Resolving deltas: …</code> with no errors.</p>
+<hr />
+<h2 id="task-10-open-the-pr">Task 10: Open the PR</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create the PR using <code>mcp__github__create_pull_request</code></strong></li>
+</ul>
+<p>Invoke with:</p>
+<ul>
+<li><code>owner</code>: <code>TEAMSchools</code></li>
+<li><code>repo</code>: <code>teamster</code></li>
+<li><code>head</code>: <code>cbini/fix/claude-dim-terms-orphans</code></li>
+<li><code>base</code>: <code>main</code></li>
+<li><code>title</code>:
+  <code>fix(dbt): eliminate 37M term_key orphans, drop region_key diamond (closes #3677, #3717)</code></li>
+<li><code>body</code>: use <code>.github/pull_request_template.md</code> structure. Minimum:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="gu">## Summary</span>
+
+<span class="k">-</span><span class="w"> </span>Fix 37M null-composite <span class="sb">`term_key`</span> orphans across six <span class="sb">`marts/`</span> consumers
+<span class="k">-</span><span class="w"> </span>Correct <span class="sb">`&#39;quarter&#39;`</span> → <span class="sb">`&#39;RT&#39;`</span> filter in three grades facts
+<span class="k">-</span><span class="w"> </span>Fix <span class="sb">`cg.storecode = rt.name`</span> (was <span class="sb">`rt.code`</span>) and
+  <span class="sb">`yearid = powerschool_year_id`</span> (was <span class="sb">`- 1990`</span>) in <span class="sb">`fct_grades_category`</span> /
+  <span class="sb">`fct_grades_term`</span>
+<span class="k">-</span><span class="w"> </span>Wrap every fact-side <span class="sb">`term_key`</span> in the nullable-FK pattern
+<span class="k">-</span><span class="w"> </span>Drop <span class="sb">`dim_terms.region_key`</span> (strict-chain traversal, reachable via
+  <span class="sb">`dim_locations.region_key`</span>)
+
+Closes <span class="ni">#3677</span> (sheet duplicate already cleaned in source) and <span class="ni">#3717</span>.
+
+Spec: <span class="sb">`docs/superpowers/specs/2026-04-24-terms-pr-batch-a-design.md`</span>
+
+<span class="gu">## Test plan</span>
+
+<span class="k">- [ ]</span> dbt Cloud CI (<span class="sb">`dbt build --select state:modified+ --full-refresh`</span>,
+      staging) passes
+<span class="k">- [ ]</span> <span class="sb">`unique_dim_terms_term_key`</span> clean
+<span class="k">- [ ]</span> Six fact-side <span class="sb">`term_key`</span> relationships tests clean
+<span class="k">- [ ]</span> Post-merge BigQuery spot check:
+      <span class="sb">`count(*) where term_key is not null and term_key not in (select term_key from dim_terms)`</span>
+      returns 0 for all six consumers
+<span class="k">- [ ]</span> No mart/rpt references <span class="sb">`dim_terms.region_key`</span> (verified via grep)
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the returned PR title and body match the intent</strong></li>
+</ul>
+<p>After the tool returns, check the <code>title</code> and <code>body</code> fields in the response
+match what was requested (per CLAUDE.md: verify tool-call results for resource
+creation).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Return the PR URL to the user for review</strong></li>
+</ul>
+<p>Paste the PR URL in the response.</p>
+<hr />
+<h2 id="task-11-post-pr-follow-up-issues">Task 11: Post-PR follow-up issues</h2>
+<p>Open three follow-up issues referencing #3717. All three are residual
+sheet-coverage / upstream-scaffold work that is out of scope for this PR.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: File the sheet-backfill issue</strong></li>
+</ul>
+<p>Use <code>mcp__github__issue_write</code> with:</p>
+<ul class="task-list">
+<li><code>owner</code>: <code>TEAMSchools</code></li>
+<li><code>repo</code>: <code>teamster</code></li>
+<li><code>method</code>: <code>create</code></li>
+<li><code>title</code>:
+  <code>fix(dbt): backfill pre-AY24 per-region RT rows in reporting terms sheet</code></li>
+<li><code>body</code>: explain that after PR batch A, pre-AY24 Newark/Camden/Miami facts get
+  <code>term_key = NULL</code> because the sheet's per-region RT rows start 2024-07-01
+  (2025-07-01 for Paterson). Two paths: backfill historical per-region rows in
+  the sheet, or document the NULL as intentional in <code>dim_terms.description</code>.
+  Link to #3717.</li>
+<li>
+<p><code>labels</code>: <code>["fix", "dbt"]</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: File the scaffold-region issue</strong></p>
+</li>
+</ul>
+<p>Use <code>mcp__github__issue_write</code> with:</p>
+<ul class="task-list">
+<li><code>title</code>: <code>fix(dbt): int_assessments__scaffold.region IS NULL for 1.6M rows</code></li>
+<li><code>body</code>: 1.6M rows in <code>int_assessments__scaffold</code> have <code>region IS NULL</code>, 273K
+  of those also have <code>administered_at IS NULL</code>. These cannot match any term via
+  <code>region</code> / date. Investigate upstream region population. Link to #3717.</li>
+<li>
+<p><code>labels</code>: <code>["fix", "dbt"]</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: File the Paterson coverage issue</strong></p>
+</li>
+</ul>
+<p>Use <code>mcp__github__issue_write</code> with:</p>
+<ul class="task-list">
+<li><code>title</code>:
+  <code>fix(dbt): dim_student_assessment_expectations Paterson 2026-02-02 term gap (105 rows)</code></li>
+<li><code>body</code>: 105 Paterson assessments dated 2026-02-02 fail to match any RT row —
+  likely a <code>school_id</code> mismatch in the sheet's Paterson RT coverage.
+  Investigate. Link to #3717.</li>
+<li>
+<p><code>labels</code>: <code>["fix", "dbt"]</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Close #3677</strong></p>
+</li>
+</ul>
+<p>Use <code>mcp__github__issue_write</code> with:</p>
+<ul>
+<li><code>method</code>: <code>update</code></li>
+<li><code>issue_number</code>: <code>3677</code></li>
+<li><code>state</code>: <code>closed</code></li>
+<li><code>state_reason</code>: <code>completed</code></li>
+</ul>
+<p>Then comment on #3677 via <code>mcp__github__add_issue_comment</code> linking the PR URL
+and noting the BigQuery verification that 0 duplicates exist in
+<code>stg_google_sheets__reporting__terms</code> or <code>dim_terms</code> under the current 6-tuple
+composition (sheet owner cleaned the duplicate row between the issue's reopen
+and now).</p>
+<hr />
+<h2 id="post-execution-notes">Post-execution notes</h2>
+<ul>
+<li>dbt Cloud CI is the authoritative test run; the job is
+  <code>dbt build --select state:modified+ --full-refresh</code> against the Staging
+  environment. Per <code>src/dbt/kipptaf/CLAUDE.md</code>. Do not attempt a full local
+  <code>dbt build</code> — the staging schema is <code>dbt_cloud_pr_…</code>, not writable from this
+  environment.</li>
+<li>The <code>--full-refresh</code> flag on CI is required because <code>term_key</code> null handling
+  changes force every consumer row to rehash.</li>
+<li>If any of the six relationships tests still fail in CI, inspect the failing
+  rows in <code>dbt_cloud_pr_&lt;ci_id&gt;_&lt;pr_num&gt;_kipptaf_dbt_test__audit</code> — those are
+  legitimate residual coverage gaps, not <code>term_key</code> logic bugs.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

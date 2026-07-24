@@ -1,0 +1,2430 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Finalsite → Focus enrollment integration (KIPP Miami) — design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-focus-enrollment-integration-kipp-miami-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite → Focus enrollment integration (KIPP Miami) — design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#direction-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Direction &amp; scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-warehouse-first-with-two-pluggable-forks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture — warehouse-first with two pluggable forks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture — warehouse-first with two pluggable forks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fork-1-finalsite-source-resolved-rest-api-live-validated-2026-06-09" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fork 1 — Finalsite source: RESOLVED → REST API (live-validated 2026-06-09)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fork-2-focus-transport-resolved-focus-sftp-import-2026-06-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fork 2 — Focus transport — RESOLVED → Focus SFTP import (2026-06-16)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-transport-coverage-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source × transport coverage matrix
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Source × transport coverage matrix">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headline-can-we-complete-the-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Headline — can we complete the target?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#target-a-focus-sftp-templates-required-field-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Target A — Focus SFTP templates: required-field coverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#target-b-focus-api-post-student-field-group-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Target B — Focus API POST /student: field-group coverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-the-matrix-decides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What the matrix decides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#student_enrollment-field-resolution-finalsite-api-focus-sftp-chosen-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Student_Enrollment field resolution (Finalsite API → Focus SFTP — chosen design)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#finalsite-api-live-profile-newark-proxy-n300" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finalsite API live profile (Newark proxy, n=300)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sync-operations-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sync operations (lifecycle)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-the-crux-resolved-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity (the crux) — resolved model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Components
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pii-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PII handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-decisions-gates-do-not-block-writingimplementation-planning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open decisions &amp; gates (do not block writing/implementation planning)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-05-29-finalsite-focus-integration-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-focus-enrollment-integration-kipp-miami-design">Finalsite → Focus enrollment integration (KIPP Miami) — design</h1>
+<ul>
+<li><strong>Issue:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4073">#4073</a></li>
+<li><strong>Status:</strong> Design / brainstorming output (no implementation yet); updated
+  2026-06-16 — Fork 1 resolved to the <strong>REST API</strong>, live-validated against
+  Miami; Fork 2 resolved to <strong>Focus SFTP import</strong> (all templates); <code>START_DATE</code>
+  sourced from <code>stg_finalsite__status_report</code>; <code>STUDENT_ID</code> minted by Finalsite
+  (autogen <code>IdField</code>). See <em>Fork 1</em> / <em>Fork 2</em> / <em>Open decisions</em>.</li>
+<li><strong>Scope:</strong> KIPP Miami only (<code>kippmiami</code> code location)</li>
+<li><strong>Related:</strong> inbound Focus-load spec
+  <code>2026-04-03-focus-sis-integration-design.md</code> (distinct pipeline — that loads
+  Focus → warehouse; this pushes Finalsite → Focus)</li>
+<li><strong>API reference:</strong> <code>references/focus-api-spec.md</code></li>
+<li><strong>Source sample:</strong> Finalsite Swiss Army Export "Focus Student Export" SFTP CSV
+  (<code>kippmiami_SwissArmyExport_Focus_Student_Export…_SFTP_…</code>, 2026-06-02). PII —
+  held in Drive, <strong>not committed</strong> to the repo. Schema documented in <em>Fork 1</em>.</li>
+</ul>
+<h2 id="goal">Goal</h2>
+<p>Finalsite Enrollment is the <strong>system of record</strong> for student enrollment,
+transfers out, re-enrollment, and contacts at KIPP Miami. This integration keeps
+Focus (the SIS) continuously in sync with Finalsite — creating new enrollees
+<strong>and updating existing Focus students after creation</strong> across the full
+lifecycle — so staff never re-enter enrollment data in Focus.</p>
+<h2 id="direction-scope">Direction &amp; scope</h2>
+<ul>
+<li><strong>One-directional (Finalsite → Focus) but ongoing.</strong> Finalsite is SoR; Focus
+  is the continuously-updated downstream. This is <strong>not</strong> a two-way sync — the
+  only reverse flow is writing the resolved <code>student_id</code>/<code>uuid</code> back to
+  Finalsite. But it is an ongoing <strong>upsert + lifecycle</strong> sync, not a one-time
+  create (see <em>Sync operations</em>).</li>
+<li><strong>Miami only.</strong> Focus is Miami's SIS; Newark/Camden/Paterson use PowerSchool.
+  Build in <code>kippmiami</code>, alongside the existing Focus DLT and Finalsite assets.</li>
+</ul>
+<h2 id="architecture-warehouse-first-with-two-pluggable-forks">Architecture — warehouse-first with two pluggable forks</h2>
+<p>Everything from staging through "Focus-shaped output" is shared and built
+regardless of how the two open forks resolve. The forks live only at the edges.</p>
+<div class="highlight"><pre><span></span><code>Finalsite  [FORK 1: REST API  OR  new SFTP export]
+  -&gt; GCS (Avro) -&gt; BigQuery raw [kippmiami]
+  -&gt; dbt staging            (normalize the chosen source to one common shape)
+  -&gt; dbt eligibility filter (accepted/enrolled, target school year)
+  -&gt; dbt identity resolution  &lt;-&gt; persisted crosswalk
+  -&gt; dbt Focus-shaped output models  (5 SFTP-template shapes)
+  -&gt; [FORK 2 = Focus SFTP import: 5 coordinated CSVs, keyed STDT_ID]
+  -&gt; [optional] write resolved student_id + Focus uuid back to Finalsite
+  -&gt; reconciliation: Finalsite eligible roster vs Focus students
+</code></pre></div>
+<h3 id="fork-1-finalsite-source-resolved-rest-api-live-validated-2026-06-09">Fork 1 — Finalsite source: RESOLVED → REST API (live-validated 2026-06-09)</h3>
+<p><strong>Decision: source from the Finalsite REST API.</strong> Validated live against Miami
+(<code>kippmiami.fsenrollment.com</code>): a single paginated call —
+<code>GET /contacts?school_year_id={current}&amp;count=25&amp;includes=contacts.relationships.contact</code>
+(paginate via <code>meta.next_cursor</code>) — reproduces <strong>every column of the SFTP "Focus
+Student Export."</strong> The only field not directly present is <code>Enrolled Date</code>
+(sourced from the Status Report — see below); the gendered <code>mother</code>/<code>father</code>
+relationship label is <strong>derived</strong> from <code>relationships[].rel_type</code> + the
+guardian's <code>gender</code> (validated: <code>parent</code>+<code>F</code>→mother, <code>parent</code>+<code>M</code>→father, etc.,
+falling back to the bare <code>rel_type</code> when gender is unset — reproducing the
+export exactly). Per student it returns base demographics + <code>grade</code> +
+<code>households</code> (address) + <code>custom_attributes</code> (Miami names confirmed: <code>race_ms</code>,
+<code>assigned_school_ss</code>, <code>med_doctor_txt</code>/<code>med_hospital_txt</code>/…, <code>mdcps_id_txt</code>,
+<code>sped_received_yn</code>, <code>latino_hispanic_yn</code>) + <code>id_attributes</code> + <strong>fully-expanded
+guardian contacts</strong> (name/email/phone) via the <code>contacts.relationships.contact</code>
+include. The dormant <code>build_finalsite_asset</code> + <code>FinalsiteResource</code> (JWT) already
+implement this auth + pagination, so wiring Miami contacts ingestion is mostly
+config. The dbt <strong>staging layer normalizes the source into one shape</strong>, so
+downstream is source-independent.</p>
+<p><strong><code>Enrolled Date</code> (= <code>START_DATE</code>) is not in the API</strong> — confirmed not in
+<code>contact_statuses</code> (catalog only), not reachable by any expansion (unknown
+<code>includes</code> tokens are silently ignored), and absent from the full payload (0
+minute-precision matches across 20 students). It is a workflow status-change
+timestamp the API does not expose. <strong>Resolution (decided):</strong> join the
+already-ingested <strong><code>stg_finalsite__status_report.enrolled_date</code></strong> on
+<code>finalsite_enrollment_id</code> (= the API <code>contact.id</code>; UUID, 2529/2529). That
+Status-Report SFTP feed also carries the full status-transition timeline
+(<code>accepted_date</code>, <code>enrollment_in_progress_date</code>, <code>assigned_school_date</code>,
+<code>enrolled_date</code>, <code>not_enrolling_date</code>, <code>mid_year_withdrawal_date</code>,
+<code>summer_withdraw_date</code>, …) — supplying both the <strong>eligibility predicate</strong> and
+the <strong>transfer-out <code>END_DATE</code></strong>. So: API for the contact + a keyed join to the
+existing Status Report for workflow dates. The new "Focus Student Export" file
+is <strong>not needed</strong> as a source.</p>
+<p><em>Status-history search (exhausted 2026-06-09):</em> the status-change timeline
+(incl. <code>enrolled_date</code>) is <strong>not</strong> available via the External API — <code>activities</code>
+/ <code>history</code> / <code>statuses</code> / <code>status_history</code> endpoints all 404, and the matching
+<code>includes</code> tokens are silently ignored; the External API exposes only the
+<strong>current</strong> <code>status</code>. The admin UI renders the timeline from <strong>server-side
+prerendered HTML</strong>, not a JSON endpoint, so there is no programmatic API for it.
+The only structured source is the Status Report SFTP export
+(<code>stg_finalsite__status_report</code>), verified against the live UI per student
+(<code>enrolled_timestamp</code> / <code>enrollment_in_progress_timestamp</code> /
+<code>assigned_school_timestamp</code> match the rendered status rows to the second).</p>
+<p>The SFTP "Focus Student Export" sample documented below remains the <strong>validation
+baseline</strong> the API was checked against.</p>
+<p><strong>The SFTP export now exists</strong> (sample dated 2026-06-02), so the comparison has
+real data on one side. It is a Finalsite "Swiss Army Export" configured as a
+"Focus Student Export," delivered via SFTP: <strong>one flat, denormalized row per
+student</strong>, with the address, medical fields, and up to <strong>four</strong> guardians
+embedded inline. This is the <em>source</em> shape — distinct from Focus's five
+<em>import</em> templates in Fork 2; do not conflate them.</p>
+<p>Documented columns (sample):</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Columns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identity</td>
+<td><code>Finalsite ID</code>; SIS-ID slots <code>PowerSchool DCID</code>, <code>PowerSchool Student Number</code> (see gate)</td>
+</tr>
+<tr>
+<td>Student</td>
+<td>First / Middle / Last Name, <code>Grade</code>, <code>Gender</code>, <code>Birth Date</code>, <code>Latino/Hispanic</code> (bool), <code>Race - Multi-Racial</code> (pipe-delimited multi-select)</td>
+</tr>
+<tr>
+<td>Address</td>
+<td><code>Household 1 Address / City / State / Zip</code> (single household only)</td>
+</tr>
+<tr>
+<td>Medical</td>
+<td>Student Doctor Name / Phone, <code>Media Release</code>, Preference of Hospital, Hospital/Doctor Phone (see gate)</td>
+</tr>
+<tr>
+<td>Guardians ×4</td>
+<td>per parent: <code>Finalsite ID</code>, <code>PowerSchool Contact ID</code>, Title, First / Last Name, Relationship, Primary Phone Type / Number, Email</td>
+</tr>
+</tbody>
+</table>
+<p>Findings that reshape the design:</p>
+<ol>
+<li><strong>No enrollment data.</strong> The export carries no enrollment status, school,
+   entry date, school year, or withdrawal/drop code — only <code>Grade</code>. As
+   configured it <strong>cannot drive the eligibility predicate or the lifecycle ops</strong>
+   (transfer-out, re-enroll); it only feeds demographics / address / contacts.
+   See the <em>enrollment-data gate</em>.</li>
+<li><strong>SIS-ID slots are PowerSchool-named on a Focus region</strong> — mostly empty, a
+   few guardian rows carry a populated contact ID. See the <em>SIS-ID column gate</em>.</li>
+<li><strong>Up to four guardians</strong> — the source over-supplies relative to the Focus API
+   (max 2). With the all-guardians decision (below), this tilts Fork 2 to SFTP.</li>
+<li><strong>Medical fields present</strong> — see the <em>medical-destination gate</em>.</li>
+<li><strong>Single household</strong> — no second address modeled.</li>
+</ol>
+<p><strong>Empirical profile</strong> (sample export, n=167 students, 56 columns, 2026-06-02 —
+aggregates only):</p>
+<ul>
+<li><strong>No enrollment fields, confirmed</strong> — 0 of 56 columns carry status / school /
+  entry date / year / program; the only date column is <code>Birth Date</code>. Validates
+  the <em>enrollment-data gate</em>.</li>
+<li><strong>Identity slots near-empty</strong> — <code>PowerSchool DCID</code> / <code>Student Number</code>
+  populated in ~1.2% of rows; a per-guardian <code>PowerSchool Contact ID</code> is present
+  on <strong>19.6%</strong> of guardians (returning families partially pre-keyed — bears on
+  the <em>SIS-ID column gate</em> and the crosswalk).</li>
+<li><strong>Guardian distribution</strong> (supports all-guardians → SFTP Contacts): 1 → 51, 2
+  → 87, <strong>3 → 23, 4 → 3</strong>; <strong>26 students (15.6%) have ≥3</strong> — the Focus API's
+  2-cap would drop guardians for ~1 in 6.</li>
+<li><strong>Sibling-inference yield</strong> (for <code>Linked_Students</code> via shared parent ID): <strong>64
+  students (38.3%)</strong> link to ≥1 sibling; 50 distinct pairs.</li>
+<li><strong><code>Race - Multi-Racial</code> is pipe-delimited multi-select</strong> (8 rows carry
+  multiple values) → maps to Focus <code>RACE_*</code> Y/N booleans, not just
+  <code>SINGLE_ETHNIC</code>.</li>
+<li><strong><code>Relationship</code> is coarse</strong> — generic <code>parent</code> dominates (172/306);
+  <code>RESIDES_WITH_STUD</code> has no source (default required).</li>
+<li><strong>Data quality:</strong> 3 students (1.8%) have no guardian and no address —
+  quarantine rather than push.</li>
+</ul>
+<p><strong>Superseded (2026-06-09).</strong> The earlier "enrich the single SFTP export"
+preference is dropped: Fork 1 resolved to the <strong>API</strong> (above), with
+<code>enrolled_date</code> and lifecycle dates joined from <code>stg_finalsite__status_report</code>.
+The enrollment-data gate is thereby closed (see <em>Open decisions</em>).</p>
+<h3 id="fork-2-focus-transport-resolved-focus-sftp-import-2026-06-16">Fork 2 — Focus transport — RESOLVED → Focus SFTP import (2026-06-16)</h3>
+<p><strong>Decision: all records flow to Focus via the SFTP import templates</strong> — the 5
+coordinated CSVs (Demographics, Student<em>Enrollment, Address, Contacts,
+Linked_Students), keyed on <code>STDT_ID</code>. The Focus REST API is not used. This
+covers the whole picture: contacts were already SFTP (all-guardians decision,
+below — the API caps at 2), and SFTP is </em><em>the only path that creates an actual
+enrollment record</em>* (the API's <code>enrollments</code> table is GET-only; placement only
+via
+<code>accepting*\*</code>). It also reuses the existing <code>build_bigquery_query_sftp_asset</code>
+precedent, sidesteps the OAuth2 outbound resource, and avoids the API's
+vendor-confirm unknowns entirely. Trade-off accepted: error feedback is
+batch-level (mismatches land in Focus's manual "Match Students" queue) rather
+than per-record synchronous.</p>
+<p>The comparison below is retained for context.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Focus SFTP templates</th>
+<th>Focus REST API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shape</td>
+<td>5 coordinated CSVs (Demographics, Student_Enrollment, Address, Contacts, Linked_Students) keyed on <code>STDT_ID</code></td>
+<td><code>POST /student</code> (student + demographics + 2 guardians + address + accepting grade/school/program/year), <code>PUT /student/:uuid</code>, <code>POST /multi</code> batch</td>
+</tr>
+<tr>
+<td>Auth/setup</td>
+<td>SFTP creds; files to <code>/uploaded-assets/export/</code>, static filenames, UTF-8, fixed column order</td>
+<td>OAuth2 <code>client_credentials</code>; Focus admin provisions a Third Party System (Focus dialect, write scope, Client ID/Secret)</td>
+</tr>
+<tr>
+<td>Enrollment record</td>
+<td><code>STUDENT_ENROLLMENT</code> template creates it</td>
+<td><code>enrollments</code>/<code>school_enrollments</code> are <strong>GET-only</strong> — unclear if <code>POST /student</code> accepting_* fields create the enrollment (vendor-confirm)</td>
+</tr>
+<tr>
+<td>Guardians</td>
+<td>Many (Contacts + SORT_ORDER)</td>
+<td>Exactly 2</td>
+</tr>
+<tr>
+<td>Error feedback</td>
+<td>After Focus processes batch; mismatches land in manual "Match Students" queue</td>
+<td>Per-record, synchronous</td>
+</tr>
+<tr>
+<td>Repo precedent</td>
+<td>Reuses <code>build_bigquery_query_sftp_asset</code></td>
+<td>Net-new outbound OAuth2 POST resource</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Decision (2026-06-02): preserve all guardians.</strong> Miami wants every guardian
+the source supplies (the export carries up to four). The Focus API caps at
+<code>guardian_1</code>/<code>guardian_2</code>, so an <strong>API-only path would silently drop guardians</strong>
+— it is ruled out for contacts. The SFTP <code>Contacts</code> template (+ <code>SORT_ORDER</code>)
+handles many, so Fork 2 tilts to SFTP; an API path would have to be paired with
+SFTP for the <code>Contacts</code> file. This does not by itself resolve Fork 2 for the
+student/enrollment records — only the contacts portion.</p>
+<p>Possible hybrid: API for the student record + SFTP <code>STUDENT_ENROLLMENT</code> for the
+enrollment, if the API can't create enrollments.</p>
+<h2 id="source-transport-coverage-matrix">Source × transport coverage matrix</h2>
+<p>How completely each <strong>Finalsite source</strong> (SFTP export vs REST API) can populate
+each <strong>Focus target</strong> (the 5 SFTP import templates vs the <code>POST /student</code> API).
+Authoritative field lists: Finalsite API = <code>references/finalsite-api-spec.yml</code>;
+Focus API = <code>references/focus-api-spec.md</code>; Focus SFTP = the FL K-12 import
+workbook; Finalsite SFTP = the landed export (<em>Fork 1</em>).</p>
+<p><strong>Legend:</strong> ✓ direct field in the source · ◐ obtainable by pipeline derivation,
+config, or a Finalsite custom/track field (not a base column) · ✗ no source.</p>
+<p><strong>Caveats that apply to every cell:</strong></p>
+<ul>
+<li><code>STUDENT_ID</code> / the Focus key is <strong>pipeline-resolved</strong> (identity/minting gate)
+  on all paths — counted ◐, never ✓-from-source.</li>
+<li>The Focus <strong>API marks no field required</strong> (its route registry carries no
+  <code>required</code> flags). "Required" there = the functional minimum to create + place
+  a student: a match key, name, <code>accepting_school</code>, <code>accepting_grade</code>,
+  <code>school_year</code>.</li>
+<li><strong><code>START_DATE</code>/entry date exists in no source</strong> — neither the export nor the
+  API <code>Contact</code> carries an enrollment start date; it must be derived (first
+  instructional day of <code>school_year</code>, or the API <code>contract_submit_date</code> proxy).</li>
+<li><strong>Which Focus <code>SCHOOL</code> a student enrolls in is in no base source</strong> — derivable
+  (region/grade → school) or a Finalsite custom field.</li>
+<li><strong>Race/ethnicity/language/school live in the API as custom fields — confirmed
+  populated</strong> (Newark live profile: <code>race_ms</code>, <code>preferred_language_txt</code>,
+  <code>kipp_school_*</code>/<code>assigned_school_ss</code>). The base <code>Contact</code> exposes gender +
+  birth_date; the rest are <code>custom_attributes</code>/<code>track_attributes</code>. So both
+  sources carry race — the API is in fact the broader source. Miami's exact
+  custom-field names are per-tenant (confirm when Miami creds land).</li>
+</ul>
+<h3 id="headline-can-we-complete-the-target">Headline — can we complete the target?</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>→ Focus SFTP templates</th>
+<th>→ Focus API (<code>POST /student</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Finalsite SFTP export →</strong></td>
+<td>Demographics ✅ · Address ✅ · Contacts ✅¹ · Linked ✅² · <strong>Enrollment ❌³</strong></td>
+<td>student+demographics ✅ · address ✅ · 2 guardians ⚠️⁴ · <strong>placement ⚠️³</strong></td>
+</tr>
+<tr>
+<td><strong>Finalsite API →</strong></td>
+<td>Demographics ✅⁵ · Address ✅ · Contacts ✅ · Linked ✅ · <strong>Enrollment ⚠️³</strong></td>
+<td>demographics ✅⁵ · address ✅ · 2 guardians ⚠️⁴ · placement ⚠️³ + <strong>status-driven eligibility ✅</strong></td>
+</tr>
+</tbody>
+</table>
+<p>¹ <code>RESIDES_WITH_STUD</code> not in source → default. ² via shared-parent inference. ³
+<code>SCHOOL</code> + <code>START_DATE</code> not in source (derive); Focus enrollment-code setup
+required; <strong>the API cannot write the <code>enrollments</code> table at all</strong> — placement
+only via <code>accepting_*</code>. ⁴ Focus API caps guardians at 2 → violates the
+all-guardians decision (data loss). ⁵ race/ethnicity/language/school are API
+custom fields, confirmed populated in Newark (per-tenant names — confirm Miami).</p>
+<h3 id="target-a-focus-sftp-templates-required-field-coverage">Target A — Focus SFTP templates: required-field coverage</h3>
+<table>
+<thead>
+<tr>
+<th>Focus file (req)</th>
+<th>from Finalsite SFTP</th>
+<th>from Finalsite API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Demographics (3)</td>
+<td>3/3 ✓✓◐</td>
+<td>3/3 ✓✓◐</td>
+</tr>
+<tr>
+<td>Student_Enrollment (5)</td>
+<td>3/5 — <code>GRADE_ID</code>✓ <code>STUDENT_ID</code>◐ <code>SYEAR</code>◐(config); <strong><code>SCHOOL_ID</code>◐ <code>START_DATE</code>✗</strong></td>
+<td>3/5 — <code>GRADE_ID</code>✓ <code>SYEAR</code>✓ <code>STUDENT_ID</code>◐; <strong><code>SCHOOL_ID</code>◐ <code>START_DATE</code>✗</strong></td>
+</tr>
+<tr>
+<td>Addresses (1)</td>
+<td>1/1 ◐</td>
+<td>1/1 ◐</td>
+</tr>
+<tr>
+<td>Contacts (5)</td>
+<td>4/5 — names✓ <code>SORT_ORDER</code>◐ <code>STUDENT_ID</code>◐; <code>RESIDES_WITH_STUD</code>✗(default)</td>
+<td>4/5 — same</td>
+</tr>
+<tr>
+<td>Linked_Students (3)</td>
+<td>3/3 ◐ (shared-parent inference)</td>
+<td>3/3 ✓ (<code>relationships.rel_type</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Required count is ~14/17 either way. The API doesn't raise the <em>count</em> but
+improves provenance: <code>SYEAR</code> and sibling links become direct, and — critically —
+<code>status</code>/<code>enrollment_type</code> (absent from the export entirely) arrive to drive
+eligibility and the create / transfer-out / re-enroll classification (both
+sources carry race).</p>
+<h3 id="target-b-focus-api-post-student-field-group-coverage">Target B — Focus API <code>POST /student</code>: field-group coverage</h3>
+<table>
+<thead>
+<tr>
+<th>Group (47-field flat body)</th>
+<th>from Finalsite SFTP</th>
+<th>from Finalsite API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Match key (<code>student</code>/<code>uuid</code>/<code>focus_id</code>)</td>
+<td>◐ pipeline</td>
+<td>◐ pipeline; minted number via <code>id_attributes</code></td>
+</tr>
+<tr>
+<td>Names, <code>birthdate</code>, <code>gender</code></td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Race flags + <code>ethnicity</code></td>
+<td>✓ (Race + Latino/Hispanic cols)</td>
+<td>✓ (<code>race_ms</code> custom, confirmed Newark)</td>
+</tr>
+<tr>
+<td><code>accepting_grade</code>/<code>current_grade</code></td>
+<td>✓</td>
+<td>✓ (<code>grade.canonical_name</code>)</td>
+</tr>
+<tr>
+<td><code>school_year</code></td>
+<td>◐ config</td>
+<td>✓ (<code>school_year.start_year</code>)</td>
+</tr>
+<tr>
+<td><code>accepting_school</code></td>
+<td>◐ derive</td>
+<td>✓ (<code>assigned_school_ss</code>/<code>kipp_school_*</code>, Newark)</td>
+</tr>
+<tr>
+<td><code>accepting_program</code>, <code>ese_status</code>, <code>preferred_language</code>, student <code>email</code>, <code>current_school</code></td>
+<td>✗ (mostly)</td>
+<td>◐/✓ (<code>email</code>✓; language/program/ese custom)</td>
+</tr>
+<tr>
+<td><code>guardian_1/2</code> (2 only)</td>
+<td>✓ but <strong>2 of up to 4</strong></td>
+<td>✓ but <strong>2 of up to 4</strong></td>
+</tr>
+<tr>
+<td>Address (<code>address</code>,<code>city</code>,<code>state</code>,<code>zipcode</code>)</td>
+<td>✓; <code>address2</code> ✗</td>
+<td>✓; <code>address2</code> ✓ (<code>households</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Both source paths fill the demographic + address + two-guardian core. Neither
+cleanly fills placement (<code>accepting_school</code>, start date), and <strong>both lose
+guardians 3–4</strong> to the API's 2-cap — the reason Fork 2 already tilts to SFTP for
+contacts.</p>
+<h3 id="what-the-matrix-decides">What the matrix decides</h3>
+<ol>
+<li><strong>No single corner is complete.</strong> Every path needs the identity/minting gate,
+   a <code>START_DATE</code> derivation, and a <code>SCHOOL</code> rule; the Focus API additionally
+   can't write the enrollment table and caps guardians at 2.</li>
+<li><strong>The export is a thin slice of the API.</strong> Beyond the lifecycle drivers it
+   lacks (<code>status</code>, <code>enrollment_type</code>, <code>school_year</code>, sibling <code>relationships</code>),
+   the live profile shows the API also carries race, school, language, medical,
+   IEP, and four emergency contacts (see <em>Finalsite API live profile</em>) — so an
+   API/hybrid source could fill every gap. The chosen direction stays <strong>enrich
+   the single SFTP export</strong>: the profile confirms every field to add already
+   exists in Finalsite, so it's a Swiss-Army-Export config change, not a
+   data-availability problem. Hybrid/API-source is the fallback. See the
+   <em>enrollment-data gate</em>.</li>
+<li><strong>Focus SFTP target dominates the Focus API target</strong> for this use case: it is
+   the only path that creates an actual enrollment record and the only one that
+   preserves all guardians. The Focus API is viable for student/demographic
+   upserts, never the enrollment.</li>
+<li><strong><code>status</code> is the eligibility key</strong> — the active accepted→enrolled set
+   (<code>accepted</code> / <code>enrollment_in_progress</code> / <code>assigned_school</code> / <code>enrolled</code> /
+   <code>retained</code>) is "send to Focus", confirmed against the 25-status catalog. The
+   current SFTP export omits it, so enriching the export <strong>must add <code>status</code></strong>
+   (and <code>enrollment_type</code>) — not optional.</li>
+</ol>
+<h3 id="student_enrollment-field-resolution-finalsite-api-focus-sftp-chosen-design">Student_Enrollment field resolution (Finalsite API → Focus SFTP — chosen design)</h3>
+<p>This is the <strong>chosen</strong> path (Fork 1 = API; contacts via Focus SFTP). It
+<strong>sidesteps the API enrollment-write gap</strong> — the Focus SFTP <code>STUDENT_ENROLLMENT</code>
+template does the enrollment write. Field-by-field, validated live against
+Miami:</p>
+<table>
+<thead>
+<tr>
+<th>Focus field</th>
+<th>Source</th>
+<th>Remaining</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SYEAR</code> (req)</td>
+<td>API <code>school_year.start_year</code> ✓</td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>STUDENT_ID</code> (req)</td>
+<td>API <code>id_attributes</code> (Finalsite-minted via autogen <code>IdField</code>)</td>
+<td>Finalsite config: create the 10-digit autogen field</td>
+</tr>
+<tr>
+<td><code>GRADE_ID</code> (req)</td>
+<td>API <code>grade.canonical_name</code> ✓</td>
+<td>Finalsite-grade → Focus Short-Name map; Focus grade levels set up</td>
+</tr>
+<tr>
+<td><code>SCHOOL_ID</code> (req)</td>
+<td>API <code>assigned_school_ss</code> (Miami, confirmed) ✓</td>
+<td>Finalsite-school → Focus <code>SCH_ID</code> crosswalk; Focus Schools exist</td>
+</tr>
+<tr>
+<td><code>START_DATE</code> (req)</td>
+<td><strong><code>stg_finalsite__status_report.enrolled_date</code></strong> (join <code>finalsite_enrollment_id</code>) ✓</td>
+<td>none — sourced</td>
+</tr>
+<tr>
+<td><code>ENROLLMENT_CODE</code> (opt, needed)</td>
+<td>derive from API <code>status</code> / <code>enrollment_type</code></td>
+<td><code>new</code>/<code>returning</code> → Focus Add-code (<code>EA1</code>/<code>RA1</code>) map; codes set up</td>
+</tr>
+<tr>
+<td><code>END_DATE</code> + <code>DROP_CODE</code> (xfer)</td>
+<td>status-report withdrawal dates (<code>mid_year_withdrawal_date</code> / <code>summer_withdraw_date</code> / <code>not_enrolling_date</code>)</td>
+<td>reason → Focus <code>DROP_CODE</code> map</td>
+</tr>
+<tr>
+<td><code>CALENDAR_ID</code> (opt)</td>
+<td>blank = school default</td>
+<td>only if non-default calendars</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Every required field is now sourced — no data gaps.</strong> The API supplies the
+contact-side fields; the already-ingested Status Report supplies the workflow
+dates (<code>enrolled_date</code> = <code>START_DATE</code>, withdrawal dates for transfer-out),
+joined on <code>finalsite_enrollment_id</code> (= API <code>contact.id</code>). What remains is
+<strong>mapping + Focus-side setup</strong>, not data availability:</p>
+<ol>
+<li><strong>Mapping</strong>: Finalsite grade → Focus Short-Name; <code>assigned_school_ss</code> → Focus
+   <code>SCH_ID</code>; <code>status</code>/<code>enrollment_type</code> → <code>ENROLLMENT_CODE</code>; withdrawal reason →
+   <code>DROP_CODE</code>.</li>
+<li><strong>Focus code setup</strong> (must exist, case-sensitive short names): Grade Levels,
+   Enrollment Codes (Add + Drop), Calendars, Schools.</li>
+<li><strong><code>STUDENT_ID</code> minting — decided: Finalsite mints</strong> via an autogen <code>IdField</code>;
+   the pipeline reads <code>id_attributes</code>. Remaining is the Finalsite-side field
+   config, not a pipeline concern.</li>
+</ol>
+<h2 id="finalsite-api-live-profile-newark-proxy-n300">Finalsite API live profile (Newark proxy, n=300)</h2>
+<p>Profiled the <strong>live</strong> Finalsite Enrollment API for <strong>Newark</strong> (same product as
+Miami; aggregates only, no PII) to ground the API-source assumptions. Newark is
+a <strong>proxy</strong>: status stages, the <code>IdField</code> mechanism, grades, and relationship
+types should transfer, but the specific <strong>custom-field names</strong> and which
+<code>IdField</code> holds the canonical number are per-tenant — Miami needs its own pass
+once Miami API creds exist (Newark's IdFields are
+PowerSchool/FACTS/Blackbaud/Veracross — no Focus field).</p>
+<ul>
+<li><strong>The API is far richer than the export</strong> (599 fields). Populated custom/track
+  fields include <code>race_ms</code>, <strong><code>kipp_school_2025_2026_ss</code> +
+  <code>assigned_school_ss</code></strong> (school-of-enrollment), <code>media_release_yn</code>,
+  <code>preferred_language_txt</code>, a full medical set, IEP/504/SpEd, <strong>four emergency
+  contacts</strong> (<code>emrg_1..4_*</code>), and <code>us_school_entry_date</code>. Everything the export
+  would need to add already exists.</li>
+<li><strong>No autogen <code>IdField</code> today</strong> — all 7 are <code>autogen=False</code> passthroughs
+  (<code>powerschool_student_number</code>, <code>facts_sis_student_id</code> = <code>STU…pad_zeroes:12</code>):
+  SIS-minted values written back, not Finalsite-generated. The formatting engine
+  is present, so an autogen field is feasible (see <em>minting gate</em>).</li>
+<li><strong>Identity populated only for returning students</strong> — <code>id_attributes</code> carries
+  the SIS number for <strong>205/205 returning</strong> and <strong>0/44 new</strong> (by status:
+  <code>enrolled</code> 182/203, <code>not_enrolling</code> 13/14, all inquiry/waitlist/applicant 0).</li>
+<li><strong>Eligibility predicate</strong> — 25-status catalog; active accepted→enrolled
+  (<code>accepted</code>/<code>enrollment_in_progress</code>/<code>assigned_school</code>/<code>enrolled</code>/<code>retained</code>)
+  = in-scope; <code>enrollment_type</code> (returning 205 / new 44) drives re-enroll vs
+  create.</li>
+<li><strong>Siblings direct</strong> — <code>relationships</code>: parent 382, <strong>sibling 183</strong>,
+  grandparent 41 → <code>Linked_Students</code> from the API, no inference.</li>
+</ul>
+<h2 id="sync-operations-lifecycle">Sync operations (lifecycle)</h2>
+<p>Finalsite is SoR for the full student lifecycle. The integration applies each of
+these to Focus on an ongoing basis — not just at initial enrollment:</p>
+<table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Finalsite trigger</th>
+<th>Focus effect</th>
+<th>Transport (Fork 2 = SFTP import)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Create</strong></td>
+<td>New accepted/enrolled contact</td>
+<td>New student + demographics + address + contacts + enrollment</td>
+<td>Full SFTP template set</td>
+</tr>
+<tr>
+<td><strong>Update after create</strong></td>
+<td>Any change to an existing student</td>
+<td>Update the matched Focus student</td>
+<td>SFTP refresh (re-send current state), matched on <code>STDT_ID</code> from crosswalk</td>
+</tr>
+<tr>
+<td><strong>Transfer out</strong></td>
+<td>Withdrawal / drop in Finalsite</td>
+<td>End-date / drop the enrollment</td>
+<td>SFTP <code>STUDENT_ENROLLMENT</code> <code>END_DATE</code>+<code>DROP_CODE</code></td>
+</tr>
+<tr>
+<td><strong>Re-enrollment</strong></td>
+<td>Returning student for a new year</td>
+<td>New enrollment row for the existing student</td>
+<td>SFTP <code>STUDENT_ENROLLMENT</code> (per-year file)</td>
+</tr>
+<tr>
+<td><strong>Contacts</strong></td>
+<td>Guardian / relationship changes</td>
+<td>Upsert contacts + sibling links</td>
+<td>SFTP <code>Contacts</code>/<code>Linked_Students</code> (many guardians via <code>SORT_ORDER</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Two consequences:</p>
+<ul>
+<li><strong>Updates require resolving the Focus <code>uuid</code>/<code>student_id</code> for every record</strong>,
+  not just new ones — the persisted crosswalk is load-bearing for the entire
+  lifecycle, not a one-time convenience.</li>
+<li><strong>The enrollment-write gap settled Fork 2 toward SFTP.</strong> Transfers-out and
+  re-enrollment are enrollment-record changes, and the Focus API exposes no
+  enrollment write (<code>enrollments</code>/<code>school_enrollments</code> are GET-only). The SFTP
+  <code>STUDENT_ENROLLMENT</code> template is the only mechanism that writes enrollments,
+  so the chosen design (Fork 2 = SFTP) handles the whole lifecycle in one
+  mechanism — create, update, transfer-out, and re-enroll all via the template
+  set.</li>
+</ul>
+<h2 id="identity-the-crux-resolved-model">Identity (the crux) — resolved model</h2>
+<p>KIPP owns the canonical student number. Confirmed against live Focus data (3,453
+migrated students):</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Shape</th>
+<th>Origin</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>student_id</code> (= <code>custom_53</code> / <code>local_id</code>)</td>
+<td>10-digit</td>
+<td><strong>KIPP-supplied</strong> at migration (<code>STDT_ID</code>)</td>
+<td><strong>Canonical KIPP student number (current scheme)</strong></td>
+</tr>
+<tr>
+<td><code>custom_l1482</code> (<code>powerschool_student_number</code>)</td>
+<td>6-digit</td>
+<td>KIPP-supplied</td>
+<td><strong>Legacy</strong> PowerSchool number, preserved for the migrated cohort only</td>
+</tr>
+<tr>
+<td><code>uuid</code></td>
+<td>uuid</td>
+<td>Focus-generated</td>
+<td>Internal record / API key</td>
+</tr>
+</tbody>
+</table>
+<p>Implications:</p>
+<ul>
+<li>The number is <strong>ours</strong>: we seeded <code>student_id</code> to our 10-digit scheme; the
+  <code>STDT_ID</code> import key landed in <code>custom_53</code> and equals <code>student_id</code> for every
+  row. For the migrated cohort, Focus generated only <code>uuid</code> (we supplied
+  <code>student_id</code>); whether Focus mints <code>student_id</code> for <em>new</em> records is open
+  decision #1.</li>
+<li><strong>Crosswalk anchored on <code>student_id</code></strong> (current scheme). Match Finalsite
+  enrollees to an existing <code>student_id</code> where the student already exists; assign
+  a new number for genuinely-new enrollees. Persist the crosswalk
+  (<code>finalsite_contact_id ↔ student_id ↔ focus_uuid ↔ match_state</code>) so IDs are
+  stable across runs and can be written back to Finalsite.</li>
+<li><strong>Legacy <code>custom_l1482</code></strong> is a historical bridge for reconciling the existing
+  cohort to PowerSchool-era / Finalsite history. New students never have one.</li>
+<li>Focus's manual <strong>"Match Students"</strong> tool is the fallback our resolution exists
+  to minimize — the cleaner we resolve identity before sending, the fewer
+  duplicates and less manual pairing in Focus.</li>
+<li><strong>The SFTP export already reserves SIS-ID slots</strong> (<code>PowerSchool DCID</code> /
+  <code>Student Number</code> at student level, <code>PowerSchool Contact ID</code> per guardian) —
+  mostly empty, but a few guardian rows carry a value, evidence the write-back
+  target field exists and is partially populated. Whether these slots are the
+  intended Focus write-back targets (mislabeled), vestigial PowerSchool-template
+  columns, or real PowerSchool IDs is the <em>SIS-ID column gate</em> — it determines
+  what the crosswalk anchors on from the source side and where write-back lands.</li>
+<li><strong>Match-vs-mint is empirically clean (Newark live profile).</strong> The SIS number
+  is present for <strong>100% of returning</strong> students (205/205) and <strong>0% of new</strong>
+  (0/44) — so resolution is binary: returning → match the number already in
+  Finalsite's <code>id_attributes</code>; new → mint + write back. That write-back is the
+  manual step the integration replaces.</li>
+</ul>
+<h2 id="components">Components</h2>
+<ol>
+<li><strong>Ingestion (source-agnostic)</strong> — land the chosen Finalsite source into
+   BigQuery (Avro on GCS, existing patterns).</li>
+<li><strong>Lifecycle scope &amp; state mapping</strong> — a documented, configurable mapping from
+   Finalsite status / enrollment<em>type / year to the in-scope set </em><em>and the Focus
+   operation</em><em> (create / update / transfer-out / re-enroll). More than a "who
+   gets sent" gate — it classifies each record's lifecycle action. _Implemented
+   (PR #4198):</em> <code>int_finalsite__enrollment_lifecycle</code>, currently in the
+   <code>kippmiami</code> project. The classification is 100% Finalsite-derived and the
+   <code>create</code>/<code>re_enroll</code>/<code>transfer_out</code> output is <strong>SIS-agnostic</strong> (works for
+   both the Focus and PowerSchool receivers). <strong>Promote this model to the shared
+   <code>finalsite</code> package</strong> when a second region's Finalsite <strong>contacts</strong> ingestion
+   is wired (today only <code>kippmiami</code> materializes the contacts asset, though all
+   four districts import the package). The move is mechanical: relocate to
+   <code>finalsite/models/intermediate/</code>, switch the cross-package
+   <code>ref("finalsite", …)</code> to in-package <code>ref(…)</code>, add <code>current_academic_year</code>
+   (default <code>0</code>) to the package vars, and note the new intermediate layer in
+   <code>finalsite/CLAUDE.md</code>. The receiver-specific code mapping stays per-region
+   (Component 4).</li>
+<li><strong>Identity resolution + persisted crosswalk</strong> — anchored on <code>student_id</code>,
+   legacy bridge via <code>custom_l1482</code>. Resolves the Focus <code>uuid</code>/<code>student_id</code> for
+   <strong>every</strong> in-scope record (updates and transfers, not just creates).</li>
+<li><strong>Focus-shaped output models</strong> — the 5 SFTP-template shapes (Demographics,
+   Student_Enrollment, Address, Contacts, Linked_Students), keyed on <code>STDT_ID</code>.</li>
+<li><strong>Transport seam</strong> — applies create / update / drop per record via the SFTP
+   import (Fork 2). <code>build_bigquery_query_sftp_asset</code> (static filenames, full
+   refresh of in-scope students) writes the coordinated CSVs to Focus's import
+   directory.</li>
+<li><strong>Change detection &amp; cadence</strong> — full refresh of the in-scope set each run
+   (simplest; matches SFTP's keyed-replace model) <strong>or</strong> incremental via
+   Finalsite <code>since</code> / <code>since_includes_expanded</code>. Ongoing schedule (e.g. daily,
+   more frequent in peak enrollment season).</li>
+<li><strong>Write-back</strong> — push resolved identifiers to Finalsite (Update-Fields API)
+   so later runs match trivially: always the Focus <code>uuid</code>; plus <code>student_id</code> if
+   Focus/we minted it (under option 1a Finalsite already holds it). Only reverse
+   flow.</li>
+<li><strong>Validation / observability</strong> — Avro schema checks on ingest; crosswalk
+   tests (no dupes, every in-scope student resolves); reconciliation model
+   (Finalsite in-scope roster vs Focus students via existing DLT data) that also
+   catches missed updates/drops, not just missed creates.</li>
+</ol>
+<h2 id="pii-handling">PII handling</h2>
+<p>Student/guardian PII stays in the warehouse and local artifacts. Any external
+surface (PR, issue, Asana, logs) uses redacted labels or column-name references
+only. Counts/aggregates are fine; identifiers are not. The SFTP export sample is
+held in Drive and is <strong>not committed</strong> to the repo.</p>
+<p>The export adds <strong>medical PII</strong> (student doctor name/phone, preferred hospital,
+hospital phone) on top of names, DOB, address, and guardian contacts. If the
+medical-destination gate resolves to "out of scope," drop these columns at
+staging so they never enter the warehouse rather than carrying and ignoring
+them.</p>
+<h2 id="open-decisions-gates-do-not-block-writingimplementation-planning">Open decisions &amp; gates (do not block writing/implementation planning)</h2>
+<ol>
+<li><strong>Go-forward number minting — RESOLVED → (a) Finalsite mints (decided
+   2026-06-09).</strong> The 10-digit <code>student_id</code> for a brand-new enrollee is minted
+   <strong>by Finalsite</strong> (autogen <code>IdField</code>); the pipeline reads it from
+   <code>id_attributes</code> and pushes to Focus — no pipeline minting, no number
+   write-back. The options below are retained for context. Per Finalsite's
+   <a href="https://schooladmin.zendesk.com/hc/en-us/articles/6219105734925-ID-Generation-Sync-to-Third-Party-Systems">ID Generation &amp; Sync to Third-Party Systems</a>
+   doc, Finalsite supports rule-based ID generation (incrementing numbers or
+   composite values like <code>LAST + FIRST + DOB</code>, with formatting such as leading
+   zeros), and its native API integrations use a "the SIS generates an ID and
+   sends it back to Finalsite" round-trip. Options:</li>
+<li><strong>(a) Finalsite mints it</strong> via rule-based ID generation (the API exposes
+     this read-only on the <code>Field</code> object: <code>ctype: IdField</code>,
+     <code>id_field_autogenerate</code>, <code>id_field_template</code>, <code>id_field_counter</code>;
+     per-contact value in <code>id_attributes</code>). We read it and push to Focus.
+     Cleanest fit since Finalsite is SoR — no minting logic in our pipeline.
+     Confirm with Finalsite: counter scope/uniqueness, template tokens, whether
+     it matches the existing 10-digit format, and that ID-field setup is a
+     UI/admin task.</li>
+<li><strong>(b) Focus mints, we return it to Finalsite</strong> — mirrors Finalsite's native
+     pattern (SIS generates the id, sends it back). But that round-trip is
+     pre-built only for Blackbaud/Veracross, <strong>not Focus</strong>, and it's unknown
+     whether Focus auto-increments our scheme — so we'd implement the
+     capture-and-write-back ourselves.</li>
+<li><strong>(c) We mint</strong> the next number in the pipeline (needs an allocation
+     authority / sequence).</li>
+</ol>
+<p><strong>Live evidence (Newark profile).</strong> No <code>IdField</code> uses <code>autogen=True</code> today
+   (all 7 are passthrough), and <code>id_attributes</code> is populated only for
+   <strong>returning</strong> students (205/205), <strong>0/44 new</strong> — the number is written back
+   <strong>manually today</strong> and undone for new enrollees. <strong>Decided: Finalsite mints
+   (option a).</strong> The formatting engine is confirmed present (e.g.
+   <code>STU{{ value | … | pad_zeroes: 12 }}</code>). Remaining is a <strong>Finalsite-side
+   config task</strong> (not a pipeline concern): create the autogen <code>IdField</code>
+   producing the 10-digit scheme (counter scope/uniqueness, template, admin
+   setup) and have it generate for the new cohort (today 0/44 new students carry
+   a number). The integration just <strong>reads</strong> the generated id from
+   <code>id_attributes</code> and pushes to Focus — no pipeline minting and no number
+   write-back.</p>
+<p>Identity-resolution absorbs whichever via one config flag. Formal ownership
+   sign-off: Miami ops / central data.</p>
+<ol>
+<li><strong>Fork 1 — RESOLVED → REST API</strong> (live-validated 2026-06-09; see <em>Fork 1</em>).
+   <code>enrolled_date</code> / lifecycle dates join from <code>stg_finalsite__status_report</code>.</li>
+<li><strong>Fork 2 — RESOLVED → Focus SFTP import (decided 2026-06-16).</strong> All records
+   (student, enrollment, demographics, address, contacts, links) flow to Focus
+   via the 5 coordinated SFTP import templates keyed on <code>STDT_ID</code>. The Focus
+   REST API is not used — SFTP is the only path that creates a real enrollment
+   record and preserves all guardians, and it reuses
+   <code>build_bigquery_query_sftp_asset</code>. The API vendor-confirm items below are
+   thereby moot. See <em>Fork 2</em>.</li>
+</ol>
+<p><strong>Enrollment-data gate — RESOLVED (2026-06-09).</strong> Fork 1 sources from the
+   <strong>API</strong>, which natively carries <code>status</code> / <code>enrollment_type</code> / <code>grade</code> /
+   <code>school_year</code> / <code>relationships</code> plus race / school / medical as custom fields
+   (validated live against Miami). <code>enrolled_date</code> (<code>START_DATE</code>), the
+   eligibility status timeline, and transfer-out withdrawal dates come from the
+   already-ingested <strong><code>stg_finalsite__status_report</code></strong>, joined on
+   <code>finalsite_enrollment_id</code> (= API <code>contact.id</code>). No export reconfiguration
+   needed; the new "Focus Student Export" file is not used as a source.</p>
+<p><strong>★ SIS-ID column gate</strong> — <em>confirm with:</em> the Finalsite export owner.
+   <em>Question:</em> are the PowerSchool-named SIS-ID slots a cloned PowerSchool
+   template (vestigial for Focus), the intended Focus write-back targets, or
+   real PowerSchool IDs? <em>Decides:</em> source-side crosswalk anchor and the
+   write-back target field.</p>
+<p><strong>Medical-destination gate</strong> — <em>confirm with:</em> Miami ops. <em>Question:</em> is
+   Focus the home for doctor/hospital/media-release data? <em>Decides:</em> whether to
+   map the medical columns into Focus or drop them at staging (preferred default
+   if unconfirmed, to limit medical PII).</p>
+<ol>
+<li><strong>API vendor-confirm items</strong> — create-vs-update match key field on re-POST;
+   and the <strong>enrollment-write gap</strong>: whether the API can create/end enrollments
+   (transfers-out, re-enrollment) or the SFTP <code>STUDENT_ENROLLMENT</code> template is
+   required for those operations (likely hybrid). <code>enrollments</code> are GET-only.</li>
+<li><strong>Change detection</strong> — full refresh vs incremental (<code>since</code>); and run cadence
+   (ongoing, with a likely peak-season frequency bump).</li>
+<li><strong>Schema detail (build-time)</strong> — whether <code>student_id</code> is Focus's true PK
+   accepting supplied values, or <code>uuid</code> is the PK and <code>student_id</code> a number
+   column. Doesn't change the design.</li>
+<li><strong>Prereqs</strong> — Focus admin provisions a Third Party System integration (Focus
+   dialect, write scope, Client ID/Secret) for the API path; required Focus
+   codes (grades, enrollment codes, calendars) exist. Guardian cardinality is
+   <strong>decided</strong> — preserve all (source supplies up to 4), so contacts go via the
+   SFTP <code>Contacts</code> template (API caps at 2).</li>
+</ol>
+<h2 id="out-of-scope">Out of scope</h2>
+<p>Two-way <strong>data</strong> sync (Focus → Finalsite beyond writing the resolved id back);
+non-Miami regions; migrating the existing cohort (already done); the inbound
+Focus → warehouse load (separate spec). Note: ongoing updates, transfers-out,
+re-enrollment, and contacts are explicitly <strong>in</strong> scope (Finalsite → Focus) —
+see <em>Sync operations</em>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

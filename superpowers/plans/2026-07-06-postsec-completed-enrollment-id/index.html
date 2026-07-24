@@ -1,0 +1,1886 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>postsec_completed_enrollment_id Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#postsec_completed_enrollment_id-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              postsec_completed_enrollment_id Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-add-the-completed-first-pick-and-attribute-set-to-the-model-sql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Add the completed-first pick and attribute set to the model SQL
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-document-the-new-columns-in-the-properties-yaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Document the new columns in the properties YAML
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-build-and-verify-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Build and verify behavior
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-review
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-06-postsec-completed-enrollment-id.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="postsec_completed_enrollment_id-implementation-plan">postsec_completed_enrollment_id Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Add a <code>postsec_completed_enrollment_id</code> column (plus its full parallel
+<code>postsec_completed_*</code> attribute set) to <code>int_kippadb__enrollment_pivot</code> that
+returns a student's best post-secondary enrollment, preferring a completed
+(<code>Graduated</code>) enrollment over any in-progress or withdrawn one.</p>
+<p><strong>Architecture:</strong> In the <code>enrollment_wide</code> CTE, add a <code>coalesce</code> of guarded ids
+beside the existing <code>ugrad_enrollment_id</code> CASE that ranks the three
+already-resolved track picks (<code>ba</code>/<code>aa</code>/<code>cte</code>) by completed-tier → degree level
+(<code>coalesce</code> returns the first non-null in priority order). Carry the id into the
+final <code>select</code> and add two <code>stg_kippadb__enrollment</code> / <code>stg_kippadb__account</code>
+joins to surface the parallel attribute columns. Additive only — no existing
+column or consumer changes.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>uv run dbt</code>, trunk (sqlfluff + yamllint).</p>
+<p><strong>Spec:</strong>
+<code>docs/superpowers/specs/2026-07-06-postsec-completed-enrollment-id-design.md</code>
+(Issue #4331, PR #4332)</p>
+<hr />
+<h2 id="file-structure">File structure</h2>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/kippadb/intermediate/int_kippadb__enrollment_pivot.sql</code>
+  — add the pick, carry the id to the final select, add the attribute joins and
+  columns.</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/kippadb/intermediate/properties/int_kippadb__enrollment_pivot.yml</code>
+  — document the new id and attribute columns.</li>
+</ul>
+<p>All work happens on branch
+<code>CGibson17/feat/claude-postsec-completed-enrollment-id</code> (already checked out).</p>
+<p><strong>Preflight (run once before Task 3 build/verify):</strong> confirm the prod manifest
+used for <code>--defer</code> exists; regenerate if missing.</p>
+<div class="highlight"><pre><span></span><code>ls<span class="w"> </span>src/dbt/kipptaf/target/prod/manifest.json<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">||</span><span class="w"> </span><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">       </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target-path<span class="w"> </span>target/prod
+</code></pre></div>
+<hr />
+<h2 id="task-1-add-the-completed-first-pick-and-attribute-set-to-the-model-sql">Task 1: Add the completed-first pick and attribute set to the model SQL</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/kippadb/intermediate/int_kippadb__enrollment_pivot.sql</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the pick in <code>enrollment_wide</code></strong></p>
+</li>
+</ul>
+<p>Insert this column immediately after the existing <code>ugrad_enrollment_id</code> CASE
+(currently ends <code>end as ugrad_enrollment_id,</code> at line 290), before the
+<code>coalesce(emp.start_date, ...)</code> block. <code>e</code> is <code>enrollment_grouped</code>;
+<code>ba</code>/<code>aa</code>/<code>cte</code> are the already-joined <code>stg_kippadb__enrollment</code> picks.</p>
+<div class="highlight"><pre><span></span><code><span class="w">            </span><span class="c1">-- pick the student&#39;s single best post-secondary enrollment:</span>
+<span class="w">            </span><span class="c1">-- completed (Graduated) first, then degree level (BA &gt; AA &gt; CTE).</span>
+<span class="w">            </span><span class="c1">-- coalesce returns the first non-null in priority order: graduated</span>
+<span class="w">            </span><span class="c1">-- BA/AA/CTE, then any BA/AA/CTE. null when the student has none.</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">ba</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Graduated&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">ba_enrollment_id</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">),</span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">aa</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Graduated&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">aa_enrollment_id</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">),</span>
+<span class="w">                </span><span class="k">if</span><span class="p">(</span><span class="n">cte</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Graduated&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">vocational_enrollment_id</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">),</span>
+<span class="w">                </span><span class="n">e</span><span class="p">.</span><span class="n">ba_enrollment_id</span><span class="p">,</span>
+<span class="w">                </span><span class="n">e</span><span class="p">.</span><span class="n">aa_enrollment_id</span><span class="p">,</span>
+<span class="w">                </span><span class="n">e</span><span class="p">.</span><span class="n">vocational_enrollment_id</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_enrollment_id</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Carry the id into the final <code>select</code></strong></li>
+</ul>
+<p>In the final <code>select</code> block, add this line immediately after
+<code>ew.ugrad_enrollment_id,</code> (currently line 336):</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">ew</span><span class="p">.</span><span class="n">postsec_completed_enrollment_id</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the parallel attribute columns</strong></li>
+</ul>
+<p>In the final <code>select</code>, immediately after the last <code>ugrad_*</code> column
+(<code>uga.adjusted_6_year_minority_graduation_rate as ugrad_adjusted_6_year_minority_graduation_rate,</code>,
+currently line 442) and before the <code>is_never_enrolled</code> expression, insert:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_school_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">pursuing_degree_type</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_pursuing_degree_type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">status</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_status</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">start_date</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_start_date</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">actual_end_date</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_actual_end_date</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">anticipated_graduation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_anticipated_graduation</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">account_type</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_account_type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">major</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_major</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">major_area</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_major_area</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">college_major_declared</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_college_major_declared</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">date_last_verified</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_date_last_verified</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pce</span><span class="p">.</span><span class="n">of_credits_required_for_graduation</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_credits_required_for_graduation</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">pcea</span><span class="p">.</span><span class="n">name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_account_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pcea</span><span class="p">.</span><span class="n">billing_state</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_billing_state</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pcea</span><span class="p">.</span><span class="n">nces_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_nces_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pcea</span><span class="p">.</span><span class="n">act_composite_25_75</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_act_composite_25_75</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pcea</span><span class="p">.</span><span class="n">competitiveness_ranking</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_competitiveness_ranking</span><span class="p">,</span>
+<span class="w">    </span><span class="n">pcea</span><span class="p">.</span><span class="n">adjusted_6_year_minority_graduation_rate</span>
+<span class="w">    </span><span class="k">as</span><span class="w"> </span><span class="n">postsec_completed_adjusted_6_year_minority_graduation_rate</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Add the attribute joins</strong></li>
+</ul>
+<p>At the very end of the model, immediately after the existing <code>ug</code>/<code>uga</code> joins
+(currently the last two lines, <code>left join ... as uga on ug.school = uga.id</code>),
+append:</p>
+<div class="highlight"><pre><span></span><code><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_kippadb__enrollment&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">pce</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">ew</span><span class="p">.</span><span class="n">postsec_completed_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pce</span><span class="p">.</span><span class="n">id</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_kippadb__account&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">pcea</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">pce</span><span class="p">.</span><span class="n">school</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pcea</span><span class="p">.</span><span class="n">id</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Compile to validate refs and SQL</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_kippadb__enrollment_pivot<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-15
+</code></pre></div>
+<p>Expected: <code>Compiled node 'int_kippadb__enrollment_pivot'</code> with no errors.
+(<code>--target prod</code> compile does no warehouse write and is not classifier-blocked.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint the model</strong></li>
+</ul>
+<p>Run from the repo root:</p>
+<div class="highlight"><pre><span></span><code>.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/kippadb/intermediate/int_kippadb__enrollment_pivot.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-20
+</code></pre></div>
+<p>Expected: <code>✔ No issues</code>. If sqlfluff ST06 (column ordering) fires on the pick
+subquery's placement, move <code>postsec_completed_enrollment_id</code> so it sits with the
+other complex/CASE expressions (adjacent to <code>ugrad_enrollment_id</code>) and re-run.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/kippadb/intermediate/int_kippadb__enrollment_pivot.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kipptaf): add postsec_completed_enrollment_id to enrollment pivot</span>
+
+<span class="s2">Refs #4331</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 4.8 (1M context) &lt;noreply@anthropic.com&gt;&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-document-the-new-columns-in-the-properties-yaml">Task 2: Document the new columns in the properties YAML</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/kippadb/intermediate/properties/int_kippadb__enrollment_pivot.yml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the id column entry</strong></p>
+</li>
+</ul>
+<p>Immediately after the <code>ugrad_enrollment_id</code> entry (currently lines 18-19), add:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Enrollment id of the student&#39;s best post-secondary enrollment across the BA,</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">AA, and CTE track picks — preferring a completed (Graduated) enrollment over</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">any in-progress or withdrawn one, then higher degree level (BA over AA over</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">CTE). Null when the student has no BA, AA, or CTE enrollment.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the attribute column entries</strong></li>
+</ul>
+<p>Immediately after the last <code>ugrad_*</code> entry
+(<code>ugrad_adjusted_6_year_minority_graduation_rate</code>, currently lines 230-231) and
+before the <code>is_never_enrolled</code> entry, add. Data types mirror the corresponding
+<code>ugrad_*</code> columns exactly.</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_school_name</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Name of the enrollment identified by postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_pursuing_degree_type</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Pursuing degree type of the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_status</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Status of the enrollment identified by postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_start_date</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Start date of the enrollment identified by postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_actual_end_date</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Actual end date of the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_anticipated_graduation</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Anticipated graduation date of the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_account_type</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Account type of the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_major</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Major of the enrollment identified by postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_major_area</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Major area of the enrollment identified by postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_college_major_declared</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">boolean</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Whether a college major was declared for the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_date_last_verified</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Date the enrollment identified by postsec_completed_enrollment_id was last</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">verified.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_credits_required_for_graduation</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numeric</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Credits required for graduation for the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_account_name</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Account name for the school of the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_billing_state</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Billing state for the school of the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_nces_id</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">NCES id for the school of the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_act_composite_25_75</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">ACT composite 25th-75th percentile range for the school of the enrollment</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">identified by postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_competitiveness_ranking</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Competitiveness ranking for the school of the enrollment identified by</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_enrollment_id.</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">postsec_completed_adjusted_6_year_minority_graduation_rate</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numeric</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">Adjusted 6-year minority graduation rate for the school of the enrollment</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">identified by postsec_completed_enrollment_id.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Reparse to bind the new descriptions</strong></li>
+</ul>
+<p>Partial parse caches unbound state; force a full parse.</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--no-partial-parse<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-5
+</code></pre></div>
+<p>Expected: parses with no errors.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint the YAML</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/kippadb/intermediate/properties/int_kippadb__enrollment_pivot.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-20
+</code></pre></div>
+<p>Expected: <code>✔ No issues</code> (trunk-fmt may reflow the <code>description</code> scalars — accept
+the reformat).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/kippadb/intermediate/properties/int_kippadb__enrollment_pivot.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(kipptaf): document postsec_completed_* columns</span>
+
+<span class="s2">Refs #4331</span>
+
+<span class="s2">Co-Authored-By: Claude Opus 4.8 (1M context) &lt;noreply@anthropic.com&gt;&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-build-and-verify-behavior">Task 3: Build and verify behavior</h2>
+<p>Builds into the developer's dev dataset using prod upstreams via <code>--defer</code>; no
+prod write.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Define the acceptance check</strong></li>
+</ul>
+<p>The core behavior is: for at least some students the new field returns a
+<code>Graduated</code> enrollment while <code>ugrad_enrollment_id</code> returns a non-graduated one.
+This query (used in Step 3) is the acceptance criterion — it must return rows:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">ei</span><span class="p">.</span><span class="n">student</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ei</span><span class="p">.</span><span class="n">ugrad_enrollment_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ei</span><span class="p">.</span><span class="n">ugrad_status</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ei</span><span class="p">.</span><span class="n">postsec_completed_enrollment_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ei</span><span class="p">.</span><span class="n">postsec_completed_status</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="s1">&#39;int_kippadb__enrollment_pivot&#39;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ei</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">ei</span><span class="p">.</span><span class="n">postsec_completed_enrollment_id</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">ei</span><span class="p">.</span><span class="n">ugrad_enrollment_id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ei</span><span class="p">.</span><span class="n">postsec_completed_status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Graduated&#39;</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ei</span><span class="p">.</span><span class="n">ugrad_status</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;Graduated&#39;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Build the model into dev</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_kippadb__enrollment_pivot<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>target/prod<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-25
+</code></pre></div>
+<p>Expected: model builds; the <code>student</code> uniqueness test passes (<code>PASS</code>). If the
+build reports the dev relation for an upstream is missing, add
+<code>dbt clone --select &lt;upstream&gt;</code> or ensure <code>--state target/prod</code> is fresh
+(preflight parse).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the divergence acceptance check</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span>--inline<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;SQL&#39;</span>
+<span class="s">select</span>
+<span class="s">    ei.student,</span>
+<span class="s">    ei.ugrad_status,</span>
+<span class="s">    ei.postsec_completed_status,</span>
+<span class="s">from {{ ref(&#39;int_kippadb__enrollment_pivot&#39;) }} as ei</span>
+<span class="s">where</span>
+<span class="s">    ei.postsec_completed_enrollment_id != ei.ugrad_enrollment_id</span>
+<span class="s">    and ei.postsec_completed_status = &#39;Graduated&#39;</span>
+<span class="s">    and ei.ugrad_status != &#39;Graduated&#39;</span>
+<span class="s">SQL</span>
+<span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--limit<span class="w"> </span><span class="m">20</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-30
+</code></pre></div>
+<p>Expected: one or more rows where <code>postsec_completed_status = Graduated</code> and
+<code>ugrad_status</code> is something else (e.g. <code>Attending</code>) — proving the
+completed-first pick diverges from recency-first as intended.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Confirm grain is preserved</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span>--inline<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;SQL&#39;</span>
+<span class="s">select count(*) as dupes</span>
+<span class="s">from (</span>
+<span class="s">    select ei.student</span>
+<span class="s">    from {{ ref(&#39;int_kippadb__enrollment_pivot&#39;) }} as ei</span>
+<span class="s">    group by ei.student</span>
+<span class="s">    having count(*) &gt; 1</span>
+<span class="s">)</span>
+<span class="s">SQL</span>
+<span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-10
+</code></pre></div>
+<p>Expected: <code>dupes = 0</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Confirm null behavior aligns with is_never_enrolled</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span>--inline<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;SQL&#39;</span>
+<span class="s">select</span>
+<span class="s">    ei.is_never_enrolled,</span>
+<span class="s">    countif(ei.postsec_completed_enrollment_id is null) as n_null,</span>
+<span class="s">    count(*) as n_total,</span>
+<span class="s">from {{ ref(&#39;int_kippadb__enrollment_pivot&#39;) }} as ei</span>
+<span class="s">group by ei.is_never_enrolled</span>
+<span class="s">SQL</span>
+<span class="k">)</span><span class="s2">&quot;</span><span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--limit<span class="w"> </span><span class="m">5</span><span class="w"> </span><span class="m">2</span>&gt;<span class="p">&amp;</span><span class="m">1</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-10
+</code></pre></div>
+<p>Expected: every <code>is_never_enrolled = true</code> row has a null
+<code>postsec_completed_enrollment_id</code> (both derive from the same BA/AA/CTE pool).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Push and mark the PR ready</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>CGibson17/feat/claude-postsec-completed-enrollment-id
+</code></pre></div>
+<p>Then mark PR #4332 ready for review (via the GitHub UI or <code>gh pr ready 4332</code>) so
+dbt Cloud CI and <code>claude-review</code> fire on the full change. Confirm dbt Cloud CI
+is green before requesting human review.</p>
+<hr />
+<h2 id="self-review">Self-review</h2>
+<ul>
+<li><strong>Spec coverage:</strong> candidate pool (Task 1 Step 1 — BA/AA/CTE arms); completed
+  = Graduated (<code>if(&lt;x&gt;.status = 'Graduated', ...)</code>); ranking order (graduated
+  arms before unguarded arms, <code>BA → AA → CTE</code> within each tier); full attribute
+  set (Task 1 Steps 3-4, Task 2); grain unchanged (Task 3 Step 4); null when no
+  BA/AA/CTE (Task 3 Step 5). All covered.</li>
+<li><strong>Placeholder scan:</strong> no TBD/TODO; all code and commands are concrete.</li>
+<li><strong>Type consistency:</strong> alias <code>pce</code>/<code>pcea</code> and column name
+  <code>postsec_completed_enrollment_id</code> are used identically across the SQL joins,
+  the final select, and the YAML entries; attribute <code>data_type</code>s mirror the
+  verified <code>ugrad_*</code> types (<code>date</code>/<code>numeric</code>/<code>boolean</code>/<code>string</code>).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2456 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>College Board AP Data Ingest Protocol Skill Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#college-board-ap-data-ingest-protocol-skill-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              College Board AP Data Ingest Protocol Skill Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-codes-completeness-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Codes Completeness Query
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-ap-course-tagging-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: AP Course Tagging Query
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-tiered-crosswalk-match-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Tiered Crosswalk Match Query
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-downstream-lineage-query" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Downstream Lineage Query
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-skillmd-runbook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: SKILL.md Runbook
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-end-to-end-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: End-to-End Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-7-final-lint-and-push" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: Final Lint and Push
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-13-collegeboard-ap-data-ingest-protocol.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="college-board-ap-data-ingest-protocol-skill-implementation-plan">College Board AP Data Ingest Protocol Skill Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Package the validated College Board AP pipeline audit (ingestion
+freshness, codes/course-tagging completeness, tiered crosswalk-ID matching with
+corroboration, staged batch delivery, post-paste reconciliation, downstream
+lineage verification) into a <code>.claude/skills/</code> skill so it can be re-run every
+admin year without re-deriving the queries.</p>
+<p><strong>Architecture:</strong> A <code>SKILL.md</code> runbook (phases matching the design spec's
+13-step workflow) that references four standalone <code>.sql</code> files under <code>queries/</code>
+— one per check (codes completeness, AP course tagging, tiered crosswalk match,
+downstream lineage). Every query was executed live against the real 2025-2026
+backlog during design and is copied here verbatim from that validated run, not
+re-derived. Validated by dispatching a fresh subagent with only the skill loaded
+against the current (now fully resolved) pipeline state, confirming it correctly
+reports a clean state rather than inventing problems, and that it never proposes
+writing PII to a committed file.</p>
+<p><strong>Tech Stack:</strong> Markdown (Claude Code skill format), BigQuery SQL (GoogleSQL
+dialect), Dagster MCP tools, BigQuery MCP tools.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>PII (student names, DOB, gender) never gets written to any file committed to
+  git — chat/terminal only.</li>
+<li>No fuzzy/similarity name matching — only deterministic transforms (case-fold,
+  diacritic-strip, hyphen/space token-split, exact ±1-year day-count
+  comparison).</li>
+<li>Never write directly to the Google Sheet — no tool can do it; always produce
+  copy/paste-ready output for the human.</li>
+<li>Always ask before launching a Dagster run (<code>confirm=True</code>) — preview first
+  with <code>confirm=False</code>.</li>
+<li>Batches of 20 delivered one at a time with explicit confirmation between each
+  — never dump all batches at once.</li>
+<li>Gender mismatch on a Tier C/D match is a hard gate — moves the row out of
+  <code>resolved</code> into <code>flagged_for_review</code>.</li>
+<li>Course-enrollment check is informational only for Tier C/D — never used to
+  include/exclude a match.</li>
+<li><code>base_powerschool__course_enrollments</code> join for course corroboration uses
+  <code>ap_course_subject</code> (not <code>cc_course_number</code>), filtered to
+  <code>rn_course_number_year = 1</code> and <code>not is_dropped_section</code>, bridged across
+  district-union tables via
+  <code>regexp_extract(_dbt_source_relation, r'(kipp\w+)_')</code> matching on both sides.</li>
+<li>Codes completeness check scopes to rows with a non-null <code>exam_grade</code> only —
+  unscored placeholder slots produce false positives otherwise.</li>
+<li>AP course tagging check flags unconditionally (regardless of whether the gap
+  happens to affect this cycle's matching), scoped to <code>academic_year &gt;= 2024</code>.</li>
+<li>Full spec:
+  <code>docs/superpowers/specs/2026-07-13-collegeboard-ap-pipeline-audit-design.md</code>.</li>
+</ul>
+<h2 id="file-structure">File Structure</h2>
+<div class="highlight"><pre><span></span><code>.claude/skills/collegeboard-ap-data-ingest-protocol/
+  SKILL.md                          # runbook: 13-phase workflow
+  queries/
+    01-codes-completeness.sql       # Codes Completeness Check
+    02-ap-course-tagging.sql        # AP Course Tagging Check
+    03-tiered-crosswalk-match.sql   # Tiers A-D + tiebreak + corroboration
+    04-downstream-lineage.sql       # int_collegeboard__ap_unpivot + dashboard
+</code></pre></div>
+<p>Each <code>.sql</code> file is self-contained and copy-paste-runnable via the BigQuery MCP
+<code>execute_sql</code> tool as-is (no template variables to fill in), except
+<code>04-downstream-lineage.sql</code>, which has one placeholder year to substitute
+(commented inline) since a lineage check is inherently scoped to a specific
+admin year, unlike the other three checks which self-scope automatically.</p>
+<h2 id="task-1-codes-completeness-query">Task 1: Codes Completeness Query</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/01-codes-completeness.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>kipptaf_collegeboard.stg_collegeboard__ap</code>,
+  <code>kipptaf_google_sheets.stg_google_sheets__collegeboard__ap_codes</code></li>
+<li>
+<p>Produces: rows of <code>(expected_domain, missing_code)</code> — empty result means no
+  gaps</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the query</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Codes Completeness Check</span>
+<span class="c1">--</span>
+<span class="c1">-- Confirms every exam/irregularity code the raw AP file actually uses on a</span>
+<span class="c1">-- SCORED row (a record with a real exam_grade) is present in</span>
+<span class="c1">-- stg_google_sheets__collegeboard__ap_codes. Must scope to scored rows only:</span>
+<span class="c1">-- validated during design that exam codes &quot;1&quot;/&quot;2&quot; appear in the raw file</span>
+<span class="c1">-- but only on unscored placeholder slots (exam_grade is null) - including</span>
+<span class="c1">-- those produces false positives on every run.</span>
+<span class="c1">--</span>
+<span class="c1">-- Empty result = no gaps. A non-empty result means: identify the missing</span>
+<span class="c1">-- code(s) below, look up the meaning by fetching (not just search-summarizing)</span>
+<span class="c1">-- the current College Board &quot;AP Student Datafile for Schools and Districts</span>
+<span class="c1">-- [Year] Layout Format&quot; PDF at apcentral.collegeboard.org, then hand the user</span>
+<span class="c1">-- the missing code + looked-up description + the direct URL to the ap_codes</span>
+<span class="c1">-- sheet tab so they can add the row manually (no Sheets write access here):</span>
+<span class="c1">-- https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE</span>
+<span class="c1">-- tab: src_collegeboard__ap_codes</span>
+
+<span class="k">with</span><span class="w"> </span><span class="n">scored_rows</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">exam_code</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_collegeboard</span><span class="p">.</span><span class="n">stg_collegeboard__ap</span>
+<span class="w">  </span><span class="n">unpivot</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">(</span><span class="n">exam_code</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">rn_exam_number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_01</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_01</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_01</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_01</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_02</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_02</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_02</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_02</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_03</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_03</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_03</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_03</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_04</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_04</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_04</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_04</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_05</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_05</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_05</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_05</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_06</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_06</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_06</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_06</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_07</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_07</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_07</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_07</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_08</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_08</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_08</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_08</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_09</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_09</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_09</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_09</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_10</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_10</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_10</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_10</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_11</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_11</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_11</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_11</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_12</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_12</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_12</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_12</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_13</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_13</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_13</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_13</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_14</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_14</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_14</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_14</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_15</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_15</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_15</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_15</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_16</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_16</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_16</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_16</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_17</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_17</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_17</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_17</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_18</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_18</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_18</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_18</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_19</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_19</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_19</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_19</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_20</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_20</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_20</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_20</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_21</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_21</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_21</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_21</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_22</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_22</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_22</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_22</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_23</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_23</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_23</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_23</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_24</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_24</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_24</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_24</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_25</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_25</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_25</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_25</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_26</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_26</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_26</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_26</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_27</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_27</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_27</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_27</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_28</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_28</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_28</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_28</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_29</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_29</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_29</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_29</span><span class="p">),</span>
+<span class="w">      </span><span class="p">(</span><span class="n">exam_code_30</span><span class="p">,</span><span class="w"> </span><span class="n">exam_grade_30</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_1_30</span><span class="p">,</span><span class="w"> </span><span class="n">irregularity_code_2_30</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">exam_grade</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="p">),</span>
+<span class="n">file_exam_codes</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">exam_code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">scored_rows</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">exam_code</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="p">),</span>
+<span class="n">file_irreg_codes</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">irregularity_code_1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">scored_rows</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">irregularity_code_1</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">irregularity_code_2</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">scored_rows</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">irregularity_code_2</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">),</span>
+<span class="n">known_codes</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">code</span><span class="p">,</span><span class="w"> </span><span class="o">`</span><span class="k">domain</span><span class="o">`</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__collegeboard__ap_codes</span>
+<span class="p">)</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">&#39;Exam Codes&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">expected_domain</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">missing_code</span>
+<span class="k">from</span><span class="w"> </span><span class="n">file_exam_codes</span><span class="w"> </span><span class="n">f</span>
+<span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">known_codes</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">k</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">k</span><span class="p">.</span><span class="o">`</span><span class="k">domain</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Exam Codes&#39;</span>
+<span class="p">)</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">&#39;Irregularity Scores&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">code</span>
+<span class="k">from</span><span class="w"> </span><span class="n">file_irreg_codes</span><span class="w"> </span><span class="n">f</span>
+<span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">known_codes</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">k</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">f</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">k</span><span class="p">.</span><span class="o">`</span><span class="k">domain</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Irregularity Scores&#39;</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it via the BigQuery MCP <code>execute_sql</code> tool</strong></li>
+</ul>
+<p>Expected: <code>"The query returned 0 rows."</code> against the current warehouse state
+(validated 2025-2026: zero gaps). A non-empty result is a real finding, not a
+failure of the query itself.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/01-codes-completeness.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add codes completeness query to AP ingest protocol skill&quot;</span>
+</code></pre></div>
+<h2 id="task-2-ap-course-tagging-query">Task 2: AP Course Tagging Query</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/02-ap-course-tagging.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>kipptaf_powerschool.base_powerschool__course_enrollments</code></li>
+<li>
+<p>Produces: rows of
+  <code>(cc_academic_year, cc_course_number, courses_course_name, ap_course_subject)</code>
+  where <code>ap_course_subject</code> is always <code>NULL</code> (that's the gap) — empty result
+  means no gaps</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the query</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- AP Course Tagging Check</span>
+<span class="c1">--</span>
+<span class="c1">-- ap_course_subject comes from PowerSchool&#39;s NJ state course-extension</span>
+<span class="c1">-- table (stg_powerschool__s_nj_crs_x, joined by coursesdcid) - a course-setup</span>
+<span class="c1">-- field a human sets directly in PowerSchool, independent of the crosswalk</span>
+<span class="c1">-- sheet. is_ap_course is literally defined as `ap_course_subject is not</span>
+<span class="c1">-- null`, so a course that already has the field set can&#39;t fail this check</span>
+<span class="c1">-- by definition - the real gap is a course whose NAME signals AP but was</span>
+<span class="c1">-- never tagged. Flag unconditionally: a course still gets flagged even if</span>
+<span class="c1">-- its exam type happens to already resolve fine through a different,</span>
+<span class="c1">-- correctly-tagged course elsewhere (validated case: ENG22110C4 &quot;AP Seminar&quot;</span>
+<span class="c1">-- at KIPP Newark Collegiate Academy was untagged, but Seminar exam matching</span>
+<span class="c1">-- still worked via a separate, correctly-tagged Seminar section - the</span>
+<span class="c1">-- tagging gap on ENG22110C4 is still real and still gets flagged).</span>
+<span class="c1">--</span>
+<span class="c1">-- Scoped to academic_year &gt;= 2024 per user direction (older history isn&#39;t</span>
+<span class="c1">-- actionable). This is a PowerSchool course-setup miss with no PII involved -</span>
+<span class="c1">-- hand the result to whoever owns PowerSchool course setup; no write access</span>
+<span class="c1">-- to PowerSchool here.</span>
+
+<span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">  </span><span class="n">cc_academic_year</span><span class="p">,</span>
+<span class="w">  </span><span class="n">cc_course_number</span><span class="p">,</span>
+<span class="w">  </span><span class="n">courses_course_name</span><span class="p">,</span>
+<span class="w">  </span><span class="n">ap_course_subject</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">base_powerschool__course_enrollments</span>
+<span class="k">where</span><span class="w"> </span><span class="n">cc_academic_year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">2024</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">regexp_contains</span><span class="p">(</span><span class="n">courses_course_name</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;\bAP\b&#39;</span><span class="p">)</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">ap_course_subject</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">cc_academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">courses_course_name</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it via the BigQuery MCP <code>execute_sql</code> tool</strong></li>
+</ul>
+<p>Expected (validated 2025-2026): exactly one row —
+<code>cc_academic_year=2025, cc_course_number='ENG22110C4', courses_course_name='AP Seminar', ap_course_subject=NULL</code>.
+If the result differs, that's real data drift, not a query problem — report
+whatever the query actually returns.</p>
+<p>To find which district/region owns a flagged course (needed to route the fix),
+follow up with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">cc_schoolid</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">base_powerschool__course_enrollments</span>
+<span class="k">where</span><span class="w"> </span><span class="n">cc_academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">flagged_year</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">cc_course_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&lt;flagged_course_number&gt;&#39;</span>
+</code></pre></div>
+<p>then resolve <code>cc_schoolid</code> to a school name via
+<code>kipptaf_powerschool.base_powerschool__student_enrollments</code>
+(<code>schoolid</code>/<code>school_name</code> columns, same academic_year).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/02-ap-course-tagging.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add AP course tagging query to AP ingest protocol skill&quot;</span>
+</code></pre></div>
+<h2 id="task-3-tiered-crosswalk-match-query">Task 3: Tiered Crosswalk Match Query</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/03-tiered-crosswalk-match.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>kipptaf_collegeboard.stg_collegeboard__ap</code>,
+  <code>kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves</code>,
+  <code>kipptaf_powerschool.base_powerschool__student_enrollments</code>,
+  <code>kipptaf_google_sheets.stg_google_sheets__collegeboard__ap_codes</code>,
+  <code>kipptaf_google_sheets.stg_google_sheets__collegeboard__ap_course_crosswalk</code>,
+  <code>kipptaf_powerschool.base_powerschool__course_enrollments</code></li>
+<li>
+<p>Produces: rows of
+  <code>(ap_number_ap_id, student_number, tiers, bucket, enrolled_in_matching_course)</code>
+  — <code>bucket</code> is one of <code>resolved</code>, <code>flagged_for_review</code>, <code>no_match</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the query</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Tiered Crosswalk Match + Tier C/D Corroboration</span>
+<span class="c1">--</span>
+<span class="c1">-- Self-scoping by academic_year = enrollment_school_year (each gap&#39;s own</span>
+<span class="c1">-- year) - no manual parameter needed, works unchanged every year.</span>
+<span class="c1">--</span>
+<span class="c1">-- Tiers:</span>
+<span class="c1">--   A/B - exact DOB + last_name (raw, or diacritic-stripped on both sides)</span>
+<span class="c1">--   C   - exact DOB + shared last_name TOKEN (split on hyphen/space) -</span>
+<span class="c1">--         handles compound/hyphenated surnames recorded inconsistently</span>
+<span class="c1">--         between CB and PowerSchool (CB &quot;Alvarado&quot; vs PS &quot;Alvarado Jr&quot;;</span>
+<span class="c1">--         CB &quot;Morgan-Wallace&quot; vs PS &quot;Morgan Wallace&quot;; CB &quot;Jones&quot; vs PS</span>
+<span class="c1">--         &quot;Jones-Laberth&quot;)</span>
+<span class="c1">--   D   - DOB exactly 365/366 days apart (same month/day, year off by one,</span>
+<span class="c1">--         leap-year safe) AND both first_name and last_name match exactly -</span>
+<span class="c1">--         handles a DOB-year transcription mismatch. Requires both names</span>
+<span class="c1">--         (not just last name) since loosening DOB raises collision risk</span>
+<span class="c1">--         more than Tier C does.</span>
+<span class="c1">--   Tiebreak - when Tiers A-D together yield &gt;1 distinct student_number for</span>
+<span class="c1">--         a gap, narrow using first_name (case-fold/diacritic-strip, plus</span>
+<span class="c1">--         stripping non-alphanumeric characters so an apostrophe like</span>
+<span class="c1">--         &quot;E&#39;Nylah&quot; doesn&#39;t block the match).</span>
+<span class="c1">--</span>
+<span class="c1">-- Tier C/D corroboration (Tier A/B skip both - already tight enough):</span>
+<span class="c1">--   gender_ok  - HARD GATE. Compare CB gender vs PS gender for the matched</span>
+<span class="c1">--                student_number + academic_year. No legitimate reason to</span>
+<span class="c1">--                differ; a mismatch routes the row to flagged_for_review</span>
+<span class="c1">--                instead of resolved.</span>
+<span class="c1">--   enrolled_in_matching_course - INFORMATIONAL ONLY, never a gate. Checks</span>
+<span class="c1">--                whether the matched student was enrolled in the course</span>
+<span class="c1">--                matching the exam. Can&#39;t reuse int_collegeboard__ap_unpivot</span>
+<span class="c1">--                (it requires prior crosswalk resolution - exactly what&#39;s</span>
+<span class="c1">--                being checked - so an unresolved candidate is invisible to</span>
+<span class="c1">--                it); instead unpivots exam codes directly off</span>
+<span class="c1">--                stg_collegeboard__ap for just the Tier C/D candidates.</span>
+<span class="c1">--                Joins on ap_course_subject (NOT cc_course_number, a plain</span>
+<span class="c1">--                PS course code like &quot;ENG01005C3&quot; that never matches),</span>
+<span class="c1">--                filtered to rn_course_number_year=1 and not</span>
+<span class="c1">--                is_dropped_section, bridged across district-union tables</span>
+<span class="c1">--                via _dbt_source_relation region-matching (studentid values</span>
+<span class="c1">--                aren&#39;t globally unique across districts). Presence</span>
+<span class="c1">--                corroborates; absence proves nothing (testing without the</span>
+<span class="c1">--                class, and vice versa, is normal - CB doesn&#39;t require</span>
+<span class="c1">--                course enrollment to sit the exam).</span>
+<span class="c1">--</span>
+<span class="c1">-- No fuzzy/similarity matching anywhere - every transform above is a</span>
+<span class="c1">-- deterministic string operation.</span>
+
+<span class="k">with</span><span class="w"> </span><span class="n">gaps</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cb_first_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">last_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cb_last_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">date_of_birth</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cb_dob</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">gender</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cb_gender</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">enrollment_school_year</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_collegeboard</span><span class="p">.</span><span class="n">stg_collegeboard__ap</span><span class="w"> </span><span class="n">a</span>
+<span class="w">  </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_dbt_test__audit</span><span class="p">.</span><span class="n">int_collegeboard__ap_unpivot__crosswalk_resolves</span><span class="w"> </span><span class="n">u</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">ap_number_ap_id</span>
+<span class="p">),</span>
+<span class="n">ps</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">    </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">studentid</span><span class="p">,</span><span class="w"> </span><span class="n">first_name</span><span class="p">,</span><span class="w"> </span><span class="n">last_name</span><span class="p">,</span><span class="w"> </span><span class="n">dob</span><span class="p">,</span><span class="w"> </span><span class="n">gender</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">    </span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">last_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;\pM&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_name_stripped</span><span class="p">,</span>
+<span class="w">    </span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">first_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;\pM&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;[^A-Z0-9]&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">first_name_norm</span><span class="p">,</span>
+<span class="w">    </span><span class="n">split</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">last_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;\pM&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">),</span><span class="w"> </span><span class="ss">&quot;-&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot; &quot;</span><span class="p">),</span><span class="w"> </span><span class="ss">&quot; &quot;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">last_name_tok</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">base_powerschool__student_enrollments</span>
+<span class="p">),</span>
+<span class="n">gaps_norm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">    </span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">cb_first_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;\pM&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;[^A-Z0-9]&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cb_first_name_norm</span><span class="p">,</span>
+<span class="w">    </span><span class="n">split</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">cb_last_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;\pM&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">),</span><span class="w"> </span><span class="ss">&quot;-&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot; &quot;</span><span class="p">),</span><span class="w"> </span><span class="ss">&quot; &quot;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cb_last_name_tok</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">gaps</span>
+<span class="p">),</span>
+<span class="n">tier_ab</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;A_B&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">tier</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">gaps_norm</span><span class="w"> </span><span class="k">g</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="n">p</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">enrollment_school_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">dob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">cb_dob</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">last_name</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">upper</span><span class="p">(</span><span class="k">g</span><span class="p">.</span><span class="n">cb_last_name</span><span class="p">)</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">last_name_stripped</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="k">g</span><span class="p">.</span><span class="n">cb_last_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;\pM&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">))</span>
+<span class="p">),</span>
+<span class="n">tier_c_raw</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">,</span><span class="w"> </span><span class="n">t2</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">gaps_norm</span><span class="w"> </span><span class="k">g</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="n">p</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">enrollment_school_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">dob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">cb_dob</span>
+<span class="w">  </span><span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">last_name_tok</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t1</span>
+<span class="w">  </span><span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="k">g</span><span class="p">.</span><span class="n">cb_last_name_tok</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">t2</span>
+<span class="p">),</span>
+<span class="n">tier_c</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;C&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">tier</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">tier_c_raw</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">t1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t2</span>
+<span class="p">),</span>
+<span class="n">tier_d</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;D&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">tier</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">gaps_norm</span><span class="w"> </span><span class="k">g</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="n">p</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">enrollment_school_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">abs</span><span class="p">(</span><span class="n">date_diff</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">dob</span><span class="p">,</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">cb_dob</span><span class="p">,</span><span class="w"> </span><span class="k">day</span><span class="p">))</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="mi">365</span><span class="p">,</span><span class="w"> </span><span class="mi">366</span><span class="p">)</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">last_name</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">upper</span><span class="p">(</span><span class="k">g</span><span class="p">.</span><span class="n">cb_last_name</span><span class="p">)</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">last_name_stripped</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">regexp_replace</span><span class="p">(</span><span class="n">normalize</span><span class="p">(</span><span class="k">upper</span><span class="p">(</span><span class="k">g</span><span class="p">.</span><span class="n">cb_last_name</span><span class="p">),</span><span class="w"> </span><span class="n">nfd</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="ss">&quot;\pM&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;&quot;</span><span class="p">))</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">first_name_norm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">cb_first_name_norm</span>
+<span class="p">),</span>
+<span class="n">all_tiers</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">tier_ab</span><span class="w"> </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">tier_c</span><span class="w"> </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">tier_d</span>
+<span class="p">),</span>
+<span class="n">combined</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">string_agg</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">tier</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">tier</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">tiers</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">all_tiers</span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="p">),</span>
+<span class="n">tiebreak</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">tiers</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">combined</span><span class="w"> </span><span class="k">c</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">gaps_norm</span><span class="w"> </span><span class="k">g</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">ap_number_ap_id</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">first_name_norm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">cb_first_name_norm</span>
+<span class="p">),</span>
+<span class="n">per_gap</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">student_number</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_combined</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">gaps_norm</span><span class="w"> </span><span class="k">g</span>
+<span class="w">  </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">combined</span><span class="w"> </span><span class="k">c</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">),</span>
+<span class="n">resolved_candidate</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span>
+<span class="w">    </span><span class="n">pg</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span>
+<span class="w">      </span><span class="k">when</span><span class="w"> </span><span class="n">pg</span><span class="p">.</span><span class="n">n_combined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">student_number</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">combined</span><span class="w"> </span><span class="k">c</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pg</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">)</span>
+<span class="w">      </span><span class="k">else</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">student_number</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">tiebreak</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pg</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">)</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span>
+<span class="w">      </span><span class="k">when</span><span class="w"> </span><span class="n">pg</span><span class="p">.</span><span class="n">n_combined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">tiers</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">combined</span><span class="w"> </span><span class="k">c</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pg</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">)</span>
+<span class="w">      </span><span class="k">else</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">any_value</span><span class="p">(</span><span class="n">tiers</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">tiebreak</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pg</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">)</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">tiers</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">per_gap</span><span class="w"> </span><span class="n">pg</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">pg</span><span class="p">.</span><span class="n">n_combined</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="n">pg</span><span class="p">.</span><span class="n">n_combined</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">student_number</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">tiebreak</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">t</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pg</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+<span class="p">),</span>
+<span class="n">with_gender_check</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span>
+<span class="w">    </span><span class="n">rc</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">rc</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">rc</span><span class="p">.</span><span class="n">tiers</span><span class="p">,</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">enrollment_school_year</span><span class="p">,</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="n">rc</span><span class="p">.</span><span class="n">tiers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;A_B&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="k">true</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">cb_gender</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">gender</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">gender_ok</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">resolved_candidate</span><span class="w"> </span><span class="n">rc</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">gaps_norm</span><span class="w"> </span><span class="k">g</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rc</span><span class="p">.</span><span class="n">ap_number_ap_id</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rc</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">enrollment_school_year</span>
+<span class="p">),</span>
+<span class="n">cd_candidates</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">enrollment_school_year</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">with_gender_check</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">tiers</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;A_B&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">gender_ok</span>
+<span class="p">),</span>
+<span class="n">raw_unpivot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_collegeboard</span><span class="p">.</span><span class="n">stg_collegeboard__ap</span>
+<span class="w">  </span><span class="n">unpivot</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="p">(</span><span class="n">exam_code</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">rn_exam_number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="n">exam_code_01</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_02</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_03</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_04</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_05</span><span class="p">,</span>
+<span class="w">      </span><span class="n">exam_code_06</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_07</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_08</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_09</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_10</span><span class="p">,</span>
+<span class="w">      </span><span class="n">exam_code_11</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_12</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_13</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_14</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_15</span><span class="p">,</span>
+<span class="w">      </span><span class="n">exam_code_16</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_17</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_18</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_19</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_20</span><span class="p">,</span>
+<span class="w">      </span><span class="n">exam_code_21</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_22</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_23</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_24</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_25</span><span class="p">,</span>
+<span class="w">      </span><span class="n">exam_code_26</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_27</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_28</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_29</span><span class="p">,</span><span class="w"> </span><span class="n">exam_code_30</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">cd_candidates</span><span class="p">)</span>
+<span class="p">),</span>
+<span class="n">exam_to_course</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ps_ap_course_subject_code</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">raw_unpivot</span><span class="w"> </span><span class="n">u</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__collegeboard__ap_codes</span><span class="w"> </span><span class="n">c1</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">exam_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c1</span><span class="p">.</span><span class="n">code</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">c1</span><span class="p">.</span><span class="o">`</span><span class="k">domain</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Exam Codes&#39;</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__collegeboard__ap_course_crosswalk</span><span class="w"> </span><span class="n">xw</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">c1</span><span class="p">.</span><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xw</span><span class="p">.</span><span class="n">test_name</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">xw</span><span class="p">.</span><span class="n">data_source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;CB File&#39;</span>
+<span class="w">  </span><span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">split</span><span class="p">(</span><span class="n">xw</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;,&#39;</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">p</span>
+<span class="p">),</span>
+<span class="n">course_bridge</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">cc</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">cc</span><span class="p">.</span><span class="n">enrollment_school_year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ps_internal_studentid</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">_dbt_source_relation</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">cd_candidates</span><span class="w"> </span><span class="n">cc</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">ps</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cc</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cc</span><span class="p">.</span><span class="n">enrollment_school_year</span>
+<span class="p">),</span>
+<span class="n">course_enrollment_check</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">etc</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="n">logical_or</span><span class="p">(</span><span class="n">ce</span><span class="p">.</span><span class="n">ap_course_subject</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">enrolled_in_matching_course</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="n">exam_to_course</span><span class="w"> </span><span class="n">etc</span>
+<span class="w">  </span><span class="k">join</span><span class="w"> </span><span class="n">course_bridge</span><span class="w"> </span><span class="n">cb</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">cb</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">etc</span><span class="p">.</span><span class="n">ap_number_ap_id</span>
+<span class="w">  </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">base_powerschool__course_enrollments</span><span class="w"> </span><span class="n">ce</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">cc_studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cb</span><span class="p">.</span><span class="n">ps_internal_studentid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">cc_academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cb</span><span class="p">.</span><span class="n">enrollment_school_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">ce</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;(kipp\w+)_&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">cb</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;(kipp\w+)_&#39;</span><span class="p">)</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">rn_course_number_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">is_dropped_section</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">ap_course_subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">etc</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span>
+<span class="w">  </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="n">wgc</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span>
+<span class="w">  </span><span class="n">wgc</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">  </span><span class="n">wgc</span><span class="p">.</span><span class="n">tiers</span><span class="p">,</span>
+<span class="w">  </span><span class="k">if</span><span class="p">(</span><span class="k">not</span><span class="w"> </span><span class="n">wgc</span><span class="p">.</span><span class="n">gender_ok</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;flagged_for_review&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;resolved&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bucket</span><span class="p">,</span>
+<span class="w">  </span><span class="n">cec</span><span class="p">.</span><span class="n">enrolled_in_matching_course</span>
+<span class="k">from</span><span class="w"> </span><span class="n">with_gender_check</span><span class="w"> </span><span class="n">wgc</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">course_enrollment_check</span><span class="w"> </span><span class="n">cec</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">cec</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">wgc</span><span class="p">.</span><span class="n">ap_number_ap_id</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">,</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">),</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">),</span><span class="w"> </span><span class="s1">&#39;no_match&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bool</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="n">gaps_norm</span><span class="w"> </span><span class="k">g</span>
+<span class="k">where</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">resolved_candidate</span><span class="w"> </span><span class="n">rc</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">rc</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">g</span><span class="p">.</span><span class="n">ap_number_ap_id</span><span class="p">)</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">bucket</span><span class="p">,</span><span class="w"> </span><span class="n">ap_number_ap_id</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it via the BigQuery MCP <code>execute_sql</code> tool</strong></li>
+</ul>
+<p>Expected: empty result once the crosswalk is fully caught up (validated: <code>0</code>
+rows against the current, fully-resolved 2025-2026 backlog — this is correct
+behavior, not a bug). Against an actual backlog, expect a mix of <code>resolved</code> /
+<code>flagged_for_review</code> / <code>no_match</code> rows (validated against the 173-gap 2025-2026
+backlog: 173 <code>resolved</code>, 0 <code>flagged_for_review</code>, 0 <code>no_match</code>, after Tiers C/D
+were added).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/03-tiered-crosswalk-match.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add tiered crosswalk match query to AP ingest protocol skill&quot;</span>
+</code></pre></div>
+<h2 id="task-4-downstream-lineage-query">Task 4: Downstream Lineage Query</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create:
+  <code>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/04-downstream-lineage.sql</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes:
+  <code>kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves</code>,
+  <code>kipptaf_collegeboard.int_collegeboard__ap_unpivot</code>,
+  <code>kipptaf_tableau.rpt_tableau__ap_assessment_dashboard</code></li>
+<li>
+<p>Produces: a one-row count summary, then (if counts don't reconcile) rows of
+  <code>(powerschool_student_number, exam_code_description, ps_ap_course_subject_code, ap_course_name)</code>
+  for exam scores present in <code>int_collegeboard__ap_unpivot</code> but missing from the
+  dashboard</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the query</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Downstream Lineage Verification</span>
+<span class="c1">--</span>
+<span class="c1">-- Confirms a crosswalk fix actually reaches int_collegeboard__ap_unpivot and</span>
+<span class="c1">-- the CARAT dashboard (rpt_tableau__ap_assessment_dashboard), not just the</span>
+<span class="c1">-- crosswalk sheet. rpt_tableau__ap_assessment_dashboard lives in the</span>
+<span class="c1">-- kipptaf_tableau dataset (not a generic &quot;extracts&quot; dataset - confirmed via</span>
+<span class="c1">-- INFORMATION_SCHEMA, don&#39;t guess). The dashboard&#39;s actual Tableau workbook</span>
+<span class="c1">-- is the &quot;College Admission Readiness Assessments Tracker (CARAT)&quot; exposure</span>
+<span class="c1">-- in src/dbt/kipptaf/models/exposures/tableau.yml</span>
+<span class="c1">-- (name: college_admission_readiness_assessments_tracker_carat, LSID</span>
+<span class="c1">-- 286156c4-2f9e-4983-926b-63c9b11f44f4, Dagster-owned refresh cron</span>
+<span class="c1">-- &quot;0 6 * * *&quot;) - use the exposure file to find the workbook, don&#39;t guess at</span>
+<span class="c1">-- names. Since the BQ table is a live VIEW, this count comparison already</span>
+<span class="c1">-- reflects what a live Tableau connection would show; only cross-check via</span>
+<span class="c1">-- the Tableau MCP (get-workbook / list-datasources with the LSID) if the</span>
+<span class="c1">-- workbook turns out to use an extract instead.</span>
+<span class="c1">--</span>
+<span class="c1">-- Replace &lt;academic_year&gt; below with the year the crosswalk fix targeted.</span>
+
+<span class="k">select</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_dbt_test__audit</span><span class="p">.</span><span class="n">int_collegeboard__ap_unpivot__crosswalk_resolves</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">remaining_crosswalk_gaps</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_collegeboard</span><span class="p">.</span><span class="n">int_collegeboard__ap_unpivot</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">academic_year</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">unpivot_rows</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__ap_assessment_dashboard</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">academic_year</span><span class="o">&gt;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">test_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">dashboard_scored_rows</span><span class="p">;</span>
+
+<span class="c1">-- If unpivot_rows and dashboard_scored_rows don&#39;t reconcile, find exactly</span>
+<span class="c1">-- which exam scores are missing from the dashboard:</span>
+
+<span class="k">select</span>
+<span class="w">  </span><span class="n">u</span><span class="p">.</span><span class="n">powerschool_student_number</span><span class="p">,</span>
+<span class="w">  </span><span class="n">u</span><span class="p">.</span><span class="n">exam_code_description</span><span class="p">,</span>
+<span class="w">  </span><span class="n">u</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span><span class="p">,</span>
+<span class="w">  </span><span class="n">u</span><span class="p">.</span><span class="n">ap_course_name</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_collegeboard</span><span class="p">.</span><span class="n">int_collegeboard__ap_unpivot</span><span class="w"> </span><span class="n">u</span>
+<span class="k">where</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">academic_year</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">exists</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__ap_assessment_dashboard</span><span class="w"> </span><span class="n">d</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">academic_year</span><span class="o">&gt;</span>
+<span class="w">      </span><span class="k">and</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">powerschool_student_number</span>
+<span class="w">      </span><span class="k">and</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span>
+<span class="w">      </span><span class="k">and</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">test_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">);</span>
+
+<span class="c1">-- For each missing row, check whether the student has ANY course enrollment</span>
+<span class="c1">-- with a matching ap_course_subject (regardless of the dashboard&#39;s specific</span>
+<span class="c1">-- join filters) to distinguish &quot;PowerSchool tagging gap&quot; (a sibling course</span>
+<span class="c1">-- with the right subject exists but wasn&#39;t picked up - see</span>
+<span class="c1">-- 02-ap-course-tagging.sql) from &quot;genuinely tested without taking the class&quot;</span>
+<span class="c1">-- (a real, expected scenario per College Board&#39;s rules - not a bug to</span>
+<span class="c1">-- chase; if EVERY missing row is this case, the root cause is actually</span>
+<span class="c1">-- rpt_tableau__ap_assessment_dashboard&#39;s join structure itself - see</span>
+<span class="c1">-- https://github.com/TEAMSchools/teamster/issues/4391):</span>
+
+<span class="k">select</span>
+<span class="w">  </span><span class="n">se</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">ap_course_subject</span><span class="p">,</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">courses_course_name</span><span class="p">,</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">is_dropped_section</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">base_powerschool__course_enrollments</span><span class="w"> </span><span class="n">ce</span>
+<span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_powerschool</span><span class="p">.</span><span class="n">base_powerschool__student_enrollments</span><span class="w"> </span><span class="n">se</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="n">se</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">cc_studentid</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">se</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">cc_academic_year</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">se</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;(kipp\w+)_&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">ce</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;(kipp\w+)_&#39;</span><span class="p">)</span>
+<span class="k">where</span><span class="w"> </span><span class="n">se</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="o">&lt;</span><span class="n">missing_student_numbers</span><span class="o">&gt;</span><span class="p">)</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">cc_academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">academic_year</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">ce</span><span class="p">.</span><span class="n">ap_course_subject</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run it via the BigQuery MCP <code>execute_sql</code> tool</strong>, substituting
+      the actual target academic year for <code>&lt;academic_year&gt;</code></li>
+</ul>
+<p>Expected (validated for <code>academic_year = 2025</code>, 2025-2026 admin, after the
+crosswalk fix): <code>remaining_crosswalk_gaps = 0</code>, <code>unpivot_rows = 658</code>,
+<code>dashboard_scored_rows = 643</code>. The 15-row gap traced to two causes: 12
+Seminar-exam rows (the <code>ENG22110C4</code> tagging gap from Task 2), 3 rows that are
+the <code>rpt_tableau__ap_assessment_dashboard</code> join-structure bug (issue #4391) —
+students who genuinely tested without a matching course enrollment. Future runs
+will show different counts; the query's job is to surface whatever the real gap
+is, not reproduce these exact numbers.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/04-downstream-lineage.sql
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add downstream lineage query to AP ingest protocol skill&quot;</span>
+</code></pre></div>
+<h2 id="task-5-skillmd-runbook">Task 5: SKILL.md Runbook</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: all four query files from Tasks 1-4; Dagster MCP tools
+  (<code>get_asset_health</code>, <code>get_asset_materializations</code>, <code>launch_run</code>); BigQuery MCP
+  <code>execute_sql</code></li>
+<li>
+<p>Produces: the full 13-phase runbook a fresh agent follows end-to-end</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the file</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>---
+name: collegeboard-ap-data-ingest-protocol
+description:
+  Use when resolving gaps in the College Board AP ID crosswalk, when new AP
+  scores aren&#39;t showing up on the AP assessment / CARAT dashboard, when
+  stg_collegeboard__ap hasn&#39;t picked up a new AP score file drop, or when
+<span class="gu">  auditing the AP codes/course-crosswalk sheets for completeness.</span>
+<span class="gu">---</span>
+
+<span class="gh"># College Board AP Data Ingest Protocol</span>
+
+<span class="gu">## Overview</span>
+
+Every AP admin year, new scores land in <span class="sb">`stg_collegeboard__ap`</span> but silently fail
+to reach <span class="sb">`rpt_tableau__ap_assessment_dashboard`</span> (the CARAT dashboard) for one of
+four reasons: the staging table hasn&#39;t picked up the new file, new students
+aren&#39;t in the CB-ID-to-PowerSchool crosswalk sheet yet, the
+codes/course-crosswalk sheets are missing an entry, or a crosswalk fix doesn&#39;t
+fully propagate downstream. This skill walks all four, in order, with the human
+approving every risky action and every batch of data before it moves.
+
+<span class="gs">**Full design rationale and validation evidence:**</span>
+<span class="sb">`docs/superpowers/specs/2026-07-13-collegeboard-ap-pipeline-audit-design.md`</span>.
+This file is the runbook; that doc is the &quot;why.&quot;
+
+<span class="gu">## PII — read this before running anything</span>
+
+Crosswalk-matching results (Phases 4-8) include student names, DOB, and gender.
+<span class="gs">**Never write these to any file that gets committed to git**</span> — issue, PR, commit
+message, or any file under version control. Chat/terminal output only. The
+codes-completeness, AP-course-tagging, and downstream-lineage checks carry no
+PII (codes, course names, aggregate counts) — no special handling needed for
+those.
+
+<span class="gu">## Why crosswalk gaps happen (say this to the user)</span>
+
+A College Board ID can be missing from the crosswalk sheet for two reasons: a
+first-time AP tester (no ID ever existed to add), or a student with a second CB
+account for this admin (College Board&#39;s merge process is too tedious for KTAF to
+pursue — the fix is just adding the new ID as another mapping to the same
+<span class="sb">`student_number`</span>). Both resolve identically (add the row) — say this out loud
+when presenting results so a &quot;new&quot; ID doesn&#39;t read as something having gone
+wrong.
+
+<span class="gu">## Phase 1: Ingestion check</span>
+
+Compare materialization timestamps via <span class="sb">`get_asset_health`</span> /
+<span class="sb">`get_asset_materializations`</span>: raw <span class="sb">`kipptaf/collegeboard/ap`</span> (partitioned by
+school × school_year) vs. staging <span class="sb">`kipptaf/collegeboard/stg_collegeboard__ap`</span>.
+
+If a raw partition materialized more recently than staging&#39;s last
+materialization, staging is stale — most likely blocked by
+<span class="sb">`stg_collegeboard__ap`</span>&#39;s automation condition, whose partition range extends to
+<span class="sb">`CURRENT_FISCAL_YEAR.fiscal_year + 1`</span>, a partition that&#39;s always unmaterialized
+and trips the condition&#39;s <span class="sb">`not (any_deps_missing)`</span> gate. This recurs every year
+until that automation condition itself is fixed (separate issue, not this
+skill&#39;s job).
+
+<span class="gs">**Always ask before launching anything.**</span> Preview with
+<span class="sb">`launch_run(..., confirm=False)`</span>, explain to the user why (which partitions are
+newer, and that the automation condition is blocking the rebuild), then fire
+with <span class="sb">`confirm=True`</span> only after explicit approval. Never skip the ask, even
+though this is expected to recur annually.
+
+After the run succeeds, re-check asset health. <span class="sb">`int_collegeboard__ap_unpivot`</span>
+doesn&#39;t need a separate manual trigger — it rematerializes on its own via the
+automation condition once <span class="sb">`stg_collegeboard__ap`</span> succeeds.
+
+Only proceed to Phase 2 once staging is confirmed fresh.
+
+<span class="gu">## Phase 2: Codes completeness check</span>
+
+Run [<span class="sb">`queries/01-codes-completeness.sql`</span>](queries/01-codes-completeness.sql).
+
+If it returns any rows: for each missing code, look up its meaning by fetching
+(reading the actual document, not trusting a search-result summary) the current
+College Board &quot;AP Student Datafile for Schools and Districts [Year] Layout
+Format&quot; PDF at <span class="sb">`apcentral.collegeboard.org`</span>. Hand the user the missing code, its
+looked-up description, and the direct sheet URL:
+<span class="sb">`https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE`</span>
+(tab <span class="sb">`src_collegeboard__ap_codes`</span>) so they can add it manually — no Sheets write
+access here.
+
+<span class="gu">## Phase 3: AP course tagging check</span>
+
+Run [<span class="sb">`queries/02-ap-course-tagging.sql`</span>](queries/02-ap-course-tagging.sql).
+
+Any row returned is a PowerSchool course-setup gap — flag it unconditionally
+(regardless of whether it happens to matter to this cycle&#39;s matching). If found,
+identify the owning region/district with the follow-up query in that file&#39;s
+comments, and hand the finding to whoever owns PowerSchool course setup for that
+region. No write access to PowerSchool here.
+
+<span class="gu">## Phase 4: Pre-audit summary</span>
+
+Get cheap counts before running anything expensive:
+
+<span class="k">-</span><span class="w"> </span>Total raw students: <span class="sb">`stg_collegeboard__ap`</span> row count for the relevant admin
+  year.
+<span class="k">-</span><span class="w"> </span>Total exam scores: <span class="sb">`int_collegeboard__ap_unpivot`</span> row count for the same year.
+<span class="k">-</span><span class="w"> </span>Gap count:
+  <span class="sb">`select count(*) from kipptaf_dbt_test__audit.int_collegeboard__ap_unpivot__crosswalk_resolves`</span>.
+
+Present as: &quot;The raw AP file has <span class="ge">_N_</span> students resolving to <span class="ge">_M_</span> exam scores. Of
+those, <span class="ge">_G_</span> aren&#39;t in the crosswalk yet.&quot; Then ask: &quot;Ready for me to run the
+matching audit against PowerSchool?&quot; <span class="gs">**Don&#39;t proceed without confirmation.**</span>
+
+<span class="gu">## Phase 5: Run the tiered match</span>
+
+Run
+[<span class="sb">`queries/03-tiered-crosswalk-match.sql`</span>](queries/03-tiered-crosswalk-match.sql)
+once approved. This already includes the Tier C/D corroboration checks (gender
+hard-gate, course-enrollment informational annotation) — see the comments in
+that file for the full tier/corroboration logic.
+
+<span class="gu">## Phase 6: Tier breakdown</span>
+
+Present counts per tier (how many resolved at Tier A/B, C, D, via tiebreak), how
+many <span class="sb">`flagged_for_review`</span> (gender mismatch), and how many <span class="sb">`no_match`</span>. Ask:
+&quot;Ready to start copy-pasting matches into the sheet?&quot; **Don&#39;t proceed without
+confirmation.**
+
+<span class="gu">## Phase 7: Batch-by-batch delivery</span>
+
+Present <span class="sb">`resolved`</span> rows in batches of 20, **as a plain delimited block in a
+fenced code block** (<span class="sb">`College_Board_ID&lt;tab&gt;PowerSchool_Student_Number`</span>, one pair
+per line) — not a markdown table, so it pastes cleanly into two Sheet columns
+without pipe/dash characters riding along. If a batch contains any Tier C/D
+rows, put a small markdown review table (tier tag, course-enrollment note)
+immediately above the paste block for eyeballing — not for pasting.
+
+After each batch, ask &quot;Ready for the next batch?&quot; and wait — **never dump all
+batches in one message.**
+
+Present <span class="sb">`flagged_for_review`</span> rows (if any) separately, after all <span class="sb">`resolved`</span>
+batches, as a markdown table (CB first/last/gender vs. PS first/last/gender) for
+the user to decide on individually — these never go in a paste block.
+
+Present <span class="sb">`no_match`</span> rows (if any) as a single markdown table (CB first/last/DOB)
+— see Phase 13.
+
+The Google Sheet itself:
+<span class="sb">`https://docs.google.com/spreadsheets/d/1dmPEB3lVBwNhcGANh1H8_D42nK3zIrFFE0rBFZQBuxE`</span>
+(tab <span class="sb">`src_collegeboard__ap_id_crosswalk`</span>).
+
+<span class="gu">## Phase 8: User pastes</span>
+
+The user manually pastes each batch&#39;s rows into the Google Sheet — as they go,
+or after the last batch, whichever they prefer. No tool here can write to Sheets
+directly.
+
+<span class="gu">## Phase 9: Post-paste reconciliation</span>
+
+Once the last batch is delivered, watch
+<span class="sb">`stg_google_sheets__collegeboard__ap_id_crosswalk`</span>&#39;s row count (Dagster asset
+health, or a direct BigQuery row count) until it increases by the number of
+resolved rows generated. Tell the user explicitly that a reconciliation check is
+about to run, then compare the generated <span class="sb">`resolved`</span> list against the actual new
+rows in that table:
+
+<span class="k">-</span><span class="w"> </span><span class="gs">**Missing rows**</span> — a generated pair that never made it in.
+<span class="k">-</span><span class="w"> </span><span class="gs">**Duplicate rows**</span> — the same <span class="sb">`College_Board_ID`</span> appearing more than once,
+  possibly with different student numbers.
+<span class="k">-</span><span class="w"> </span><span class="gs">**Incorrect rows**</span> — a <span class="sb">`College_Board_ID`</span> present with a different
+  <span class="sb">`student_number`</span> than generated.
+
+<span class="gu">## Phase 10: Downstream lineage verification</span>
+
+Once the sheet reconciles cleanly, run
+[<span class="sb">`queries/04-downstream-lineage.sql`</span>](queries/04-downstream-lineage.sql)
+(substituting the target academic year) and present the before/after count
+summary across crosswalk sheet → <span class="sb">`int_collegeboard__ap_unpivot`</span> → dashboard. If
+counts don&#39;t reconcile, use the file&#39;s follow-up queries to find exactly which
+rows are missing and why (a PowerSchool tagging gap vs. the known dashboard
+join-structure limitation, tracked in
+[<span class="nt">#4391</span>](<span class="na">https://github.com/TEAMSchools/teamster/issues/4391</span>)).
+
+<span class="gu">## Phase 11: Final gap recount</span>
+
+Re-run the Phase 4 gap-count query to confirm it dropped to the expected
+residual (0 for a fully-resolved run, or the remaining <span class="sb">`no_match`</span> count
+otherwise).
+
+<span class="gu">## Phase 12: No-match root cause review</span>
+
+For whatever remains in <span class="sb">`no_match`</span>, don&#39;t just hand it over — characterize <span class="ge">_why_</span>
+it didn&#39;t match, in chat only (never write real names/DOB to a committed file):
+
+<span class="k">1.</span> Loosen the DOB constraint (any academic_year, not just the gap&#39;s own year)
+   and look for the same last_name/token — reveals students who exist under a
+   different year.
+<span class="k">2.</span> Loosen the last_name constraint (same DOB, any last_name in the same year) —
+   reveals a name recorded very differently.
+<span class="k">3.</span> If a case reveals a new deterministic, generalizable pattern (not one-off
+   noise), that&#39;s a signal a new tier belongs in <span class="sb">`03-tiered-crosswalk-match.sql`</span>
+   — the same way Tiers C and D were derived during design. Genuinely one-off
+   cases (student really isn&#39;t in PowerSchool) stay manual.
+
+This is diagnostic, not a promise to keep expanding tiers forever — the goal is
+a small manual-review bucket and evidence-based future additions.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify frontmatter and word count</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>pyyaml<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span>
+<span class="s2">import yaml, pathlib</span>
+<span class="s2">text = pathlib.Path(&#39;.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md&#39;).read_text()</span>
+<span class="s2">front = text.split(&#39;---&#39;)[1]</span>
+<span class="s2">meta = yaml.safe_load(front)</span>
+<span class="s2">assert set(meta) &gt;= {&#39;name&#39;, &#39;description&#39;}</span>
+<span class="s2">assert len(front) &lt;= 1024</span>
+<span class="s2">print(&#39;frontmatter OK:&#39;, meta[&#39;name&#39;])</span>
+<span class="s2">&quot;</span>
+wc<span class="w"> </span>-w<span class="w"> </span>.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md
+</code></pre></div>
+<p>Expected: <code>frontmatter OK: collegeboard-ap-data-ingest-protocol</code> and a word
+count (this skill is intentionally longer than the &lt;500-word guideline for
+frequently-loaded skills — it's a domain-specific, occasionally-invoked 13-phase
+runbook, not a getting-started skill).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat: add SKILL.md runbook for AP data ingest protocol&quot;</span>
+</code></pre></div>
+<h2 id="task-6-end-to-end-validation">Task 6: End-to-End Validation</h2>
+<p><strong>Files:</strong> none created — this task exercises Tasks 1-5's output.</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the full skill directory from Tasks 1-5</li>
+<li>
+<p>Produces: a pass/fail judgment on whether a fresh agent can correctly follow
+  the runbook</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Dispatch a fresh subagent with only the skill's content</strong> (no
+      memory of this conversation), prompted to: "Using
+      <code>.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md</code>, check
+      whether the College Board AP crosswalk pipeline has any current gaps and
+      walk me through resolving them if so." Give it BigQuery MCP and Dagster
+      MCP tool access; explicitly instruct it NOT to actually launch any Dagster
+      run (<code>confirm=True</code>) or take any other real action — dry-run only,
+      reporting what it would do at each phase.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Confirm the subagent's behavior matches these three criteria</strong>
+      (this is the Technique-skill validation, per superpowers:writing-skills —
+      "can it apply the technique correctly"):</p>
+</li>
+<li>It runs Phase 1 (ingestion check) before anything else, and — since the real
+    pipeline is currently caught up — correctly reports no staleness rather than
+    inventing a run to launch.</li>
+<li>It runs Phases 2-3 (codes/course-tagging checks) and reports the real,
+    current results (0 codes gaps; the one <code>ENG22110C4</code> course-tagging gap, if
+    it's still unresolved at run time) rather than hallucinating different
+    numbers.</li>
+<li>Since the crosswalk is currently fully resolved (0 gaps), it correctly
+    reports a clean state at Phase 4 and does not fabricate a matching exercise
+    or ask to paste anything — it should recognize "0 gaps, nothing to do" as a
+    valid, complete outcome, not treat the runbook's later phases as mandatory
+    busywork.</li>
+<li>
+<p>It never proposes writing any student name, DOB, or gender value into a
+    file, issue, or commit.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: If any criterion fails</strong>, fix the SKILL.md wording (not the
+      underlying queries — those are independently validated in Tasks 1-4) and
+      re-dispatch. Do not mark this task done until a subagent run satisfies all
+      three.</p>
+</li>
+</ul>
+<h2 id="task-7-final-lint-and-push">Task 7: Final Lint and Push</h2>
+<p><strong>Files:</strong> none created.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Run trunk check on every new file</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/01-codes-completeness.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/02-ap-course-tagging.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/03-tiered-crosswalk-match.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>.claude/skills/collegeboard-ap-data-ingest-protocol/queries/04-downstream-lineage.sql
+</code></pre></div>
+<p>Expected: no findings (or only auto-fixed formatting). <code>.sql</code> files here are
+ad-hoc operational queries for a skill, not dbt models — the <code>src/dbt/CLAUDE.md</code>
+SQL style guide (no correlated subqueries, no <code>ORDER BY</code>, etc.) does not apply
+to this directory.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Push</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>push
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Update the tracking issue.</strong> Comment on
+      <a href="https://github.com/TEAMSchools/teamster/issues/4390">#4390</a> that the
+      skill is implemented and validated, linking the final commit.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

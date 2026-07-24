@@ -1,0 +1,2372 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Codespace Sandbox Hardening — Design Spec - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#codespace-sandbox-hardening-design-spec" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Codespace Sandbox Hardening — Design Spec
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motivation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Motivation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#three-layer-protection-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Three-layer protection model
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#change-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Change Inventory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-tmpfs-mount" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. tmpfs Mount
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. tmpfs Mount">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#symlinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Symlinks
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#re-injection-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-injection behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-capability-drops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Capability Drops
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Capability Drops">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-sys_admin-is-not-added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why SYS_ADMIN is not added
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-sudo-removal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Sudo Removal
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Sudo Removal">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-sudo-is-still-needed-briefly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why sudo is still needed (briefly)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#postcreate-privileged-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        postCreate privileged sequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inject-secretssh-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        inject-secrets.sh changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-removal-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-removal behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-sftp-transient-file-relocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. SFTP Transient File Relocation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. SFTP Transient File Relocation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#audit-envenv-references-in-dev-configs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Audit: env/.env references in dev configs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-claude-code-sandbox-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Claude Code Sandbox Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Claude Code Sandbox Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#weaker-nested-sandbox-verified-ineffective" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Weaker nested sandbox — verified ineffective
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#actual-defense-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Actual defense model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#path-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Path coverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dependency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependency
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-hook-restructuring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Hook Restructuring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Hook Restructuring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#design-principle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design principle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-sensitivesh-new-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check-sensitive.sh — new structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules removed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rules-removed-from-bash-scope-gated-on-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rules removed from Bash scope (gated on verification)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#check-outputsh-relaxed-matcher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check-output.sh — relaxed matcher
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing &amp; Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-03-20-codespace-sandbox-hardening-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="codespace-sandbox-hardening-design-spec">Codespace Sandbox Hardening — Design Spec</h1>
+<p><strong>Date:</strong> 2026-03-20 <strong>Updated:</strong> 2026-03-22 <strong>Status:</strong> Draft</p>
+<h2 id="overview">Overview</h2>
+<p>Six hardening measures applied to the GitHub Codespaces dev environment:</p>
+<p><strong>OS-level (devcontainer):</strong></p>
+<ol>
+<li><strong>tmpfs for secrets</strong> — <code>/etc/secret-volume</code> moves to RAM-backed tmpfs;
+   secrets never touch disk</li>
+<li><strong>Capability drops</strong> — three dangerous Linux capabilities dropped at
+   container start via <code>runArgs</code> (NET_RAW, SYS_PTRACE, NET_ADMIN)</li>
+<li><strong>Sudo removal</strong> — sudo is available only during <code>postCreate</code> for the single
+   privileged setup step; removed before the container is handed to the user</li>
+</ol>
+<p><strong>Claude Code sandbox:</strong></p>
+<ol>
+<li><strong>Sandbox mode</strong> — Claude Code's sandboxed bash tool enabled with
+   <code>enableWeakerNestedSandbox</code> (required because Codespaces blocks unprivileged
+   user namespaces); provides OS-level filesystem and network isolation for all
+   bash subprocesses</li>
+<li><strong>Hook restructuring</strong> — <code>check-sensitive.sh</code> reorganized by tool type;
+   path-based rules removed from Bash (sandbox owns that) while command-pattern
+   rules retained (sandbox cannot cover these)</li>
+<li><strong>Output scanning relaxation</strong> — <code>check-output.sh</code> no longer scans Edit/Write
+   output; Claude is the author of that content, not the reader, and sandbox
+   network filtering prevents exfiltration</li>
+</ol>
+<p>A seventh code change relocates SFTP transient download files from <code>env/</code> to
+<code>/tmp/dagster/</code>, a side effect of consolidating all secrets into
+<code>/etc/secret-volume</code>.</p>
+<p>Convenience symlinks at the repo root (<code>secret-volume/</code>, <code>dagster-tmp/</code>) provide
+easy access to both locations during development.</p>
+<hr />
+<h2 id="motivation">Motivation</h2>
+<p>The existing setup stores secrets as disk-backed files under
+<code>/etc/secret-volume</code> and <code>env/.env</code>. These persist across container restarts and
+are accessible to any process with filesystem read access. Additionally, <code>sudo</code>
+remains available indefinitely, and the container retains capabilities useful
+only to attackers (raw sockets, process inspection, network admin).</p>
+<p>The hooks (<code>check-sensitive.sh</code>, <code>check-output.sh</code>) were originally the sole
+protection layer. They use regex pattern matching on tool inputs and outputs —
+effective but best-effort against obfuscation. This spec adds two reinforcing
+layers beneath them.</p>
+<h3 id="three-layer-protection-model">Three-layer protection model</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>What it covers</th>
+<th>Strengths</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hooks</strong></td>
+<td>All Claude tools (file tools, Bash, MCP)</td>
+<td>Covers Claude's own tool use, output scanning</td>
+</tr>
+<tr>
+<td><strong>Sandbox</strong></td>
+<td>Bash subprocesses (filesystem + network)</td>
+<td>OS-level enforcement, can't be bypassed by regex</td>
+</tr>
+<tr>
+<td><strong>OS hardening</strong></td>
+<td>Container-level (tmpfs, caps, sudo)</td>
+<td>Protects secrets at rest, limits privilege</td>
+</tr>
+</tbody>
+</table>
+<p>Each rule lives in the strongest layer that covers it. Redundancy across layers
+is only justified when the primary layer is unreliable (e.g., weaker nested
+sandbox mode).</p>
+<p>These measures raise the bar against:</p>
+<ul>
+<li>Prompt-injected or accidental secret exfiltration via disk reads</li>
+<li>Privilege escalation via unrestricted sudo</li>
+<li>Network-layer attacks via raw socket or interface manipulation</li>
+<li>Claude autonomously reading secrets via bash subprocesses</li>
+<li>Data exfiltration via bash subprocess network access</li>
+</ul>
+<hr />
+<h2 id="change-inventory">Change Inventory</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Change</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.devcontainer/devcontainer.json</code></td>
+<td>Add one tmpfs mount + four <code>--cap-drop</code> flags to <code>runArgs</code></td>
+</tr>
+<tr>
+<td><code>.devcontainer/scripts/postCreate.sh</code></td>
+<td>Add <code>bubblewrap socat</code> to apt install; add <code>chown</code>, <code>mkdir</code>, <code>sudo rm</code> at end; three symlinks</td>
+</tr>
+<tr>
+<td><code>.devcontainer/scripts/inject-secrets.sh</code></td>
+<td>Remove sudo block; write <code>.env</code> to <code>/etc/secret-volume/.env</code></td>
+</tr>
+<tr>
+<td><code>src/teamster/libraries/sftp/assets.py</code></td>
+<td>Replace <code>./env/</code> prefix with <code>/tmp/dagster/</code> in all three factory functions</td>
+</tr>
+<tr>
+<td><code>.gitignore</code></td>
+<td>Add <code>secret-volume</code> and <code>dagster-tmp</code></td>
+</tr>
+<tr>
+<td><code>.claude/settings.json</code></td>
+<td>Add <code>sandbox</code> configuration block</td>
+</tr>
+<tr>
+<td><code>.claude/hooks/check-sensitive.sh</code></td>
+<td>Restructure by tool type; remove path rules for Bash</td>
+</tr>
+<tr>
+<td><code>.claude/hooks/check-output.sh</code></td>
+<td>Remove Edit and Write from matcher</td>
+</tr>
+<tr>
+<td><em>(audit)</em></td>
+<td>Verify <code>grep -r 'env/\.env'</code> returns only the symlink and <code>.gitignore</code>; update any config that resolves symlinks to real paths</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1-tmpfs-mount">1. tmpfs Mount</h2>
+<h3 id="configuration">Configuration</h3>
+<div class="highlight"><pre><span></span><code>// devcontainer.json
+&quot;mounts&quot;: [
+  &quot;type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760&quot;
+]
+</code></pre></div>
+<ul>
+<li><strong>Size:</strong> 10 MB — holds credential files and <code>.env</code>. Will never approach 1 MB
+  in practice; 10 MB is headroom.</li>
+<li><strong>Mode:</strong> <code>0700</code> — directory not world-readable at mount time.</li>
+<li><strong>Ownership:</strong> Docker creates the mount as root. One privileged step in
+  <code>postCreate</code> transfers ownership to <code>vscode</code> (see Section 3).</li>
+</ul>
+<h3 id="symlinks">Symlinks</h3>
+<p><code>postCreate</code> creates two convenience symlinks at the repo root:</p>
+<div class="highlight"><pre><span></span><code>ln<span class="w"> </span>-sf<span class="w"> </span>/etc/secret-volume<span class="w"> </span>/workspaces/teamster/secret-volume
+ln<span class="w"> </span>-sf<span class="w"> </span>/etc/secret-volume/.env<span class="w"> </span>/workspaces/teamster/env/.env
+</code></pre></div>
+<p>The dagster-tmp/ symlink is for SFTP transient files (see Section 4).</p>
+<div class="highlight"><pre><span></span><code>mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/dagster
+ln<span class="w"> </span>-sf<span class="w"> </span>/tmp/dagster<span class="w"> </span>/workspaces/teamster/dagster-tmp
+</code></pre></div>
+<p><code>env/.env</code> remains accessible at its existing path — non-Claude processes
+(Dagster, dbt, shell scripts) that reference <code>env/.env</code> continue to work without
+changes. Claude's tool access remains hook-blocked regardless of the symlink.</p>
+<p>Both symlink names are added to <code>.gitignore</code>.</p>
+<h3 id="re-injection-behavior">Re-injection behavior</h3>
+<ul>
+<li><strong><code>.env</code> re-injection</strong> — works anytime; <code>inject-secrets.sh</code> writes as
+  <code>vscode</code>, no sudo required</li>
+<li><strong>File-based secrets</strong> (certs, keys) — require container rebuild; these rarely
+  change and are written only during initial setup</li>
+</ul>
+<hr />
+<h2 id="2-capability-drops">2. Capability Drops</h2>
+<div class="highlight"><pre><span></span><code>// devcontainer.json
+&quot;runArgs&quot;: [
+  &quot;--cap-drop=NET_RAW&quot;,
+  &quot;--cap-drop=SYS_PTRACE&quot;,
+  &quot;--cap-drop=NET_ADMIN&quot;
+]
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Cap</th>
+<th>What it removes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NET_RAW</code></td>
+<td>Raw socket access — prevents packet sniffing and crafting</td>
+</tr>
+<tr>
+<td><code>SYS_PTRACE</code></td>
+<td>Process memory inspection — prevents reading other processes</td>
+</tr>
+<tr>
+<td><code>NET_ADMIN</code></td>
+<td>Network config (iptables, interface management)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="why-sys_admin-is-not-added">Why SYS_ADMIN is not added</h3>
+<p><code>CAP_SYS_ADMIN</code> is not in Docker's default non-privileged capability set and is
+required for bubblewrap's full sandbox mode (user namespace creation). However,
+<strong>GitHub Codespaces silently strips <code>--cap-add=SYS_ADMIN</code></strong> from <code>runArgs</code> — the
+capability never appears in the container's bounding set regardless of
+configuration. This behavior is undocumented by GitHub.</p>
+<p>Verified empirically (2026-03-22):</p>
+<ul>
+<li><code>kernel.unprivileged_userns_clone = 1</code> and <code>max_user_namespaces = 63954</code> in
+  the Codespace kernel</li>
+<li><code>--cap-add=SYS_ADMIN</code> in <code>runArgs</code> is silently ignored — <code>capsh --print</code> shows
+  the standard Docker default set with no <code>cap_sys_admin</code></li>
+<li><code>unshare(CLONE_NEWUSER)</code> returns <code>EPERM</code> due to the seccomp filter
+  (<code>Seccomp: 2</code>, 1 active filter) gating <code>CLONE_NEWUSER</code> on <code>CAP_SYS_ADMIN</code></li>
+<li><code>--privileged</code> mode reportedly works but grants all capabilities — rejected as
+  disproportionate</li>
+</ul>
+<p>Consequence: bwrap runs in weaker nested sandbox mode (see Section 5). The
+Codespace VM provides outer isolation (ephemeral environment, managed network),
+so the weaker sandbox still adds meaningful protection.</p>
+<p>No development workflow (uv, Python, Dagster, dbt, GCS/BigQuery API calls, SFTP,
+1Password CLI) requires NET_RAW, SYS_PTRACE, or NET_ADMIN.</p>
+<hr />
+<h2 id="3-sudo-removal">3. Sudo Removal</h2>
+<h3 id="why-sudo-is-still-needed-briefly">Why sudo is still needed (briefly)</h3>
+<p>Docker creates the tmpfs at <code>/etc/secret-volume</code> as root. One <code>chown</code> transfers
+ownership to <code>vscode</code> before <code>inject-secrets.sh</code> runs. After that, all writes to
+<code>/etc/secret-volume</code> are unprivileged.</p>
+<h3 id="postcreate-privileged-sequence"><code>postCreate</code> privileged sequence</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># 1. transfer tmpfs ownership to vscode — only sudo call</span>
+sudo<span class="w"> </span>chown<span class="w"> </span>vscode:vscode<span class="w"> </span>/etc/secret-volume
+
+<span class="c1"># 2. inject secrets (no sudo inside inject-secrets.sh)</span>
+.devcontainer/scripts/inject-secrets.sh
+
+<span class="c1"># 3. create convenience symlinks</span>
+ln<span class="w"> </span>-sf<span class="w"> </span>/etc/secret-volume<span class="w"> </span>/workspaces/teamster/secret-volume
+ln<span class="w"> </span>-sf<span class="w"> </span>/etc/secret-volume/.env<span class="w"> </span>/workspaces/teamster/env/.env
+mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/dagster
+ln<span class="w"> </span>-sf<span class="w"> </span>/tmp/dagster<span class="w"> </span>/workspaces/teamster/dagster-tmp
+
+<span class="c1"># 4. remove sudo — must be last privileged step</span>
+sudo<span class="w"> </span>rm<span class="w"> </span>-f<span class="w"> </span>/usr/local/bin/sudo<span class="w"> </span>/usr/bin/sudo
+</code></pre></div>
+<h3 id="inject-secretssh-changes"><code>inject-secrets.sh</code> changes</h3>
+<p>The existing sudo block is removed. Files are written directly as <code>vscode</code> using
+<code>install -m 600</code> instead of <code>sudo mv</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before (removed):</span>
+sudo<span class="w"> </span>chown<span class="w"> </span>root:root<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">TMP_SECRET</span><span class="si">}</span><span class="s2">&quot;</span>
+sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">TMP_SECRET</span><span class="si">}</span><span class="s2">&quot;</span>
+sudo<span class="w"> </span>mv<span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">TMP_SECRET</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;/etc/secret-volume/</span><span class="si">${</span><span class="nv">tpl</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># after:</span>
+install<span class="w"> </span>-m<span class="w"> </span><span class="m">600</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">TMP_SECRET</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;/etc/secret-volume/</span><span class="si">${</span><span class="nv">tpl</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p>The <code>.env</code> injection target changes from <code>env/.env</code> to
+<code>/etc/secret-volume/.env</code>.</p>
+<h3 id="post-removal-behavior">Post-removal behavior</h3>
+<p>After <code>postCreate</code> completes, sudo is permanently unavailable for the lifetime
+of the container. Any future privileged operation requires a container rebuild.
+Re-injection of <code>.env</code> works at any time without sudo.</p>
+<hr />
+<h2 id="4-sftp-transient-file-relocation">4. SFTP Transient File Relocation</h2>
+<p>SFTP assets currently stage downloaded files at
+<code>./env/{asset_key}/{remote_path}</code>. With <code>env/</code> no longer a general-purpose
+staging directory, these move to <code>/tmp/dagster/{asset_key}/{remote_path}</code>.</p>
+<p>Five <code>./env/</code> references across the three factory functions are updated:</p>
+<ul>
+<li><code>build_sftp_file_asset</code> — line 180 (<code>sftp_get</code> local path)</li>
+<li><code>build_sftp_archive_asset</code> — line 312 (<code>sftp_get</code> local path), line 334
+  (<code>zipfile.extract</code> output path), line 338 (extracted file path)</li>
+<li><code>build_sftp_folder_asset</code> — line 454 (<code>sftp_get</code> local path)</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># before</span>
+<span class="sa">f</span><span class="s2">&quot;./env/</span><span class="si">{</span><span class="n">context</span><span class="o">.</span><span class="n">asset_key</span><span class="o">.</span><span class="n">to_user_string</span><span class="p">()</span><span class="si">}</span><span class="s2">/...&quot;</span>
+
+<span class="c1"># after</span>
+<span class="sa">f</span><span class="s2">&quot;/tmp/dagster/</span><span class="si">{</span><span class="n">context</span><span class="o">.</span><span class="n">asset_key</span><span class="o">.</span><span class="n">to_user_string</span><span class="p">()</span><span class="si">}</span><span class="s2">/...&quot;</span>
+</code></pre></div>
+<p>Files in <code>/tmp/dagster/</code> are disk-backed, persist for the container session, and
+are accessible via the <code>dagster-tmp/</code> symlink for manual inspection. They are
+not secrets and do not require tmpfs.</p>
+<h3 id="audit-envenv-references-in-dev-configs">Audit: <code>env/.env</code> references in dev configs</h3>
+<p>Search for hardcoded <code>env/.env</code> references across the repo. The symlink means
+most tools work without changes, but any config that resolves symlinks to their
+real path may need updating. Done when <code>grep -r 'env/\.env'</code> returns only the
+symlink itself and <code>.gitignore</code>.</p>
+<hr />
+<h2 id="5-claude-code-sandbox-configuration">5. Claude Code Sandbox Configuration</h2>
+<h3 id="weaker-nested-sandbox-verified-ineffective">Weaker nested sandbox — verified ineffective</h3>
+<p>GitHub Codespaces silently strips <code>--cap-add=SYS_ADMIN</code> (see Section 2), leaving
+<code>CAP_SYS_ADMIN</code> absent from the container's bounding set. Bubblewrap's full mode
+requires user namespaces, which the OCI seccomp filter gates on <code>CAP_SYS_ADMIN</code>.
+The <code>enableWeakerNestedSandbox</code> option is configured as a fallback but provides
+<strong>no effective enforcement</strong> in this environment.</p>
+<p>Verified empirically (2026-03-22) with hooks disabled:</p>
+<ul>
+<li><strong>Filesystem</strong>: all <code>denyRead</code> paths readable (including <code>/proc/self/environ</code>
+  which leaked tokens and credentials), all <code>denyWrite</code> paths writable</li>
+<li><strong>Network</strong>: no proxy detected — <code>curl</code> connected directly to arbitrary
+  external hosts without restriction</li>
+</ul>
+<p>The sandbox configuration is retained because it is zero-cost and will activate
+automatically if Anthropic improves weaker mode enforcement or Codespaces begins
+honoring <code>--cap-add=SYS_ADMIN</code>.</p>
+<h3 id="actual-defense-model">Actual defense model</h3>
+<p>The effective security layers in this Codespace are:</p>
+<ol>
+<li><strong>Permissions</strong> (regular mode, not auto-allow) — the user approves or denies
+   each bash command before execution. This is the primary gate against novel
+   attacks.</li>
+<li><strong>Hooks</strong> (<code>check-sensitive.sh</code>, <code>check-output.sh</code>) — auto-block known
+   dangerous patterns before the user sees them (sensitive paths, env leakage,
+   encoding bypasses, secret patterns in output). Hooks protect all tools, not
+   just Bash.</li>
+<li><strong>Sandbox</strong> — no effective enforcement today; future upside only.</li>
+</ol>
+<p>Auto-allow mode was rejected because it would auto-approve any sandboxed bash
+command without user confirmation. Since the sandbox provides no filesystem or
+network enforcement, auto-allow would remove the only effective gate
+(permissions) — allowing unrestricted access to sensitive paths and arbitrary
+network hosts.</p>
+<h3 id="configuration_1">Configuration</h3>
+<p>Added to <code>.claude/settings.json</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;sandbox&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;enableWeakerNestedSandbox&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;filesystem&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;denyRead&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;~/.ssh&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;~/.config/gcloud&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;~/.kube&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;/etc/secret-volume&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./secret-volume&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;/proc/&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;/dev/fd/&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./.devcontainer/tpl/&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./env/&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;denyWrite&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;./.claude/settings.json&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./.claude/settings.local.json&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./.claude/hooks/&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./.claude/shell-snapshots/&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./.devcontainer/scripts/&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./.git/hooks/&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;./.trunk/&quot;</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Sandbox path prefixes match any path that starts with the prefix string.
+Trailing slashes are recommended — <code>/proc/</code> matches <code>/proc/1/environ</code> but not a
+hypothetical <code>/processor</code> path. All listed paths use trailing slashes for
+directories and no trailing slash for leaf paths (<code>~/.ssh</code> matches
+<code>~/.ssh/id_rsa</code>).</p>
+<h3 id="path-coverage">Path coverage</h3>
+<p>Sandbox <code>denyRead</code> and <code>denyWrite</code> use path prefixes, not globs. Pattern-based
+sensitive paths (<code>.env*</code>, <code>*.pem</code>, <code>*.key</code>, <code>*.cer</code>, <code>credentials.json</code>,
+<code>secrets.json</code>) cannot be expressed as sandbox paths and remain in the hooks for
+file tool protection.</p>
+<table>
+<thead>
+<tr>
+<th>Sandbox path</th>
+<th>What it protects</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>~/.ssh</code></td>
+<td>SSH keys and config</td>
+</tr>
+<tr>
+<td><code>~/.config/gcloud</code></td>
+<td>gcloud credentials, ADC, tokens</td>
+</tr>
+<tr>
+<td><code>~/.kube</code></td>
+<td>Kubernetes config and auth cache</td>
+</tr>
+<tr>
+<td><code>/etc/secret-volume</code></td>
+<td>1Password-injected secrets (tmpfs)</td>
+</tr>
+<tr>
+<td><code>/proc/</code></td>
+<td>Process memory, environ, cmdline</td>
+</tr>
+<tr>
+<td><code>/dev/fd/</code></td>
+<td>File descriptor access</td>
+</tr>
+<tr>
+<td><code>./.devcontainer/tpl/</code></td>
+<td>Secret templates</td>
+</tr>
+<tr>
+<td><code>./secret-volume</code></td>
+<td>Symlink to <code>/etc/secret-volume</code></td>
+</tr>
+<tr>
+<td><code>./env/</code></td>
+<td>Symlink dir to secret-volume</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dependency">Dependency</h3>
+<p>Bubblewrap and socat must be added to the apt install in <code>postCreate.sh</code>:</p>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>apt-get<span class="w"> </span>-y<span class="w"> </span>install<span class="w"> </span>--no-install-recommends<span class="w"> </span>sshpass<span class="w"> </span>bubblewrap<span class="w"> </span>socat
+</code></pre></div>
+<hr />
+<h2 id="6-hook-restructuring">6. Hook Restructuring</h2>
+<h3 id="design-principle">Design principle</h3>
+<p>Each protection rule lives in one layer. The hooks shift focus to Claude's
+autonomous tool use (file tools, MCP) — the threat sandbox cannot cover. Bash
+subprocess filesystem access is delegated to the sandbox. Bash command-pattern
+rules stay in the hooks because they prevent secrets from entering Claude's
+context, which sandbox cannot help with.</p>
+<h3 id="check-sensitivesh-new-structure">check-sensitive.sh — new structure</h3>
+<p>The flat list of regex rules is reorganized into three sections by tool type:</p>
+<p><strong>Section 1 — File tools</strong> (Read, Edit, Write, Grep, Glob, NotebookEdit,
+WebFetch, WebSearch):</p>
+<ul>
+<li>Rule 1: sensitive path patterns (<code>.env*</code>, <code>.ssh</code>, <code>.pem</code>, <code>.key</code>, <code>.cer</code>,
+  <code>credentials.json</code>, <code>secrets.json</code>, <code>secret-volume</code>, <code>.devcontainer/tpl/</code>)</li>
+<li>Rule 1b: file-extension patterns scoped to <code>path_only</code></li>
+<li>Rule 2: self-protection — block writes to hook scripts, settings, config
+  (Edit/Write/NotebookEdit only; Read/Grep/Glob still allowed)</li>
+</ul>
+<p><strong>Section 2 — Bash only:</strong></p>
+<ul>
+<li>Rule 3/3b/3c: env var leakage (<code>printenv</code>, <code>declare -x</code>, <code>export -p</code>, <code>set</code>,
+  <code>env</code>)</li>
+<li>Rule 4: 1Password CLI escalation (<code>op vault/item/read/document/inject</code>)</li>
+<li>Rule 5/5a-5d: encoding bypass detection (base64/xxd/printf piped to bash,
+  Python exec/eval with chr/join/bytes/base64/codecs, <code>__import__</code> and
+  <code>importlib</code> with sensitive modules)</li>
+<li>Rule 7: <code>$UPPER_CASE</code> variable expansion blocking (including <code>${!prefix*}</code>
+  indirect expansion)</li>
+</ul>
+<p><strong>Section 3 — BigQuery MCP:</strong></p>
+<ul>
+<li>Rule 8: read-only enforcement (only SELECT/SHOW/DESCRIBE/WITH; deny
+  INSERT/UPDATE/DELETE/CREATE/DROP/ALTER/GRANT/REVOKE/CALL/MERGE/EXPORT)</li>
+</ul>
+<p>Note: <code>mcp__bigquery__ask_data_insights</code> accepts natural language, not SQL. It
+is blocked by Rule 8 (input does not start with SELECT/SHOW/DESCRIBE/WITH) and
+is also absent from the permissions allow list. This double-gating is
+intentional — the tool generates and executes SQL internally without user
+review.</p>
+<h3 id="rules-removed">Rules removed</h3>
+<ul>
+<li><strong>Rule 6</strong> (<code>/proc/*/</code>, <code>/dev/fd/</code>) — removed entirely. Sandbox <code>denyRead</code>
+  covers bash subprocesses. Claude's file tool permissions already restrict Read
+  to project dir and plugins dir, blocking <code>/proc/</code> access.</li>
+</ul>
+<h3 id="rules-removed-from-bash-scope-gated-on-verification">Rules removed from Bash scope (gated on verification)</h3>
+<p>Rules 1, 1b, and 2 are removed from Bash scope only after automated testing
+confirms the weaker nested sandbox reliably blocks every listed <code>denyRead</code> and
+<code>denyWrite</code> path. If verification fails, these rules remain as defense-in-depth
+until sandbox enforcement is confirmed.</p>
+<ul>
+<li><strong>Rule 1/1b</strong> (sensitive file paths) — sandbox <code>denyRead</code> covers bash
+  subprocess reads of these paths at OS level</li>
+<li><strong>Rule 2</strong> (self-protection writes) — sandbox <code>denyWrite</code> covers bash
+  subprocess writes to these paths at OS level</li>
+</ul>
+<h3 id="check-outputsh-relaxed-matcher">check-output.sh — relaxed matcher</h3>
+<p>The PostToolUse hook matcher changes from:</p>
+<div class="highlight"><pre><span></span><code>Bash|Read|Edit|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*
+</code></pre></div>
+<p>to:</p>
+<div class="highlight"><pre><span></span><code>Bash|Read|Grep|NotebookEdit|WebFetch|WebSearch|mcp__.*
+</code></pre></div>
+<p><strong>Edit removed.</strong> (Write was never in the matcher.) Rationale: when Claude
+writes content via Edit, it is the author — the content already exists in
+Claude's context. Output scanning this tool only catches false positives (e.g.,
+documentation containing example secret patterns like <code>op://</code> URIs). Sandbox
+network filtering prevents exfiltration of any content Claude has in context via
+bash subprocesses.</p>
+<h3 id="no-changes">No changes</h3>
+<ul>
+<li>SessionStart shell-snapshot sanitization hook</li>
+<li>PreToolUse:Bash shell-snapshot sanitization hook</li>
+<li>PostToolUse:Edit|Write trunk fmt hook</li>
+<li>settings.json hook matchers (tool-type branching is inside the scripts)</li>
+<li>Permissions block (existing allow list unchanged)</li>
+</ul>
+<hr />
+<h2 id="testing-verification">Testing &amp; Verification</h2>
+<p>After implementation, verify:</p>
+<p><strong>OS hardening (Sections 1-4):</strong></p>
+<ol>
+<li><code>docker inspect &lt;container&gt;</code> shows the tmpfs mount on <code>/etc/secret-volume</code></li>
+<li><code>ls -la /etc/secret-volume</code> shows <code>vscode</code> ownership and mode <code>700</code></li>
+<li><code>inject-secrets.sh</code> runs without error and all expected files exist in
+   <code>/etc/secret-volume</code></li>
+<li><code>env/.env</code> and <code>secret-volume/</code> symlinks resolve correctly</li>
+<li><code>sudo</code> is not available after <code>postCreate</code> completes (<code>command -v sudo</code>
+   returns nothing)</li>
+<li>Dagster loads env vars correctly</li>
+<li>An SFTP asset materialization writes to <code>/tmp/dagster/</code> and is accessible via
+   <code>dagster-tmp/</code></li>
+</ol>
+<p><strong>Sandbox (Section 5):</strong></p>
+<ol>
+<li>Weaker nested sandbox is configured but provides <strong>no</strong> filesystem or network
+   enforcement (verified 2026-03-22 with hooks disabled — all <code>denyRead</code> paths
+   readable, all <code>denyWrite</code> paths writable, no network proxy detected)</li>
+<li><strong>Verification gate result:</strong> Rules 1/1b/2 <strong>must remain</strong> for Bash in the
+   hooks — the sandbox does not block any paths</li>
+<li>Permissions (regular mode) + hooks are the only effective security layers</li>
+</ol>
+<p><strong>Hooks (Section 6):</strong></p>
+<ol>
+<li>Hook regression tests pass: <code>bash tests/hooks/run_all.sh</code></li>
+<li>File tools (Read, Grep) are still blocked from sensitive paths (<code>.env</code>,
+   <code>.ssh</code>, etc.)</li>
+<li>Edit/Write to <code>.md</code> files containing example secret patterns (e.g., <code>op://</code>)
+   no longer triggers output scanning false positives</li>
+<li>Bash command-pattern rules still block <code>printenv</code>, <code>set</code>, <code>env</code>, <code>op</code> CLI,
+   encoding bypasses, and <code>$VAR</code> expansion</li>
+</ol>
+<p><strong>Future improvement:</strong> If Codespaces ever starts honoring
+<code>--cap-add=SYS_ADMIN</code>, re-run the verification gate to confirm full sandbox
+enforcement, then remove Rules 1/1b/2 from Bash scope in the hooks. Add an
+automated sandbox smoke test to catch behavioral changes in future Claude Code
+versions.</p>
+<hr />
+<h2 id="non-goals">Non-Goals</h2>
+<ul>
+<li>Full bwrap sandbox — requires <code>CAP_SYS_ADMIN</code>, which Codespaces silently
+  strips from <code>--cap-add</code>. <code>--privileged</code> would grant it but is
+  disproportionate. Weaker nested sandbox is the available trade-off</li>
+<li>Sandbox auto-allow mode — rejected due to exfiltration risk via broad allowed
+  domains (see Section 5)</li>
+<li>Secret injection without container rebuild — accepted limitation for
+  file-based secrets</li>
+<li><code>pkexec</code>/<code>su</code> privilege escalation paths — <code>su</code> is present but requires root's
+  password (not set in the base image); <code>pkexec</code> is not installed. Neither is
+  addressed further; out of scope for a single-user dev container</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

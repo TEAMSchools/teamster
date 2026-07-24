@@ -1,0 +1,2156 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Paterson Staff Propagation Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#paterson-staff-propagation-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Paterson Staff Propagation Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-0-worktree-sync-and-dbt-deps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 0: Worktree sync and dbt deps
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-remove-the-adp-spine-paterson-filter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Remove the ADP spine Paterson filter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-remove-the-illuminate-users-ps-direct-paterson-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Remove the Illuminate users PS-direct Paterson branch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-rework-the-illuminate-roles-paterson-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Rework the Illuminate roles Paterson branch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-remove-the-clever-staff-paterson-schools-exclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Remove the Clever staff Paterson schools exclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-local-verification-of-the-spine-non-sis-extracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Local verification of the spine + non-SIS extracts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-pre-merge-gate-verification-pr-description-mapping-table-and-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Pre-merge gate verification, PR-description mapping table, and PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Review
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-02-paterson-staff-propagation.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="paterson-staff-propagation-implementation-plan">Paterson Staff Propagation Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Propagate Paterson (<code>KPAT</code>) staff through the ADP-sourced staff roster
+and downstream extracts by removing the spine exclusion filter and the
+PowerSchool-direct re-injection workarounds.</p>
+<p><strong>Architecture:</strong> One dbt exclusion in <code>int_people__staff_roster_history</code>
+currently drops Paterson before it reaches <code>int_people__staff_roster</code>. Removing
+it propagates Paterson into ~50 ADP-derived extracts automatically. Three
+PowerSchool-sourced extracts (<code>rpt_illuminate__users</code>, <code>rpt_illuminate__roles</code>,
+<code>rpt_clever__staff</code>) carry compensating workarounds that must be removed in the
+same PR to avoid duplicate/mis-keyed rows once Paterson enters the roster.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>kipptaf</code> project. SQL only — no Python.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Single PR</strong>, held until three Ops gates land in prod (crosswalk populate,
+  Zendesk re-key re-verify, LDAP <code>TMP</code> update). See the design spec:
+  <code>docs/superpowers/specs/2026-06-22-paterson-staff-propagation-design.md</code>.</li>
+<li><strong>Worktree:</strong> all work happens in
+  <code>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation</code>
+  (branch <code>cbini/feat/claude-paterson-staff-propagation</code>). Use
+  <code>git -C &lt;worktree&gt;</code> for git and <code>--project-dir &lt;worktree&gt;/src/dbt/kipptaf</code> for
+  dbt. Never run bare <code>git</code>/<code>dbt</code> from the main repo.</li>
+<li><strong>dbt local runs:</strong> <code>--target dev</code> with
+  <code>--defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod</code> (absolute
+  path — required from a worktree). <code>--target prod</code> is classifier-blocked; hand
+  prod builds to the user. <code>dbt compile</code>/<code>parse</code> are never blocked.</li>
+<li><strong>SQL style</strong> (<code>.trunk/config/.sqlfluff</code>): BigQuery dialect, single quotes,
+  trailing commas in <code>SELECT</code>, 88-char lines, no <code>ORDER BY</code>, no <code>SELECT *</code> in
+  final <code>rpt_</code> selects. Do not run <code>trunk fmt</code>/<code>check</code> manually except the
+  explicit <code>trunk check</code> step (pre-commit runs fmt; pre-push runs the rest).</li>
+<li><strong>No new duplication idioms:</strong> do not add <code>select distinct</code>,
+  <code>qualify row_number()=1</code>, or <code>dbt_utils.deduplicate</code> anywhere in this work.
+  The changes are filter removals plus one additive union branch.</li>
+<li><strong>Verification split:</strong> the spine + non-SIS extracts (Coupa/Egencia/Zendesk)
+  are verifiable locally now; the SIS-coupled models (<code>rpt_illuminate__*</code>,
+  <code>rpt_clever__staff</code>) fully verify only after the crosswalk + Zendesk Ops gates
+  land in staging (Task 6).</li>
+</ul>
+<hr />
+<h2 id="task-0-worktree-sync-and-dbt-deps">Task 0: Worktree sync and dbt deps</h2>
+<p><strong>Files:</strong> none (environment setup).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Merge latest main into the branch</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>main
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>merge<span class="w"> </span>origin/main
+</code></pre></div>
+<p>Expected: clean merge (branch only holds the design spec + this plan).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Install dbt packages in the worktree</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: <code>Installed from ...</code> for each package; no errors. (A fresh worktree
+has no <code>dbt_packages/</code>.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm the prod manifest exists for <code>--defer</code></strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>ls<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod/manifest.json
+</code></pre></div>
+<p>Expected: the file exists. If missing, regenerate:
+<code>uv run dbt parse --target prod --project-dir /workspaces/teamster/src/dbt/kipptaf --target-path target/prod</code>.</p>
+<hr />
+<h2 id="task-1-remove-the-adp-spine-paterson-filter">Task 1: Remove the ADP spine Paterson filter</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/people/intermediate/int_people__staff_roster_history.sql</code>
+  (the <code>where</code> clause of the ADP Workforce Now branch, ~lines 114-119)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: nothing from earlier tasks.</li>
+<li>
+<p>Produces: Paterson rows in <code>int_people__staff_roster_history</code> and
+  <code>int_people__staff_roster</code>. Downstream tasks and every ADP-derived extract
+  rely on Paterson being present in <code>int_people__staff_roster</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Baseline — confirm Paterson is absent today</strong></p>
+</li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_people__staff_roster
+</code></pre></div>
+<p>Then query prod (BigQuery MCP or <code>bq</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">paterson_rows</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_people</span><span class="p">.</span><span class="n">int_people__staff_roster</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: <code>paterson_rows = 0</code> (baseline — filter still in place upstream).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Edit the <code>where</code> clause</strong></li>
+</ul>
+<p>In <code>int_people__staff_roster_history.sql</code>, replace:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">w</span><span class="p">.</span><span class="n">effective_date_end</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="s1">&#39;2021-01-01&#39;</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="k">coalesce</span><span class="p">(</span><span class="n">w</span><span class="p">.</span><span class="n">organizational_unit__home__business_unit__name</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="w">            </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="k">coalesce</span><span class="p">(</span><span class="n">w</span><span class="p">.</span><span class="n">organizational_unit__assigned__business_unit__name</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+<span class="w">            </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">w</span><span class="p">.</span><span class="n">effective_date_end</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="s1">&#39;2021-01-01&#39;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Compile to validate SQL/refs</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_people__staff_roster_history
+</code></pre></div>
+<p>Expected: <code>Compiled node 'int_people__staff_roster_history'</code>; no errors.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build the roster into dev and check the grain</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_people__staff_roster_history<span class="w"> </span>int_people__staff_roster
+</code></pre></div>
+<p>Expected: both models build; uniqueness test on <code>int_people__staff_roster</code>
+PASSES (no Paterson-driven duplication).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify Paterson now propagates (~94 staff)</strong></li>
+</ul>
+<p>Query the dev schema (<code>zz_cbini_kipptaf_people</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">employee_number</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">paterson_staff</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kipptaf_people</span><span class="p">.</span><span class="n">int_people__staff_roster</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: <code>paterson_staff</code> ≈ 94 (current Paterson active/current-record
+workers).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/people/intermediate/int_people__staff_roster_history.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kipptaf): remove Paterson exclusion from staff roster spine&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-remove-the-illuminate-users-ps-direct-paterson-branch">Task 2: Remove the Illuminate users PS-direct Paterson branch</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/extracts/illuminate/rpt_illuminate__users.sql</code>
+  (delete the <code>stg_powerschool__users</code> union branch, ~lines 15-32)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Paterson present in <code>int_people__staff_roster</code> (Task 1).</li>
+<li>
+<p>Produces: <code>rpt_illuminate__users</code> with Paterson teachers sourced only from the
+  roster branch; <code>01 User ID</code> = <code>powerschool_teacher_number</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit — delete the PS-direct union branch</strong></p>
+</li>
+</ul>
+<p>In <code>rpt_illuminate__users.sql</code>, delete this entire block (the middle <code>union all</code>
+branch), leaving the <code>int_people__staff_roster</code> branch and the
+<code>int_people__temp_staff</code> branch intact:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">employee_number</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">teachernumber</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">powerschool_teacher_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">last_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">family_name_1</span><span class="p">,</span>
+<span class="w">            </span><span class="n">first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">given_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">email_addr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">user_principal_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">email_addr</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sam_account_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="n">ptaccess</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">psaccess</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">uac_account_disable</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">&#39;KIPP Paterson&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">home_business_unit_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">job_title</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">_dbt_source_relation</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%kipppaterson%&#39;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Compile to validate</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_illuminate__users
+</code></pre></div>
+<p>Expected: compiles clean; the compiled SQL no longer references
+<code>stg_powerschool__users</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm no stray <code>stg_powerschool__users</code> ref remains</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;stg_powerschool__users\|kipppaterson\|KIPP Paterson&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf/models/extracts/illuminate/rpt_illuminate__users.sql
+</code></pre></div>
+<p>Expected: no matches.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/illuminate/rpt_illuminate__users.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kipptaf): drop Illuminate PS-direct Paterson user branch&quot;</span>
+</code></pre></div>
+<blockquote>
+<p>Full data-test verification (unique <code>01 User ID</code>, teacher-number match to
+<code>mastschd</code>/<code>roster</code>) runs in Task 6 after the crosswalk gate lands.</p>
+</blockquote>
+<hr />
+<h2 id="task-3-rework-the-illuminate-roles-paterson-branch">Task 3: Rework the Illuminate roles Paterson branch</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/extracts/illuminate/rpt_illuminate__roles.sql</code>
+  (remove the PS-direct Paterson branch; add a Paterson region-wide branch;
+  guard the school-based branch)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Paterson present in <code>int_people__staff_roster</code> (Task 1), with
+  <code>home_business_unit_name = 'KIPP Paterson'</code>,
+  <code>home_work_location_powerschool_school_id</code>, <code>worker_status_code</code>,
+  <code>powerschool_teacher_number</code>.</li>
+<li>
+<p>Produces: <code>rpt_illuminate__roles</code> where Paterson regional/CMO staff
+  (<code>school_id = 0</code>) get "School Leadership" roles at all Paterson schools
+  (<code>school_number</code> 2 and 1234), and school-based Paterson staff get their home
+  school — with no Paterson <code>Site ID = 0</code> rows.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Delete the PS-direct Paterson branch</strong></p>
+</li>
+</ul>
+<p>In <code>rpt_illuminate__roles.sql</code>, delete this <code>union all</code> branch (the "Paterson =
+all schools in region" block reading <code>stg_powerschool__users</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="cm">/* Paterson = all schools in region */</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="c1">-- trunk-ignore-begin(sqlfluff/RF05)</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">teachernumber</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">01</span><span class="w"> </span><span class="k">Local</span><span class="w"> </span><span class="k">User</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">school_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">02</span><span class="w"> </span><span class="n">Site</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="s1">&#39;School Leadership&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">03</span><span class="w"> </span><span class="k">Role</span><span class="w"> </span><span class="n">Name</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">concat</span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">current_school_year</span><span class="p">(</span><span class="n">var</span><span class="p">(</span><span class="ss">&quot;local_timezone&quot;</span><span class="p">))</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="s1">&#39;-&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">current_school_year</span><span class="p">(</span><span class="n">var</span><span class="p">(</span><span class="ss">&quot;local_timezone&quot;</span><span class="p">))</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">04</span><span class="w"> </span><span class="n">Academic</span><span class="w"> </span><span class="k">Year</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="mi">1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">05</span><span class="w"> </span><span class="k">Session</span><span class="w"> </span><span class="k">Type</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="p">,</span>
+<span class="c1">-- trunk-ignore-end(sqlfluff/RF05)</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">u</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__schools&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">union_dataset_join_clause</span><span class="p">(</span><span class="n">left_alias</span><span class="o">=</span><span class="ss">&quot;u&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">right_alias</span><span class="o">=</span><span class="ss">&quot;s&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">u</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%kipppaterson%&#39;</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="p">(</span><span class="n">u</span><span class="p">.</span><span class="n">ptaccess</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="n">psaccess</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Guard the school-based branch against Paterson <code>Site ID = 0</code></strong></li>
+</ul>
+<p>Find the school-based branch
+(<code>/* School-based staff = only respective school */</code>). Its <code>where</code> clause
+currently reads:</p>
+<div class="highlight"><pre><span></span><code><span class="k">where</span>
+<span class="w">    </span><span class="n">worker_status_code</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;Terminated&#39;</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">home_department_name</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;Teaching and Learning&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Data&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Executive&#39;</span><span class="p">)</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">home_work_location_is_campus</span>
+</code></pre></div>
+<p>Add a Paterson-scoped guard so Paterson <code>school_id = 0</code> staff are excluded (they
+are handled by the new branch in Step 3):</p>
+<div class="highlight"><pre><span></span><code><span class="k">where</span>
+<span class="w">    </span><span class="n">worker_status_code</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;Terminated&#39;</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">home_department_name</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;Teaching and Learning&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Data&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Executive&#39;</span><span class="p">)</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">home_work_location_is_campus</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="n">home_work_location_powerschool_school_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">)</span>
+</code></pre></div>
+<blockquote>
+<p>The 57 pre-existing non-Paterson <code>Site ID = 0</code> rows are out of scope — do not
+broaden the guard beyond Paterson.</p>
+</blockquote>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the Paterson region-wide branch</strong></li>
+</ul>
+<p>Append this branch to the end of the model (after the existing <code>/* Temps */</code>
+branch):</p>
+<div class="highlight"><pre><span></span><code><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="cm">/* Paterson regional/CMO staff = all Paterson schools */</span>
+<span class="k">select</span>
+<span class="w">    </span><span class="c1">-- trunk-ignore-begin(sqlfluff/RF05)</span>
+<span class="w">    </span><span class="n">sr</span><span class="p">.</span><span class="n">powerschool_teacher_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">01</span><span class="w"> </span><span class="k">Local</span><span class="w"> </span><span class="k">User</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">school_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">02</span><span class="w"> </span><span class="n">Site</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="s1">&#39;School Leadership&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">03</span><span class="w"> </span><span class="k">Role</span><span class="w"> </span><span class="n">Name</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">concat</span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">current_school_year</span><span class="p">(</span><span class="n">var</span><span class="p">(</span><span class="ss">&quot;local_timezone&quot;</span><span class="p">))</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span>
+<span class="w">        </span><span class="s1">&#39;-&#39;</span><span class="p">,</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">current_school_year</span><span class="p">(</span><span class="n">var</span><span class="p">(</span><span class="ss">&quot;local_timezone&quot;</span><span class="p">))</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">04</span><span class="w"> </span><span class="n">Academic</span><span class="w"> </span><span class="k">Year</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="mi">1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="mi">05</span><span class="w"> </span><span class="k">Session</span><span class="w"> </span><span class="k">Type</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="p">,</span>
+<span class="c1">-- trunk-ignore-end(sqlfluff/RF05)</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_people__staff_roster&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sr</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__schools&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%kipppaterson%&#39;</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">sr</span><span class="p">.</span><span class="n">worker_status_code</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;Terminated&#39;</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">home_work_location_powerschool_school_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Compile to validate</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_illuminate__roles
+</code></pre></div>
+<p>Expected: compiles clean; no <code>stg_powerschool__users</code> reference remains in the
+compiled SQL.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Confirm the PS-direct branch is gone</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;stg_powerschool__users\|ptaccess\|psaccess&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf/models/extracts/illuminate/rpt_illuminate__roles.sql
+</code></pre></div>
+<p>Expected: no matches.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/illuminate/rpt_illuminate__roles.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kipptaf): route Illuminate Paterson roles through the roster&quot;</span>
+</code></pre></div>
+<blockquote>
+<p>The unique-combination data test and the "no Paterson <code>Site ID = 0</code>" /
+"school_id=0 staff assigned to schools 2 and 1234" checks run in Task 6 after
+the crosswalk gate lands.</p>
+</blockquote>
+<hr />
+<h2 id="task-4-remove-the-clever-staff-paterson-schools-exclusion">Task 4: Remove the Clever staff Paterson schools exclusion</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/models/extracts/clever/rpt_clever__staff.sql</code> (the
+  <code>schools</code> CTE <code>where</code> clause)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: Paterson present in <code>int_people__staff_roster</code> (Task 1); Paterson
+  <code>powerschool_school_id</code> present in <code>int_people__location_crosswalk</code> (verified:
+  Prep Elementary 1234, Prep Middle 2, Room 12/Room 9 → 0).</li>
+<li>
+<p>Produces: <code>rpt_clever__staff</code> with Paterson schools assignable, so Paterson
+  staff resolve to schools via the existing assignment branches.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Edit the <code>schools</code> CTE</strong></p>
+</li>
+</ul>
+<p>In <code>rpt_clever__staff.sql</code>, replace:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">_dbt_source_relation</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%kipppaterson%&#39;</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">state_excludefromreporting</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Compile to validate</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_clever__staff
+</code></pre></div>
+<p>Expected: compiles clean.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Confirm the exclusion is gone</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;kipppaterson&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf/models/extracts/clever/rpt_clever__staff.sql
+</code></pre></div>
+<p>Expected: no matches.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/clever/rpt_clever__staff.sql
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kipptaf): allow Paterson schools in Clever staff assignments&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-local-verification-of-the-spine-non-sis-extracts">Task 5: Local verification of the spine + non-SIS extracts</h2>
+<p><strong>Files:</strong> none (verification only).</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Consumes: all edits from Tasks 1-4.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Lint the changed SQL</strong></p>
+</li>
+</ul>
+<p>Run (from inside the worktree, per repo convention):</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/people/intermediate/int_people__staff_roster_history.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/illuminate/rpt_illuminate__users.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/illuminate/rpt_illuminate__roles.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/clever/rpt_clever__staff.sql
+</code></pre></div>
+<p>Expected: <code>✔ No issues</code> (sqlfluff clean).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Build + test the non-SIS extracts that are crosswalk-ready now</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_coupa__users<span class="w"> </span>rpt_egencia__users
+</code></pre></div>
+<p>Expected: both build; contract + uniqueness tests PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify Coupa resolves non-NULL Intacct coding for Paterson</strong></li>
+</ul>
+<p>Query the dev schema:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="o">`</span><span class="n">Sage</span><span class="w"> </span><span class="n">Intacct</span><span class="w"> </span><span class="n">Fund</span><span class="o">`</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_fund</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="o">`</span><span class="n">School</span><span class="w"> </span><span class="n">Name</span><span class="o">`</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_school</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">paterson_rows</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_coupa__users</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="o">`</span><span class="n">Employee</span><span class="w"> </span><span class="nb">Number</span><span class="o">`</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">employee_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kipptaf_people</span><span class="p">.</span><span class="n">int_people__staff_roster</span><span class="o">`</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span>
+<span class="p">);</span>
+</code></pre></div>
+<p>Expected: <code>null_fund = 0</code>, <code>null_school = 0</code> (Coupa crosswalks cover Paterson).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify Egencia never NULLs the traveler group</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">countif</span><span class="p">(</span><span class="o">`</span><span class="n">Traveler</span><span class="w"> </span><span class="k">Group</span><span class="o">`</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">null_group</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_cbini_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_egencia__users</span><span class="o">`</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: <code>null_group = 0</code> (the <code>'General Traveler Group'</code> fallback guarantees
+this).</p>
+<hr />
+<h2 id="task-6-pre-merge-gate-verification-pr-description-mapping-table-and-pr">Task 6: Pre-merge gate verification, PR-description mapping table, and PR</h2>
+<p><strong>Files:</strong> none (runs after the three Ops gates land in prod; produces the PR).</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Consumes: all edits (Tasks 1-4); the three Ops gates satisfied (crosswalk
+  populated, Zendesk re-keyed, LDAP <code>TMP</code> updated).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Refresh staging for the edited Google Sheets sources</strong></p>
+</li>
+</ul>
+<p>Ask the user to run (classifier-blocked for the agent; <code>--target staging</code>
+full-refresh recreates shared <code>zz_stg_*</code> tables):</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>run-operation<span class="w"> </span>stage_external_sources<span class="w"> </span>--target<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--args<span class="w"> </span><span class="s1">&#39;{select: google_sheets.src_google_sheets__people__powerschool_crosswalk google_sheets.src_google_sheets__zendesk_org_lookup, ext_full_refresh: true}&#39;</span>
+</code></pre></div>
+<p>Then rebuild the two staging models:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>stg_google_sheets__people__powerschool_crosswalk<span class="w"> </span>stg_google_sheets__zendesk_org_lookup
+</code></pre></div>
+<p>Expected: both staging tables rebuilt with Paterson rows.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify the Zendesk join now resolves for Paterson</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="n">pat</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">home_business_unit_code</span><span class="p">,</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">home_work_location_reporting_name</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_people</span><span class="p">.</span><span class="n">int_people__staff_roster</span><span class="o">`</span><span class="w"> </span><span class="n">sr</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span>
+<span class="p">)</span>
+<span class="k">select</span><span class="w"> </span><span class="n">pat</span><span class="p">.</span><span class="n">home_work_location_reporting_name</span><span class="p">,</span>
+<span class="w">       </span><span class="k">if</span><span class="p">(</span><span class="n">zol</span><span class="p">.</span><span class="n">zendesk_organization</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;NO MATCH&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">zol</span><span class="p">.</span><span class="n">zendesk_organization</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">org</span>
+<span class="k">from</span><span class="w"> </span><span class="n">pat</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__zendesk_org_lookup</span><span class="o">`</span><span class="w"> </span><span class="n">zol</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="n">pat</span><span class="p">.</span><span class="n">home_business_unit_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zol</span><span class="p">.</span><span class="n">adp_business_unit</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">pat</span><span class="p">.</span><span class="n">home_work_location_reporting_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zol</span><span class="p">.</span><span class="n">location_clean_name</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: every Paterson work location returns a non-NULL org (no <code>NO MATCH</code>).
+If Room 9 shows <code>NO MATCH</code>, flag to Ops (spec gate 2).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify Illuminate teacher-number resolution and User-ID match</strong></li>
+</ul>
+<p>Build the SIS models against staging, then confirm the Illuminate <code>01 User ID</code>
+matches the PS <code>teachernumber</code> used by <code>mastschd</code>/<code>roster</code>:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>staging<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_illuminate__users<span class="w"> </span>rpt_illuminate__roles<span class="w"> </span>rpt_clever__staff
+</code></pre></div>
+<p>Expected: all build; <code>unique</code> on <code>rpt_illuminate__users.01 User ID</code> and
+<code>unique_combination_of_columns</code> on <code>rpt_illuminate__roles</code> PASS. Then:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Paterson Illuminate users whose User ID is NOT referenced by any Paterson section/roster</span>
+<span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">orphaned_paterson_teachers</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_illuminate__users</span><span class="o">`</span><span class="w"> </span><span class="n">u</span>
+<span class="k">where</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="o">`</span><span class="mi">18</span><span class="w"> </span><span class="n">City</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="n">u</span><span class="p">.</span><span class="o">`</span><span class="mi">01</span><span class="w"> </span><span class="k">User</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="o">`</span><span class="mi">05</span><span class="w"> </span><span class="k">User</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_illuminate__mastschd</span><span class="o">`</span>
+<span class="w">  </span><span class="p">);</span>
+</code></pre></div>
+<p>Expected: <code>orphaned_paterson_teachers</code> is 0 for teachers who own sections
+(non-teaching Paterson staff legitimately have no sections — spot-check any
+nonzero result against the crosswalk coverage count).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the roles region-wide branch and the <code>Site ID = 0</code>
+      guard</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Paterson school_id=0 staff should have rows for BOTH Paterson schools (2, 1234), none at Site ID 0</span>
+<span class="k">select</span><span class="w"> </span><span class="o">`</span><span class="mi">02</span><span class="w"> </span><span class="n">Site</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">site_id</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_illuminate__roles</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="o">`</span><span class="mi">01</span><span class="w"> </span><span class="k">Local</span><span class="w"> </span><span class="k">User</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="n">powerschool_teacher_number</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_people</span><span class="p">.</span><span class="n">int_people__staff_roster</span><span class="o">`</span>
+<span class="w">  </span><span class="k">where</span><span class="w"> </span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">home_work_location_powerschool_school_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="p">)</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: rows at <code>site_id</code> 2 and 1234; <strong>no</strong> row at <code>site_id</code> 0.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Generate the PR-description crosswalk mapping table</strong></li>
+</ul>
+<p>Run this against the staging build and capture the output for the PR body
+(config-level, deidentified — safe to publish):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">  </span><span class="n">sr</span><span class="p">.</span><span class="n">home_business_unit_code</span><span class="p">,</span>
+<span class="w">  </span><span class="n">sr</span><span class="p">.</span><span class="n">home_business_unit_name</span><span class="p">,</span>
+<span class="w">  </span><span class="n">sr</span><span class="p">.</span><span class="n">home_work_location_reporting_name</span><span class="p">,</span>
+<span class="w">  </span><span class="n">sr</span><span class="p">.</span><span class="n">home_department_name</span><span class="p">,</span>
+<span class="w">  </span><span class="n">sr</span><span class="p">.</span><span class="n">job_title</span><span class="p">,</span>
+<span class="w">  </span><span class="n">cu</span><span class="p">.</span><span class="o">`</span><span class="n">School</span><span class="w"> </span><span class="n">Name</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">coupa_school_name</span><span class="p">,</span>
+<span class="w">  </span><span class="n">cu</span><span class="p">.</span><span class="o">`</span><span class="n">Sage</span><span class="w"> </span><span class="n">Intacct</span><span class="w"> </span><span class="n">Fund</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">coupa_fund</span><span class="p">,</span>
+<span class="w">  </span><span class="n">cu</span><span class="p">.</span><span class="o">`</span><span class="n">Sage</span><span class="w"> </span><span class="n">Intacct</span><span class="w"> </span><span class="n">Program</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">coupa_program</span><span class="p">,</span>
+<span class="w">  </span><span class="n">cu</span><span class="p">.</span><span class="o">`</span><span class="n">Sage</span><span class="w"> </span><span class="n">Intacct</span><span class="w"> </span><span class="n">Department</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">coupa_department</span><span class="p">,</span>
+<span class="w">  </span><span class="n">cu</span><span class="p">.</span><span class="o">`</span><span class="n">Sage</span><span class="w"> </span><span class="n">Intacct</span><span class="w"> </span><span class="k">Location</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">coupa_location</span><span class="p">,</span>
+<span class="w">  </span><span class="n">cu</span><span class="p">.</span><span class="o">`</span><span class="k">Default</span><span class="w"> </span><span class="n">Address</span><span class="w"> </span><span class="n">Name</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">coupa_address</span><span class="p">,</span>
+<span class="w">  </span><span class="n">eu</span><span class="p">.</span><span class="o">`</span><span class="n">Traveler</span><span class="w"> </span><span class="k">Group</span><span class="o">`</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">egencia_group</span><span class="p">,</span>
+<span class="w">  </span><span class="n">zu</span><span class="p">.</span><span class="n">organization_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">zendesk_org</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_people</span><span class="p">.</span><span class="n">int_people__staff_roster</span><span class="o">`</span><span class="w"> </span><span class="n">sr</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_coupa__users</span><span class="o">`</span><span class="w"> </span><span class="n">cu</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">employee_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cu</span><span class="p">.</span><span class="o">`</span><span class="n">Employee</span><span class="w"> </span><span class="nb">Number</span><span class="o">`</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_egencia__users</span><span class="o">`</span><span class="w"> </span><span class="n">eu</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">employee_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">eu</span><span class="p">.</span><span class="o">`</span><span class="n">Employee</span><span class="w"> </span><span class="n">ID</span><span class="o">`</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_extracts</span><span class="p">.</span><span class="n">rpt_zendesk__users</span><span class="o">`</span><span class="w"> </span><span class="n">zu</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">employee_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zu</span><span class="p">.</span><span class="n">external_id</span>
+<span class="k">where</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span><span class="p">;</span>
+</code></pre></div>
+<p>Also capture the PowerSchool crosswalk coverage count (do NOT list
+employee-level pairs — PII):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">employee_number</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">paterson_staff</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">xw</span><span class="p">.</span><span class="n">employee_number</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">mapped_in_crosswalk</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_people</span><span class="p">.</span><span class="n">int_people__staff_roster</span><span class="o">`</span><span class="w"> </span><span class="n">sr</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">zz_stg_kipptaf_google_sheets</span><span class="p">.</span><span class="n">stg_google_sheets__people__powerschool_crosswalk</span><span class="o">`</span><span class="w"> </span><span class="n">xw</span>
+<span class="w">  </span><span class="k">on</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">sr</span><span class="p">.</span><span class="n">employee_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">xw</span><span class="p">.</span><span class="n">employee_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">xw</span><span class="p">.</span><span class="n">is_active</span>
+<span class="k">where</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">home_business_unit_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;KIPP Paterson&#39;</span><span class="p">;</span>
+</code></pre></div>
+<p>Expected: the mapping table has no NULLs in Coupa/Egencia/Zendesk columns;
+report <code>mapped_in_crosswalk / paterson_staff</code> as the coverage line.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Push and open the PR</strong></li>
+</ul>
+<p>Run (bundle all commits into one push):</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-feat-claude-paterson-staff-propagation<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/feat/claude-paterson-staff-propagation
+</code></pre></div>
+<p>Open the PR with <code>mcp__github__create_pull_request</code> using
+<code>.github/pull_request_template.md</code> as the body, <code>Closes #4239</code>, and the mapping
+table + coverage line from Step 5. Squash merge.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Confirm CI green + warnings</strong></li>
+</ul>
+<p>After dbt Cloud CI reaches a terminal state, check the run status and fetch
+warnings with <code>mcp__dbt__get_job_run_error(run_id=&lt;ci_run&gt;, warning_only=true)</code>.
+Confirm no new uniqueness/contract/not-null failures introduced by Paterson rows
+before requesting merge.</p>
+<hr />
+<h2 id="self-review">Self-Review</h2>
+<ul>
+<li><strong>Spec coverage:</strong> spine removal (Task 1) ✓; Illuminate users branch (Task 2)
+  ✓; Illuminate roles branch + region-wide decision (Task 3) ✓; Clever schools
+  exclusion (Task 4) ✓; Lattice / temp_staff / Coupa / Egencia / Zendesk
+  no-code-change (verified in Tasks 5-6) ✓; blast radius (Task 5 spot-checks +
+  Task 7 CI) ✓; three Ops gates (Task 6) ✓; PR-description mapping table + PII
+  carve-out (Task 6 Step 5) ✓.</li>
+<li><strong>Placeholders:</strong> none — every edit shows exact before/after SQL and every
+  verification step has a concrete command with expected output.</li>
+<li><strong>Type/name consistency:</strong> <code>home_business_unit_name</code>,
+  <code>home_work_location_powerschool_school_id</code>, <code>powerschool_teacher_number</code>,
+  <code>school_number</code>, <code>state_excludefromreporting</code>, <code>_dbt_source_relation</code> used
+  consistently across Tasks 1, 3, 4, 6, matching the read models.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

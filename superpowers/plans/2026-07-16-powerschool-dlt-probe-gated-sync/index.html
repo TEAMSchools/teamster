@@ -1,0 +1,2567 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>PowerSchool dlt probe-gated sync — Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#powerschool-dlt-probe-gated-sync-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              PowerSchool dlt probe-gated sync — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global Constraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-spike-verify-dlt-zero-yield-state-commit-assumptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Spike — verify dlt zero-yield + state-commit assumptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-library-powerschooltable-probe_signature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Library — PowerSchoolTable + probe_signature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-library-gated-source-single-dlt_assets-factory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Library — gated source + single @dlt_assets factory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-code-location-config-assets-schedules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Code location — config, assets, schedules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-validation-docs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Validation + docs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-branch-deployment-end-to-end-timing-spike-item-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Branch-deployment end-to-end + timing (spike item 3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-review notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-16-powerschool-dlt-probe-gated-sync.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="powerschool-dlt-probe-gated-sync-implementation-plan">PowerSchool dlt probe-gated sync — Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Collapse kipppaterson's 48 per-table dlt PowerSchool assets into one
+probe-gated <code>@dlt_assets</code> multi-asset that full-replaces only tables whose
+<code>COUNT(*)</code>/<code>MAX(cursor)</code> signature drifted.</p>
+<p><strong>Architecture:</strong> One <code>@dlt_assets</code> over one <code>@dlt.source</code> of 48
+<code>@dlt.resource</code>s, one <code>dlt.pipeline</code>. The op gates: it probes each selected
+table (<code>COUNT(*)</code>/<code>MAX(cursor)</code>), compares against the signature in
+<code>dlt.current.resource_state()</code>, and runs only the changed resources via
+<code>source.with_resources(*changed)</code>. Two schedules subset the multi-asset by tier.
+Spec:
+<code>docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md</code>.</p>
+<p><strong>Tech Stack:</strong> dagster 1.13.13, dagster-dlt 0.29.13, dlt 1.28.1, SQLAlchemy +
+oracledb (probe), BigQuery destination.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Tracked in issue #3807; branch <code>cbini/feat/claude-powerschool-dlt-paterson</code>;
+  ALL file edits target the worktree
+  <code>/workspaces/teamster/.worktrees/cbini/feat/claude-powerschool-dlt-paterson</code>
+  (editing <code>/workspaces/teamster/&lt;path&gt;</code> silently dirties <code>main</code>).</li>
+<li>Every git command:
+  <code>git -C /workspaces/teamster/.worktrees/cbini/feat/claude-powerschool-dlt-paterson ...</code>
+  or run Bash with that cwd.</li>
+<li>Python via <code>uv run</code> only; execute from inside the worktree
+  (<code>cd &lt;worktree&gt; &amp;&amp; uv run ...</code>). Python ≥3.13 style: built-in generics,
+  <code>X | None</code>, return-type annotations on library functions.</li>
+<li>Asset keys are <code>kipppaterson/powerschool/sis/{table}</code> (the <code>sis</code> segment added
+  during review, parallel to <code>powerschool/enrollment/*</code>); BQ dataset stays
+  <code>dagster_kipppaterson_dlt_powerschool</code>; schedule names stay
+  <code>kipppaterson__powerschool__dlt__intraday_asset_job_schedule</code> /
+  <code>..__nightly_asset_job_schedule</code> (regenerated docs depend on names).</li>
+<li><code>write_disposition="replace"</code> everywhere; no BigQuery <code>MERGE</code>; no
+  partitioning.</li>
+<li>Commit messages: conventional commits, footer
+  <code>Co-Authored-By: Claude Fable 5 &lt;noreply@anthropic.com&gt;</code>.</li>
+<li>Do not run <code>trunk fmt</code> manually; pre-commit formats. Suppress lint with
+  <code># trunk-ignore(linter/rule): reason</code> on the line immediately above.</li>
+</ul>
+<hr />
+<h3 id="task-1-spike-verify-dlt-zero-yield-state-commit-assumptions">Task 1: Spike — verify dlt zero-yield + state-commit assumptions</h3>
+<p>The design assumes (a) a <code>replace</code> resource that yields zero rows produces no
+load job and leaves the destination table untouched, and (b) whether a
+state-only change commits without any data load. Verify locally against duckdb
+before building anything. If (a) is FALSE (the table gets truncated), STOP — the
+gate cannot live inside the resource and the design needs revision. (b) may be
+either way: if state-only changes do NOT commit, the empty-table edge just
+re-truncates each tick (idempotent, acceptable) — record the result.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create (throwaway, gitignored): <code>.claude/scratch/dlt_spike.py</code> under the
+  worktree</li>
+<li>Modify:
+  <code>docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md</code>
+  (record spike results in the Spike section)</li>
+</ul>
+<p><strong>Interfaces:</strong> none (evidence only).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the spike script</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Spike: zero-yield replace semantics + state-only commit in dlt 1.28.1.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">dlt</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_source</span><span class="p">(</span><span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">state_marker</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="nd">@dlt</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;probe_target&quot;</span><span class="p">,</span> <span class="n">write_disposition</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">probe_target</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">state_marker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dlt</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">resource_state</span><span class="p">()[</span><span class="s2">&quot;signature&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_marker</span>
+        <span class="k">yield from</span> <span class="n">rows</span>
+
+    <span class="nd">@dlt</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;spike&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">spike_source</span><span class="p">():</span>
+        <span class="k">yield</span> <span class="n">probe_target</span>
+
+    <span class="k">return</span> <span class="n">spike_source</span><span class="p">()</span>
+
+
+<span class="n">pipeline</span> <span class="o">=</span> <span class="n">dlt</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span>
+    <span class="n">pipeline_name</span><span class="o">=</span><span class="s2">&quot;spike_pipeline&quot;</span><span class="p">,</span>
+    <span class="n">destination</span><span class="o">=</span><span class="s2">&quot;duckdb&quot;</span><span class="p">,</span>
+    <span class="n">dataset_name</span><span class="o">=</span><span class="s2">&quot;spike&quot;</span><span class="p">,</span>
+    <span class="n">dev_mode</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Run 1: load 3 rows, write state marker &quot;v1&quot;</span>
+<span class="n">info1</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">build_source</span><span class="p">([{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}],</span> <span class="s2">&quot;v1&quot;</span><span class="p">))</span>
+<span class="k">with</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">sql_client</span><span class="p">()</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+    <span class="n">count1</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">execute_sql</span><span class="p">(</span><span class="s2">&quot;select count(*) from probe_target&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run1 jobs=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">info1</span><span class="o">.</span><span class="n">load_packages</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">jobs</span><span class="p">[</span><span class="s1">&#39;completed_jobs&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2"> rows=</span><span class="si">{</span><span class="n">count1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Run 2: yield NOTHING, no state change -&gt; expect no load job, table untouched</span>
+<span class="n">info2</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">build_source</span><span class="p">([],</span> <span class="kc">None</span><span class="p">))</span>
+<span class="k">with</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">sql_client</span><span class="p">()</span> <span class="k">as</span> <span class="n">c</span><span class="p">:</span>
+    <span class="n">count2</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">execute_sql</span><span class="p">(</span><span class="s2">&quot;select count(*) from probe_target&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">packages2</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">info2</span><span class="o">.</span><span class="n">load_packages</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run2 packages=</span><span class="si">{</span><span class="n">packages2</span><span class="si">}</span><span class="s2"> rows_after=</span><span class="si">{</span><span class="n">count2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">count2</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;ZERO-YIELD TRUNCATED THE TABLE (rows=</span><span class="si">{</span><span class="n">count2</span><span class="si">}</span><span class="s2">) - design broken&quot;</span>
+
+<span class="c1"># Run 3: yield nothing but CHANGE state -&gt; does state-only commit?</span>
+<span class="n">info3</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">build_source</span><span class="p">([],</span> <span class="s2">&quot;v2&quot;</span><span class="p">))</span>
+<span class="n">state3</span> <span class="o">=</span> <span class="n">pipeline</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;sources&quot;</span><span class="p">][</span><span class="s2">&quot;spike&quot;</span><span class="p">][</span><span class="s2">&quot;resources&quot;</span><span class="p">][</span><span class="s2">&quot;probe_target&quot;</span><span class="p">][</span><span class="s2">&quot;signature&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run3 packages=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">info3</span><span class="o">.</span><span class="n">load_packages</span><span class="p">)</span><span class="si">}</span><span class="s2"> state_after=</span><span class="si">{</span><span class="n">state3</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Run 4: fresh pipeline instance (simulates new pod) - is &quot;v2&quot; restorable?</span>
+<span class="n">pipeline2</span> <span class="o">=</span> <span class="n">dlt</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span>
+    <span class="n">pipeline_name</span><span class="o">=</span><span class="s2">&quot;spike_pipeline&quot;</span><span class="p">,</span> <span class="n">destination</span><span class="o">=</span><span class="s2">&quot;duckdb&quot;</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s2">&quot;spike&quot;</span>
+<span class="p">)</span>
+<span class="n">pipeline2</span><span class="o">.</span><span class="n">sync_destination</span><span class="p">()</span>
+<span class="n">restored</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">pipeline2</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sources&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spike&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resources&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;probe_target&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;signature&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run4 restored_state=</span><span class="si">{</span><span class="n">restored</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;SPIKE OK: zero-yield preserved table; state-only commit =&quot;</span><span class="p">,</span> <span class="n">restored</span> <span class="o">==</span> <span class="s2">&quot;v2&quot;</span><span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the spike</strong></li>
+</ul>
+<p>Run (from the worktree):
+<code>uv run --with duckdb python .claude/scratch/dlt_spike.py</code></p>
+<p>Expected: <code>run2 rows_after=3</code> (assertion passes). Record whether
+<code>restored_state</code> is <code>v2</code> (state-only commits) or <code>v1</code> (it doesn't).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Record results in the spec</strong></li>
+</ul>
+<p>Edit the spec's <code>## Spike</code> section: mark items 1-2 with results, e.g. append
+<code>— verified 2026-07-16 (duckdb spike): zero-yield produces no load job and does not truncate; state-only changes do/do not commit (re-truncate each tick is acceptable if not).</code>
+Item 3 (timing) stays open until Task 6.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(powerschool): record dlt spike results in spec&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-library-powerschooltable-probe_signature">Task 2: Library — <code>PowerSchoolTable</code> + <code>probe_signature</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/dlt/powerschool/assets.py</code> (add to top, keep
+  existing content for now)</li>
+<li>Test: <code>tests/libraries/test_dlt_powerschool_assets.py</code> (REPLACE — this file
+  currently holds two tests for the removed per-table signature (<code>table_name=</code>,
+  <code>load_strategy=</code>); overwrite it entirely with the new tests below, since Task
+  3 deletes the behavior they cover)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>PowerSchoolTable(name: str, cursor_column: str | None)</code> frozen
+  dataclass;
+  <code>probe_signature(connection, table_name: str, cursor_column: str) -&gt; dict[str, int | str | None]</code>
+  returning <code>{"count": int, "max_cursor": str | None}</code> (ISO string, tz-naive).
+  Task 3's resource compares this dict by equality against
+  <code>dlt.current.resource_state()["signature"]</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Replace the entire contents of <code>tests/libraries/test_dlt_powerschool_assets.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Unit tests for the probe-gated PowerSchool dlt factory (no external deps).&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.dlt.powerschool.assets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PowerSchoolTable</span><span class="p">,</span>
+    <span class="n">probe_signature</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">FakeResult</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_row</span> <span class="o">=</span> <span class="n">row</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">one</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_row</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">FakeConnection</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">row</span> <span class="o">=</span> <span class="n">row</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queries</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clause</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">clause</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">FakeResult</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">row</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_probe_signature_shapes_datetime_cursor</span><span class="p">():</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">FakeConnection</span><span class="p">((</span><span class="mi">42</span><span class="p">,</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">0</span><span class="p">)))</span>
+
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">probe_signature</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;students&quot;</span><span class="p">,</span> <span class="s2">&quot;transaction_date&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">sig</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span> <span class="s2">&quot;max_cursor&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-07-15T13:30:00&quot;</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="s2">&quot;COUNT(*)&quot;</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">queries</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="s2">&quot;MAX(transaction_date)&quot;</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">queries</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="s2">&quot;FROM students&quot;</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">queries</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_probe_signature_empty_table_none_cursor</span><span class="p">():</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">FakeConnection</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+    <span class="n">sig</span> <span class="o">=</span> <span class="n">probe_signature</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;cc&quot;</span><span class="p">,</span> <span class="s2">&quot;transaction_date&quot;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">sig</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max_cursor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_powerschool_table_dataclass</span><span class="p">():</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">PowerSchoolTable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;students&quot;</span><span class="p">,</span> <span class="n">cursor_column</span><span class="o">=</span><span class="s2">&quot;transaction_date&quot;</span><span class="p">)</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">PowerSchoolTable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">cursor_column</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">t</span><span class="o">.</span><span class="n">cursor_column</span> <span class="o">==</span> <span class="s2">&quot;transaction_date&quot;</span>
+    <span class="k">assert</span> <span class="n">n</span><span class="o">.</span><span class="n">cursor_column</span> <span class="ow">is</span> <span class="kc">None</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests to verify they fail</strong></li>
+</ul>
+<p>Run:
+<code>cd &lt;worktree&gt; &amp;&amp; uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v</code>
+Expected: FAIL — <code>ImportError: cannot import name 'PowerSchoolTable'</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Implement</strong></li>
+</ul>
+<p>Add to <code>src/teamster/libraries/dlt/powerschool/assets.py</code> (below the existing
+imports; add <code>from dataclasses import dataclass</code> and <code>import sqlalchemy as sa</code>
+to the imports):</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PowerSchoolTable</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;One PowerSchool table&#39;s sync config.</span>
+
+<span class="sd">    cursor_column None means the table has no change-tracking column and is</span>
+<span class="sd">    always fully replaced when selected (nightly tier only).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">cursor_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">probe_signature</span><span class="p">(</span>
+    <span class="n">connection</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cursor_column</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fetch the change signature for a table: total count + max cursor.</span>
+
+<span class="sd">    Equality-compared against the stored signature; drift in either value</span>
+<span class="sd">    (including a cursor regression) triggers a full replace. Values are</span>
+<span class="sd">    JSON-serializable for dlt resource state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">count</span><span class="p">,</span> <span class="n">max_cursor</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+        <span class="c1"># trunk-ignore(bandit/B608): table/column names from static YAML config</span>
+        <span class="n">sa</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;SELECT COUNT(*), MAX(</span><span class="si">{</span><span class="n">cursor_column</span><span class="si">}</span><span class="s2">) FROM </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2">&quot;</span>  <span class="c1"># noqa: S608</span>
+        <span class="p">)</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">one</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;count&quot;</span><span class="p">:</span> <span class="n">count</span><span class="p">,</span>
+        <span class="s2">&quot;max_cursor&quot;</span><span class="p">:</span> <span class="n">max_cursor</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span> <span class="k">if</span> <span class="n">max_cursor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span>
+</code></pre></div>
+<p>(If trunk flags the <code>noqa</code>, drop it — the <code>trunk-ignore</code> line is the
+authoritative suppression.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run tests to verify they pass</strong></li>
+</ul>
+<p>Run:
+<code>cd &lt;worktree&gt; &amp;&amp; uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v</code>
+Expected: 3 PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/dlt/powerschool/assets.py<span class="w"> </span>tests/libraries/test_dlt_powerschool_assets.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(powerschool): add dlt probe signature helpers&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-library-gated-source-single-dlt_assets-factory">Task 3: Library — gated source + single <code>@dlt_assets</code> factory</h3>
+<p>Replaces the per-table factory wholesale. The only caller is
+<code>code_locations/kipppaterson/powerschool/sis/dlt/assets.py</code> (updated in Task 4 —
+the tree will not import cleanly between Task 3 and Task 4 commits; that is
+fine, they land in sequence).</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/libraries/dlt/powerschool/assets.py</code> (replace
+  <code>LOAD_STRATEGIES</code> and <code>build_powerschool_dlt_assets</code>; keep <code>ORACLE_SCHEMA</code>,
+  <code>oracle_number_adapter</code>, <code>_oracle_connection_url</code>,
+  <code>PowerSchoolDagsterDltTranslator</code>, Task 2's additions)</li>
+<li>Test: <code>tests/libraries/test_dlt_powerschool_assets.py</code> (extend)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>PowerSchoolTable</code>, <code>probe_signature</code> (Task 2).</li>
+<li>
+<p>Produces:
+  <code>build_powerschool_dlt_assets(code_location: str, tables: list[PowerSchoolTable], op_tags: dict[str, object] | None = None) -&gt; AssetsDefinition</code>
+  — ONE multi-asset (<code>can_subset=True</code>) with keys
+  <code>{code_location}/powerschool/{table.name}</code>, op name
+  <code>{code_location}__powerschool</code>, pool <code>dlt_powerschool_{code_location}</code>,
+  pipeline name <code>powerschool</code>, dataset
+  <code>dagster_{code_location}_dlt_powerschool</code>. Task 4 calls it once with all 48
+  tables.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/libraries/test_dlt_powerschool_assets.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.dlt.powerschool.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_powerschool_dlt_assets</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_factory_builds_single_subsettable_multiasset</span><span class="p">():</span>
+    <span class="n">tables</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">PowerSchoolTable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;students&quot;</span><span class="p">,</span> <span class="n">cursor_column</span><span class="o">=</span><span class="s2">&quot;transaction_date&quot;</span><span class="p">),</span>
+        <span class="n">PowerSchoolTable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;users&quot;</span><span class="p">,</span> <span class="n">cursor_column</span><span class="o">=</span><span class="s2">&quot;whenmodified&quot;</span><span class="p">),</span>
+        <span class="n">PowerSchoolTable</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">cursor_column</span><span class="o">=</span><span class="kc">None</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="n">assets_def</span> <span class="o">=</span> <span class="n">build_powerschool_dlt_assets</span><span class="p">(</span>
+        <span class="n">code_location</span><span class="o">=</span><span class="s2">&quot;kipppaterson&quot;</span><span class="p">,</span> <span class="n">tables</span><span class="o">=</span><span class="n">tables</span>
+    <span class="p">)</span>
+
+    <span class="k">assert</span> <span class="p">{</span><span class="n">k</span><span class="o">.</span><span class="n">to_user_string</span><span class="p">()</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">assets_def</span><span class="o">.</span><span class="n">keys</span><span class="p">}</span> <span class="o">==</span> <span class="p">{</span>
+        <span class="s2">&quot;kipppaterson/powerschool/sis/students&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kipppaterson/powerschool/sis/users&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;kipppaterson/powerschool/sis/test&quot;</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">assert</span> <span class="n">assets_def</span><span class="o">.</span><span class="n">can_subset</span> <span class="ow">is</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">assets_def</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;kipppaterson__powerschool&quot;</span>
+    <span class="k">assert</span> <span class="n">assets_def</span><span class="o">.</span><span class="n">op</span><span class="o">.</span><span class="n">pool</span> <span class="o">==</span> <span class="s2">&quot;dlt_powerschool_kipppaterson&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run test to verify it fails</strong></li>
+</ul>
+<p>Run:
+<code>cd &lt;worktree&gt; &amp;&amp; uv run pytest tests/libraries/test_dlt_powerschool_assets.py::test_factory_builds_single_subsettable_multiasset -v</code>
+Expected: FAIL — <code>TypeError</code> (old signature takes <code>table_name</code>, not <code>tables</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Replace the factory</strong></li>
+</ul>
+<p>In <code>src/teamster/libraries/dlt/powerschool/assets.py</code>: delete <code>LOAD_STRATEGIES</code>
+and the entire existing <code>build_powerschool_dlt_assets</code>; keep <code>ORACLE_SCHEMA</code>,
+<code>oracle_number_adapter</code>, <code>_oracle_connection_url</code>,
+<code>PowerSchoolDagsterDltTranslator</code>, and Task 2's additions (<code>PowerSchoolTable</code>,
+<code>probe_signature</code>, <code>import sqlalchemy as sa</code>). <code>AssetExecutionContext</code> and
+<code>AssetKey</code> are already imported; no <code>MaterializeResult</code> needed. Then add the
+op-gate factory plus the <code>_stored_signatures</code> helper:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">build_powerschool_dlt_assets</span><span class="p">(</span>
+    <span class="n">code_location</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">tables</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PowerSchoolTable</span><span class="p">],</span>
+    <span class="n">op_tags</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build ONE probe-gated @dlt_assets over all PowerSchool tables.</span>
+
+<span class="sd">    The op opens the SSH tunnel, restores prior per-table signatures from dlt</span>
+<span class="sd">    resource_state (persisted in the destination), probes each selected table&#39;s</span>
+<span class="sd">    COUNT(*)/MAX(cursor), and runs the pipeline over only the changed resources</span>
+<span class="sd">    via source.with_resources(*changed) — a full `replace` load per changed</span>
+<span class="sd">    table. Tables without a cursor_column are always loaded when selected.</span>
+<span class="sd">    Unselected / unchanged tables are never in the run, so their destination</span>
+<span class="sd">    tables are untouched. Schedules subset the multi-asset per tier. See</span>
+<span class="sd">    docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source_name</span> <span class="o">=</span> <span class="s2">&quot;powerschool&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_resource</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n">PowerSchoolTable</span><span class="p">,</span> <span class="n">signature</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nd">@dlt</span><span class="o">.</span><span class="n">resource</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">write_disposition</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_table_rows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">:</span>
+            <span class="c1"># Persist the just-probed signature with this load package so the</span>
+            <span class="c1"># next run detects drift. No-cursor tables carry no signature.</span>
+            <span class="k">if</span> <span class="n">signature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">dlt</span><span class="o">.</span><span class="n">current</span><span class="o">.</span><span class="n">resource_state</span><span class="p">()[</span><span class="s2">&quot;signature&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">signature</span>
+            <span class="k">yield from</span> <span class="n">sql_table</span><span class="p">(</span>
+                <span class="n">credentials</span><span class="o">=</span><span class="n">_oracle_connection_url</span><span class="p">(),</span>
+                <span class="n">schema</span><span class="o">=</span><span class="n">ORACLE_SCHEMA</span><span class="p">,</span>
+                <span class="n">table</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;pyarrow&quot;</span><span class="p">,</span>
+                <span class="n">reflection_level</span><span class="o">=</span><span class="s2">&quot;full_with_precision&quot;</span><span class="p">,</span>
+                <span class="n">defer_table_reflect</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">table_adapter_callback</span><span class="o">=</span><span class="n">remove_nullability_adapter</span><span class="p">,</span>
+                <span class="n">type_adapter_callback</span><span class="o">=</span><span class="n">oracle_number_adapter</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">_table_rows</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_source</span><span class="p">(</span><span class="n">selected</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PowerSchoolTable</span><span class="p">],</span> <span class="n">signatures</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]):</span>
+        <span class="nd">@dlt</span><span class="o">.</span><span class="n">source</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">source_name</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_src</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">_build_resource</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">signatures</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">_src</span><span class="p">()</span>
+
+    <span class="n">dlt_pipeline</span> <span class="o">=</span> <span class="n">dlt</span><span class="o">.</span><span class="n">pipeline</span><span class="p">(</span>
+        <span class="n">pipeline_name</span><span class="o">=</span><span class="n">source_name</span><span class="p">,</span>
+        <span class="c1"># No `autodetect_schema=True`: oracle_number_adapter +</span>
+        <span class="c1"># full_with_precision reflection are the authoritative decimal schema</span>
+        <span class="c1"># (see oracle_number_adapter docstring).</span>
+        <span class="n">destination</span><span class="o">=</span><span class="n">bigquery</span><span class="p">(),</span>
+        <span class="n">dataset_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;dagster_</span><span class="si">{</span><span class="n">code_location</span><span class="si">}</span><span class="s2">_dlt_powerschool&quot;</span><span class="p">,</span>
+        <span class="n">progress</span><span class="o">=</span><span class="n">LogCollector</span><span class="p">(</span><span class="n">dump_system_stats</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="n">translator</span> <span class="o">=</span> <span class="n">PowerSchoolDagsterDltTranslator</span><span class="p">(</span><span class="n">code_location</span><span class="p">)</span>
+    <span class="n">tables_by_key</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">AssetKey</span><span class="p">([</span><span class="n">code_location</span><span class="p">,</span> <span class="s2">&quot;powerschool&quot;</span><span class="p">,</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span><span class="p">]):</span> <span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tables</span>
+    <span class="p">}</span>
+
+    <span class="nd">@dlt_assets</span><span class="p">(</span>
+        <span class="c1"># Full source only defines the asset specs; the op runs a narrowed one.</span>
+        <span class="n">dlt_source</span><span class="o">=</span><span class="n">_build_source</span><span class="p">(</span><span class="n">tables</span><span class="p">,</span> <span class="p">{}),</span>
+        <span class="n">dlt_pipeline</span><span class="o">=</span><span class="n">dlt_pipeline</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">code_location</span><span class="si">}</span><span class="s2">__powerschool&quot;</span><span class="p">,</span>
+        <span class="n">dagster_dlt_translator</span><span class="o">=</span><span class="n">translator</span><span class="p">,</span>
+        <span class="n">group_name</span><span class="o">=</span><span class="s2">&quot;powerschool&quot;</span><span class="p">,</span>
+        <span class="n">pool</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;dlt_powerschool_</span><span class="si">{</span><span class="n">code_location</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="n">op_tags</span><span class="o">=</span><span class="n">op_tags</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_assets</span><span class="p">(</span>
+        <span class="n">context</span><span class="p">:</span> <span class="n">AssetExecutionContext</span><span class="p">,</span>
+        <span class="n">dlt</span><span class="p">:</span> <span class="n">DagsterDltResource</span><span class="p">,</span>
+        <span class="n">ssh_powerschool</span><span class="p">:</span> <span class="n">SSHResource</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">:</span>
+        <span class="n">selected</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">tables_by_key</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">selected_asset_keys</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">tables_by_key</span>
+        <span class="p">]</span>
+
+        <span class="k">with</span> <span class="n">ssh_powerschool</span><span class="o">.</span><span class="n">open_ssh_tunnel_paramiko</span><span class="p">():</span>
+            <span class="c1"># Restore prior signatures from the destination state table. On a</span>
+            <span class="c1"># truly first run (no dataset) this raises; treat as no prior state.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">dlt_pipeline</span><span class="o">.</span><span class="n">sync_destination</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;no prior dlt state; all selected are changed&quot;</span><span class="p">)</span>
+
+            <span class="n">stored</span> <span class="o">=</span> <span class="n">_stored_signatures</span><span class="p">(</span><span class="n">dlt_pipeline</span><span class="p">,</span> <span class="n">source_name</span><span class="p">)</span>
+
+            <span class="c1"># Probe every selected table that has a cursor column (one shared</span>
+            <span class="c1"># engine over the single tunnel).</span>
+            <span class="n">current</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">engine</span> <span class="o">=</span> <span class="n">sa</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="n">_oracle_connection_url</span><span class="p">())</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">connection</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">cursor_column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">current</span><span class="p">[</span><span class="n">table</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">probe_signature</span><span class="p">(</span>
+                                <span class="n">connection</span><span class="p">,</span> <span class="n">table</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">table</span><span class="o">.</span><span class="n">cursor_column</span>
+                            <span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">engine</span><span class="o">.</span><span class="n">dispose</span><span class="p">()</span>
+
+            <span class="n">changed</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">table</span>
+                <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">selected</span>
+                <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">cursor_column</span> <span class="ow">is</span> <span class="kc">None</span>
+                <span class="ow">or</span> <span class="n">current</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">!=</span> <span class="n">stored</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="p">]</span>
+
+            <span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;powerschool probe: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">changed</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span><span class="si">}</span><span class="s2"> changed; &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;changed=</span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">changed</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">changed</span><span class="p">:</span>
+                <span class="k">return</span>  <span class="c1"># idle tick: nothing to load</span>
+
+            <span class="k">yield from</span> <span class="n">dlt</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span>
+                <span class="n">dlt_source</span><span class="o">=</span><span class="n">_build_source</span><span class="p">(</span><span class="n">changed</span><span class="p">,</span> <span class="n">current</span><span class="p">),</span>
+                <span class="n">dlt_pipeline</span><span class="o">=</span><span class="n">dlt_pipeline</span><span class="p">,</span>
+                <span class="n">dagster_dlt_translator</span><span class="o">=</span><span class="n">translator</span><span class="p">,</span>
+                <span class="n">write_disposition</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_assets</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_stored_signatures</span><span class="p">(</span><span class="n">dlt_pipeline</span><span class="p">,</span> <span class="n">source_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read last-run per-resource signatures from dlt pipeline state.&quot;&quot;&quot;</span>
+    <span class="n">resources</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">dlt_pipeline</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sources&quot;</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">source_name</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resources&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">res_state</span><span class="p">[</span><span class="s2">&quot;signature&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">res_state</span> <span class="ow">in</span> <span class="n">resources</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">res_state</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;signature&quot;</span> <span class="ow">in</span> <span class="n">res_state</span>
+    <span class="p">}</span>
+</code></pre></div>
+<p>Notes for the implementer:</p>
+<ul class="task-list">
+<li><code>_build_source</code> / <code>_build_resource</code> are defined at factory scope, so the <code>dlt</code>
+  they reference is the module import (<code>@dlt.resource</code>,
+  <code>dlt.current.resource_state</code>). Inside <code>_assets</code>, the <code>dlt</code> parameter (the
+  <code>DagsterDltResource</code>) shadows the module — but <code>_assets</code> only calls
+  <code>dlt.run(...)</code>, so that is correct.</li>
+<li><code>sql_table(...)</code> / <code>_oracle_connection_url()</code> are called only when a resource
+  is iterated at run time, so building the full source at definition does not
+  read env vars (the definition-time test in Step 1 passes offline).</li>
+<li>Passing an explicit narrowed <code>dlt_source</code> to <code>dlt.run()</code> works with
+  dagster-dlt 0.29.13: its <code>is_subset</code> filter intersects with
+  <code>context.selected_asset_keys</code>, and <code>changed ⊆ selected</code>, so all changed
+  resources pass through and only they yield <code>MaterializeResult</code>s.</li>
+<li>
+<p>State preservation across selective runs (unchanged tables keep their stored
+  signature even though they are not in this run) is an assumption the Task 6
+  branch-deployment E2E verifies via the idle-second-run check.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run the test suite</strong></p>
+</li>
+</ul>
+<p>Run:
+<code>cd &lt;worktree&gt; &amp;&amp; uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v</code>
+Expected: all PASS (factory test + Task 2 tests).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/dlt/powerschool/assets.py<span class="w"> </span>tests/libraries/test_dlt_powerschool_assets.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(powerschool): probe-gated single multi-asset dlt factory&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-code-location-config-assets-schedules">Task 4: Code location — config, assets, schedules</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Rewrite:
+  <code>src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/config/assets.yaml</code></li>
+<li>Rewrite:
+  <code>src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/assets.py</code></li>
+<li>Rewrite:
+  <code>src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/schedules.py</code></li>
+<li>Test: <code>tests/libraries/test_dlt_powerschool_assets.py</code> (extend)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>build_powerschool_dlt_assets</code>, <code>PowerSchoolTable</code> (Task 3).</li>
+<li>Produces: module attribute <code>assets: list</code> containing the ONE assets def;
+  <code>schedules: list[ScheduleDefinition]</code> with the two existing schedule names.
+  <code>definitions.py</code> needs no changes (already loads the module and wires <code>dlt</code></li>
+<li>
+<p><code>ssh_powerschool</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the failing tests</strong></p>
+</li>
+</ul>
+<p>Append to <code>tests/libraries/test_dlt_powerschool_assets.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="n">CONFIG</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span>
+    <span class="s2">&quot;src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/config/assets.yaml&quot;</span>
+<span class="p">)</span>
+
+<span class="n">INTRADAY_TRANSACTION_DATE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;attendance&quot;</span><span class="p">,</span> <span class="s2">&quot;storedgrades&quot;</span><span class="p">,</span> <span class="s2">&quot;pgfinalgrades&quot;</span><span class="p">,</span> <span class="s2">&quot;cc&quot;</span><span class="p">,</span> <span class="s2">&quot;students&quot;</span><span class="p">,</span> <span class="s2">&quot;courses&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;schools&quot;</span><span class="p">,</span> <span class="s2">&quot;sections&quot;</span><span class="p">,</span> <span class="s2">&quot;termbins&quot;</span><span class="p">,</span> <span class="s2">&quot;terms&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">INTRADAY_WHENMODIFIED</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;gradescaleitem&quot;</span><span class="p">,</span> <span class="s2">&quot;roledef&quot;</span><span class="p">,</span> <span class="s2">&quot;s_nj_crs_x&quot;</span><span class="p">,</span> <span class="s2">&quot;s_nj_ren_x&quot;</span><span class="p">,</span> <span class="s2">&quot;s_nj_stu_x&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;s_stu_x&quot;</span><span class="p">,</span> <span class="s2">&quot;schoolstaff&quot;</span><span class="p">,</span> <span class="s2">&quot;sectionteacher&quot;</span><span class="p">,</span> <span class="s2">&quot;studentcorefields&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;studentrace&quot;</span><span class="p">,</span> <span class="s2">&quot;u_studentsuserfields&quot;</span><span class="p">,</span> <span class="s2">&quot;users&quot;</span><span class="p">,</span> <span class="s2">&quot;userscorefields&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">NIGHTLY_WHENMODIFIED</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;assignmentcategoryassoc&quot;</span><span class="p">,</span> <span class="s2">&quot;assignmentscore&quot;</span><span class="p">,</span> <span class="s2">&quot;assignmentsection&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;districtteachercategory&quot;</span><span class="p">,</span> <span class="s2">&quot;gradecalcformulaweight&quot;</span><span class="p">,</span> <span class="s2">&quot;gradecalcschoolassoc&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;gradecalculationtype&quot;</span><span class="p">,</span> <span class="s2">&quot;gradeformulaset&quot;</span><span class="p">,</span> <span class="s2">&quot;gradeschoolconfig&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;gradeschoolformulaassoc&quot;</span><span class="p">,</span> <span class="s2">&quot;teachercategory&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">NIGHTLY_NO_CURSOR</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;attendance_code&quot;</span><span class="p">,</span> <span class="s2">&quot;attendance_conversion_items&quot;</span><span class="p">,</span> <span class="s2">&quot;bell_schedule&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;calendar_day&quot;</span><span class="p">,</span> <span class="s2">&quot;cycle_day&quot;</span><span class="p">,</span> <span class="s2">&quot;fte&quot;</span><span class="p">,</span> <span class="s2">&quot;gen&quot;</span><span class="p">,</span> <span class="s2">&quot;log&quot;</span><span class="p">,</span> <span class="s2">&quot;reenrollments&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;spenrollments&quot;</span><span class="p">,</span> <span class="s2">&quot;studenttest&quot;</span><span class="p">,</span> <span class="s2">&quot;studenttestscore&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="s2">&quot;testscore&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_config_matches_spec_cursor_map</span><span class="p">():</span>
+    <span class="n">entries</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">CONFIG</span><span class="o">.</span><span class="n">read_text</span><span class="p">())[</span><span class="s2">&quot;assets&quot;</span><span class="p">]</span>
+    <span class="n">by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">e</span><span class="p">[</span><span class="s2">&quot;table_name&quot;</span><span class="p">]:</span> <span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">}</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">entries</span><span class="p">)</span> <span class="o">==</span> <span class="mi">48</span>
+
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">INTRADAY_TRANSACTION_DATE</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">==</span> <span class="p">{</span>
+            <span class="s2">&quot;table_name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;cursor_column&quot;</span><span class="p">:</span> <span class="s2">&quot;transaction_date&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;schedule_tier&quot;</span><span class="p">:</span> <span class="s2">&quot;intraday&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">INTRADAY_WHENMODIFIED</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">==</span> <span class="p">{</span>
+            <span class="s2">&quot;table_name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;cursor_column&quot;</span><span class="p">:</span> <span class="s2">&quot;whenmodified&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;schedule_tier&quot;</span><span class="p">:</span> <span class="s2">&quot;intraday&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">NIGHTLY_WHENMODIFIED</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">==</span> <span class="p">{</span>
+            <span class="s2">&quot;table_name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;cursor_column&quot;</span><span class="p">:</span> <span class="s2">&quot;whenmodified&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;schedule_tier&quot;</span><span class="p">:</span> <span class="s2">&quot;nightly&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">NIGHTLY_NO_CURSOR</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">==</span> <span class="p">{</span>
+            <span class="s2">&quot;table_name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+            <span class="s2">&quot;cursor_column&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;schedule_tier&quot;</span><span class="p">:</span> <span class="s2">&quot;nightly&quot;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_schedules_subset_by_tier</span><span class="p">():</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">powerschool_dlt_intraday_asset_job_schedule</span> <span class="k">as</span> <span class="n">intraday</span><span class="p">,</span>
+        <span class="n">powerschool_dlt_nightly_asset_job_schedule</span> <span class="k">as</span> <span class="n">nightly</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">intraday</span><span class="o">.</span><span class="n">cron_schedule</span> <span class="o">==</span> <span class="s2">&quot;*/15 * * * *&quot;</span>
+    <span class="k">assert</span> <span class="n">nightly</span><span class="o">.</span><span class="n">cron_schedule</span> <span class="o">==</span> <span class="s2">&quot;0 2 * * *&quot;</span>
+    <span class="k">assert</span> <span class="n">intraday</span><span class="o">.</span><span class="n">tags</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;dagster/max_runtime&quot;</span><span class="p">:</span> <span class="s2">&quot;3600&quot;</span><span class="p">}</span>
+    <span class="k">assert</span> <span class="n">nightly</span><span class="o">.</span><span class="n">tags</span> <span class="o">==</span> <span class="p">{</span><span class="s2">&quot;dagster/max_runtime&quot;</span><span class="p">:</span> <span class="s2">&quot;3600&quot;</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_assets_module_exposes_single_def</span><span class="p">():</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kipppaterson.powerschool.sis.dlt.assets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">assets</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">assets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">assets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">))</span> <span class="o">==</span> <span class="mi">48</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run tests to verify they fail</strong></li>
+</ul>
+<p>Run:
+<code>cd &lt;worktree&gt; &amp;&amp; uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v -k "config or schedules or single_def"</code>
+Expected: FAIL (yaml lacks <code>cursor_column</code>; assets module has 48 defs; old
+schedules have no tags).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Rewrite <code>config/assets.yaml</code></strong></li>
+</ul>
+<p>Full contents — 48 entries. Cursor map verified against kippnewark 2026-07-16
+(spec "Cursor map" section):</p>
+<div class="highlight"><pre><span></span><code><span class="nt">assets</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># intraday, cursor transaction_date</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">attendance</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cc</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">courses</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pgfinalgrades</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schools</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sections</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">storedgrades</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">students</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">termbins</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">terms</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">transaction_date</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="c1"># intraday, cursor whenmodified</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gradescaleitem</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">roledef</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">s_nj_crs_x</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">s_nj_ren_x</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">s_nj_stu_x</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">s_stu_x</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schoolstaff</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sectionteacher</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">studentcorefields</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">studentrace</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">u_studentsuserfields</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">users</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">userscorefields</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">intraday</span>
+<span class="w">  </span><span class="c1"># nightly gradebook, cursor whenmodified</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignmentcategoryassoc</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignmentscore</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">assignmentsection</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">districtteachercategory</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gradecalcformulaweight</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gradecalcschoolassoc</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gradecalculationtype</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gradeformulaset</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gradeschoolconfig</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gradeschoolformulaassoc</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">teachercategory</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">whenmodified</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="c1"># nightly, no cursor -&gt; unconditional replace</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">attendance_code</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">attendance_conversion_items</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bell_schedule</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">calendar_day</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cycle_day</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fte</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gen</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">log</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reenrollments</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">spenrollments</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">studenttest</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">studenttestscore</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">table_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">testscore</span>
+<span class="w">    </span><span class="nt">cursor_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">schedule_tier</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">nightly</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Rewrite <code>assets.py</code></strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kipppaterson</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.dlt.powerschool.assets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">PowerSchoolTable</span><span class="p">,</span>
+    <span class="n">build_powerschool_dlt_assets</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">config_file</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;config&quot;</span> <span class="o">/</span> <span class="s2">&quot;assets.yaml&quot;</span>
+
+<span class="n">assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">build_powerschool_dlt_assets</span><span class="p">(</span>
+        <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span>
+        <span class="n">tables</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">PowerSchoolTable</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;table_name&quot;</span><span class="p">],</span> <span class="n">cursor_column</span><span class="o">=</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;cursor_column&quot;</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">config_file</span><span class="o">.</span><span class="n">read_text</span><span class="p">())[</span><span class="s2">&quot;assets&quot;</span><span class="p">]</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Rewrite <code>schedules.py</code></strong></li>
+</ul>
+<p>Keep the existing tier validation; add intraday-requires-cursor validation and
+run tags:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScheduleDefinition</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kipppaterson</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">LOCAL_TIMEZONE</span>
+
+<span class="n">config_file</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;config&quot;</span> <span class="o">/</span> <span class="s2">&quot;assets.yaml&quot;</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">config_file</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+
+<span class="n">_VALID_SCHEDULE_TIERS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;intraday&quot;</span><span class="p">,</span> <span class="s2">&quot;nightly&quot;</span><span class="p">}</span>
+
+<span class="n">_invalid_tier_assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;assets&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;schedule_tier&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_VALID_SCHEDULE_TIERS</span>
+<span class="p">]</span>
+<span class="k">if</span> <span class="n">_invalid_tier_assets</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="s2">&quot;Invalid schedule_tier for table(s): &quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;table_name&#39;</span><span class="p">]</span><span class="si">!r}</span><span class="s2"> (</span><span class="si">{</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;schedule_tier&#39;</span><span class="p">]</span><span class="si">!r}</span><span class="s2">)&quot;</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">_invalid_tier_assets</span>
+        <span class="p">)</span>
+        <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;; expected one of </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">_VALID_SCHEDULE_TIERS</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="p">)</span>
+
+<span class="c1"># no-cursor tables cannot be probe-gated, so they must not run intraday</span>
+<span class="n">_ungated_intraday</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">a</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;assets&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;schedule_tier&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;intraday&quot;</span> <span class="ow">and</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;cursor_column&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="p">]</span>
+<span class="k">if</span> <span class="n">_ungated_intraday</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="s2">&quot;intraday tables require a cursor_column: &quot;</span>
+        <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="s2">&quot;table_name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">_ungated_intraday</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_tier_targets</span><span class="p">(</span><span class="n">tier</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">/powerschool/</span><span class="si">{</span><span class="n">a</span><span class="p">[</span><span class="s1">&#39;table_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;assets&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">a</span><span class="p">[</span><span class="s2">&quot;schedule_tier&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">tier</span>
+    <span class="p">]</span>
+
+
+<span class="n">powerschool_dlt_intraday_asset_job_schedule</span> <span class="o">=</span> <span class="n">ScheduleDefinition</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">__powerschool__dlt__intraday_asset_job_schedule&quot;</span><span class="p">,</span>
+    <span class="n">cron_schedule</span><span class="o">=</span><span class="s2">&quot;*/15 * * * *&quot;</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">_tier_targets</span><span class="p">(</span><span class="s2">&quot;intraday&quot;</span><span class="p">),</span>
+    <span class="n">tags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dagster/max_runtime&quot;</span><span class="p">:</span> <span class="s2">&quot;3600&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">powerschool_dlt_nightly_asset_job_schedule</span> <span class="o">=</span> <span class="n">ScheduleDefinition</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">__powerschool__dlt__nightly_asset_job_schedule&quot;</span><span class="p">,</span>
+    <span class="n">cron_schedule</span><span class="o">=</span><span class="s2">&quot;0 2 * * *&quot;</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+    <span class="n">target</span><span class="o">=</span><span class="n">_tier_targets</span><span class="p">(</span><span class="s2">&quot;nightly&quot;</span><span class="p">),</span>
+    <span class="n">tags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dagster/max_runtime&quot;</span><span class="p">:</span> <span class="s2">&quot;3600&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">schedules</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">powerschool_dlt_intraday_asset_job_schedule</span><span class="p">,</span>
+    <span class="n">powerschool_dlt_nightly_asset_job_schedule</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Run the full test file</strong></li>
+</ul>
+<p>Run:
+<code>cd &lt;worktree&gt; &amp;&amp; uv run pytest tests/libraries/test_dlt_powerschool_assets.py -v</code>
+Expected: all PASS. Also sanity-check tier sizes inline:
+<code>uv run python -c "from teamster.code_locations.kipppaterson.powerschool.sis.dlt.schedules import _tier_targets; print(len(_tier_targets('intraday')), len(_tier_targets('nightly')))"</code>
+Expected: <code>23 25</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/teamster/code_locations/kipppaterson/powerschool/sis/dlt/<span class="w"> </span>tests/libraries/test_dlt_powerschool_assets.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kipppaterson): probe-gated single multi-asset powerschool dlt config&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-validation-docs">Task 5: Validation + docs</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kipppaterson/CLAUDE.md</code> (PowerSchool via
+  dlt section)</li>
+</ul>
+<p><strong>Interfaces:</strong> none.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Validate definitions and run the broader test suite</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;worktree&gt;
+uv<span class="w"> </span>run<span class="w"> </span>dagster-dbt<span class="w"> </span>project<span class="w"> </span>prepare-and-package<span class="w"> </span>--file<span class="w"> </span>src/teamster/code_locations/kipppaterson/__init__.py
+uv<span class="w"> </span>run<span class="w"> </span>dagster<span class="w"> </span>definitions<span class="w"> </span>validate<span class="w"> </span>-m<span class="w"> </span>teamster.code_locations.kipppaterson.definitions
+uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/libraries/test_dlt_powerschool_assets.py<span class="w"> </span>tests/test_dagster_definitions.py<span class="w"> </span>-v
+</code></pre></div>
+<p>Expected: validate succeeds; tests pass. (If validate fails on missing env vars
+unrelated to this change, fall back to
+<code>uv run python -c "import teamster.code_locations.kipppaterson.definitions"</code>.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update <code>code_locations/kipppaterson/CLAUDE.md</code></strong></li>
+</ul>
+<p>Rewrite the "PowerSchool via dlt" bullet list items that describe per-table
+assets and the go-live pool note. Replace the paragraph beginning "Assets are
+defined in <code>powerschool/sis/dlt/</code>" so the section reads (keep surrounding
+content):</p>
+<div class="highlight"><pre><span></span><code>Paterson ingests PowerSchool with <span class="gs">**dlt**</span>, syncing directly from its Oracle
+database through an in-process paramiko SSH tunnel (<span class="sb">`ssh_powerschool`</span> resource,
+<span class="sb">`enable_legacy_rsa=True`</span>) and landing to BigQuery via keyless ADC (issue <span class="ni">#3807</span>).
+This is the pilot/template for migrating the ODBC districts (<span class="sb">`kippnewark`</span>,
+<span class="sb">`kippcamden`</span>, <span class="sb">`kippmiami`</span>) off <span class="sb">`sshpass`</span>. ONE probe-gated <span class="sb">`@dlt_assets`</span>
+multi-asset covers all 48 tables (<span class="sb">`powerschool/sis/dlt/`</span>): each table&#39;s dlt
+resource probes <span class="sb">`COUNT(*)`</span>/<span class="sb">`MAX(cursor_column)`</span> and full-replaces only on
+signature drift (signature in dlt resource state, restored from BigQuery);
+<span class="sb">`cursor_column: null`</span> tables always replace. Config in
+<span class="sb">`powerschool/sis/dlt/config/assets.yaml`</span>; two schedules in <span class="sb">`schedules.py`</span> subset
+the multi-asset (intraday 15-min = 23 cursor tables; nightly = 25). Design:
+<span class="sb">`docs/superpowers/specs/2026-07-16-powerschool-dlt-probe-gated-sync-design.md`</span>.
+</code></pre></div>
+<p>And replace the go-live bullet ("set a low concurrency limit...") with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">-</span><span class="w"> </span>The <span class="sb">`dlt_powerschool_kipppaterson`</span> pool stays at limit 1 (Dagster+ deployment
+  settings, UI) so an overrunning tick serializes with the next instead of
+  racing it
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Trunk-check changed markdown, commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>&lt;worktree&gt;
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span>src/teamster/code_locations/kipppaterson/CLAUDE.md<span class="w"> </span>&lt;/dev/null
+git<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;docs(kipppaterson): describe probe-gated powerschool dlt sync&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-6-branch-deployment-end-to-end-timing-spike-item-3">Task 6: Branch-deployment end-to-end + timing (spike item 3)</h3>
+<p>Requires push + CI deploy; coordinate with the user before pushing (dbt Cloud CI
+on PR #4415 restarts on push — confirm it is in a terminal state first).</p>
+<p><strong>Files:</strong> none (operational validation; results recorded in the spec's
+Baseline/Spike sections + PR comment).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push the branch</strong> (after confirming dbt Cloud CI is idle)</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-powerschool-dlt-paterson<span class="w"> </span>push
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wait for the branch deployment</strong></li>
+</ul>
+<p>Watch the PR's <code>deploy</code> Actions job; recover the branch-deployment hash from the
+log line <code>Deploying to branch deployment {hash}</code>. First MCP call against a
+dormant deployment may throw <code>DagsterUserCodeUnreachableError</code> — retry after
+~90s.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Full-load run (timing baseline)</strong></li>
+</ul>
+<p>Launch one run selecting ALL 48 asset keys via
+<code>mcp__dagster__launch_run(deployment={hash}, confirm=False first)</code>. Fresh
+pipeline state → every table full-loads. Record wall-clock (run
+<code>startTime</code>→<code>endTime</code>) in the spec's Baseline section (spike item 3). Expect
+under ~10 min.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Idle re-run (gate verification)</strong></li>
+</ul>
+<p>Immediately launch the same selection again. Expected: run SUCCEEDS, zero or
+near-zero materializations (only tables that genuinely changed between runs),
+per-table <code>unchanged, skipped</code> log lines in compute logs
+(<code>get_run_compute_logs</code>), runtime ~1-2 min.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Data verification (BigQuery MCP)</strong></p>
+</li>
+<li>
+<p><code>SELECT count(*) FROM dagster_kipppaterson_dlt_powerschool.students</code> matches
+  the run's <code>rows_loaded</code> metadata (<code>mcp__dagster__get_asset_materializations</code>).</p>
+</li>
+<li>
+<p><code>_dlt_pipeline_state</code> has a row for pipeline <code>powerschool</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Record results + update spec, commit, comment on PR #4415</strong></p>
+</li>
+</ul>
+<p>Update the spec's Spike item 3 and Baseline with measured numbers; commit
+(<code>docs(powerschool): record collapsed-run timing</code>); summarize the E2E evidence
+in a PR #4415 comment (no PII — counts and durations only).</p>
+<hr />
+<h2 id="self-review-notes">Self-review notes</h2>
+<ul>
+<li>Spec coverage: op-gate probe + changed-set selection + resource_state
+  signature write (Task 3), empty-at-source handled automatically by
+  truncate-on-zero-yield — no special case (Task 3 / spec Edge cases),
+  config/cursor map (Task 4), schedules subsetting + tiers (Task 4), pool limit
+  1 + max_runtime (Task 4 tags + CLAUDE.md, pool limit is a UI setting that
+  already exists), ODBC resource elimination (Paterson never wired
+  <code>db_powerschool</code> for dlt — no change needed), spike executed → in-resource
+  gate rejected, pivoted to op-gate (Task 1, recorded in spec Spike section),
+  collapsed-run timing + state-preservation E2E (Task 6), migration first-run
+  full load (Task 6 step 3), docs (Task 5).</li>
+<li><code>select_columns</code> parity (<code>cc</code>, <code>u_studentsuserfields</code>, <code>log</code>) is explicitly
+  out of scope per spec.</li>
+<li>Types consistent: <code>PowerSchoolTable</code> / <code>probe_signature</code> signatures match
+  between Tasks 2-4.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

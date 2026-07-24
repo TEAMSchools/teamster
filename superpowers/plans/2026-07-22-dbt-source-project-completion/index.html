@@ -1,0 +1,2111 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>_dbt_source_project Completion Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_dbt_source_project-completion-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              _dbt_source_project Completion Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transformation-patterns-referenced-by-every-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transformation patterns (referenced by every task)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-1a-rename-the-macro-1-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch 1a — Rename the macro (1 PR)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-1b-backfill-regex-producers-3-prs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch 1b — Backfill regex-producers (3 PRs)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Batch 1b — Backfill regex-producers (3 PRs)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pr-1b-1-powerschool-30-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 1b-1 — powerschool (30 files)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-1b-2-assessment-sources-illuminate-dlt-pearson-fldoe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 1b-2 — assessment sources (illuminate-dlt + pearson + fldoe)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-1b-3-misc-sources-deanslist-overgrad-finalsite-schoolmint-titan-zendesk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 1b-3 — misc sources (deanslist + overgrad + finalsite + schoolmint + titan + zendesk)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-1c-crosswalk-carve-out-1-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch 1c — Crosswalk carve-out (1 PR)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-2-consumer-join-swaps-pattern-s-by-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch 2 — Consumer join swaps (Pattern S), by directory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Batch 2 — Consumer join swaps (Pattern S), by directory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pr-2a-1-tableau-gradebook-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2a-1 — tableau gradebook family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-2a-2-tableau-assessmentstate-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2a-2 — tableau assessment/state family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-2a-3-tableau-attendanceculturemisc-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2a-3 — tableau attendance/culture/misc family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-2b-tableau-intermediate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2b — tableau intermediate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-2c-extractsgoogle-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2c — extracts/google (12)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-2d-extractsdeanslist-clever-powerschool-littlesis-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2d — extracts/deanslist + clever + powerschool + littlesis (13)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-2e-non-extract-consumers-18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2e — non-extract consumers (18)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-2f-qa-tests-analyses-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2f — qa + tests + analyses (5)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#batch-3-macro-removal-docs-1-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch 3 — Macro removal + docs (1 PR)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-review notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#execution-findings-scope-refinement-discovered-during-batch-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution findings — scope refinement (discovered during Batch 1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-22-dbt-source-project-completion.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="_dbt_source_project-completion-implementation-plan"><code>_dbt_source_project</code> Completion Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Finish #3142 — every <code>union_relations</code> view exposes
+<code>_dbt_source_project</code>, every <code>union_dataset_join_clause</code> call is replaced by a
+<code>_dbt_source_project</code> equality, and the macro is deleted.</p>
+<p><strong>Architecture:</strong> A behavior-preserving refactor in three dependency-ordered
+batches: (1) rename the producer macro and backfill the column on every union
+view, (2) swap consumer joins directory-by-directory, (3) delete the legacy
+macro and update docs. Each lettered sub-step is its own PR.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), Jinja macros, dbt contracts, sqlfluff/trunk.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Spec:
+  <code>docs/superpowers/specs/2026-07-22-dbt-source-project-completion-design.md</code>.</li>
+<li>Macro signature: <code>extract_source_project(relation="")</code> — qualified when an
+  alias is passed, unqualified when omitted.</li>
+<li><strong>Producer gate:</strong> a consumer join may be swapped only after <strong>both</strong> joined
+  union views expose <code>_dbt_source_project</code>. Batch 1 fully precedes Batch 2;
+  Batch 2 fully precedes Batch 3.</li>
+<li><strong>Carve-out sources</strong> (iReady, renlearn, amplify mClass) resolve
+  <code>_dbt_source_project</code> from
+  <code>int_people__location_crosswalk.location_dagster_code_location</code>, NOT the
+  regex.</li>
+<li>Contract-enforced layers (<code>staging/</code>, <code>marts/</code>) require the new column in the
+  model's <code>properties.yml</code>; intermediate/<code>base</code> do not.</li>
+<li>All work happens in the worktree
+  <code>/workspaces/teamster/.worktrees/cbini/refactor/claude-source-project-sweep</code>
+  on branch <code>cbini/refactor/claude-source-project-sweep</code>. Use
+  <code>git -C &lt;worktree&gt;</code> and run dbt with
+  <code>--project-dir &lt;worktree&gt;/src/dbt/kipptaf</code>.</li>
+<li>Run <code>uv run dbt deps --project-dir &lt;worktree&gt;/src/dbt/kipptaf</code> once in a fresh
+  worktree before any build.</li>
+<li><code>--target prod</code> dbt runs are classifier-blocked; use <code>--target dev --defer</code>
+  with <code>--state /workspaces/teamster/src/dbt/kipptaf/target/prod</code> (absolute).</li>
+<li>Lint before every push:
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force</code> the changed files, run
+  with cwd set to the worktree.</li>
+<li>Commit trailer:
+  <code>Co-Authored-By: Claude Opus 4.8 (1M context) &lt;noreply@anthropic.com&gt;</code>. PR
+  bodies ref <code>#3142</code>.</li>
+</ul>
+<hr />
+<h2 id="transformation-patterns-referenced-by-every-task">Transformation patterns (referenced by every task)</h2>
+<p><strong>Pattern R — rename (Batch 1a):</strong> <code>extract_code_location(X)</code> →
+<code>extract_source_project(X)</code>; <code>extract_code_location(table="X")</code> →
+<code>extract_source_project(relation="X")</code>; the macro definition is renamed and
+gains the optional arg. No other change.</p>
+<p><strong>Pattern P — producer add (Batch 1b):</strong> in a union view's final <code>select</code>, add
+the column. Prefer the no-arg form in bare-<code>select *</code> / AM04 / unit-tested
+views:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- select-* view (keep the AM04 trunk-ignore already present)</span>
+<span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">extract_source_project</span><span class="p">()</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">union_relations</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1">-- explicit / qualified-star view</span>
+<span class="k">select</span><span class="w"> </span><span class="n">ur</span><span class="p">.</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="n">extract_source_project</span><span class="p">(</span><span class="ss">&quot;ur&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ur</span>
+</code></pre></div>
+<p><strong>Pattern I — inline → macro (Batch 1b):</strong> replace an inline
+<code>regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project</code>
+with <code>extract_source_project() as _dbt_source_project</code> (or the qualified form if
+the inline was qualified).</p>
+<p><strong>Pattern X — crosswalk (Batch 1c):</strong> the model must join
+<code>int_people__location_crosswalk</code> on its school/location column and project:</p>
+<div class="highlight"><pre><span></span><code><span class="n">lc</span><span class="p">.</span><span class="n">location_dagster_code_location</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+</code></pre></div>
+<p>If the model lacks a location join, add it
+(<code>left join {{ ref("int_people__location_crosswalk") }} as lc on &lt;school&gt; = lc.location_name</code>).</p>
+<p><strong>Pattern S — consumer swap (Batch 2):</strong> in a join clause, replace the macro:</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- before</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;other_union_model&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">b</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">union_dataset_join_clause</span><span class="p">(</span><span class="n">left_alias</span><span class="o">=</span><span class="ss">&quot;a&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">right_alias</span><span class="o">=</span><span class="ss">&quot;b&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+
+<span class="c1">-- after</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;other_union_model&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">b</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">id</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+</code></pre></div>
+<p>If alias <code>a</code> or <code>b</code> does not yet expose <code>_dbt_source_project</code>, add it to that
+CTE's <code>select</code> first (it originates from the union view fixed in Batch 1).</p>
+<p><strong>Pattern C — contract column:</strong> for a contracted producer/consumer, add to
+<code>properties.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">_dbt_source_project</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">KIPP region code location derived from the source relation.</span>
+</code></pre></div>
+<hr />
+<h2 id="batch-1a-rename-the-macro-1-pr">Batch 1a — Rename the macro (1 PR)</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/dbt/kipptaf/macros/utils.sql</code> (macro def)</li>
+<li>Modify: all files calling <code>extract_code_location</code> (~45 producer sites + 2
+  non-producer sites <code>int_students__fldoe_fte.sql</code>,
+  <code>qa_edplan__powerschool_mismatch.sql</code>)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: macro <code>extract_source_project(relation="")</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Rewrite the macro definition</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">macro</span><span class="w"> </span><span class="n">extract_source_project</span><span class="p">(</span><span class="n">relation</span><span class="o">=</span><span class="ss">&quot;&quot;</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">    </span><span class="n">regexp_extract</span><span class="p">(</span>
+<span class="w">        </span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">relation</span><span class="w"> </span><span class="o">%</span><span class="err">}{{</span><span class="w"> </span><span class="n">relation</span><span class="w"> </span><span class="err">}}</span><span class="p">.</span><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endif</span><span class="w"> </span><span class="o">%</span><span class="err">}</span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">        </span><span class="n">r</span><span class="s1">&#39;(kipp\w+)_&#39;</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endmacro</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+</code></pre></div>
+<p>(Delete the old <code>extract_code_location</code> macro. Leave <code>union_dataset_join_clause</code>
+and <code>extract_region</code> untouched — <code>union_dataset_join_clause</code> still references
+the old name, so update its body to call <code>extract_source_project</code>.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Sweep all call sites</strong> — replace <code>extract_code_location(</code> with
+      <code>extract_source_project(</code> and the keyword <code>table=</code> with <code>relation=</code>:</li>
+</ul>
+<p>Run (from worktree):</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rl<span class="w"> </span><span class="s1">&#39;extract_code_location&#39;</span><span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--include<span class="o">=</span><span class="s1">&#39;*.sql&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="p">|</span><span class="w"> </span>xargs<span class="w"> </span>sed<span class="w"> </span>-i<span class="w"> </span><span class="s1">&#39;s/extract_code_location(table=/extract_source_project(relation=/g; s/extract_code_location(/extract_source_project(/g&#39;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify no references remain</strong></li>
+</ul>
+<p>Run: <code>grep -rn 'extract_code_location' src/dbt/kipptaf</code> → Expected: only the
+docs/CLAUDE.md prose (fixed in Batch 3); <strong>0</strong> in <code>*.sql</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Compile to confirm identical render</strong></li>
+</ul>
+<p>Run: <code>uv run dbt parse --project-dir src/dbt/kipptaf --target dev</code> Expected:
+parses with no macro-resolution errors.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Lint</strong></li>
+</ul>
+<p>Run: <code>/workspaces/teamster/.trunk/tools/trunk check --force &lt;changed .sql&gt;</code> (cwd
+= worktree). Expected: no new issues.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit + push + PR</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>add<span class="w"> </span>-u
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor(dbt): rename extract_code_location to extract_source_project (#3142)&quot;</span>
+git<span class="w"> </span>-C<span class="w"> </span>&lt;worktree&gt;<span class="w"> </span>push
+</code></pre></div>
+<p>PR body: "Mechanical rename, behavior-preserving. Refs #3142."</p>
+<hr />
+<h2 id="batch-1b-backfill-regex-producers-3-prs">Batch 1b — Backfill regex-producers (3 PRs)</h2>
+<p>All 53 regex-producers apply <strong>Pattern P</strong> (or <strong>Pattern I</strong> for the 9 inline
+copies), plus <strong>Pattern C</strong> for the <code>staging*</code> ones. <strong>Skip disabled
+integrations</strong> — they will not build: <code>adp/workforce_now/fivetran/*</code> and
+<code>illuminate/fivetran/*</code> (per <code>kipptaf/CLAUDE.md</code> disabled list). Apply the macro
+to them for consistency but note in the PR they are unverifiable locally.</p>
+<h3 id="pr-1b-1-powerschool-30-files">PR 1b-1 — powerschool (30 files)</h3>
+<p><strong>Files (Modify SQL + <code>properties.yml</code> for <code>stg_*</code>):</strong>
+<code>int_powerschool__calendar_rollup</code>, <code>int_powerschool__category_grades_pivot</code>,
+<code>int_powerschool__district_entry_date</code>, <code>int_powerschool__final_grades_pivot</code>,
+<code>int_powerschool__gradescaleitem_lookup</code>,
+<code>int_powerschool__section_grade_config</code>, <code>int_powerschool__teachers</code>,
+<code>stg_powerschool__attendance</code>, <code>stg_powerschool__attendance_code</code>,
+<code>stg_powerschool__cc</code>, <code>stg_powerschool__fte</code>, <code>stg_powerschool__gen</code>,
+<code>stg_powerschool__gpnode</code>, <code>stg_powerschool__gpprogresssubject</code>,
+<code>stg_powerschool__gpprogresssubjectearned</code>,
+<code>stg_powerschool__gpprogresssubjectenrolled</code>, <code>stg_powerschool__log</code>,
+<code>stg_powerschool__pgfinalgrades</code>, <code>stg_powerschool__roledef</code>,
+<code>stg_powerschool__s_stu_x</code>, <code>stg_powerschool__sectionteacher</code>,
+<code>stg_powerschool__studentrace</code>, <code>stg_powerschool__studenttest</code>,
+<code>stg_powerschool__studenttestscore</code>, <code>stg_powerschool__terms</code>,
+<code>stg_powerschool__test</code>, <code>stg_powerschool__testscore</code>,
+<code>stg_powerschool__u_storedgrades_de</code>, <code>stg_powerschool__users</code>,
+<code>stg_powerschool__userscorefields</code></p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Apply Pattern P to each SQL (Pattern I where inline already
+      exists), Pattern C to each <code>stg_*</code> <code>properties.yml</code>. Inspect each: if it
+      is a bare <code>select *</code> with an AM04 trunk-ignore, use
+      <code>extract_source_project()</code> (no arg); if <code>select ur.*</code>/explicit, use
+      <code>extract_source_project("ur")</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Build + verify column present, row count unchanged</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>stg_powerschool__cc<span class="w"> </span>stg_powerschool__terms<span class="w"> </span>int_powerschool__teachers<span class="w">  </span><span class="c1"># (repeat/expand for the set)</span>
+</code></pre></div>
+<p>Expected: all build; <code>_dbt_source_project</code> populated with <code>kipp*</code> values;
+per-model row count equals prod baseline.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Lint</strong> the changed <code>.sql</code>/<code>.yml</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit + push + PR</strong>
+      (<code>refactor(dbt): add _dbt_source_project to powerschool union views (#3142)</code>).</li>
+</ul>
+<h3 id="pr-1b-2-assessment-sources-illuminate-dlt-pearson-fldoe">PR 1b-2 — assessment sources (illuminate-dlt + pearson + fldoe)</h3>
+<p><strong>Files:</strong> <code>int_illuminate__agg_student_responses</code> (dlt),
+<code>int_illuminate__repository_data</code>, <code>stg_illuminate__national_assessments__psat</code>,
+<code>stg_pearson__student_list_report</code>, <code>stg_pearson__student_test_update</code>,
+<code>int_fldoe__fast_standard_performance_unpivot</code>. (Disabled,
+apply-but-unverifiable: <code>int_illuminate__agg_student_responses</code> (fivetran),
+<code>stg_illuminate__aptest</code>, <code>stg_illuminate__psat</code>, <code>stg_illuminate__psat89</code>.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Steps as PR 1b-1 (Patterns P/I + C), building the enabled models.</li>
+</ul>
+<h3 id="pr-1b-3-misc-sources-deanslist-overgrad-finalsite-schoolmint-titan-zendesk">PR 1b-3 — misc sources (deanslist + overgrad + finalsite + schoolmint + titan + zendesk)</h3>
+<p><strong>Files:</strong> <code>int_deanslist__incidents__attachments</code>,
+<code>int_deanslist__students__custom_fields__pivot</code>, <code>stg_deanslist__behavior</code>,
+<code>stg_deanslist__terms</code>, <code>stg_deanslist__users</code>, <code>int_overgrad__admissions</code>,
+<code>stg_overgrad__admissions</code>, <code>stg_finalsite__status_report</code>,
+<code>stg_schoolmint_grow__generic_tags</code>, <code>stg_titan__income_form_data</code>,
+<code>int_zendesk__ticket_metrics_union</code>. (Disabled, apply-but-unverifiable:
+<code>int_adp_workforce_now__person_communication_pivot</code>,
+<code>int_adp_workforce_now__worker_organizational_unit_pivot</code>.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Steps as PR 1b-1.</li>
+</ul>
+<hr />
+<h2 id="batch-1c-crosswalk-carve-out-1-pr">Batch 1c — Crosswalk carve-out (1 PR)</h2>
+<p><strong>Files (all apply Pattern X + Pattern C for <code>stg_*</code>):</strong></p>
+<ul class="task-list">
+<li>iReady: <code>int_iready__instruction_by_lesson</code>,
+  <code>int_iready__instruction_by_lesson_pro</code>,
+  <code>int_iready__instructional_usage_data</code>,
+  <code>int_iready__personalized_instruction_unpivot</code>,
+  <code>stg_iready__personalized_instruction_summary</code></li>
+<li>renlearn: <code>stg_renlearn__fast_star</code>, <code>stg_renlearn__star_dashboard_standards</code></li>
+<li>amplify mClass: <code>stg_amplify__mclass__sftp__benchmark_student_summary</code>,
+  <code>stg_amplify__mclass__sftp__pm_student_summary</code>,
+  <code>stg_amplify__mclass__sftp__pm_student_summary_aimline</code></li>
+<li>
+<p>Reference (already crosswalk-resolved, normalize pattern to match):
+  <code>stg_renlearn__star</code>, <code>int_iready__diagnostic_results</code>,
+  <code>int_amplify__mclass__benchmark_student_summary</code>,
+  <code>int_amplify__mclass__pm_student_summary</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Verify each unions a shared/non-region relation</strong> — confirm the
+      model unions a <code>kippnj_*</code> source (iReady/renlearn) or a method-keyed union
+      (amplify). If a listed model instead unions region-bearing relations, use
+      Pattern P/I (macro) rather than Pattern X.</p>
+</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2:</strong> Apply Pattern X (add the <code>int_people__location_crosswalk</code> join
+      where absent; project
+      <code>location_dagster_code_location as _dbt_source_project</code>). Add Pattern C to
+      the <code>stg_*</code> <code>properties.yml</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build + verify home region</strong> — a Newark iReady/renlearn row
+      reads <code>kippnewark</code> (NOT <code>kippnj</code>); a Camden row reads <code>kippcamden</code>; row
+      counts match prod.</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>stg_renlearn__fast_star<span class="w"> </span>int_iready__instruction_by_lesson
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Lint. Step 5: Commit + push + PR</strong>
+      (<code>refactor(dbt): resolve _dbt_source_project via crosswalk for iready/renlearn/amplify (#3142)</code>).</li>
+</ul>
+<hr />
+<h2 id="batch-2-consumer-join-swaps-pattern-s-by-directory">Batch 2 — Consumer join swaps (Pattern S), by directory</h2>
+<p><strong>Gate:</strong> run this only after all Batch 1 PRs merge. Before each PR, for every
+<code>union_dataset_join_clause</code> call in its files, confirm both aliased CTEs expose
+<code>_dbt_source_project</code> (grep the compiled SQL); if not, thread it through the
+CTE.</p>
+<p>Common per-PR cycle for each task below:</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Apply Pattern S to every <code>union_dataset_join_clause</code> in the file set;
+      thread the column through CTEs as needed; add Pattern C for contracted
+      models.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Build the changed models <code>--target dev --defer</code>; confirm <strong>row count and
+      distinct-key count equal the prod baseline</strong> (algebraic identity → exact
+      match).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Lint; commit; push; PR
+      (<code>refactor(dbt): swap union_dataset_join_clause in &lt;dir&gt; (#3142)</code>).</li>
+</ul>
+<h3 id="pr-2a-1-tableau-gradebook-family">PR 2a-1 — tableau gradebook family</h3>
+<p><code>rpt_tableau__gradebook_dashboard</code>, <code>rpt_tableau__gradebook_assignments</code>,
+<code>rpt_tableau__gradebook_gpa</code>, <code>rpt_tableau__assignment_checks</code>,
+<code>rpt_tableau__student_course_grades</code>, <code>rpt_tableau__qbl</code>.</p>
+<h3 id="pr-2a-2-tableau-assessmentstate-family">PR 2a-2 — tableau assessment/state family</h3>
+<p><code>rpt_tableau__state_assessments_dashboard</code>, <code>rpt_tableau__assessment_dashboard</code>,
+<code>rpt_tableau__ddi_dashboard</code>, <code>rpt_tableau__college_assessment_dashboard_de</code>,
+<code>rpt_tableau__college_assessment_dashboard_historic</code>,
+<code>rpt_tableau__state_testing_accomodations</code>, <code>rpt_tableau__power_standards</code>,
+<code>rpt_tableau__academic_goals_rollup</code>, <code>rpt_tableau__iready_apm</code>,
+<code>rpt_tableau__miami_k2_iready</code>, <code>rpt_tableau__dibels_dashboard</code>,
+<code>rpt_tableau__graduation_requirements</code>.</p>
+<h3 id="pr-2a-3-tableau-attendanceculturemisc-family">PR 2a-3 — tableau attendance/culture/misc family</h3>
+<p><code>rpt_tableau__attendance_dashboard</code>,
+<code>rpt_tableau__attendance_chronic_absenteeism_log</code>,
+<code>rpt_tableau__suspension_over_time</code>, <code>rpt_tableau__consequence_dashboard</code>,
+<code>rpt_tableau__okrts_behavior</code>, <code>rpt_tableau__school_culture_dashboard_nj</code>,
+<code>rpt_tableau__mtss_rti</code>, <code>rpt_tableau__community_service</code>,
+<code>rpt_tableau__home_instruction</code>, <code>rpt_tableau__home_instruction_queue</code>,
+<code>rpt_tableau__hs_early_warning_dashboard</code>, <code>rpt_tableau__crdc_roster</code>,
+<code>rpt_tableau__nj_school_register</code>, <code>rpt_tableau__gpa_analysis</code>,
+<code>rpt_tableau__student_info_audit</code>,
+<code>rpt_tableau__student_attrition_over_time_v1</code>, <code>rpt_tableau__ops_dashboard</code>.</p>
+<h3 id="pr-2b-tableau-intermediate">PR 2b — tableau intermediate</h3>
+<p><code>int_tableau__gradebook_audit_student_scaffold</code>,
+<code>int_tableau__gradebook_audit_teacher_scaffold</code>,
+<code>int_tableau__gradebook_audit_categories_teacher</code>,
+<code>int_tableau__gradebook_audit_assignments_teacher</code>,
+<code>int_tableau__gradebook_audit_assignments_student</code>,
+<code>int_tableau__state_assessments_demographic_comps</code>.</p>
+<h3 id="pr-2c-extractsgoogle-12">PR 2c — extracts/google (12)</h3>
+<p><code>rpt_gsheets__nj_state_test_roster</code>, <code>rpt_gsheets__athletic_eligibility</code>,
+<code>rpt_gsheets__kippfwd_miami_roster</code>, <code>rpt_gsheets__csgf_hs_enrollment</code>,
+<code>rpt_gsheets__csgf_hs_ap_offerings</code>, <code>rpt_gsheets__grad_plan_tracking</code>,
+<code>rpt_gsheets__award_ceremony_gpa</code>, <code>rpt_gsheets__mtss_rti</code>,
+<code>rpt_gsheets__absence_streak_roster</code>, <code>rpt_gsheets__school_metrics_extract</code>,
+<code>rpt_gsheets__gpa_roster</code>, <code>rpt_gsheets__gpa_flags_report</code>,
+<code>int_google_sheets__dibels_pm_expectations</code> (13 incl. the intermediate).</p>
+<h3 id="pr-2d-extractsdeanslist-clever-powerschool-littlesis-13">PR 2d — extracts/deanslist + clever + powerschool + littlesis (13)</h3>
+<p><code>rpt_deanslist__promo_status</code>, <code>rpt_deanslist__student_misc</code>,
+<code>rpt_deanslist__transcript_gpas</code>, <code>rpt_deanslist__final_grades</code>,
+<code>rpt_deanslist__hs_transcript_programs</code>, <code>rpt_deanslist__state_test_scores</code>,
+<code>rpt_deanslist__designations</code>, <code>rpt_deanslist__transcript_grades</code>,
+<code>rpt_clever__enrollments</code>, <code>rpt_clever__sections</code>,
+<code>rpt_powerschool__autocomm_students</code>, <code>rpt_powerschool__autocomm_teachers</code>,
+<code>rpt_littlesis__enrollments</code>.</p>
+<h3 id="pr-2e-non-extract-consumers-18">PR 2e — non-extract consumers (18)</h3>
+<p><code>int_students__contacts</code>, <code>int_students__athletic_eligibility</code>,
+<code>int_extracts__student_enrollments_subjects</code>,
+<code>int_assessments__course_enrollments</code>, <code>int_kippadb__roster</code>,
+<code>int_powerschool__state_assessments_transfer_scores</code>, <code>int_powerschool__log</code>,
+<code>int_powerschool__ps_adaadm_daily_ctod</code>, <code>int_powerschool__gpnode</code>,
+<code>int_powerschool__gpprogress_grades</code>, <code>base_powerschool__sections</code>,
+<code>int_reporting__promotional_status</code>, <code>int_topline__gpa_term_weekly</code>,
+<code>int_topline__iready_diagnostic_weekly</code>, <code>int_topline__gpa_cumulative_weekly</code>,
+<code>bridge_course_section_teachers</code>, <code>fct_family_communications</code>, <code>dim_students</code>.</p>
+<p><strong>Ordering within 2e:</strong> some of these are themselves union producers feeding
+others (<code>int_powerschool__gpnode</code> → <code>int_powerschool__gpprogress_grades</code> →
+<code>int_topline__gpa_term_weekly</code>). Do producer models before their consumers
+within the PR; keep each model's own swap atomic.</p>
+<h3 id="pr-2f-qa-tests-analyses-5">PR 2f — qa + tests + analyses (5)</h3>
+<p><code>qa_powerschool__transfer_records</code>, <code>qa_edplan__powerschool_mismatch</code>,
+<code>test_incorrect_student_number_pearson</code>,
+<code>collegeboard_ap_tiered_crosswalk_match</code>,
+<code>collegeboard_ap_downstream_lineage_root_cause</code>. (Also convert the 2
+non-producer <code>extract_source_project</code> filter/alias sites in
+<code>int_students__fldoe_fte</code> — done in 2e with <code>int_students__</code> — and
+<code>qa_edplan__powerschool_mismatch</code> to plain <code>_dbt_source_project</code> refs.)</p>
+<hr />
+<h2 id="batch-3-macro-removal-docs-1-pr">Batch 3 — Macro removal + docs (1 PR)</h2>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>src/dbt/kipptaf/macros/utils.sql</code> (delete
+  <code>union_dataset_join_clause</code>)</li>
+<li>Modify: <code>src/dbt/kipptaf/CLAUDE.md</code>, <code>src/dbt/kipptaf/models/marts/CLAUDE.md</code></li>
+<li>
+<p>Verify: the 7 half-migrated files carry no residual macro call</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Confirm 0 call sites</strong></p>
+</li>
+</ul>
+<p>Run: <code>grep -rn 'union_dataset_join_clause' src/dbt/kipptaf --include='*.sql'</code>
+Expected: <strong>0</strong> results.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Delete the macro</strong> from <code>utils.sql</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Rewrite the docs</strong> — in <code>kipptaf/CLAUDE.md</code>, replace the
+      <code>union_dataset_join_clause (critical)</code> section with the new rule: "Union
+      views expose <code>_dbt_source_project</code> via <code>extract_source_project()</code>; join on
+      it directly. Exception: crosswalk-resolved sources
+      (iReady/renlearn/amplify mClass) derive it from
+      <code>int_people__location_crosswalk</code>." Remove the "prefer inline" guidance.
+      Update the <code>marts/CLAUDE.md</code> hash-and-join note.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Reconcile half-migrated files</strong> — grep the 7 files; ensure none
+      still calls the macro (all should have been swapped in Batch 2).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Compile</strong> (<code>dbt parse --target dev</code>) — Expected: no
+      <code>union_dataset_join_clause</code> resolution errors (proves nothing still calls
+      it).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Lint</strong> (include the <code>*.md</code>:
+      <code>trunk check --force --no-fix &lt;/dev/null &lt;files&gt;</code>).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Commit + push + PR</strong>
+      (<code>refactor(dbt): remove union_dataset_join_clause macro; update docs (closes #3142)</code>).</li>
+</ul>
+<hr />
+<h2 id="self-review-notes">Self-review notes</h2>
+<ul>
+<li><strong>Spec coverage:</strong> macro rename (1a) ✓, backfill all 124 = 61 existing + 63
+  new split regex(1b)/carve-out(1c) ✓, inline→macro ✓, consumer swaps all 263/90
+  files (2a-2f) ✓, macro delete + docs (3) ✓, contract columns (Pattern C) ✓,
+  carve-out (1c) ✓, half-migrated reconciliation (3) ✓.</li>
+<li><strong>Producer gate</strong> enforced by batch ordering + the pre-swap compiled-SQL
+  check.</li>
+<li><strong>Disabled integrations</strong> (adp/illuminate Fivetran) flagged as
+  apply-but-unverifiable, not silently skipped.</li>
+</ul>
+<hr />
+<h2 id="execution-findings-scope-refinement-discovered-during-batch-1">Execution findings — scope refinement (discovered during Batch 1)</h2>
+<p>The plan's "backfill 63 producers" over-counted. The real rule is <strong>backfill
+every <em>cross-district (region)</em> union view</strong>, not literally every
+<code>union_relations</code> view. A union view whose <code>_dbt_source_relation</code> encodes a
+<em>non-region</em> dimension must be <strong>excluded</strong> — a region regex would yield null.</p>
+<p><strong>Excluded (non-region unions), verified during execution:</strong></p>
+<ul>
+<li><strong>illuminate</strong> — unions response-types (<code>_standard</code>/<code>_group</code>), repository ids,
+  and assessment years, never districts.</li>
+<li><strong>zendesk</strong> (<code>int_zendesk__ticket_metrics_union</code>) — unions current + archive.</li>
+<li><strong>schoolmint_grow</strong> (<code>stg_schoolmint_grow__generic_tags</code>) — unions tag-types.</li>
+<li><strong>adp / illuminate Fivetran</strong> — disabled integrations.</li>
+<li><strong>renlearn</strong> <code>stg_renlearn__fast_star</code>,
+  <code>stg_renlearn__star_dashboard_standards</code> — union <code>kippmiami_renlearn</code> ONLY
+  (FAST is a Florida assessment, Miami-only), so <code>_dbt_source_project</code> would be
+  a constant <code>kippmiami</code> with nothing to disambiguate; they also lack a
+  school/location column (only <code>school_year</code>). Not region-joined (<code>fast_star</code>
+  has no consumers; <code>star_dashboard_standards</code> joins its STAR subquery on
+  <code>assessment_id</code>). (The shared <code>kippnj_renlearn</code> schema applies to
+  <code>stg_renlearn__star</code>, which is a different, already-resolved model.)</li>
+<li><strong>iReady</strong> secondary models (<code>int_iready__instruction_by_lesson</code>(<code>_pro</code>),
+  <code>int_iready__instructional_usage_data</code>,
+  <code>int_iready__personalized_instruction_unpivot</code>,
+  <code>stg_iready__personalized_instruction_summary</code>) — none use
+  <code>union_dataset_join_clause</code> or expose <code>_dbt_source_project</code> (some
+  crosswalk-rewrite <code>_dbt_source_relation</code> internally but do not project the
+  column); only <code>int_iready__diagnostic_results</code> projects it, and it already has
+  it.</li>
+<li><strong>amplify mClass sftp staging</strong> — region is resolved one level up in
+  <code>int_amplify__mclass__benchmark_student_summary</code> /
+  <code>int_amplify__mclass__pm_student_summary</code> (crosswalk), which already have it.</li>
+</ul>
+<p><strong>Batch 1c is therefore a no-op for code.</strong> The carve-out sources'
+region-relevant models (<code>stg_renlearn__star</code>, <code>int_iready__diagnostic_results</code>,
+<code>int_amplify__mclass__*</code>) already carry <code>_dbt_source_project</code> from PR #4024.</p>
+<p><strong>Batch 1 (producer backfill) is complete</strong> across PRs #4503 / #4504 / #4505.</p>
+<p><strong>Batch 2 gating (stronger than stated):</strong> a consumer whose join alias reads a
+<strong>snapshot</strong> (e.g. <code>int_topline__gpa_term_weekly</code> reads
+<code>snapshot_powerschool__gpa_term</code>) cannot expose <code>_dbt_source_project</code> on that
+side until the producer PR <strong>merges and the snapshot re-runs in prod</strong> — so
+Batch 2 is gated on Batch 1 <em>merging</em>, not just the branch carrying the columns.</p>
+<p><strong>Two recurring build-only bugs</strong> (both lint/parse-clean, fail at BigQuery
+build):</p>
+<ul>
+<li>bare <code>extract_source_project()</code> without <code>{{ }}</code> → "Function not found".</li>
+<li>per-model <code>contract: enforced: true</code> set in <code>properties.yml</code> (not the
+  directory default) → a <code>select *</code> wrap breaks the contract unless the column
+  is added to the yml. Check per file.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

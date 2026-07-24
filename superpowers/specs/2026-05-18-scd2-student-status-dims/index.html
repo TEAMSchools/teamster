@@ -1,0 +1,2171 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>SCD2 dims for IEP, ELL, and meal-eligibility status - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#scd2-dims-for-iep-ell-and-meal-eligibility-status" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SCD2 dims for IEP, ELL, and meal-eligibility status
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Solution
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Solution">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#row-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Row semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source map
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Source map">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dim_iep_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_iep_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_ell_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_ell_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_meal_eligibility_status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_meal_eligibility_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dim-sql-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dim SQL pattern
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dim SQL pattern">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#island-detection-nj-legs-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Island detection (NJ legs only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_dbt_source_project-promotion-additive-upstream-edits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        _dbt_source_project promotion (additive upstream edits)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dim-shapes-pk-columns-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dim shapes (PK, columns, tests)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Dim shapes (PK, columns, tests)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dim_iep_status_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_iep_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_ell_status_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_ell_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_meal_eligibility_status_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_meal_eligibility_status
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contracts-and-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contracts and constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strict-chain-traversal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Strict-chain traversal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_dates-sentinel-row" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_dates sentinel row
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cube-exposure-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cube exposure update
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dim_students-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_students change
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hash-change-posture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hash-change posture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-merge-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-merge checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation order
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-05-18-scd2-student-status-dims.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="scd2-dims-for-iep-ell-and-meal-eligibility-status">SCD2 dims for IEP, ELL, and meal-eligibility status</h1>
+<p>Tracking issue: <a href="https://github.com/TEAMSchools/teamster/issues/3960">#3960</a>.</p>
+<h2 id="problem">Problem</h2>
+<p><code>has_iep</code> and <code>meal_eligibility_status</code> were dropped from <code>dim_students</code> in
+<code>af0c2bf22</code> (closes #3723) with the rationale that they are enrollment
+attributes, not student attributes. <code>is_ell</code> remained but was simplified to the
+current PowerSchool <code>studentcorefields.lep_status</code> flag, dropping the prior
+enrollment-date-window logic.</p>
+<p>Net effect at the mart layer:</p>
+<ul>
+<li><strong>IEP</strong> — not surfaced at all. <code>spedlep</code>, <code>special_education_code</code>,
+  <code>special_education_placement</code> live only at enrollment grain in
+  <code>base_powerschool__student_enrollments</code> and downstream <code>int_extracts__*</code>.</li>
+<li><strong>ELL</strong> — surfaced as a single point-in-time boolean on <code>dim_students</code>, with
+  no date-bound logic. Cannot answer "was student X ELL on date Y?"</li>
+<li><strong>Meal eligibility</strong> — not surfaced at all.</li>
+</ul>
+<p>These three attributes are date-bound by nature. The right shape is one
+SCD2-style dimension per attribute, with effective-date spans per student.</p>
+<h2 id="solution">Solution</h2>
+<p>Add three new mart dimensions under <code>src/dbt/kipptaf/models/marts/dimensions/</code>:</p>
+<ul>
+<li><code>dim_iep_status</code></li>
+<li><code>dim_ell_status</code></li>
+<li><code>dim_meal_eligibility_status</code></li>
+</ul>
+<p>Each dim carries one row per (student × effective span) for its attribute.
+Active rows use <code>'9999-12-31'</code> as the end-date sentinel, matching the project's
+snapshot convention.</p>
+<h3 id="row-semantics">Row semantics</h3>
+<p>The dims are <strong>inclusion-based</strong>: a row exists only where the source has a span
+to report. Students with no row covering date Y are treated as "unknown / not
+applicable" — consumers default to <code>false</code> / <code>'No IEP'</code> / <code>null</code> accordingly:</p>
+<div class="highlight"><pre><span></span><code><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">    </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">is_iep</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;dim_iep_status&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">student_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">student_key</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">target_date</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">effective_date_start_key</span>
+<span class="w">                                </span><span class="k">and</span><span class="w"> </span><span class="n">effective_date_end_key</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="k">false</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_iep_on_date</span>
+</code></pre></div>
+<p>This affects the NJ legs (where edplan only sends students with IEPs and
+<code>s_nj_stu_x</code> only carries non-null <code>lepbegindate</code> for students with LEP records)
+and the Paterson + Miami legs (where the dim emits one row per student carrying
+the current value; absence of a row means no student record in scope). Both legs
+share the coalesce-default consumer semantics.</p>
+<p><code>is_ell</code> is removed from <code>dim_students</code> as part of this work. Boolean rollups
+(<code>is_iep</code>, <code>is_ell</code>, <code>is_meal_eligible</code>) live on the new dims as derived
+attributes — not on <code>dim_students</code>.</p>
+<h2 id="source-map">Source map</h2>
+<p>Each dim has two legs: an NJ leg using a native upstream model with
+effective-date columns, and a Paterson + Miami leg pulling current-state values
+from PowerSchool staging.</p>
+<p><strong>Why no enrollment-year reconstruction</strong>: <code>stg_powerschool__studentcorefields</code>
+(the source of <code>spedlep</code> / <code>lep_status</code> for Paterson + Miami) is current-state
+only — one row per student, no per-year history. Joining it across enrollment
+years would propagate the current value backward as fake history. The honest
+shape is one row per student carrying the current value, anchored to the
+earliest observed enrollment.</p>
+<h3 id="dim_iep_status"><code>dim_iep_status</code></h3>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Source model</th>
+<th>Value columns</th>
+<th>Start date</th>
+<th>End date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Newark, Camden</td>
+<td><code>int_edplan__njsmart_powerschool_union</code></td>
+<td><code>spedlep</code> (→ <code>iep_classification</code>), <code>special_education_code</code>, <code>special_education</code> (→ <code>special_education_name</code>)</td>
+<td><code>effective_date</code></td>
+<td><code>effective_end_date</code></td>
+</tr>
+<tr>
+<td>Paterson, Miami</td>
+<td><code>stg_powerschool__studentcorefields</code> joined to <code>base_powerschool__student_enrollments</code> for entry anchor</td>
+<td><code>spedlep</code> (→ <code>iep_classification</code>) only — code / name / placement null</td>
+<td><code>min(entrydate)</code> per student from <code>base_powerschool__student_enrollments</code></td>
+<td><code>'9999-12-31'</code> (open)</td>
+</tr>
+</tbody>
+</table>
+<p>Value-derivation in the Paterson + Miami leg uses the current
+<code>stg_powerschool__studentcorefields.spedlep</code> coalesced to <code>'No IEP'</code>. <code>is_iep</code>
+is derived as <code>iep_classification != 'No IEP'</code>.</p>
+<h3 id="dim_ell_status"><code>dim_ell_status</code></h3>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Source model</th>
+<th>Row emission</th>
+<th>Start date</th>
+<th>End date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Newark, Camden</td>
+<td><code>stg_powerschool__s_nj_stu_x</code></td>
+<td>One row per non-null <code>lepbegindate</code> (plus one per non-null <code>lepbegindate2</code>) — every emitted row has <code>is_ell = true</code></td>
+<td><code>lepbegindate</code></td>
+<td><code>lependdate</code> (9999-12-31 if null)</td>
+</tr>
+<tr>
+<td>Paterson, Miami</td>
+<td><code>stg_powerschool__studentcorefields</code> joined to <code>base_powerschool__student_enrollments</code> for entry anchor</td>
+<td>One row per student where <code>lep_status = true</code>; no row when <code>lep_status</code> is false</td>
+<td><code>min(entrydate)</code> per student from <code>base_powerschool__student_enrollments</code></td>
+<td><code>'9999-12-31'</code> (open)</td>
+</tr>
+</tbody>
+</table>
+<p>The secondary NJ range columns (<code>lepbegindate2</code>, <code>liependdate2</code>) generate
+additional spans where populated.</p>
+<p><strong>Known limitation</strong>: <code>s_nj_stu_x</code> is a current-state table, not a versioned
+one. Historical LEP entry/exit/re-entry transitions that have been overwritten
+in the source are not recoverable. This is acceptable — exit/re-entry is not a
+known real-world ELL pattern in our population. Document in the model's
+<code>description:</code>.</p>
+<h3 id="dim_meal_eligibility_status"><code>dim_meal_eligibility_status</code></h3>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Source model</th>
+<th>Value column</th>
+<th>Start date</th>
+<th>End date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Newark, Camden</td>
+<td><code>stg_titan__person_data</code></td>
+<td><code>eligibility_name</code> (Free / Reduced / Paid / Direct Certification)</td>
+<td><code>eligibility_start_date</code></td>
+<td><code>eligibility_end_date</code></td>
+</tr>
+<tr>
+<td>Paterson, Miami</td>
+<td>Most-recent <code>lunch_status</code> from <code>base_powerschool__student_enrollments</code> per student</td>
+<td><code>lunch_status</code></td>
+<td><code>min(entrydate)</code> per student from <code>base_powerschool__student_enrollments</code></td>
+<td><code>'9999-12-31'</code> (open)</td>
+</tr>
+</tbody>
+</table>
+<p><code>is_meal_eligible</code> derived as
+<code>meal_eligibility IN ('Free', 'Reduced', 'Direct Certification')</code>. Paid / null /
+invalid codes resolve to <code>false</code>.</p>
+<p>For the Paterson + Miami leg, <code>lunch_status</code> is picked from the most recent
+enrollment row per student (e.g. via <code>dbt_utils.deduplicate</code> partitioned by
+student, ordered by <code>entrydate desc</code>) rather than the current PS staging
+snapshot — <code>lunch_status</code> doesn't have a stable single-row analog like
+<code>studentcorefields</code>.</p>
+<h2 id="dim-sql-pattern">Dim SQL pattern</h2>
+<p>Each dim is a single mart-layer model — no <code>int_*</code> intermediate. All logic (NJ
+leg + Paterson/Miami leg, island-collapse for NJ, current-state pick for
+Paterson/Miami) lives inline. Marts/CLAUDE.md only requires <code>rpt_*</code> to buffer
+external consumers from intermediates; mart dims building directly off staging</p>
+<ul>
+<li>existing intermediates is permitted.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- dim_iep_status.sql (illustrative)</span>
+<span class="k">with</span>
+<span class="w">    </span><span class="n">nj_leg</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- Native SCD2 from edplan. Collapse consecutive rows with unchanged</span>
+<span class="w">        </span><span class="c1">-- (spedlep, special_education_code, special_education) into one span.</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="n">spedlep</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">iep_classification</span><span class="p">,</span>
+<span class="w">            </span><span class="n">special_education_code</span><span class="p">,</span>
+<span class="w">            </span><span class="n">special_education</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">special_education_name</span><span class="p">,</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="n">placement_column</span><span class="o">&gt;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">special_education_placement</span><span class="p">,</span>
+<span class="w">            </span><span class="k">min</span><span class="p">(</span><span class="n">effective_date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">effective_date_start</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">                </span><span class="k">max</span><span class="p">(</span><span class="n">effective_end_date</span><span class="p">),</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="s1">&#39;9999-12-31&#39;</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">effective_date_end</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_edplan__njsmart_powerschool_union&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="o">&lt;</span><span class="n">island_id</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="o">&gt;</span><span class="w">      </span><span class="c1">-- see &quot;Island detection&quot; below</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">pm_leg</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- Current-state pick: one row per student in Paterson/Miami, anchored</span>
+<span class="w">        </span><span class="c1">-- to earliest enrollment entrydate, open-ended.</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">enr</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">            </span><span class="k">coalesce</span><span class="p">(</span><span class="n">scf</span><span class="p">.</span><span class="n">spedlep</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;No IEP&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">iep_classification</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">special_education_code</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">special_education_name</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">special_education_placement</span><span class="p">,</span>
+<span class="w">            </span><span class="k">min</span><span class="p">(</span><span class="n">enr</span><span class="p">.</span><span class="n">entrydate</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">effective_date_start</span><span class="p">,</span>
+<span class="w">            </span><span class="nb">date</span><span class="w"> </span><span class="s1">&#39;9999-12-31&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">effective_date_end</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;base_powerschool__student_enrollments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">enr</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__studentcorefields&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">scf</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">students_dcid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scf</span><span class="p">.</span><span class="n">studentsdcid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">union_dataset_join_clause</span><span class="p">(</span>
+<span class="w">                </span><span class="n">left_alias</span><span class="o">=</span><span class="ss">&quot;enr&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">right_alias</span><span class="o">=</span><span class="ss">&quot;scf&quot;</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">region</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;Paterson&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Miami&#39;</span><span class="p">)</span>
+<span class="w">        </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="mi">6</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">unioned</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">nj_leg</span>
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">pm_leg</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span>
+<span class="w">        </span><span class="ss">&quot;student_number&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;_dbt_source_project&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;effective_date_start&quot;</span>
+<span class="w">    </span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">iep_status_key</span><span class="p">,</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">generate_surrogate_key</span><span class="p">([</span><span class="ss">&quot;student_number&quot;</span><span class="p">])</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_key</span><span class="p">,</span>
+<span class="w">    </span><span class="n">iep_classification</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;No IEP&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_iep</span><span class="p">,</span>
+<span class="w">    </span><span class="n">iep_classification</span><span class="p">,</span>
+<span class="w">    </span><span class="n">special_education_code</span><span class="p">,</span>
+<span class="w">    </span><span class="n">special_education_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">special_education_placement</span><span class="p">,</span>
+<span class="w">    </span><span class="n">effective_date_start</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">effective_date_start_key</span><span class="p">,</span>
+<span class="w">    </span><span class="n">effective_date_end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">effective_date_end_key</span><span class="p">,</span>
+<span class="w">    </span><span class="n">effective_date_end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="s1">&#39;9999-12-31&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_current</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">unioned</span>
+</code></pre></div>
+<p><code>dim_ell_status</code> and <code>dim_meal_eligibility_status</code> follow the same shape with
+their respective upstreams and value columns.</p>
+<h3 id="island-detection-nj-legs-only">Island detection (NJ legs only)</h3>
+<p>The NJ legs (<code>int_edplan__njsmart_powerschool_union</code>,
+<code>stg_powerschool__s_nj_stu_x</code>, <code>stg_titan__person_data</code>) collapse consecutive
+rows where the tracked value is unchanged into a single span. Gap-and-island
+pattern:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">flagged</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="o">&lt;</span><span class="n">value_column</span><span class="o">&gt;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lag</span><span class="p">(</span><span class="o">&lt;</span><span class="n">value_column</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                    </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">_dbt_source_project</span>
+<span class="w">                    </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="o">&lt;</span><span class="n">start_date_column</span><span class="o">&gt;</span>
+<span class="w">                </span><span class="p">),</span>
+<span class="w">                </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">                </span><span class="mi">1</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_island_start</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">&lt;</span><span class="k">source</span><span class="o">&gt;</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">islanded</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="o">*</span><span class="p">,</span>
+<span class="w">            </span><span class="k">sum</span><span class="p">(</span><span class="n">is_island_start</span><span class="p">)</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">_dbt_source_project</span>
+<span class="w">                </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="o">&lt;</span><span class="n">start_date_column</span><span class="o">&gt;</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">island_id</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">flagged</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">    </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">    </span><span class="o">&lt;</span><span class="n">value_column</span><span class="o">&gt;</span><span class="p">,</span>
+<span class="w">    </span><span class="k">min</span><span class="p">(</span><span class="o">&lt;</span><span class="n">start_date_column</span><span class="o">&gt;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">effective_date_start</span><span class="p">,</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="k">max</span><span class="p">(</span><span class="o">&lt;</span><span class="n">end_date_column</span><span class="o">&gt;</span><span class="p">),</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="s1">&#39;9999-12-31&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">effective_date_end</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">islanded</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="n">island_id</span>
+</code></pre></div>
+<p>For multi-column value tracking (IEP: <code>spedlep</code> + <code>special_education_code</code> +
+<code>special_education_name</code>), the lag comparison uses <code>format("%T|%T|%T", ...)</code> for
+NULL-safe concatenation per <code>src/dbt/CLAUDE.md</code>.</p>
+<h2 id="_dbt_source_project-promotion-additive-upstream-edits"><code>_dbt_source_project</code> promotion (additive upstream edits)</h2>
+<p>Per <code>marts/CLAUDE.md</code> and
+<a href="https://github.com/TEAMSchools/teamster/issues/3142">#3142</a>, all union models
+feeding this work must materialize <code>_dbt_source_project</code> — downstream consumers
+(these dims) join and hash on the materialized column, not re-derive it from
+<code>_dbt_source_relation</code>.</p>
+<p>Status before this work:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Materializes <code>_dbt_source_project</code>?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>base_powerschool__student_enrollments</code></td>
+<td>✓ (alongside legacy <code>code_location</code>)</td>
+</tr>
+<tr>
+<td><code>int_edplan__njsmart_powerschool_union</code></td>
+<td>✗ — add as additive edit</td>
+</tr>
+<tr>
+<td><code>stg_powerschool__s_nj_stu_x</code> (kipptaf union)</td>
+<td>✗ — add as additive edit</td>
+</tr>
+<tr>
+<td><code>stg_titan__person_data</code> (kipptaf union)</td>
+<td>✗ — add as additive edit</td>
+</tr>
+<tr>
+<td><code>stg_powerschool__studentcorefields</code></td>
+<td>verify; add as additive edit if absent</td>
+</tr>
+</tbody>
+</table>
+<p>Add:</p>
+<div class="highlight"><pre><span></span><code><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;(kipp\w+)_&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+</code></pre></div>
+<p>immediately after the <code>union_relations</code> CTE in each model. Update their
+<code>properties/*.yml</code> to add the column to the contract. Do not drop
+<code>code_location</code> from <code>base_powerschool__student_enrollments</code> — full
+<code>code_location</code> deprecation across consumers is out of scope and will land with
+the rest of #3142.</p>
+<h2 id="dim-shapes-pk-columns-tests">Dim shapes (PK, columns, tests)</h2>
+<h3 id="dim_iep_status_1"><code>dim_iep_status</code></h3>
+<div class="highlight"><pre><span></span><code>iep_status_key                = generate_surrogate_key(student_number, _dbt_source_project, effective_date_start)   -- PK
+student_key                   = generate_surrogate_key(student_number)                                          -- FK → dim_students
+is_iep                        BOOL
+iep_classification            STRING — degenerate
+special_education_code        STRING — degenerate, NJ-only (paired with _name)
+special_education_name        STRING — degenerate, NJ-only (paired with _code)
+special_education_placement   STRING — degenerate, NJ-only
+effective_date_start_key      DATE   — FK → dim_dates
+effective_date_end_key        DATE   — FK → dim_dates (9999-12-31 = active)
+is_current                    BOOL   (effective_date_end_key = &#39;9999-12-31&#39;)
+</code></pre></div>
+<h3 id="dim_ell_status_1"><code>dim_ell_status</code></h3>
+<div class="highlight"><pre><span></span><code>ell_status_key                = generate_surrogate_key(student_number, _dbt_source_project, effective_date_start)   -- PK
+student_key                   FK → dim_students
+is_ell                        BOOL
+effective_date_start_key      DATE   FK → dim_dates
+effective_date_end_key        DATE   FK → dim_dates
+is_current                    BOOL
+</code></pre></div>
+<h3 id="dim_meal_eligibility_status_1"><code>dim_meal_eligibility_status</code></h3>
+<div class="highlight"><pre><span></span><code>meal_eligibility_status_key   = generate_surrogate_key(student_number, _dbt_source_project, effective_date_start)   -- PK
+student_key                   FK → dim_students
+meal_eligibility              STRING — degenerate
+is_meal_eligible              BOOL
+effective_date_start_key      DATE   FK → dim_dates
+effective_date_end_key        DATE   FK → dim_dates
+is_current                    BOOL
+</code></pre></div>
+<h3 id="tests">Tests</h3>
+<p>Each dim:</p>
+<ul>
+<li><code>unique</code> on PK</li>
+<li><code>not_null</code> on PK, <code>student_key</code>, <code>effective_date_start_key</code>,
+  <code>effective_date_end_key</code>, <code>is_current</code>, and the boolean derived attribute
+  (<code>is_iep</code> / <code>is_ell</code> / <code>is_meal_eligible</code>)</li>
+<li><code>relationships</code> from <code>student_key</code> to <code>dim_students.student_key</code></li>
+<li><code>relationships</code> from <code>effective_date_start_key</code> / <code>effective_date_end_key</code> to
+  <code>dim_dates.date_key</code></li>
+<li>Singular test: no overlapping spans per student × <code>_dbt_source_project</code></li>
+</ul>
+<h3 id="contracts-and-constraints">Contracts and constraints</h3>
+<p>Inherited from <code>marts/</code> directory config: <code>contract: enforced: true</code>,
+<code>materialized: view</code>. PK/FK <code>constraints:</code> blocks include
+<code>warn_unsupported: false</code> per marts/CLAUDE.md.</p>
+<h3 id="strict-chain-traversal">Strict-chain traversal</h3>
+<p>These dims FK only to <code>dim_students</code> and <code>dim_dates</code>. No <code>region_key</code>,
+<code>location_key</code>, or shortcut FKs to deeper dims — consumers traverse the chain
+through <code>dim_students</code> to reach location / region context.</p>
+<h3 id="dim_dates-sentinel-row"><code>dim_dates</code> sentinel row</h3>
+<p>The <code>'9999-12-31'</code> end-date sentinel requires a matching row in <code>dim_dates</code> for
+the <code>effective_date_end_key</code> relationships test to pass. Verify the row exists
+before merge; if missing, extend the <code>dim_dates</code> generator to include it
+(additive upstream edit).</p>
+<h2 id="cube-exposure-update">Cube exposure update</h2>
+<p>Add the three new dim names to <code>cube.yml</code>'s <code>cube_semantic_layer.depends_on</code>
+list. No Cube view files in this PR — that's a follow-up.</p>
+<h2 id="dim_students-change"><code>dim_students</code> change</h2>
+<p>Remove <code>is_ell</code> from <code>dim_students</code> and its <code>properties/dim_students.yml</code>. No
+other column changes. Consumers shift to <code>dim_ell_status</code> filtered by date.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>Cube view files (<code>{iep,ell,meal_eligibility}_{detail,summary}.yml</code>) —
+  follow-up issue.</li>
+<li><code>fct_iep_meetings</code> (per-meeting events: initial / annual review / parent
+  consent dates) — current consumers (<code>rpt_tableau__ops_dashboard</code>,
+  <code>int_extracts__student_enrollments_subjects_weeks</code>) are pass-through display,
+  no calculations on the values. File a follow-up if/when a calculation requires
+  them.</li>
+<li><code>dim_504_status</code>, <code>dim_gifted_status</code> — same pattern, separate issues.</li>
+<li>Cross-district student transfer reconciliation (a student moving Newark →
+  Paterson keeps separate spans per <code>_dbt_source_project</code> rather than unifying).
+  Consumers filter by date and source as needed.</li>
+</ul>
+<h2 id="hash-change-posture">Hash-change posture</h2>
+<p>Three new dims with new PKs — no existing hashes affected. <code>is_ell</code> removal from
+<code>dim_students</code> doesn't affect its PK (<code>student_key</code> hashes <code>student_number</code>
+only).</p>
+<h2 id="pre-merge-checks">Pre-merge checks</h2>
+<p>Per marts/CLAUDE.md "Pre-merge checklist (marts PRs)":</p>
+<ul>
+<li>Scan the three new <code>dim_*</code> files for diamond paths (none expected — FKs go
+  only to <code>dim_students</code> + <code>dim_dates</code>).</li>
+<li>Scan all three new files for column-naming rubric violations (R1–R10). Hot
+  spots specific to this work: <code>iep_classification</code> (R2 / R7 — no bare <code>spedlep</code>
+  or <code>lep</code>), <code>special_education_code</code> + <code>special_education_name</code> (degenerate-dim
+  code+name pairing), <code>meal_eligibility</code> (no <code>_status</code> suffix), <code>is_*</code> booleans
+  (R3).</li>
+<li>Confirm <code>_dbt_source_project</code> is materialized on all four upstream union
+  models touched by this work and that downstream consumers of those models
+  still parse (additive contract change only).</li>
+<li>Confirm <code>dim_iep_status</code>, <code>dim_ell_status</code>, <code>dim_meal_eligibility_status</code>
+  appear in <code>cube.yml</code>'s <code>cube_semantic_layer.depends_on</code>.</li>
+<li>Pull marts-model warnings from the latest CI run
+  (<code>mcp__dbt__get_job_run_error</code> with <code>warning_only=true</code>); bucket and file
+  follow-ups per marts/CLAUDE.md "Filing follow-up issues from marts work"
+  before the final PR comment.</li>
+<li>Scan project board <a href="https://github.com/orgs/TEAMSchools/projects/4">#4</a> for
+  bonus issues incidentally resolved; close them in the PR.</li>
+</ul>
+<h2 id="implementation-order">Implementation order</h2>
+<ol>
+<li>Promote <code>_dbt_source_project</code> to the upstream union models that need it
+   (<code>int_edplan__njsmart_powerschool_union</code>, <code>stg_powerschool__s_nj_stu_x</code>
+   kipptaf union, <code>stg_titan__person_data</code> kipptaf union, and
+   <code>stg_powerschool__studentcorefields</code> kipptaf union if absent). Update each
+   model's <code>properties/*.yml</code> contract. Additive only — no <code>code_location</code>
+   removal in this PR.</li>
+<li>Verify <code>dim_dates</code> has a <code>'9999-12-31'</code> row; extend the generator if not.</li>
+<li>Build the three <code>dim_*</code> models (each a single mart-layer file containing NJ
+   leg + Paterson/Miami leg + island-collapse). Write <code>properties/*.yml</code> with
+   descriptions, constraints (<code>warn_unsupported: false</code>), and tests.</li>
+<li>Remove <code>is_ell</code> from <code>dim_students</code> SQL + YAML.</li>
+<li>Add the three dim names to <code>cube.yml</code> <code>cube_semantic_layer.depends_on</code>.</li>
+<li>Verify with
+   <code>uv run dbt build --select dim_iep_status+ dim_ell_status+ dim_meal_eligibility_status+</code>
+   against the relevant project (worktree-scoped <code>--project-dir</code>).</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

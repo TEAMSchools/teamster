@@ -1,0 +1,3043 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Star Schema Data Mart Design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#star-schema-data-mart-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Star Schema Data Mart Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conventions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Conventions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#column-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Column Naming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dbt-conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dbt Conventions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#date-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Date Keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#source-layer-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source Layer Relationship
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grain-split-naming-facts-and-dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grain-Split Naming (facts and dimensions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architectural-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architectural Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model Inventory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Inventory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conformed-dimensions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformed Dimensions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#student-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Student Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staff-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staff Domain
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Staff Domain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#versioning-mechanism" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Versioning mechanism
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#worker-level-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worker-level models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#work-assignment-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Work assignment models
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#course-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Course Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assessment-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assessment Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#college-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        College Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staff-observation-professional-development-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staff Observation &amp; Professional Development Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#student-attendance-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Student Attendance Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#behavioral-communications-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Behavioral &amp; Communications Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gradebook-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gradebook Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#survey-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Survey Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#talent-acquisition-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Talent Acquisition Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#staffing-model-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staffing Model Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#it-support-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IT Support Domain
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-review-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open Review Items
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#second-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Second Pass
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Second Pass">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deferred-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred domains
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deferred-modeling-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred modeling questions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-03-27-star-schema-data-mart-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="star-schema-data-mart-design">Star Schema Data Mart Design</h1>
+<h2 id="summary">Summary</h2>
+<p>A conformed star schema data mart for the kipptaf dbt project, following the
+<strong>Kimball dimensional modeling methodology</strong>. Designed to be mapped onto a Cube
+semantic layer and consumed by all reporting. This mart replaces the role of the
+existing <code>models/extracts/</code> folder over time — Cube handles analytics consumers
+(Tableau, Google Sheets, DeansList, ad-hoc), while thin dbt extract models on
+top of the mart handle system integration feeds (Clever, PowerSchool autocomm,
+ADP, IDauto, etc.) where format requirements don't belong in a semantic layer.
+Dagster assets query the mart/Cube and deliver files to target systems.</p>
+<h2 id="scope">Scope</h2>
+<ul>
+<li>Design and build the complete star schema in <code>models/marts/</code> with
+  <code>dimensions/</code>, <code>facts/</code>, and <code>bridges/</code> subdirectories.</li>
+<li>Does NOT include: Cube semantic layer configuration, rewiring existing
+  extracts, or retiring existing models. Those are future projects that consume
+  this deliverable.</li>
+</ul>
+<h2 id="conventions">Conventions</h2>
+<h3 id="column-naming">Column Naming</h3>
+<p>All mart models use generic, standard terminology — no source system field names
+or KIPP-specific language. Mapping from source-specific names happens in
+staging/intermediate layers. The
+<a href="https://edfi.atlassian.net/wiki/spaces/EFDS/overview">Ed-Fi Unified Data Model</a>
+is a reference for entity and attribute nomenclature where applicable.</p>
+<table>
+<thead>
+<tr>
+<th>Source-Specific</th>
+<th>Mart Column Name</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>student_number</code> (PowerSchool)</td>
+<td><code>local_student_identifier</code></td>
+</tr>
+<tr>
+<td><code>home_business_unit_name</code> (ADP)</td>
+<td><code>legal_entity</code></td>
+</tr>
+<tr>
+<td><code>_dbt_source_relation</code> region extraction</td>
+<td><code>region</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="dbt-conventions">dbt Conventions</h3>
+<p>All models follow existing dbt project conventions documented in
+<code>src/dbt/CLAUDE.md</code> and <code>src/dbt/kipptaf/CLAUDE.md</code>:</p>
+<ul>
+<li><code>contract: enforced: true</code> (inherited from <code>dbt_project.yml</code> directory config)</li>
+<li>Uniqueness tests on all models</li>
+<li>No <code>SELECT *</code> in final SELECT of mart models</li>
+<li>Column ordering per ST06 rule</li>
+<li><code>current_date('{{ var("local_timezone") }}')</code> for timezone-aware dates</li>
+<li><code>union_dataset_join_clause()</code> macro for cross-region joins</li>
+<li>Surrogate keys via <code>dbt_utils.generate_surrogate_key()</code></li>
+</ul>
+<h3 id="date-keys">Date Keys</h3>
+<p>Date keys are raw DATE types — not integer surrogates. <code>dim_dates</code> carries a
+<code>date_timestamp</code> column (TIMESTAMP cast) for Cube, which requires timestamps for
+date dimension joins. Fact and dimension tables join to <code>dim_dates</code> on the DATE
+key directly.</p>
+<h3 id="source-layer-relationship">Source Layer Relationship</h3>
+<p>Google Sheets and other reference/scaffold sources (expected assessments,
+academic goals, PM goals, reporting terms, etc.) remain at the staging and
+intermediate layers and flow into mart dimensions through the normal dbt DAG.
+The mart is a new consumption layer — it does not replace or refactor the
+upstream models that feed it. Existing intermediate and extract models keep
+their current sources.</p>
+<h3 id="grain-split-naming-facts-and-dimensions">Grain-Split Naming (facts and dimensions)</h3>
+<p>Under the strict-chain traversal principle (see Architectural Decisions), a
+single business process sometimes splits into multiple facts or dimensions
+because its rows bind to different grains or populations. Two naming patterns
+apply:</p>
+<ul>
+<li><strong>Grain suffix (<code>_&lt;grain&gt;_scoped</code>)</strong> — same process, rows bind to different
+  grains of the same entity hierarchy. Siblings share a common prefix; the
+  suffix identifies the grain. Example:
+  <code>fct_assessment_scores_enrollment_scoped</code> and
+  <code>fct_assessment_scores_student_scoped</code> are both assessment administrations
+  with scores; they differ only in whether the record binds to a student
+  enrollment (iReady, STAR, DIBELS, FAST, NJSLA, internal) or to a student (SAT,
+  PSAT, ACT, AP).</li>
+<li><strong>Population prefix (<code>&lt;population&gt;_&lt;process&gt;_</code>)</strong> — substantively different
+  populations with parallel processes (different schedules, question pools,
+  business rules) that cannot be meaningfully unioned. Example:
+  <code>fct_staff_observations</code> and student assessments are not the same process at
+  different grains; they have different instruments, rubrics, and business
+  rules.</li>
+<li><strong>Discriminator column</strong> — when populations share the same instrument and the
+  primary analytical use case is cross-population comparison, use a single model
+  with a <code>respondent_population</code> (or similar) discriminator and nullable
+  population-specific FKs. Example: <code>fct_survey_submissions</code> covers staff,
+  student, and family respondents taking the same SCD instrument; splitting
+  would make the core comparison use case harder.</li>
+<li><strong>Solo models</strong> — don't preemptively add suffixes. Apply the convention only
+  when a sibling actually exists. Adding <code>_enrollment_scoped</code> to a dim with no
+  student-scoped counterpart is noise.</li>
+</ul>
+<p><strong>Decision test:</strong> If the two models could in principle be <code>UNION</code>-ed and mean
+something coherent (same columns, same business meaning), it's a grain split —
+use the suffix. If the populations share the same instrument and the primary use
+case is cross-population comparison, use a single model with a discriminator
+column. If they are parallel processes that happen to share a shape but have
+genuinely different instruments or business rules, it's a population split — use
+the prefix.</p>
+<h2 id="architectural-decisions">Architectural Decisions</h2>
+<p>Implementation-level decisions. Rationale for each is documented in the
+<a href="https://github.com/TEAMSchools/teamster/issues/3543">issue description</a>.</p>
+<ul>
+<li><strong>Multi-region handling</strong>: <code>dim_regions</code> as its own normalized dimension</li>
+<li><strong>System integration feeds</strong>: Thin dbt extracts on top of mart + Dagster for
+  delivery</li>
+<li><strong>Time/calendar</strong>: Role-playing <code>dim_dates</code> + <code>dim_terms</code> +
+  <code>dim_school_calendars</code></li>
+<li><strong><code>dim_terms</code> scope</strong>: Generalized beyond academic terms</li>
+<li><strong><code>dim_school_calendars</code> scope</strong>: Serves attendance validity AND assessment
+  calculations</li>
+<li><strong>SCDs</strong>: Hybrid — Type 2 where point-in-time history matters, Type 1 for
+  stable/static dims</li>
+<li><strong>Student fact FK routing</strong>: Each student-context fact FKs to its finest-grain
+  dim — gradebook facts to <code>dim_student_section_enrollments</code>; daily attendance,
+  GPA, etc. to <code>dim_student_enrollments</code></li>
+<li><strong>Staff compensation FK</strong>: <code>fct_work_assignment_compensation</code> and
+  <code>fct_work_assignment_additional_earnings</code> FK to <code>dim_staff_work_assignments</code></li>
+<li><strong>Attrition + termination</strong>: Single <code>fct_staff_attrition</code> fact (employee x
+  academic_year x attrition_type, recalculated each run);
+  <code>fct_staff_terminations</code> dropped. FK to <code>dim_staff_status</code> (the worker-level
+  status version active at the methodology's outcome determination date).</li>
+<li><strong>Expectation scaffolds</strong>: Dimensions (<code>dim_*_expectations</code>) for assessments,
+  observations, surveys</li>
+<li><strong>Expectation inputs</strong>: <code>dim_student_section_enrollments</code> is a key input to
+  building <code>dim_student_assessment_expectations</code></li>
+<li><strong>Survey completion</strong>: Submission-level fact (respondent x
+  survey_administration) parent of response-level fact (submission x question)</li>
+<li><strong>Survey domain unification</strong>: Single <code>fct_survey_submissions</code> /
+  <code>fct_survey_responses</code> / <code>dim_survey_expectations</code> with
+  <code>respondent_population</code> discriminator (staff/student/family) and nullable
+  population-specific respondent FKs. Motivated by the SCD being the same
+  instrument across populations.</li>
+<li><strong>Survey administration model</strong>: <code>dim_survey_administrations</code> (survey x term)
+  sits between <code>dim_surveys</code> (pure definition) and the instance-level models
+  (expectations, submissions). Eliminates a diamond to <code>dim_terms</code> and gives
+  administration-specific metadata a home.</li>
+<li><strong>Date keys</strong>: Raw DATE type; <code>dim_dates</code> carries a <code>date_timestamp</code> column
+  for Cube</li>
+<li><strong>Talent acquisition isolation</strong>: SmartRecruiters and ADP/Seat Tracker have no
+  joinable ID</li>
+<li><strong>Assessment facts</strong>: Split by grain —
+  <code>fct_assessment_scores_enrollment_scoped</code> (iReady, STAR, DIBELS, FAST, NJSLA,
+  internal) and <code>fct_assessment_scores_student_scoped</code> (SAT, PSAT, ACT, AP)</li>
+<li><strong>Assessment targets</strong>: Single <code>dim_assessment_targets</code> with <code>target_type</code>
+  discriminator</li>
+<li><strong>Gradebook facts</strong>: Full hierarchy — term grades, category grades,
+  assignments — FK to <code>dim_student_section_enrollments</code></li>
+<li><strong>GPA</strong>: Pre-calculated <code>fct_grades_gpa</code> fact at student_enrollment grain</li>
+<li><strong>Attendance</strong>: Separate facts by business process</li>
+<li><strong>Staff domain decomposition</strong>: Derived from the ADP API Pydantic schema
+  (<code>Worker</code> → <code>WorkAssignment</code> → nested objects); structs stay as columns,
+  arrays and high-churn structs get their own effective-dated models</li>
+<li><strong>Staff assignment SCD</strong>: <code>dim_staff_work_assignments</code> is Type 1; high-churn
+  attributes factored to Type 2 child models</li>
+<li><strong>Work assignment child naming</strong>: Work-assignment children drop the <code>staff_</code>
+  prefix and include <code>work_assignment_</code> in the name</li>
+<li><strong>Course domain</strong>: Normalized — course catalog separate from sections</li>
+<li><strong>Staff observations</strong>: Own domain separate from performance management</li>
+<li><strong>Compensation</strong>: Fact, not dimension</li>
+<li><strong>Mart directory structure</strong>: <code>marts/dimensions/</code>, <code>marts/facts/</code>,
+  <code>marts/bridges/</code></li>
+<li><strong>Build order</strong>: Conformed dimensions first, then domain facts</li>
+</ul>
+<h2 id="model-inventory">Model Inventory</h2>
+<h3 id="conformed-dimensions">Conformed Dimensions</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_dates</code></td>
+<td>Static</td>
+<td>one row per calendar date (2000-01-01 to 9999-12-31)</td>
+<td>Generated — day of week, month, quarter, year, is_weekday, academic_year, fiscal_year, date_timestamp (TIMESTAMP cast for Cube)</td>
+</tr>
+<tr>
+<td><code>dim_terms</code></td>
+<td>Type 1</td>
+<td>one row per named period x region (region nullable for org-wide periods like fiscal quarters)</td>
+<td>Google Sheets reporting terms, performance management rounds, survey windows, assessment admin windows, fiscal periods</td>
+</tr>
+<tr>
+<td><code>dim_regions</code></td>
+<td>Type 1</td>
+<td>one row per region</td>
+<td>Newark, Camden, Miami, Paterson — state, timezone, regulatory context</td>
+</tr>
+<tr>
+<td><code>dim_locations</code></td>
+<td>Type 1</td>
+<td>one row per school/office</td>
+<td>Location crosswalk — region, grade band, campus (physical site grouping — multiple schools share a campus), school IDs, abbreviation. Campus-to-schools fan-out for staff who are assigned at campus level is a Cube join concern (self-join on <code>campus</code>).</td>
+</tr>
+<tr>
+<td><code>dim_school_calendars</code></td>
+<td>Type 1</td>
+<td>one row per date x school</td>
+<td>PowerSchool calendar day — is_in_session, is_membership_day. FK to <code>dim_dates</code> and <code>dim_locations</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="student-domain">Student Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_students</code></td>
+<td>Type 1</td>
+<td>one row per student</td>
+<td>PowerSchool — local_student_identifier, state_student_identifier, name, birth_date, gender, race/ethnicity, is_gifted, is_ell. edplan — has_iep (source of truth for special education status). Titan — lunch_status (source of truth for meal eligibility).</td>
+</tr>
+<tr>
+<td><code>dim_student_enrollments</code></td>
+<td>Type 1</td>
+<td>one row per student x school x year (each enrollment is a distinct record with entry/exit dates)</td>
+<td>PowerSchool enrollments — grade_level, graduation_year, school_level, enroll_status, is_retained_year</td>
+</tr>
+<tr>
+<td><code>dim_student_contact_persons</code></td>
+<td>Type 1</td>
+<td>one row per unique contact person</td>
+<td>PowerSchool person records for contacts — contact_name, phone, email, address. Deduped across students; one parent who appears on multiple students' records collapses into a single row.</td>
+</tr>
+<tr>
+<td><code>dim_student_section_enrollments</code></td>
+<td>Type 1</td>
+<td>one row per student x section</td>
+<td>PowerSchool — FK to <code>dim_student_enrollments</code>, <code>dim_course_sections</code>, <code>dim_terms</code>. Roster membership.</td>
+</tr>
+<tr>
+<td><code>bridge_student_contacts</code></td>
+<td>Type 1</td>
+<td>one row per student x contact person</td>
+<td>PowerSchool student–contact pairings — relationship, is_emergency, is_primary, contact_priority (all vary per student–contact pair and therefore live on the bridge, not the person). FK to <code>dim_students</code>, <code>dim_student_contact_persons</code>. Resolves the N:M between the two.</td>
+</tr>
+</tbody>
+</table>
+<p>Contacts are genuinely many-to-many (BigQuery verification: 11.1% of contact
+persons in Newark are linked to 2+ students; max 12 students per contact),
+driven primarily by siblings sharing parents or guardians. The bridge split
+deduplicates contact attributes (phone, email) and keeps per-student
+relationship context on the bridge where it belongs.</p>
+<p><strong>Foreign keys on <code>dim_student_enrollments</code>:</strong></p>
+<ul>
+<li><code>student_key</code> -&gt; <code>dim_students</code></li>
+<li><code>location_key</code> -&gt; <code>dim_locations</code> (traverse to <code>dim_regions</code> via this chain;
+  no direct region FK)</li>
+<li><code>entry_date_key</code> -&gt; <code>dim_dates</code> (role-playing)</li>
+<li><code>exit_date_key</code> -&gt; <code>dim_dates</code> (role-playing)</li>
+</ul>
+<h3 id="staff-domain">Staff Domain</h3>
+<p>The staff domain decomposition follows the ADP Workforce Now API Pydantic schema
+(<code>Worker</code> → <code>WorkAssignment</code> → nested objects). The <code>Worker</code> is the top-level
+entity extracted daily from the API.</p>
+<p>At the <strong>worker level</strong>, person attributes are Type 1 on <code>dim_staff</code>, while
+<code>workerStatus</code> gets its own effective-dated model to track employment status
+over time.</p>
+<p>At the <strong>work assignment level</strong>, <code>dim_staff_work_assignments</code> is <strong>Type 1</strong>
+(current state only). Nested objects that change frequently or have their own
+multiplicity are factored into effective-dated child models. These children use
+the <code>dim_work_assignment_*</code> / <code>fct_work_assignment_*</code> naming convention —
+dropping the <code>staff_</code> prefix but including <code>work_assignment_</code> — to clearly
+identify assignment-level (not person-level) versioning. This decomposition is
+justified by empirical change frequency analysis across 4,675 work assignments
+in BigQuery:</p>
+<table>
+<thead>
+<tr>
+<th>Attribute group</th>
+<th>Assignments with changes</th>
+<th>Treatment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assignmentStatus</code></td>
+<td>2,260 (48%)</td>
+<td>Own model (Type 2)</td>
+</tr>
+<tr>
+<td><code>baseRemuneration</code></td>
+<td>2,262 (48%)</td>
+<td>Own model (Type 2)</td>
+</tr>
+<tr>
+<td><code>workerTypeCode</code> + benefits</td>
+<td>922 (20%)</td>
+<td>Own model (Type 2)</td>
+</tr>
+<tr>
+<td><code>jobTitle</code> / <code>jobCode</code></td>
+<td>899 (19%)</td>
+<td>Own model (Type 2)</td>
+</tr>
+<tr>
+<td><code>homeWorkLocation</code></td>
+<td>485 (10%)</td>
+<td>Own model (Type 2)</td>
+</tr>
+<tr>
+<td><code>workerTimeProfile</code></td>
+<td>1,376 (artifact)</td>
+<td>Type 1 on assignment (one-time backfill, no point-in-time value)</td>
+</tr>
+<tr>
+<td>All other scalars/structs</td>
+<td>0–440</td>
+<td>Type 1 on assignment</td>
+</tr>
+</tbody>
+</table>
+<h4 id="versioning-mechanism">Versioning mechanism</h4>
+<p>Type 2 models in this domain use one of two mechanisms. Some ADP nested objects
+carry a native <code>effectiveDate</code>; others do not, and their history must be
+constructed from daily payload-hash diffs. The difference is an implementation
+detail — both produce <code>effective_date_start</code>, <code>effective_date_end</code>, and
+<code>is_current_record</code> columns for the consumer — but determines which build logic
+applies per model. Verified against production data (4,675 current work
+assignments):</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Mechanism</th>
+<th>Source signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_staff_status</code></td>
+<td>Derived</td>
+<td><code>Worker.workerStatus</code> has no <code>effectiveDate</code> field in the ADP schema</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_status</code></td>
+<td>Source-native</td>
+<td><code>assignmentStatus.effectiveDate</code> populated on 99.9% of assignments</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_jobs</code></td>
+<td>Derived</td>
+<td><code>jobCode.effectiveDate</code> field exists in schema but is never populated</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_types</code></td>
+<td>Derived</td>
+<td><code>workerTypeCode.effectiveDate</code> and <code>workerGroups[].groupCode.effectiveDate</code> unpopulated</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_locations</code></td>
+<td>Derived</td>
+<td><code>homeWorkLocation.nameCode.effectiveDate</code> unpopulated</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_organizational_units</code></td>
+<td>Derived</td>
+<td><code>homeOrganizationalUnits[].nameCode.effectiveDate</code> unpopulated</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_reporting_relationships</code></td>
+<td>Derived</td>
+<td><code>ReportsToItem</code> has no <code>effectiveDate</code> field in the ADP schema</td>
+</tr>
+<tr>
+<td><code>fct_work_assignment_compensation</code></td>
+<td>Source-native</td>
+<td><code>baseRemuneration.effectiveDate</code> populated on 99.7% of assignments</td>
+</tr>
+<tr>
+<td><code>fct_work_assignment_additional_earnings</code></td>
+<td>Source-native</td>
+<td><code>additionalRemunerations[].effectiveDate</code> populated on 100% of earning items</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Source-native models</strong> load rows directly on each new <code>effectiveDate</code> observed
+in the source — no diff logic needed. <strong>Derived models</strong> construct
+<code>effective_date_start/end</code> from daily payload-hash diffs at the relevant
+sub-object grain, flagging the change point as the diff's first observation
+date.</p>
+<h4 id="worker-level-models">Worker-level models</h4>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_staff</code></td>
+<td>Type 1</td>
+<td>one row per person</td>
+<td>ADP <code>Worker.person</code> (names, demographics, addresses, communication), <code>Worker.workerDates</code>, <code>Worker.customFieldGroup</code>, LDAP. <code>employee_number</code> is a KIPP-generated identifier (via <code>stg_people__employee_numbers</code>), not an ADP-native field.</td>
+</tr>
+<tr>
+<td><code>dim_staff_status</code></td>
+<td>Type 2 (derived)</td>
+<td>one row per worker x status x version</td>
+<td>ADP <code>Worker.workerStatus</code> — status_code (Active, Terminated). Effective-dated from daily payload-hash diffs.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="work-assignment-models">Work assignment models</h4>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_staff_work_assignments</code></td>
+<td>Type 1</td>
+<td>one row per assignment</td>
+<td>ADP <code>WorkAssignment</code> scalars + static structs — positionID, flags (primary, management, voluntary), FTE, payroll fields, dates (hire, start, seniority, termination), workerTimeProfile, wageLawCoverage, payCycleCode, standardHours</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_status</code></td>
+<td>Type 2 (source-native)</td>
+<td>one row per assignment x status x version</td>
+<td>ADP <code>WorkAssignment.assignmentStatus</code> — status_code, reason_code. Effective dates load from <code>assignmentStatus.effectiveDate</code>.</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_jobs</code></td>
+<td>Type 2 (derived)</td>
+<td>one row per assignment x job x version</td>
+<td>ADP <code>WorkAssignment.jobTitle</code> + <code>WorkAssignment.jobCode</code> — these always change together (899 items). Effective dates derived from daily payload-hash diffs.</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_types</code></td>
+<td>Type 2 (derived)</td>
+<td>one row per assignment x worker type x version</td>
+<td>ADP <code>WorkAssignment.workerTypeCode</code> + <code>WorkAssignment.workerGroups[]</code> (benefits_eligibility_class). 77% of eligibility changes co-occur with type changes. Effective dates derived from daily payload-hash diffs.</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_locations</code></td>
+<td>Type 2 (derived)</td>
+<td>one row per assignment x location x version</td>
+<td>ADP <code>WorkAssignment.homeWorkLocation</code> — name_code, address. Effective dates derived from daily payload-hash diffs. Answers "which school was this person at on date X?"</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_organizational_units</code></td>
+<td>Type 2 (derived)</td>
+<td>one row per assignment x org unit x version</td>
+<td>ADP <code>WorkAssignment.homeOrganizationalUnits[]</code> + <code>assignedOrganizationalUnits[]</code> — business_unit, department, cost_number. <code>assignment_type</code> column (home/assigned). Effective dates derived from daily payload-hash diffs.</td>
+</tr>
+<tr>
+<td><code>dim_work_assignment_reporting_relationships</code></td>
+<td>Type 2 (derived)</td>
+<td>one row per assignment x manager x version</td>
+<td>ADP <code>WorkAssignment.reportsTo[]</code> — manager identifier, name, position. Effective dates derived from daily payload-hash diffs.</td>
+</tr>
+<tr>
+<td><code>fct_work_assignment_compensation</code></td>
+<td>Type 2 (source-native)</td>
+<td>one row per assignment x compensation x version</td>
+<td>ADP <code>WorkAssignment.baseRemuneration</code> — annual/hourly/daily/period rates. Effective dates load from <code>baseRemuneration.effectiveDate</code>. FK to <code>dim_staff_work_assignments</code>, <code>dim_dates</code>.</td>
+</tr>
+<tr>
+<td><code>fct_work_assignment_additional_earnings</code></td>
+<td>Type 2 (source-native)</td>
+<td>one row per assignment x earning type x version</td>
+<td>ADP <code>WorkAssignment.additionalRemunerations[]</code> — supplemental pay (stipends, bonuses). Effective dates load from <code>additionalRemunerations[].effectiveDate</code>. FK to <code>dim_staff_work_assignments</code>, <code>dim_dates</code>.</td>
+</tr>
+<tr>
+<td><code>fct_staff_attrition</code></td>
+<td>Type 1</td>
+<td>one row per employee x academic_year x attrition_type</td>
+<td><code>int_people__staff_roster_history</code> — is_attrition, termination_reason, termination_effective_date, attrition_cutoff_date. Three methodology rows (foundation, nj_compliance, recruitment). FK to <code>dim_staff_status</code> (the status version effective at the outcome date).</td>
+</tr>
+<tr>
+<td><code>fct_staff_benefits_enrollments</code></td>
+<td>Type 1</td>
+<td>one row per staff x benefit plan x enrollment period</td>
+<td>ADP SFTP pension and benefits — plan_type, plan_name, coverage_level (degenerate dimensions). FK to <code>dim_staff</code>, <code>dim_dates</code> (enrollment_start_date, enrollment_end_date as role-playing).</td>
+</tr>
+<tr>
+<td><code>fct_staff_membership_enrollments</code></td>
+<td>Type 1</td>
+<td>one row per staff x program x enrollment period</td>
+<td>ADP SFTP employee memberships — membership_code, membership_description, category_code, category_description (degenerate dimensions). FK to <code>dim_staff</code>, <code>dim_dates</code> (enrollment_start_date, enrollment_end_date as role-playing).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Dropped from work assignment:</strong></p>
+<ul>
+<li><code>WorkAssignment.assignedWorkLocations[]</code> — 148/4,675 items populated, never
+  differs from homeWorkLocation, never changes. No signal.</li>
+<li><code>WorkAssignment.occupationalClassifications[]</code> — 7% populated, unused by any
+  downstream model.</li>
+</ul>
+<p><strong>Foreign keys on <code>dim_staff_work_assignments</code>:</strong></p>
+<ul>
+<li><code>staff_key</code> -&gt; <code>dim_staff</code></li>
+</ul>
+<p>All Type 2 child models FK back to <code>dim_staff_work_assignments</code> via
+<code>work_assignment_key</code>. They carry their own <code>effective_date_start</code> /
+<code>effective_date_end</code> / <code>is_current_record</code> columns.</p>
+<p><strong>Date axis independence.</strong> Each model in the staff domain carries its own date
+columns and joins <code>dim_dates</code> independently — dates are not inherited from the
+parent. Three distinct kinds of dates exist in this hierarchy:</p>
+<ul>
+<li><strong>Lifecycle dates</strong> on <code>dim_staff_work_assignments</code> — hire_date, start_date,
+  seniority_date, termination_date. These are milestones on the assignment
+  itself; they do not version.</li>
+<li><strong>Attribute effective dates</strong> on Type 2 children — <code>effective_date_start</code> /
+  <code>effective_date_end</code>. These track when a specific attribute (job title,
+  status, location, etc.) changed, independent of the parent's lifecycle dates.</li>
+<li><strong>Event dates</strong> on facts — <code>fct_work_assignment_compensation</code> and
+  <code>fct_work_assignment_additional_earnings</code> join <code>dim_dates</code> on their own
+  effective dates because the question is "when did this pay rate take effect,"
+  not "when did the assignment start."</li>
+</ul>
+<p><code>fct_staff_benefits_enrollments</code> and <code>fct_staff_membership_enrollments</code> FK to
+<code>dim_staff</code> (not <code>dim_staff_work_assignments</code>) because benefits and memberships
+are <strong>person-level</strong> — a worker's health plan or union membership is not scoped
+to a single assignment. They join <code>dim_dates</code> on their own enrollment start/end
+dates.</p>
+<p><strong><code>fct_staff_attrition</code> detail:</strong></p>
+<p>A fact table capturing each staff member's attrition status at the close of each
+academic year, across three measurement methodologies. Replaces both prototype
+<code>fct_staff_attrition</code> and <code>fct_staff_terminations</code>.</p>
+<p>Attrition is a <strong>person-level</strong> concept: did this person leave the organization?
+<code>Worker.workerStatus</code> expresses that directly and is stable across promotions
+and mid-year role transfers (a Teacher-to-Dean promotion terminates the old work
+assignment but the worker's status stays <code>Active</code>). The fact therefore FKs to
+<code>dim_staff_status</code> — specifically the status version effective on the
+outcome-determination date (retention-check date for retained, termination
+effective date for attritors). Work-assignment context (what job they held, at
+which school, under whose supervision) is reached via the chain
+<code>dim_staff_status → dim_staff → dim_staff_work_assignments</code> with an appropriate
+as-of-date filter.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>staff_attrition_key</code></td>
+<td>string</td>
+<td>Surrogate PK: <code>employee_number + academic_year + attrition_type</code></td>
+</tr>
+<tr>
+<td><code>staff_status_key</code></td>
+<td>string</td>
+<td>FK to <code>dim_staff_status</code> (the status version effective on the outcome-determination date)</td>
+</tr>
+<tr>
+<td><code>academic_year</code></td>
+<td>int64</td>
+<td></td>
+</tr>
+<tr>
+<td><code>attrition_type</code></td>
+<td>string</td>
+<td><code>foundation</code>, <code>nj_compliance</code>, <code>recruitment</code></td>
+</tr>
+<tr>
+<td><code>attrition_cutoff_date</code></td>
+<td>date</td>
+<td>Window close per methodology (4/30 / 6/30 / 8/31) for retained; termination effective date for attritors</td>
+</tr>
+<tr>
+<td><code>is_attrition</code></td>
+<td>boolean</td>
+<td><code>TRUE</code> = attrited, <code>FALSE</code> = retained</td>
+</tr>
+<tr>
+<td><code>termination_reason</code></td>
+<td>string, nullable</td>
+<td>Excludes <code>Import Created Action</code> and <code>Upgrade Created Action</code> artifacts</td>
+</tr>
+<tr>
+<td><code>termination_effective_date</code></td>
+<td>date, nullable</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Attrition methodology window definitions:</p>
+<table>
+<thead>
+<tr>
+<th><code>attrition_type</code></th>
+<th>Cohort window</th>
+<th>Return check date</th>
+<th>Retained <code>attrition_cutoff_date</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>foundation</code></td>
+<td>9/1 – 4/30 of academic year</td>
+<td>9/1 of following year</td>
+<td>4/30</td>
+</tr>
+<tr>
+<td><code>nj_compliance</code></td>
+<td>7/1 – 6/30 of academic year</td>
+<td>7/1 of following year</td>
+<td>6/30</td>
+</tr>
+<tr>
+<td><code>recruitment</code></td>
+<td>9/1 – 8/31 of academic year</td>
+<td>9/1 of following year</td>
+<td>8/31</td>
+</tr>
+</tbody>
+</table>
+<p>A person is in a methodology's cohort only if they had an active (non-Pre-Start,
+non-Terminated, non-Deceased) assignment during that window. Interns whose
+assignment status reason is <code>Internship Ended</code> are excluded from all cohorts.</p>
+<h3 id="course-domain">Course Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_courses</code></td>
+<td>Type 1</td>
+<td>one row per course in catalog</td>
+<td>PowerSchool courses — course_number, course_name, discipline, credit_hours</td>
+</tr>
+<tr>
+<td><code>dim_course_sections</code></td>
+<td>Type 1</td>
+<td>one row per section</td>
+<td>PowerSchool sections — section_number, period, room. FK to <code>dim_courses</code>, <code>dim_locations</code>. Teacher and term relationships live on bridges (see below).</td>
+</tr>
+<tr>
+<td><code>bridge_course_section_teachers</code></td>
+<td>Type 1</td>
+<td>one row per section x teacher</td>
+<td>PowerSchool <code>sectionteacher</code> — teacher role (lead, co-teacher, etc.), effective_date_start/end per assignment. Resolves the N:M between sections and teachers. FK to <code>dim_course_sections</code>, <code>dim_staff</code>.</td>
+</tr>
+<tr>
+<td><code>bridge_course_section_terms</code></td>
+<td>Type 1</td>
+<td>one row per section x term</td>
+<td>PowerSchool — maps each section to every term it runs in. A year-long section at a quarterly school produces 4 bridge rows; a semester-long section produces 2. FK to <code>dim_course_sections</code>, <code>dim_terms</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Sections have N:M relationships with both teachers and terms:</p>
+<ul>
+<li><strong>Teachers</strong>: BigQuery verification shows 46% of sections in Newark have 2+
+  teachers (max 18) in <code>sectionteacher</code>. Lead-teacher-plus-co-teacher and
+  paraprofessional-assignment patterns are common.</li>
+<li><strong>Terms</strong>: a year-long section at a quarterly school spans 4 terms; a
+  semester-long course spans 2. The section itself is one record; the terms it
+  runs in are listed via the bridge.</li>
+</ul>
+<h3 id="assessment-domain">Assessment Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_assessments</code></td>
+<td>Type 1</td>
+<td>one row per assessment definition</td>
+<td>Assessment metadata — assessment_type, subject, scope, grade_level_tested, <code>is_internal_assessment</code> (drives expectation scaffold), <code>assessment_scope</code> (<code>enrollment</code> or <code>student</code> — drives fact routing)</td>
+</tr>
+<tr>
+<td><code>dim_assessment_comparisons</code></td>
+<td>Type 1</td>
+<td>one row per assessment x year x region</td>
+<td>Google Sheets state test comparison — external benchmarks (city, state, neighborhood schools percent proficient, total students). FK to <code>dim_regions</code> only. No FK to <code>dim_assessments</code> or <code>dim_assessment_administrations</code>: comparisons live at region x test x academic_year grain (no <code>grade_level</code>), coarser than <code>dim_assessments</code> (definition grain, includes <code>grade_level</code>) and <code>dim_assessment_administrations</code> (per-occurrence grain, includes <code>administered_date</code>). The FK is intentionally absent. Answers "how do we compare?"</td>
+</tr>
+<tr>
+<td><code>dim_assessment_targets</code></td>
+<td>Type 1</td>
+<td>one row per assessment x year x target_type x school x grade</td>
+<td>Assessment targets with <code>target_type</code> discriminator — vendor-defined benchmarks (DIBELS benchmark levels, iReady growth targets), KIPP-defined internal goals (grade/school/region/organization goals), and any other target category. FK to <code>dim_assessments</code>, <code>dim_locations</code>. Answers "are we hitting our targets?"</td>
+</tr>
+<tr>
+<td><code>dim_student_assessment_expectations</code></td>
+<td>Type 1</td>
+<td>one row per student_section_enrollment x assessment x administration_window</td>
+<td>Scaffolded from business rules — which assessments a student should take based on section subject, grade, school, year. Scoped to <code>is_internal_assessment = TRUE</code> (matches existing <code>int_assessments__scaffold</code> pattern). FK to <code>dim_student_section_enrollments</code>, <code>dim_assessments</code>, <code>dim_terms</code>. No sibling for student-scoped assessments (SAT/ACT are elective, AP deferred to second pass).</td>
+</tr>
+<tr>
+<td><code>fct_assessment_scores_enrollment_scoped</code></td>
+<td>Type 1</td>
+<td>one row per student_section_enrollment x assessment x administration</td>
+<td>Enrollment-scoped administrations — iReady, STAR, DIBELS, FAST, NJSLA, internal KIPP assessments. Columns: scale_score, percent_correct, proficiency_level, growth_percentile, nullable assessment-specific fields. FK to <code>dim_student_section_enrollments</code>, <code>dim_assessments</code>, <code>dim_dates</code> (test_date as role-playing), <code>dim_terms</code>.</td>
+</tr>
+<tr>
+<td><code>fct_assessment_scores_student_scoped</code></td>
+<td>Type 1</td>
+<td>one row per student x assessment x administration</td>
+<td>Student-scoped administrations that follow the student regardless of enrollment — SAT, PSAT, ACT, AP. Columns: scale_score, subscores, percent_correct, proficiency_level, nullable assessment-specific fields. FK to <code>dim_students</code>, <code>dim_assessments</code>, <code>dim_dates</code> (test_date as role-playing), <code>dim_terms</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Enrollment-scoped expectation and score models FK to
+<code>dim_student_section_enrollments</code> because the subject (and therefore the
+assessment family that applies) is determined by the section the student is
+enrolled in. Traversal reaches <code>dim_student_enrollments</code> and <code>dim_students</code>
+through the chain. Student-scoped scores FK directly to <code>dim_students</code>.</p>
+<p><strong>Expected vs unexpected analytical pattern.</strong> To identify which expected
+assessments were taken (and which were missed), LEFT JOIN
+<code>dim_student_assessment_expectations</code> to
+<code>fct_assessment_scores_enrollment_scoped</code> on
+<code>(student_section_enrollment_key, assessment_key, term_key)</code>. To identify
+administrations that were <em>not</em> explicitly expected, anti-join
+<code>fct_assessment_scores_enrollment_scoped</code> against
+<code>dim_student_assessment_expectations</code> on the same keys. Both paths live inside
+the enrollment-scoped fact; no cross-grain gymnastics are required because the
+student-scoped fact has no expectation scaffold.</p>
+<p><strong>No expectation scaffold for student-scoped assessments.</strong> SAT/ACT
+participation is elective (X2 — no expectation dim). AP participation follows
+from course enrollment (student in an AP course should take the AP exam) but
+encoding this requires section → course → AP exam mapping data not currently
+available; deferred to second pass (see Second Pass section).</p>
+<h3 id="college-domain">College Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_colleges</code></td>
+<td>Type 1</td>
+<td>one row per institution</td>
+<td>NSC — college_name, type (2yr/4yr), selectivity, state</td>
+</tr>
+<tr>
+<td><code>dim_college_enrollments</code></td>
+<td>Type 1</td>
+<td>one row per student x college x tenure</td>
+<td>NSC — enrollment_status, degree_pursued, enrollment_start_date, enrollment_end_date. A single enrollment spans the student's entire tenure at that college, not a single term. FK to <code>dim_students</code>, <code>dim_colleges</code>, <code>dim_dates</code> (enrollment_start_date, enrollment_end_date as role-playing).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="staff-observation-professional-development-domain">Staff Observation &amp; Professional Development Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_staff_observation_rubrics</code></td>
+<td>Type 1</td>
+<td>one row per rubric definition</td>
+<td>SchoolMint Grow — rubric_name, measurement groups</td>
+</tr>
+<tr>
+<td><code>dim_staff_observation_rubric_measurements</code></td>
+<td>Type 1</td>
+<td>one row per measurement item per rubric</td>
+<td>SchoolMint Grow — measurement_name, strand_name. FK to <code>dim_staff_observation_rubrics</code></td>
+</tr>
+<tr>
+<td><code>dim_staff_observation_types</code></td>
+<td>Type 1</td>
+<td>one row per observation type</td>
+<td>SchoolMint Grow — type name (walkthrough, O3, formal evaluation), scope, frequency expectations</td>
+</tr>
+<tr>
+<td><code>dim_staff_observation_microgoal_types</code></td>
+<td>Type 1</td>
+<td>one row per goal in 4-level taxonomy</td>
+<td>SchoolMint Grow generic tags — goal_type -&gt; bucket -&gt; strand -&gt; goal</td>
+</tr>
+<tr>
+<td><code>dim_staff_observation_expectations</code></td>
+<td>Type 1</td>
+<td>one row per staff x observation_type x term</td>
+<td>Scaffolded from business rules — which observations a staff member should receive based on role, location, term. FK to <code>dim_staff</code>, <code>dim_staff_observation_types</code>, <code>dim_terms</code>.</td>
+</tr>
+<tr>
+<td><code>fct_staff_observations</code></td>
+<td>Type 1</td>
+<td>one row per observation event</td>
+<td>SchoolMint Grow — overall_score, glows, grows. FK to <code>dim_staff</code> (teacher, observer as role-playing), <code>dim_staff_observation_types</code>, <code>dim_locations</code>, <code>dim_dates</code>, <code>dim_terms</code></td>
+</tr>
+<tr>
+<td><code>fct_staff_observation_scores</code></td>
+<td>Type 1</td>
+<td>one row per measurement item per observation</td>
+<td>SchoolMint Grow — value_score (int64), value_text (dropdown selection), text_box_content (open text, HTML-cleaned), checkbox_values (boolean selections), measurement_comments. FK to <code>fct_staff_observations</code>, <code>dim_staff_observation_rubric_measurements</code></td>
+</tr>
+<tr>
+<td><code>fct_staff_observation_microgoals</code></td>
+<td>Type 1</td>
+<td>one row per teacher x goal assignment</td>
+<td>SchoolMint Grow assignments — assignment_date. FK to <code>dim_staff</code> (teacher, creator as role-playing), <code>dim_staff_observation_microgoal_types</code>, <code>dim_terms</code>, <code>dim_dates</code> (assignment_date)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Score placement.</strong> <code>overall_score</code> lives on <code>fct_staff_observations</code> (the
+observation-level fact), not on <code>fct_staff_observation_scores</code>. It is a property
+of the observation event at its natural grain — one value per observation. Cube
+exposes it directly on the observations cube; cross-cube queries (observations +
+measurement scores) reach it via the FK relationship. Denormalizing it onto the
+scores table would duplicate it across every measurement row, violating the
+grain principle.</p>
+<p><strong>Measurement response types.</strong> <code>fct_staff_observation_scores</code> captures the full
+response payload from SchoolMint Grow, not just numeric scores. Measurement rows
+in Grow carry multiple response types: <code>value_score</code> (always present, int64),
+<code>value_text</code> (dropdown/radio selection), text boxes (free-text input, HTML
+cleaned), and checkboxes (boolean selections). The existing Tableau extract only
+surfaces <code>row_score</code> and <code>measurement_comments</code>; the mart preserves the complete
+response data.</p>
+<p><strong>Note:</strong> PM round mapping and tier calculation (PM1/PM2/PM3, overall tier 1-4)
+are Cube concerns, not mart models.</p>
+<h3 id="student-attendance-domain">Student Attendance Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_student_attendance_intervention_types</code></td>
+<td>Type 1</td>
+<td>one row per intervention type definition</td>
+<td>Scaffolded — absence threshold, region, commlog reason. Used for completeness tracking.</td>
+</tr>
+<tr>
+<td><code>fct_student_attendance_daily</code></td>
+<td>Type 1</td>
+<td>one row per student x date</td>
+<td>PowerSchool — attendance_code, excused/unexcused, present/absent/tardy/early_dismissal. FK to <code>dim_student_enrollments</code>, <code>dim_dates</code>. <code>dim_school_calendars</code> attributes (<code>is_in_session</code>, <code>is_membership_day</code>) reached via compound join on <code>(date_key, location_key)</code> using the enrollment's location — avoids a diamond to <code>dim_locations</code></td>
+</tr>
+<tr>
+<td><code>fct_student_attendance_streaks</code></td>
+<td>Type 1</td>
+<td>one row per student x streak</td>
+<td>Derived — streak_start_date, streak_end_date, streak_length, streak_type. A derived business object not in the source data. FK to <code>dim_student_enrollments</code>, <code>dim_dates</code> (start, end as role-playing)</td>
+</tr>
+<tr>
+<td><code>fct_student_attendance_interventions</code></td>
+<td>Type 1</td>
+<td>one row per student x intervention type x academic year</td>
+<td>Derived from threshold scaffold + DeansList comm log — intervention status (complete/missing). FK to <code>dim_student_enrollments</code>, <code>dim_student_attendance_intervention_types</code>, <code>dim_staff</code>, <code>dim_dates</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="behavioral-communications-domain">Behavioral &amp; Communications Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fct_behavioral_incidents</code></td>
+<td>Type 1</td>
+<td>one row per student x incident</td>
+<td>DeansList — incident_type (degenerate dimension). FK to <code>dim_student_enrollments</code>, <code>dim_staff</code> (referring_staff as role-playing), <code>dim_dates</code></td>
+</tr>
+<tr>
+<td><code>fct_behavioral_consequences</code></td>
+<td>Type 1</td>
+<td>one row per student x incident x consequence</td>
+<td>DeansList — consequence_type, duration, is_served (degenerate dimensions). FK to <code>fct_behavioral_incidents</code> (incident_key), <code>dim_dates</code> (start, end as role-playing). Student/location/region context traversed through the parent incident.</td>
+</tr>
+<tr>
+<td><code>fct_family_communications</code></td>
+<td>Type 1</td>
+<td>one row per communication event</td>
+<td>DeansList comm log — method, topic, reason, status, outcome (degenerate dimensions). General-purpose, not attendance-specific. Scope: enrolled-student recipients only. FK to <code>dim_student_enrollments</code>, <code>dim_staff</code>, <code>dim_dates</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="gradebook-domain">Gradebook Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fct_grades_term</code></td>
+<td>Type 1</td>
+<td>one row per student x section x term</td>
+<td>PowerSchool — percent_grade, letter_grade, citizenship_grade. FK to <code>dim_student_section_enrollments</code>, <code>dim_terms</code>, <code>dim_dates</code></td>
+</tr>
+<tr>
+<td><code>fct_grades_category</code></td>
+<td>Type 1</td>
+<td>one row per student x section x term x category</td>
+<td>PowerSchool — category_name, category_weight, percent_grade. FK to <code>dim_student_section_enrollments</code>, <code>dim_terms</code></td>
+</tr>
+<tr>
+<td><code>fct_grades_assignments</code></td>
+<td>Type 1</td>
+<td>one row per student x assignment</td>
+<td>PowerSchool — assignment_name, score, points_possible, is_missing, is_late, category. FK to <code>dim_student_section_enrollments</code>, <code>dim_terms</code>, <code>dim_dates</code> (due_date as role-playing)</td>
+</tr>
+<tr>
+<td><code>fct_grades_gpa</code></td>
+<td>Type 1</td>
+<td>one row per student_enrollment x term</td>
+<td><strong>Periodic-snapshot fact.</strong> Pre-calculated — cumulative_gpa, term_gpa, weighted/unweighted variants, credit_hours_earned, credit_hours_attempted, <code>is_current_row</code> (boolean: TRUE on the latest row per student_enrollment, refreshed nightly). FK to <code>dim_student_enrollments</code>, <code>dim_terms</code>. GPA is a per-term summary across all sections, not section-bound.</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>fct_grades_gpa</code> as a periodic snapshot.</strong> Each row captures cumulative GPA
+as-of the close of a given term. A student accumulates one row per term
+throughout their enrollment — for a 4-year high school on a 4-term calendar,
+that's 16 rows. This preserves history ("what was their cumulative GPA after
+sophomore year Q2?") without expensive per-query window functions.</p>
+<p>To answer "every student's current cumulative GPA" in Cube, filter on the
+pre-computed <code>is_current_row</code> flag. The flag denotes the most recent row per
+<code>student_enrollment_key</code>, refreshed nightly in dbt:</p>
+<div class="highlight"><pre><span></span><code><span class="n">ROW_NUMBER</span><span class="p">()</span><span class="w"> </span><span class="n">OVER</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="n">PARTITION</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">student_enrollment_key</span>
+<span class="w">  </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">term_close_date</span><span class="w"> </span><span class="k">DESC</span>
+<span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">is_current_row</span>
+</code></pre></div>
+<p>This is the Kimball-idiomatic pattern for current-state queries against a
+periodic-snapshot fact: the fact preserves all history; a pre-computed flag
+collapses to current state in O(filter), without window functions in every
+query. A global <code>dim_terms.is_current_term</code> flag is insufficient because
+different students' "current term" may differ (graduation, transfer, different
+school-level calendars).</p>
+<h3 id="survey-domain">Survey Domain</h3>
+<p>Unified survey domain — all populations (staff, student, family) share a single
+set of submission and response facts with a <code>respondent_population</code>
+discriminator column. The primary motivation is the School Community Diagnostic
+(SCD), which is the same instrument administered to staff, students, and
+families with identical questions and answer scales. The primary analytical use
+case — comparing responses across populations — is a filter on
+<code>respondent_population</code> within a single Cube cube, not a cross-cube join.</p>
+<p>Staff-only surveys (Manager Survey, Support/Engagement Survey) also fit in the
+unified fact. The Manager Survey adds a <code>subject_staff_key</code> (the manager being
+evaluated by their direct reports) — a nullable role-playing FK to <code>dim_staff</code>,
+populated only for that survey type.</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_surveys</code></td>
+<td>Type 1</td>
+<td>one row per survey definition</td>
+<td>Survey metadata — survey_name, survey_type, subject_area. Pure instrument definition, no temporal scoping. No FK to <code>dim_terms</code> — the administration window lives on <code>dim_survey_administrations</code>.</td>
+</tr>
+<tr>
+<td><code>dim_survey_administrations</code></td>
+<td>Type 1</td>
+<td>one row per survey x term</td>
+<td>Each instance of a survey in an administration window. FK to <code>dim_surveys</code>, <code>dim_terms</code>. Carries administration-specific metadata: administration_status (open/closed), response_deadline, platform (Google Forms/Alchemer). Analogous to how <code>dim_course_sections</code> sits between <code>dim_courses</code> and enrollment instances.</td>
+</tr>
+<tr>
+<td><code>dim_survey_questions</code></td>
+<td>Type 1</td>
+<td>one row per question</td>
+<td>Google Forms (current) / Alchemer (archival) — question_text, question_type, response_options. No FK to <code>dim_surveys</code> — questions are pure reference data so they can be reused across surveys.</td>
+</tr>
+<tr>
+<td><code>bridge_survey_questions</code></td>
+<td>Type 1</td>
+<td>one row per survey x question</td>
+<td>Pairs questions to surveys with survey-specific metadata — ordering, is_required, section. FK to <code>dim_surveys</code>, <code>dim_survey_questions</code>. Stays at definition level — questions pair to the instrument, not the instance.</td>
+</tr>
+<tr>
+<td><code>dim_survey_expectations</code></td>
+<td>Type 1</td>
+<td>one row per respondent x survey_administration</td>
+<td>Scaffolded from business rules — which survey administrations a respondent should complete based on population-specific criteria (role/location for staff; grade/school for students; one per family). <code>respondent_population</code> discriminator. FK to <code>dim_survey_administrations</code>, plus nullable respondent FKs.</td>
+</tr>
+<tr>
+<td><code>fct_survey_submissions</code></td>
+<td>Type 1</td>
+<td>one row per respondent x survey_administration</td>
+<td>Survey completion record. <code>respondent_population</code> discriminator (staff/student/family). Nullable respondent FKs: <code>staff_key</code> → <code>dim_staff</code>, <code>student_enrollment_key</code> → <code>dim_student_enrollments</code>, <code>student_contact_person_key</code> → <code>dim_student_contact_persons</code> (exactly one populated per row). Nullable <code>subject_staff_key</code> → <code>dim_staff</code> (role-playing, Manager Survey only). FK to <code>dim_survey_administrations</code>, <code>dim_dates</code>.</td>
+</tr>
+<tr>
+<td><code>fct_survey_responses</code></td>
+<td>Type 1</td>
+<td>one row per submission x question</td>
+<td>Response detail — response_value, response_text. FK to <code>fct_survey_submissions</code>, <code>dim_survey_questions</code>. Reach <code>dim_surveys</code> only via the chain: submission → administration → survey.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Respondent FK routing.</strong> Each submission row has exactly one respondent FK
+populated, determined by <code>respondent_population</code>:</p>
+<ul>
+<li><code>staff</code> → <code>staff_key</code> (staff member completing the survey)</li>
+<li><code>student</code> → <code>student_enrollment_key</code> (student completing the survey)</li>
+<li><code>family</code> → <code>student_contact_person_key</code> (family member completing the survey)</li>
+</ul>
+<p>Cube defines conditional joins filtered by <code>respondent_population</code> to resolve
+the correct respondent dimension.</p>
+<p><strong>Family respondent note.</strong> Family SCD submissions FK to
+<code>dim_student_contact_persons</code>. The expectation grain is one survey
+administration per contact person (not per student). Student linkage is
+reachable via <code>bridge_student_contacts</code> when needed. Historical family SCD
+responses are not associated with a specific student. The family respondent
+source system is migrating from PowerSchool to Finalsite — the mart's
+source-agnostic design insulates this domain from that change.</p>
+<p><strong>Manager Survey.</strong> The Manager Survey is taken by direct reports about their
+manager. The respondent is the direct report (<code>staff_key</code>); the subject is the
+manager (<code>subject_staff_key</code>, role-playing FK to <code>dim_staff</code>). Completion is
+tracked from the respondent side (did each direct report submit?), consistent
+with the expectation grain across all survey types: respondent x
+survey_administration.</p>
+<p><strong>Why <code>dim_survey_administrations</code> exists.</strong> A survey definition (e.g., "School
+Community Diagnostic Staff Survey") is a timeless instrument — it gets
+administered in multiple terms across years. Without an administration model,
+<code>dim_surveys</code> would need an FK to <code>dim_terms</code>, which then creates a diamond:
+<code>dim_survey_expectations</code> → <code>dim_surveys</code> → <code>dim_terms</code> and
+<code>dim_survey_expectations</code> → <code>dim_terms</code> (direct). The administration model
+linearizes this — <code>dim_surveys</code> is a pure definition, and all temporal scoping
+flows through <code>dim_survey_administrations</code> → <code>dim_terms</code>. One path from any
+model to <code>dim_terms</code>.</p>
+<p><strong>Expectation ↔ submission pattern.</strong> Mirrors the assessment pattern. LEFT JOIN
+<code>dim_survey_expectations</code> to <code>fct_survey_submissions</code> on
+<code>(respondent_key, survey_administration_key)</code> for expected-taken/missed;
+anti-join the submission fact against the expectation dim for unexpected
+submissions. The expectation dim carries <code>respondent_population</code> so business
+rules can differ per population while sharing a single model.</p>
+<p><strong>Why <code>bridge_survey_questions</code> exists.</strong> A question's text and type are
+properties of the question itself, not of the survey it appears on — if survey A
+and survey B both ask "How many years have you worked in education?", that's one
+question used twice, not two questions with identical text. Hoisting the
+survey-to-question pairing into a bridge keeps <code>dim_survey_questions</code> as pure
+reference data and eliminates a diamond from the response facts: without this
+split, a response had two paths to <code>dim_surveys</code> (via submission → admin →
+survey and via question), and by construction the two always agreed — an
+unlabeled diamond that Cube resolves non-deterministically. With the bridge, the
+response chain is linear: response → submission → administration → survey for
+survey context; response → question for question context; bridge joins only when
+survey-question metadata (ordering, required) is needed.</p>
+<h3 id="talent-acquisition-domain">Talent Acquisition Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_job_postings</code></td>
+<td>Type 1</td>
+<td>one row per job posting</td>
+<td>SmartRecruiters — job_title, department, city, recruiter. 685 distinct postings across 20 departments and 11 cities.</td>
+</tr>
+<tr>
+<td><code>dim_job_candidates</code></td>
+<td>Type 1</td>
+<td>one row per candidate</td>
+<td>SmartRecruiters — candidate profile, contact info</td>
+</tr>
+<tr>
+<td><code>fct_job_candidate_applications</code></td>
+<td>Type 1</td>
+<td>one row per applicant x position</td>
+<td>SmartRecruiters — application status, stage, dates. FK to <code>dim_job_candidates</code>, <code>dim_job_postings</code>, <code>dim_dates</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Known limitation:</strong> No unique identifier or matchable field exists between
+SmartRecruiters (candidates) and ADP (staff) or AppSheet Seat Tracker
+(positions). <code>dim_job_candidates</code> and <code>fct_job_candidate_applications</code> are an
+isolated domain with no FK to <code>dim_staff_work_assignments</code> or
+<code>dim_staffing_positions</code>. This is acknowledged as a future-state aspiration, not
+current reality.</p>
+<h3 id="staffing-model-domain">Staffing Model Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dim_staffing_positions</code></td>
+<td>Type 2</td>
+<td>one row per budgeted position x version</td>
+<td>AppSheet seat tracker (via dbt snapshot) — department, job_title, location, entity, grade_band, staffing_status, plan_status, is_mid_year_hire. FK to <code>dim_locations</code>, <code>dim_staff</code> (teammate, recruiter as role-playing)</td>
+</tr>
+</tbody>
+</table>
+<p>Standalone dimension — no FK relationships to other mart domains currently. See
+Talent Acquisition known limitation above.</p>
+<h3 id="it-support-domain">IT Support Domain</h3>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>SCD</th>
+<th>Grain</th>
+<th>Key Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fct_support_tickets</code></td>
+<td>Type 1</td>
+<td>one row per ticket</td>
+<td>Zendesk — ticket status, subject, category, tech_tier, resolution_time, reply_count, business_hours_to_solve. Scope: staff-submitted only. FK to <code>dim_staff</code> (submitter, assignee, original_assignee as role-playing), <code>dim_dates</code> (created, solved as role-playing), <code>dim_locations</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="open-review-items">Open Review Items</h2>
+<ul>
+<li><strong>Expectation scaffold complexity</strong> — <code>dim_staff_observation_expectations</code> and
+  <code>dim_survey_expectations</code> business rules (different dates, types, regions,
+  every year) may be complex to encode.</li>
+<li><strong>Talent acquisition isolation</strong> — no joinable ID between SmartRecruiters and
+  ADP/Seat Tracker. Future-state aspiration.</li>
+<li><strong>Bridge table candidates</strong> — students with multiple race/ethnicity codes,
+  staff with multiple group memberships, students with multiple special program
+  flags. Determine which need bridge tables as the data is explored.</li>
+<li><strong>Attendance interventions domain placement</strong> — currently in Student
+  Attendance Domain but the actions are DeansList communications (Behavioral &amp;
+  Communications Domain). Revisit if the split causes friction.</li>
+<li><strong>Chronic absenteeism</strong> — <code>fct_student_attendance_daily</code> (ADA derivable in
+  Cube) + <code>fct_student_attendance_interventions</code> (threshold tracking) cover
+  known requirements. Foundation is adding detailed CA tracking — monitor
+  whether the current facts are sufficient or if additional structure is needed.</li>
+<li><strong>Cumulative GPA granularity</strong> — <code>fct_grades_gpa</code> at student x term grain
+  provides checkpoint history. Within-term GPA tracking currently lives in dbt
+  snapshots + topline layer. Second pass to determine if the mart needs a
+  finer-grained model beyond term endpoints.</li>
+<li><strong>SIS migration: Focus replacing PowerSchool in Miami</strong> — Focus is a new, not
+  yet integrated system. When onboarded, Miami student/enrollment/course/
+  gradebook/attendance data will source from Focus instead of PowerSchool. The
+  mart's source-agnostic column naming convention should insulate downstream
+  models, but the staging/intermediate layer will need a new source integration.</li>
+<li><strong>SIS migration: Finalsite replacing PowerSchool enrollment</strong> — Finalsite will
+  become the enrollment source. Same insulation principle applies.</li>
+</ul>
+<h2 id="second-pass">Second Pass</h2>
+<p>Deferred work — acknowledged scope beyond the first build, addressed after the
+fundamental domains are stable.</p>
+<h3 id="deferred-domains">Deferred domains</h3>
+<ul>
+<li><strong>Student Recruitment and Enrollment (SRE)</strong> — enrollment pipeline/funnel
+  tracking and Finalsite website/CMS analytics (includes the pattern for
+  creating historical data where the source has none).</li>
+<li><strong>College Domain expansion</strong> — kippadb (Salesforce) entities beyond NSC
+  enrollments and test scores: college applications, post-secondary employment,
+  financial aid awards, counselor contact notes, internships/programs, college
+  persistence (semester-to-semester retention). All currently fan-out 1.</li>
+<li><strong>Certification tracking</strong> — staff teaching certifications/licenses.</li>
+<li><strong>Grant timesheet tracking</strong> — time tracking for grant-funded positions.</li>
+</ul>
+<h3 id="deferred-modeling-questions">Deferred modeling questions</h3>
+<ul>
+<li><strong>Historical school grade levels as a source of truth.</strong> School grade bands
+  (ES/MS/HS) can change year over year as schools transition (e.g., 5th grade
+  moving from MS to ES for specific schools/regions, independently of the
+  school's own school level). STAT Dash, Gradebook Dash, and DIBELS all need
+  this history. Requires a reference table with <em>both</em> the school's School Level
+  and the grade's School Level, versioned by academic year. The source of truth
+  for this data does not currently exist; creating one is a dedicated
+  second-pass effort. Until then, <code>dim_locations</code> remains Type 1 with static
+  grade band.</li>
+<li><strong>AP assessment expectations.</strong> Students enrolled in an AP course should take
+  the corresponding AP exam, but encoding this rule requires a section → course
+  → AP exam mapping that is not currently curated. Deferred until that mapping
+  exists. SAT/ACT do not need an expectation dim (participation is elective).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

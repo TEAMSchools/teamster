@@ -1,0 +1,1874 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>DeansList Family Contacts — Add Emergency Contacts Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#deanslist-family-contacts-add-emergency-contacts-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DeansList Family Contacts — Add Emergency Contacts Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-add-emergency-contacts-numbered-and-grain-tested" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Add emergency contacts, numbered and grain-tested
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-review notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-21-deanslist-emergency-contacts.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="deanslist-family-contacts-add-emergency-contacts-implementation-plan">DeansList Family Contacts — Add Emergency Contacts Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Add emergency contacts to the DeansList <code>contacts.txt</code> feed, numbered
+<code>Emergency 1</code>–<code>Emergency 4</code> in the <code>Relationship</code> column, while the primary
+parent keeps its real relationship.</p>
+<p><strong>Architecture:</strong> One kipptaf-only reporting view change. Drop the
+<code>contact_slot = 'contact_1'</code> filter in <code>rpt_deanslist__family_contacts</code> so all
+Finalsite contact slots flow through, and derive the <code>Relationship</code> value from
+<code>contact_slot</code>. Swap the row-grain uniqueness test to
+<code>(StudentID, Relationship)</code>. A new dbt unit test drives the change (TDD).</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), dbt_utils, dbt unit tests, trunk (sqlfluff +
+prettier + yamllint).</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Work in the worktree
+  <code>/workspaces/teamster/.worktrees/cbini/feat/claude-deanslist-emergency-contacts</code>.
+  Every <code>git</code>, <code>dbt</code>, Read/Edit/Write path targets that worktree.</li>
+<li>Issue: <a href="https://github.com/TEAMSchools/teamster/issues/4478">#4478</a>. Spec:
+  <code>docs/superpowers/specs/2026-07-21-deanslist-emergency-contacts-design.md</code>.</li>
+<li>Nine DeansList template columns only — do NOT add a tenth column to the feed.
+  <code>contact_slot</code> is used only inside the <code>Relationship</code> <code>CASE</code>; it is not
+  projected.</li>
+<li>SQL follows <code>src/dbt/CLAUDE.md</code>: BigQuery dialect, trailing commas, single
+  quotes, max one level of function nesting, no <code>QUALIFY</code>/<code>ORDER BY</code>,
+  backtick-quoted output aliases, computed values derived as named CTE columns.</li>
+<li>YAML <code>description:</code> scalars must not contain <code>": "</code> (colon-space) or start
+  with a backtick. Unit-test <code>given</code>/<code>expect</code> scalars stay UNQUOTED unless a
+  quote is needed to preserve the string type.</li>
+<li><code>uv run</code> for all dbt; never bare <code>dbt</code>. Do not run <code>trunk fmt</code>/<code>trunk check</code>
+  by hand except the explicit <code>trunk check</code> step below.</li>
+</ul>
+<hr />
+<h2 id="file-structure">File structure</h2>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql</code>
+  — the reporting view. Drops the slot filter; adds the numbered-<code>Relationship</code>
+  <code>CASE</code>; renames the <code>parent_contacts</code> CTE to <code>contacts</code>.</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml</code>
+  — swaps the <code>StudentID</code> <code>unique</code> test for a model-level
+  <code>unique_combination_of_columns([StudentID, Relationship])</code> (error), updates
+  the model + <code>Relationship</code> descriptions, and adds the unit test.</li>
+</ul>
+<p>No other files. All upstream columns already exist in prod, so there is no
+district, source-schema, staging-seed, or Dagster/Python change.</p>
+<hr />
+<h2 id="task-1-add-emergency-contacts-numbered-and-grain-tested">Task 1: Add emergency contacts, numbered and grain-tested</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes (unchanged, already in prod): <code>int_finalsite__student_contacts</code>
+  (<code>finalsite_enrollment_id</code>, <code>_dbt_source_project</code>, <code>contact_slot</code>,
+  <code>relationship</code>, <code>contact_first_name</code>, <code>contact_last_name</code>, <code>email</code>,
+  <code>phone_home</code>, <code>phone_work</code>, <code>phone_mobile</code>);
+  <code>int_finalsite__contact_id_attributes</code> (<code>finalsite_enrollment_id</code>,
+  <code>_dbt_source_project</code>, <code>powerschool_student_number</code>);
+  <code>stg_powerschool__students</code> (<code>student_number</code>, <code>enroll_status</code>,
+  <code>_dbt_source_relation</code>).</li>
+<li>
+<p>Produces: the <code>contacts.txt</code> feed shape — columns <code>StudentID</code> (int64),
+  <code>ParentFirstName</code>, <code>ParentLastName</code>, <code>HomePhone</code>, <code>WorkPhone</code>, <code>CellPhone</code>,
+  <code>Email</code>, <code>Relationship</code>, <code>Language</code> (all string). Grain: one row per
+  <code>(StudentID, Relationship)</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add the failing unit test to the properties yml</strong></p>
+</li>
+</ul>
+<p>Append this <code>unit_tests:</code> block to the end of
+<code>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml</code>
+(top-level key, sibling of <code>models:</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="nt">unit_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_family_contacts_emergency_numbering</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">One student with a primary parent plus two emergency contacts. Asserts the</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">primary parent keeps its Finalsite relationship, each emergency slot is</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">relabeled Emergency N by slot number, and all three contacts are emitted</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">for the enrolled student.</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_deanslist__family_contacts</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_finalsite__student_contacts&#39;)</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select</span>
+<span class="w">            </span><span class="no">&#39;enr-001&#39; as finalsite_enrollment_id,</span>
+<span class="w">            </span><span class="no">&#39;kippnewark&#39; as _dbt_source_project,</span>
+<span class="w">            </span><span class="no">&#39;contact_1&#39; as contact_slot,</span>
+<span class="w">            </span><span class="no">&#39;parent&#39; as relationship,</span>
+<span class="w">            </span><span class="no">&#39;Alice&#39; as contact_first_name,</span>
+<span class="w">            </span><span class="no">&#39;Johnson&#39; as contact_last_name,</span>
+<span class="w">            </span><span class="no">&#39;alice@example.com&#39; as email,</span>
+<span class="w">            </span><span class="no">&#39;305-555-0100&#39; as phone_home,</span>
+<span class="w">            </span><span class="no">cast(null as string) as phone_work,</span>
+<span class="w">            </span><span class="no">&#39;305-555-0101&#39; as phone_mobile</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select</span>
+<span class="w">            </span><span class="no">&#39;enr-001&#39;, &#39;kippnewark&#39;, &#39;emergency_1&#39;, &#39;grandparent&#39;,</span>
+<span class="w">            </span><span class="no">&#39;Bob&#39;, &#39;Smith&#39;, cast(null as string), cast(null as string),</span>
+<span class="w">            </span><span class="no">cast(null as string), &#39;305-555-0200&#39;</span>
+<span class="w">          </span><span class="no">union all</span>
+<span class="w">          </span><span class="no">select</span>
+<span class="w">            </span><span class="no">&#39;enr-001&#39;, &#39;kippnewark&#39;, &#39;emergency_2&#39;, &#39;aunt&#39;,</span>
+<span class="w">            </span><span class="no">&#39;Carol&#39;, &#39;Diaz&#39;, cast(null as string), cast(null as string),</span>
+<span class="w">            </span><span class="no">cast(null as string), cast(null as string)</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_finalsite__contact_id_attributes&#39;)</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select</span>
+<span class="w">            </span><span class="no">&#39;enr-001&#39; as finalsite_enrollment_id,</span>
+<span class="w">            </span><span class="no">&#39;kippnewark&#39; as _dbt_source_project,</span>
+<span class="w">            </span><span class="no">&#39;123456&#39; as powerschool_student_number</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;stg_powerschool__students&#39;)</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select</span>
+<span class="w">            </span><span class="no">123456 as student_number,</span>
+<span class="w">            </span><span class="no">0 as enroll_status,</span>
+<span class="w">            </span><span class="no">&#39;kippnewark_powerschool&#39; as _dbt_source_relation</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            StudentID</span><span class="p">:</span><span class="w"> </span><span class="nv">123456</span><span class="p p-Indicator">,</span>
+<span class="nt">            ParentFirstName</span><span class="p">:</span><span class="w"> </span><span class="nv">Alice</span><span class="p p-Indicator">,</span>
+<span class="nt">            ParentLastName</span><span class="p">:</span><span class="w"> </span><span class="nv">Johnson</span><span class="p p-Indicator">,</span>
+<span class="nt">            Relationship</span><span class="p">:</span><span class="w"> </span><span class="nv">parent</span><span class="p p-Indicator">,</span>
+<span class="nt">            HomePhone</span><span class="p">:</span><span class="w"> </span><span class="nv">305-555-0100</span><span class="p p-Indicator">,</span>
+<span class="nt">            CellPhone</span><span class="p">:</span><span class="w"> </span><span class="nv">305-555-0101</span><span class="p p-Indicator">,</span>
+<span class="nt">            Email</span><span class="p">:</span><span class="w"> </span><span class="nv">alice@example.com</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            StudentID</span><span class="p">:</span><span class="w"> </span><span class="nv">123456</span><span class="p p-Indicator">,</span>
+<span class="nt">            ParentFirstName</span><span class="p">:</span><span class="w"> </span><span class="nv">Bob</span><span class="p p-Indicator">,</span>
+<span class="nt">            ParentLastName</span><span class="p">:</span><span class="w"> </span><span class="nv">Smith</span><span class="p p-Indicator">,</span>
+<span class="nt">            Relationship</span><span class="p">:</span><span class="w"> </span><span class="nv">Emergency 1</span><span class="p p-Indicator">,</span>
+<span class="nt">            CellPhone</span><span class="p">:</span><span class="w"> </span><span class="nv">305-555-0200</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            StudentID</span><span class="p">:</span><span class="w"> </span><span class="nv">123456</span><span class="p p-Indicator">,</span>
+<span class="nt">            ParentFirstName</span><span class="p">:</span><span class="w"> </span><span class="nv">Carol</span><span class="p p-Indicator">,</span>
+<span class="nt">            ParentLastName</span><span class="p">:</span><span class="w"> </span><span class="nv">Diaz</span><span class="p p-Indicator">,</span>
+<span class="nt">            Relationship</span><span class="p">:</span><span class="w"> </span><span class="nv">Emergency 2</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<p>Rationale for <code>format: sql</code> on every input: it provides exactly the columns the
+model reads and avoids dbt schema introspection of the real relations (per
+<code>src/dbt/CLAUDE.md</code>). Columns omitted from an <code>expect</code> row are compared as null.
+The <code>_dbt_source_relation</code> value <code>kippnewark_powerschool</code> makes
+<code>extract_code_location</code> resolve to <code>kippnewark</code>, matching the finalsite rows'
+<code>_dbt_source_project</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Ensure worktree deps, then run the unit test to verify it
+      fails</strong></li>
+</ul>
+<p>The current model still filters <code>contact_slot = 'contact_1'</code>, so the two
+emergency rows drop and the model returns one row against three expected.</p>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-deanslist-emergency-contacts/src/dbt/kipptaf
+
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s2">&quot;rpt_deanslist__family_contacts,test_type:unit&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-deanslist-emergency-contacts/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: FAIL — the unit test reports a row-count / value difference (1 actual
+row vs 3 expected). If instead it errors on profiles, add
+<code>--profiles-dir /workspaces/teamster/.dbt</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Rewrite the model SQL</strong></li>
+</ul>
+<p>Replace the entire contents of
+<code>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql</code>
+with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">contacts</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">contact_first_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">contact_last_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">email</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">phone_home</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">phone_work</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">phone_mobile</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">xw</span><span class="p">.</span><span class="n">powerschool_student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">case</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">contact_slot</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;emergency_1&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Emergency 1&#39;</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;emergency_2&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Emergency 2&#39;</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;emergency_3&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Emergency 3&#39;</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;emergency_4&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Emergency 4&#39;</span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">relationship</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">relationship</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_finalsite__student_contacts&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sc</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_finalsite__contact_id_attributes&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">xw</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xw</span><span class="p">.</span><span class="n">finalsite_enrollment_id</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">sc</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xw</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="w">        </span><span class="k">where</span>
+<span class="w">            </span><span class="n">sc</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;kippnewark&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;kippcamden&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;kipppaterson&#39;</span><span class="p">)</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">xw</span><span class="p">.</span><span class="n">powerschool_student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">enrolled_students</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">student_number</span><span class="p">,</span>
+
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="n">extract_code_location</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__students&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">            </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__students&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">enroll_status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">StudentID</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">contact_first_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">ParentFirstName</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">contact_last_name</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">ParentLastName</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">phone_home</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">HomePhone</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">phone_work</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">WorkPhone</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">phone_mobile</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">CellPhone</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">email</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">Email</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="k">c</span><span class="p">.</span><span class="n">relationship</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">Relationship</span><span class="o">`</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="k">Language</span><span class="o">`</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">contacts</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">enrolled_students</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">_dbt_source_project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+</code></pre></div>
+<p>Changes vs. the current file: <code>contact_slot = 'contact_1'</code> filter removed; <code>CTE</code>
+renamed <code>parent_contacts</code> → <code>contacts</code> and its alias <code>pc</code> → <code>c</code>; the passthrough
+<code>sc.relationship</code> replaced by the <code>CASE</code>. (sqlfmt will collapse the
+<code>when … then …</code> lines at commit; either layout is acceptable.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Update the properties yml — uniqueness test and descriptions</strong></li>
+</ul>
+<p>In
+<code>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml</code>:</p>
+<p>Replace the model <code>description</code> (lines 3–9 in the current file) with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">DeansList nightly Family Contacts import (`contacts.txt`) for the NJ regions —</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">one row per Finalsite contact for each currently enrolled student, covering</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">the primary parent (`contact_1`, the relationship flagged primary, falling</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">back to financial) plus emergency contacts (`emergency_1` through</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">`emergency_4`). Emergency contacts carry a numbered `Emergency N` relationship</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">so Ops can exclude them from DeansList guardian messaging; the primary parent</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">keeps its real Finalsite relationship. Column names match the DeansList import</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">template headers exactly. Delivered by the Dagster asset</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">`kipptaf/extracts/deanslist/contacts_txt`.</span>
+</code></pre></div>
+<p>Immediately after the model <code>description</code> and before <code>columns:</code>, add the
+model-level grain test:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">StudentID</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Relationship</span>
+<span class="w">      </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+</code></pre></div>
+<p>On the <code>StudentID</code> column, remove the <code>unique</code> test but keep <code>not_null</code> (error).
+The column's <code>data_tests:</code> becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+</code></pre></div>
+<p>Replace the <code>Relationship</code> column <code>description</code> with:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">Relationship of the contact to the student. For the primary parent</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">(`contact_1`) this is the Finalsite `rel_type` (`parent`, `stepparent`,</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">`guardian`, `grandparent`, etc.). For emergency contacts this is `Emergency</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">N`, numbered by the Finalsite emergency slot (`emergency_1` through</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">`emergency_4`).</span>
+</code></pre></div>
+<p>Leave <code>ParentFirstName</code>, <code>ParentLastName</code>, phones, <code>Email</code>, and <code>Language</code>
+columns and their tests unchanged (<code>ParentLastName</code> <code>not_null</code> stays at the
+project-default warn).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the unit test to verify it passes</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s2">&quot;rpt_deanslist__family_contacts,test_type:unit&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-deanslist-emergency-contacts/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: PASS (1 unit test).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the view against prod data and run the data tests</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_deanslist__family_contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-deanslist-emergency-contacts/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: the view builds in the dev schema and every test PASSES — in
+particular <code>unique_combination_of_columns(StudentID, Relationship)</code> (error) and
+<code>not_null</code> on <code>StudentID</code> (error). <code>ParentLastName</code> <code>not_null</code> may WARN (~8
+rows); that is expected and acceptable.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Confirm the built view's shape (row count and grain)</strong></li>
+</ul>
+<p>Query the dev-built view via the BigQuery MCP (schema is
+<code>zz_&lt;github_user&gt;_kipptaf_extracts</code>; find it with the SCHEMATA query in
+<code>src/dbt/CLAUDE.md</code> if unsure). Confirm ~30,478 rows, that <code>Relationship</code>
+<code>Emergency N</code> values appear, and <code>(StudentID, Relationship)</code> is unique
+(<code>count(*) = count(distinct format('%T|%T', StudentID, Relationship))</code>). Do not
+copy any PII values into the commit, PR, or issue.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Lint the changed files</strong></li>
+</ul>
+<p>Run (from inside the worktree; the <code>trunk</code> binary lives only in the main repo):</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-deanslist-emergency-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: No issues (sqlfluff, yamllint, prettier). Fix any findings inline and
+re-run.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-deanslist-emergency-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml
+
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-deanslist-emergency-contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(deanslist): add emergency contacts to family contacts export</span>
+
+<span class="s2">Closes #4478&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="post-implementation">Post-implementation</h2>
+<ul>
+<li>Push the branch and open a PR with <code>.github/pull_request_template.md</code> as the
+  body; the PR body should <code>Closes #4478</code>.</li>
+<li>dbt Cloud CI rebuilds the <code>rpt</code> view under <code>state:modified+</code>. After CI passes,
+  fetch warnings with <code>get_job_run_error(warning_only=true)</code> — a
+  <code>ParentLastName</code> <code>not_null</code> warn (~8 rows) is expected, not a regression.</li>
+<li>Post-merge: Dagster rematerializes the view and the <code>contacts_txt</code> extract
+  asset emits the wider <code>contacts.txt</code> on the next nightly run.</li>
+</ul>
+<h2 id="self-review-notes">Self-review notes</h2>
+<ul>
+<li><strong>Spec coverage:</strong> drop filter (Step 3), numbered <code>Emergency N</code> (Step 3 CASE),
+  <code>(StudentID, Relationship)</code> error-level uniqueness (Step 4), <code>ParentLastName</code>
+  stays warn (Step 4), descriptions updated (Step 4), kipptaf-only single PR
+  (file structure). All covered.</li>
+<li><strong>No placeholders:</strong> every step has exact paths, code, commands, expected
+  output.</li>
+<li><strong>Type consistency:</strong> <code>StudentID</code> int64 (from <code>safe_cast(... as int64)</code>);
+  <code>Relationship</code> string (CASE branches + <code>rel_type</code> are all string); unit-test
+  <code>powerschool_student_number</code> supplied as string <code>'123456'</code> and cast to
+  <code>123456</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

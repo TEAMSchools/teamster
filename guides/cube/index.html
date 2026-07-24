@@ -1,0 +1,2632 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../superpowers/">
+      
+      
+        <link rel="next" href="../claude-cube-connector/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Cube - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deployment-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-kipp-uses-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How KIPP uses them
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development Workflow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Development Workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-create-a-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Create a branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-edit-cube-models-in-vs-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Edit cube models in VS Code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-test-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Test locally
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-test-in-cube-cloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Test in Cube Cloud
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-open-a-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Open a PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-and-staging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review and Staging
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review and Staging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#peer-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peer review
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stakeholder-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stakeholder review
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-dev" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Dev
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-row-level-security-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing row-level security locally
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing row-level security locally">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sql-level-rls-invariants-to-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQL-level RLS invariants to check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warnings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-cube-with-claude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Cube with Claude
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using Cube with Claude">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#claude-desktop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Desktop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#claude-code-vs-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Code (VS Code)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-cube-in-claude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Cube in Claude
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#admin-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Admin Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Admin Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-access-is-resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How access is resolved
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#access-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cube-cloud-one-time-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cube Cloud One-Time Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#deployment-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deployment types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-kipp-uses-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How KIPP uses them
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#development-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Development Workflow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Development Workflow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-create-a-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Create a branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-edit-cube-models-in-vs-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Edit cube models in VS Code
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-test-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Test locally
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-test-in-cube-cloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Test in Cube Cloud
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-open-a-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Open a PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#review-and-staging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review and Staging
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Review and Staging">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#peer-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Peer review
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stakeholder-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stakeholder review
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-dev" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Dev
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-row-level-security-locally" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing row-level security locally
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing row-level security locally">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sql-level-rls-invariants-to-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SQL-level RLS invariants to check
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warnings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-cube-with-claude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Cube with Claude
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Using Cube with Claude">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#claude-desktop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Desktop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#claude-code-vs-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claude Code (VS Code)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-cube-in-claude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Cube in Claude
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#admin-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Admin Setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Admin Setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-access-is-resolved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How access is resolved
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#access-groups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access groups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cube-cloud-one-time-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cube Cloud One-Time Setup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/guides/cube.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube">Cube</h1>
+<p>Cube is the semantic layer between BigQuery and downstream reporting tools
+(dashboards, LLMs, apps, etc.). Cube models live in <code>src/cube/</code> alongside dbt
+models and are version-controlled in this repository. Security — row-level
+filtering, column access policies, group membership — is enforced once in Cube
+for all downstream consumers.</p>
+<p><strong>Jump to:</strong> <a href="#concepts">Concepts</a> ·
+<a href="#development-workflow">Development Workflow</a> ·
+<a href="#review-and-staging">Review and Staging</a> · <a href="#local-dev">Local Dev</a> ·
+<a href="#using-cube-with-claude">Using Cube with Claude</a> · <a href="#admin-setup">Admin Setup</a></p>
+<h2 id="concepts">Concepts</h2>
+<h3 id="deployment-types">Deployment types</h3>
+<p>Cube Cloud has two deployment types that control infrastructure scaling:</p>
+<ul>
+<li><strong>Development Instance</strong> — deallocates after inactivity and reallocates when a
+  request comes in. Cheaper, but has a cold-start delay on the first query after
+  idle.</li>
+<li><strong>Production Cluster</strong> — always running, no cold starts. Use once downstream
+  tools are live and users expect instant responses.</li>
+</ul>
+<h3 id="environments">Environments</h3>
+<p>A Cube Cloud deployment has two contexts:</p>
+<ul>
+<li><strong>Production environment</strong> — always tracks <code>main</code>. This is what downstream
+  tools (Superset, Streamlit) connect to. Redeploys automatically when <code>main</code>
+  changes.</li>
+<li><strong>Staging environments</strong> — one per branch, activated automatically when a user
+  switches to that branch in the Cube Cloud UI. Each has its own isolated API
+  endpoints. Multiple staging environments can be active simultaneously for
+  different branches. Suspends after 10 minutes of inactivity by default; toggle
+  <strong>always active</strong> in Settings → Staging Environments to keep a branch live for
+  multi-day stakeholder review.</li>
+</ul>
+<p><strong>Development mode</strong> is the interactive UI session in Cube Cloud (not a separate
+environment — it targets whichever branch is currently active in the UI).
+Switching branches in development mode activates that branch's staging
+environment.</p>
+<h3 id="how-kipp-uses-them">How KIPP uses them</h3>
+<p>One deployment covers everything:</p>
+<table>
+<thead>
+<tr>
+<th>Context</th>
+<th>What it is</th>
+<th>Tracks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Production</td>
+<td>Production environment</td>
+<td><code>main</code>, auto-redeploys on merge</td>
+</tr>
+<tr>
+<td>Staging</td>
+<td>Per-branch staging environments, separate API URL</td>
+<td>Any branch, multiple active simultaneously</td>
+</tr>
+</tbody>
+</table>
+<p>Staging environments are how analysts test feature branches, reviewers validate
+changes, and stakeholders preview models before merge — all within one
+deployment, with no additional infrastructure.</p>
+<h2 id="development-workflow">Development Workflow</h2>
+<h3 id="1-create-a-branch">1. Create a branch</h3>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>main<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>merge<span class="w"> </span>origin/main
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>you/feat/my-cube-change
+</code></pre></div>
+<h3 id="2-edit-cube-models-in-vs-code">2. Edit cube models in VS Code</h3>
+<p>Edit files in <code>src/cube/model/cubes/</code> or <code>src/cube/model/views/</code>.</p>
+<p>If <code>main</code> has new or renamed dbt models since you last compiled, regenerate the
+local manifest first:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>compile<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf
+</code></pre></div>
+<p>You only need this when dbt model definitions change. If you are only editing
+Cube YAML files, the existing manifest stays valid.</p>
+<div class="admonition warning">
+<p class="admonition-title">Do not use the Playground Models tab.</p>
+<p>In dev mode, Cube treats it as a live editor and overwrites YAML files.
+Edit in VS Code only.</p>
+</div>
+<h3 id="3-test-locally">3. Test locally</h3>
+<p>Run the <strong>Cube: Dev Server</strong> VS Code task to start Cube at <code>localhost:4000</code> —
+see <a href="#local-dev">Local Dev</a>. To exercise <strong>row-level security</strong> (not just that
+models compile), see
+<a href="#testing-row-level-security-locally">Testing row-level security locally</a> —
+developer mode disables auth, so RLS needs a specific setup.</p>
+<h3 id="4-test-in-cube-cloud">4. Test in Cube Cloud</h3>
+<p>Push your branch, then switch to it in the Cube Cloud UI's development mode
+branch switcher. Cube Cloud activates a staging environment for the branch
+automatically.</p>
+<p>Test in the Cube Cloud Playground. Your real access row from
+<code>kipptaf_marts.dim_staff_cube_access</code> applies here — use this to verify security
+behavior against live HR data.</p>
+<p>Check:</p>
+<ul>
+<li>Cubes and views load without errors</li>
+<li>Queries return expected results against live BigQuery data</li>
+<li>Row-level security behaves correctly for your groups</li>
+<li>Existing cubes and views still work (no regressions)</li>
+</ul>
+<h3 id="5-open-a-pr">5. Open a PR</h3>
+<p>When ready, open a pull request from your feature branch to <code>main</code>.</p>
+<h2 id="review-and-staging">Review and Staging</h2>
+<h3 id="peer-review">Peer review</h3>
+<p>The reviewing analyst:</p>
+<ol>
+<li>Reads through the YAML changes in the PR</li>
+<li>Switches to the author's branch — in Cube Cloud dev mode or locally — and
+   tests in the Playground:</li>
+<li>Do all cubes and views load without errors?</li>
+<li>Do queries return expected results against live BigQuery data?</li>
+<li>Do existing cubes and views still work?</li>
+<li>To test row-level security behavior, follow
+   <a href="#testing-row-level-security-locally">Testing row-level security locally</a>
+   (auth must be on — developer mode bypasses it), or test in Cube Cloud dev
+   mode where your real access row applies</li>
+<li>Leaves review comments on the PR, or approves</li>
+</ol>
+<p>Author and reviewer can work together in the same Cube Cloud Playground session
+since they're both hitting the same branch.</p>
+<h3 id="stakeholder-review">Stakeholder review</h3>
+<p>When a business user needs to validate changes before merge:</p>
+<ol>
+<li>In Cube Cloud, switch to the feature branch — this activates a staging
+   environment for that branch</li>
+<li>Go to <strong>Settings → Staging Environments</strong> and toggle the branch to <strong>always
+   active</strong> so queries don't fail when no one is viewing the branch</li>
+<li>Find the branch's API URL under <strong>API Credentials</strong></li>
+<li>Point the staging instance of the connected tool (dashboard, etc.) at that
+   URL and share it with the stakeholder</li>
+<li>Stakeholder tests queries and dashboards against live data — multiple
+   branches can have active staging environments simultaneously</li>
+<li>Once the stakeholder approves, merge the PR — production redeploys
+   automatically from <code>main</code></li>
+</ol>
+<h2 id="local-dev">Local Dev</h2>
+<ol>
+<li><code>cp src/cube/.env.example src/cube/.env</code> and fill in the BigQuery connection
+   variables (already pre-filled in <code>.env.example</code> for the teamster project — no
+   credentials needed, ADC handles auth)</li>
+<li>Run the <strong>GCloud: Application Default Login</strong> VS Code task if your ADC token
+   is stale</li>
+<li>Run the <strong>Cube: Dev Server</strong> VS Code task (<code>Ctrl+Shift+P</code> → Tasks: Run Task)</li>
+<li>Playground opens at <code>http://localhost:4000</code></li>
+<li>Click <strong>Edit Security Context</strong> and set
+   <code>{"email": "you@apps.teamschools.org"}</code>. <strong>Caveat:</strong> in developer mode this
+   only reaches <code>contextToGroups</code> as an <code>email</code> claim — it does NOT run identity
+   resolution, so gated views return zero rows. See
+   <a href="#testing-row-level-security-locally">Testing row-level security locally</a>.</li>
+</ol>
+<h2 id="testing-row-level-security-locally">Testing row-level security locally</h2>
+<p>Row-level security is enforced by per-view <code>access_policy</code>, driven by the
+<code>securityContext</code> that <code>resolveAccess</code> builds <strong>inside the auth hooks</strong>
+(<code>checkAuth</code> for REST, <code>checkSqlAuth</code> for the SQL API). That placement has a
+sharp consequence for local testing:</p>
+<p>Developer mode skips <code>checkAuth</code> (REST) — so the Playground and REST <code>/load</code>
+default-deny every gated view (empty <code>securityContext</code>, <code>contextToGroups</code>
+returns <code>[]</code>) unless you turn auth on. But <code>checkSqlAuth</code> (the SQL API's hook)
+runs <strong>even in developer mode</strong>, which makes the SQL API the easier and
+truer-to-prod way to validate.</p>
+<p><strong>Prefer the SQL API for validation.</strong> It resolves your real identity with no
+<code>NODE_ENV</code> change, and it is the surface Superset/BI actually use — so you
+validate the production path. Tesseract (<code>CUBEJS_TESSERACT_SQL_PLANNER</code>, default
+<code>true</code>) is the planner on the SQL API, and joining views is a supported feature
+there
+(<a href="https://docs.cube.dev/docs/data-modeling/multi-fact-views">multi-fact views</a>).
+Enable the SQL API in <code>src/cube/.env</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">CUBEJS_PG_SQL_PORT</span><span class="o">=</span><span class="m">15432</span>
+<span class="nv">CUBEJS_SQL_USER</span><span class="o">=</span>cube_dev
+<span class="nv">CUBEJS_SQL_PASSWORD</span><span class="o">=</span>local-dev-sql
+<span class="c1"># Optional: pin EVERY connection to one viewer (dev-only override of the</span>
+<span class="c1"># connecting user). Leave it commented to resolve as the connecting SQL user</span>
+<span class="c1"># instead, which lets you switch viewers per connection with no restart.</span>
+<span class="c1"># CUBE_SQL_DEV_EMAIL=someone@apps.teamschools.org</span>
+</code></pre></div>
+<p>Restart the <strong>Cube: Dev Server</strong> task. Identity resolves from the <strong>SQL <code>user</code>
+you connect as</strong> (unless <code>CUBE_SQL_DEV_EMAIL</code> is set, which overrides it) — so
+put the viewer's email in <code>user</code>, and switch viewers by opening a new connection
+rather than restarting. <code>MEASURE()</code> wraps measures:</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>psycopg2-binary<span class="w"> </span>python<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;&#39;PY&#39;</span>
+<span class="s">import psycopg2</span>
+
+<span class="s"># identity = the `user` you connect as; swap it to test a different viewer</span>
+<span class="s">conn = psycopg2.connect(host=&quot;127.0.0.1&quot;, port=15432,</span>
+<span class="s">                        user=&quot;you@apps.teamschools.org&quot;,</span>
+<span class="s">                        password=&quot;local-dev-sql&quot;, dbname=&quot;cube&quot;)</span>
+<span class="s">cur = conn.cursor()</span>
+<span class="s">cur.execute(&quot;SELECT MEASURE(count_employees) FROM staff_directory&quot;)</span>
+<span class="s">print(cur.fetchall())</span>
+<span class="s">PY</span>
+</code></pre></div>
+<p><code>resolveAccess</code> reads that email's row from <code>dim_staff_cube_access</code>, builds the
+real <code>securityContext</code>, and the policies enforce. Compare a scoped viewer's
+counts against a network viewer's breakdown to confirm scoping.</p>
+<p>A quick region-isolation check on student data — loop the SAME query over a few
+viewer emails (a region-scoped viewer, a network viewer, a <code>none</code>-scope viewer):</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>psycopg2-binary<span class="w"> </span>python<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;&#39;PY&#39;</span>
+<span class="s">import psycopg2</span>
+
+<span class="s">for email in [&quot;a-region-scoped-viewer@apps.teamschools.org&quot;,</span>
+<span class="s">              &quot;a-network-viewer@apps.teamschools.org&quot;,</span>
+<span class="s">              &quot;a-none-scope-viewer@apps.teamschools.org&quot;]:</span>
+<span class="s">    conn = psycopg2.connect(host=&quot;127.0.0.1&quot;, port=15432, user=email,</span>
+<span class="s">                            password=&quot;local-dev-sql&quot;, dbname=&quot;cube&quot;)</span>
+<span class="s">    cur = conn.cursor()</span>
+<span class="s">    cur.execute(&quot;SELECT regions_region_name, MEASURE(count_students) &quot;</span>
+<span class="s">                &quot;FROM student_enrollments_view GROUP BY 1 ORDER BY 1&quot;)</span>
+<span class="s">    print(email, cur.fetchall())</span>
+<span class="s">    conn.close()</span>
+<span class="s">PY</span>
+</code></pre></div>
+<p>Expect the region-scoped viewer to return only their own region, the network
+viewer all four regions, and the <code>none</code>-scope viewer no rows (default-deny) —
+which confirms <code>resolveAccess</code> and the <code>student-&lt;scope&gt;</code> policies agree. Because
+identity is the connecting <code>user</code>, one loop covers the whole viewer matrix with
+no restart.</p>
+<p><strong>Alternative: REST <code>/load</code> with a JWT.</strong> The REST hook is disabled in developer
+mode, so this path needs auth <strong>on</strong> — run with <code>NODE_ENV=production</code> and drop
+<code>CUBEJS_DEV_MODE</code> (it overrides <code>NODE_ENV</code>):</p>
+<div class="highlight"><pre><span></span><code><span class="nv">NODE_ENV</span><span class="o">=</span>production<span class="w"> </span>npm<span class="w"> </span>run<span class="w"> </span>dev
+</code></pre></div>
+<p>Then sign an HS256 JWT whose <code>email</code> claim is the viewer (with
+<code>CUBEJS_API_SECRET</code>) and POST it:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">tok</span><span class="o">=</span><span class="k">$(</span>node<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;const j=require(&#39;jsonwebtoken&#39;);console.log(j.sign({email:&#39;you@apps.teamschools.org&#39;},process.env.CUBEJS_API_SECRET,{algorithm:&#39;HS256&#39;}))&quot;</span><span class="k">)</span>
+curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: </span><span class="nv">$tok</span><span class="s2">&quot;</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-X<span class="w"> </span>POST<span class="w"> </span>--data<span class="w"> </span><span class="s1">&#39;{&quot;query&quot;:{&quot;measures&quot;:[&quot;staff_pii.count_employees&quot;]}}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>http://localhost:4000/cubejs-api/v1/load
+</code></pre></div>
+<p><strong>The <code>CUBE_GROUP_MAP</code> trap.</strong> <code>.env.example</code> ships a <code>CUBE_GROUP_MAP</code> line
+whose placeholder value uses <strong>stale group names</strong> (<code>cube-network-detail</code>,
+<code>cube-access-student-data</code>) that predate the current taxonomy (<code>student-&lt;scope&gt;</code>
+/ <code>staff-directory</code> / <code>staff-pii-&lt;scope&gt;</code>). If you <code>cp .env.example .env</code>
+verbatim, that map's dev-bypass <strong>overrides real resolution with dead groups no
+policy matches → every view denies</strong>. Comment out (or delete) <code>CUBE_GROUP_MAP</code>
+so <code>resolveAccess</code> reads real HR data. (The bypass fires whenever
+<code>NODE_ENV !== production</code>, so it is inert on the REST auth-on path but active on
+the SQL-API/dev-mode path — keep it commented out either way.)</p>
+<p><strong>Testing branch models not yet in production.</strong> The cubes and <code>resolveAccess</code>
+read <code>kipptaf_marts</code> (production). If your branch reworks a mart the cubes read
+(<code>dim_staff_cube_access</code>, <code>dim_staff_reporting_chain</code>, etc.), production still
+has the old schema and resolution fails closed. To test against your branch:</p>
+<ol>
+<li>Build the changed models to your dev schema:
+   <code>uv run dbt build --project-dir src/dbt/kipptaf --target dev --defer --select &lt;models&gt;</code>
+   (lands in <code>zz_&lt;user&gt;_kipptaf_marts</code>).</li>
+<li>If a changed source is a Google Sheet, <strong>re-stage its external first</strong> — the
+   external table caches the sheet's columns, so a stale external makes the
+   staging model fail its contract:
+   <code>uv run dbt run-operation stage_external_sources --project-dir src/dbt/kipptaf --target dev --args "select: &lt;source&gt;.&lt;table&gt;" --vars '{ext_full_refresh: true}'</code>.</li>
+<li>Surgically redirect <strong>only</strong> the changed identity tables in <code>cube.js</code> / the
+   cube YAML to <code>zz_&lt;user&gt;_kipptaf_marts</code>; leave unchanged facts/dims on
+   <code>kipptaf_marts</code>. Do <strong>not</strong> redirect a table whose surrogate keys must join
+   against prod siblings — e.g. redirecting <code>dim_work_assignment_jobs</code> breaks
+   its join to prod <code>dim_staff_work_assignments</code>. This redirect is an
+   <strong>uncommitted</strong> scaffold; <code>git checkout</code> to revert before committing (and
+   <code>grep -r zz_ src/cube</code> to confirm none leaked).</li>
+</ol>
+<p><strong><code>count_students</code> is seasonal.</strong> On <code>student_enrollments</code> it anchors to
+<code>is_current_record</code> (current-as-of-now), so it returns 0 during summer/breaks.
+For a location-scoping check that returns real numbers year-round, use
+<code>student_attendance</code>'s <code>count_students</code> (additive over a date range).</p>
+<h3 id="sql-level-rls-invariants-to-check">SQL-level RLS invariants to check</h3>
+<p>The default-deny behavior rests entirely on Cube compiling an empty allow-list
+array to <code>IN ()</code> — no explicit "deny" branch exists at the SQL level. These two
+cases exercise that boundary directly and are worth running whenever
+<code>access_policy</code> or a pre-aggregation's dimension list changes.</p>
+<p><strong>1. Empty-allow-list case.</strong> A viewer whose role resolves
+<code>staff_pii_scope='all_in_scope'</code> but <code>staff_department_scope='none'</code> should get
+zero rows on <code>staff_pii</code>, not an error and not every row. Over the SQL API
+(viewer identity = the connecting <code>user</code>):</p>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>--with<span class="w"> </span>psycopg2-binary<span class="w"> </span>python<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;&#39;PY&#39;</span>
+<span class="s">import psycopg2</span>
+
+<span class="s">conn = psycopg2.connect(host=&quot;127.0.0.1&quot;, port=15432,</span>
+<span class="s">                        user=&quot;a-department-scope-none-viewer@apps.teamschools.org&quot;,</span>
+<span class="s">                        password=&quot;local-dev-sql&quot;, dbname=&quot;cube&quot;)</span>
+<span class="s">cur = conn.cursor()</span>
+<span class="s">cur.execute(&quot;SELECT MEASURE(count_employees) FROM staff_pii&quot;)</span>
+<span class="s">print(cur.fetchall())  # expect zero rows / zero count, not an error</span>
+<span class="s">PY</span>
+</code></pre></div>
+<p><strong>2. Pre-agg-served scoped case.</strong> Once a cube carries a pre-aggregation (e.g.
+<code>proficiency_rollup</code> on <code>student_assessment_scores</code>), a region-scoped viewer
+querying a rolled-up measure by subject on the corresponding view should get
+region-scoped rows AND the response should show the query was served by the
+pre-aggregation (rollup hit), not a fact-table fallback. Over the REST API,
+check <code>usedPreAggregations</code> in the response metadata:</p>
+<div class="highlight"><pre><span></span><code>curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: </span><span class="nv">$tok</span><span class="s2">&quot;</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">&#39;Content-Type: application/json&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-X<span class="w"> </span>POST<span class="w"> </span>--data<span class="w"> </span><span class="s1">&#39;{&quot;query&quot;:{</span>
+<span class="s1">    &quot;measures&quot;:[&quot;student_assessment_scores_view.pct_proficient&quot;],</span>
+<span class="s1">    &quot;dimensions&quot;:[&quot;student_assessment_scores_view.academic_subject&quot;]</span>
+<span class="s1">  }}&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>http://localhost:4000/cubejs-api/v1/load<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.usedPreAggregations&#39;</span>
+</code></pre></div>
+<p>An empty <code>{}</code> means the query fell back to the fact — check that every
+<code>row_level</code> scoping member the view filters on (e.g. <code>region_key</code>,
+<code>abbreviation</code>) is also declared in the pre-aggregation's <code>dimensions:</code> list. A
+schema test can catch this statically; this case confirms it end-to-end against
+a live server.</p>
+<h2 id="warnings">Warnings</h2>
+<p>Do <strong>not</strong> set <code>CUBE_GROUP_MAP</code> in Cube Cloud. This variable is a dev bypass
+that short-circuits BigQuery identity reads; it must never be configured in
+production. It only supplies <code>groups</code> (not the <code>row_level</code> interpolation
+values), so it cannot validate row-level scoping — and <code>.env.example</code>'s
+placeholder value uses stale group names that deny everything. See
+<a href="#testing-row-level-security-locally">Testing row-level security locally</a>.</p>
+<p>Do <strong>not</strong> use the Cube Playground <strong>Models</strong> tab in dev mode. It overwrites
+YAML files in <code>model/cubes/</code> and <code>model/views/</code> with auto-generated content,
+discarding hand-authored definitions.</p>
+<p>When a user requests a field their access tier excludes, Cube <strong>blocks the
+entire query</strong> — it does not silently drop the column and return the rest. In
+practice this only surfaces in Tableau, where a workbook published by someone
+with broad access (e.g. <code>staff-pii</code>) may error at query time for viewers with
+narrower access. BI tools that connect via Cube's SQL API (Superset) avoid this
+because each user's field list is filtered at connection time. A member-strip
+approach that drops inaccessible fields transparently is tracked in
+<a href="https://github.com/TEAMSchools/teamster/issues/4268">#4268</a>. Until then, build
+Tableau workbooks using only the fields your least-privileged audience can see,
+or publish separate workbooks per access tier.</p>
+<h2 id="using-cube-with-claude">Using Cube with Claude</h2>
+<p>The Cube MCP server lets Claude query your organization's data using plain
+English — no SQL required. Once connected, you can ask questions like:</p>
+<ul>
+<li>"What metrics are available?"</li>
+<li>"Show me ADA by school for this year"</li>
+<li>"What are the available dimensions in the student cube?"</li>
+</ul>
+<p>Claude uses the Cube semantic layer to find and return the right data. You'll
+need a Cube API key from the data team before getting started.</p>
+<h3 id="claude-desktop">Claude Desktop</h3>
+<ol>
+<li><strong>Install Node.js</strong> if you don't have it:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>node<span class="w"> </span>--version
+</code></pre></div>
+<p>If you see a version number, skip ahead. Otherwise install via Homebrew:</p>
+<div class="highlight"><pre><span></span><code>brew<span class="w"> </span>install<span class="w"> </span>node
+</code></pre></div>
+<p>Then find the full path to <code>npx</code> — you'll need it below:</p>
+<div class="highlight"><pre><span></span><code>which<span class="w"> </span>npx
+</code></pre></div>
+<ol>
+<li><strong>Open the config file.</strong> In Claude Desktop, go to <strong>Settings → Developer →
+   Edit Config</strong>. Or navigate directly in Finder:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>~/Library/Application Support/Claude/claude_desktop_config.json
+</code></pre></div>
+<p>If the file doesn't exist yet, create it with an empty <code>{}</code>.</p>
+<ol>
+<li><strong>Add the Cube MCP server.</strong> Replace <code>[YOUR-API-KEY]</code> with your key, and
+   update the <code>command</code> path if your <code>npx</code> location differs:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;mcpServers&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;cube-mcp-server&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;command&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/opt/homebrew/bin/npx&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;args&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="s2">&quot;-y&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;mcp-remote&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;https://ai.gcp-us-central1.cubecloud.dev/api/mcp&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;--transport&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="s2">&quot;http&quot;</span>
+<span class="w">      </span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;env&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;CUBE_TOKEN&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;[YOUR-API-KEY]&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>If your config already has content, add <code>mcpServers</code> alongside the existing
+   keys — don't replace anything.</p>
+<ol>
+<li><strong>Restart Claude Desktop.</strong> Press <code>Cmd+Q</code> to fully quit (don't just close the
+   window), then reopen. A tools/hammer icon in the bottom-right of the chat
+   input confirms the server is connected.</li>
+</ol>
+<p>!!! warning "Keep your API key private." Treat it like a password — don't share
+your config file with anyone outside the pilot group.</p>
+<h3 id="claude-code-vs-code">Claude Code (VS Code)</h3>
+<p>In the Codespace, the Cube MCP server is already configured in <code>.mcp.json</code> — no
+manual setup required. When Claude Code first tries to use it, you'll be
+prompted to OAuth into Cube Cloud. Approve the connection and you're ready to
+query.</p>
+<h3 id="using-cube-in-claude">Using Cube in Claude</h3>
+<p>Once connected, toggle Cube MCP on via the <strong>+</strong> or tools menu in your chat,
+then ask questions in plain English:</p>
+<ul>
+<li>"What data do you have access to?"</li>
+<li>"What metrics can I query?"</li>
+<li>"Show me [metric] by [dimension] for [time period]"</li>
+</ul>
+<p>Claude interprets your question using the Cube semantic layer and returns
+results directly in the chat. No table names, field names, or SQL required.</p>
+<h3 id="troubleshooting">Troubleshooting</h3>
+<p><strong>"Server disconnected" error</strong> — Claude can't find <code>npx</code>. Run <code>which npx</code> in
+Terminal and make sure the path in your config matches exactly.</p>
+<p><strong><code>npx</code> not found</strong> — Node.js isn't installed. Follow step 1 above.</p>
+<p><strong>Tools icon doesn't appear after restart</strong> — Your JSON has a formatting error
+(missing comma, mismatched brackets). Paste the file into
+<a href="https://jsonlint.com">jsonlint.com</a> to check.</p>
+<p><strong>Check the logs</strong> — For any other issue, check the MCP server log:</p>
+<div class="highlight"><pre><span></span><code>tail<span class="w"> </span>-f<span class="w"> </span>~/Library/Logs/Claude/mcp-server-cube-mcp-server.log
+</code></pre></div>
+<h2 id="admin-setup">Admin Setup</h2>
+<h3 id="how-access-is-resolved">How access is resolved</h3>
+<p>Cube resolves each user's access at query time via two BigQuery reads against
+<code>kipptaf_marts</code> (no Google Admin Directory API):</p>
+<ol>
+<li><strong><code>dim_staff_cube_access</code></strong> — one row per active+primary staff member, keyed
+   on <code>google_email</code>. Carries per-field scope enums (<code>student_location_scope</code>,
+   <code>staff_pii_scope</code>, etc.) that <code>cube.js</code> translates into Cube group strings
+   via <code>access.buildGroups(row)</code>.</li>
+<li><strong><code>dim_staff_reporting_chain</code></strong> — transitive closure of the org tree, keyed
+   on <code>(manager_staff_key, reportee_staff_key)</code>. Used to resolve the viewer's
+   direct and indirect reports for <code>reporting_chain</code> and
+   <code>reporting_chain_or_below_rank</code> scopes.</li>
+</ol>
+<p>Results are cached until next midnight ET. A staff member not in
+<code>dim_staff_cube_access</code> (e.g. a non-staff admin user) resolves to an empty group
+list and sees no data (default deny).</p>
+<h3 id="access-groups">Access groups</h3>
+<p><code>access.buildGroups(row)</code> emits scope-specific group strings from the access
+row's scope columns. A viewer holds at most one group per axis, and each gated
+view's <code>access_policy</code> matches exactly one of them — no group on an axis means
+default-deny for the views gated by it:</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Emitted when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>student-region</code> / <code>student-school</code> / <code>student-network</code></td>
+<td>matching non-<code>none</code> <code>student_location_scope</code></td>
+</tr>
+<tr>
+<td><code>staff-directory</code></td>
+<td>always (every resolved viewer)</td>
+</tr>
+<tr>
+<td><code>staff-pii-&lt;scope&gt;</code></td>
+<td>one group per non-<code>none</code> <code>staff_pii_scope</code></td>
+</tr>
+<tr>
+<td><code>staff-compensation</code> / <code>staff-observations</code> / <code>staff-benefits</code></td>
+<td>matching non-<code>none</code> <code>*_scope</code></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>staff_pii_scope</code> values are <code>all_in_scope</code>, <code>teaching_staff</code>,
+<code>reporting_chain</code>, and <code>reporting_chain_or_below_rank</code>. The compensation /
+observations / benefits groups are emitted but no view consumes them yet
+(forward-compat).</p>
+<p>Row-level filtering is enforced <strong>declaratively in each view's <code>access_policy</code></strong>
+— <code>row_level</code> filters that interpolate the <code>securityContext</code> values
+<code>resolveAccess</code> builds — <strong>not</strong> in <code>queryRewrite</code>, which now carries only the
+snapshot-anchor guard. Student domains are single collapsed views (no
+summary/detail split); any <code>student-&lt;scope&gt;</code> group sees every field, including
+PII, with location scoping applied by the matching policy. Staff is split into
+<code>staff_directory</code> (open roster, no PII) and <code>staff_pii</code> (the sensitive fields,
+gated per <code>staff_pii_scope</code> by a location-and-department remit precomputed into
+<code>securityContext</code>).</p>
+<h3 id="cube-cloud-one-time-setup">Cube Cloud One-Time Setup</h3>
+<p>Performed in the Cube Cloud UI by an admin:</p>
+<ol>
+<li>Create a new Cube Cloud deployment — use <strong>Development Instance</strong> type for
+   now; switch to <strong>Production Cluster</strong> before connecting downstream tools
+   (Superset, Streamlit) so queries don't hit a cold start</li>
+<li>Connect the <code>TEAMSchools/teamster</code> GitHub repository</li>
+<li>Set the Cube project path to <code>src/cube/</code></li>
+<li>Set the production branch to <code>main</code> — merges trigger automatic redeploy</li>
+<li>Set the following environment variables in Cube Cloud:</li>
+<li><code>CUBEJS_DB_TYPE=bigquery</code></li>
+<li><code>CUBEJS_DB_BQ_PROJECT_ID=teamster-332318</code></li>
+<li><code>CUBEJS_DB_BQ_CREDENTIALS</code> — service account JSON (base64-encoded)</li>
+<li><code>CUBEJS_SQL_SUPER_USER=cube-superset-service</code> — SQL API super-user for
+     Superset user impersonation (follow-up integration)</li>
+</ol>
+<p>Cube Cloud automatically generates <code>CUBEJS_API_SECRET</code>, the SQL API username,
+   and the SQL API password on deployment creation — find them under the
+   deployment's <strong>Settings → Environment Variables</strong>. Do not set these manually.</p>
+<ol>
+<li>The service account for BigQuery needs <code>roles/bigquery.dataViewer</code> and
+   <code>roles/bigquery.jobUser</code> on the <code>teamster-332318</code> project — both for the
+   warehouse data (<code>dim_*</code> / <code>fct_*</code>) and for <code>dim_staff_cube_access</code> /
+   <code>dim_staff_reporting_chain</code> used for identity resolution</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

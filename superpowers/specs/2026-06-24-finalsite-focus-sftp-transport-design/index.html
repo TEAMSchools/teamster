@@ -1,0 +1,1982 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Finalsite → Focus SFTP transport (Component 5) - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-focus-sftp-transport-component-5" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite → Focus SFTP transport (Component 5)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Components
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Components">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-ssh_focus-resource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. SSH_FOCUS resource
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-configfocusyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. config/focus.yaml
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-assetspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. assets.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-jobspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. jobs.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-schedulespy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. schedules.py
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-trim-rpt_focus__-models-to-the-focus-contract-dbt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Trim rpt_focus__* models to the Focus contract (dbt)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-layouts-focus-import-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File layouts (Focus import contract)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling-and-edge-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error handling and edge cases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-and-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing and validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dependencies-and-ship-gates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dependencies and ship gates
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-items-to-confirm-not-blocking-the-build" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open items to confirm (not blocking the build)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-06-24-finalsite-focus-sftp-transport-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-focus-sftp-transport-component-5">Finalsite → Focus SFTP transport (Component 5)</h1>
+<ul>
+<li><strong>Issue:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4207">#4207</a></li>
+<li><strong>Parent:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4073">#4073</a> —
+  Finalsite → Focus enrollment integration (KIPP Miami)</li>
+<li><strong>Status:</strong> Design approved; ready for implementation plan</li>
+</ul>
+<h2 id="summary">Summary</h2>
+<p>Build the transport seam that renders the five Focus-shaped output models to
+coordinated CSVs and delivers them to Focus over SFTP. Component 4
+(<a href="https://github.com/TEAMSchools/teamster/issues/4201">#4201</a>) built the
+<code>rpt_focus__*</code> output models; nothing yet pushes them to Focus. This component
+adds that push using the existing <code>build_bigquery_query_sftp_asset</code> factory (no
+library changes): YAML config, one new SSH resource, and a small trim of the
+<code>rpt_focus__*</code> models so their columns exactly match the Focus import contract.</p>
+<h2 id="context">Context</h2>
+<p>The five Focus SFTP template layouts are produced by <code>rpt_focus__*</code> models:</p>
+<ul>
+<li><code>rpt_focus__demographics</code></li>
+<li><code>rpt_focus__student_enrollment</code></li>
+<li><code>rpt_focus__addresses</code></li>
+<li><code>rpt_focus__contacts</code></li>
+<li><code>rpt_focus__linked_students</code></li>
+</ul>
+<p>The authoritative models live in the <strong>kipptaf</strong> dbt project
+(<code>src/dbt/kipptaf/models/extracts/focus/</code>), materializing to the
+<code>kipptaf_extracts</code> schema. They carry the <code>stdt_id</code> / <code>student_id</code> null stub
+(repointed by <a href="https://github.com/TEAMSchools/teamster/issues/4205">#4205</a>) and
+the crosswalk logic (gaps tracked in
+<a href="https://github.com/TEAMSchools/teamster/issues/4208">#4208</a>).</p>
+<p>The <strong>kippmiami</strong> dbt project re-exposes them as thin pass-through models
+reading <code>source("kipptaf_extracts", "rpt_focus__*")</code> and materializing into
+<code>kippmiami_extracts</code>. Those pass-throughs exist so a kippmiami-located transport
+can read a kippmiami dataset — which is the home #4073 specifies (build in the
+kippmiami code location, alongside the existing Focus DLT and Finalsite assets).</p>
+<p>Focus imports the five files as one coordinated set keyed on a caller-supplied
+<code>STDT_ID</code>.</p>
+<h2 id="decisions">Decisions</h2>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Choice</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Transport</td>
+<td>SFTP (5 coordinated CSVs)</td>
+<td>Named scope of #4207; factory exists; #4073 flagged the API may not be able to create the enrollment record</td>
+</tr>
+<tr>
+<td>Asset location</td>
+<td><code>kippmiami</code> code location, reading <code>kippmiami_extracts.rpt_focus__*</code></td>
+<td>Honors #4073; uses the existing pass-through models as designed</td>
+</tr>
+<tr>
+<td>Asset structure</td>
+<td>Five config-driven factory assets, one daily job</td>
+<td>Pure reuse of the <code>build_bigquery_query_sftp_asset</code> factory; matches the <code>powerschool</code> extracts idiom</td>
+</tr>
+<tr>
+<td>Cadence</td>
+<td>Daily schedule</td>
+<td>Focus picks up a fresh full set daily; can be scoped to the enrollment window later</td>
+</tr>
+<tr>
+<td>Pre-launch gating</td>
+<td>Schedule ships STOPPED (no <code>default_status</code>)</td>
+<td>No query-level gate needed; Ops enables once data and creds are ready</td>
+</tr>
+<tr>
+<td>Header mapping</td>
+<td>Uppercase via <code>header_replacements</code></td>
+<td>Focus header = uppercase dbt column (1:1)</td>
+</tr>
+<tr>
+<td>Column set</td>
+<td>Trim extra columns in the <code>rpt_focus__*</code> models</td>
+<td>Models become exactly the Focus contract, so the transport stays a plain pass-through (no <code>select</code> needed)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="architecture">Architecture</h2>
+<div class="highlight"><pre><span></span><code>kipptaf rpt_focus__*          (kipptaf_extracts)   &lt;- #4205 / #4208 land here
+  -&gt; kippmiami pass-throughs  (kippmiami_extracts)
+  -&gt; 5 build_bigquery_query_sftp_asset definitions  (kippmiami/extracts)
+       query -&gt; CSV (Focus header casing via header_replacements)
+  -&gt; SFTP push to Focus incoming dir  (SSH_FOCUS resource)
+  -&gt; Focus coordinated template import (keyed on STDT_ID)
+</code></pre></div>
+<p>All five assets are built by the existing factory in
+<code>src/teamster/libraries/extracts/assets.py</code>. No library changes.</p>
+<h2 id="components">Components</h2>
+<h3 id="1-ssh_focus-resource">1. <code>SSH_FOCUS</code> resource</h3>
+<p>In <code>src/teamster/core/resources.py</code>, mirror <code>SSH_COUCHDROP</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">SSH_FOCUS</span> <span class="o">=</span> <span class="n">SSHResource</span><span class="p">(</span>
+    <span class="n">remote_host</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FOCUS_SFTP_HOST&quot;</span><span class="p">),</span>
+    <span class="n">remote_port</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span>
+    <span class="n">username</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FOCUS_SFTP_USERNAME&quot;</span><span class="p">),</span>
+    <span class="n">password</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FOCUS_SFTP_PASSWORD&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Wire <code>"ssh_focus": SSH_FOCUS</code> into the resources dict in
+<code>src/teamster/code_locations/kippmiami/definitions.py</code>. The factory resolves the
+SSH resource key from <code>destination_config.name</code> (<code>focus</code> -&gt; <code>ssh_focus</code>).</p>
+<p><code>SSHResource</code> also supports key-based auth — confirm password vs key with
+whoever provisions the Focus SFTP account before finalizing the field set.</p>
+<h3 id="2-configfocusyaml">2. <code>config/focus.yaml</code></h3>
+<p>New file <code>src/teamster/code_locations/kippmiami/extracts/config/focus.yaml</code>,
+following the shape of <code>powerschool.yaml</code>. One <code>assets:</code> entry per model.
+Because the <code>rpt_focus__*</code> models are trimmed to exactly the Focus contract
+(Component 6), each asset is a plain pass-through of the whole table; the only
+output shaping is <code>file_config.format.header_replacements</code>, which renames each
+lowercase dbt column to its uppercase Focus header (mechanically,
+<code>column.upper()</code>).</p>
+<p>Worked example (<code>demographics</code>, abbreviated):</p>
+<div class="highlight"><pre><span></span><code><span class="nt">assets</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">query_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schema</span>
+<span class="w">      </span><span class="nt">value</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">table</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kippmiami_extracts</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_focus__demographics</span>
+<span class="w">    </span><span class="nt">file_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">stem</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;focus_filename&gt;</span><span class="w"> </span><span class="c1"># see Open items</span>
+<span class="w">      </span><span class="nt">suffix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">csv</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">header_replacements</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">stdt_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STDT_ID</span>
+<span class="w">          </span><span class="nt">last_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LAST_NAME</span>
+<span class="w">          </span><span class="nt">first_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FIRST_NAME</span>
+<span class="w">          </span><span class="c1"># ... one entry per column -&gt; its uppercase form</span>
+<span class="w">    </span><span class="nt">destination_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">focus</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;focus_incoming_dir&gt;</span>
+<span class="w">  </span><span class="c1"># ... four more entries: student_enrollment, addresses, contacts,</span>
+<span class="w">  </span><span class="c1">#     linked_students</span>
+</code></pre></div>
+<p><code>header_replacements</code> is a pure rename of the CSV header row (no reorder, no
+filter). The full per-file <code>header_replacements</code> maps are enumerated in the
+implementation plan from the <em>File layouts</em> section. CSV column order follows
+the model's <code>SELECT</code> order, which Component 6 keeps aligned to Focus
+<code>COLUMN ORDER</code>.</p>
+<h3 id="3-assetspy">3. <code>assets.py</code></h3>
+<p>In <code>src/teamster/code_locations/kippmiami/extracts/assets.py</code>, add the focus
+asset list and append it to <code>assets</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">focus_extract_assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">build_bigquery_query_sftp_asset</span><span class="p">(</span>
+        <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">timezone</span><span class="o">=</span><span class="n">LOCAL_TIMEZONE</span><span class="p">,</span> <span class="o">**</span><span class="n">a</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">config_from_files</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config_dir</span><span class="si">}</span><span class="s2">/focus.yaml&quot;</span><span class="p">])[</span><span class="s2">&quot;assets&quot;</span><span class="p">]</span>
+<span class="p">]</span>
+
+<span class="n">assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="o">*</span><span class="n">powerschool_extract_assets</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">focus_extract_assets</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<h3 id="4-jobspy">4. <code>jobs.py</code></h3>
+<div class="highlight"><pre><span></span><code><span class="n">focus_extract_asset_job</span> <span class="o">=</span> <span class="n">define_asset_job</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">__extracts__focus__asset_job&quot;</span><span class="p">,</span>
+    <span class="n">selection</span><span class="o">=</span><span class="n">focus_extract_assets</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<h3 id="5-schedulespy">5. <code>schedules.py</code></h3>
+<div class="highlight"><pre><span></span><code><span class="n">focus_extract_assets_schedule</span> <span class="o">=</span> <span class="n">ScheduleDefinition</span><span class="p">(</span>
+    <span class="n">job</span><span class="o">=</span><span class="n">focus_extract_asset_job</span><span class="p">,</span>
+    <span class="n">cron_schedule</span><span class="o">=</span><span class="s2">&quot;0 3 * * *&quot;</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Add to the <code>schedules</code> list. No <code>default_status</code> is set, so Dagster ships the
+schedule STOPPED. Asset keys land as <code>kippmiami/extracts/focus/&lt;stem&gt;_&lt;suffix&gt;</code>;
+each asset's upstream dep auto-resolves to the <code>kippmiami/extracts/rpt_focus__*</code>
+dbt model via the factory's table-name dep key (no explicit <code>deps</code> needed, same
+as <code>powerschool</code>). Schema-type queries also get the branch-deploy <code>zz_dagster_</code>
+schema redirect for free.</p>
+<h3 id="6-trim-rpt_focus__-models-to-the-focus-contract-dbt">6. Trim <code>rpt_focus__*</code> models to the Focus contract (dbt)</h3>
+<p>Each model carries one column the Focus layout does not import; remove it so the
+model output is exactly the contract (see <em>File layouts</em>):</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Column to drop</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rpt_focus__demographics</code></td>
+<td><code>tide_access_code</code></td>
+</tr>
+<tr>
+<td><code>rpt_focus__student_enrollment</code></td>
+<td><code>fl_days_absent_not_disc</code></td>
+</tr>
+<tr>
+<td><code>rpt_focus__addresses</code></td>
+<td><code>mail_zipcode</code></td>
+</tr>
+<tr>
+<td><code>rpt_focus__contacts</code></td>
+<td><code>contact7_callout</code> (verify)</td>
+</tr>
+<tr>
+<td><code>rpt_focus__linked_students</code></td>
+<td><code>relationship</code></td>
+</tr>
+</tbody>
+</table>
+<p>For each drop: remove the column from the SQL <code>SELECT</code>, from the contract
+<code>columns:</code> in the model's <code>properties</code> yml, and from any unit-test <code>expect</code>.
+Apply in both layers in dependency order — the authoritative <strong>kipptaf</strong> model
+first (<code>src/dbt/kipptaf/models/extracts/focus/</code>), then the <strong>kippmiami</strong>
+pass-through that selects it (<code>src/dbt/kippmiami/models/extracts/focus/</code>) — or
+the pass-through fails on a missing column.</p>
+<p>Before dropping each column, confirm no other model/exposure consumes it (these
+<code>rpt_focus__*</code> models are Focus-export-only, so the expectation is none). Three
+of these models (<code>demographics</code>, <code>student_enrollment</code>, <code>contacts</code>) are also
+edited by #4205 — coordinate so the two branches don't collide (see
+<em>Dependencies</em>).</p>
+<h2 id="file-layouts-focus-import-contract">File layouts (Focus import contract)</h2>
+<p>Source: the Focus "Florida K-12 Import Layouts" sheet (working parse in
+<code>.claude/scratch/focus-import-layout-mapping.md</code>, not committed). Each file's
+CSV columns must be exactly these fields, in this order; the CSV header is the
+<strong>uppercase</strong> form of each. The <code>rpt_focus__*</code> models already match this order
+but carry one extra column each (listed as <em>drop</em>) that Component 6 removes.</p>
+<p><code>demographics</code> (42 fields) — drop <code>tide_access_code</code>:</p>
+<div class="highlight"><pre><span></span><code>stdt_id, last_name, first_name, name_suffix, middle_name, nickname, dt_birth,
+gender, lang, stdt_email, ethnic_hl, single_ethnic, race_am_ind_ak_nat,
+race_asian, race_black, race_nat_haw_pac_isl, race_white, residence_county,
+contry_birth, homeroom_tchr, resident_st, birth_loc, bdate_verif, immun_st,
+primary_home_lang, native_parent_lang, grde_enter_dist, msix_id, homeroom,
+pmrn, internt_perm, act_perm, direct_perm, screen_perm, photo_vid_perm,
+survey_perm, mckay_sch_attend, fhsaa_el3_ind, fhsaa_el3ch_ind,
+dt_home_lang_survey, casas_track, lcp_cont_stdt
+</code></pre></div>
+<p><code>student_enrollment</code> (28 fields) — drop <code>fl_days_absent_not_disc</code>:</p>
+<div class="highlight"><pre><span></span><code>syear, school_id, student_id, grade_id, start_date, enrollment_code, end_date,
+drop_code, calendar_id, prior_dist, prior_state, prior_country, ed_choice,
+stdt_dis_affect, offender_transfer_stdt, came_from, moved_to, sec_sch,
+grde_prom_st, good_cause_exempt, graduation_requirement_program, next_school,
+next_grade, district_ood, sch_ood, include_in_class_rank, fl_days_present,
+fl_days_absent
+</code></pre></div>
+<p><code>addresses</code> (12 fields) — drop <code>mail_zipcode</code>:</p>
+<div class="highlight"><pre><span></span><code>student_id, address, address2, city, state, zipcode, phone, mailing,
+mail_address, mail_address2, mail_city, mail_state
+</code></pre></div>
+<p><code>contacts</code> (50 fields) — drop <code>contact7_callout</code>:</p>
+<div class="highlight"><pre><span></span><code>student_id, student_relation, sort_order, first_name, middle_name, last_name,
+resides_with_stud, custody, emergency, pickup, address, address2, city, state,
+zipcode, email,
+then contact{1..6}_{type, value, blocked, unlisted, callout},
+contact7_{type, value, blocked, unlisted}
+</code></pre></div>
+<p><code>linked_students</code> (2 fields) — drop <code>relationship</code>:</p>
+<div class="highlight"><pre><span></span><code>primary_student_id, secondary_student_id
+</code></pre></div>
+<p>Notes for the implementation plan: <code>mail_zipcode</code> is confirmed excluded (absent
+from both the grouped and per-layout sheet sections). <code>contact7_callout</code> is
+omitted in the parsed layout (50 fields, and contacts 1–6 each have a callout) —
+treat as a drop but sanity-check the asymmetry against the live Focus sheet.
+<code>resides_with_stud</code> is a required computed field (no direct Focus column) —
+confirm its derivation.</p>
+<h2 id="data-flow">Data flow</h2>
+<ol>
+<li>Upstream dbt builds <code>kipptaf_extracts.rpt_focus__*</code>, then the kippmiami
+   pass-throughs into <code>kippmiami_extracts.rpt_focus__*</code>.</li>
+<li>The daily job materializes the five focus extract assets together.</li>
+<li>Each asset runs its BigQuery query, serializes to CSV applying
+   <code>header_replacements</code>, and uploads to the Focus incoming directory.</li>
+<li>Focus imports the coordinated set, keyed on <code>STDT_ID</code>.</li>
+</ol>
+<h2 id="error-handling-and-edge-cases">Error handling and edge cases</h2>
+<ul>
+<li><strong>Empty-result guard</strong> — the factory returns early when the query yields zero
+  rows, so no empty CSV is written or uploaded.</li>
+<li><strong>Non-atomic five-file delivery</strong> — the five SFTP uploads are independent; a
+  mid-run failure could leave a partial set on the server. Mitigated by fixed
+  filenames that overwrite on the next daily run, and by the schedule staying
+  stopped until the data is real. Revisit a single all-or-nothing asset only if
+  Focus chokes on a partial set.</li>
+<li><strong>Stopped schedule is the launch gate</strong> — Ops enables the schedule only once
+  all of these hold: <code>STDT_ID</code> populated (#4205), the E05/E02 enrollment-code
+  rule resolved (#4208), and Focus SFTP credentials provisioned.</li>
+</ul>
+<h2 id="testing-and-validation">Testing and validation</h2>
+<ul>
+<li><code>uv run dbt build --select rpt_focus__*</code> in both kipptaf and kippmiami —
+  models build.</li>
+<li><code>uv run python -c "import teamster.code_locations.kippmiami.definitions"</code> and
+  <code>uv run dagster definitions validate -m teamster.code_locations.kippmiami.definitions</code>
+  — wiring imports and validates (env-var false errors in codespace are
+  expected; fall back to the import check).</li>
+<li>Diff a generated CSV header row against the Focus template spreadsheet to
+  confirm casing.</li>
+<li>Optional: a single-asset run in a branch deployment against a Focus <strong>test</strong>
+  SFTP path once credentials exist.</li>
+</ul>
+<h2 id="dependencies-and-ship-gates">Dependencies and ship gates</h2>
+<p>These gate <strong>enabling</strong> the schedule, not building the transport:</p>
+<ul>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4205">#4205</a> — <code>STDT_ID</code>
+  populated (blocked on Finalsite minting the Focus student id).</li>
+<li><a href="https://github.com/TEAMSchools/teamster/issues/4208">#4208</a> §1 — E05 vs E02
+  enrollment-code rule resolved. §2 (unfilled crosswalk cells) is warn-level and
+  does not block.</li>
+</ul>
+<p>Build-time coordination: #4205 also edits <code>rpt_focus__demographics</code>,
+<code>rpt_focus__contacts</code>, and <code>rpt_focus__student_enrollment</code> (repointing the id
+stub). The Component 6 column trim touches the same models, so whichever branch
+merges second must rebase to avoid a conflict — or fold the trim into the #4205
+branch if they land together.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>OAuth2 Focus API transport (the swappable alternative; deferred).</li>
+<li>The #4205 / #4208 upstream dbt fixes.</li>
+<li>The #4073 reconciliation model and the optional Finalsite write-back.</li>
+</ul>
+<h2 id="open-items-to-confirm-not-blocking-the-build">Open items to confirm (not blocking the build)</h2>
+<ul>
+<li><strong>Header strings — resolved.</strong> Focus header = uppercase dbt column (see <em>File
+  layouts</em>). The per-file <code>header_replacements</code> maps are enumerated in the
+  implementation plan.</li>
+<li><strong>Filenames + format</strong> — the delivered file name per layout (fixed, no date
+  stamp, so it overwrites daily), the suffix (<code>csv</code> assumed), and any delimiter.
+  The layout/tab names are the basis; confirm the exact name Focus expects on
+  its SFTP server.</li>
+<li><strong><code>contacts</code> tail</strong> — sanity-check the <code>contact7_callout</code> drop against the
+  live Focus sheet (the asymmetry is unusual), and confirm the
+  <code>resides_with_stud</code> derivation. (<code>mail_zipcode</code> is already confirmed
+  excluded.)</li>
+<li><strong>Focus SFTP host, credentials, incoming path, auth method</strong> (password vs key)
+  — Ops/IT provision in Dagster Cloud. Incoming-directory path: relative
+  preferred, per the extracts library guidance.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2864 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>#3780 DISTINCT Cleanup Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#3780-distinct-cleanup-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              #3780 DISTINCT Cleanup Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#phase-0-pre-merge-bq-shape-audit-no-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 0: Pre-merge BQ shape audit (no commit)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Phase 0: Pre-merge BQ shape audit (no commit)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-01-run-surveys-side-bq-shape-audits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 0.1: Run surveys-side BQ shape audits
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-02-compute-expected-assessments-row-count-deltas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 0.2: Compute expected assessments row-count deltas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-03-grep-cube-for-state_nj-state_fl-literals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 0.3: Grep cube for state_nj / state_fl literals
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commit-1-assessments-mart-rewrite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commit 1: Assessments mart rewrite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Commit 1: Assessments mart rewrite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-11-rewrite-dim_assessments-state-ctes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1.1: Rewrite dim_assessments state CTEs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-12-rewrite-dim_assessment_administrations-state-ctes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1.2: Rewrite dim_assessment_administrations state CTEs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-13-commit-assessments-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1.3: Commit assessments changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commit-2-surveys-redirects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commit 2: Surveys redirects
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Commit 2: Surveys redirects">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-21-rewrite-dim_survey_questionssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2.1: Rewrite dim_survey_questions.sql
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-22-rewrite-dim_surveyssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2.2: Rewrite dim_surveys.sql
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-23-rewrite-bridge_survey_questionssql" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2.3: Rewrite bridge_survey_questions.sql
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-24-commit-surveys-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2.4: Commit surveys changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commit-3-cube-migration-conditional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Commit 3: Cube migration (conditional)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Commit 3: Cube migration (conditional)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-31-apply-cube-literal-swaps-only-if-phase-0-task-03-surfaced-matches" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3.1: Apply cube literal swaps (only if Phase 0 Task 0.3 surfaced matches)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-merge-push-ci-triage-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-merge: push, CI triage, PR
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pre-merge: push, CI triage, PR">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-41-push-and-watch-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4.1: Push and watch CI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-42-project-board-scan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4.2: Project board scan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-43-file-pre-existing-follow-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4.3: File pre-existing follow-up
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-44-open-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4.4: Open PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review-checklist-executed-after-plan-is-written" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Review Checklist (executed after plan is written)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-05-24-distinct-cleanup-3780-plan.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="3780-distinct-cleanup-implementation-plan">#3780 DISTINCT Cleanup Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Replace <code>SELECT DISTINCT</code> / <code>GROUP BY</code> collapses in 5 mart models with
+correct constructs (annotated DISTINCT for pure projection, redirects to
+existing entity-grain models for surveys), and split NJSLA/PARCC/FAST/FSA/EOC
+into distinct lineages in <code>dim_assessments</code> + <code>dim_assessment_administrations</code>.</p>
+<p><strong>Architecture:</strong> Per
+<code>docs/superpowers/specs/2026-05-24-distinct-cleanup-3780-design.md</code>. No new
+intermediates. Assessments side switches from <code>int_pearson__all_assessments</code> /
+<code>int_fldoe__all_assessments</code> (legacy denormalized) to 8 per-staging-table CTEs
+each carrying a literal <code>assessment_type</code> lineage. Surveys side redirects to
+existing entity-grain models (<code>int_google_forms__form__items</code>,
+<code>stg_alchemer__survey_question</code>, <code>stg_alchemer__survey</code>,
+<code>stg_google_forms__form</code>).</p>
+<p><strong>Tech Stack:</strong> dbt 1.11, BigQuery, sqlfluff (BigQuery dialect), trunk-fmt
+pre-commit.</p>
+<p><strong>Working directory:</strong>
+<code>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780</code>.
+Branch <code>cbini/refactor/claude-distinct-cleanup-3780</code> is linked to issue #3780.</p>
+<p><strong>Verification command (used in every task):</strong></p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>&lt;model&gt;+<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod
+</code></pre></div>
+<hr />
+<h2 id="phase-0-pre-merge-bq-shape-audit-no-commit">Phase 0: Pre-merge BQ shape audit (no commit)</h2>
+<h3 id="task-01-run-surveys-side-bq-shape-audits">Task 0.1: Run surveys-side BQ shape audits</h3>
+<p><strong>Files:</strong> none (BQ queries only)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Run query A (Google Forms questions redirect)</strong> via
+      <code>mcp__bigquery__execute_sql</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">  </span><span class="k">current</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">form_id</span><span class="p">,</span><span class="w"> </span><span class="n">item_abbreviation</span><span class="p">,</span><span class="w"> </span><span class="n">item_title</span><span class="p">,</span><span class="w"> </span><span class="n">question_kind</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_google_forms</span><span class="p">.</span><span class="n">int_google_forms__form_responses</span><span class="o">`</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">item_title</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">),</span>
+<span class="w">  </span><span class="n">target</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="n">form_id</span><span class="p">,</span><span class="w"> </span><span class="n">item_abbreviation</span><span class="p">,</span><span class="w"> </span><span class="n">item_title</span><span class="p">,</span><span class="w"> </span><span class="n">question_kind</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_google_forms</span><span class="p">.</span><span class="n">int_google_forms__form__items</span><span class="o">`</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">item_title</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">current</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_current</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">target</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_target</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">current</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">target</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_current_only</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">target</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">current</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_target_only</span><span class="p">,</span>
+</code></pre></div>
+<p>Save the 4-tuple to a scratch note for the PR body.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run query B (Alchemer questions)</strong> — same shape, sources from
+      spec section "Phase 0 → B".</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run query C (Google Forms surveys)</strong> — spec section "Phase 0 →
+      C".</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run query D (Alchemer surveys)</strong>. First resolve <code>&lt;title_col&gt;</code>:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">column_name</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_alchemer</span><span class="p">.</span><span class="n">INFORMATION_SCHEMA</span><span class="p">.</span><span class="n">COLUMNS</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="k">table_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;stg_alchemer__survey&#39;</span>
+<span class="w">  </span><span class="k">and</span><span class="w"> </span><span class="k">lower</span><span class="p">(</span><span class="k">column_name</span><span class="p">)</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%title%&#39;</span>
+</code></pre></div>
+<p>Then substitute in spec query D and run.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run query E (Google Forms bridge pairs)</strong> — spec section "Phase
+      0 → E".</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Run query F (Alchemer bridge pairs)</strong> — spec section "Phase 0 →
+      F".</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Run query G (Manager-pairs redirect equivalence)</strong>:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">  </span><span class="k">current</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span><span class="w"> </span><span class="n">question_shortname</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_surveys</span><span class="p">.</span><span class="n">int_surveys__manager_survey_details</span><span class="o">`</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">survey_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;historic_alchemer_Manager_survey&#39;</span>
+<span class="w">      </span><span class="k">and</span><span class="w"> </span><span class="n">question_shortname</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">),</span>
+<span class="w">  </span><span class="n">target</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">      </span><span class="s1">&#39;historic_alchemer_Manager_survey&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">      </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_google_forms</span><span class="p">.</span><span class="n">int_google_forms__form__items</span><span class="o">`</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">form_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0&#39;</span>
+<span class="w">      </span><span class="k">and</span><span class="w"> </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="k">select</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">current</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_current</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">target</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_target</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">current</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">target</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_current_only</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">target</span><span class="w"> </span><span class="k">except</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">current</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_target_only</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Apply decision rules.</strong> For queries A–F, classify each per spec
+      "Phase-0 decision rules". For query G, <strong><code>n_current_only</code> must be 0</strong> —
+      otherwise STOP and escalate manager_pairs to a new intermediate before
+      Task 2.3.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Append all 7 results + classifications to
+      <code>.claude/scratch/phase0-results.md</code></strong> for the PR body. Format each as:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>Query A (gforms questions): n_current=X, n_target=Y, n_current_only=A, n_target_only=B — verdict: &lt;safe / escalate&gt;
+</code></pre></div>
+<h3 id="task-02-compute-expected-assessments-row-count-deltas">Task 0.2: Compute expected assessments row-count deltas</h3>
+<p><strong>Files:</strong> none (BQ queries only)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Compute <code>dim_assessments</code> NJ delta</strong>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="p">(</span><span class="n">testcode</span><span class="p">,</span><span class="w"> </span><span class="n">src</span><span class="p">))</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;parcc&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">stg_pearson__parcc</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">      </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;njsla&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">stg_pearson__njsla</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">      </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;njsla_science&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">stg_pearson__njsla_science</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">      </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;njgpa&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">stg_pearson__njgpa</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">testcode</span><span class="p">)</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">int_pearson__all_assessments</span><span class="o">`</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">nj_added_rows</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Compute <code>dim_assessments</code> FL delta</strong>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="p">(</span><span class="n">test_code</span><span class="p">,</span><span class="w"> </span><span class="n">src</span><span class="p">))</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">      </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;fast&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">test_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_fldoe</span><span class="p">.</span><span class="n">stg_fldoe__fast</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">scale_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">      </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;fsa&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">test_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_fldoe</span><span class="p">.</span><span class="n">stg_fldoe__fsa</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">scale_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">      </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;eoc&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">test_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_fldoe</span><span class="p">.</span><span class="n">stg_fldoe__eoc</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">scale_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">      </span><span class="k">union</span><span class="w"> </span><span class="k">all</span><span class="w"> </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;science&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">test_code</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kippmiami_fldoe</span><span class="p">.</span><span class="n">stg_fldoe__science</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">scale_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">test_code</span><span class="p">)</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_fldoe</span><span class="p">.</span><span class="n">int_fldoe__all_assessments</span><span class="o">`</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">scale_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fl_added_rows</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Compute <code>dim_assessment_administrations</code> deltas</strong> with the
+      analogous query but including the admin partition columns
+      (<code>administered_date is null</code> on state branches, <code>academic_year</code>, <code>region</code>,
+      <code>administration_period</code>). Use:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">with</span><span class="w"> </span><span class="k">current</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;%T|%T|%T|%T&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">module_code</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">administration_period</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">      </span><span class="k">case</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC05&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI05&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC08&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI08&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC11&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI11&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">module_code</span><span class="p">,</span>
+<span class="w">      </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">      </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+<span class="w">      </span><span class="k">if</span><span class="p">(</span><span class="k">period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;FallBlock&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Fall&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">period</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">administration_period</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">int_pearson__all_assessments</span><span class="o">`</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">),</span>
+<span class="n">new_rows</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">  </span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="k">distinct</span><span class="w"> </span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;%T|%T|%T|%T|%T&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">module_code</span><span class="p">,</span><span class="w"> </span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">region</span><span class="p">,</span><span class="w"> </span><span class="n">administration_period</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="w">  </span><span class="k">from</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;parcc&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">src</span><span class="p">,</span>
+<span class="w">      </span><span class="k">case</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC05&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI05&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC08&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI08&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC11&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI11&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">module_code</span><span class="p">,</span>
+<span class="w">      </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">      </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+<span class="w">      </span><span class="k">if</span><span class="p">(</span><span class="k">period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;FallBlock&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Fall&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">period</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">administration_period</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">stg_pearson__parcc</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">    </span><span class="c1">-- repeat for njsla, njsla_science, njgpa</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;njsla&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="k">case</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC05&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI05&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC08&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI08&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC11&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI11&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">end</span><span class="p">,</span>
+<span class="w">      </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">      </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">)),</span>
+<span class="w">      </span><span class="k">if</span><span class="p">(</span><span class="k">period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;FallBlock&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Fall&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">period</span><span class="p">),</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">stg_pearson__njsla</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;njsla_science&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="k">case</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC05&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI05&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC08&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI08&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC11&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI11&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">end</span><span class="p">,</span>
+<span class="w">      </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">      </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">)),</span>
+<span class="w">      </span><span class="k">if</span><span class="p">(</span><span class="k">period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;FallBlock&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Fall&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">period</span><span class="p">),</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">stg_pearson__njsla_science</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="s1">&#39;njgpa&#39;</span><span class="p">,</span>
+<span class="w">      </span><span class="k">case</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC05&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI05&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC08&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI08&#39;</span><span class="w"> </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC11&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI11&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">testcode</span><span class="w"> </span><span class="k">end</span><span class="p">,</span>
+<span class="w">      </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">      </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">)),</span>
+<span class="w">      </span><span class="k">if</span><span class="p">(</span><span class="k">period</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;FallBlock&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Fall&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">period</span><span class="p">),</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf_pearson</span><span class="p">.</span><span class="n">stg_pearson__njgpa</span><span class="o">`</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="p">)</span>
+<span class="k">select</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">new_rows</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="k">current</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">nj_admin_added_rows</span>
+</code></pre></div>
+<p>Repeat the analogous query for FL (using FLDOE staging tables +
+<code>administration_window</code> for <code>administration_period</code>, and no SC code remapping).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Append all 4 expected deltas to
+      <code>.claude/scratch/phase0-results.md</code></strong>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>dim_assessments expected delta: NJ +X, FL +Y, total +Z
+dim_assessment_administrations expected delta: NJ +A, FL +B, total +C
+</code></pre></div>
+<h3 id="task-03-grep-cube-for-state_nj-state_fl-literals">Task 0.3: Grep cube for state_nj / state_fl literals</h3>
+<p><strong>Files:</strong> none (read-only grep)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Search cube models for affected literals:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rnE<span class="w"> </span><span class="s2">&quot;&#39;state_nj&#39;|&#39;state_fl&#39;|state_nj[^_a-z]|state_fl[^_a-z]&quot;</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780/src/cube/model/
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Append results to <code>.claude/scratch/phase0-results.md</code></strong>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code>Cube literal matches: &lt;none / list of file:line&gt;
+</code></pre></div>
+<p>If any matches: plan Task 3 to apply <code>LIKE 'state_nj_%'</code> swaps to each. If no
+matches: Task 3 will be skipped.</p>
+<hr />
+<h2 id="commit-1-assessments-mart-rewrite">Commit 1: Assessments mart rewrite</h2>
+<h3 id="task-11-rewrite-dim_assessments-state-ctes">Task 1.1: Rewrite <code>dim_assessments</code> state CTEs</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/marts/dimensions/dim_assessments.sql:1-216</code>
+  (replace state_nj + state_fl CTEs with 8 per-staging-table CTEs; remove stale
+  illuminate comment; annotate remaining DISTINCTs)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read the current file</strong> to confirm line numbers haven't drifted:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">&#39;1,40p&#39;</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780/src/dbt/kipptaf/models/marts/dimensions/dim_assessments.sql
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Remove the stale comment block above <code>illuminate_assessments</code>
+      CTE (lines 1-11 of the with-block).</strong> The CTE has no DISTINCT; the comment
+      misleads. Replace the entire comment block (lines starting from
+      <code>-- DISTINCT projects from response grain (one row per student) to</code>
+      through <code>-- via this dim's assessment_key.</code>) with:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1">-- Member-grain: one row per actual Illuminate assessment_id. Bridge</span>
+<span class="c1">-- table `bridge_assessment_administration_members` maps each</span>
+<span class="c1">-- canonical-grain `dim_assessment_administrations` row to its member(s)</span>
+<span class="c1">-- via this dim&#39;s `assessment_key`.</span>
+</code></pre></div>
+<p>The "DISTINCT projects..." prose goes; the bridge-relationship prose stays.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Replace the existing <code>state_nj</code> CTE (lines 41-79) with 4 CTEs,
+      one per Pearson staging table.</strong> Canonical template (use for PARCC; adapt
+      the literal and ref for the other 3):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- projection IS the operation, not deduplication</span>
+<span class="w">    </span><span class="n">state_nj_parcc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">source_assessment_id</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">module_type</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">&#39;state_nj_parcc&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assessment_type</span><span class="p">,</span>
+<span class="w">            </span><span class="k">false</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_internal_assessment</span><span class="p">,</span>
+<span class="w">            </span><span class="s1">&#39;enrollment&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assessment_scope</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">combined_academic_subject</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">aligned_academic_subject</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">credit_category</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">test_type</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">&#39;PARCC&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">title</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">discipline</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">scope</span><span class="p">,</span>
+<span class="w">            </span><span class="n">test_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="o">`</span><span class="n">subject</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;English Language Arts/Literacy&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="s1">&#39;English Language Arts&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="o">`</span><span class="n">subject</span><span class="o">`</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject_area</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="n">testcode</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC05&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI05&#39;</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC08&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI08&#39;</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC11&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI11&#39;</span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="n">testcode</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">module_code</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_pearson__parcc&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Then duplicate three more times, substituting:</p>
+<table>
+<thead>
+<tr>
+<th>CTE name</th>
+<th><code>assessment_type</code> literal</th>
+<th><code>title</code> literal</th>
+<th><code>ref()</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state_nj_njsla</code></td>
+<td><code>'state_nj_njsla'</code></td>
+<td><code>'NJSLA'</code></td>
+<td><code>ref("stg_pearson__njsla")</code></td>
+</tr>
+<tr>
+<td><code>state_nj_njsla_science</code></td>
+<td><code>'state_nj_njsla_science'</code></td>
+<td><code>'NJSLA Science'</code></td>
+<td><code>ref("stg_pearson__njsla_science")</code></td>
+</tr>
+<tr>
+<td><code>state_nj_njgpa</code></td>
+<td><code>'state_nj_njgpa'</code></td>
+<td><code>'NJGPA'</code></td>
+<td><code>ref("stg_pearson__njgpa")</code></td>
+</tr>
+</tbody>
+</table>
+<p>Notes:</p>
+<ul class="task-list">
+<li><code>case testcode when 'SC05' then 'SCI05' ...</code> stays in every CTE; it's a no-op
+  for tables that don't carry SC-prefixed codes.</li>
+<li>
+<p><code>title</code> is now a constant per CTE — the literal assessment_name for that
+  program.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Replace the existing <code>state_fl</code> CTE (lines 81-108) with 4 CTEs,
+      one per FLDOE staging table.</strong> Canonical template:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- projection IS the operation, not deduplication</span>
+<span class="w">    </span><span class="n">state_fl_fast</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">source_assessment_id</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">module_type</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">&#39;state_fl_fast&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assessment_type</span><span class="p">,</span>
+<span class="w">            </span><span class="k">false</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_internal_assessment</span><span class="p">,</span>
+<span class="w">            </span><span class="s1">&#39;enrollment&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assessment_scope</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">combined_academic_subject</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">aligned_academic_subject</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">credit_category</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">test_type</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">&#39;FAST&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">title</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">assessment_subject</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject_area</span><span class="p">,</span>
+<span class="w">            </span><span class="n">discipline</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">scope</span><span class="p">,</span>
+<span class="w">            </span><span class="n">test_code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">module_code</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">assessment_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">int</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_fldoe__fast&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">scale_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Duplicate three more times for <code>state_fl_fsa</code> / <code>state_fl_eoc</code> /
+<code>state_fl_science</code>:</p>
+<table>
+<thead>
+<tr>
+<th>CTE name</th>
+<th><code>assessment_type</code></th>
+<th><code>title</code></th>
+<th><code>ref()</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>state_fl_fsa</code></td>
+<td><code>'state_fl_fsa'</code></td>
+<td><code>'FSA'</code></td>
+<td><code>ref("stg_fldoe__fsa")</code></td>
+</tr>
+<tr>
+<td><code>state_fl_eoc</code></td>
+<td><code>'state_fl_eoc'</code></td>
+<td><code>'EOC'</code></td>
+<td><code>ref("stg_fldoe__eoc")</code></td>
+</tr>
+<tr>
+<td><code>state_fl_science</code></td>
+<td><code>'state_fl_science'</code></td>
+<td><code>'Science'</code></td>
+<td><code>ref("stg_fldoe__science")</code></td>
+</tr>
+</tbody>
+</table>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Annotate <code>college_assessments</code> CTE.</strong> Replace its existing
+      leading comment block:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- DISTINCT projects from response grain to definition grain (see</span>
+<span class="w">    </span><span class="c1">-- illuminate_assessments comment above).</span>
+</code></pre></div>
+<p>with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- projection IS the operation, not deduplication</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Annotate <code>practice_assessments</code> CTE.</strong> Its current "One row per
+      (scope, subject_area) — matching Official college's…" comment is
+      informative and should stay; ADD the projection annotation as a separate
+      line directly above the <code>select distinct</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- projection IS the operation, not deduplication</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Annotate <code>ap_assessments</code> CTE.</strong> Replace its existing comment
+      block (also "DISTINCT projects from response grain to definition grain")
+      with:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- projection IS the operation, not deduplication</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Update the final UNION ALL block (around line 198).</strong> Replace
+      the 6-branch union with a 12-branch union covering:
+      <code>illuminate_assessments</code>, <code>state_nj_parcc</code>, <code>state_nj_njsla</code>,
+      <code>state_nj_njsla_science</code>, <code>state_nj_njgpa</code>, <code>state_fl_fast</code>,
+      <code>state_fl_fsa</code>, <code>state_fl_eoc</code>, <code>state_fl_science</code>, <code>college_assessments</code>,
+      <code>practice_assessments</code>, <code>ap_assessments</code>. Each branch is
+      <code>select {{ union_cols }}, from &lt;cte_name&gt;</code> followed by <code>union all</code> (except
+      the last).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 9: Leave the downstream <code>dbt_utils.deduplicate</code> (<code>all_assessments</code>)
+      untouched.</strong> Its partition_by
+      <code>assessment_type, source_assessment_id, module_code, test_type</code> and
+      order_by <code>title</code> continue to deduplicate any cross-branch collisions
+      correctly under the new type-string scheme.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 10: Build dim_assessments and verify row count:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>dim_assessments<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: build succeeds, all tests pass. If unique test on <code>assessment_key</code>
+fails, the new <code>assessment_type</code> literals are not splitting the hashes as
+expected — recheck Step 3 / Step 4 literals.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 11: Verify row-count delta matches Phase 0 expectation.</strong> Find the
+      PR-branch schema from the build output (printed in
+      <code>Create profile from connection BigQuery (override schema to '...')</code> step,
+      or by querying <code>INFORMATION_SCHEMA.SCHEMATA</code>). Then:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="o">&lt;</span><span class="n">pr_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">dim_assessments</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_pr</span><span class="p">,</span>
+<span class="w">  </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="n">kipptaf</span><span class="p">.</span><span class="n">dim_assessments</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n_prod</span><span class="p">,</span>
+</code></pre></div>
+<p><code>n_pr - n_prod</code> must equal the sum of <code>nj_added_rows + fl_added_rows</code> from Phase
+0 Task 0.2. If not, recheck <code>assessment_type</code> composition.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 12: Verify lineage taxonomy:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">assessment_type</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="o">&lt;</span><span class="n">pr_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">dim_assessments</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">assessment_type</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;state_%&#39;</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Must return exactly these 8 values (and nothing else): <code>state_fl_eoc</code>,
+<code>state_fl_fast</code>, <code>state_fl_fsa</code>, <code>state_fl_science</code>, <code>state_nj_njgpa</code>,
+<code>state_nj_njsla</code>, <code>state_nj_njsla_science</code>, <code>state_nj_parcc</code>.</p>
+<h3 id="task-12-rewrite-dim_assessment_administrations-state-ctes">Task 1.2: Rewrite <code>dim_assessment_administrations</code> state CTEs</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/dim_assessment_administrations.sql:51-117</code>
+  (replace state_nj_administrations + state_fl_administrations; annotate other
+  DISTINCTs)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace <code>state_nj_administrations</code> (lines 51-91) with 4 CTEs.</strong>
+      Canonical template (PARCC):</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- projection IS the operation, not deduplication</span>
+<span class="w">    </span><span class="c1">-- State NJ PARCC: one administration per (testcode, period, academic_year, region).</span>
+<span class="w">    </span><span class="n">state_nj_parcc_administrations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="s1">&#39;state_nj_parcc&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assessment_type</span><span class="p">,</span>
+<span class="w">            </span><span class="s1">&#39;PARCC&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">title</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span>
+<span class="w">                </span><span class="o">`</span><span class="n">subject</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;English Language Arts/Literacy&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="s1">&#39;English Language Arts&#39;</span><span class="p">,</span>
+<span class="w">                </span><span class="o">`</span><span class="n">subject</span><span class="o">`</span>
+<span class="w">            </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject_area</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">discipline</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">scope</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">case</span>
+<span class="w">                </span><span class="n">testcode</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC05&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI05&#39;</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC08&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI08&#39;</span>
+<span class="w">                </span><span class="k">when</span><span class="w"> </span><span class="s1">&#39;SC11&#39;</span>
+<span class="w">                </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;SCI11&#39;</span>
+<span class="w">                </span><span class="k">else</span><span class="w"> </span><span class="n">testcode</span>
+<span class="w">            </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">module_code</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">test_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">administered_date</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">source_assessment_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">if</span><span class="p">(</span><span class="o">`</span><span class="k">period</span><span class="o">`</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;FallBlock&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Fall&#39;</span><span class="p">,</span><span class="w"> </span><span class="o">`</span><span class="k">period</span><span class="o">`</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">administration_period</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">test_type</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_pearson__parcc&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">testscalescore</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Duplicate for <code>state_nj_njsla</code> / <code>state_nj_njsla_science</code> / <code>state_nj_njgpa</code>
+with the same substitution table from Task 1.1 Step 3 (assessment_type + title +
+ref() change; everything else identical).</p>
+<p><strong>Important:</strong> <code>assessment_type</code> literal here is <code>'state_nj_parcc'</code>
+(lineage-split), NOT the pre-existing <code>'state'</code> literal in the current file.
+This change aligns the admin's hash with the dim's hash composition for the same
+assessment.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replace <code>state_fl_administrations</code> (lines 95-117) with 4 CTEs.</strong>
+      Canonical template (FAST):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- projection IS the operation, not deduplication</span>
+<span class="w">    </span><span class="c1">-- State FL FAST: one administration per (test_code, administration_window, academic_year, region).</span>
+<span class="w">    </span><span class="n">state_fl_fast_administrations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="s1">&#39;state_fl_fast&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">assessment_type</span><span class="p">,</span>
+<span class="w">            </span><span class="s1">&#39;FAST&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">title</span><span class="p">,</span>
+<span class="w">            </span><span class="n">assessment_subject</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject_area</span><span class="p">,</span>
+<span class="w">            </span><span class="n">discipline</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">scope</span><span class="p">,</span>
+<span class="w">            </span><span class="n">test_code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">module_code</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">assessment_grade</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">int</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">grade_level</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">administered_date</span><span class="p">,</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">initcap</span><span class="p">(</span><span class="n">regexp_extract</span><span class="p">(</span><span class="n">_dbt_source_relation</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;kipp(\w+)_&#39;</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">region</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">int64</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">source_assessment_id</span><span class="p">,</span>
+
+<span class="w">            </span><span class="n">administration_window</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">administration_period</span><span class="p">,</span>
+
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">test_type</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_fldoe__fast&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">scale_score</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Duplicate for <code>state_fl_fsa</code> / <code>state_fl_eoc</code> / <code>state_fl_science</code> with the
+substitution table from Task 1.1 Step 4.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Annotate the surviving DISTINCT CTEs.</strong> For each of
+      <code>college_administrations</code>, <code>ap_administrations</code> (lines ~122 and ~174),
+      prepend the standard annotation directly above its <code>select distinct</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- projection IS the operation, not deduplication</span>
+</code></pre></div>
+<p><code>practice_administrations</code> uses <code>select</code> + <code>group by</code> for
+<code>any_value(subject_area)</code> resolution — that's canonical-attribute resolution,
+not pure projection. Leave it as-is; do NOT add the annotation. (The <code>any_value</code>
+call qualifies as <code>dbt_utils.deduplicate</code>-equivalent semantics; the existing
+block comment explains the choice.)</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Update the final UNION ALL block.</strong> Replace the 6-branch union
+      with a 14-branch union: <code>illuminate_administrations</code> + 4 NJ + 4 FL +
+      <code>college_administrations</code> + <code>practice_administrations</code> +
+      <code>ap_administrations</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build and verify:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>dim_assessment_administrations<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: build succeeds, unique test on <code>assessment_administration_key</code> passes.</p>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify row-count delta</strong> matches the expected admin delta from
+      Phase 0 Task 0.2 Step 3.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Verify lineage taxonomy</strong> on the admin dim:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">assessment_type</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="p">.</span><span class="o">&lt;</span><span class="n">pr_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">dim_assessment_administrations</span><span class="o">`</span>
+<span class="k">where</span><span class="w"> </span><span class="n">assessment_type</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;state_%&#39;</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Must return the same 8 lineage values as Task 1.1 Step 12.</p>
+<h3 id="task-13-commit-assessments-changes">Task 1.3: Commit assessments changes</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Stage modified files:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780
+git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/dimensions/dim_assessments.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/dimensions/dim_assessment_administrations.sql
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit</strong> (use HEREDOC to preserve formatting):</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">refactor(dbt): split state assessment lineages in dim_assessments + admin</span>
+
+<span class="s">Replaces state_nj / state_fl CTEs in dim_assessments and</span>
+<span class="s">dim_assessment_administrations with 8 per-staging-table CTEs each carrying</span>
+<span class="s">a literal assessment_type that encodes program lineage (parcc, njsla,</span>
+<span class="s">njsla_science, njgpa, fast, fsa, eoc, science). Drops the</span>
+<span class="s">int_pearson__all_assessments and int_fldoe__all_assessments mart</span>
+<span class="s">dependencies in favor of staging-direct reads.</span>
+
+<span class="s">Annotates surviving pure-projection DISTINCTs per the new</span>
+<span class="s">src/dbt/CLAUDE.md rule clarification. Removes stale &quot;DISTINCT projects...&quot;</span>
+<span class="s">comment block above dim_assessments.illuminate_assessments (the CTE has</span>
+<span class="s">no DISTINCT).</span>
+
+<span class="s">Refs #3780</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="commit-2-surveys-redirects">Commit 2: Surveys redirects</h2>
+<h3 id="task-21-rewrite-dim_survey_questionssql">Task 2.1: Rewrite <code>dim_survey_questions.sql</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify:
+  <code>src/dbt/kipptaf/models/marts/dimensions/dim_survey_questions.sql:1-75</code>
+  (redirect gforms + alchemer; drop manager_questions)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace <code>google_forms_questions</code> CTE (lines 2-10).</strong> Current:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">google_forms_questions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- DISTINCT projects from response grain to question grain.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">item_title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_text</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">question_kind</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_type</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_google_forms__form_responses&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fr</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">item_title</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">google_forms_questions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">item_title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_text</span><span class="p">,</span>
+<span class="w">            </span><span class="n">question_kind</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_type</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_google_forms__form__items&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">item_title</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replace <code>alchemer_questions</code> CTE (lines 21-31).</strong> Current:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">alchemer_questions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- DISTINCT projects from response grain to question grain.</span>
+<span class="w">        </span><span class="c1">-- Sources Alchemer + Google Forms staff/student survey questions that</span>
+<span class="w">        </span><span class="c1">-- feed fct_survey_responses.general_responses.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">question_title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_text</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_type</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_surveys__survey_responses&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sr</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">question_shortname</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">alchemer_questions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">shortname</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">title_english</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_text</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_type</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_alchemer__survey_question&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">shortname</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Delete <code>manager_questions</code> CTE (lines 33-41) AND its UNION ALL
+      branch (in <code>all_questions</code> CTE, lines ~52-55).</strong> After deletion,
+      <code>all_questions</code> must be:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="c1">-- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate</span>
+<span class="w">    </span><span class="n">all_questions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">google_forms_questions</span>
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">scd_questions</span>
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">alchemer_questions</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Leave <code>scd_questions</code> CTE and the downstream
+      <code>dbt_utils.deduplicate</code> untouched.</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build and verify:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>dim_survey_questions<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: build succeeds; unique on <code>survey_question_key</code> passes.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify delta</strong> matches sum of Phase 0 queries A and B
+      (<code>n_target - n_current</code> per query, summed, signed). Document the actual
+      delta vs expected in <code>.claude/scratch/phase0-results.md</code>.</li>
+</ul>
+<h3 id="task-22-rewrite-dim_surveyssql">Task 2.2: Rewrite <code>dim_surveys.sql</code></h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/dbt/kipptaf/models/marts/dimensions/dim_surveys.sql:1-19</code>
+  (redirect gforms + alchemer)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace <code>google_forms_surveys</code> CTE (lines 2-8).</strong> Current:</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">google_forms_surveys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- DISTINCT projects from response grain to survey grain.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">form_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span><span class="w"> </span><span class="n">info_title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_name</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Google Forms&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">platform</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_google_forms__form_responses&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">form_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">google_forms_surveys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">form_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span><span class="w"> </span><span class="n">info_title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_name</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Google Forms&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">platform</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_forms__form&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">form_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replace <code>alchemer_surveys</code> CTE (lines 10-19).</strong> First, run a
+      quick column check to find the title column on <code>stg_alchemer__survey</code> (if
+      Phase 0 Task 0.1 Step 4 didn't already capture it):</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dbt<span class="w"> </span>show<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--inline<span class="w"> </span><span class="s2">&quot;select column_name from \`teamster-332318.kipptaf_alchemer.INFORMATION_SCHEMA.COLUMNS\` where table_name = &#39;stg_alchemer__survey&#39; and lower(column_name) like &#39;%title%&#39;&quot;</span>
+</code></pre></div>
+<p>Then replace the current alchemer_surveys:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">alchemer_surveys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- DISTINCT projects from response grain to survey grain.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">survey_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">survey_title</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">&#39;Alchemer&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">platform</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;alchemer&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;base_alchemer__survey_results&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">survey_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>with (substitute <code>&lt;title_col&gt;</code> with whatever Step 2 returned — likely
+<code>title_english</code> since <code>stg_alchemer__survey_question</code> uses that name):</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">alchemer_surveys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="o">&lt;</span><span class="n">title_col</span><span class="o">&gt;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_name</span><span class="p">,</span>
+
+<span class="w">            </span><span class="s1">&#39;Alchemer&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">platform</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_alchemer__survey&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Leave <code>archive_manager</code>, <code>archive_support</code>, <code>powerschool_family</code>
+      CTEs untouched</strong> — they synthesize survey_keys for legacy data with
+      downstream filter dependencies.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build and verify:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>dim_surveys<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify delta</strong> matches sum of Phase 0 queries C and D.</li>
+</ul>
+<h3 id="task-23-rewrite-bridge_survey_questionssql">Task 2.3: Rewrite <code>bridge_survey_questions.sql</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/marts/bridges/bridge_survey_questions.sql:1-79</code>
+  (redirect gforms, alchemer, manager)</li>
+</ul>
+<p><strong>Precondition:</strong> Phase 0 query G (Task 0.1 Step 7) must have returned
+<code>n_current_only = 0</code>. If not, STOP and escalate manager_pairs to a new int per
+spec.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace <code>google_forms_pairs</code> CTE (lines 2-10).</strong> Current:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">google_forms_pairs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- DISTINCT projects from response grain to (survey, question) pair grain.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">form_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">fr</span><span class="p">.</span><span class="n">question_required</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_required</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_google_forms__form_responses&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">fr</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">form_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">fr</span><span class="p">.</span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">google_forms_pairs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">form_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="n">question_required</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_required</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_google_forms__form__items&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">form_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replace <code>alchemer_pairs</code> CTE (lines 21-29).</strong> Current:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">alchemer_pairs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- DISTINCT projects from response grain to (survey, question) pair grain.</span>
+<span class="w">        </span><span class="c1">-- Covers Alchemer + Google Forms staff/student survey questions feeding</span>
+<span class="w">        </span><span class="c1">-- fct_survey_responses.general_responses.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_id</span><span class="p">,</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">question_shortname</span><span class="p">,</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bool</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_required</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_surveys__survey_responses&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sr</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">survey_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">sr</span><span class="p">.</span><span class="n">question_shortname</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">alchemer_pairs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">survey_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">shortname</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bool</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_required</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_alchemer__survey_question&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">shortname</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Replace <code>manager_pairs</code> CTE (lines 31-37) — redirect, not
+      drop.</strong> Current:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">manager_pairs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- DISTINCT projects from response grain to (survey, question) pair grain.</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">ms</span><span class="p">.</span><span class="n">survey_id</span><span class="p">,</span><span class="w"> </span><span class="n">ms</span><span class="p">.</span><span class="n">question_shortname</span><span class="p">,</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bool</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_required</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_surveys__manager_survey_details&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ms</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">ms</span><span class="p">.</span><span class="n">survey_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">ms</span><span class="p">.</span><span class="n">question_shortname</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<p>Replace with:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">manager_pairs</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="c1">-- Synthesizes (survey_id, question_shortname) pairs for the</span>
+<span class="w">        </span><span class="c1">-- historic Manager Survey archive, whose original Alchemer</span>
+<span class="w">        </span><span class="c1">-- survey_ids were not preserved. Live Manager Survey pairs flow</span>
+<span class="w">        </span><span class="c1">-- through google_forms_pairs above (same form_id).</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="s1">&#39;historic_alchemer_Manager_survey&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">survey_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">question_shortname</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="k">null</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">bool</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">is_required</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_google_forms__form__items&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">form_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;1cvp9RnYxbn-WGLXsYSupbEl2KhVhWKcOFbHR2CgUBH0&#39;</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">item_abbreviation</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Leave <code>scd_powerschool_pairs</code> CTE and the downstream
+      <code>dbt_utils.deduplicate</code> block untouched.</strong> The dedup partition
+      <code>(survey_id, question_shortname)</code> continues to handle cross-CTE
+      collisions.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Build and verify:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>bridge_survey_questions<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>src/dbt/kipptaf/target/prod
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify delta</strong> matches sum of Phase 0 queries E, F, G.</li>
+</ul>
+<h3 id="task-24-commit-surveys-changes">Task 2.4: Commit surveys changes</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Stage modified files:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780
+git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/marts/dimensions/dim_survey_questions.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/dimensions/dim_surveys.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>src/dbt/kipptaf/models/marts/bridges/bridge_survey_questions.sql
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Commit:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">refactor(dbt): redirect surveys marts to entity-grain upstreams</span>
+
+<span class="s">dim_survey_questions, dim_surveys, and bridge_survey_questions now read</span>
+<span class="s">from existing entity-grain models (int_google_forms__form__items,</span>
+<span class="s">stg_alchemer__survey_question, stg_alchemer__survey,</span>
+<span class="s">stg_google_forms__form) instead of collapsing response-grain models with</span>
+<span class="s">SELECT DISTINCT. manager_questions CTE removed as redundant; manager_pairs</span>
+<span class="s">redirected to derive historic Manager Survey pairs from the same Google</span>
+<span class="s">Form&#39;s items.</span>
+
+<span class="s">Refs #3780</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="commit-3-cube-migration-conditional">Commit 3: Cube migration (conditional)</h2>
+<h3 id="task-31-apply-cube-literal-swaps-only-if-phase-0-task-03-surfaced-matches">Task 3.1: Apply cube literal swaps (only if Phase 0 Task 0.3 surfaced matches)</h3>
+<p><strong>Precondition:</strong> <code>.claude/scratch/phase0-results.md</code> lists one or more
+<code>src/cube/model/*</code> matches. If none, <strong>skip this entire task</strong> and proceed to
+Task 4.</p>
+<p><strong>Files:</strong> the cube model files identified in Task 0.3.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: For each match, determine the correct rewrite per its semantic
+      context:</strong></li>
+<li>Exact-match filter expecting all NJ state programs:
+    <code>assessment_type = 'state_nj'</code> → <code>assessment_type LIKE 'state_nj_%'</code></li>
+<li>Same for <code>'state_fl'</code> → <code>LIKE 'state_fl_%'</code></li>
+<li>
+<p>Filter that meant one specific program (rare; identify by surrounding
+    label/title): substitute the specific lineage literal (e.g.
+    <code>assessment_type = 'state_nj_njsla'</code>)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Edit each cube file</strong> with the appropriate swap.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Validate cube model with the local cube dev process</strong> per
+      <code>src/cube/CLAUDE.md</code>. (If no local cube validation is available, defer to
+      Cube CI on PR.)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Stage and commit:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780
+git<span class="w"> </span>add<span class="w"> </span>src/cube/model/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">refactor(cube): migrate state_nj/state_fl filters for #3780 lineage split</span>
+
+<span class="s">Updates Cube model filters that referenced the pre-split assessment_type</span>
+<span class="s">literals &#39;state_nj&#39; / &#39;state_fl&#39; to use LIKE &#39;state_nj_%&#39; / LIKE</span>
+<span class="s">&#39;state_fl_%&#39; patterns (or specific lineage literals where the filter</span>
+<span class="s">targeted one program).</span>
+
+<span class="s">Refs #3780</span>
+
+<span class="s">Co-Authored-By: Claude Opus 4.7 (1M context) &lt;noreply@anthropic.com&gt;</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="pre-merge-push-ci-triage-pr">Pre-merge: push, CI triage, PR</h2>
+<h3 id="task-41-push-and-watch-ci">Task 4.1: Push and watch CI</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push the branch:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini-refactor-claude-distinct-cleanup-3780
+git<span class="w"> </span>push
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wait for dbt Cloud CI to finish.</strong> Use
+      <code>mcp__github__pull_request_read get_status</code> against the PR (after Task 4.4
+      opens it; if waiting before, poll <code>mcp__dbt__list_jobs_runs</code> for the most
+      recent run on this branch).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Pull marts-model warnings from the CI run:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>mcp__dbt__get_job_run_error(run_id=&lt;latest&gt;, warning_only=true)
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: For each warning on a touched mart:</strong></li>
+<li>Search open issues by model name + FK target (<code>mcp__github__search_issues</code>)</li>
+<li>Bucket orphans (by region, source, test_type, lineage) in scratch</li>
+<li>If a new orphan pattern surfaces that isn't covered by an open issue: file a
+    follow-up per marts CLAUDE.md "Filing follow-up issues" (project board #4,
+    Tier / PR batch / Driver set)</li>
+</ul>
+<h3 id="task-42-project-board-scan">Task 4.2: Project board scan</h3>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1:</strong> Visit <code>https://github.com/orgs/TEAMSchools/projects/4/views/1</code>
+      and scan for incidentally-resolved issues. Candidates: NJSLA-vs-PARCC
+      reporting splits, lineage-aware assessment dashboards, EOC reporting
+      requests, FL Science reporting, manager-pairs bridge issues.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: For each incidentally resolved: close in the PR</strong> by referencing
+      <code>Closes #N</code> in the PR body (Task 4.4).</p>
+</li>
+</ul>
+<h3 id="task-43-file-pre-existing-follow-up">Task 4.3: File pre-existing follow-up</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: File the <code>fct_assessment_scores_enrollment_scoped</code> admin-key
+      hash mismatch issue</strong> via <code>mcp__github__issue_write</code>:</li>
+<li>Title:
+    <code>fct_assessment_scores_enrollment_scoped state branch admin-key hash mismatch with dim_assessment_administrations</code></li>
+<li>Body: Describe the literal <code>'state'</code> (fact) vs <code>'state_nj_*'</code> /
+    <code>'state_fl_*'</code> (dim) mismatch. Reference current line numbers in the fact
+    for the hash inputs.</li>
+<li>Labels: <code>dbt</code>, <code>bug</code></li>
+<li>
+<p>Surfaced during #3780 spec investigation</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add to project board #4 with <code>Tier</code>, <code>PR batch</code>, <code>Driver</code> set</strong>
+      per <code>src/dbt/kipptaf/models/marts/CLAUDE.md</code> filing convention. Prefix
+      <code>gh project item-add</code> with <code>GITHUB_TOKEN=</code> to use the OAuth scope.</p>
+</li>
+</ul>
+<h3 id="task-44-open-pr">Task 4.4: Open PR</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Prepare PR body</strong> from <code>.github/pull_request_template.md</code> plus
+      the Phase 0 results. Body must include:</li>
+<li>Brief summary (lineage split + surveys redirects + DISTINCT annotations)</li>
+<li>Phase 0 results table (all 7 queries + 4 expected-delta computations)</li>
+<li>Pre-merge checklist results (R1-R10 scan = no rename / no new column; CI
+    warning triage outcome; project board scan; pre-existing-issue follow-up
+    filed)</li>
+<li>Closes / Refs lines for #3780 and any incidentally-resolved issues from Task
+    4.2</li>
+<li>
+<p><code>Closes #3780</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Open PR:</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;refactor(dbt): #3780 distinct cleanup + state assessment lineage split&quot;</span><span class="w"> </span>--body<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>cat<span class="w"> </span><span class="s">&lt;&lt;&#39;EOF&#39;</span>
+<span class="s">## Summary</span>
+
+<span class="s">- Splits NJ and FL state assessments into per-program lineages</span>
+<span class="s">  (parcc / njsla / njsla_science / njgpa; fast / fsa / eoc / science)</span>
+<span class="s">  on dim_assessments and dim_assessment_administrations.</span>
+<span class="s">- Replaces SELECT DISTINCT in surveys marts with redirects to existing</span>
+<span class="s">  entity-grain models (int_google_forms__form__items,</span>
+<span class="s">  stg_alchemer__survey_question, etc.).</span>
+<span class="s">- Annotates surviving pure-projection DISTINCTs per the new</span>
+<span class="s">  src/dbt/CLAUDE.md rule (already in branch).</span>
+
+<span class="s">## Phase 0 audit results</span>
+
+<span class="s">&lt;paste from .claude/scratch/phase0-results.md&gt;</span>
+
+<span class="s">## Pre-merge checklist</span>
+
+<span class="s">- R1–R10 column rubric: no new columns, no renames — N/A</span>
+<span class="s">- Diamond paths: no new FKs — N/A</span>
+<span class="s">- CI warnings: &lt;triage outcome&gt;</span>
+<span class="s">- Project board scan: &lt;incidentally-resolved list or &quot;none&quot;&gt;</span>
+<span class="s">- Pre-existing fct_assessment_scores admin-key hash mismatch: filed as</span>
+<span class="s">  #&lt;num&gt;</span>
+
+<span class="s">## Test plan</span>
+
+<span class="s">- [ ] Phase 0 BQ queries A-G run and documented</span>
+<span class="s">- [ ] dim_assessments builds, lineage spot-check returns exactly 8 state_* values</span>
+<span class="s">- [ ] dim_assessment_administrations builds, same lineage taxonomy</span>
+<span class="s">- [ ] dim_survey_questions, dim_surveys, bridge_survey_questions build</span>
+<span class="s">- [ ] Row-count deltas match Phase 0 expectations</span>
+<span class="s">- [ ] Cube CI green (or N/A if no cube changes)</span>
+
+<span class="s">Closes #3780</span>
+
+<span class="s">🤖 Generated with [Claude Code](https://claude.com/claude-code)</span>
+<span class="s">EOF</span>
+<span class="k">)</span><span class="s2">&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify PR body</strong> by reading it back via
+      <code>mcp__github__pull_request_read</code>. Confirm no <code>env</code> token leaked into the
+      body (would trigger the path hook).</li>
+</ul>
+<hr />
+<h2 id="self-review-checklist-executed-after-plan-is-written">Self-Review Checklist (executed after plan is written)</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Every spec section / requirement has a task implementing it</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> No placeholders (TBD/TODO/etc.) in the plan</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Type/name consistency: <code>assessment_type</code> literals match across
+      dim*assessments and dim_assessment_administrations (both use
+      <code>state_nj*&lt;lineage&gt;</code>/<code>state*fl*&lt;lineage&gt;</code>)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> File paths are absolute (worktree-rooted)</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Each commit boundary has a stage-and-commit task</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> Phase 0 query G acts as the gate for the manager_pairs redirect in Task
+      2.3</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

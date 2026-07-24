@@ -1,0 +1,2361 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Focus Staging — Users & Permissions (Batch G) Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#focus-staging-users-permissions-batch-g-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Focus Staging — Users &amp; Permissions (Batch G) Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#setup-once-before-task-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup (once, before Task 1)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Setup (once, before Task 1)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-stg_focus__user_profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: stg_focus__user_profiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-stg_focus__permission" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: stg_focus__permission
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-stg_focus__login_history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: stg_focus__login_history
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-stg_focus__user_enrollment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: stg_focus__user_enrollment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-stg_focus__users" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: stg_focus__users
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#final-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-other-plans-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope (other plans / issues)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review-checklist-run-before-handing-off" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-review checklist (run before handing off)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-06-18-focus-staging-g-users.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="focus-staging-users-permissions-batch-g-implementation-plan">Focus Staging — Users &amp; Permissions (Batch G) Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Add contract-enforced <code>stg_focus__*</code> staging models for the five
+populated Focus users/permissions tables (<code>users</code>, <code>user_enrollment</code>,
+<code>user_profiles</code>, <code>permission</code>, <code>login_history</code>) in the <code>focus</code> source-system dbt
+project.</p>
+<p><strong>Architecture:</strong> One staging model + properties YAML per source table, reading
+the BQ-native Focus dlt source already declared in
+<code>src/dbt/focus/models/staging/sources-bigquery.yml</code>. Light cleaning only:
+explicit column projection (drop dlt bookkeeping + audit-quad columns), a
+soft-delete filter where the table has a <code>deleted</code> column, a uniqueness test on
+each table's primary key, and a <code>description:</code> on the model and every column.
+<code>users</code> is a wide table (235 columns, mostly a <code>custom_*</code> long-tail) — staging
+carries the curated core set (identity, keys, names, dates) <strong>plus an inline
+block of every currently-populated <code>custom_*</code> column, each aliased to its
+human-readable slug</strong> from the extracted <code>custom_fields</code> catalog. Unpopulated
+<code>custom_*</code> columns are out of scope (they hold no data). Select/multiple coded
+custom values are left <strong>encoded as stored codes</strong> in this batch; decoding
+against the <code>custom_fields</code> option catalog is a deferred follow-up. Models build
+inside the consuming district project (<code>kippmiami</code>), which sets <code>focus_schema</code>
+and imports the <code>focus</code> package.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>dbt_utils</code>, dbt contracts. SQL per
+<code>.trunk/config/.sqlfluff</code> (BigQuery dialect, trailing commas, single quotes, 88
+cols, lowercase).</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Contract enforcement is already set at the <code>staging</code> directory level in
+  <code>src/dbt/focus/dbt_project.yml</code> (<code>+contract: enforced: true</code>) — do NOT add
+  <code>{{ config(contract=...) }}</code> per model. Every column the SQL projects MUST be
+  declared in the properties YAML with a matching <code>data_type</code>.</li>
+<li>Source is BQ-native: <code>{{ source("focus", "&lt;table&gt;") }}</code> (source name <code>focus</code>,
+  bare table name). Schema resolves from <code>var("focus_schema")</code> =
+  <code>dagster_kippmiami_dlt_focus</code> (set in <code>src/dbt/kippmiami/dbt_project.yml</code>).</li>
+<li>Exclude dlt bookkeeping columns (<code>_dlt_*</code>) and the audit-quad
+  (<code>created_by_class</code>, <code>created_by_id</code>, <code>updated_by_class</code>, <code>updated_by_id</code>)
+  from every model. Keep <code>created_at</code> / <code>updated_at</code> / <code>uuid</code>.</li>
+<li>Staging uniqueness + <code>not_null</code> tests MUST set <code>config: severity: error</code>
+  (project default is <code>warn</code>).</li>
+<li><strong>Soft-delete:</strong> Focus <code>deleted INT64</code> is <code>NULL</code> for live rows and <code>1</code> for
+  deleted — there is no <code>0</code>. Filter <code>where deleted is null</code> (NOT <code>= 0</code>, which
+  matches nothing) and OMIT the <code>deleted</code> column from the projection. Only
+  <code>users</code> in this batch has a <code>deleted</code> column. <code>user_profiles</code> has an
+  <code>inactive STRING</code> flag — that is NOT a soft-delete sentinel; keep it as a raw
+  attribute column (do not filter on it).</li>
+<li><strong>Primary keys (uniqueness + <code>not_null</code>, both <code>severity: error</code>):</strong> <code>users</code> →
+  <code>profile_id</code>; <code>user_enrollment</code> → <code>id</code>; <code>user_profiles</code> → <code>id</code>; <code>permission</code> →
+  <code>id</code>; <code>login_history</code> → <code>id</code>.</li>
+<li>Focus columns are already <code>snake_case</code>. No BigQuery-reserved-word column names
+  ship in any of the five curated projections, so no backtick-quoting /
+  <code>quote: true</code> is needed. (<code>type</code>, <code>key</code>, <code>date</code> are projected — they are NOT
+  reserved as bare column identifiers in BigQuery and ship unquoted, matching
+  the Batch C <code>school_periods</code> / <code>attendance_codes</code> precedent where <code>type</code> ships
+  unquoted.)</li>
+<li>Y/N-style flags stay raw <code>STRING</code>; coded <code>INT64</code> lookups stay raw <code>INT64</code>. No
+  <code>is_</code> boolean conversion in this batch (convert in an intermediate layer later
+  if a consumer needs it).</li>
+<li><strong>Populated custom-field block (<code>users</code> only):</strong> every currently-populated
+  <code>custom_*</code> column is projected as <code>&lt;column_name&gt; as &lt;slug&gt;</code> and contracted
+  under its slug name. Coded values (<code>select</code> / <code>multiple</code> focus types) are kept
+  as their <strong>stored codes</strong> — decoding them against the <code>custom_fields</code> option
+  catalog is a deferred follow-up, NOT part of this batch. The authoritative
+  list of populated custom columns + their slugs, BigQuery types, and titles is
+  <code>/.claude/scratch/focus-users-custom-map.md</code>. Do NOT project a custom column
+  absent from that map (unpopulated = out of scope) and do NOT duplicate a
+  column already in the curated core projection.</li>
+<li><strong>PII:</strong> several <code>users</code> columns are direct PII (<code>password</code>,
+  <code>social_security_number</code> = SSN, <code>e_mail_address</code> = email, <code>first_name</code> /
+  <code>last_name</code> / <code>middle_name</code>, <code>ein</code>). They are projected into staging (staging
+  mirrors the source) but never echo a sampled value into any external surface
+  (PR, commit, issue). Validation output stays local.</li>
+<li>Build/test context is the <strong>kippmiami</strong> project, not <code>focus</code> standalone.</li>
+</ul>
+<hr />
+<h2 id="setup-once-before-task-1">Setup (once, before Task 1)</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Install package deps in the worktree</strong> (fresh worktrees have no
+      <code>dbt_packages/</code>):</li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippmiami
+</code></pre></div>
+<hr />
+<h3 id="task-1-stg_focus__user_profiles">Task 1: <code>stg_focus__user_profiles</code></h3>
+<p>Narrow lookup table (16 columns). Drops the audit-quad; keeps everything else,
+including the <code>inactive</code> STRING flag (a raw attribute, not a soft-delete
+sentinel). This is the smallest table with no soft-delete — a good
+pattern-proving first task for the batch.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/focus/models/staging/stg_focus__user_profiles.sql</code></li>
+<li>Create: <code>src/dbt/focus/models/staging/properties/stg_focus__user_profiles.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>source("focus", "user_profiles")</code></li>
+<li>
+<p>Produces: model <code>stg_focus__user_profiles</code>, grain one row per <code>id</code> (a Focus
+  permission profile / role definition).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model SQL</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">district_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">profile</span><span class="p">,</span>
+<span class="w">    </span><span class="n">title</span><span class="p">,</span>
+<span class="w">    </span><span class="k">type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">super_profile</span><span class="p">,</span>
+<span class="w">    </span><span class="n">description</span><span class="p">,</span>
+<span class="w">    </span><span class="n">inactive</span><span class="p">,</span>
+<span class="w">    </span><span class="n">imported</span><span class="p">,</span>
+<span class="w">    </span><span class="n">uuid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">updated_at</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;focus&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;user_profiles&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the properties YAML</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_focus__user_profiles</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">Focus user profiles — one row per permission profile (role) definition.</span>
+<span class="w">      </span><span class="no">Profiles group users and drive the permission keys in</span>
+<span class="w">      </span><span class="no">stg_focus__permission.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Primary key — Focus user profile id.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">unique</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">district_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus district id the profile belongs to.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Profile name.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">title</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Display title for the profile.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">type</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Profile type classification (e.g. staff, parent, student).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">super_profile</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Parent / super profile this profile inherits from.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">description</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Free-text description of the profile.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">inactive</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Y/N — whether the profile is inactive (raw flag, not a delete</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">sentinel).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">imported</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Source import marker for the profile row.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uuid</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus global unique identifier for the row.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">created_at</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Row creation timestamp in Focus.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">updated_at</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Row last-update timestamp in Focus.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and verify</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select stg_focus__user_profiles --project-dir src/dbt/kippmiami</code>
+Expected: model builds; <code>unique</code> + <code>not_null</code> tests on <code>id</code> PASS. A contract
+mismatch here means a <code>data_type</code> in the YAML disagrees with the warehouse — fix
+the YAML to match <code>INFORMATION_SCHEMA.COLUMNS</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/focus/models/staging/stg_focus__user_profiles.sql<span class="w"> </span>src/dbt/focus/models/staging/properties/stg_focus__user_profiles.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add stg_focus__user_profiles (#4213)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-stg_focus__permission">Task 2: <code>stg_focus__permission</code></h3>
+<p>Narrow join table (9 columns). After dropping the audit-quad, five columns
+remain. Grain is one permission key per profile.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/focus/models/staging/stg_focus__permission.sql</code></li>
+<li>Create: <code>src/dbt/focus/models/staging/properties/stg_focus__permission.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>source("focus", "permission")</code></li>
+<li>
+<p>Produces: model <code>stg_focus__permission</code>, grain one row per <code>id</code> (a single
+  permission key granted to a profile).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model SQL</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">profile_id</span><span class="p">,</span>
+<span class="w">    </span><span class="k">key</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">updated_at</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;focus&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;permission&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the properties YAML</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_focus__permission</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">Focus permission grants — one row per permission key granted to a user</span>
+<span class="w">      </span><span class="no">profile. Joins to stg_focus__user_profiles on profile_id.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Primary key — Focus permission grant id.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">unique</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus user profile id this permission is granted to.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">key</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Permission key string identifying the granted capability.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">created_at</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Row creation timestamp in Focus.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">updated_at</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Row last-update timestamp in Focus.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and verify</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select stg_focus__permission --project-dir src/dbt/kippmiami</code>
+Expected: builds; <code>unique</code> + <code>not_null</code> on <code>id</code> PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/focus/models/staging/stg_focus__permission.sql<span class="w"> </span>src/dbt/focus/models/staging/properties/stg_focus__permission.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add stg_focus__permission (#4213)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-stg_focus__login_history">Task 3: <code>stg_focus__login_history</code></h3>
+<p>Narrow audit table (10 columns). No audit-quad and no <code>deleted</code> column, so all
+ten columns are projected. <code>date</code> is a TIMESTAMP column despite the name; keep
+the source name. <code>failed</code> is a Y/N STRING flag.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/focus/models/staging/stg_focus__login_history.sql</code></li>
+<li>Create: <code>src/dbt/focus/models/staging/properties/stg_focus__login_history.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>source("focus", "login_history")</code></li>
+<li>
+<p>Produces: model <code>stg_focus__login_history</code>, grain one row per <code>id</code> (a single
+  login / authentication attempt).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model SQL</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">object_id</span><span class="p">,</span>
+<span class="w">    </span><span class="nb">date</span><span class="p">,</span>
+<span class="w">    </span><span class="k">type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">failed</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ip_address</span><span class="p">,</span>
+<span class="w">    </span><span class="n">user_agent</span><span class="p">,</span>
+<span class="w">    </span><span class="n">username</span><span class="p">,</span>
+<span class="w">    </span><span class="n">token_type</span><span class="p">,</span>
+<span class="w">    </span><span class="n">hostname</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;focus&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;login_history&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the properties YAML</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_focus__login_history</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">Focus login history — one row per authentication attempt, including the</span>
+<span class="w">      </span><span class="no">acting user, source IP, and whether the attempt failed.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Primary key — Focus login history id.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">unique</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">object_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus id of the user (or object) the login attempt targets.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Timestamp of the login attempt (TIMESTAMP despite the name).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">type</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Login event type classification.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">failed</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Y/N — whether the login attempt failed.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ip_address</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Source IP address of the login attempt.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">user_agent</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Client user-agent string for the login attempt.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">username</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Username supplied for the login attempt.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">token_type</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Authentication token type used.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hostname</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Hostname the login attempt was made against.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and verify</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select stg_focus__login_history --project-dir src/dbt/kippmiami</code>
+Expected: builds; <code>unique</code> + <code>not_null</code> on <code>id</code> PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/focus/models/staging/stg_focus__login_history.sql<span class="w"> </span>src/dbt/focus/models/staging/properties/stg_focus__login_history.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add stg_focus__login_history (#4213)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-stg_focus__user_enrollment">Task 4: <code>stg_focus__user_enrollment</code></h3>
+<p>Narrow table (21 columns). After dropping the audit-quad, 17 columns remain.
+Several columns are STRING-serialized arrays (<code>profiles</code>, <code>schools</code>,
+<code>districts</code>, <code>schools_array</code>, <code>profiles_array</code>) — keep them raw STRING in
+staging; parsing/exploding belongs in an intermediate layer if a consumer needs
+it. Note that <code>imported</code> and <code>imported1</code> are distinct source columns; keep both.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/focus/models/staging/stg_focus__user_enrollment.sql</code></li>
+<li>Create:
+  <code>src/dbt/focus/models/staging/properties/stg_focus__user_enrollment.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>source("focus", "user_enrollment")</code></li>
+<li>
+<p>Produces: model <code>stg_focus__user_enrollment</code>, grain one row per <code>id</code> (a
+  staff-to-school/profile enrollment span).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model SQL</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">staff_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">profiles</span><span class="p">,</span>
+<span class="w">    </span><span class="n">schools</span><span class="p">,</span>
+<span class="w">    </span><span class="n">districts</span><span class="p">,</span>
+<span class="w">    </span><span class="n">schools_array</span><span class="p">,</span>
+<span class="w">    </span><span class="n">profiles_array</span><span class="p">,</span>
+<span class="w">    </span><span class="n">erp_profiles</span><span class="p">,</span>
+<span class="w">    </span><span class="n">one_access_request_id</span><span class="p">,</span>
+<span class="w">    </span><span class="k">comment</span><span class="p">,</span>
+<span class="w">    </span><span class="n">imported</span><span class="p">,</span>
+<span class="w">    </span><span class="n">imported1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">start_date</span><span class="p">,</span>
+<span class="w">    </span><span class="n">end_date</span><span class="p">,</span>
+<span class="w">    </span><span class="n">uuid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">updated_at</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;focus&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;user_enrollment&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the properties YAML</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_focus__user_enrollment</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">Focus user enrollments — one row per staff enrollment span linking a staff</span>
+<span class="w">      </span><span class="no">member to the schools, districts, and profiles they are enrolled in for a</span>
+<span class="w">      </span><span class="no">date range. Array-like columns are kept as raw serialized strings.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Primary key — Focus user enrollment id.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">unique</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">staff_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus staff id (users.staff_id) this enrollment is for.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profiles</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Serialized list of profile ids for the enrollment (raw).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schools</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Serialized list of school ids for the enrollment (raw).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">districts</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Serialized list of district ids for the enrollment (raw).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">schools_array</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Serialized array form of the enrollment&#39;s school ids (raw).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profiles_array</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Serialized array form of the enrollment&#39;s profile ids (raw).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">erp_profiles</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Serialized list of ERP profile ids for the enrollment (raw).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">one_access_request_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OneAccess provisioning request id tied to the enrollment.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">comment</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Free-text comment on the enrollment.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">imported</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Source import marker for the enrollment row.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">imported1</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Secondary source import marker for the enrollment row.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">start_date</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">First date of the enrollment span.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">end_date</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Last date of the enrollment span.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uuid</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus global unique identifier for the row.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">created_at</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Row creation timestamp in Focus.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">updated_at</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Row last-update timestamp in Focus.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and verify</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select stg_focus__user_enrollment --project-dir src/dbt/kippmiami</code>
+Expected: builds; <code>unique</code> + <code>not_null</code> on <code>id</code> PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/focus/models/staging/stg_focus__user_enrollment.sql<span class="w"> </span>src/dbt/focus/models/staging/properties/stg_focus__user_enrollment.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add stg_focus__user_enrollment (#4213)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-stg_focus__users">Task 5: <code>stg_focus__users</code></h3>
+<p><code>users</code> is the wide table — 235 columns, the vast majority a <code>custom_*</code>
+long-tail. Staging carries two blocks:</p>
+<ol>
+<li>The <strong>curated core set</strong>: identity/keys, names, login/identity attributes,
+   and the canonical date/timestamp columns.</li>
+<li>The <strong>populated custom-field block</strong>: every <code>custom_*</code> column that currently
+   holds data, projected as <code>&lt;source_column&gt; as &lt;slug&gt;</code> where the slug is the
+   human-readable name from the extracted <code>custom_fields</code> catalog. The
+   authoritative list is <code>/.claude/scratch/focus-users-custom-map.md</code> (10
+   populated custom columns of 93 total). Unpopulated <code>custom_*</code> columns are out
+   of scope here — they hold no data and are not projected.</li>
+</ol>
+<p>The custom block sits <strong>after the core columns and before any cast block</strong>
+(there are no casts in this model — all columns ship as plain refs — so the
+custom block is simply the last group of plain refs before <code>from</code>), per ST06.</p>
+<p><strong>Encoding note:</strong> the <code>active</code> (<code>custom_319000004</code>),
+<code>profile_on_non_production_sites</code> (<code>custom_l790</code>), and <code>education</code> (<code>custom_2</code>)
+columns are <code>select</code> / <code>multiple</code> focus types. Their values remain <strong>stored
+codes</strong> in this staging model — decoding them to labels against the
+<code>custom_fields</code> option catalog is a deferred follow-up, not part of this batch.</p>
+<p>Soft-delete applies: <code>users.deleted</code> is <code>NULL</code> for live rows and <code>1</code> for
+deleted. The model filters <code>where deleted is null</code> and OMITS the <code>deleted</code>
+column.</p>
+<p><strong>Curation note — GENDER mapping discrepancy:</strong> an external import-layout
+mapping lists <code>GENDER</code> → <code>users.custom_59</code>, but <code>custom_59</code> does NOT exist in
+the warehouse <code>users</code> schema (and is not in the populated-custom map). The
+schema instead has a named <code>gender INT64</code> column. This plan projects the named
+<code>gender</code> column and does not project a (nonexistent) <code>custom_59</code>.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/focus/models/staging/stg_focus__users.sql</code></li>
+<li>Create: <code>src/dbt/focus/models/staging/properties/stg_focus__users.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>source("focus", "users")</code></li>
+<li>
+<p>Produces: model <code>stg_focus__users</code>, grain one row per <code>profile_id</code> (a Focus
+  staff/user account); curated core columns plus the populated custom-field
+  slugs.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Write the model SQL</strong></p>
+</li>
+</ul>
+<p>The column order follows ST06 (plain refs only here — no casts/functions): keys,
+identity/login, names, school/org context, then the populated custom-field block
+(each <code>custom_*</code> aliased to its slug), then the canonical dates. The soft-delete
+filter lives in <code>WHERE</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="n">profile_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">staff_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">parent_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">rollover_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">erp_profile_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">university_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">current_school_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">current_district_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">district_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">syear</span><span class="p">,</span>
+<span class="w">    </span><span class="n">username</span><span class="p">,</span>
+<span class="w">    </span><span class="n">password</span><span class="p">,</span>
+<span class="w">    </span><span class="n">profile</span><span class="p">,</span>
+<span class="w">    </span><span class="n">title</span><span class="p">,</span>
+<span class="w">    </span><span class="n">ein</span><span class="p">,</span>
+<span class="w">    </span><span class="n">gender</span><span class="p">,</span>
+<span class="w">    </span><span class="n">first_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">middle_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">last_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">name_suffix</span><span class="p">,</span>
+<span class="w">    </span><span class="n">homeroom</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_100000001</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e_mail_address</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_200000001</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">staff_number_identifier_local</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_100000002</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">phone_number</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_200000002</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">experience_length_years</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_556</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">social_security_number</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_319000004</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">active</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_l801</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">w4_allowances_under_17</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_l802</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">f_3_claim_dependent_and_other</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_l790</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">profile_on_non_production_sites</span><span class="p">,</span>
+<span class="w">    </span><span class="n">custom_2</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">education</span><span class="p">,</span>
+<span class="w">    </span><span class="n">uuid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">last_login</span><span class="p">,</span>
+<span class="w">    </span><span class="n">last_change</span><span class="p">,</span>
+<span class="w">    </span><span class="n">last_updated_date</span><span class="p">,</span>
+<span class="w">    </span><span class="n">created_at</span><span class="p">,</span>
+<span class="w">    </span><span class="n">updated_at</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;focus&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">&quot;users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">where</span><span class="w"> </span><span class="n">deleted</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Write the properties YAML</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stg_focus__users</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">Focus users — one row per active staff/user account (deleted rows</span>
+<span class="w">      </span><span class="no">excluded). Carries the curated core columns (identity, names, school/org</span>
+<span class="w">      </span><span class="no">context, canonical dates) plus every currently-populated custom field,</span>
+<span class="w">      </span><span class="no">each aliased to its human-readable slug from the custom_fields catalog.</span>
+<span class="w">      </span><span class="no">Select/multiple custom values remain as stored codes — decoding them to</span>
+<span class="w">      </span><span class="no">labels is a deferred follow-up. Unpopulated custom_* columns are out of</span>
+<span class="w">      </span><span class="no">scope.</span>
+<span class="w">    </span><span class="nt">columns</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Primary key — Focus user account profile id.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">        </span><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">unique</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">not_null</span><span class="p">:</span>
+<span class="w">              </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">                </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">staff_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus staff id (links to user_enrollment.staff_id).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">parent_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Parent user id, where the account is linked to another.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rollover_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Source user id this account rolled over from.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">erp_profile_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ERP profile id linked to this user account.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">university_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">University / external institution id for the user.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">current_school_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus school id the user is currently assigned to.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">current_district_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus district id the user is currently assigned to.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">district_id</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus district id that owns the user record.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">syear</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus school year (start year, e.g. 2025 = 2025-26).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">username</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Login username for the account.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">password</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Stored password value (PII — never echo a sampled value).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Profile name string for the user.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">title</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">User title / job title.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ein</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Employer identification / employee number (EIN) — PII.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gender</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Coded gender value for the user.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">first_name</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">User first name (PII).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">middle_name</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">User middle name (PII).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">last_name</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">User last name (PII).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">name_suffix</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">User name suffix (e.g. Jr., III).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">homeroom</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Homeroom assignment label for the user.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">e_mail_address</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">E-mail Address (populated custom field) — PII.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">staff_number_identifier_local</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Staff Number Identifier, Local (populated custom field) — PII.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">phone_number</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Phone Number (populated custom field) — PII.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">experience_length_years</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Experience Length (Years) (populated custom field).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numeric</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">social_security_number</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Social Security Number (populated custom field) — PII.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">active</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Active (populated custom field) — select-coded; value left as the</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">stored code.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">w4_allowances_under_17</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">W4 Allowances Under 17 (populated custom field).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numeric</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">f_3_claim_dependent_and_other</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3 Claim Dependent and Other (populated custom field).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">numeric</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profile_on_non_production_sites</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Profile On Non-Production Sites (populated custom field) —</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">select-coded; value left as the stored code.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">education</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">Education (populated custom field) — multiple-select coded; value left</span>
+<span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">as the stored code(s).</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">uuid</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Focus global unique identifier for the row.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">last_login</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Timestamp of the user&#39;s last login.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">last_change</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Timestamp of the last change to the user record.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">last_updated_date</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Source last-updated date for the user record.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">date</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">created_at</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Row creation timestamp in Focus.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">updated_at</span>
+<span class="w">        </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Row last-update timestamp in Focus.</span>
+<span class="w">        </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">timestamp</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Build and verify</strong></li>
+</ul>
+<p>Run:
+<code>uv run dbt build --select stg_focus__users --project-dir src/dbt/kippmiami</code>
+Expected: model builds; <code>unique</code> + <code>not_null</code> on <code>profile_id</code> PASS. Watch two
+failure modes: (a) a contract <code>data_type</code> mismatch — confirm each YAML type
+against the warehouse. From the populated-custom map the custom types are:
+<code>experience_length_years</code> / <code>w4_allowances_under_17</code> /
+<code>f_3_claim_dependent_and_other</code> are <code>numeric</code>; <code>active</code> /
+<code>profile_on_non_production_sites</code> are <code>int</code>; the rest of the custom block is
+<code>string</code>. In the core block, <code>gender</code> is <code>int</code> and <code>last_updated_date</code> is
+<code>date</code>, not <code>timestamp</code>. (b) a <code>unique</code> failure on <code>profile_id</code> would mean
+deleted rows leaked — confirm the <code>where deleted is null</code> filter is present.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/focus/models/staging/stg_focus__users.sql<span class="w"> </span>src/dbt/focus/models/staging/properties/stg_focus__users.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(dbt): add stg_focus__users (#4213)&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="final-verification">Final verification</h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Build all five together:</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>stg_focus__user_profiles<span class="w"> </span>stg_focus__permission<span class="w"> </span>stg_focus__login_history<span class="w"> </span>stg_focus__user_enrollment<span class="w"> </span>stg_focus__users<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippmiami
+</code></pre></div>
+<p>Expected: 5 models build, 10 tests (unique + not_null per model) PASS.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Lint the new files</strong> (sqlfluff/yamllint fire at pre-push/CI, not the
+      commit hook):</li>
+</ul>
+<div class="highlight"><pre><span></span><code>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/stg_focus__user_profiles.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/stg_focus__permission.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/stg_focus__login_history.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/stg_focus__user_enrollment.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/stg_focus__users.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/properties/stg_focus__user_profiles.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/properties/stg_focus__permission.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/properties/stg_focus__login_history.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/properties/stg_focus__user_enrollment.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/focus/models/staging/properties/stg_focus__users.yml
+</code></pre></div>
+<p>(Run from inside the worktree.)</p>
+<h2 id="out-of-scope-other-plans-issues">Out of scope (other plans / issues)</h2>
+<ul>
+<li><strong>Decoding select/multiple custom values to labels</strong> — <code>active</code>,
+  <code>profile_on_non_production_sites</code>, and <code>education</code> keep their stored codes in
+  this batch. Joining them to the <code>custom_fields</code> option catalog to resolve
+  human-readable labels is a deferred follow-up.</li>
+<li><strong>Unpopulated <code>custom_*</code> columns</strong> (83 of the 93 custom columns hold no data)
+  — not projected here; revisit only if a future Focus import begins populating
+  one.</li>
+<li>kipptaf region source + <code>stg_kippmiami__focus__*</code> wrappers — deferred to the
+  kipptaf-integration plan; add a wrapper only when a mart consumes one of
+  these.</li>
+<li><code>is_</code> boolean conversion of Y/N STRING flags and code-value decoding of the
+  <code>INT64</code> lookups (<code>gender</code>, <code>active</code>, <code>profile_on_non_production_sites</code>) —
+  belongs in an intermediate layer if a consumer needs it.</li>
+</ul>
+<h2 id="self-review-checklist-run-before-handing-off">Self-review checklist (run before handing off)</h2>
+<ol>
+<li><strong>Spec coverage:</strong> all five populated Batch G tables (<code>users</code>,
+   <code>user_enrollment</code>, <code>user_profiles</code>, <code>permission</code>, <code>login_history</code>) have a
+   staging task. ✓</li>
+<li><strong>Placeholder scan:</strong> every task has complete SQL + complete YAML + exact
+   build command. No TBD/TODO/"similar to". ✓</li>
+<li><strong>PK correctness:</strong> <code>users</code> → <code>profile_id</code>; the other four → <code>id</code>. Each PK
+   carries <code>unique</code> + <code>not_null</code> at <code>severity: error</code>. ✓</li>
+<li><strong>Soft-delete:</strong> only <code>users</code> has <code>deleted</code>; it filters
+   <code>where deleted is null</code> and omits the <code>deleted</code> column.
+   <code>user_profiles.inactive</code> is kept as a raw attribute, not filtered. ✓</li>
+<li><strong>Exclusions:</strong> every model drops <code>_dlt_*</code> and the audit-quad; keeps
+   <code>created_at</code> / <code>updated_at</code> / <code>uuid</code> where present. (<code>permission</code>,
+   <code>user_enrollment</code>, <code>user_profiles</code>, <code>users</code> have the audit-quad and drop it;
+   <code>login_history</code> has neither.) ✓</li>
+<li><strong>Wide-table custom block:</strong> <code>users</code> carries the curated core plus all 10
+   populated <code>custom_*</code> columns from <code>focus-users-custom-map.md</code>, each aliased
+   to its slug; no custom column absent from the map is projected, and no slug
+   duplicates a core column. Select/multiple values stay as stored codes. ✓</li>
+<li><strong>Type consistency:</strong> each YAML <code>data_type</code> matches the warehouse type and
+   the map's <code>bq_type</code> (mapped to repo spelling: STRING→string, INT64→int,
+   NUMERIC→numeric, DATE→date, TIMESTAMP→timestamp). Re-verify during build the
+   mixed-type columns: custom <code>numeric</code> (<code>experience_length_years</code>,
+   <code>w4_allowances_under_17</code>, <code>f_3_claim_dependent_and_other</code>) and custom <code>int</code>
+   (<code>active</code>, <code>profile_on_non_production_sites</code>); core <code>gender</code> = int,
+   <code>last_updated_date</code> = date. ✓</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

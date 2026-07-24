@@ -1,0 +1,2324 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Cube Security Redesign — HR-Derived Access with Open Directory + Per-Field Scopes - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cube-security-redesign-hr-derived-access-with-open-directory-per-field-scopes" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cube Security Redesign — HR-Derived Access with Open Directory + Per-Field Scopes
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#access-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Access model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#staff-an-open-directory-with-gated-sensitive-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Staff: an open directory, with gated sensitive fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#students-a-single-location-scoped-tier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Students: a single location-scoped tier
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporting-chain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "reporting chain"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-field-sensitive-scope-enum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-field sensitive scope enum
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#location-department-scopes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Location &amp; department scopes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summary-aggregate-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary (aggregate) surface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#survey-access-out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Survey access — out of scope
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dim_staff_cube_access-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_staff_cube_access schema
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-mappings-google-sheets-crosswalks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source mappings (Google Sheets crosswalks)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Source mappings (Google Sheets crosswalks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cube_access_role-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cube_access_role columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cube_access_department_override-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cube_access_department_override columns
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#access-columns-both-tabs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access columns (both tabs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cube_access_department_rollup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cube_access_department_rollup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#changes-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Changes required
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Changes required">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-layer-built-entirely-from-marts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source layer — built entirely from marts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_staff_reporting_chain-unchanged" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_staff_reporting_chain — unchanged
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dim_staff_cube_access-reworked-to-the-schema-above" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dim_staff_cube_access — reworked to the schema above
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cubejs-contexttogroups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cube.js: contextToGroups
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cubejs-queryrewrite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cube.js: queryRewrite
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cube-schema-test-isstaffmember" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cube schema test + isStaffMember
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#no-new-cubes-for-the-access-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        No new Cubes for the access models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#view-access-policies-staff-cube-join" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View access policies + staff cube join
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#google-workspace-group-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Google Workspace group cleanup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation sequence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#revision-2026-07-07-pivot-rls-to-access_policy-eliminate-queryrewrite" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Revision — 2026-07-07: pivot RLS to access_policy, eliminate queryRewrite
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Revision — 2026-07-07: pivot RLS to access_policy, eliminate queryRewrite">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#motivation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Motivation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r1-server-side-identity-resolution-into-securitycontext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R1. Server-side identity resolution into securityContext
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r2-view-re-topology-split-staff-by-tier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R2. View re-topology — split staff by tier
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r3-access_policyrow_level-per-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R3. access_policy.row_level per view
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r4-de-risking-spike-do-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R4. De-risking spike — do FIRST
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r5-queryrewrite-deletion-track-1-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R5. queryRewrite deletion + Track 1 coordination
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r6-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R6. Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r7-sections-this-revision-supersedes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R7. Sections this revision supersedes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r8-new-open-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R8. New open questions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-06-03-cube-security-redesign.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="cube-security-redesign-hr-derived-access-with-open-directory-per-field-scopes">Cube Security Redesign — HR-Derived Access with Open Directory + Per-Field Scopes</h1>
+<p><strong>Issue:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4102">#4102</a>
+<strong>Branch:</strong> <code>cristinabaldor/feat/claude-cube-security-redesign</code></p>
+<p><strong>Revision history.</strong></p>
+<ul>
+<li>2026-06-03 — single <code>scope_level</code> capping both summary and detail, boolean-ish
+  <code>*_access_level</code> tiers.</li>
+<li>2026-06-24a — decomposed into independent axes (summary vs detail scope per
+  domain; location and department split apart).</li>
+<li>2026-06-24b — <strong>staff directory is open</strong>; only <em>sensitive</em> staff fields are
+  gated. The org-relation gate (<code>staff_detail_org_gate</code>) folds into a
+  self-contained scope enum on each sensitive field. A single term
+  <strong><code>reporting_chain</code></strong> (aligned with <code>dim_staff_reporting_chain</code>) is used for
+  "the people who report up to you" — replacing the prior mix of "reporting
+  chain" / "downline" / "team". It means strictly your direct + indirect
+  reports, never same-level peers.</li>
+<li>2026-06-24c — staff <strong>summary aggregates are open</strong> too (no <code>staff_summary_*</code>
+  scope columns; staff aggregates, like the directory, are unscoped). The
+  sensitive remit columns drop the now-misleading <code>detail</code> prefix:
+  <code>staff_location_scope</code> + <code>staff_department_scope</code>. They constrain rows only in
+  conjunction with a sensitive field. Prior models are in git history.</li>
+<li>2026-06-30 (this revision) — <strong>students collapse to a single location-scoped
+  tier.</strong> The summary/detail location split and the separate <code>student_pii_scope</code>
+  are removed in favor of one <code>student_location_scope</code>; any non-<code>none</code> value
+  grants the single <code>student</code> tier, which sees every student view (summary +
+  detail) and all fields, <strong>PII included</strong>. Location is the only student gating
+  axis. Separately, <strong><code>department_type</code> (instructional/non-instructional) is
+  dropped</strong> from the role crosswalk, the rollup, and <code>dim_staff_cube_access</code> —
+  role matching is now keyed on <code>(job_function_code, entity)</code>. (The
+  <code>department_group</code> / <code>staff_department_scope</code> <code>own_group</code> staff remit is
+  unchanged.) Tier names are the short forms used in the merged code (<code>student</code>,
+  <code>staff-directory</code>, <code>staff-pii</code>, …), not the <code>cube-access-*</code> prefixes this spec
+  originally described.</li>
+<li>2026-07-07 — <strong>pivot RLS to <code>access_policy</code>, eliminate <code>queryRewrite</code></strong> (see
+  the "Revision — 2026-07-07" section at the end). Row-level access moves from
+  <code>queryRewrite</code> into Cube-native <code>access_policy</code> + server-side
+  <code>securityContext</code> enrichment (<code>checkAuth</code> / <code>checkSqlAuth</code>); staff detail
+  splits into <code>staff_directory</code> + <code>staff_pii</code>. The dbt models, scope enums, and
+  <code>member_level</code> gating are unchanged.</li>
+</ul>
+<h2 id="summary">Summary</h2>
+<p>Move all Cube access control into Cube itself, derived from HR data. Two dbt
+models are the source of truth, replacing manual Google Workspace group
+enrollment and the Google Admin Directory API entirely:</p>
+<ul>
+<li><code>dim_staff_cube_access</code> — one row per active+primary staff member (keyed on
+  <code>staff_key</code>); resolves each person's <strong>current role</strong> to access scopes via the
+  Google Sheets crosswalks.</li>
+<li><code>dim_staff_reporting_chain</code> — the transitive closure of the current org tree
+  (manager → every direct/indirect report), keyed on <code>staff_key</code>. It is the data
+  behind a viewer's <strong>reporting chain</strong> (everyone who reports up to them,
+  directly or indirectly).</li>
+</ul>
+<p>Identity keys on <code>staff_key</code>. The JWT email claim is used in exactly one place —
+a boundary lookup resolving email → <code>staff_key</code>.</p>
+<h2 id="access-model">Access model</h2>
+<h3 id="staff-an-open-directory-with-gated-sensitive-fields">Staff: an open directory, with gated sensitive fields</h3>
+<p>The staff data splits into two kinds of field, not two row-gated views:</p>
+<ul>
+<li><strong>Directory / employment fields</strong> (names, work email, AD username, title, job
+  function, worker type, department, location, manager, FTE, status, tenure
+  dates, org structure) are an <strong>internal directory — open to every staff
+  viewer, network-wide, no row gate.</strong> These are not sensitive on their own;
+  they only matter in combination with the gated fields below, so gating them
+  buys nothing.</li>
+<li><strong>Sensitive fields</strong> (personal contact, date of birth, demographics; and —
+  when those cubes are built — compensation, observations) are <strong>gated per
+  field</strong>, by a self-contained scope enum, bounded by a shared staff location +
+  department scope.</li>
+</ul>
+<p>So there is no "is the staff row visible" gate — the row gate fires <strong>only when
+a query touches a sensitive field</strong>, and then only restricts to that field's
+scope. A directory-only query returns all staff.</p>
+<h3 id="students-a-single-location-scoped-tier">Students: a single location-scoped tier</h3>
+<p>Students have no directory/sensitive split and no reporting-chain concept —
+student-level data is inherently sensitive. There is one axis,
+<code>student_location_scope</code> (<code>network</code>/<code>region</code>/<code>school</code>/<code>none</code>). Any non-<code>none</code>
+value grants the single <code>student</code> tier, which exposes <strong>every</strong> student view
+(detail and summary) and <strong>all</strong> fields, PII included — there is no separate
+summary/detail or PII gate. Rows are filtered to the location scope in
+<code>queryRewrite</code>.</p>
+<h3 id="reporting-chain">"reporting chain"</h3>
+<p>A viewer's <strong>reporting chain</strong> is every staff member who reports up to them
+through the org tree (direct + indirect), from <code>dim_staff_reporting_chain</code>. It
+is strictly <em>downward</em> — never same-level peers — and <strong>unbounded by location or
+department</strong> — a report at another school is still in your reporting chain ("you
+can never be hidden from your own manager").</p>
+<h3 id="per-field-sensitive-scope-enum">Per-field sensitive scope enum</h3>
+<p>Each sensitive staff field carries one scope value. It decides <strong>both</strong> whether
+the column is visible <strong>and</strong> which rows it is visible for:</p>
+<!-- markdownlint-disable MD013 -->
+
+<table>
+<thead>
+<tr>
+<th>Scope value</th>
+<th>Column shown?</th>
+<th>Rows the field is visible for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>none</code></td>
+<td>no</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>all_in_scope</code></td>
+<td>yes</td>
+<td>all rows in <code>staff_location_scope ∩ staff_department_scope</code></td>
+</tr>
+<tr>
+<td><code>reporting_chain_or_below_rank</code></td>
+<td>yes</td>
+<td>(in scope <strong>∩</strong> ranked below me) <strong>∪</strong> my reporting chain</td>
+</tr>
+<tr>
+<td><code>reporting_chain</code></td>
+<td>yes</td>
+<td>my reporting chain only (unbounded by location/department)</td>
+</tr>
+<tr>
+<td><code>teaching_staff</code></td>
+<td>yes</td>
+<td><code>job_function_code IN ('TEACH','TIR')</code> within scope</td>
+</tr>
+</tbody>
+</table>
+<!-- markdownlint-enable MD013 -->
+
+<p><code>job_function_level</code>: numerically greater = lower rank (1 = Chief, 6 = Teacher).
+The <strong>only union</strong> is the reporting chain inside
+<code>reporting_chain_or_below_rank</code>; everything else is an intersection. Applied
+independently to <code>staff_pii_scope</code>, <code>staff_compensation_scope</code>,
+<code>staff_observations_scope</code>, <code>staff_benefits_scope</code>, so a viewer can, e.g., see
+contact info for everyone in their school (<code>all_in_scope</code>) but compensation only
+for their reporting chain (<code>reporting_chain</code>).</p>
+<p><strong>Multi-field queries intersect (most-restrictive wins).</strong> A query pulling two
+sensitive fields with different scopes returns the intersection of their row
+sets — pull <code>pii = all_in_scope</code> + <code>comp = reporting_chain</code> together and you get
+your reporting chain; pull <code>pii</code> alone and you get the whole school. This is the
+standard "requesting a restricted field narrows the query" tradeoff.</p>
+<h3 id="location-department-scopes">Location &amp; department scopes</h3>
+<p>Decomposed — no fused enums. Students carry a single location scope
+(<code>student_location_scope</code>); staff carry only the sensitive remit
+(<code>staff_location_scope</code> + <code>staff_department_scope</code>) since the staff summary and
+directory are open.</p>
+<!-- markdownlint-disable MD013 -->
+
+<table>
+<thead>
+<tr>
+<th>Axis</th>
+<th>Values</th>
+<th>Bounds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>*_location_scope</code></td>
+<td><code>network</code> / <code>region</code> / <code>school</code> / <code>none</code></td>
+<td><code>network</code> = no filter; <code>region</code> = <code>region_key</code> = mine; <code>school</code> = <code>abbreviation</code> = mine; <code>none</code> = deny</td>
+</tr>
+<tr>
+<td><code>staff_department_scope</code></td>
+<td><code>all</code> / <code>own_group</code> / <code>none</code></td>
+<td><code>all</code> = no filter; <code>own_group</code> = <code>department_group</code> = mine; <code>none</code> = deny</td>
+</tr>
+</tbody>
+</table>
+<!-- markdownlint-enable MD013 -->
+
+<p><code>staff_location_scope ∩ staff_department_scope</code> bound the <code>all_in_scope</code> /
+<code>reporting_chain_or_below_rank</code> / <code>teaching_staff</code> field values (the
+<code>reporting_chain</code> value ignores them by design). They constrain rows <strong>only in
+conjunction with a sensitive field</strong> — a directory-only query, and the aggregate
+summary, are never bounded by them. <code>network</code> is only ever set intentionally by
+the mapping; an unmatched region/school resolves to <code>none</code> (deny), never
+<code>network</code>. The viewer's <code>region_key</code>, <code>location_abbreviation</code>, and
+<code>department_group</code> are carried on <code>dim_staff_cube_access</code> so <code>cube.js</code> builds
+filters from the level.</p>
+<h3 id="summary-aggregate-surface">Summary (aggregate) surface</h3>
+<p><code>staff_summary</code> exposes aggregate demographics and headcount/FTE breakdowns — no
+row-level identifiers — and is <strong>open network-wide to every staff viewer</strong> (no
+location/department scope), so a leader can benchmark against region/network.
+Low-N suppression is tracked in
+<a href="https://github.com/TEAMSchools/teamster/issues/4237">#4237</a>. There are
+therefore <strong>no <code>staff_summary_*</code> scope columns</strong> — staff aggregates, like the
+directory, are unscoped. (Open question: with the directory open at row level,
+whether to keep <code>staff_summary</code> as a distinct view or fold it into the directory
+is deferred.)</p>
+<h3 id="survey-access-out-of-scope">Survey access — out of scope</h3>
+<p>Deferred to a separate plan; no survey column in v1.</p>
+<h2 id="dim_staff_cube_access-schema"><code>dim_staff_cube_access</code> schema</h2>
+<p>One row per active+primary <code>staff_key</code>. Columns:</p>
+<div class="highlight"><pre><span></span><code>staff_key                          -- PK
+google_email                       -- JWT-boundary lookup only
+
+region_key                         -- viewer identity (filter key)
+location_abbreviation              -- viewer identity (filter key)
+department_group                   -- viewer identity (filter key)
+entity                             -- KTAF / Region
+job_function_code
+job_function_level                 -- org rank 1-6
+
+student_location_scope             -- network / region / school / none
+
+staff_location_scope               -- sensitive bound: network/region/school/none
+staff_department_scope             -- sensitive bound: all/own_group/none
+staff_pii_scope                    -- sensitive scope enum (5 values; see table)
+staff_compensation_scope           -- (same vocabulary)
+staff_observations_scope           -- (same vocabulary)
+staff_benefits_scope               -- (same vocabulary)
+</code></pre></div>
+<p>Removed vs the prior revision: <code>staff_detail_org_gate</code> (folded into the four
+sensitive <code>*_scope</code> enums). The directory/employment columns are NOT in this
+table — they live on <code>dim_staff</code> and are open; this table only carries the
+access criteria.</p>
+<h2 id="source-mappings-google-sheets-crosswalks">Source mappings (Google Sheets crosswalks)</h2>
+<p>The data team edits the sheet; <code>dim_staff_cube_access</code> joins the staged
+crosswalks. Special-access <code>department</code> override wins entirely over the role
+mapping when matched.</p>
+<h3 id="cube_access_role-columns"><code>cube_access_role</code> columns</h3>
+<p><code>job_function_code</code>, <code>entity</code> (<code>KTAF</code>/<code>Region</code>/<code>any</code>), <code>job_function_level</code>
+(1-7), then the access columns below. Keyed on <code>(job_function_code, entity)</code>.</p>
+<h3 id="cube_access_department_override-columns"><code>cube_access_department_override</code> columns</h3>
+<p><code>department</code> (exact <code>department_name</code>), then the same access columns. 8 rows:
+Executive, Data, Human Resources, Leadership Development, Teacher Development,
+Accounting, Finance, Compliance.</p>
+<h3 id="access-columns-both-tabs">Access columns (both tabs)</h3>
+<p><code>student_location_scope</code>, <code>staff_location_scope</code>, <code>staff_department_scope</code>,
+<code>staff_pii_scope</code>, <code>staff_compensation_scope</code>, <code>staff_observations_scope</code>,
+<code>staff_benefits_scope</code>. (No <code>staff_summary_*</code> and no <code>staff_detail_org_gate</code>.)
+The four <code>staff_*_scope</code> field values use the per-field enum
+(<code>none</code>/<code>all_in_scope</code>/<code>reporting_chain_or_below_rank</code>/<code>reporting_chain</code>/<code>teaching_staff</code>);
+<code>staff_location_scope</code> + <code>staff_department_scope</code> are the shared remit that
+bounds them.</p>
+<h3 id="cube_access_department_rollup"><code>cube_access_department_rollup</code></h3>
+<p><code>department_name</code> → <code>department_group</code> (the <code>own_group</code> remit). The former
+<code>department_type</code> column is removed.</p>
+<h2 id="changes-required">Changes required</h2>
+<h3 id="source-layer-built-entirely-from-marts">Source layer — built entirely from marts</h3>
+<p><code>dim_staff_cube_access</code> and <code>dim_staff_reporting_chain</code> are assembled
+<strong>intra-mart</strong> from the work-assignment dimensional star, filtered to each
+person's <strong>current primary</strong> assignment (every join filters <code>is_current</code> and the
+primary assignment). <code>job_function_code</code> on <code>dim_work_assignment_jobs</code> is the
+prereq (landed, <code>f9dd839ed</code>). <code>staff_key</code> stays
+<code>generate_surrogate_key([employee_number])</code>.</p>
+<h3 id="dim_staff_reporting_chain-unchanged"><code>dim_staff_reporting_chain</code> — unchanged</h3>
+<p>Transitive closure of the current org tree, keyed on <code>staff_key</code>; self-pair at
+<code>depth = 0</code>. <code>WITH RECURSIVE</code> → <code>contract: enforced: false</code>. Built and
+validated.</p>
+<h3 id="dim_staff_cube_access-reworked-to-the-schema-above"><code>dim_staff_cube_access</code> — reworked to the schema above</h3>
+<p>Primary-assignment spine → rollup → override-then-role join → coalesce
+non-matches to the deny value (<code>none</code>). Carry the viewer identity keys. Drop
+<code>staff_detail_org_gate</code>, <code>scope_level</code>, <code>scope_key</code>, <code>student_access_level</code>,
+<code>staff_access_level</code>.</p>
+<h3 id="cubejs-contexttogroups"><code>cube.js</code>: <code>contextToGroups</code></h3>
+<p>Replace the Admin Directory API with BigQuery reads, cached to midnight ET. (1)
+email → access row from <code>dim_staff_cube_access</code> (<code>WHERE google_email = @email</code>);
+(2) <code>staff_key</code> → reporting-chain <code>staff_key</code>s from <code>dim_staff_reporting_chain</code>
+(<code>WHERE manager_staff_key = @staffKey</code>). Cache
+<code>{ row, reportingChainKeys, groups }</code>. <code>buildGroups(row)</code> emits column tiers:</p>
+<ul>
+<li>Students: the single <code>student</code> tier when <code>student_location_scope != none</code>.</li>
+<li>Staff: <code>staff-directory</code> for <strong>every</strong> staff viewer (the open directory); a
+  sensitive column tier per the <code>*_scope</code> enums (<code>!= none</code>). In v1 the only
+  sensitive columns are PII → <code>staff-pii</code> when <code>staff_pii_scope != none</code>.</li>
+</ul>
+<h3 id="cubejs-queryrewrite"><code>cube.js</code>: <code>queryRewrite</code></h3>
+<p>Reads the cached <code>row</code> + <code>reportingChainKeys</code>.</p>
+<ul>
+<li><strong>Directory-only staff query</strong> → no row filter (all staff network-wide).</li>
+<li><strong>Staff query touching sensitive field(s)</strong> → AND the per-field scope filters
+  of every requested sensitive field (intersection). Each field's filter is
+  built from its enum value:</li>
+<li><code>all_in_scope</code> → location ∩ department</li>
+<li><code>reporting_chain_or_below_rank</code> → (location ∩ department ∩ ranked below
+    viewer) ∪ chain-IN</li>
+<li><code>reporting_chain</code> → chain-IN</li>
+<li><code>teaching_staff</code> → location ∩ department ∩ <code>job_function_code</code> in
+    <code>('TEACH','TIR')</code></li>
+<li><code>none</code> → the column is hidden by <code>access_policy</code>, never requested</li>
+<li><strong>Student query</strong> → location filter from <code>student_location_scope</code> (one tier,
+  no per-surface distinction), default-deny empty <code>IN ()</code>.</li>
+<li>Student-member strip, snapshot-anchor guard, and <code>canSwitchSqlUser</code> unchanged.</li>
+</ul>
+<p>The staff views expose <code>staff.staff_key</code>, <code>staff.job_function_level</code>,
+<code>staff.job_function_code</code>, <code>staff.department_group</code> (via the § "staff cube
+join") for these filters.</p>
+<h3 id="cube-schema-test-isstaffmember">Cube schema test + <code>isStaffMember</code></h3>
+<p><code>tests/cube/test_cube_schema.py</code> (no <code>dim_</code>/<code>fct_</code> cube names) — DONE. Add an
+<code>isStaffMember</code> prefix helper in <code>access.js</code>.</p>
+<h3 id="no-new-cubes-for-the-access-models">No new Cubes for the access models</h3>
+<p><code>dim_staff_cube_access</code> / <code>dim_staff_reporting_chain</code> get no cube/view. Sole
+exception: the <code>staff</code> cube reads <code>job_function_level</code>, <code>job_function_code</code>,
+<code>department_group</code> from <code>dim_staff_cube_access</code> via a <code>staff_key</code> <code>LEFT JOIN</code>
+(never the access-policy columns).</p>
+<h3 id="view-access-policies-staff-cube-join">View access policies + <code>staff</code> cube join</h3>
+<ul>
+<li><strong>Student views</strong> (6): a single <code>student</code> tier (<code>includes: "*"</code>) on every view
+  — no detail/summary or PII split.</li>
+<li><strong>Staff views</strong>: <code>staff_detail</code> carries <code>staff-directory</code> (<code>includes: "*"</code>,
+  <code>excludes:</code> the sensitive fields — <code>personal_email</code>, <code>personal_cell_phone</code>,
+  <code>birth_date</code>, <code>gender_identity</code>, <code>race</code>, <code>is_hispanic</code>) + <code>staff-pii</code>
+  (<code>includes: "*"</code>). <code>staff_summary</code> keeps a single aggregate tier.</li>
+<li><strong><code>staff</code> cube</strong>: inline <code>sql:</code> <code>LEFT JOIN dim_staff_cube_access</code> on
+  <code>staff_key</code> exposing <code>job_function_level</code>, <code>job_function_code</code>,
+  <code>department_group</code>; expose all three on <code>staff_detail</code> for the sensitive-field
+  filters. <code>staff_summary</code> needs none of them for gating (it's open);
+  <code>department_group</code> may optionally be exposed there as an aggregate breakdown.</li>
+</ul>
+<h3 id="google-workspace-group-cleanup">Google Workspace group cleanup</h3>
+<p>After live + validated, retire the <code>cube-*</code> Workspace groups (names are now
+internal).</p>
+<h2 id="open-questions">Open questions</h2>
+<ol>
+<li>Department rollup (<code>department_name</code> → <code>department_group</code>) owned by the data
+   team.</li>
+<li><code>job_function_code</code> — RESOLVED (prereq landed).</li>
+<li>Multi-location / itinerant staff — one <code>location_abbreviation</code>; deferred.</li>
+<li>Whether to keep <code>staff_summary</code> as a distinct view or fold it into the open
+   directory (its only unique job is aggregate demographics) — deferred.</li>
+</ol>
+<h2 id="implementation-sequence">Implementation sequence</h2>
+<ol>
+<li>Crosswalk sheet columns + <code>sources-external.yml</code> + staging contracts; data
+   team re-fills; re-stage (<code>--target staging</code>).</li>
+<li>Rework <code>dim_staff_cube_access</code>; keep <code>dim_staff_reporting_chain</code>. Validate
+   1:1 on <code>staff_key</code>.</li>
+<li>Confirm both dims in <code>exposures/cube.yml</code> <code>depends_on</code>.</li>
+<li><code>staff</code> cube inline join (<code>job_function_level</code> / <code>job_function_code</code> /
+   <code>department_group</code>).</li>
+<li>View <code>access_policy</code>: students a single <code>student</code> tier; staff
+   <code>-directory</code>/<code>-pii</code>.</li>
+<li><code>cube.js</code> / <code>access.js</code>: BigQuery <code>contextToGroups</code>; <code>queryRewrite</code> with open
+   directory + per-field sensitive scopes (intersection across requested
+   sensitive fields); <code>isStaffMember</code>.</li>
+<li><code>tests/cube/test_cube_schema.py</code> — DONE.</li>
+<li>Docs: <code>src/cube/CLAUDE.md</code> + staff view YAML (the #4092 gate).</li>
+<li>Validate in Dev Mode per tier (directory open; sensitive fields scoped;
+   reporting-chain-only vs in-scope vs below-rank; summary breadth &gt; sensitive).</li>
+<li>Deploy; spot-check.</li>
+<li>Retire <code>cube-*</code> Workspace groups.</li>
+<li>Data-quality follow-up (#4260) — aggregate counts only, no PII.</li>
+</ol>
+<h2 id="revision-2026-07-07-pivot-rls-to-access_policy-eliminate-queryrewrite">Revision — 2026-07-07: pivot RLS to <code>access_policy</code>, eliminate <code>queryRewrite</code></h2>
+<p><strong>Status:</strong> design approved (supersedes the row-level mechanism below). The
+<code>dim_staff_cube_access</code> / <code>dim_staff_reporting_chain</code> models, the scope enums,
+<code>access.js</code>'s pure resolution helpers, and <code>member_level</code> field gating are
+unchanged — only the row-level application layer moves.</p>
+<h3 id="motivation">Motivation</h3>
+<p><code>queryRewrite</code> does two unrelated jobs: snapshot-anchor injection for
+semi-additive attendance/enrollment measures, and row-level access filtering.
+Both are being removed — the first by the Tesseract end-of-period measures
+(Track 1, refs #4214 / #4333), the second by this pivot. Rather than invest this
+PR in reworking RLS <em>inside</em> <code>queryRewrite</code> and delete it later, move RLS to
+Cube's native <code>access_policy</code> now. End state: no <code>queryRewrite</code> — <code>checkSqlAuth</code>
+/ <code>checkAuth</code> (authentication) + <code>access_policy</code> (authorization) + Tesseract
+(measure semantics).</p>
+<h3 id="r1-server-side-identity-resolution-into-securitycontext">R1. Server-side identity resolution into <code>securityContext</code></h3>
+<p><code>access_policy.row_level</code> filters interpolate <code>securityContext</code> values, so the
+resolved access row must live <em>in</em> <code>securityContext</code>, not only in <code>cube.js</code>'s
+cache. Move the two BigQuery reads out of <code>contextToGroups</code> (see "<code>cube.js</code>:
+<code>contextToGroups</code>" above) into the auth hooks:</p>
+<ul>
+<li><strong><code>checkAuth</code></strong> (REST / MCP) and <strong><code>checkSqlAuth</code></strong> (SQL API / Superset)
+  resolve the access row + reporting-chain keys (reusing <code>access.js</code> + the
+  midnight-ET cache) and write them into <code>securityContext</code>: the scope enums,
+  <code>region_key</code>, <code>location_abbreviation</code>, <code>department_group</code>,
+  <code>job_function_level</code>, <code>reportee_staff_keys</code>, and the derived tier groups.</li>
+<li>Nothing BQ-resolved is transported in the JWT (built server-side), so the
+  reporting-chain list never bloats tokens.</li>
+<li><code>contextToGroups</code> folds into this — groups come from the resolved row.</li>
+</ul>
+<h3 id="r2-view-re-topology-split-staff-by-tier">R2. View re-topology — split staff by tier</h3>
+<p>The one thing that does not translate to declarative <code>access_policy</code> is the
+<em>query-shape conditionality</em> in the current "<code>cube.js</code>: <code>queryRewrite</code>" section
+(apply the sensitive remit only when a sensitive field is queried). <code>row_level</code>
+applies whenever a viewer matches the policy group, regardless of query shape.
+Resolve it by splitting the staff detail surface:</p>
+<ul>
+<li><strong><code>staff_directory</code></strong> — names / work-directory fields only. Open to every
+  resolved staff viewer; <strong>no <code>row_level</code></strong>.</li>
+<li><strong><code>staff_pii</code></strong> — the sensitive fields (v1: the six PII columns); <code>row_level</code>
+  applies the location ∩ department ∩ scope remit; <code>member_level</code> includes the
+  sensitive fields for the <code>staff-pii</code> group.</li>
+<li><code>staff_summary</code> unchanged (aggregate; open). Future sensitive domains
+  (compensation / observations / benefits) each become their own tier view.</li>
+</ul>
+<p>Students / enrollment / assessments keep a single tier — their location filter
+always applies (no query-shape conditionality), so one <code>row_level</code> filter on
+<code>securityContext.student_location_scope</code> covers them.</p>
+<h3 id="r3-access_policyrow_level-per-view">R3. <code>access_policy.row_level</code> per view</h3>
+<p>Translate the <code>access.js</code> scope logic into declarative filters:</p>
+<ul>
+<li><strong>student / enrollment / assessment views</strong> — one location filter,
+  <code>conditions</code> on <code>securityContext.student_location_scope</code> (<code>network</code> → none;
+  <code>region</code> → <code>region_key</code>; <code>school</code> → <code>abbreviation</code>; <code>none</code> → default-deny).</li>
+<li><strong><code>staff_pii</code></strong> — per the viewer's sensitive scope enum:</li>
+<li><code>all_in_scope</code> → location ∩ department</li>
+<li><code>teaching_staff</code> → the above + <code>job_function_code IN ('TEACH','TIR')</code></li>
+<li><code>reporting_chain</code> → <code>staff_key IN {securityContext.reportee_staff_keys}</code></li>
+<li><code>reporting_chain_or_below_rank</code> → nested <code>or</code> of
+    <code>{and: [remit, job_function_level gt {securityContext.job_function_level}]}</code>
+    and the <code>staff_key IN</code> chain filter</li>
+<li><strong><code>staff_directory</code> / <code>staff_summary</code></strong> — no <code>row_level</code>.</li>
+</ul>
+<h3 id="r4-de-risking-spike-do-first">R4. De-risking spike — do FIRST</h3>
+<p>Prove the riskiest translations on a throwaway Dev Mode model before building
+the full pivot:</p>
+<ol>
+<li><strong>Array-valued <code>securityContext</code> interpolation</strong> into an <code>equals</code> / IN
+   <code>row_level</code> filter (the reporting-chain list).</li>
+<li><strong>Nested <code>or</code> / <code>and</code></strong> filter grammar inside <code>row_level</code>
+   (<code>reporting_chain_or_below_rank</code>).</li>
+<li><strong>Multi-policy <code>row_level</code> combination</strong> — whether Cube ANDs or ORs filters
+   when a viewer matches multiple policy groups (decides multi-tier
+   correctness).</li>
+</ol>
+<p>If any fails, fall back (documented): most likely a thin residual <code>queryRewrite</code>
+for <em>only</em> the chain filter, or precomputing chain membership differently. The
+spike outcome gates the rest of the work.</p>
+<h3 id="r5-queryrewrite-deletion-track-1-coordination">R5. <code>queryRewrite</code> deletion + Track 1 coordination</h3>
+<p>Once row-level is in <code>access_policy</code> and resolution is in the auth hooks, delete
+<code>queryRewrite</code>'s RLS half. The snapshot half is removed by Track 1 (Tesseract).
+The final <code>cube.js</code> with no <code>queryRewrite</code> lands only after both tracks merge —
+sequence the last cleanup so whichever merges second removes the remaining half
+without colliding.</p>
+<h3 id="r6-testing">R6. Testing</h3>
+<ul>
+<li><code>access.js</code> unit tests adapt to whatever pure logic remains (most
+  filter-building moves to declarative YAML).</li>
+<li>Policy-level validation via Dev Mode Edit-Security-Context across a viewer
+  matrix (network / region / school / none; each staff scope enum;
+  PII-rides-with-access; directory open vs <code>staff_pii</code> scoped), confirming row
+  counts + field visibility — reusing this PR's validation approach.</li>
+</ul>
+<h3 id="r7-sections-this-revision-supersedes">R7. Sections this revision supersedes</h3>
+<ul>
+<li>"<code>cube.js</code>: <code>contextToGroups</code>" — resolution moves to the auth hooks (R1).</li>
+<li>"<code>cube.js</code>: <code>queryRewrite</code>" — RLS half deleted; row filtering →
+  <code>access_policy</code> (R3). Snapshot half removed by Track 1.</li>
+<li>"View access policies + <code>staff</code> cube join" — staff detail splits into
+  <code>staff_directory</code> + <code>staff_pii</code> (R2).</li>
+</ul>
+<h3 id="r8-new-open-questions">R8. New open questions</h3>
+<ol>
+<li>Multi-policy <code>row_level</code> combination semantics (AND vs OR) — resolved by the
+   R4 spike.</li>
+<li>Cube Cloud <code>userAttributes</code> vs Cube Core <code>securityContext</code> interpolation for
+   our deployment — confirm the filter-interpolation form works on the
+   production surface.</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

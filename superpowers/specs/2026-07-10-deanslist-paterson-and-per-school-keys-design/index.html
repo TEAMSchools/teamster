@@ -1,0 +1,2043 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>DeansList: add Paterson and restructure per-school API keys - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#deanslist-add-paterson-and-restructure-per-school-api-keys" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              DeansList: add Paterson and restructure per-school API keys
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#background-current-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background: current architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Background: current architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#key-delivery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key delivery
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pain-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pain points
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#district-ingestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        District ingestion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dbt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        dbt
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#part-1-per-school-key-fields-to-a-mounted-directory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1 — Per-school key fields to a mounted directory
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — Per-school key fields to a mounted directory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1password-item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1Password item
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deploy-config-dagster-cloudyaml-all-four-districts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploy config (dagster-cloud.yaml, all four districts)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resource-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resource change
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#blast-radius" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blast radius
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#risk-field-label-vs-secret-key-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk: field label vs secret key name
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#part-2-paterson-dagster-ingestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2 — Paterson Dagster ingestion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#part-3-paterson-district-dbt-project" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 3 — Paterson district dbt project
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#part-4-kipptaf-cross-district-inclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 4 — kipptaf cross-district inclusion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rollout-and-sequencing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rollout and sequencing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Rollout and sequencing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pr-1-keys-plus-paterson-ingestion-python-and-k8s-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 1 — Keys plus Paterson ingestion (Python and K8s only)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pr-2-all-dbt-paterson-district-plus-kipptaf-unions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2 — All dbt (Paterson district plus kipptaf unions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing-and-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing and validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-considered" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternatives considered
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites-and-open-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites and open items
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-07-10-deanslist-paterson-and-per-school-keys-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="deanslist-add-paterson-and-restructure-per-school-api-keys">DeansList: add Paterson and restructure per-school API keys</h1>
+<ul>
+<li><strong>Issue:</strong> <a href="https://github.com/TEAMSchools/teamster/issues/4367">#4367</a></li>
+<li><strong>Status:</strong> Design</li>
+<li><strong>Date:</strong> 2026-07-10</li>
+</ul>
+<blockquote>
+<p><strong>Amendment (per-city secrets):</strong> during implementation the monolithic
+<code>op-deanslist-api</code> item was split <strong>by city</strong> — one 1Password item and K8s
+secret per district (<code>op-deanslist-api-&lt;district&gt;</code>), each repeating the
+<code>subdomain</code> field plus that city's school keys, synced by one
+<code>OnePasswordItem</code> CR per city in <code>.k8s/1password/items.yaml</code>. Read every
+"single shared secret" statement below as per-city; the resource mechanism is
+unchanged (it still reads one mounted directory). kipptaf's vestigial
+<code>DEANSLIST_SUBDOMAIN</code> mapping (an SFTP-only location that never used the API
+resource) was removed as part of the split.</p>
+</blockquote>
+<h2 id="summary">Summary</h2>
+<p>Two related changes to the DeansList integration:</p>
+<ol>
+<li><strong>Restructure per-school API key storage</strong> so that adding or rotating a
+   school key is a single field edit in the 1Password UI, instead of
+   hand-editing a fragile multi-line YAML blob. This touches the shared
+   <code>DeansListResource</code>, so it migrates all four API districts at once.</li>
+<li><strong>Extend the DeansList integration to Paterson</strong> end-to-end: Dagster
+   ingestion, the district dbt project, and the kipptaf cross-district models.</li>
+</ol>
+<h2 id="background-current-architecture">Background: current architecture</h2>
+<h3 id="key-delivery">Key delivery</h3>
+<ul>
+<li>One 1Password item, <code>DeansList API</code> (vault <code>Data Team</code>), is synced by the
+  1Password Kubernetes Operator into the <code>op-deanslist-api</code> secret in the
+  <code>dagster-cloud</code> namespace. Each field of the item becomes one key of the
+  secret. The <code>OnePasswordItem</code> custom resource lives in
+  <a href="../../../.k8s/1password/items.yaml"><code>.k8s/1password/items.yaml</code></a>.</li>
+<li>Today the item has two fields: <code>subdomain</code> and a single field holding an
+  entire YAML blob (<code>api_key_map: {school_id: key, ...}</code>) covering every school
+  across the network.</li>
+<li>Each district's <code>dagster-cloud.yaml</code> projects the blob field into the code and
+  run pods as a file under <code>/etc/secret-volume/</code>, and sets <code>DEANSLIST_SUBDOMAIN</code>
+  from the <code>subdomain</code> key.</li>
+<li><code>DeansListResource</code>
+  (<a href="../../../src/teamster/libraries/deanslist/resources.py"><code>src/teamster/libraries/deanslist/resources.py</code></a>)
+  is a single shared instance
+  (<a href="../../../src/teamster/core/resources.py"><code>src/teamster/core/resources.py</code></a>),
+  configured with <code>subdomain</code> and <code>api_key_map</code> (the file path). At startup it
+  parses the YAML into <code>self._api_key_map</code>, then looks up
+  <code>self._api_key_map[school_id]</code> per request. All API districts share this one
+  resource and one subdomain.</li>
+</ul>
+<h3 id="pain-points">Pain points</h3>
+<ul>
+<li>The YAML blob is a single 1Password field: no per-school history, easy to
+  break indentation, awkward to diff or edit.</li>
+<li>Adding a school is at least two edits (the key blob, plus the district's
+  partition list) followed by a redeploy. This spec targets the <strong>key</strong> half.</li>
+</ul>
+<h3 id="district-ingestion">District ingestion</h3>
+<ul>
+<li>API districts (<code>kippnewark</code>, <code>kippcamden</code>, <code>kippmiami</code>) each have a
+  <code>&lt;district&gt;/deanslist/</code> module: <code>assets.py</code> (a <code>StaticPartitionsDefinition</code> of
+  the district's DeansList <code>school_id</code>s, plus factory calls from
+  <a href="../../../src/teamster/libraries/deanslist/assets.py"><code>libraries/deanslist/assets.py</code></a>),
+  <code>schema.py</code>, <code>schedules.py</code>, <code>__init__.py</code>, and <code>config/*.yaml</code>.</li>
+<li><code>kipppaterson</code> has <strong>no</strong> DeansList module today, and its CLAUDE.md lists
+  DeansList as absent. Paterson also has no ODBC PowerSchool and no BigQuery
+  writes from its location (its PowerSchool arrives via Couchdrop SFTP), but
+  that does not affect DeansList, which is a direct REST pull.</li>
+</ul>
+<h3 id="dbt">dbt</h3>
+<ul>
+<li>The <code>deanslist</code> source-system package produces <code>stg_deanslist__*</code> and
+  <code>int_deanslist__*</code> models. It builds inside each <strong>consuming district</strong>
+  project (<code>kippnewark</code>, <code>kippcamden</code>, <code>kippmiami</code>), reading that district's own
+  <code>src_deanslist__*</code> external tables. <code>kipppaterson</code> does not import the
+  package.</li>
+<li><code>kipptaf</code> does not import the package. It has its own <code>models/deanslist/api/</code>
+  union layer: one <code>sources-kipp&lt;district&gt;.yml</code> per district plus <code>stg_</code>/<code>int_</code>
+  models that
+  <code>dbt_utils.union_relations([source("kippnewark_deanslist", ...), ...])</code> across
+  the three API districts. Downstream kipptaf models (for example
+  <code>int_students__attendance_interventions</code>) consume those union models.</li>
+</ul>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>Editing or rotating a school key is a single 1Password field edit; no YAML, no
+  <code>dagster-cloud.yaml</code> change, no code change.</li>
+<li>The four API districts share one consistent key mechanism after migration.</li>
+<li>Paterson DeansList data is ingested and queryable network-wide (district
+  project plus kipptaf unions).</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Deriving the Dagster school-partition list dynamically. The per-district
+  <code>StaticPartitionsDefinition</code> stays explicit (an intentional scope decision).
+  Adding a school still requires a small code edit plus redeploy; only the key
+  edit is being simplified.</li>
+<li>Changing the secret store (staying on 1Password) or moving to a runtime
+  secrets API.</li>
+<li>Per-district subdomains. Paterson joins the existing shared subdomain.</li>
+</ul>
+<h2 id="design">Design</h2>
+<h3 id="part-1-per-school-key-fields-to-a-mounted-directory">Part 1 — Per-school key fields to a mounted directory</h3>
+<p>The operator maps each 1Password field to one secret key. We exploit that: store
+one field per school, then mount the whole secret as a directory of files and
+let the resource assemble the map.</p>
+<h4 id="1password-item">1Password item</h4>
+<p><code>DeansList API</code> keeps its <code>subdomain</code> field and gains one text field per school:
+field label = the DeansList <code>school_id</code> (for example <code>121</code>), value = that
+school's API key. <code>op-deanslist-api</code> then synchronizes to a secret with keys
+<code>subdomain</code>, <code>121</code>, <code>122</code>, and so on.</p>
+<h4 id="deploy-config-dagster-cloudyaml-all-four-districts">Deploy config (<code>dagster-cloud.yaml</code>, all four districts)</h4>
+<p>Mount the whole <code>op-deanslist-api</code> secret as a <strong>directory</strong> in its own
+<code>mountPath</code> (for example <code>/etc/secret-volume/deanslist</code>), with no <code>items:</code>
+filter, so every field lands as a file whose name is the school id and whose
+content is the key. The <code>subdomain</code> field lands as a file in the same directory,
+so the resource reads it from there too — the separate <code>DEANSLIST_SUBDOMAIN</code>
+environment-variable mapping is <strong>removed</strong> from all four <code>dagster-cloud.yaml</code>
+files. One directory is now the sole loading mechanism. Both <code>server_k8s_config</code>
+and <code>run_k8s_config</code> consumers apply.</p>
+<p>The field-to-directory chain is two hops, and only the first is
+1Password-specific:</p>
+<ol>
+<li><strong>Operator maps field to secret key</strong> (already how <code>subdomain</code> works today):
+   the 1Password Operator writes each field of the <code>DeansList API</code> item as one
+   key of the <code>op-deanslist-api</code> Secret.</li>
+<li><strong>kubelet maps secret key to file</strong> (standard Kubernetes): a Secret mounted
+   as a volume is written as one file per key, filename = key, contents = value.
+   Today's <code>items:</code> filter cherry-picks the single blob key as one file;
+   dropping it materializes every key as its own file.</li>
+</ol>
+<p>So the change adds fields and removes one filter — no new infrastructure.</p>
+<p>Example projected-volume source:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">volumes</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deanslist-keys</span>
+<span class="w">    </span><span class="nt">projected</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">sources</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">secret</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">op-deanslist-api</span>
+<span class="nt">volumeMounts</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">deanslist-keys</span>
+<span class="w">    </span><span class="nt">readOnly</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">mountPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/etc/secret-volume/deanslist</span>
+</code></pre></div>
+<h4 id="resource-change">Resource change</h4>
+<p>The resource loads everything from the one mounted directory. Both config fields
+(<code>subdomain</code> and <code>api_key_map</code>) collapse into a single <code>api_key_dir</code>: the
+subdomain comes from the <code>subdomain</code> file, and the key map from the
+numeric-named files.</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">setup_for_execution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">InitResourceContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_log</span> <span class="o">=</span> <span class="n">check</span><span class="o">.</span><span class="n">not_none</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">context</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+
+    <span class="n">key_dir</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">api_key_dir</span><span class="p">)</span>
+
+    <span class="n">subdomain</span> <span class="o">=</span> <span class="p">(</span><span class="n">key_dir</span> <span class="o">/</span> <span class="s2">&quot;subdomain&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_base_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://</span><span class="si">{</span><span class="n">subdomain</span><span class="si">}</span><span class="s2">.deanslistsoftware.com/api&quot;</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_api_key_map</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nb">int</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">):</span> <span class="n">f</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">key_dir</span><span class="o">.</span><span class="n">iterdir</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span>
+    <span class="p">}</span>
+</code></pre></div>
+<p>The <code>subdomain</code> file is read explicitly; the <code>f.name.isdigit()</code> filter keeps it
+(and the projected-volume symlink entries <code>..data</code> / timestamped dirs) out of
+the key map. <code>get()</code> and <code>list()</code> are unchanged; they already look up
+<code>self._api_key_map[school_id]</code> with an <code>int</code> key. The single instantiation in
+<code>core/resources.py</code> passes only <code>api_key_dir="/etc/secret-volume/deanslist"</code> —
+the <code>subdomain=EnvVar("DEANSLIST_SUBDOMAIN")</code> argument is dropped.</p>
+<h4 id="blast-radius">Blast radius</h4>
+<p>Because the resource is shared, this converts all four districts at once. A
+one-time manual step (owner: whoever administers the 1Password item): re-enter
+the existing keys as individual fields, then delete the YAML blob field — done
+in the additive-first order below so nothing breaks mid-migration.</p>
+<h4 id="risk-field-label-vs-secret-key-name">Risk: field label vs secret key name</h4>
+<p><code>.k8s/CLAUDE.md</code> warns that a secret key can come from a field's internal name,
+not its UI label (known remaps on login-template fields, for example <code>password</code>
+to <code>newPassword</code>). We rely on custom numeric fields syncing as <code>121</code>, <code>122</code>, and
+so on. The <code>subdomain</code> field is already proven safe — it syncs to secret key
+<code>subdomain</code> today (the existing <code>secretKeyRef</code>), so reading the <code>subdomain</code> file
+carries no new risk and gives a working reference point for the numeric fields.</p>
+<ul>
+<li><strong>Verify early</strong> (owner-side; <code>kubectl</code> is blocked from this tool): add one
+  test field, then
+  <code>kubectl -n dagster-cloud get secret op-deanslist-api -o jsonpath='{.data}' | jq keys</code>.</li>
+<li><strong>Fallback if labels do not survive:</strong> store <code>school_id|key</code> in the field
+  <em>value</em> and parse each file's contents instead of trusting the filename. The
+  resource logic changes from "filename is the id" to "split the value on <code>|</code>".</li>
+</ul>
+<h3 id="part-2-paterson-dagster-ingestion">Part 2 — Paterson Dagster ingestion</h3>
+<p>Add <code>src/teamster/code_locations/kipppaterson/deanslist/</code>, mirroring
+<code>kippnewark</code>:</p>
+<ul>
+<li><code>assets.py</code> — a <code>StaticPartitionsDefinition</code> of Paterson's DeansList
+  <code>school_id</code>s (<strong>supplied separately</strong>, see Prerequisites), plus the same
+  factory calls (<code>build_deanslist_static_partition_asset</code>,
+  <code>build_deanslist_multi_partition_asset</code>,
+  <code>build_deanslist_paginated_multi_partition_asset</code>) driven by <code>config/*.yaml</code>.</li>
+<li><code>schema.py</code> — the Pydantic and Avro schemas Paterson needs (start from
+  Newark's; trim to the endpoints Paterson uses).</li>
+<li><code>schedules.py</code>, <code>__init__.py</code>, and <code>config/</code> (<code>static-partition-assets.yaml</code>,
+  <code>multi-partition-monthly-assets.yaml</code>, <code>multi-partition-fiscal-assets.yaml</code>) —
+  copied from Newark and adjusted to Paterson's endpoint set.</li>
+</ul>
+<p>Wire-up:</p>
+<ul>
+<li><code>kipppaterson/definitions.py</code>: import <code>DEANSLIST_RESOURCE</code>, add
+  <code>"deanslist": DEANSLIST_RESOURCE</code> to resources, and add the module's assets
+  and schedules.</li>
+<li><code>kipppaterson/dagster-cloud.yaml</code>: add the directory mount from Part 1 (no
+  <code>DEANSLIST_SUBDOMAIN</code> variable — the subdomain is read from the mounted
+  <code>subdomain</code> file, same shared subdomain).</li>
+<li><code>kipppaterson/CLAUDE.md</code>: remove DeansList from the "does not use" list and
+  add it to Active Integrations (schedule-driven).</li>
+</ul>
+<h3 id="part-3-paterson-district-dbt-project">Part 3 — Paterson district dbt project</h3>
+<ul>
+<li><code>src/dbt/kipppaterson/packages.yml</code>: add <code>- local: ../deanslist</code>.</li>
+<li><code>src/dbt/kipppaterson/dbt_project.yml</code>: add a <code>deanslist:</code> models block
+  (<code>+materialized: table</code>, and disable any models Paterson does not use,
+  matching the Newark pattern that disables <code>stg_deanslist__followups</code>). Confirm
+  the external-source variables the package needs (<code>cloud_storage_uri_base</code> is
+  already set at the project level; the package sources resolve schema via
+  <code>{{ project_name }}</code>).</li>
+<li>Stage the new external sources with <code>--target staging</code> before the dbt Cloud CI
+  job will pass (per the External Table Pattern in <code>src/dbt/CLAUDE.md</code>). This
+  requires Paterson DeansList Avro to have landed in GCS first.</li>
+</ul>
+<h3 id="part-4-kipptaf-cross-district-inclusion">Part 4 — kipptaf cross-district inclusion</h3>
+<ul>
+<li>Add <code>src/dbt/kipptaf/models/deanslist/api/sources-kipppaterson.yml</code>, mirroring
+  the existing three per-district source files.</li>
+<li>Add <code>source("kipppaterson_deanslist", "&lt;model&gt;")</code> to the <code>relations=[...]</code>
+  list of every kipptaf <code>deanslist/api</code> union model (staging and intermediate).</li>
+<li>No downstream kipptaf model logic changes — they read the union outputs, which
+  now include Paterson.</li>
+</ul>
+<h2 id="rollout-and-sequencing">Rollout and sequencing</h2>
+<p>There is one hard ordering constraint, and it is data-dependent: Paterson
+DeansList Avro must exist in GCS before the dbt external sources can be staged,
+and staging is what lets dbt Cloud CI pass. That single seam — everything that
+<em>produces</em> the data, then everything that <em>reads</em> it — splits the work into
+<strong>two PRs</strong>.</p>
+<p>Bracketing both PRs are two manual 1Password steps (owner: whoever administers
+the <code>DeansList API</code> item), done additive-first so nothing breaks mid-migration:</p>
+<ul>
+<li><strong>Before PR 1 merges:</strong> add every school as its own field — existing
+  districts' keys re-entered from the blob, plus Paterson's — while leaving the
+  YAML blob field in place.</li>
+<li><strong>After PR 1 deploys and is verified:</strong> delete the old YAML blob field.</li>
+</ul>
+<h3 id="pr-1-keys-plus-paterson-ingestion-python-and-k8s-only">PR 1 — Keys plus Paterson ingestion (Python and K8s only)</h3>
+<ul>
+<li>The <code>DeansListResource</code> directory change and its <code>core/resources.py</code>
+  instantiation.</li>
+<li>The directory-mount change to all four <code>dagster-cloud.yaml</code> files.</li>
+<li>The new <code>kipppaterson/deanslist</code> module and its <code>definitions.py</code>,
+  <code>dagster-cloud.yaml</code>, and CLAUDE.md wiring.</li>
+</ul>
+<p>No dbt changes, so dbt Cloud CI is a no-op on this PR. After the post-merge
+deploy: verify Newark/Camden/Miami still pull DeansList (a sample school
+partition materializes), materialize Paterson's assets so its Avro lands in prod
+GCS, then remove the blob field.</p>
+<h3 id="pr-2-all-dbt-paterson-district-plus-kipptaf-unions">PR 2 — All dbt (Paterson district plus kipptaf unions)</h3>
+<ul>
+<li>Paterson district project: <code>packages.yml</code>, <code>dbt_project.yml</code>, and staging the
+  new external sources.</li>
+<li>kipptaf: <code>sources-kipppaterson.yml</code> and Paterson added to each
+  <code>union_relations</code> list.</li>
+</ul>
+<p>Land these together via the single-PR cross-project workflow in
+<code>src/dbt/kipptaf/CLAUDE.md</code> (stage/clone the Paterson district models into
+<code>zz_stg_*</code> so kipptaf CI reads them). This depends on PR 1 being deployed and
+Paterson's DeansList assets materialized in prod, so the external sources stage
+against real data.</p>
+<p><strong>Optional third PR:</strong> if you would rather verify the network-wide key migration
+in isolation before adding a new district, lift the <code>DeansListResource</code> plus
+four-<code>dagster-cloud.yaml</code> change out of PR 1 into its own PR ahead of Paterson.
+Two PRs is the floor; this makes it three.</p>
+<h2 id="testing-and-validation">Testing and validation</h2>
+<ul>
+<li><strong>Resource unit behavior:</strong> a focused test that points the resource at a temp
+  directory of numeric-named files plus a <code>subdomain</code> file and a <code>..data</code>-style
+  entry, asserting the base URL uses the subdomain and the key map contains only
+  the numeric files with <code>int</code> keys.</li>
+<li><strong>Existing districts unaffected:</strong> after PR 1 deploys, materialize one static
+  and one multi-partition DeansList asset per existing district for a known
+  school and confirm row counts are non-zero and the Avro schema check passes.</li>
+<li><strong>Paterson ingestion:</strong> materialize Paterson DeansList assets; confirm Avro in
+  the Paterson GCS path and passing schema checks.</li>
+<li><strong>dbt:</strong> <code>uv run dbt build --select &lt;paterson deanslist models&gt;</code> against the
+  district project; then the kipptaf union models after Paterson prod exists.
+  kipptaf CI only builds kipptaf, so district-side correctness is verified with
+  a local district build.</li>
+</ul>
+<h2 id="alternatives-considered">Alternatives considered</h2>
+<ul>
+<li><strong>Per-school fields exposed as individual environment variables</strong> rather than
+  a mounted directory. Rejected: adding a school would require editing
+  <code>dagster-cloud.yaml</code> (two blocks) every time — it re-creates the toil this
+  change removes.</li>
+<li><strong>Runtime fetch from the in-cluster 1Password Connect API</strong>, skipping the
+  synced secret entirely. Rejected: adds a network dependency and token handling
+  at run time — disproportionate to an "easier to edit" goal.</li>
+<li><strong>Dynamically derived partitions</strong> (single source of truth). Explicitly out of
+  scope per the scope decision; the partition list stays explicit.</li>
+</ul>
+<h2 id="prerequisites-and-open-items">Prerequisites and open items</h2>
+<ul>
+<li><strong>Paterson DeansList <code>school_id</code>s and API keys</strong> must be provided (the ids for
+  the partition definition, the keys for the 1Password fields).</li>
+<li><strong>Field-label sync verification</strong> (Part 1 risk) should be confirmed before
+  committing to filename-as-id, with the value-encoded fallback ready.</li>
+<li><strong>Endpoint set for Paterson:</strong> confirm which DeansList endpoints Paterson uses
+  (to trim <code>schema.py</code> and <code>config/*.yaml</code> from the Newark copy).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

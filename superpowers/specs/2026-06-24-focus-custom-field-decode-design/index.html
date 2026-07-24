@@ -1,0 +1,2412 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Focus SIS Wave 2 — decode encoded custom values + reshape log fields - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#focus-sis-wave-2-decode-encoded-custom-values-reshape-log-fields" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Focus SIS Wave 2 — decode encoded custom values + reshape log fields
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#findings-from-data-profiling-miami-pull" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Findings from data profiling (Miami pull)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals-yagni" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals (YAGNI)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#int_focus__custom_field_options-crosswalk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_focus__custom_field_options (crosswalk)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_focus__entity__pivot-decode-via-unpivot-then-join-then-pivot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_focus__&lt;entity&gt;__pivot (decode via UNPIVOT then join then PIVOT)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="int_focus__&lt;entity&gt;__pivot (decode via UNPIVOT then join then PIVOT)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#multiple-wrinkle-int_focus__users__pivot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        multiple wrinkle — int_focus__users__pivot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#in-scope-decode-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In-scope decode inventory
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_focus__custom_field_log__unpivot-wide-to-long-reshape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_focus__custom_field_log__unpivot (wide-to-long reshape)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cross-cutting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cross-cutting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-follow-ups" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope / follow-ups
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Out of scope / follow-ups">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#option_query-backed-fields-not-decoded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        option_query-backed fields (not decoded)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-implementation-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open implementation checks
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-06-24-focus-custom-field-decode-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="focus-sis-wave-2-decode-encoded-custom-values-reshape-log-fields">Focus SIS Wave 2 — decode encoded custom values + reshape log fields</h1>
+<p>Design spec for <a href="https://github.com/TEAMSchools/teamster/issues/4258">#4258</a>.
+Deferred follow-up from Focus SIS Phase B (#4213).</p>
+<h2 id="context">Context</h2>
+<p>The Phase B staging models project <code>select</code> / <code>multiple</code> custom-field values
+inline but leave them as their stored Focus <strong>option codes</strong> (decode was out of
+scope to keep staging contracts stable). This work decodes those codes to
+human-readable labels, and reshapes the <code>log</code>-type custom fields into a usable
+long shape.</p>
+<p>All work is <strong>additive intermediate models</strong> under
+<code>src/dbt/focus/models/intermediate/</code>. There are <strong>no staging changes</strong> — staging
+stays encoded, and the H custom-field metadata staging is already merged. Models
+build in <code>kippmiami</code> (the only district wired for Focus); district-internal, so
+there is no prod-materialization gate.</p>
+<h2 id="findings-from-data-profiling-miami-pull">Findings from data profiling (Miami pull)</h2>
+<p>These reframe the issue and <code>focus/CLAUDE.md</code>, and are load-bearing for the
+design:</p>
+<ol>
+<li>
+<p><strong>The decode join needs the owner-type filter.</strong> The documented join
+   (<code>custom_field_select_options.source_id = custom_fields.id</code>) is correct but
+   under-specified: <code>select_options.source_class</code> is a polymorphic owner type —
+   the literal <code>CustomField</code> for entity fields, <code>CustomFieldLogColumn</code> for
+   log-column slots — and the same numeric <code>source_id</code> occurs under both. Add
+   <code>select_options.source_class = 'CustomField'</code> (or <code>'CustomFieldLogColumn'</code>
+   for log slots) so the two owner types don't collide. Do <strong>not</strong> match the
+   entity class (<code>SISSchool</code>, etc.) — <code>source_class</code> is never the entity class,
+   so that filter returns zero rows (the trap that surfaced this).</p>
+</li>
+<li>
+<p><strong>The stored value is the option <code>id</code> OR its <code>code</code> — it varies by field.</strong>
+   <code>school_level</code>/<code>sex</code> store the select-option <strong>id</strong> (<code>5538</code>, <code>2789</code>);
+   <code>prior_state</code> stores the <strong><code>code</code></strong> (<code>FL</code>). So decode matches the stored
+   value against <strong>either</strong> <code>select_options.id</code> or <code>select_options.code</code>
+   (<code>unpivoted.stored_value in (options.option_id, options.code)</code>), filtered to
+   the field; it reads <code>label</code>. A <code>multiple</code> value is a JSON-array string of
+   those values (<code>["2795"]</code>) — parse-JSON + match each, not split on a
+   delimiter. Every current <code>multiple</code> value is single-element, but the format
+   is a real JSON array, so decode handles N elements generically.</p>
+</li>
+<li>
+<p><strong>A minority of fields back their option list with a dynamic <code>option_query</code></strong>
+   (no rows in <code>custom_field_select_options</code>; Focus builds the list at render
+   time from other tables). Among the in-scope projected fields, exactly <strong>one</strong>
+   is <code>option_query</code>-backed: <code>FocusUser.profile_on_non_production_sites</code>
+   (<code>custom_l790</code>). It is decodable — its query is
+   <code>select id, title as label from user_profiles</code>, and <code>user_profiles</code> is staged
+   — but skipped as low-value (12 of 181 users, one distinct code). All other
+   in-scope fields resolve via stored options. See <em>Out of scope</em> for the full
+   <code>option_query</code> inventory.</p>
+</li>
+<li>
+<p><strong>The <code>log</code> reshape is narrow.</strong> All 24,224 <code>custom_field_log_entries</code> rows
+   are <code>SISStudent</code>, across just <strong>two</strong> fields — <code>Immunization Compliance</code>
+   (<code>field_id</code> 541) and <code>ARMS Student Field Tracker</code> (<code>field_id</code> 1119) — and
+   1,514 students. Each entry has up to four typed slots (<code>LOG_FIELD1..4</code>) named
+   by <code>custom_field_log_columns</code>. <code>created_at</code> / <code>updated_at</code> are fully
+   populated; <code>completed_at</code> is always null; <code>syear</code> is populated only on ARMS.</p>
+</li>
+</ol>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>Decode every in-scope projected <code>select</code> / <code>multiple</code> custom value to its
+  label.</li>
+<li>Reshape the two populated <code>log</code>-type fields into a long, typed, decoded model.</li>
+<li>Provide a single reusable code-to-label crosswalk.</li>
+<li>Fix the wrong decode-join documentation in <code>focus/CLAUDE.md</code>.</li>
+</ul>
+<h2 id="non-goals-yagni">Non-goals (YAGNI)</h2>
+<ul>
+<li>No <code>rpt_</code> / mart / extract layer — this pass builds the reusable intermediate
+  foundation only. (Repo convention: an <code>rpt_</code> must sit between an intermediate
+  model and any external consumer; one gets added when a concrete consumer
+  appears.)</li>
+<li>No decode of <code>option_query</code>-backed fields (inventoried under <em>Out of scope</em>;
+  the one in-scope field is skipped as low-value).</li>
+<li>No decode of non-<code>select</code>/<code>multiple</code> customs (<code>checkbox</code> Y/N, <code>text</code>,
+  <code>numeric</code>, <code>date</code> are already human-readable).</li>
+<li>No staging changes.</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<p>Nine intermediate models:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int_focus__custom_field_options</code></td>
+<td>Shared code-to-label crosswalk</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>Decoded labels for SISStudent select fields</td>
+</tr>
+<tr>
+<td><code>int_focus__schools__pivot</code></td>
+<td>Decoded labels for SISSchool select fields</td>
+</tr>
+<tr>
+<td><code>int_focus__student_enrollment__pivot</code></td>
+<td>Decoded labels for StudentEnrollment select fields</td>
+</tr>
+<tr>
+<td><code>int_focus__users__pivot</code></td>
+<td>Decoded labels for FocusUser select + multiple fields</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>Decoded labels for CoursePeriod select fields</td>
+</tr>
+<tr>
+<td><code>int_focus__master_courses__pivot</code></td>
+<td>Decoded labels for CourseCatalog select fields</td>
+</tr>
+<tr>
+<td><code>int_focus__courses__pivot</code></td>
+<td>Decoded labels for Course select fields</td>
+</tr>
+<tr>
+<td><code>int_focus__custom_field_log__unpivot</code></td>
+<td>Wide-to-long reshape of the two log-type fields</td>
+</tr>
+</tbody>
+</table>
+<p>The existing <code>int_focus__student_enrollment</code> (title enrichment) is unchanged;
+the new <code>int_focus__student_enrollment__pivot</code> is a separate decode-only model.</p>
+<p>Each <code>__pivot</code> model is <strong>labels-only</strong>, keyed by the entity primary key. Codes
+remain in staging untouched; a downstream consumer joins staging (codes) and the
+pivot model (labels) on the PK.</p>
+<h3 id="int_focus__custom_field_options-crosswalk"><code>int_focus__custom_field_options</code> (crosswalk)</h3>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">cf</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">source_class</span><span class="p">,</span><span class="w"> </span><span class="k">lower</span><span class="p">(</span><span class="k">column_name</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">column_name</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_focus__custom_fields&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">opt</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">cast</span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">option_id</span><span class="p">,</span><span class="w"> </span><span class="n">source_id</span><span class="p">,</span><span class="w"> </span><span class="n">code</span><span class="p">,</span><span class="w"> </span><span class="n">label</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_focus__custom_field_select_options&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">source_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;CustomField&#39;</span><span class="w">  </span><span class="c1">-- keep inactive: decode historical values</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">opt</span><span class="p">.</span><span class="n">option_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cf</span><span class="p">.</span><span class="n">source_class</span><span class="p">,</span>
+<span class="w">    </span><span class="n">cf</span><span class="p">.</span><span class="k">column_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">opt</span><span class="p">.</span><span class="n">code</span><span class="p">,</span>
+<span class="w">    </span><span class="n">opt</span><span class="p">.</span><span class="n">label</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">opt</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">cf</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">opt</span><span class="p">.</span><span class="n">source_id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cf</span><span class="p">.</span><span class="n">id</span>
+</code></pre></div>
+<ul>
+<li>Grain / uniqueness: <code>option_id</code> (the select-option PK — globally unique,
+  non-null, so no dedupe needed).</li>
+<li>The stored value is the option <code>id</code> for some fields, the <code>code</code> for others;
+  pivots match it against <code>option_id</code> OR <code>code</code>. <code>code</code> is the Focus
+  import/export value and <code>label</code> the human name (the decode output).</li>
+<li><code>inactive</code> options are kept — a stored value can reference an option later
+  marked inactive.</li>
+</ul>
+<h3 id="int_focus__entity__pivot-decode-via-unpivot-then-join-then-pivot"><code>int_focus__&lt;entity&gt;__pivot</code> (decode via UNPIVOT then join then PIVOT)</h3>
+<p>Pattern, shown for <code>int_focus__schools__pivot</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">encoded</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">id</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">school_level</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">custom_100000004</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">school_type</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">custom_200000326</span><span class="p">,</span>
+<span class="w">            </span><span class="k">cast</span><span class="p">(</span><span class="n">technical_center</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">string</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">custom_50000002</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_focus__schools&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">unpivoted</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="k">column_name</span><span class="p">,</span><span class="w"> </span><span class="n">stored_value</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">encoded</span><span class="w"> </span><span class="n">unpivot</span><span class="w"> </span><span class="p">(</span>
+<span class="w">            </span><span class="n">stored_value</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="k">column_name</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">                </span><span class="n">custom_100000004</span><span class="p">,</span><span class="w"> </span><span class="n">custom_200000326</span><span class="p">,</span><span class="w"> </span><span class="n">custom_50000002</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">decoded</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">unpivoted</span><span class="p">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">unpivoted</span><span class="p">.</span><span class="k">column_name</span><span class="p">,</span><span class="w"> </span><span class="k">options</span><span class="p">.</span><span class="n">label</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">unpivoted</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_focus__custom_field_options&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">options</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="k">options</span><span class="p">.</span><span class="n">source_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;SISSchool&#39;</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="k">options</span><span class="p">.</span><span class="k">column_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">unpivoted</span><span class="p">.</span><span class="k">column_name</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">unpivoted</span><span class="p">.</span><span class="n">stored_value</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">options</span><span class="p">.</span><span class="n">option_id</span><span class="p">,</span><span class="w"> </span><span class="k">options</span><span class="p">.</span><span class="n">code</span><span class="p">)</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="o">*</span>
+<span class="k">from</span><span class="w"> </span><span class="n">decoded</span><span class="w"> </span><span class="n">pivot</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="n">any_value</span><span class="p">(</span><span class="n">label</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="k">column_name</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="s1">&#39;custom_100000004&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_level_label</span><span class="p">,</span>
+<span class="w">        </span><span class="s1">&#39;custom_200000326&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">school_type_label</span><span class="p">,</span>
+<span class="w">        </span><span class="s1">&#39;custom_50000002&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">technical_center_label</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Mechanics and rationale:</p>
+<ul>
+<li>The slug to catalog-<code>column_name</code> mapping lives once, in the <code>encoded</code> CTE
+  aliases — <code>custom_100000004</code> greps straight back to staging's
+  <code>custom_100000004 as school_level</code>. No magic field-id integers in the model.</li>
+<li>All encoded columns are cast to <code>string</code> in <code>encoded</code> so the mixed-type
+  <code>select</code> columns share a type for <code>UNPIVOT</code> (codes compare as strings against
+  the crosswalk).</li>
+<li><code>UNPIVOT</code> excludes nulls by default, so an unset field yields no row and a
+  null pivot column.</li>
+<li><code>any_value(label)</code> is safe: each <code>(pk, column_name)</code> has exactly one row after
+  the join. An unresolved code (none, given the inventory below) would yield a
+  null label.</li>
+<li>Output label columns use the <code>&lt;slug&gt;_label</code> suffix.</li>
+<li>Uniqueness test on the entity PK (one row per entity).</li>
+</ul>
+<h4 id="multiple-wrinkle-int_focus__users__pivot"><code>multiple</code> wrinkle — <code>int_focus__users__pivot</code></h4>
+<p>A single <code>PIVOT</code> applies one aggregate to all fields, and <code>multiple</code> needs a
+JSON-array explode plus <code>array_agg</code>. So <code>int_focus__users__pivot</code> PIVOTs its one
+decodable <code>select</code> field (<code>active</code>), then left-joins an <code>education_label</code>
+<code>array&lt;string&gt;</code> built with the CTE pattern (cross join <code>unnest</code> then join then
+<code>array_agg</code>) — not a correlated subquery, per the BigQuery no-correlated-
+subquery rule in <code>dbt/CLAUDE.md</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">education</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span>
+<span class="w">        </span><span class="n">users</span><span class="p">.</span><span class="n">staff_id</span><span class="p">,</span>
+<span class="w">        </span><span class="n">array_agg</span><span class="p">(</span><span class="k">options</span><span class="p">.</span><span class="n">label</span><span class="w"> </span><span class="k">ignore</span><span class="w"> </span><span class="n">nulls</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="k">options</span><span class="p">.</span><span class="n">label</span><span class="p">)</span>
+<span class="w">            </span><span class="k">as</span><span class="w"> </span><span class="n">education_label</span><span class="p">,</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_focus__users&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">users</span>
+<span class="w">    </span><span class="k">cross</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="k">unnest</span><span class="p">(</span><span class="n">json_value_array</span><span class="p">(</span><span class="n">users</span><span class="p">.</span><span class="n">education</span><span class="p">))</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">element_id</span>
+<span class="w">    </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_focus__custom_field_options&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">options</span>
+<span class="w">        </span><span class="k">on</span><span class="w"> </span><span class="n">element_id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="k">options</span><span class="p">.</span><span class="n">option_id</span><span class="p">,</span><span class="w"> </span><span class="k">options</span><span class="p">.</span><span class="n">code</span><span class="p">)</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="k">options</span><span class="p">.</span><span class="n">source_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;FocusUser&#39;</span>
+<span class="w">        </span><span class="k">and</span><span class="w"> </span><span class="k">options</span><span class="p">.</span><span class="k">column_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;custom_2&#39;</span>
+<span class="w">    </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">users</span><span class="p">.</span><span class="n">staff_id</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><code>profile_on_non_production_sites</code> (<code>custom_l790</code>) is <code>option_query</code>-backed and
+is <strong>omitted</strong> from the pivot. It is decodable via a join to
+<code>stg_focus__user_profiles</code> (<code>custom_l790 = user_profiles.id</code>, then <code>title</code>), but
+skipped as low-value (12 of 181 users, one distinct code). Its code remains in
+staging; a SQL comment documents the skip. See <em>Out of scope</em> for the full
+<code>option_query</code> inventory.</p>
+<h4 id="in-scope-decode-inventory">In-scope decode inventory</h4>
+<p>Authoritative map (catalog-confirmed; <code>field_id</code> shown for reference only — the
+models join on <code>column_name</code>, not the id):</p>
+<table>
+<thead>
+<tr>
+<th>Pivot model</th>
+<th>source_class</th>
+<th>staging slug</th>
+<th>column_name</th>
+<th>field_id</th>
+<th>type</th>
+<th>options</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>ethnicity_hispanic_or_latino</code></td>
+<td><code>custom_100000105</code></td>
+<td>73</td>
+<td>select</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>race_white</code></td>
+<td><code>custom_100000104</code></td>
+<td>74</td>
+<td>select</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>race_black_or_african_american</code></td>
+<td><code>custom_100000102</code></td>
+<td>75</td>
+<td>select</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>race_asian</code></td>
+<td><code>custom_100000101</code></td>
+<td>141</td>
+<td>select</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>sex</code></td>
+<td><code>custom_200000000</code></td>
+<td>310</td>
+<td>select</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>race_american_indian_or_alaska_native</code></td>
+<td><code>custom_100000100</code></td>
+<td>368</td>
+<td>select</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>race_native_hawaiian_or_other_pacific_islander</code></td>
+<td><code>custom_100000103</code></td>
+<td>369</td>
+<td>select</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>residence_county</code></td>
+<td><code>custom_837</code></td>
+<td>374</td>
+<td>select</td>
+<td>75</td>
+</tr>
+<tr>
+<td><code>int_focus__students__pivot</code></td>
+<td>SISStudent</td>
+<td><code>language</code></td>
+<td><code>custom_200000005</code></td>
+<td>434</td>
+<td>select</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>int_focus__schools__pivot</code></td>
+<td>SISSchool</td>
+<td><code>technical_center</code></td>
+<td><code>custom_50000002</code></td>
+<td>678</td>
+<td>select</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>int_focus__schools__pivot</code></td>
+<td>SISSchool</td>
+<td><code>school_level</code></td>
+<td><code>custom_100000004</code></td>
+<td>681</td>
+<td>select</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>int_focus__schools__pivot</code></td>
+<td>SISSchool</td>
+<td><code>school_type</code></td>
+<td><code>custom_200000326</code></td>
+<td>682</td>
+<td>select</td>
+<td>12</td>
+</tr>
+<tr>
+<td><code>int_focus__student_enrollment__pivot</code></td>
+<td>StudentEnrollment</td>
+<td><code>prior_district</code></td>
+<td><code>custom_1</code></td>
+<td>1486</td>
+<td>select</td>
+<td>82</td>
+</tr>
+<tr>
+<td><code>int_focus__student_enrollment__pivot</code></td>
+<td>StudentEnrollment</td>
+<td><code>prior_state</code></td>
+<td><code>custom_2</code></td>
+<td>1487</td>
+<td>select</td>
+<td>72</td>
+</tr>
+<tr>
+<td><code>int_focus__student_enrollment__pivot</code></td>
+<td>StudentEnrollment</td>
+<td><code>prior_country</code></td>
+<td><code>custom_3</code></td>
+<td>1488</td>
+<td>select</td>
+<td>288</td>
+</tr>
+<tr>
+<td><code>int_focus__student_enrollment__pivot</code></td>
+<td>StudentEnrollment</td>
+<td><code>educational_choice</code></td>
+<td><code>custom_4</code></td>
+<td>1489</td>
+<td>select</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>int_focus__student_enrollment__pivot</code></td>
+<td>StudentEnrollment</td>
+<td><code>student_offender_transfer</code></td>
+<td><code>custom_6</code></td>
+<td>1491</td>
+<td>select</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_focus__users__pivot</code></td>
+<td>FocusUser</td>
+<td><code>active</code></td>
+<td><code>custom_319000004</code></td>
+<td>513</td>
+<td>select</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int_focus__users__pivot</code></td>
+<td>FocusUser</td>
+<td><code>education</code></td>
+<td><code>custom_2</code></td>
+<td>508</td>
+<td>multiple</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>fefp_number</code></td>
+<td><code>custom_2</code></td>
+<td>1508</td>
+<td>select</td>
+<td>11</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>scheduling_method</code></td>
+<td><code>custom_4</code></td>
+<td>1513</td>
+<td>select</td>
+<td>9</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>facility_type</code></td>
+<td><code>custom_6</code></td>
+<td>1516</td>
+<td>select</td>
+<td>21</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>cert_licensure_qual_status</code></td>
+<td><code>custom_28</code></td>
+<td>1530</td>
+<td>select</td>
+<td>13</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>highly_qualified</code></td>
+<td><code>custom_5</code></td>
+<td>1531</td>
+<td>select</td>
+<td>9</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>reading_intervention_component</code></td>
+<td><code>custom_25</code></td>
+<td>1534</td>
+<td>select</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>location_of_student</code></td>
+<td><code>custom_33</code></td>
+<td>1554</td>
+<td>select</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>eoc_exam_term</code></td>
+<td><code>custom_34</code></td>
+<td>1560</td>
+<td>select</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>int_focus__course_periods__pivot</code></td>
+<td>CoursePeriod</td>
+<td><code>basic_skills_exam</code></td>
+<td><code>custom_22</code></td>
+<td>1544</td>
+<td>select</td>
+<td>14</td>
+</tr>
+<tr>
+<td><code>int_focus__master_courses__pivot</code></td>
+<td>CourseCatalog</td>
+<td><code>fefp</code></td>
+<td><code>custom_field_5</code></td>
+<td>1738</td>
+<td>select</td>
+<td>11</td>
+</tr>
+<tr>
+<td><code>int_focus__master_courses__pivot</code></td>
+<td>CourseCatalog</td>
+<td><code>course_flag_1</code></td>
+<td><code>custom_field_6</code></td>
+<td>1739</td>
+<td>select</td>
+<td>18</td>
+</tr>
+<tr>
+<td><code>int_focus__master_courses__pivot</code></td>
+<td>CourseCatalog</td>
+<td><code>dual_enrollment_indicator</code></td>
+<td><code>custom_field_13</code></td>
+<td>1731</td>
+<td>select</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>int_focus__courses__pivot</code></td>
+<td>Course</td>
+<td><code>course_sequence</code></td>
+<td><code>custom_4</code></td>
+<td>1724</td>
+<td>select</td>
+<td>12</td>
+</tr>
+<tr>
+<td><code>int_focus__courses__pivot</code></td>
+<td>Course</td>
+<td><code>ocp</code></td>
+<td><code>custom_3</code></td>
+<td>1723</td>
+<td>select</td>
+<td>78</td>
+</tr>
+</tbody>
+</table>
+<p>Excluded (in-scope entity, but not decodable): <code>FocusUser</code>
+<code>profile_on_non_production_sites</code> (<code>custom_l790</code>, field 790) —
+<code>option_query</code>-only.</p>
+<h3 id="int_focus__custom_field_log__unpivot-wide-to-long-reshape"><code>int_focus__custom_field_log__unpivot</code> (wide-to-long reshape)</h3>
+<p><code>UNPIVOT</code> <code>log_field1..log_field30</code> (nulls dropped), inner-join
+<code>stg_focus__custom_field_log_columns</code> on <code>(field_id, LOG_FIELDn)</code> to label and
+type each slot, then decode <code>select</code>-type slots via
+<code>stg_focus__custom_field_select_options</code> keyed on
+<code>source_class = 'CustomFieldLogColumn'</code>,
+<code>source_id = custom_field_log_columns.id</code>.</p>
+<ul>
+<li>Columns: <code>log_entry_id</code>, <code>student_id</code> (<code>source_id</code>), <code>school_id</code>, <code>field_id</code>,
+  <code>field_title</code>, <code>slot_sort_order</code>, <code>slot_column_name</code>, <code>slot_title</code>,
+  <code>slot_type</code>, <code>value</code>, <code>value_label</code>, <code>syear</code>, <code>created_at</code>, <code>updated_at</code>.</li>
+<li>Grain / uniqueness: <code>(log_entry_id, slot_column_name)</code>.</li>
+<li><code>completed_at</code> is omitted (always null). <code>created_at</code> / <code>updated_at</code> are the
+  recorded-at timestamps.</li>
+<li>Unpivot all 30 slots for forward-safety; the inner join to
+  <code>custom_field_log_columns</code> drops slots a field does not define (current data
+  uses slots 1–4 only).</li>
+<li><code>value_label</code> is the decoded label for <code>select</code> slots; for non-<code>select</code> slots
+  it is null (the raw <code>value</code> carries the readable content).</li>
+</ul>
+<h2 id="cross-cutting">Cross-cutting</h2>
+<ul>
+<li><strong>Naming.</strong> Decode-to-wide models use the <code>int_focus__&lt;entity&gt;__pivot</code>
+  convention with <code>&lt;slug&gt;_label</code> columns; the wide-to-long log model uses the
+  <code>__unpivot</code> suffix.</li>
+<li><strong>Tests.</strong> Uniqueness test on every model (intermediate-layer requirement):
+  entity PK on each <code>__pivot</code>, <code>option_id</code> on the crosswalk,
+  <code>(log_entry_id, slot_column_name)</code> on the log model. Tests are warn-level
+  unless a stronger signal is warranted; the crosswalk <code>option_id</code> is <code>error</code> (a
+  duplicate there silently corrupts every decode).</li>
+<li><strong>PII.</strong> Every pivot model and the log model is keyed by a student/staff
+  identifier (a FERPA direct identifier), so each carries
+  <code>config.meta.contains_pii: true</code> at the model level regardless of which
+  columns are tagged. Decoded attributes — <code>sex</code>, <code>race_*</code>, <code>language</code>,
+  residence/birth-linked values — are FERPA <em>indirect</em> identifiers (PII under
+  the "linked or linkable" standard, which applies here because they sit
+  alongside the student key). FERPA-aligned tagging is therefore <strong>broad</strong> (tag
+  these columns). The existing Focus staging precedent is narrower (omits
+  gender/race/IDs); reconcile the two and confirm direct-only vs direct+indirect
+  scope with People Operations before finalizing tags — this is a compliance
+  call, not settled by this spec.</li>
+<li><strong>Descriptions.</strong> Every new model and every column gets a <code>description:</code> in
+  <code>properties/</code>. Describe decoded columns by their logic (decoded label for the
+  named field). Data/column semantics go in descriptions, not CLAUDE.md.</li>
+<li><strong>Docs clarification.</strong> Augment the "Focus field value codes" section of
+  <code>src/dbt/focus/CLAUDE.md</code>: keep <code>select_options.source_id = custom_fields.id</code>,
+  but add <code>select_options.source_class = 'CustomField'</code> (or
+  <code>'CustomFieldLogColumn'</code> for log slots) to prevent <code>source_id</code> collisions
+  across owner types, and note that <code>source_class</code> is never the entity class.</li>
+</ul>
+<h2 id="out-of-scope-follow-ups">Out of scope / follow-ups</h2>
+<ul>
+<li><code>option_query</code>-backed dynamic option lists (inventoried below).</li>
+<li>Any <code>rpt_</code> / mart / extract consuming these models.</li>
+<li>Other districts (only <code>kippmiami</code> ingests Focus).</li>
+</ul>
+<h3 id="option_query-backed-fields-not-decoded"><code>option_query</code>-backed fields (not decoded)</h3>
+<p>These <code>select</code> fields generate their option list from a live Focus query against
+other tables instead of <code>custom_field_select_options</code>, so they do not decode via
+the crosswalk. Only <code>FocusUser.profile_on_non_production_sites</code> (<code>custom_l790</code>)
+is projected in staging today, and it is skipped as low-value; the rest are not
+projected. Recorded here so the set is captured if a future consumer needs one.</p>
+<table>
+<thead>
+<tr>
+<th>source_class</th>
+<th>column_name</th>
+<th>title</th>
+<th>label source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FocusUser</td>
+<td><code>custom_l790</code></td>
+<td>Profile On Non-Production Sites</td>
+<td><code>user_profiles</code> (projected; skipped)</td>
+</tr>
+<tr>
+<td>FocusUser</td>
+<td><code>check_location</code></td>
+<td>Check Location</td>
+<td><code>gl_facilities</code></td>
+</tr>
+<tr>
+<td>FocusUser</td>
+<td><code>charter_final_eval</code></td>
+<td>Final Evaluation Code</td>
+<td><code>gl_pr_personnel_evaluation_codes</code></td>
+</tr>
+<tr>
+<td>FocusUser</td>
+<td><code>charter_eval_msp</code></td>
+<td>MSP</td>
+<td><code>gl_pr_measures_of_student_learning_growth</code></td>
+</tr>
+<tr>
+<td>FocusUser</td>
+<td><code>charter_mid_eval</code></td>
+<td>Midpoint Evaluation (new teachers)</td>
+<td><code>gl_pr_personnel_evaluation_codes</code></td>
+</tr>
+<tr>
+<td>FocusUser</td>
+<td><code>charter_prim_job</code></td>
+<td>Primary Job Code</td>
+<td><code>gl_pr_jobs_state</code></td>
+</tr>
+<tr>
+<td>FocusUser</td>
+<td><code>charter_prim_schl</code></td>
+<td>Primary School</td>
+<td><code>gl_facilities</code></td>
+</tr>
+<tr>
+<td>FocusUser</td>
+<td><code>custom_l1472</code></td>
+<td>Site Assignment (Primary)</td>
+<td><code>schools</code></td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>custom_fl_biliteracy_aappl</code></td>
+<td>ACTFL AAPPL</td>
+<td>options table (syear-scoped)</td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>custom_fl_biliteracy_opi</code></td>
+<td>ACTFL OPI</td>
+<td>options table (syear-scoped)</td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>custom_fl_biliteracy_asl</code></td>
+<td>SLPI:ASL</td>
+<td>options table (syear-scoped)</td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>custom_fl_biliteracy_stamp4s</code></td>
+<td>STAMP4S (Grade 7-Adult)</td>
+<td>options table (syear-scoped)</td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>custom_fl_biliteracy_bcpo</code></td>
+<td>Biliteracy Seal Portfolio Option</td>
+<td>options table (syear-scoped)</td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>application_courses_selected_course_1</code></td>
+<td>Application Courses Selected 1</td>
+<td><code>course_periods</code> + <code>courses</code> (syear-scoped)</td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>application_courses_selected_course_2</code></td>
+<td>Application Courses Selected 2</td>
+<td><code>course_periods</code> + <code>courses</code> (syear-scoped)</td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>application_courses_selected_course_3</code></td>
+<td>Application Courses Selected 3</td>
+<td><code>course_periods</code> + <code>courses</code> (syear-scoped)</td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>custom_992012001</code></td>
+<td>Bus Driver Name AM</td>
+<td><code>custom_field_log_entries</code></td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>custom_992012002</code></td>
+<td>Bus Driver Name PM</td>
+<td><code>custom_field_log_entries</code></td>
+</tr>
+<tr>
+<td>SISStudent</td>
+<td><code>custom_l1216</code></td>
+<td>Future ESE Model Choice</td>
+<td><code>custom_field_select_options</code> (source_id 1042)</td>
+</tr>
+<tr>
+<td>CourseCatalog</td>
+<td><code>custom_field_15</code></td>
+<td>Industry Certification ID</td>
+<td><code>florida_industry_certifications</code> (syear)</td>
+</tr>
+<tr>
+<td>CourseCatalog</td>
+<td><code>custom_field_16</code></td>
+<td>2nd Industry Certification ID</td>
+<td><code>florida_industry_certifications</code> (syear)</td>
+</tr>
+<tr>
+<td>CourseCatalog</td>
+<td><code>custom_field_18</code></td>
+<td>3rd Industry Certification ID</td>
+<td><code>florida_industry_certifications</code> (syear)</td>
+</tr>
+</tbody>
+</table>
+<p><code>SISSchool</code>, <code>StudentEnrollment</code>, <code>CoursePeriod</code>, and <code>Course</code> have none. The
+catalog is the live source of truth — regenerate the current set with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">cf</span><span class="p">.</span><span class="n">source_class</span><span class="p">,</span><span class="w"> </span><span class="n">cf</span><span class="p">.</span><span class="k">column_name</span><span class="p">,</span><span class="w"> </span><span class="n">cf</span><span class="p">.</span><span class="n">title</span><span class="p">,</span><span class="w"> </span><span class="n">cf</span><span class="p">.</span><span class="n">option_query</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_focus__custom_fields&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cf</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="p">(</span>
+<span class="w">    </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">source_id</span>
+<span class="w">    </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_focus__custom_field_select_options&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="k">where</span><span class="w"> </span><span class="n">source_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;CustomField&#39;</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">o</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">cf</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">o</span><span class="p">.</span><span class="n">source_id</span>
+<span class="k">where</span><span class="w"> </span><span class="n">cf</span><span class="p">.</span><span class="k">type</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;select&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;multiple&#39;</span><span class="p">)</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">cf</span><span class="p">.</span><span class="n">option_query</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">o</span><span class="p">.</span><span class="n">source_id</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div>
+<h2 id="open-implementation-checks">Open implementation checks</h2>
+<ol>
+<li><strong>Decode matches id OR code.</strong> The stored value is the option id for some
+   fields, the code for others, so pivots match
+   <code>stored_value in (option_id, code)</code>. The crosswalk keys on <code>option_id</code> (the
+   option PK — unique, no dedupe). Spot-check that each pivot decodes (non-null
+   labels where the entity value is set); all-null labels signal a match-key
+   mismatch for that entity.</li>
+<li><strong><code>multiple</code> multi-element.</strong> Current data is single-element; the <code>array_agg</code>
+   decode handles N elements regardless. No additional work unless a
+   multi-element value needs ordering guarantees beyond <code>order by label</code>.</li>
+<li><strong>Log-slot select decode coverage.</strong> Confirm the <code>select</code>-type log slots
+   (<code>Vaccination</code>, <code>ARMS Student Field</code>) resolve via the
+   <code>CustomFieldLogColumn</code>-keyed options before relying on <code>value_label</code>.</li>
+<li><strong>Build order.</strong> Crosswalk first, then the pivots and log model. Run
+   <code>dbt deps</code> in the worktree before any build (fresh worktree has no
+   <code>dbt_packages/</code>).</li>
+</ol>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

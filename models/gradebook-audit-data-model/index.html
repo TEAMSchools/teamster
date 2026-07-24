@@ -1,0 +1,4283 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+        <link rel="prev" href="../../reference/automation-conditions/">
+      
+      
+        <link rel="next" href="../../reference/automations/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Gradebook Audit Data Model - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gradebook-audit-data-model" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Gradebook Audit Data Model
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-the-gradebook-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is the gradebook audit?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What is the gradebook audit?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-coverage-ay-2026-2027" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard coverage (AY 2026-2027)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grading-policy-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grading policy overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ay-2026-2027-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AY 2026-2027 data model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AY 2026-2027 data model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-changed-from-ay-2025-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What changed from AY 2025-2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline-overview-ay-2026-2027-post-teacherstudent-split-july-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline overview (AY 2026-2027, post teacher/student split — July 2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expectations-source-int_powerschool__u_expectations_qtd_unpivot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expectations source: int_powerschool__u_expectations_qtd_unpivot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assignment-and-category-rollup-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assignment and category rollup layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assignment and category rollup layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#int_powerschool__gradebook_assignments_scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_powerschool__gradebook_assignments_scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_powerschool__gradebook_assignment_scores_rollup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_powerschool__gradebook_assignment_scores_rollup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#student-flags-source-int_extracts__gradebook_audit_student_flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Student flags source: int_extracts__gradebook_audit_student_flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#student-flags-sheet-rpt_gsheets__gradebook_audit_student_flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Student flags sheet: rpt_gsheets__gradebook_audit_student_flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#final-extract-rpt_tableau__gradebook_audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final extract: rpt_tableau__gradebook_audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-of-year-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start-of-year procedure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Start-of-year procedure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-confirm-assignment-expectations-are-updated-in-powerschool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1 — Confirm assignment expectations are updated in PowerSchool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-revert-the-summer-toggle-if-applied" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2 — Revert the summer toggle (if applied)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions-and-future-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions and future work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#legacy-ay-2025-2026-and-superseded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Legacy: AY 2025-2026 and superseded
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Legacy: AY 2025-2026 and superseded">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-data-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key data flows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-stg_google_sheets__gradebook_expectations_assignments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration: stg_google_sheets__gradebook_expectations_assignments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-stg_google_sheets__gradebook_exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration: stg_google_sheets__gradebook_exceptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scaffold-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffold layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scaffold layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_teacher_scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_teacher_scaffold
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_student_scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_student_scaffold
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assignment-and-category-rollup-layer_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assignment and category rollup layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assignment and category rollup layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#int_powerschool__gradebook_assignments_scores_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_powerschool__gradebook_assignments_scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_assignments_student" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_assignments_student
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_assignments_teacher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_assignments_teacher
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_categories_teacher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_categories_teacher
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flag-assembly-int_tableau__gradebook_audit_flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flag assembly: int_tableau__gradebook_audit_flags
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Flag assembly: int_tableau__gradebook_audit_flags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#design-principle-cte_grouping-determines-what-columns-a-row-carries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design principle: cte_grouping determines what columns a row carries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-per-cte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern per CTE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cte-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CTE inventory
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#final-extract-rpt_tableau__gradebook_audit_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final extract: rpt_tableau__gradebook_audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-is-the-gradebook-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is the gradebook audit?
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What is the gradebook audit?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dashboard-coverage-ay-2026-2027" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dashboard coverage (AY 2026-2027)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grading-policy-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grading policy overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ay-2026-2027-data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AY 2026-2027 data model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="AY 2026-2027 data model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-changed-from-ay-2025-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What changed from AY 2025-2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pipeline-overview-ay-2026-2027-post-teacherstudent-split-july-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline overview (AY 2026-2027, post teacher/student split — July 2026)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expectations-source-int_powerschool__u_expectations_qtd_unpivot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Expectations source: int_powerschool__u_expectations_qtd_unpivot
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assignment-and-category-rollup-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assignment and category rollup layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assignment and category rollup layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#int_powerschool__gradebook_assignments_scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_powerschool__gradebook_assignments_scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_powerschool__gradebook_assignment_scores_rollup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_powerschool__gradebook_assignment_scores_rollup
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#student-flags-source-int_extracts__gradebook_audit_student_flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Student flags source: int_extracts__gradebook_audit_student_flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#student-flags-sheet-rpt_gsheets__gradebook_audit_student_flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Student flags sheet: rpt_gsheets__gradebook_audit_student_flags
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#final-extract-rpt_tableau__gradebook_audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final extract: rpt_tableau__gradebook_audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-of-year-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start-of-year procedure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Start-of-year procedure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-confirm-assignment-expectations-are-updated-in-powerschool" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1 — Confirm assignment expectations are updated in PowerSchool
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-revert-the-summer-toggle-if-applied" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2 — Revert the summer toggle (if applied)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-questions-and-future-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open questions and future work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#legacy-ay-2025-2026-and-superseded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Legacy: AY 2025-2026 and superseded
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Legacy: AY 2025-2026 and superseded">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layer-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layer summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-data-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key data flows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-stg_google_sheets__gradebook_expectations_assignments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration: stg_google_sheets__gradebook_expectations_assignments
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-stg_google_sheets__gradebook_exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration: stg_google_sheets__gradebook_exceptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scaffold-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scaffold layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scaffold layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_teacher_scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_teacher_scaffold
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_student_scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_student_scaffold
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#assignment-and-category-rollup-layer_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assignment and category rollup layer
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assignment and category rollup layer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#int_powerschool__gradebook_assignments_scores_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_powerschool__gradebook_assignments_scores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_assignments_student" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_assignments_student
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_assignments_teacher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_assignments_teacher
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#int_tableau__gradebook_audit_categories_teacher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        int_tableau__gradebook_audit_categories_teacher
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flag-assembly-int_tableau__gradebook_audit_flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flag assembly: int_tableau__gradebook_audit_flags
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Flag assembly: int_tableau__gradebook_audit_flags">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#design-principle-cte_grouping-determines-what-columns-a-row-carries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design principle: cte_grouping determines what columns a row carries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-per-cte" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern per CTE
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cte-inventory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CTE inventory
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#final-extract-rpt_tableau__gradebook_audit_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Final extract: rpt_tableau__gradebook_audit
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/models/gradebook-audit-data-model.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="gradebook-audit-data-model">Gradebook Audit Data Model</h1>
+<p>Reference document for <code>rpt_tableau__gradebook_audit</code> — the Tableau extract that
+powers the gradebook audit dashboard used by school leaders to monitor teacher
+gradebook compliance with KIPP TAF grading policy.</p>
+<p>!!! tip "Claude Code skill available" The <code>gradebook-audit</code> skill in
+<code>.claude/skills/gradebook-audit/</code> walks you through the routine changes to this
+pipeline at the code level — for each task it names the exact dbt model and CTE
+to edit. It covers: the summer academic-year rollover (the dbt-side data toggle
+that keeps the dashboard populated after the database flips to the new year but
+before teachers start entering grades — this is separate from the academics
+team's annual expectations update in PowerSchool); adding, removing, or editing
+an audit flag (where a new flag's boolean column belongs based on its grain,
+where to remove an existing one, and which literal to change to adjust a
+threshold); adding a new region; and debugging a flag that isn't firing. Invoke
+it by describing what you need to do with the gradebook audit.</p>
+<h2 id="what-is-the-gradebook-audit">What is the gradebook audit?</h2>
+<p>KIPP TAF schools require teachers to maintain PowerSchool gradebooks that follow
+the network's grading policy. The audit surfaces deviations from policy each
+quarter so they can be addressed before the quarter closes. Since the July 2026
+teacher/student split it produces <strong>two outputs</strong> from one shared pipeline:</p>
+<ul>
+<li><strong>A Tableau dashboard</strong> (<code>rpt_tableau__gradebook_audit</code>) for school leaders
+  and instructional coaches — teacher/section-facing gradebook compliance with
+  <strong>zero student PII</strong>. Per section × quarter × assignment category it reports
+  whether enough assignments were entered, lists individual assignments that
+  fail a validity check, and carries section-level "any student flagged"
+  booleans plus per-teacher "healthy gradebook" booleans.</li>
+<li><strong>A Google Sheet</strong> (<code>rpt_gsheets__gradebook_audit_student_flags</code>) for ops
+  follow-up — the student-level grade anomalies, which carry PII (student name
+  and number), one row per flagged student × section × quarter.</li>
+</ul>
+<p>The audit operates at several grains:</p>
+<ul>
+<li><strong>Assignment</strong> — did this assignment receive valid scores (correct point
+  value, enough of the class graded, not over-exempt)? This is the
+  <code>assignment_has_flags</code> rollup, surfaced on the dashboard as per-assignment
+  detail rows.</li>
+<li><strong>Section-category, quarter-to-date</strong> — has this teacher entered the required
+  number of assignments in this category so far this quarter? (Quarter-grain as
+  of AY 2026-2027 — previously a weekly check.)</li>
+<li><strong>Student-course</strong> — is a student's quarter course grade out of policy: above
+  100, or below 70 with no end-of-quarter comment? These are the two flags that
+  feed the Google Sheet (and, aggregated with PII dropped, the dashboard's
+  section-level booleans).</li>
+<li><strong>End-of-quarter (EOQ)</strong> — are comments and final grades entered by quarter
+  close? MS/HS via the below-70 comment flag; ES via the separate
+  <code>rpt_tableau__gradebook_es_comments</code> model.</li>
+</ul>
+<h3 id="dashboard-coverage-ay-2026-2027">Dashboard coverage (AY 2026-2027)</h3>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>School level</th>
+<th>Coverage depth</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Camden</td>
+<td>MS, HS</td>
+<td>Full audit (all applicable flags)</td>
+<td></td>
+</tr>
+<tr>
+<td>Newark</td>
+<td>MS, HS</td>
+<td>Full audit (all applicable flags)</td>
+<td></td>
+</tr>
+<tr>
+<td>Paterson</td>
+<td>MS</td>
+<td>Full audit (all applicable flags)</td>
+<td>Added AY 2026-2027; expectations spoofed from Newark's MS data</td>
+</tr>
+<tr>
+<td>Camden</td>
+<td>ES</td>
+<td>EOQ comments only (<code>qt_es_comment_missing</code>)</td>
+<td>ES schools do not enter assignments in PS gradebook</td>
+</tr>
+<tr>
+<td>Newark</td>
+<td>ES</td>
+<td>EOQ comments only (<code>qt_es_comment_missing</code>)</td>
+<td>ES schools do not enter assignments in PS gradebook</td>
+</tr>
+<tr>
+<td>Paterson</td>
+<td>ES</td>
+<td>EOQ comments only (<code>qt_es_comment_missing</code>)</td>
+<td>Added AY 2026-2027</td>
+</tr>
+<tr>
+<td>Miami</td>
+<td>n/a</td>
+<td>Removed</td>
+<td>Moved to Focus gradebook; excluded at scaffold level</td>
+</tr>
+</tbody>
+</table>
+<p>!!! note "Paterson GradeBook plugin" The <strong>KIPP NJ Gradebook Audit</strong> plugin
+cannot be installed on Paterson's PowerSchool instance, so <code>U_EXPECTATIONS</code> is
+never populated there natively. <code>kipptaf</code>'s own
+<code>stg_powerschool__u_expectations</code> model handles this directly: a
+<code>paterson_spoof</code> CTE reads Newark's real U_EXPECTATIONS data via
+<code>source("kippnewark_powerschool", "stg_powerschool__u_expectations")</code>, filtered
+to <code>school_level = 'MS'</code>, with a hardcoded
+<code>'kipppaterson' as _dbt_source_project</code> (bypassing the usual
+<code>extract_code_location()</code> regex-on-schema-name derivation, since the physical
+relation really is Newark's — deriving from it would mislabel these rows as
+<code>kippnewark</code>). This is <code>UNION ALL</code>-ed alongside the real Camden/Newark union
+(<code>src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql</code>).
+There is no per-district override model in <code>kipppaterson</code> anymore — that
+approach (a <code>kipppaterson</code>-project model reading Newark's source under a
+misleadingly-named <code>kippnewark_powerschool</code> source declaration) was replaced
+after review; see PR #4132 review discussion.
+<code>int_powerschool__u_expectations_qtd_unpivot</code>'s kipptaf-level union picks this
+up as a third region alongside Camden and Newark — no different from a real
+region's data at that point. Tracked:
+<a href="https://github.com/TEAMSchools/teamster/issues/3908">#3908</a></p>
+<hr />
+<h2 id="grading-policy-overview">Grading policy overview</h2>
+<p>KIPP TAF teachers use four assignment categories in PowerSchool:</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Policy: max score per assignment</th>
+<th>Policy: quarterly total</th>
+<th>Policy: missing score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>W</code></td>
+<td>Work Habits</td>
+<td>10 pts</td>
+<td>n/a</td>
+<td>5 (non-HS) / 0 (HS)</td>
+</tr>
+<tr>
+<td><code>H</code></td>
+<td>Homework</td>
+<td>10 pts</td>
+<td>n/a</td>
+<td>5 (non-HS) / 0 (HS)</td>
+</tr>
+<tr>
+<td><code>F</code></td>
+<td>Formative Mastery</td>
+<td>10 pts</td>
+<td>n/a</td>
+<td>5 (non-HS) / 0 (HS)</td>
+</tr>
+<tr>
+<td><code>S</code></td>
+<td>Summative Mastery</td>
+<td>No per-assignment max</td>
+<td>200 pts</td>
+<td>0 (HS); min 50% of max (non-HS)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ay-2026-2027-data-model">AY 2026-2027 data model</h2>
+<h3 id="what-changed-from-ay-2025-2026">What changed from AY 2025-2026</h3>
+<p><strong>Regions:</strong></p>
+<ul>
+<li>Miami removed — gradebook moved to Focus; excluded in scaffold via
+  <code>_dbt_source_project != 'kippmiami'</code></li>
+<li>Paterson added — MS mirrors Newark MS flags; ES has EOQ comments only</li>
+</ul>
+<p><strong>Architecture:</strong></p>
+<p>The AY 2026-2027 pipeline eliminated both scaffold models and collapsed the
+multi-rollup chain into two new intermediates:</p>
+<table>
+<thead>
+<tr>
+<th>Old model (AY 2025-2026)</th>
+<th>New model (AY 2026-2027)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int_tableau__gradebook_audit_teacher_scaffold</code></td>
+<td>Disabled — <code>flags_calculations</code> joins <code>int_extracts__course_schedule_by_term</code> directly instead</td>
+</tr>
+<tr>
+<td><code>int_tableau__gradebook_audit_student_scaffold</code></td>
+<td>Disabled — <code>flags_calculations</code> joins <code>int_extracts__course_enrollments_by_term</code> directly instead</td>
+</tr>
+<tr>
+<td><code>int_tableau__gradebook_audit_assignments_teacher</code></td>
+<td>Disabled — function inlined in <code>int_tableau__gradebook_audit_flags_calculations</code></td>
+</tr>
+<tr>
+<td><code>int_tableau__gradebook_audit_assignments_student</code></td>
+<td>Disabled — function inlined in <code>int_tableau__gradebook_audit_flags_calculations</code></td>
+</tr>
+<tr>
+<td><code>int_tableau__gradebook_audit_categories_teacher</code></td>
+<td>Disabled — function inlined in <code>int_tableau__gradebook_audit_flags_calculations</code></td>
+</tr>
+<tr>
+<td><code>int_tableau__gradebook_audit_flags</code></td>
+<td>Disabled — UNPIVOT now inline in <code>rpt_tableau__gradebook_audit</code>'s <code>health_calc</code>/<code>flags_unpivot</code> CTEs</td>
+</tr>
+<tr>
+<td><code>int_tableau__gradebook_audit_flags_calculations</code></td>
+<td><strong>Deleted</strong> (July 2026, teacher/student split) — folded directly into <code>rpt_tableau__gradebook_audit</code>; see below</td>
+</tr>
+<tr>
+<td><code>stg_google_sheets__gradebook_expectations_assignments</code></td>
+<td><code>int_powerschool__u_expectations_qtd_unpivot</code></td>
+</tr>
+<tr>
+<td><code>stg_google_sheets__gradebook_exceptions</code></td>
+<td>Deprecated — all exception joins removed</td>
+</tr>
+<tr>
+<td><code>stg_google_sheets__gradebook_flags</code></td>
+<td>Deprecated — per-flag allowlist no longer needed (see below)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Assignment count (QTD):</strong> the audit now operates at quarter-grain (one row per
+section × quarter × category) rather than week-grain. Q1 and Q2 are restored —
+the prior <code>term not in ('Q1', 'Q2')</code> volume workaround is removed. All four
+quarters are covered.</p>
+<p><strong>Deprecated flags</strong> (removed from <code>stg_google_sheets__gradebook_flags</code> for AY
+2026; boolean columns remain in SQL for future years):</p>
+<ul>
+<li><code>w_grade_inflation</code></li>
+<li><code>qt_student_is_ada_80_plus_gpa_less_2</code></li>
+<li><code>qt_teacher_s_total_greater_200</code> / <code>qt_teacher_s_total_less_200</code></li>
+<li><code>assign_s_hs_score_not_conversion_chart_options</code></li>
+<li><code>assign_s_ms_score_not_conversion_chart_options</code></li>
+</ul>
+<p><strong>Assignment score flags</strong> — the 12 per-category per-school-level boolean
+columns were consolidated to 5 merged flags. See
+<a href="#int_powerschool__gradebook_assignments_scores"><code>int_powerschool__gradebook_assignments_scores</code></a>
+below.</p>
+<h3 id="pipeline-overview-ay-2026-2027-post-teacherstudent-split-july-2026">Pipeline overview (AY 2026-2027, post teacher/student split — July 2026)</h3>
+<p>The old scaffold models (<code>int_tableau__gradebook_audit_teacher_scaffold</code> and
+<code>int_tableau__gradebook_audit_student_scaffold</code>) were eliminated first, and
+<code>int_tableau__gradebook_audit_flags_calculations</code> (their AY 2026-2027
+replacement) was deleted outright in the July 2026 teacher/student split — see
+"Why changed" below. A July 2026 follow-up then extracted the shared
+student-flag logic into <code>int_extracts__gradebook_audit_student_flags</code> so the two
+reports no longer depend on each other (<code>rpt_</code> reading <code>rpt_</code> was a layering
+violation). The pipeline is now one shared intermediate feeding two terminal
+reports:</p>
+<div class="highlight"><pre><span></span><code>int_extracts__course_enrollments_by_term ──┐
+int_extracts__course_schedule_by_term ─────┼──► int_extracts__gradebook_audit_student_flags
+base_powerschool__final_grades /            │        │
+  stg_powerschool__storedgrades ────────────┘        │
+                                    ┌──────────────────┴──────────────────┐
+                                    ▼                                     ▼
+             rpt_gsheets__gradebook_audit_student_flags       (section-level &quot;any student
+             (projection, flagged rows only)                   flagged&quot; booleans, zero PII)
+                                                                          │
+int_extracts__course_schedule_by_term ──┐                                 ▼
+int_powerschool__u_expectations_qtd_unpivot ┼──────────────► rpt_tableau__gradebook_audit
+int_powerschool__gradebook_assignment_scores_rollup ┘
+</code></pre></div>
+<p><strong>Why changed:</strong> <code>rpt_tableau__gradebook_audit</code> used to carry a <code>student_course</code>
+branch with full student PII (name, student number) into a Tableau-facing
+report. The July 2026 split moved that branch's logic into its own model,
+<code>rpt_gsheets__gradebook_audit_student_flags</code>, feeding an external Google Sheet
+for ops review instead — <code>rpt_tableau__gradebook_audit</code> now carries zero student
+PII. See both models' own sections below for the current design.</p>
+<p>Both models filter <code>school_level_alt != 'ES'</code> and
+<code>_dbt_source_project != 'kippmiami'</code>.</p>
+<p>Sections whose PowerSchool term overlaps only a single quarter are excluded
+upstream by <code>int_extracts__course_schedule_by_term</code>
+(<code>section_quarter_count &gt;= 2</code> — only year and semester terms fan out to
+quarters). In AY 2025-2026 data this drops a handful of trimester-term specials
+(Paterson MS Music/Spanish) and short-term Newark sections; those teachers'
+gradebooks are not audited.</p>
+<p><strong>No business rationale for this filter is recoverable.</strong> It shipped in the
+model's original commit (<code>f8650076d</code>) with only a mechanical commit-message
+description ("qualify filter drops quarter-level PS term sections"); the PR that
+introduced it has no comment discussing why single-quarter sections should be
+out of scope for the audit; and as of this doc's last review, the model's own
+author could no longer recall the reason either. Treat the current behavior as
+inherited, not deliberate policy — if you're touching this filter, re-derive
+whether excluding these sections is still desired before assuming it is.</p>
+<p><strong><code>int_extracts__course_enrollments_by_term</code> has a known, arbitrary dedup tie,
+inherited by <code>int_extracts__gradebook_audit_student_flags</code></strong> (and thus by both
+reports downstream of it). Its final <code>enrollments</code> CTE picks one candidate
+section per student/course/quarter with
+<code>row_number() over (... order by e.exitdate desc, s.dateleft desc)</code>. When
+PowerSchool has two overlapping course-enrollment records for the same
+student/course/school/quarter — a section reassignment where the old section's
+<code>dateleft</code> was never closed out at the switch, the same root cause tracked in
+<a href="https://github.com/TEAMSchools/teamster/issues/3900">#3900</a> — those two
+tiebreaker columns are frequently identical on both candidates, leaving nothing
+to actually break the tie. BigQuery gives no ordering guarantee for exact ties,
+so the pick is arbitrary and not guaranteed stable across rebuilds. Verified in
+AY 2025-2026 data: 431 ambiguous student/course/quarter combinations, 354 of
+them fully tied (identical <code>exitdate</code> and <code>dateleft</code> on every candidate), 86 of
+those fully-tied cases spanning two different teachers — meaning for those 86,
+which teacher's gradebook is in scope for that student/quarter is effectively
+arbitrary today. No code fix has been applied; this is called out here as a
+known limitation rather than resolved.</p>
+<p>The teacher/student split also fixed a related, separate gap:
+<code>int_extracts__gradebook_audit_student_flags</code> inner-joins
+<code>int_extracts__course_schedule_by_term</code> so a student's course-quarter row only
+appears if the section also exists in the schedule model — scoping out orphans
+from the <code>section_quarter_count</code> exclusion above (a student could otherwise be
+flagged for a "course" with no corresponding teacher/section presence anywhere
+else in the pipeline). Verified as a real safeguard, not a fix for a currently
+visible bug: at merge time, zero of the 83 previously-identified orphan
+sections/~800 students overlapped with an actually-flagged student.</p>
+<h3 id="expectations-source-int_powerschool__u_expectations_qtd_unpivot">Expectations source: <code>int_powerschool__u_expectations_qtd_unpivot</code></h3>
+<p>Replaces <code>stg_google_sheets__gradebook_expectations_assignments</code>. Reads the
+PowerSchool <code>U_EXPECTATIONS</code> plugin table, which stores assignment count
+expectations per category per week, and collapses it to the most recently
+completed week per quarter. One row per
+<code>region × school_level × quarter × assignment_category_code</code> (uniqueness-tested;
+<code>academic_year</code> is injected as <code>current_academic_year</code>).</p>
+<p><code>week_end_sunday</code> — an output column consumed by
+<code>rpt_tableau__gradebook_audit</code>'s <code>category_join</code> CTE as the QTD assignment count
+cutoff — is the Sunday ending the most recently completed school week (the
+latest calendar week with
+<code>week_start_monday &lt; date_trunc(current_date, isoweek)</code>).</p>
+<h3 id="assignment-and-category-rollup-layer">Assignment and category rollup layer</h3>
+<h4 id="int_powerschool__gradebook_assignments_scores"><code>int_powerschool__gradebook_assignments_scores</code></h4>
+<p>One row per student × assignment. Same grain and key business logic as AY
+2025-2026 — the model was not renamed. The INNER JOIN to
+<code>base_powerschool__course_enrollments</code> on the half-open range
+<code>duedate &gt;= cc_dateenrolled and duedate &lt; cc_dateleft</code> scopes each assignment to
+students whose enrollment was active when the assignment was due (half-open so
+back-to-back enrollment stints sharing a boundary date match once). The LEFT
+JOIN to <code>stg_powerschool__assignmentscore</code> means a student row exists even when
+no score has been entered — <code>score_entered</code> is null in that case.</p>
+<p><strong>What changed in AY 2026-2027</strong>: the 12 per-category per-school-level boolean
+flag columns were consolidated to 5 merged flags using <code>category_code in (...)</code>
+predicates. <code>assign_score_above_max</code> is unchanged. <code>assign_null_score</code> was
+removed — nothing downstream read it
+(<code>int_powerschool__gradebook_assignment_scores_rollup</code> sums <code>is_expected_null</code>
+directly instead); use <code>is_expected_null</code> for the same signal.</p>
+<p><strong>Key computed columns</strong> (unchanged):</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is_expected</code></td>
+<td>True if not exempt and <code>iscountedinfinalgrade = 1</code></td>
+</tr>
+<tr>
+<td><code>is_expected_null</code></td>
+<td><code>is_expected</code> and <code>score_entered is null</code></td>
+</tr>
+<tr>
+<td><code>is_expected_zero</code></td>
+<td><code>is_expected</code> and <code>score_entered = 0</code></td>
+</tr>
+<tr>
+<td><code>is_expected_missing</code></td>
+<td><code>is_expected</code> and <code>is_missing = 1</code></td>
+</tr>
+<tr>
+<td><code>is_expected_late</code></td>
+<td><code>is_expected</code> and <code>is_late = 1</code></td>
+</tr>
+<tr>
+<td><code>is_expected_scored</code></td>
+<td><code>is_expected</code> and <code>score_entered is not null</code></td>
+</tr>
+<tr>
+<td><code>is_expected_academic_dishonesty</code></td>
+<td><code>is_expected</code>; HS; <code>score_entered = 0</code> and not missing</td>
+</tr>
+<tr>
+<td><code>score_entered</code></td>
+<td><code>scorepoints</code> for POINTS; <code>actualscoreentered</code> cast to numeric for PERCENT</td>
+</tr>
+<tr>
+<td><code>half_total_point_value</code></td>
+<td><code>totalpointvalue / 2</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Consolidated assignment flag columns</strong> (AY 2026-2027):</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assign_score_above_max</code></td>
+<td><code>is_expected</code> and <code>score_entered &gt; totalpointvalue</code></td>
+</tr>
+<tr>
+<td><code>assign_mh_hwf_score_less_5</code></td>
+<td>H/W/F category; <code>is_expected</code> and <code>is_missing = 0</code>; <code>score_entered &lt; 5</code></td>
+</tr>
+<tr>
+<td><code>assign_ms_hwf_missing_score_not_5</code></td>
+<td>H/W/F category; MS; <code>is_expected_missing = 1</code>; <code>score_entered != 5</code></td>
+</tr>
+<tr>
+<td><code>assign_hs_hwfs_missing_score_not_0</code></td>
+<td>H/W/F/S category; HS; <code>is_expected_missing = 1</code>; <code>score_entered != 0</code></td>
+</tr>
+<tr>
+<td><code>assign_ms_s_score_less_50p</code></td>
+<td>S category; MS; <code>is_expected</code>; <code>score_entered &lt; half_total_point_value</code></td>
+</tr>
+<tr>
+<td><code>assign_hs_s_score_less_50p</code></td>
+<td>S category; HS; <code>is_expected</code> and <code>is_missing = 0</code>; <code>score_entered &lt; half_total_point_value</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Consolidation from AY 2025-2026</strong> (12 flags → 5):</p>
+<table>
+<thead>
+<tr>
+<th>AY 2025-2026 flags</th>
+<th>AY 2026-2027 replacement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assign_w_score_less_5</code>, <code>assign_h_score_less_5</code>, <code>assign_f_score_less_5</code></td>
+<td><code>assign_mh_hwf_score_less_5</code></td>
+</tr>
+<tr>
+<td><code>assign_w_missing_score_not_5</code>, <code>assign_h_missing_score_not_5</code>, <code>assign_f_missing_score_not_5</code></td>
+<td><code>assign_ms_hwf_missing_score_not_5</code></td>
+</tr>
+<tr>
+<td><code>assign_w_missing_score_not_0</code>, <code>assign_h_missing_score_not_0</code>, <code>assign_f_missing_score_not_0</code>, <code>assign_s_missing_score_not_0</code></td>
+<td><code>assign_hs_hwfs_missing_score_not_0</code></td>
+</tr>
+<tr>
+<td><code>assign_s_score_less_50p</code> (non-HS only)</td>
+<td><code>assign_ms_s_score_less_50p</code></td>
+</tr>
+<tr>
+<td><code>assign_s_hs_score_less_50p</code></td>
+<td><code>assign_hs_s_score_less_50p</code></td>
+</tr>
+</tbody>
+</table>
+<p>!!! note "KIPP Sumner base level + grade 5/6 MS override" KIPP Sumner Academy
+(formerly KIPP Sumner Elementary; school 179905) is base-classified <strong>ES</strong>
+network-wide in <code>stg_powerschool__schools</code> (matched by <code>abbreviation = 'Sumner'</code>
+— high_grade alone no longer implies ES now that Sumner is K-6). Grades 5 and 6
+are then overridden to MS (<code>school_level_alt = 'MS'</code>) for AY 2025+ in three
+downstream models: the <code>scores</code> CTE here and
+<code>int_extracts__course_schedule_by_term</code> match on <code>schoolid = 179905</code>;
+<code>int_extracts__student_enrollments</code> matches on <code>school_abbreviation = 'Sumner'</code>
+— never on school name, which PowerSchool has renamed once already. This ensures
+HS-vs-non-HS flag conditions apply consistently to those students.</p>
+<p>Feeds <code>int_powerschool__gradebook_assignment_scores_rollup</code>.</p>
+<h4 id="int_powerschool__gradebook_assignment_scores_rollup"><code>int_powerschool__gradebook_assignment_scores_rollup</code></h4>
+<p>One row per <code>_dbt_source_project × assignmentsectionid</code> (class-assignment
+grain). New in AY 2026-2027. Aggregates
+<code>int_powerschool__gradebook_assignments_scores</code> to produce per-assignment
+summary counts and assignment-level compliance flags. Downstream consumers join
+this model directly rather than computing inline rollups.</p>
+<p><strong>Uniqueness test</strong>: <code>dbt_utils.unique_combination_of_columns</code> on
+<code>(_dbt_source_project, assignmentsectionid)</code>.</p>
+<p><strong>CTE chain</strong>:</p>
+<ol>
+<li>
+<p><code>transformations</code> — groups to <code>_dbt_source_project × assignmentsectionid</code>
+   grain (with assignment metadata as group-by keys); excludes
+   <code>_dbt_source_project = 'kippmiami'</code>. Produces all count and average columns.</p>
+</li>
+<li>
+<p><code>flags</code> — derives <code>assign_max_score_not_10</code>, <code>overly_exempt_assignment</code>, and
+   <code>assign_percent_graded</code> from the aggregated counts.</p>
+</li>
+<li>
+<p><code>invalid_assign_check</code> — computes <code>flags_sum</code> (sum of all per-student flag
+   counts) and <code>percent_graded_min_not_met</code>.</p>
+</li>
+<li>
+<p>Final <code>SELECT</code> — adds <code>assignment_has_flags</code>.</p>
+</li>
+</ol>
+<p><strong>Count columns</strong> (from <code>transformations</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>n_students</code></td>
+<td><code>count(students_dcid)</code> — all students with an assignment row</td>
+</tr>
+<tr>
+<td><code>n_expected</code></td>
+<td><code>countif(is_expected)</code> — not exempt and counted in final grade</td>
+</tr>
+<tr>
+<td><code>n_expected_scored</code></td>
+<td><code>countif(is_expected_scored)</code> — expected students with a score entered</td>
+</tr>
+<tr>
+<td><code>n_expected_late</code></td>
+<td><code>sum(is_expected_late)</code></td>
+</tr>
+<tr>
+<td><code>n_exempt</code></td>
+<td><code>sum(is_exempt)</code></td>
+</tr>
+<tr>
+<td><code>n_expected_missing</code></td>
+<td><code>sum(is_expected_missing)</code></td>
+</tr>
+<tr>
+<td><code>n_expected_null</code></td>
+<td><code>sum(is_expected_null)</code></td>
+</tr>
+<tr>
+<td><code>n_score_above_max</code></td>
+<td>Count of students where <code>assign_score_above_max</code> fired</td>
+</tr>
+<tr>
+<td><code>n_expected_academic_dishonesty</code></td>
+<td>Count of expected HS students with score = 0 and not missing</td>
+</tr>
+<tr>
+<td><code>n_assign_mh_hwf_score_less_5</code></td>
+<td>Count of students where <code>assign_mh_hwf_score_less_5</code> fired</td>
+</tr>
+<tr>
+<td><code>n_assign_ms_hwf_missing_score_not_5</code></td>
+<td>Count of students where <code>assign_ms_hwf_missing_score_not_5</code> fired</td>
+</tr>
+<tr>
+<td><code>n_assign_hs_hwfs_missing_score_not_0</code></td>
+<td>Count of students where <code>assign_hs_hwfs_missing_score_not_0</code> fired</td>
+</tr>
+<tr>
+<td><code>n_assign_ms_s_score_less_50p</code></td>
+<td>Count of students where <code>assign_ms_s_score_less_50p</code> fired</td>
+</tr>
+<tr>
+<td><code>n_assign_hs_s_score_less_50p</code></td>
+<td>Count of students where <code>assign_hs_s_score_less_50p</code> fired</td>
+</tr>
+<tr>
+<td><code>avg_score_for_assign</code></td>
+<td>Average <code>assign_final_score_percent</code> across expected scored students</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Assignment-level flags</strong> (from <code>flags</code> and <code>invalid_assign_check</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assign_max_score_not_10</code></td>
+<td>True when H/W/F category and <code>totalpointvalue != 10</code></td>
+</tr>
+<tr>
+<td><code>overly_exempt_assignment</code></td>
+<td>True when <code>n_exempt &gt;= 0.5 * n_students</code></td>
+</tr>
+<tr>
+<td><code>assign_percent_graded</code></td>
+<td><code>safe_divide(n_expected_scored, n_expected)</code></td>
+</tr>
+<tr>
+<td><code>flags_sum</code></td>
+<td><code>n_expected_null + n_score_above_max + n_assign_mh_hwf_score_less_5 + n_assign_ms_hwf_missing_score_not_5 + n_assign_hs_hwfs_missing_score_not_0 + n_assign_ms_s_score_less_50p + n_assign_hs_s_score_less_50p</code></td>
+</tr>
+<tr>
+<td><code>percent_graded_min_not_met</code></td>
+<td>True when <code>assign_percent_graded &lt; 0.90</code></td>
+</tr>
+<tr>
+<td><code>assignment_has_flags</code></td>
+<td>True when <code>assign_max_score_not_10</code> OR <code>overly_exempt_assignment</code> OR <code>flags_sum &gt; 0</code> OR <code>percent_graded_min_not_met</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>assignment_has_flags</code> is the single rollup signal: <code>false</code> = fully compliant,
+<code>true</code> = at least one check failed. The individual flag columns and counts
+remain available for diagnostic drill-down.</p>
+<h3 id="student-flags-source-int_extracts__gradebook_audit_student_flags">Student flags source: <code>int_extracts__gradebook_audit_student_flags</code></h3>
+<p>The shared intermediate where both student-level flags are computed. One row per
+student × section × quarter, <strong>unfiltered</strong> (every scoped enrollment, flag
+<code>true</code> or <code>false</code>). Both reports read it: the Google Sheet projects and filters
+it, and the Tableau report aggregates it. Extracting it (July 2026 follow-up)
+removed the earlier <code>rpt_</code>-reading-<code>rpt_</code> layering violation. Materialized as a
+table in the <code>extracts</code> schema, matching its <code>int_extracts__course_*</code> siblings.</p>
+<p>Source is <code>int_extracts__course_enrollments_by_term</code>, filtered <code>rn_year = 1</code>,
+<code>enroll_status = 0</code>, <code>not is_out_of_district</code>, <code>school_level_alt != 'ES'</code>,
+<code>_dbt_source_project != 'kippmiami'</code>, <code>exclude_from_gpa = 0</code>, and inner-joined
+to <code>int_extracts__course_schedule_by_term</code> (the orphan-scoping fix described
+above). Grades/comments come from the <code>quarter_course_grades</code> union it defines
+(<code>base_powerschool__final_grades</code> for the current year,
+<code>stg_powerschool__storedgrades</code> for the prior year during the summer toggle —
+the summer-toggle markers live here). Carries full student PII (name, student
+number) — acceptable because it is an internal intermediate read only by the two
+reports, never by an external tool directly.</p>
+<h3 id="student-flags-sheet-rpt_gsheets__gradebook_audit_student_flags">Student flags sheet: <code>rpt_gsheets__gradebook_audit_student_flags</code></h3>
+<p>Feeds an external Google Sheet for ops review — not Tableau. A thin projection
+over <code>int_extracts__gradebook_audit_student_flags</code>, filtered to <strong>flagged rows
+only</strong> (at least one of <code>qt_percent_grade_greater_100</code> /
+<code>qt_grade_70_comment_missing</code> is true). Same columns and grain as the
+intermediate, including <code>teacher_employee_number</code> (from
+<code>int_people__staff_roster</code>) and <code>is_current_quarter</code>, which make the sheet easy
+to filter to the in-progress quarter. Full student PII is appropriate here since
+this is an internal ops artifact, unlike the Tableau-facing report below.</p>
+<p><code>rpt_tableau__gradebook_audit</code> reads the intermediate above (aggregated, with
+PII dropped) for its section-level "any student flagged" booleans — see below.
+No per-rule "reason" is ever surfaced for either flag; the whole point of the
+July 2026 split was to move to aggregated boolean signals instead of granular
+rule-level detail.</p>
+<h3 id="final-extract-rpt_tableau__gradebook_audit">Final extract: <code>rpt_tableau__gradebook_audit</code></h3>
+<p>Teacher/section-facing only — zero student PII. Floor of one row per section ×
+quarter × assignment category (<code>row_type = 'category_summary'</code>, four rows:
+W/H/F/S), present even when nothing is flagged, plus one additional row per
+assignment that fails the no-flags bar for its category
+(<code>row_type = 'assignment_detail'</code>). A teacher with zero flags anywhere has
+exactly <code>(number of sections) × 4</code> rows for the quarter — no separate anchor-row
+concept, unlike the pre-July-2026 design below.</p>
+<p><strong>CTE chain:</strong></p>
+<ol>
+<li><code>category_join</code> — <code>int_extracts__course_schedule_by_term</code> inner-joined to
+   <code>int_powerschool__u_expectations_qtd_unpivot</code> (on
+   <code>region × school_level × academic_year × quarter</code>) and left-joined to
+   <code>int_powerschool__gradebook_assignment_scores_rollup</code> for per-assignment
+   rollup data. Computes <code>expectation</code>, <code>assignments_entered_count</code>, and
+   <code>assignments_entered_count_no_flags</code> as <strong>window functions</strong> partitioned by
+   <code>_dbt_source_project, sectionid, quarter, assignment_category_code</code> — not a
+   <code>GROUP BY</code> — so the per-assignment row grain survives for step 2 to use.</li>
+<li><code>category_summary</code> — a grain-projection <code>SELECT DISTINCT</code> over
+   <code>category_join</code> that collapses the per-assignment fan-out to one row per
+   section × quarter × category, and adds <code>not_enough_assignments</code>
+   (<code>assignments_entered_count_no_flags &lt; expectation</code>). Every projected column
+   is functionally determined by
+   <code>_dbt_source_project, sectionid, quarter, assignment_category_code</code> — the
+   section columns (from <code>int_extracts__course_schedule_by_term</code>), the category
+   columns (from <code>int_powerschool__u_expectations_qtd_unpivot</code>), and the three
+   window aggregates from step 1 over that same partition — so <code>DISTINCT</code> is a
+   pure grain projection, not a mask for upstream duplicates. The
+   assignment-level columns from the rollup are not projected, so they collapse
+   out.</li>
+<li><code>assignment_detail</code> — reads <code>category_join</code> directly (the full fanned-out
+   set), filtered to <code>assignment_has_flags</code>.</li>
+<li><code>combined</code> — explicit-column <code>UNION ALL</code> of <code>category_summary</code> and
+   <code>assignment_detail</code>, tagging <code>row_type</code>. <code>expectation</code>,
+   <code>assignments_entered_count</code>, and <code>not_enough_assignments</code> are null on
+   <code>assignment_detail</code> rows; the assignment-identity columns are null on
+   <code>category_summary</code> rows.</li>
+<li><code>student_flags_aggregate</code> — reads
+   <code>int_extracts__gradebook_audit_student_flags</code> (see above), grouped to
+   <code>_dbt_source_project, sectionid, quarter</code>, computing <code>has_grade_above_100</code> /
+   <code>has_grade_below_70_no_comment</code> via <code>countif(&lt;flag&gt;) &gt; 0</code> per flag type.
+   Reading the unfiltered intermediate yields the same booleans as the old
+   flagged-only source (an un-flagged row adds 0 to either <code>countif</code>). No PII
+   survives this aggregation.</li>
+<li><code>with_section_flags</code> — left-joins <code>combined</code> to the aggregate above,
+   broadcasting the two booleans onto <strong>every</strong> row for a section (all 4
+   category rows, plus any assignment-detail rows) — these are section-level
+   facts, not category-level ones, so they're intentionally identical across all
+   of a section's rows.</li>
+<li><code>health_calc</code> — aggregates over <code>with_section_flags</code> at
+   <code>_dbt_source_project, academic_year, schoolid, teacher_number, quarter</code> grain
+   (across <em>all</em> of a teacher's sections, not just one), producing two booleans:</li>
+<li><code>is_healthy_gradebook_all_flags</code> — false if any of
+     <code>not_enough_assignments</code>, <code>has_grade_above_100</code>, or
+     <code>has_grade_below_70_no_comment</code> fired anywhere for that teacher/quarter.</li>
+<li><code>is_healthy_gradebook_excl_comments</code> — same, but
+     <code>has_grade_below_70_no_comment</code> doesn't count toward it (it's an
+     end-of-quarter item, still visible as its own column). A Tableau parameter
+     picks which health column to read — implemented as two columns on one
+     row-set rather than two duplicated branches, to avoid doubling the model's
+     row count for a single-column difference.</li>
+<li>Final <code>SELECT</code> — joins <code>with_section_flags</code> to <code>health_calc</code>, broadcasting
+   the two health columns onto every row for the teacher/quarter.</li>
+</ol>
+<p>Verified empirically at merge time: every section-quarter has exactly 4
+<code>category_summary</code> rows (6,374 confirmed, zero exceptions); health combos are
+internally consistent (no teacher/quarter is healthy-under-all-flags but
+unhealthy-under-excl-comments, which would be a logical impossibility given the
+second is strictly more lenient).</p>
+<hr />
+<h2 id="start-of-year-procedure">Start-of-year procedure</h2>
+<p>As of AY 2026-2027, there is no flags configuration sheet to roll over. The
+<code>stg_google_sheets__gradebook_flags</code> model is disabled. The three active audit
+flags (<code>has_grade_above_100</code>, <code>has_grade_below_70_no_comment</code>,
+<code>not_enough_assignments</code>) are hardcoded in <code>rpt_tableau__gradebook_audit</code>'s
+<code>health_calc</code> CTE and require no annual configuration.</p>
+<h3 id="step-1-confirm-assignment-expectations-are-updated-in-powerschool">Step 1 — Confirm assignment expectations are updated in PowerSchool</h3>
+<p>The expectations data that drives <code>not_enough_assignments</code> comes from
+<code>int_powerschool__u_expectations_qtd_unpivot</code>, which reads the <code>U_EXPECTATIONS</code>
+table populated by the <strong>KIPP NJ Gradebook Audit</strong> PowerSchool plugin. The
+<code>U_EXPECTATIONS</code> table does not have an <code>academic_year</code> field — it reflects the
+current state of expectations in PowerSchool. Until the T&amp;L team member
+responsible for gradebook expectations updates the table for the new year, the
+audit will continue to report against the prior year's expectation values.</p>
+<p>Plugin source and update instructions:
+<a href="https://github.com/TEAMSchools/ps-plugins">TEAMSchools/ps-plugins</a></p>
+<h3 id="step-2-revert-the-summer-toggle-if-applied">Step 2 — Revert the summer toggle (if applied)</h3>
+<p>If the summer toggle was applied during the off-season (switching year filters
+to <code>current_academic_year - 1</code>, grades type to <code>'last_year'</code> where applicable)
+to <code>rpt_tableau__gradebook_audit</code>,
+<code>int_extracts__gradebook_audit_student_flags</code>,
+<code>int_powerschool__u_expectations_qtd_unpivot</code>, and
+<code>rpt_tableau__gradebook_es_comments</code>, revert all changes in all four files
+before the new school year begins. See the <code>gradebook-audit</code> skill for the exact
+lines — the student grade/comment toggle now lives in
+<code>int_extracts__gradebook_audit_student_flags</code> (the July 2026 intermediate
+extraction moved it out of <code>rpt_gsheets__gradebook_audit_student_flags</code>), and
+<code>rpt_tableau__gradebook_es_comments</code> does not use the
+<code>grades_type</code>/<code>storedgrades</code> fallback the other three do (see the skill for
+why).</p>
+<hr />
+<h2 id="open-questions-and-future-work">Open questions and future work</h2>
+<p>Three known future-work items remain. The rest of the AY 2026-2027 build is
+delivered — see <a href="https://github.com/TEAMSchools/teamster/issues/3908">#3908</a> and
+the
+<a href="../../superpowers/plans/2026-05-14-gradebook-audit-ay2627-revamp/">implementation plan</a>
+for that history.</p>
+<ul>
+<li><strong>Install the gradebook-audit plugin on Paterson's PowerSchool instance.</strong> The
+  KIPP NJ Gradebook Audit plugin cannot currently be installed on Paterson, so
+  <code>U_EXPECTATIONS</code> is not populated there natively and Paterson MS runs on
+  <em>spoofed</em> expectations — Newark's MS values, via the <code>paterson_spoof</code> CTE in
+  <code>stg_powerschool__u_expectations</code> (see the Paterson note above). Once the
+  plugin can be installed on Paterson, it should use its own real expectations
+  and the spoof can be removed. Plugin source:
+  <a href="https://github.com/TEAMSchools/ps-plugins">TEAMSchools/ps-plugins</a>.</li>
+<li><strong>Make student-course selection deterministic when enrollment dates overlap.</strong>
+  <code>int_extracts__course_enrollments_by_term</code> picks one section per
+  student/course/quarter with a <code>row_number()</code> tiebreaker
+  (<code>exitdate desc, dateleft desc</code>) that is frequently a true tie when
+  PowerSchool holds overlapping course-enrollment records for the same
+  student/course/quarter (the #3900 double-write root cause). On a tie the
+  section — and therefore the teacher — in scope for that student is arbitrary
+  and not stable across rebuilds. Add a deterministic tiebreak here, or fix the
+  upstream double-writes
+  (<a href="https://github.com/TEAMSchools/teamster/issues/3900">#3900</a>), so the pick is
+  stable and correct.</li>
+<li><strong>Re-derive the <code>section_quarter_count &gt;= 2</code> filter, or remove it.</strong>
+  <code>int_extracts__course_schedule_by_term</code> silently excludes sections whose
+  PowerSchool term spans only a single quarter (some trimester specials and
+  short-term sections), so those teachers' gradebooks are never audited. The
+  filter shipped in the model's original commit with no recorded rationale, and
+  its original author could not reconstruct why single-quarter sections should
+  be out of scope (see the note under the pipeline section above). Confirm with
+  T&amp;L whether excluding these sections is still intended; if not, drop the
+  filter.</li>
+</ul>
+<hr />
+<h2 id="legacy-ay-2025-2026-and-superseded">Legacy: AY 2025-2026 and superseded</h2>
+<p>Reference material for the pre-AY 2026-2027 model and the configuration it
+replaced. Kept collapsed for history; none of it describes the current pipeline.</p>
+<hr />
+<details class="note">
+<summary>AY 2025-2026 dashboard coverage</summary>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>School level</th>
+<th>Coverage depth</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Camden</td>
+<td>MS, HS</td>
+<td>Full audit (all applicable flags)</td>
+<td></td>
+</tr>
+<tr>
+<td>Camden</td>
+<td>ES</td>
+<td>EOQ comments only (<code>qt_es_comment_missing</code>)</td>
+<td>ES schools do not enter assignments in PS gradebook</td>
+</tr>
+<tr>
+<td>Newark</td>
+<td>MS, HS</td>
+<td>Full audit (all applicable flags)</td>
+<td></td>
+</tr>
+<tr>
+<td>Newark</td>
+<td>ES</td>
+<td>EOQ comments only (<code>qt_es_comment_missing</code>)</td>
+<td>ES schools do not enter assignments in PS gradebook</td>
+</tr>
+<tr>
+<td>Miami</td>
+<td>ES, MS</td>
+<td>Full audit (all applicable flags)</td>
+<td>Removed AY 2026-2027 — moved to Focus</td>
+</tr>
+<tr>
+<td>Paterson</td>
+<td>n/a</td>
+<td>Not on dashboard</td>
+<td>Added AY 2026-2027</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<details class="note">
+<summary>AY 2025-2026 data model</summary>
+<pre class="mermaid"><code>flowchart TD
+    %% ── Sources ──────────────────────────────────────────────────────────────
+    subgraph SRC ["Sources"]
+        direction TB
+        src_ps_sec["PowerSchool\nsections / courses"]
+        src_ps_cc["PowerSchool\ncourse_enrollments"]
+        src_ps_ga["PowerSchool\ngradebook_assignments\n+ scores"]
+        src_ps_grades["PowerSchool\nfinal_grades\n+ stored_grades"]
+        src_ps_terms["PowerSchool\nterms / calendar_week"]
+        src_ps_sch["PowerSchool\nschools"]
+        src_gs_flags["Google Sheets\ngradebook_flags"]
+        src_gs_exp["Google Sheets\ngradebook_expectations\n_assignments"]
+        src_gs_exc["Google Sheets\ngradebook_exceptions"]
+    end
+
+    %% ── Staging / Base ───────────────────────────────────────────────────────
+    subgraph STG ["Staging &amp; Base"]
+        direction TB
+        stg_flags["stg_google_sheets__\ngradebook_flags"]
+        stg_exp["stg_google_sheets__\ngradebook_expectations\n_assignments"]
+        stg_exc["stg_google_sheets__\ngradebook_exceptions"]
+        base_sec["base_powerschool__\nsections"]
+        base_ce["base_powerschool__\ncourse_enrollments"]
+        base_fg["base_powerschool__\nfinal_grades"]
+        stg_sg["stg_powerschool__\nstoredgrades"]
+    end
+
+    %% ── Intermediate – Upstream ──────────────────────────────────────────────
+    subgraph INT_UP ["Intermediate · Upstream"]
+        direction TB
+        int_terms["int_powerschool__terms\n+ calendar_week"]
+        int_catgr["int_powerschool__\ncategory_grades"]
+        int_ga["int_powerschool__\ngradebook_assignments"]
+        int_gas["int_powerschool__\ngradebook_assignments_scores"]
+        int_enroll["int_extracts__\nstudent_enrollments"]
+        int_staff["int_people__staff_roster"]
+        int_lead["int_people__\nleadership_crosswalk"]
+    end
+
+    %% ── Intermediate – Audit Scaffolds ───────────────────────────────────────
+    subgraph INT_SCAF ["Intermediate · Audit Scaffolds"]
+        direction TB
+        int_tscaf["int_tableau__\ngradebook_audit_teacher_scaffold"]
+        int_sscaf["int_tableau__\ngradebook_audit_student_scaffold"]
+    end
+
+    %% ── Intermediate – Audit Rollups ─────────────────────────────────────────
+    subgraph INT_ROLL ["Intermediate · Audit Rollups"]
+        direction TB
+        int_at["int_tableau__\ngradebook_audit_assignments_teacher"]
+        int_as["int_tableau__\ngradebook_audit_assignments_student"]
+        int_ct["int_tableau__\ngradebook_audit_categories_teacher"]
+    end
+
+    %% ── Flag Assembly + Final ─────────────────────────────────────────────────
+    int_flags["int_tableau__\ngradebook_audit_flags"]
+    RPT(["rpt_tableau__gradebook_audit"])
+
+    %% ── Edges: Sources → Staging/Base ────────────────────────────────────────
+    src_gs_flags --&gt; stg_flags
+    src_gs_exp   --&gt; stg_exp
+    src_gs_exc   --&gt; stg_exc
+    src_ps_sec   --&gt; base_sec
+    src_ps_cc    --&gt; base_ce
+    src_ps_grades --&gt; base_fg
+    src_ps_grades --&gt; stg_sg
+
+    %% ── Edges: Sources → Upstream Intermediates ──────────────────────────────
+    src_ps_terms --&gt; int_terms
+    src_ps_sch   --&gt; int_terms
+    src_ps_grades --&gt; int_catgr
+    src_ps_ga    --&gt; int_ga
+    src_ps_ga    --&gt; int_gas
+
+    %% ── Edges: → Teacher Scaffold ────────────────────────────────────────────
+    base_sec   --&gt; int_tscaf
+    int_terms  --&gt; int_tscaf
+    int_staff  --&gt; int_tscaf
+    int_lead   --&gt; int_tscaf
+    stg_exp    --&gt; int_tscaf
+    stg_exc    --&gt; int_tscaf
+
+    %% ── Edges: → Student Scaffold ────────────────────────────────────────────
+    int_enroll --&gt; int_sscaf
+    base_ce    --&gt; int_sscaf
+    base_fg    --&gt; int_sscaf
+    stg_sg     --&gt; int_sscaf
+    int_tscaf  --&gt; int_sscaf
+    int_catgr  --&gt; int_sscaf
+    stg_exp    --&gt; int_sscaf
+    stg_exc    --&gt; int_sscaf
+
+    %% ── Edges: → Rollups ─────────────────────────────────────────────────────
+    int_tscaf --&gt; int_at
+    int_ga    --&gt; int_at
+    int_gas   --&gt; int_at
+    stg_exc   --&gt; int_at
+
+    int_sscaf --&gt; int_as
+    int_gas   --&gt; int_as
+
+    int_tscaf --&gt; int_ct
+    int_ga    --&gt; int_ct
+    int_gas   --&gt; int_ct
+    stg_exc   --&gt; int_ct
+
+    %% ── Edges: → Flag Assembly ───────────────────────────────────────────────
+    int_as    --&gt; int_flags
+    int_at    --&gt; int_flags
+    int_ct    --&gt; int_flags
+    int_sscaf --&gt; int_flags
+    stg_flags --&gt; int_flags
+    stg_exc   --&gt; int_flags
+
+    %% ── Edges: → Final ───────────────────────────────────────────────────────
+    int_flags --&gt; RPT
+
+    %% ── Styling ───────────────────────────────────────────────────────────────
+    classDef source   fill:#e8f4f8,stroke:#5b9bd5,color:#000
+    classDef staging  fill:#e2f0d9,stroke:#70ad47,color:#000
+    classDef intmodel fill:#fce4d6,stroke:#ed7d31,color:#000
+    classDef report   fill:#d9e1f2,stroke:#4472c4,color:#000,font-weight:bold
+
+    class src_ps_sec,src_ps_cc,src_ps_ga,src_ps_grades,src_ps_terms,src_ps_sch,src_gs_flags,src_gs_exp,src_gs_exc source
+    class stg_flags,stg_exp,stg_exc,base_sec,base_ce,base_fg,stg_sg staging
+    class int_terms,int_catgr,int_ga,int_gas,int_enroll,int_staff,int_lead,int_tscaf,int_sscaf,int_at,int_as,int_ct,int_flags intmodel
+    class RPT report</code></pre>
+<h3 id="layer-summary">Layer summary</h3>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Count</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sources</td>
+<td>9</td>
+<td>PowerSchool gradebook, enrollment, and calendar data; three Google Sheets config tables</td>
+</tr>
+<tr>
+<td>Staging &amp; Base</td>
+<td>7</td>
+<td>Light cleaning of config sheets; union of district PowerSchool tables</td>
+</tr>
+<tr>
+<td>Upstream intermediates</td>
+<td>7</td>
+<td>Gradebook assignments/scores, enrollment, terms, staff/leadership — shared with other models</td>
+</tr>
+<tr>
+<td>Audit scaffolds</td>
+<td>2</td>
+<td>Time spine (section × week × category) and student roster with EOQ flag columns</td>
+</tr>
+<tr>
+<td>Audit rollups</td>
+<td>3</td>
+<td>Assignment and category metrics at teacher and student grain</td>
+</tr>
+<tr>
+<td>Flag assembly</td>
+<td>1</td>
+<td>UNION ALL + UNPIVOT of all flag sources; applies allowlist and suppressions</td>
+</tr>
+<tr>
+<td>Report</td>
+<td>1</td>
+<td>Final 5-branch UNION joining teacher aggregates to student flag rows</td>
+</tr>
+</tbody>
+</table>
+<h3 id="key-data-flows">Key data flows</h3>
+<p><strong>Teacher/section stream</strong> — tracks what teachers have posted: how many
+assignments per category per week, whether max scores are correct, whether the
+class is keeping up with grading. Teacher-scoped; no individual student
+identifiers. Flows through <code>int_tableau__gradebook_audit_teacher_scaffold</code> →
+<code>int_powerschool__gradebook_assignments_scores</code> →
+<code>int_tableau__gradebook_audit_assignments_teacher</code> and
+<code>int_tableau__gradebook_audit_categories_teacher</code>.</p>
+<p><strong>Student stream</strong> — tracks what each individual student has received: whether
+scores are valid, whether missing assignments are coded correctly, and whether
+EOQ requirements are satisfied. Flows through
+<code>int_tableau__gradebook_audit_student_scaffold</code> →
+<code>int_powerschool__gradebook_assignments_scores</code> →
+<code>int_tableau__gradebook_audit_assignments_student</code>.</p>
+<p>Both streams converge in <code>int_tableau__gradebook_audit_flags</code>, where boolean
+flag columns are unpivoted to rows and filtered through the configuration
+allowlist and suppression tables. The final extract joins teacher-aggregated
+flag rows to individual student flag rows via a LEFT JOIN — teacher-level flags
+(class-category, class-category-assignment) appear with <code>null</code> student fields
+unless a student-level row also fired that flag.</p>
+<hr />
+<h3 id="configuration-stg_google_sheets__gradebook_expectations_assignments">Configuration: <code>stg_google_sheets__gradebook_expectations_assignments</code></h3>
+<p>Deprecated in AY 2026-2027. Replaced by
+<code>int_powerschool__u_expectations_qtd_unpivot</code>.</p>
+<p>Defined the minimum number of assignments a teacher was expected to have posted
+per category by each week of each quarter.</p>
+<p><strong>Grain</strong>: one row per
+<code>academic_year × region × school_level × quarter × week_number × assignment_category_code</code>
+(after staging unpivot).</p>
+<p>The source sheet stored expectations in a wide format — one column per category
+code (<code>W</code>, <code>H</code>, <code>F</code>, <code>S</code>) — with rows for each region / school level / quarter /
+week combination. Staging unpivoted to one row per category (dropping nulls,
+meaning that category was not expected that week in that context) and computed:</p>
+<ul>
+<li><code>assignment_category_term</code> — <code>code || right(quarter, 1)</code>, e.g. <code>W3</code> for Work
+  Habits in Q3</li>
+<li><code>assignment_category_name</code> — full name from code (<code>W</code> → <code>'Work Habits'</code>, etc.)</li>
+</ul>
+<p><code>int_tableau__gradebook_audit_teacher_scaffold</code> inner-joined to this table to
+expand each section × week to one row per category. If a region / school level /
+week combination had no rows here, the teacher category scaffold produced no
+rows for that context — the audit was silent rather than erroring.</p>
+<hr />
+<h3 id="configuration-stg_google_sheets__gradebook_exceptions">Configuration: <code>stg_google_sheets__gradebook_exceptions</code></h3>
+<p>Deprecated in AY 2026-2027. All exception joins removed from the pipeline.
+The <code>src_google_sheets__gradebook_exceptions</code> source is also disabled
+(<code>config: enabled: false</code> in <code>sources-external.yml</code>) — Dagster no longer
+pulls the sheet into BigQuery.</p>
+<p>Was the suppression table. Used in 15+ LEFT JOINs across five intermediate
+models to permanently or temporarily exclude specific rows from the audit output.</p>
+<p><strong>Grain</strong>: no natural grain — each row was an override instruction addressed to a
+specific model and CTE, identified by <code>view_name</code> + <code>cte</code>.</p>
+<p><strong>How suppression worked</strong>: every consuming CTE did a LEFT JOIN to this table,
+then added <code>WHERE e.include_row IS NULL</code>. A row where <code>include_row</code> is non-null
+caused the matched data rows to be dropped from that CTE's output.</p>
+<p><strong>Call sites</strong> — <code>view_name</code> and <code>cte</code> together identified where in the code a
+row applied:</p>
+<table>
+<thead>
+<tr>
+<th><code>view_name</code></th>
+<th><code>cte</code></th>
+<th>Where used</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>teacher_scaffold</code></td>
+<td><code>sections</code></td>
+<td><code>int_tableau__gradebook_audit_teacher_scaffold</code></td>
+<td>Removed an entire section from the audit</td>
+</tr>
+<tr>
+<td><code>teacher_scaffold</code></td>
+<td><code>null</code></td>
+<td><code>int_tableau__gradebook_audit_teacher_scaffold</code></td>
+<td>Removed section-weeks from the final scaffold output</td>
+</tr>
+<tr>
+<td><code>teacher_category_scaffold</code></td>
+<td><code>final</code></td>
+<td><code>int_tableau__gradebook_audit_teacher_scaffold</code></td>
+<td>Removed a gradebook category from the teacher category scaffold</td>
+</tr>
+<tr>
+<td><code>assignments_teacher</code></td>
+<td><code>null</code></td>
+<td><code>int_tableau__gradebook_audit_assignments_teacher</code></td>
+<td>Suppressed assignment rollup counts for a course</td>
+</tr>
+<tr>
+<td><code>categories_teacher</code></td>
+<td><code>null</code></td>
+<td><code>int_tableau__gradebook_audit_categories_teacher</code></td>
+<td>Removed category-level rows</td>
+</tr>
+<tr>
+<td><code>categories_teacher</code></td>
+<td><code>assignment_score_rollup</code></td>
+<td><code>int_tableau__gradebook_audit_categories_teacher</code></td>
+<td>Excluded students from <code>n_expected</code> / <code>n_expected_scored</code></td>
+</tr>
+<tr>
+<td><code>audit_flags</code></td>
+<td><code>student_unpivot</code></td>
+<td><code>int_tableau__gradebook_audit_flags</code></td>
+<td>Suppressed specific student-assignment flags</td>
+</tr>
+<tr>
+<td><code>audit_flags</code></td>
+<td><code>teacher_unpivot_cca</code></td>
+<td><code>int_tableau__gradebook_audit_flags</code></td>
+<td>Suppressed teacher assignment flags</td>
+</tr>
+<tr>
+<td><code>audit_flags</code></td>
+<td><code>teacher_unpivot_cc</code></td>
+<td><code>int_tableau__gradebook_audit_flags</code></td>
+<td>Suppressed teacher category flags</td>
+</tr>
+<tr>
+<td><code>audit_flags</code></td>
+<td><code>eoq_items</code></td>
+<td><code>int_tableau__gradebook_audit_flags</code></td>
+<td>Suppressed EOQ student flags (non-conduct)</td>
+</tr>
+<tr>
+<td><code>audit_flags</code></td>
+<td><code>eoq_items_conduct_code</code></td>
+<td><code>int_tableau__gradebook_audit_flags</code></td>
+<td>Suppressed conduct code flags</td>
+</tr>
+<tr>
+<td><code>audit_flags</code></td>
+<td><code>student_course_category</code></td>
+<td><code>int_tableau__gradebook_audit_flags</code></td>
+<td>Suppressed student-category flags</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Permanent vs. temporary suppression</strong> was controlled by
+<code>is_quarter_end_date_range</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Suppression applied when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NULL</code></td>
+<td>Always (permanent)</td>
+</tr>
+<tr>
+<td><code>TRUE</code></td>
+<td>Only during the EOQ window</td>
+</tr>
+<tr>
+<td><code>FALSE</code></td>
+<td>Only outside the EOQ window</td>
+</tr>
+</tbody>
+</table>
+<p>!!! warning "Silent failures" A typo in <code>view_name</code> or <code>cte</code> meant the exception
+was never matched and silently had no effect. There was no validation that these
+values corresponded to actual call sites in the SQL.</p>
+<hr />
+<h3 id="scaffold-layer">Scaffold layer</h3>
+<h4 id="int_tableau__gradebook_audit_teacher_scaffold"><code>int_tableau__gradebook_audit_teacher_scaffold</code></h4>
+<p>The time spine for the audit. One row per active section × calendar week ×
+scaffold variant for the current academic year. Feeds directly into
+<code>int_tableau__gradebook_audit_student_scaffold</code> — changes here cascaded
+immediately to the student scaffold.</p>
+<p><strong>Why two scaffold variants</strong>: some audit flags apply at the section level (e.g.
+a teacher hasn't set up their gradebook at all), while others apply at the
+section × gradebook category level (e.g. too few homework grades in a given
+category). The <code>scaffold_name</code> field distinguishes the two variants downstream —
+flags referencing <code>scaffold_name = 'teacher_scaffold'</code> are section-level only;
+flags referencing <code>scaffold_name = 'teacher_category_scaffold'</code> are per category.</p>
+<p><strong>Scope</strong>: <code>current_academic_year</code> only; Q3 and Q4 only; sections with zero
+enrolled students excluded (<code>sections_no_of_students != 0</code>).</p>
+<p><strong>Source table temporal scope</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>base_powerschool__sections</code></td>
+<td>Multi-year</td>
+</tr>
+<tr>
+<td><code>int_powerschool__terms</code></td>
+<td>Multi-year</td>
+</tr>
+<tr>
+<td><code>int_powerschool__calendar_week</code></td>
+<td>Multi-year</td>
+</tr>
+<tr>
+<td><code>int_people__staff_roster</code></td>
+<td>Year-agnostic</td>
+</tr>
+<tr>
+<td><code>stg_powerschool__schools</code></td>
+<td>Year-agnostic</td>
+</tr>
+<tr>
+<td><code>int_people__leadership_crosswalk</code></td>
+<td>Year-agnostic</td>
+</tr>
+</tbody>
+</table>
+<p><strong>CTE chain</strong>:</p>
+<ol>
+<li><code>sections</code> — active sections from <code>base_powerschool__sections</code> joined to
+   <code>int_people__staff_roster</code> for <code>teacher_tableau_username</code>; filters to
+   <code>current_academic_year</code> and excludes zero-student sections; applies
+   section-level exceptions.</li>
+<li><code>term_weeks</code> — joins <code>int_powerschool__terms</code> to
+   <code>int_powerschool__calendar_week</code> on <code>yearid + schoolid + quarter</code>; joins
+   <code>stg_powerschool__schools</code> for the school abbreviation; joins
+   <code>int_people__leadership_crosswalk</code> for HoS and school leader names; computes
+   <code>quarter_end_date_insession</code> (last in-session day of the quarter via window
+   <code>max(week_end_date)</code>).</li>
+<li><code>school_level_mod</code> — crosses sections and term weeks; computes
+   <code>is_quarter_end_date_range</code>, <code>region_school_level</code>, and <code>section_or_period</code>
+   (HS uses <code>external_expression</code>; others use <code>section_number</code>); applies
+   scaffold-level exceptions.</li>
+<li><code>final</code> — UNION ALL of the two scaffold variants:</li>
+<li><code>teacher_scaffold</code> — bare section × week row; category columns are <code>null</code></li>
+<li><code>teacher_category_scaffold</code> — inner-joined to
+     <code>stg_google_sheets__gradebook_expectations_assignments</code> on
+     <code>region + school_level + academic_year + quarter + week_number</code>; carries
+     category columns; applies category exceptions</li>
+</ol>
+<p><strong><code>is_quarter_end_date_range</code></strong> — boolean computed against <code>current_date</code>;
+controls when EOQ-only flags fire and which exception rows apply:</p>
+<table>
+<thead>
+<tr>
+<th>Context</th>
+<th><code>TRUE</code> when <code>current_date</code> is...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Miami (all levels)</td>
+<td>9 days before through 28 days after <code>quarter_end_date_insession</code></td>
+</tr>
+<tr>
+<td>HS, Q3</td>
+<td>9 days after through 20 days after <code>quarter_end_date_insession</code></td>
+</tr>
+<tr>
+<td>HS, Q3 (outside above range)</td>
+<td>Never (<code>FALSE</code>)</td>
+</tr>
+<tr>
+<td>All others</td>
+<td>5 days before through 14 days after <code>quarter_end_date_insession</code></td>
+</tr>
+</tbody>
+</table>
+<p>!!! note "KIPP Sumner Elementary grade 5" Grade 5 sections at KIPP Sumner
+Elementary were treated as MS (<code>school_level_alt = 'MS'</code>) rather than ES. This
+override was applied in the <code>sections</code> CTE and propagated through
+<code>region_school_level</code> and all downstream school-level filters.</p>
+<h4 id="int_tableau__gradebook_audit_student_scaffold"><code>int_tableau__gradebook_audit_student_scaffold</code></h4>
+<p>Added enrolled students to the teacher scaffold. Mirrored the two-branch
+structure of <code>int_tableau__gradebook_audit_teacher_scaffold</code> at the student
+grain — <code>student_scaffold</code> produced quarter-level flags, and
+<code>student_category_scaffold</code> produced flags tied to a specific gradebook
+category.</p>
+<p><strong>Scope</strong>: <code>current_academic_year</code>, <code>enroll_status = 0</code>, not out-of-district,
+<code>rn_year = 1</code> (deduplicated enrollment), <code>sections_no_of_students != 0</code>.
+Inherited all section and category exclusions from the teacher scaffold via
+INNER JOIN.</p>
+<p><strong>Source table temporal scope</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int_extracts__student_enrollments</code></td>
+<td>Multi-year</td>
+</tr>
+<tr>
+<td><code>base_powerschool__course_enrollments</code></td>
+<td>Multi-year</td>
+</tr>
+<tr>
+<td><code>int_powerschool__category_grades</code></td>
+<td>Multi-year</td>
+</tr>
+<tr>
+<td><code>base_powerschool__final_grades</code></td>
+<td>Current year only</td>
+</tr>
+<tr>
+<td><code>stg_powerschool__storedgrades</code></td>
+<td>Multi-year</td>
+</tr>
+<tr>
+<td><code>int_tableau__gradebook_audit_teacher_scaffold</code></td>
+<td>Current year only</td>
+</tr>
+</tbody>
+</table>
+<p>!!! note "quarter_course_grades CTE — summer refresh toggle" The
+<code>quarter_course_grades</code> CTE UNIONed two sources:</p>
+<pre><code>- `'current_year'` — from `base_powerschool__final_grades` (current year
+  only), filtered to `termbin_start_date &lt;= current_date`
+- `'last_year'` — from `stg_powerschool__storedgrades` for
+  `current_academic_year - 1`, `storecode_type = 'Q'`, non-transfer grades
+
+The JOIN filtered to `grades_type = 'current_year'` during the school year.
+After PowerSchool rolled over in summer, flip to `grades_type = 'last_year'`
+to keep the dashboard operational. Flip back when new-year data was ready.
+</code></pre>
+<p><strong><code>student_scaffold</code></strong> — boolean columns unpivoted in
+<code>int_tableau__gradebook_audit_flags</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>qt_student_is_ada_80_plus_gpa_less_2</code></td>
+<td>Non-ES (Camden/Newark/Miami-MS); ADA &gt;= 80% and quarter GPA &lt; 2.0</td>
+</tr>
+<tr>
+<td><code>qt_percent_grade_greater_100</code></td>
+<td>Camden and Miami (ES/MS/HS) only; quarter course percent grade &gt; 100</td>
+</tr>
+<tr>
+<td><code>qt_grade_70_comment_missing</code></td>
+<td>Non-ES; EOQ window; grade &lt; 70; comment is null</td>
+</tr>
+<tr>
+<td><code>qt_comment_missing</code></td>
+<td>MiamiES; EOQ window; comment is null</td>
+</tr>
+<tr>
+<td><code>qt_es_comment_missing</code></td>
+<td>CamdenES or NewarkES; EOQ window; credit type in (HR, MATH, ENG, RHET); comment is null</td>
+</tr>
+<tr>
+<td><code>qt_g1_g8_conduct_code_missing</code></td>
+<td>Miami G1-G8; EOQ window; non-HR course; conduct is null</td>
+</tr>
+<tr>
+<td><code>qt_g1_g8_conduct_code_incorrect</code></td>
+<td>Miami G1-G8; EOQ window; non-HR course; conduct not in (A, B, C, D, E, F)</td>
+</tr>
+<tr>
+<td><code>qt_kg_conduct_code_missing</code></td>
+<td>MiamiES KG; EOQ window; HR course; conduct is null</td>
+</tr>
+<tr>
+<td><code>qt_kg_conduct_code_incorrect</code></td>
+<td>MiamiES KG; EOQ window; HR course; conduct not in (E, G, S, M)</td>
+</tr>
+<tr>
+<td><code>qt_kg_conduct_code_not_hr</code></td>
+<td>MiamiES KG; EOQ window; non-HR course; conduct is not null</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>student_category_scaffold</code></strong> — category-level boolean columns:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>w_grade_inflation</code></td>
+<td>Non-ES; student's W% differs from class-wide W average by &gt;= 30 percentage points</td>
+</tr>
+<tr>
+<td><code>qt_effort_grade_missing</code></td>
+<td>Miami (ES and MS); W category; EOQ window; category grade is null</td>
+</tr>
+<tr>
+<td><code>qt_formative_grade_missing</code></td>
+<td>MiamiES only; F category; EOQ window; category grade is null</td>
+</tr>
+<tr>
+<td><code>qt_summative_grade_missing</code></td>
+<td>MiamiES only; S category; non-ENG/MATH; EOQ window; category grade is null</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="assignment-and-category-rollup-layer_1">Assignment and category rollup layer</h3>
+<h4 id="int_powerschool__gradebook_assignments_scores_1"><code>int_powerschool__gradebook_assignments_scores</code></h4>
+<p>One row per student × assignment. Generated every assignment a student should
+have a score for based on enrollment dates — including assignments in exempt
+courses or gradebook categories, which were filtered out downstream.</p>
+<p><strong>Key business logic</strong>: The INNER JOIN to
+<code>base_powerschool__course_enrollments</code> on
+<code>duedate between cc_dateenrolled and cc_dateleft</code> scoped each assignment to
+only the students whose enrollment was active when the assignment was due. The
+LEFT JOIN to <code>stg_powerschool__assignmentscore</code> meant a student row existed
+even when no score had been entered.</p>
+<p><strong>Key computed columns</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>is_expected</code></td>
+<td>True if not exempt and <code>iscountedinfinalgrade = 1</code></td>
+</tr>
+<tr>
+<td><code>is_expected_null</code></td>
+<td><code>is_expected</code> and <code>score_entered is null</code></td>
+</tr>
+<tr>
+<td><code>is_expected_zero</code></td>
+<td><code>is_expected</code> and <code>score_entered = 0</code></td>
+</tr>
+<tr>
+<td><code>is_expected_missing</code></td>
+<td><code>is_expected</code> and <code>is_missing = 1</code></td>
+</tr>
+<tr>
+<td><code>is_expected_late</code></td>
+<td><code>is_expected</code> and <code>is_late = 1</code></td>
+</tr>
+<tr>
+<td><code>is_expected_scored</code></td>
+<td><code>is_expected</code> and <code>score_entered is not null</code></td>
+</tr>
+<tr>
+<td><code>is_academic_dishonesty</code></td>
+<td>HS; <code>score_entered = 0</code> and not marked missing</td>
+</tr>
+<tr>
+<td><code>is_expected_academic_dishonesty</code></td>
+<td><code>is_expected</code> and HS; <code>score_entered = 0</code> and not marked missing</td>
+</tr>
+<tr>
+<td><code>score_entered</code></td>
+<td><code>scorepoints</code> for POINTS; <code>actualscoreentered</code> cast to numeric for PERCENT</td>
+</tr>
+<tr>
+<td><code>half_total_point_value</code></td>
+<td><code>totalpointvalue / 2</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Per-student per-assignment flags</strong> (AY 2025-2026 — 16 flags):</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assign_null_score</code></td>
+<td><code>is_expected_null = 1</code> (score field is blank)</td>
+</tr>
+<tr>
+<td><code>assign_score_above_max</code></td>
+<td><code>score_entered &gt; totalpointvalue</code></td>
+</tr>
+<tr>
+<td><code>assign_w_score_less_5</code></td>
+<td>W; not missing; <code>score_entered &lt; 5</code></td>
+</tr>
+<tr>
+<td><code>assign_h_score_less_5</code></td>
+<td>H; not missing; <code>score_entered &lt; 5</code></td>
+</tr>
+<tr>
+<td><code>assign_f_score_less_5</code></td>
+<td>F; not missing; <code>score_entered &lt; 5</code></td>
+</tr>
+<tr>
+<td><code>assign_w_missing_score_not_5</code></td>
+<td>W; non-HS; marked missing; <code>score_entered != 5</code></td>
+</tr>
+<tr>
+<td><code>assign_h_missing_score_not_5</code></td>
+<td>H; non-HS; marked missing; <code>score_entered != 5</code></td>
+</tr>
+<tr>
+<td><code>assign_f_missing_score_not_5</code></td>
+<td>F; non-HS; marked missing; <code>score_entered != 5</code></td>
+</tr>
+<tr>
+<td><code>assign_w_missing_score_not_0</code></td>
+<td>W; HS; marked missing; <code>score_entered != 0</code></td>
+</tr>
+<tr>
+<td><code>assign_h_missing_score_not_0</code></td>
+<td>H; HS; marked missing; <code>score_entered != 0</code></td>
+</tr>
+<tr>
+<td><code>assign_f_missing_score_not_0</code></td>
+<td>F; HS; marked missing; <code>score_entered != 0</code></td>
+</tr>
+<tr>
+<td><code>assign_s_missing_score_not_0</code></td>
+<td>S; HS; marked missing; <code>score_entered != 0</code></td>
+</tr>
+<tr>
+<td><code>assign_s_score_less_50p</code></td>
+<td>S; non-HS; <code>score_entered &lt; half_total_point_value</code></td>
+</tr>
+<tr>
+<td><code>assign_s_hs_score_less_50p</code></td>
+<td>S; HS; not missing; <code>score_entered &lt; half_total_point_value</code></td>
+</tr>
+<tr>
+<td><code>assign_s_ms_score_not_conversion_chart_options</code></td>
+<td>S; MS; not exempt; not null; score not on MS chart</td>
+</tr>
+<tr>
+<td><code>assign_s_hs_score_not_conversion_chart_options</code></td>
+<td>S; HS; not AP; not exempt; not null; score not on HS chart</td>
+</tr>
+</tbody>
+</table>
+<p>Feeds <code>int_tableau__gradebook_audit_assignments_student</code> (student-level flags)
+and <code>int_tableau__gradebook_audit_assignments_teacher</code> (teacher-level flags).</p>
+<h4 id="int_tableau__gradebook_audit_assignments_student"><code>int_tableau__gradebook_audit_assignments_student</code></h4>
+<p>One row per student × assignment × week. Joined
+<code>int_tableau__gradebook_audit_student_scaffold</code> (<code>student_category_scaffold</code>
+variant) to <code>int_powerschool__gradebook_assignments_scores</code> on
+<code>sections_dcid + students_dcid + category_code + duedate within week</code>.</p>
+<p>Assignment-level filters in the JOIN condition: <code>iscountedinfinalgrade = 1</code> and
+<code>scoretype in ('POINTS', 'PERCENT')</code>. Assignments that failed these criteria
+were excluded entirely rather than producing a flag.</p>
+<h4 id="int_tableau__gradebook_audit_assignments_teacher"><code>int_tableau__gradebook_audit_assignments_teacher</code></h4>
+<p>One row per section × assignment × week. Joined the teacher category scaffold
+to <code>int_powerschool__gradebook_assignments</code> on
+<code>sections_dcid + category_name + duedate within week window</code>, then to
+<code>int_powerschool__gradebook_assignments_scores</code> aggregated by
+<code>assignmentsectionid</code>.</p>
+<p><strong>Exception handling</strong> — own exception join to
+<code>stg_google_sheets__gradebook_exceptions</code> (<code>view_name = 'assignments_teacher'</code>,
+<code>cte is null</code>, keyed by <code>course_number</code> and <code>is_quarter_end_date_range</code>). When
+an exception row matched, all aggregate rollup columns were set to <code>null</code>.</p>
+<p><strong>Class-level max-score flags</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>w_assign_max_score_not_10</code></td>
+<td>W assignment; <code>totalpointvalue != 10</code></td>
+</tr>
+<tr>
+<td><code>h_assign_max_score_not_10</code></td>
+<td>H assignment (non-ES); <code>totalpointvalue != 10</code></td>
+</tr>
+<tr>
+<td><code>f_assign_max_score_not_10</code></td>
+<td>F assignment; <code>totalpointvalue != 10</code></td>
+</tr>
+<tr>
+<td><code>s_max_score_greater_100</code></td>
+<td>Miami S assignment; <code>totalpointvalue &gt; 100</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Aggregates passed downstream</strong>:</p>
+<ul>
+<li><code>n_students</code>, <code>n_late</code>, <code>n_exempt</code>, <code>n_missing</code>, <code>n_null</code>,
+  <code>n_academic_dishonesty</code>, <code>n_is_null_missing</code>, <code>n_is_null_not_missing</code>,
+  <code>n_expected</code>, <code>n_expected_scored</code></li>
+<li><code>teacher_avg_score_for_assign_per_class_section_and_assign_id</code></li>
+<li><code>sum_totalpointvalue_section_quarter_category</code></li>
+<li><code>teacher_running_total_assign_by_cat</code></li>
+</ul>
+<h4 id="int_tableau__gradebook_audit_categories_teacher"><code>int_tableau__gradebook_audit_categories_teacher</code></h4>
+<p>One row per section × category × week. Joined the teacher category scaffold to
+<code>int_powerschool__gradebook_assignments</code> and
+<code>int_powerschool__gradebook_assignments_scores</code>, then aggregated to category
+level.</p>
+<p><strong>Per-category per-section flags</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Fires when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>w_expected_assign_count_not_met</code></td>
+<td>W; <code>teacher_running_total_assign_by_cat &lt; expectation</code></td>
+</tr>
+<tr>
+<td><code>h_expected_assign_count_not_met</code></td>
+<td>H; same</td>
+</tr>
+<tr>
+<td><code>f_expected_assign_count_not_met</code></td>
+<td>F; same</td>
+</tr>
+<tr>
+<td><code>s_expected_assign_count_not_met</code></td>
+<td>S; same</td>
+</tr>
+<tr>
+<td><code>w_percent_graded_min_not_met</code></td>
+<td>W; <code>percent_graded_for_quarter_week_class &lt; 0.70</code></td>
+</tr>
+<tr>
+<td><code>h_percent_graded_min_not_met</code></td>
+<td>H; same</td>
+</tr>
+<tr>
+<td><code>f_percent_graded_min_not_met</code></td>
+<td>F; same</td>
+</tr>
+<tr>
+<td><code>s_percent_graded_min_not_met</code></td>
+<td>S; same</td>
+</tr>
+<tr>
+<td><code>qt_teacher_s_total_greater_200</code></td>
+<td>S; non-MiamiES; <code>sum_totalpointvalue &gt; 200</code></td>
+</tr>
+<tr>
+<td><code>qt_teacher_s_total_less_200</code></td>
+<td>S; non-MiamiES; <code>sum_totalpointvalue &lt; 200</code></td>
+</tr>
+<tr>
+<td><code>qt_teacher_s_total_greater_100</code></td>
+<td>S; MiamiES; <code>sum_totalpointvalue &gt; 100</code></td>
+</tr>
+<tr>
+<td><code>qt_teacher_s_total_less_100</code></td>
+<td>S; MiamiES; <code>sum_totalpointvalue &lt; 100</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="flag-assembly-int_tableau__gradebook_audit_flags">Flag assembly: <code>int_tableau__gradebook_audit_flags</code></h3>
+<p>Six-branch <code>UNION ALL</code> that converted boolean flag columns to rows, applied the
+active-flag allowlist, and applied suppressions. Single source for
+<code>rpt_tableau__gradebook_audit</code>.</p>
+<h4 id="design-principle-cte_grouping-determines-what-columns-a-row-carries">Design principle: <code>cte_grouping</code> determines what columns a row carries</h4>
+<p>Each flag in <code>stg_google_sheets__gradebook_flags</code> had a <code>cte_grouping</code> value
+that encoded the grain of information that flag needed. The UNION ALL schema was
+wide enough to hold every grain, but each branch only populated the columns
+meaningful for its grouping — everything else was <code>null</code>.</p>
+<table>
+<thead>
+<tr>
+<th><code>cte_grouping</code></th>
+<th>Carries</th>
+<th>Nulls out</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>assignment_student</code></td>
+<td>Student + section + assignment + teacher aggregates</td>
+<td>Category-level agg columns</td>
+</tr>
+<tr>
+<td><code>student_course</code></td>
+<td>Student + section (quarter grain)</td>
+<td>Category, assignment, teacher agg cols</td>
+</tr>
+<tr>
+<td><code>student_course_category</code></td>
+<td>Student + section + category</td>
+<td>Assignment, teacher agg columns</td>
+</tr>
+<tr>
+<td><code>class_category_assignment</code></td>
+<td>Section + assignment + teacher agg counts</td>
+<td>Student columns</td>
+</tr>
+<tr>
+<td><code>class_category</code></td>
+<td>Section + category-level agg columns</td>
+<td>Student columns, per-assignment counts</td>
+</tr>
+</tbody>
+</table>
+<h4 id="pattern-per-cte">Pattern per CTE</h4>
+<div class="highlight"><pre><span></span><code><span class="o">&lt;</span><span class="n">source_model</span><span class="o">&gt;</span><span class="w"> </span><span class="n">UNPIVOT</span><span class="w"> </span><span class="p">(</span><span class="n">audit_flag_value</span><span class="w"> </span><span class="k">FOR</span><span class="w"> </span><span class="n">audit_flag_name</span><span class="w"> </span><span class="k">IN</span><span class="w"> </span><span class="p">(...</span><span class="n">flags</span><span class="p">...))</span>
+<span class="k">INNER</span><span class="w"> </span><span class="k">JOIN</span><span class="w"> </span><span class="n">stg_google_sheets__gradebook_flags</span><span class="w">   </span><span class="c1">-- allowlist</span>
+<span class="k">LEFT</span><span class="w"> </span><span class="k">JOIN</span><span class="w"> </span><span class="n">stg_google_sheets__gradebook_exceptions</span><span class="w">  </span><span class="c1">-- suppression</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">include_row</span><span class="w"> </span><span class="k">IS</span><span class="w"> </span><span class="k">NULL</span>
+</code></pre></div>
+<h4 id="cte-inventory">CTE inventory</h4>
+<table>
+<thead>
+<tr>
+<th>CTE</th>
+<th>Source</th>
+<th><code>cte_grouping</code></th>
+<th>Flags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>student_unpivot</code></td>
+<td><code>int_tableau__gradebook_audit_assignments_student</code></td>
+<td><code>assignment_student</code></td>
+<td>16</td>
+</tr>
+<tr>
+<td><code>teacher_unpivot_cca</code></td>
+<td><code>int_tableau__gradebook_audit_assignments_teacher</code></td>
+<td><code>class_category_assignment</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>teacher_unpivot_cc</code></td>
+<td><code>int_tableau__gradebook_audit_categories_teacher</code></td>
+<td><code>class_category</code></td>
+<td>12</td>
+</tr>
+<tr>
+<td><code>eoq_items</code></td>
+<td><code>int_tableau__gradebook_audit_student_scaffold</code></td>
+<td><code>student_course</code>, <code>student</code></td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>eoq_items_conduct_code</code></td>
+<td><code>int_tableau__gradebook_audit_student_scaffold</code></td>
+<td><code>student_course</code></td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>student_course_category</code></td>
+<td><code>int_tableau__gradebook_audit_student_scaffold</code></td>
+<td><code>student_course_category</code></td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="final-extract-rpt_tableau__gradebook_audit_1">Final extract: <code>rpt_tableau__gradebook_audit</code></h3>
+<p><strong>Design intent</strong>: Every possible flag slot — whether or not a flag actually
+fired — must appear as a row so Tableau can compute a teacher health score
+(active errors / total possible checks). <code>teacher_aggs</code> produced that full set.
+The LEFT JOIN to <code>valid_flags</code> attached student data and set <code>flag_value = 1</code>
+when a flag fired; unmatched slots got <code>coalesce(v.flag_value, 0) = 0</code>.</p>
+<p>!!! note "FYI Flags — excluded from the Tableau health score" Five flags were
+informational only. They appeared in the extract but were excluded from the
+gradebook completion rate in Tableau via a calculated field on
+<code>[Audit Flag Name]</code>:</p>
+<pre><code>- `qt_student_is_ada_80_plus_gpa_less_2`
+- `w_grade_inflation`
+- `qt_teacher_s_total_less_200`
+- `assign_s_hs_score_not_conversion_chart_options`
+- `assign_s_ms_score_not_conversion_chart_options`
+</code></pre>
+<p><strong>Five-branch UNION ALL</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Branch</th>
+<th><code>cte_grouping</code> / <code>code_type</code></th>
+<th>Includes <code>teacher_assign_id</code>?</th>
+<th>Includes <code>assignment_category_term</code>?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>code_type = 'Gradebook Category'</code> + <code>cte_grouping = 'assignment_student'</code></td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>cte_grouping = 'student_course_category'</code></td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>code_type = 'Quarter'</code> + <code>cte_grouping != 'student_course_category'</code></td>
+<td>No</td>
+<td>No</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>code_type = 'Gradebook Category'</code> + <code>cte_grouping = 'class_category_assignment'</code></td>
+<td>Yes</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>code_type = 'Gradebook Category'</code> + <code>cte_grouping = 'class_category'</code></td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>All branches filtered
+<code>audit_start_date &lt;= current_date('{{ var("local_timezone") }}')</code> and
+<code>not is_current_week</code>. The current week was always excluded — grading was still
+in progress.</p>
+</details>
+<hr />
+<details class="note">
+<summary>Deprecated: gradebook_flags configuration</summary>
+<p>!!! warning "Deprecated in AY 2026-2027" This model is disabled
+(<code>config: enabled: false</code>) as of AY 2026-2027.</p>
+<pre><code>**Why it was removed:** the AY 2026-2027 refactor consolidated all
+individual flag signals into a small set of boolean columns
+(`is_healthy_gradebook_all_flags` / `is_healthy_gradebook_excl_comments`
+as of the July 2026 teacher/student split — see below). The audit no
+longer calculates a per-flag gradebook score or reports individual flags
+to Tableau — it surfaces only whether a teacher's gradebook is healthy or
+not. With no per-flag filtering needed, the per-flag allowlist sheet
+became vestigial.
+
+The source sheet, staging SQL, and YAML remain in the repository in case
+the per-flag reporting approach is restored in a future year. The INNER
+JOIN to this model was removed from the pipeline in AY 2026-2027, and the
+`audit_category` and `code_type` columns it provided were dropped from
+`rpt_tableau__gradebook_audit`.
+
+The `src_google_sheets__gradebook_flags` source is also disabled
+(`config: enabled: false` in `sources-external.yml`) as of AY 2026-2027 —
+MS signed off on the same audit model as HS, so the sheet has no remaining
+consumer in any region. Dagster no longer pulls the sheet into BigQuery.
+Re-enable the source before re-enabling the staging model if this is ever
+restored.
+</code></pre>
+<p>Previously, this was the flag allowlist. A flag only appeared in the dashboard
+if a matching row existed in this table, making it the primary on/off switch for
+every audit check.</p>
+<p><strong>Grain</strong>: one row per
+<code>academic_year × region × school_level × code × audit_flag_name</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code_type</code></td>
+<td><code>'Quarter'</code> (EOQ flags) or <code>'Gradebook Category'</code> (weekly flags)</td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td>Quarter (<code>Q3</code>, <code>Q4</code>) or category code (<code>W</code>, <code>H</code>, <code>F</code>, <code>S</code>)</td>
+</tr>
+<tr>
+<td><code>audit_category</code></td>
+<td>Human-readable grouping shown in Tableau (e.g., <code>'Missing Score'</code>, <code>'Conduct Code'</code>)</td>
+</tr>
+<tr>
+<td><code>audit_flag_name</code></td>
+<td>Snake-case name matching the boolean column in the source model</td>
+</tr>
+<tr>
+<td><code>cte_grouping</code></td>
+<td>Which UNION branch in <code>int_tableau__gradebook_audit_flags_calculations</code> this row targeted (model deleted July 2026 — historical reference only)</td>
+</tr>
+<tr>
+<td><code>grade_level</code></td>
+<td>Set only for conduct code flags that require a grade-level-specific join</td>
+</tr>
+<tr>
+<td><code>alt_code</code></td>
+<td>Computed in staging; maps student-category flags to their category code for joining</td>
+</tr>
+</tbody>
+</table>
+</details>
+<hr />
+<details class="note">
+<summary>Superseded: Q1/Q2 removal (May 2026)</summary>
+<p>In May 2026, Q1 and Q2 were removed from the (now disabled)
+<code>int_tableau__gradebook_audit_teacher_scaffold</code> by adding
+<code>t.term not in ('Q1', 'Q2')</code> to its <code>term_weeks</code> CTE. This was not a policy
+change — the audit policy for Q1 and Q2 was unchanged — but a volume reduction
+to address Tableau Server refresh failures. The AY 2026-2027 quarter-grain
+pipeline restored full Q1-Q4 coverage, superseding this workaround.</p>
+<p>Tracking issue: <a href="https://github.com/TEAMSchools/teamster/issues/3908">#3908</a></p>
+</details>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1997 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Focus SIS database (Postgres) — ERD reference - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#focus-sis-database-postgres-erd-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Focus SIS database (Postgres) — ERD reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#conventions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conventions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attendance-calendar-singular-vs-plural-the-trap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attendance calendar — singular vs plural (the trap)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#students-people-contacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Students, people, contacts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#student-enrollment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Student enrollment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attendance-day-and-period" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Attendance (day and period)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#courses-course-periods-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Courses, course periods, schedule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grades-standards-gradebook" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grades, standards, gradebook
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Discipline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-history" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test history
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#users" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Users
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#custom-fields-critical-for-querying" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom fields (critical for querying)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-domains-table-inventories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other domains (table inventories)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/references/focus-db-erd.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="focus-sis-database-postgres-erd-reference">Focus SIS database (Postgres) — ERD reference</h1>
+<blockquote>
+<p>Source: "Focus DB Diagram.pdf" (2024 User Conference FOCUS Database, ERD
+Diagram; Focus School Software). A partial ERD in Crow's Foot notation
+covering the most-queried tables. Errors/omissions →
+<code>smooth@focusschoolsoftware.com</code>.</p>
+<p>This is the <strong>database</strong> schema (what the <code>dlt/focus</code> pull loads from the
+Focus Postgres <code>public</code> schema into <code>dagster_kippmiami_dlt_focus</code>). For the
+REST API surface, see <code>focus-api-spec.md</code>. For warehouse-query gotchas
+(soft-delete sentinel, <code>custom_NNN</code> decode, join pitfalls), see
+<code>src/dbt/focus/CLAUDE.md</code>.</p>
+</blockquote>
+<h2 id="conventions">Conventions</h2>
+<ul>
+<li><strong>PK / FK</strong> — Crow's Foot notation; a PK holds one distinct value, an FK may
+  repeat (many-to-one).</li>
+<li><strong><code>syear</code></strong> — school-year start year (e.g. <code>2026</code> = SY2026-27), matching
+  Finalsite <code>school_year_start</code> and the <code>int_focus__school_year_first_day</code>
+  derivation grain.</li>
+<li><strong><code>school_id</code></strong> joins to <code>schools.id</code>; the district-facing school number is
+  <code>schools.custom_327</code>. <strong><code>district_id</code></strong> joins to <code>districts.id</code>.</li>
+<li><strong>Soft delete</strong> — <code>deleted</code> is <code>NULL</code> for live rows and <code>1</code> for deleted, never
+  <code>0</code> (see <code>src/dbt/focus/CLAUDE.md</code>).</li>
+</ul>
+<h2 id="attendance-calendar-singular-vs-plural-the-trap">Attendance calendar — singular vs plural (the trap)</h2>
+<p>Two distinct tables, easy to confuse:</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Grain</th>
+<th>Key columns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>attendance_calendars</code></td>
+<td>one row per calendar (header)</td>
+<td>PK <code>calendar_id</code>, FK <code>school_id</code>, <code>syear</code>, <code>title</code>, <code>default_calendar</code></td>
+</tr>
+<tr>
+<td><code>attendance_calendar</code></td>
+<td><strong>one row per calendar day</strong></td>
+<td>PK <code>id</code>, FK <code>calendar_id</code>, FK <code>school_id</code>, <code>syear</code>, <strong><code>school_date</code></strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>student_enrollment.calendar_id</code> → <code>attendance_calendars.calendar_id</code> (the
+header). The <strong>actual in-session dates</strong> live in the singular
+<code>attendance_calendar</code>, keyed back to the header by <code>calendar_id</code>.</p>
+<p><strong>First day of school</strong> for a school year = <code>min(school_date)</code> in
+<code>attendance_calendar</code> for that <code>syear</code> (scope to the school's default calendar
+via <code>attendance_calendars.default_calendar</code>). This is the authoritative,
+registrar-maintained source for the enrollment start-date floor — independent of
+the Finalsite feed.</p>
+<p>Ingestion note: the <code>dlt/focus</code> pull historically loaded only
+<code>attendance_calendars</code> (header); <code>attendance_calendar</code> (dates) was added to
+<code>src/teamster/code_locations/kippmiami/dlt/focus/config/focus.yaml</code> so the dates
+land in the warehouse.</p>
+<h2 id="students-people-contacts">Students, people, contacts</h2>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>PK</th>
+<th>Key FKs / columns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>students</code></td>
+<td><code>student_id</code></td>
+<td><code>first_name</code>, <code>middle_name</code>, <code>last_name</code>, <code>custom_fields</code> (jsonb), <code>custom_*</code></td>
+</tr>
+<tr>
+<td><code>students_join_users</code></td>
+<td><code>id</code></td>
+<td>FK <code>student_id</code>, <code>person_id</code>, <code>staff_id</code></td>
+</tr>
+<tr>
+<td><code>students_join_people</code></td>
+<td><code>id</code></td>
+<td>FK <code>student_id</code>, <code>person_id</code>; <code>student_relation</code>, <code>sort_order</code>, <code>pickup</code>, <code>custody</code>, <code>emergency</code>, <code>deleted</code></td>
+</tr>
+<tr>
+<td><code>students_join_students</code></td>
+<td><code>id</code></td>
+<td>FK <code>primary_student_id</code>, <code>secondary_student_id</code></td>
+</tr>
+<tr>
+<td><code>students_join_groups</code></td>
+<td><code>id</code></td>
+<td>FK <code>group_id</code>, <code>student_id</code> (→ <code>student_groups.id</code>)</td>
+</tr>
+<tr>
+<td><code>students_join_address</code></td>
+<td><code>id</code></td>
+<td>FK <code>student_id</code>, <code>address_id</code></td>
+</tr>
+<tr>
+<td><code>address</code></td>
+<td><code>address_id</code></td>
+<td><code>address</code>, <code>address2</code>, <code>city</code>, <code>state</code>, <code>zipcode</code></td>
+</tr>
+<tr>
+<td><code>people</code></td>
+<td><code>person_id</code></td>
+<td><code>first_name</code>, <code>middle_name</code>, <code>last_name</code>, <code>title</code>, <code>deleted</code></td>
+</tr>
+<tr>
+<td><code>people_join_contacts</code></td>
+<td><code>id</code></td>
+<td>FK <code>person_id</code>; <code>title</code>, <code>value</code>, <code>callout</code>, <code>sms</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>students</code> is the hub: <code>student_id</code> fans out to enrollment, attendance,
+schedule, grades, discipline, SSS. Guardian/contact chain: <code>students</code> →
+<code>students_join_people</code> → <code>people</code> → <code>people_join_contacts</code>.</p>
+<h2 id="student-enrollment">Student enrollment</h2>
+<p><code>student_enrollment</code> (PK <code>id</code>) is the enrollment stint. Key FKs:</p>
+<ul>
+<li><code>student_id</code> → <code>students.student_id</code></li>
+<li><code>school_id</code> → <code>schools.id</code>; <code>district_id</code> → <code>districts.id</code></li>
+<li><code>grade_id</code> → <code>school_gradelevels.id</code></li>
+<li><code>enrollment_code</code> → <code>student_enrollment_codes.id</code> (rows of <code>type</code> = Add)</li>
+<li><code>drop_code</code> → <code>student_enrollment_codes.id</code> (rows of <code>type</code> = Drop)</li>
+<li><code>calendar_id</code> → <code>attendance_calendars.calendar_id</code></li>
+<li><code>team_id</code> → <code>scheduling_teams.id</code></li>
+<li><code>graduation_requirement_program</code> → <code>grad_subject_programs.id</code></li>
+<li>plus <code>start_date</code>, <code>end_date</code>, <code>syear</code></li>
+</ul>
+<p>Supporting: <code>student_enrollment_codes</code> (PK <code>id</code>, <code>short_name</code>, <code>title</code>, <code>type</code>),
+<code>school_gradelevels</code> (PK <code>id</code>, FK <code>school_id</code>, <code>short_name</code>, <code>title</code>),
+<code>scheduling_teams</code>, <code>grad_subject_programs</code>.</p>
+<h2 id="attendance-day-and-period">Attendance (day and period)</h2>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>PK</th>
+<th>Key FKs / columns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>attendance_day</code></td>
+<td><code>id</code></td>
+<td>FK <code>student_id</code>, <code>marking_period_id</code>; <code>syear</code>, <code>school_date</code>, <code>daily_code</code>, <code>state_value</code></td>
+</tr>
+<tr>
+<td><code>attendance_notes</code></td>
+<td><code>id</code></td>
+<td>FK <code>attendance_day_id</code>, <code>student_id</code></td>
+</tr>
+<tr>
+<td><code>attendance_period</code></td>
+<td><code>id</code></td>
+<td>FK <code>period_id</code>, <code>course_period_id</code>, <code>student_id</code>, <code>attendance_code</code>, <code>attendance_teacher_code</code>, <code>marking_period_id</code>; <code>school_date</code></td>
+</tr>
+<tr>
+<td><code>attendance_completed</code></td>
+<td><code>id</code></td>
+<td>FK <code>staff_id</code>, <code>school_id</code>, <code>period_id</code>, <code>course_period_id</code>; <code>school_date</code>, <code>syear</code></td>
+</tr>
+<tr>
+<td><code>attendance_codes</code></td>
+<td><code>id</code></td>
+<td>FK <code>school_id</code>; <code>syear</code>, <code>short_name</code>, <code>title</code></td>
+</tr>
+<tr>
+<td><code>marking_periods</code></td>
+<td><code>marking_period_id</code></td>
+<td>FK <code>school_id</code>; <code>syear</code>, <code>short_name</code>, <code>title</code>, <code>start_date</code>, <code>end_date</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>attendance_day</code> = daily attendance per student; <code>attendance_period</code> = per
+class-period attendance. <code>attendance_code</code> / <code>attendance_teacher_code</code> →
+<code>attendance_codes.id</code>.</p>
+<h2 id="courses-course-periods-schedule">Courses, course periods, schedule</h2>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>PK</th>
+<th>Key FKs / columns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>master_courses</code></td>
+<td><code>course_id</code></td>
+<td>FK <code>district_id</code>; <code>syear</code>, <code>short_name</code></td>
+</tr>
+<tr>
+<td><code>courses</code></td>
+<td><code>course_id</code></td>
+<td>FK <code>school_id</code>, <code>grad_subject_id</code>(<code>_2</code>,<code>_3</code>), <code>subject_id</code>, <code>store_category_id</code>; <code>syear</code>, <code>short_name</code>, <code>title</code></td>
+</tr>
+<tr>
+<td><code>course_subjects</code></td>
+<td><code>subject_id</code></td>
+<td>FK <code>school_id</code>; <code>short_name</code>, <code>title</code></td>
+</tr>
+<tr>
+<td><code>course_periods</code></td>
+<td><code>course_period_id</code></td>
+<td>FK <code>school_id</code>, <code>course_id</code>, <code>teacher_id</code>, <code>co_teacher_id1</code>–<code>10</code>, <code>marking_period_id</code>, <code>period_id</code>, <code>end_period_id</code>, <code>room</code>, <code>calendar_id</code>, <code>team_id</code>, <code>bell_schedule_id</code>, <code>grade_posting_scheme_id</code>, <code>grade_scale_id</code>, <code>standards_grade_scale_id</code>; <code>syear</code></td>
+</tr>
+<tr>
+<td><code>schedule</code></td>
+<td><code>id</code></td>
+<td>FK <code>school_id</code>, <code>student_id</code>, <code>course_id</code>, <code>course_period_id</code>, <code>marking_period_id</code>; <code>syear</code>, <code>start_date</code>, <code>end_date</code></td>
+</tr>
+<tr>
+<td><code>school_periods</code></td>
+<td><code>period_id</code></td>
+<td>FK <code>school_id</code></td>
+</tr>
+<tr>
+<td><code>co_teachers</code></td>
+<td>—</td>
+<td>FK <code>staff_id</code>, <code>course_period_id</code>, <code>school_id</code></td>
+</tr>
+<tr>
+<td><code>co_teacher_days</code></td>
+<td><code>id</code></td>
+<td>FK <code>teacher_id</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>course_periods</code> is the section (a course taught in a period by a teacher);
+<code>schedule</code> links a <code>student_id</code> to a <code>course_period_id</code>.</p>
+<h2 id="grades-standards-gradebook">Grades, standards, gradebook</h2>
+<ul>
+<li><code>student_report_card_grades</code> (PK <code>id</code>) — FK <code>school_id</code>, <code>student_id</code>,
+  <code>report_card_comment_id</code>, <code>report_card_grade_id</code>, <code>grade_scale_id</code>,
+  <code>marking_period_id</code>; <code>percent_grade</code>, <code>grade_title</code>, <code>credits</code>,
+  <code>credits_earned</code>, <code>course_num</code>, <code>course_title</code>, <code>syear</code>, FK <code>course_id</code>,
+  <code>grad_subject_id</code>.</li>
+<li><code>report_card_grades</code> (PK <code>id</code>) — FK <code>scale_id</code>, <code>school_id</code>; <code>grade_title</code>.</li>
+<li><code>report_card_grade_scales</code> (PK <code>id</code>) — <code>syear</code>, FK <code>school_id</code>,
+  <code>default_scale</code>.</li>
+<li><code>report_card_comments</code>, <code>student_report_card_grades_change_requests</code>,
+  <code>grade_change_request_reasons</code>.</li>
+<li><code>grad_subjects</code> / <code>grad_subject_credits</code> / <code>grad_subject_programs</code> /
+  <code>grad_subject_credit_course</code> / <code>grad_subject_credit_assessment</code> — graduation
+  requirement structure.</li>
+<li>Standards: <code>student_standard_grades</code> (PK <code>id</code>; FK <code>standard_id</code>, <code>course_id</code>,
+  <code>course_period_id</code>, <code>student_id</code>, <code>marking_period_id</code>, <code>grade_scale_id</code>,
+  <code>report_card_grade_id</code>), <code>standards</code> (FK <code>category_1_id</code>..<code>category_4_id</code>),
+  <code>standard_categories_1</code>..<code>_4</code> (FK <code>rollover_id</code>), <code>standards_join_courses</code>.</li>
+<li>Gradebook: <code>gradebook_grades</code> (FK <code>student_id</code>, <code>assignment_id</code>,
+  <code>standard_id</code>, <code>letter_grade</code>, <code>comment_codes</code>), <code>gradebook_assignments</code> (PK
+  <code>assignment_id</code>; FK <code>template_id</code>, <code>rubric_id</code>, <code>assignment_type_id</code>),
+  <code>gradebook_assignment_types</code>, <code>gradebook_templates</code> (FK <code>staff_id</code>, <code>schools</code>
+  delimited), <code>gradebook_*_join_course_periods</code>, <code>gradebook_comment_codes</code>.</li>
+</ul>
+<h2 id="discipline">Discipline</h2>
+<p><code>discipline_incidents</code> (PK <code>id</code>, FK <code>school_id</code>, <code>syear</code>) and
+<code>discipline_referrals</code> (PK <code>referral_id</code>; FK <code>attendance_code</code>,
+<code>attendance_period_id</code>, <code>school_id</code>, <code>student_id</code>, <code>merged_referral_id</code>,
+<code>tardy_threshold_id</code>; <code>referral_date</code>, <code>suspension_begin</code>, <code>suspension_end</code>)
+link via <code>discipline_incidents_join_referrals</code>. Codes/actions: <code>referral_codes</code>,
+<code>referral_code_offenses</code>, <code>referral_actions</code>, <code>referral_teacher_codes</code>,
+<code>tardy_threshold</code> (+ <code>_attendance_code</code>, <code>_school_period</code>), <code>letters</code> /
+<code>letter_queue</code> / <code>letter_triggers</code>.</p>
+<p>Note: <code>discipline_referrals</code> and <code>discipline_incidents</code> are custom-field
+<code>source_class</code> targets (see below).</p>
+<h2 id="test-history">Test history</h2>
+<p><code>test_history_administrations</code> (PK <code>id</code>; FK <code>test_id</code>, <code>student_id</code>,
+<code>fas_assignment_id</code>; <code>administration_date</code>) → <code>test_history_scores</code> (FK
+<code>administration_id</code>, <code>test_id</code>, <code>part_id</code>, <code>score_type_id</code>, <code>fas_section_id</code>,
+<code>student_id</code>; <code>test_code</code>, <code>score</code>). Reference: <code>test_history_tests</code>,
+<code>test_history_test_types</code>, <code>test_history_parts</code>, <code>test_history_score_types</code>,
+<code>test_history_score_ranges</code> (+ <code>_sublevels</code>), <code>eoc_scale</code> / <code>eoc_scale_sets</code>.</p>
+<h2 id="users">Users</h2>
+<p><code>users</code> (PK <code>staff_id</code>; <code>username</code>, <code>last_name</code>, <code>first_name</code>, <code>middle_name</code>,
+<code>ein</code>, FK <code>profiles</code>, <code>school_id</code>). Related: <code>user_enrollment</code> (FK <code>staff_id</code>,
+<code>profiles</code>, <code>erp_profiles</code>, <code>schools</code>; <code>start_date</code>, <code>end_date</code>),
+<code>user_profiles</code>, <code>permission</code> (FK <code>profile_id</code>, <code>key</code>), <code>user_permission</code>,
+<code>user_join_groups</code>, <code>login_history</code>, <code>teacher_student_flags</code>, <code>saved_reports</code>,
+<code>user_page_favorite</code>, <code>email_verification</code>, <code>email_notifications</code>.</p>
+<h2 id="custom-fields-critical-for-querying">Custom fields (critical for querying)</h2>
+<p>The custom-field system spans several tables:</p>
+<ul>
+<li><code>custom_fields</code> (PK <code>id</code>) — the field <strong>definition</strong> catalog: <code>source_id</code>,
+  <code>source_class</code>, <code>type</code>, <code>code</code>, <code>column_name</code>, <code>alias</code>, <code>json</code>, <code>required</code>,
+  <code>deleted</code>, <code>computed_query</code>, <code>default_value</code>, <code>fallback_value</code>, <code>system</code>.</li>
+<li><code>custom_field_select_options</code> (PK <code>id</code>) — allowed values for <code>select</code> /
+  <code>multiple</code> fields: <code>source_id</code>, <code>source_class</code>, <code>code</code>, <code>label</code>.</li>
+<li><code>custom_field_log_columns</code> / <code>custom_field_log_entries</code> — <code>log</code>-type field
+  values.</li>
+<li><code>custom_fields_join_categories</code>, <code>custom_field_categories</code>,
+  <code>custom_field_categories_join_schools</code>,
+  <code>custom_field_categories_join_profiles</code>.</li>
+</ul>
+<p><strong><code>source_class</code> → entity table + key</strong> (join <code>custom_fields.source_id</code> to):</p>
+<table>
+<thead>
+<tr>
+<th><code>source_class</code></th>
+<th>Table</th>
+<th>Key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SISStudent</code></td>
+<td><code>students</code></td>
+<td><code>student_id</code></td>
+</tr>
+<tr>
+<td><code>FocusUser</code></td>
+<td><code>users</code></td>
+<td><code>staff_id</code></td>
+</tr>
+<tr>
+<td><code>SISSchool</code></td>
+<td><code>schools</code></td>
+<td><code>id</code></td>
+</tr>
+<tr>
+<td><code>SISDistrict</code></td>
+<td><code>districts</code></td>
+<td><code>id</code></td>
+</tr>
+<tr>
+<td><code>SISDisciplineReferral</code></td>
+<td><code>discipline_referrals</code></td>
+<td><code>id</code></td>
+</tr>
+<tr>
+<td><code>SISDisciplineIncident</code></td>
+<td><code>discipline_incidents</code></td>
+<td><code>id</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Value storage by field <code>type</code>:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Stored as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>checkbox</code></td>
+<td>char — <code>null</code>, <code>N</code>, or <code>Y</code></td>
+</tr>
+<tr>
+<td><code>date</code></td>
+<td>timestamp</td>
+</tr>
+<tr>
+<td><code>select</code></td>
+<td><code>bigint</code> → <code>custom_field_select_options.id</code></td>
+</tr>
+<tr>
+<td><code>multiple</code></td>
+<td>delimited list of <code>custom_field_select_options.id</code></td>
+</tr>
+<tr>
+<td><code>numeric</code></td>
+<td>numeric</td>
+</tr>
+<tr>
+<td><code>text</code> / <code>textarea</code></td>
+<td>text</td>
+</tr>
+<tr>
+<td><code>signature</code> / <code>time</code></td>
+<td>varchar</td>
+</tr>
+<tr>
+<td><code>json</code></td>
+<td>key/value pairs in <code>students.custom_fields</code> (jsonb); key = <code>column_name</code></td>
+</tr>
+<tr>
+<td><code>computed</code> / <code>computed_table</code></td>
+<td>not materialized — query lives in <code>custom_fields.computed_query</code>, resolvable only inside Focus</td>
+</tr>
+<tr>
+<td><code>file</code></td>
+<td>pointer to <code>focus_files.source_id</code></td>
+</tr>
+<tr>
+<td><code>holder</code></td>
+<td>UI layout placeholder (no data)</td>
+</tr>
+<tr>
+<td><code>log</code></td>
+<td>pointer to <code>custom_field_log_entries</code></td>
+</tr>
+</tbody>
+</table>
+<p>Values live inline on the entity's wide <code>custom_NNN</code> columns (e.g.
+<code>students.custom_327</code> = school number on <code>schools</code>). See
+<code>src/dbt/focus/CLAUDE.md</code> for the decode mechanics (match stored value against
+both <code>id</code> and <code>code</code>; <code>column_name</code> is uppercase in the catalog but lowercase on
+the entity table; filter <code>custom_field_select_options.source_class</code>).</p>
+<h2 id="other-domains-table-inventories">Other domains (table inventories)</h2>
+<ul>
+<li><strong>School choice</strong> — <code>school_choice_applications</code>, <code>_application_status</code>,
+  <code>_application_notes</code>, <code>_status</code>, <code>_programs</code>, <code>_program_categories</code>,
+  <code>_program_continuities</code>, <code>_program_seats</code>, <code>_zones</code>, <code>_tours_auditions</code> (+
+  <code>_types</code>).</li>
+<li><strong>SSS (student support services)</strong> — events/forms (<code>sss_events</code>,
+  <code>sss_event_instances</code>, <code>sss_forms</code>, <code>sss_form_instances</code>, <code>sss_event_steps</code> /
+  <code>_step_instances</code>, <code>sss_accommodations</code> (+ options / categories),
+  <code>sss_meeting_minutes</code>, <code>sss_tasks</code>, <code>sss_programs</code>, <code>sss_permissions</code>) and
+  goals/caseload (<code>sss_goals</code>, <code>sss_pmp_goals</code>, <code>sss_pmp_setup</code> /
+  <code>_data_points</code>, <code>sss_services</code>, <code>sss_service_code</code> (+ <code>_provider</code>),
+  <code>sss_caseload</code> / <code>_group</code> / <code>_service</code> (+ <code>_icd10</code>), <code>sss_progress_codes</code> /
+  <code>_updates</code>).</li>
+<li><strong>Communication</strong> — <code>communication_messages</code>, <code>_announcements</code>,
+  <code>_message_schools</code> / <code>_profiles</code> / <code>_recipients</code>, <code>_attendance_messages</code>,
+  <code>_schedules</code>, <code>_templates</code>, <code>_text</code>, <code>_audio</code>, <code>_queue</code>, <code>languages</code>.</li>
+<li><strong>Formbuilder</strong> — <code>formbuilder_forms</code>, <code>_components</code>, <code>_data</code>, <code>_instances</code>,
+  <code>_drafts</code>, <code>_revisions</code>, <code>_translations</code>, <code>_headers</code> / <code>_header_instances</code>,
+  <code>_collections</code>, <code>_objects</code>, <code>_actions</code>, <code>_tags</code> / <code>_join_tags</code>,
+  <code>_join_profiles</code>, <code>_form_fees</code>, <code>form_requests</code>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

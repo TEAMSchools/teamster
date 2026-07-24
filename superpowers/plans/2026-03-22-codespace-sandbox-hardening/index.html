@@ -1,0 +1,2165 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Codespace Sandbox Hardening Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#codespace-sandbox-hardening-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Codespace Sandbox Hardening Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#file-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Map
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Map">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-devcontainerjson-tmpfs-mount-capability-drops" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: devcontainer.json — tmpfs mount + capability drops
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-gitignore-add-symlink-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: .gitignore — add symlink names
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-sftp-transient-file-relocation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: SFTP transient file relocation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-claude-code-sandbox-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Claude Code sandbox configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-postcreatesh-bubblewrap-symlinks-sudo-removal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: postCreate.sh — bubblewrap, symlinks, sudo removal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-inject-secretssh-remove-sudo-update-paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: inject-secrets.sh — remove sudo, update paths
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-7-check-outputsh-remove-edit-from-matcher" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: check-output.sh — remove Edit from matcher
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-8-check-sensitivesh-restructure-by-tool-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: check-sensitive.sh — restructure by tool type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-9-container-rebuild-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: Container rebuild + verification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-10-sandbox-verification-gate-completed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: Sandbox verification gate — COMPLETED
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-11-audit-verify-no-stale-envenv-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: Audit — verify no stale env/.env references
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-03-22-codespace-sandbox-hardening.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="codespace-sandbox-hardening-implementation-plan">Codespace Sandbox Hardening Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Harden the GitHub Codespaces dev environment with OS-level isolation
+(tmpfs, capability drops, sudo removal), Claude Code sandbox mode, and
+restructured hook protections.</p>
+<p><strong>Architecture:</strong> Three-layer defense model — OS hardening (container level),
+Claude Code sandbox (bash subprocess isolation), and hooks (Claude tool-level
+protection). Each rule lives in the strongest layer that covers it. Protected
+files (<code>.devcontainer/scripts/</code>, <code>.claude/hooks/</code>) must be drafted for manual
+application due to hook self-protection rules.</p>
+<p><strong>Tech Stack:</strong> devcontainer.json, bash (postCreate.sh, inject-secrets.sh, hook
+scripts), Claude Code settings.json, Python (sftp/assets.py)</p>
+<p><strong>Spec:</strong>
+<a href="../../specs/2026-03-20-codespace-sandbox-hardening-design/">2026-03-20-codespace-sandbox-hardening-design.md</a></p>
+<hr />
+<h2 id="file-map">File Map</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Action</th>
+<th>Task</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.devcontainer/devcontainer.json</code></td>
+<td>Modify</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>.gitignore</code></td>
+<td>Modify</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>src/teamster/libraries/sftp/assets.py</code></td>
+<td>Modify</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>.claude/settings.json</code></td>
+<td>Modify (manual)</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>.devcontainer/scripts/postCreate.sh</code></td>
+<td>Modify (manual)</td>
+<td>5</td>
+</tr>
+<tr>
+<td><code>.devcontainer/scripts/inject-secrets.sh</code></td>
+<td>Modify (manual)</td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>.claude/hooks/check-output.sh</code></td>
+<td>Modify (manual)</td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>tests/hooks/test_output_scanner.sh</code></td>
+<td>Modify (manual)</td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>.claude/hooks/check-sensitive.sh</code></td>
+<td>Modify (manual)</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>tests/hooks/test_sensitive_paths.sh</code></td>
+<td>Modify (manual)</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>tests/hooks/test_self_protection.sh</code></td>
+<td>Modify (manual)</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>tests/hooks/test_bypass_protection.sh</code></td>
+<td>Modify (manual)</td>
+<td>8</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Manual application pattern:</strong> For files in <code>.devcontainer/scripts/</code> and
+<code>.claude/hooks/</code>, the hook self-protection rule blocks Edit/Write. Draft the
+complete replacement to <code>/tmp/&lt;filename&gt;</code> and present it to the user with the
+target path and line numbers. The user copies it into place.</p>
+<hr />
+<h3 id="task-1-devcontainerjson-tmpfs-mount-capability-drops">Task 1: devcontainer.json — tmpfs mount + capability drops</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.devcontainer/devcontainer.json</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add mounts and runArgs to devcontainer.json</strong></p>
+</li>
+</ul>
+<p>Add <code>mounts</code> and <code>runArgs</code> keys. Insert after the <code>"features"</code> block (after line
+8):</p>
+<div class="highlight"><pre><span></span><code>&quot;mounts&quot;: [
+  &quot;type=tmpfs,destination=/etc/secret-volume,tmpfs-mode=0700,tmpfs-size=10485760&quot;
+],
+&quot;runArgs&quot;: [
+  &quot;--cap-drop=NET_RAW&quot;,
+  &quot;--cap-drop=SYS_PTRACE&quot;,
+  &quot;--cap-drop=NET_ADMIN&quot;
+],
+// NOTE: SYS_ADMIN is NOT added — Codespaces silently strips --cap-add=SYS_ADMIN.
+// bwrap runs in weaker nested sandbox mode. See spec Section 2.
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify JSON is valid</strong></li>
+</ul>
+<p>Run: <code>cat .devcontainer/devcontainer.json | jq .</code></p>
+<p>Expected: valid JSON output with <code>mounts</code> and <code>runArgs</code> keys present.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<p>Write commit message to <code>/tmp/commit-msg.txt</code> and run
+<code>git commit -F /tmp/commit-msg.txt</code>.</p>
+<hr />
+<h3 id="task-2-gitignore-add-symlink-names">Task 2: .gitignore — add symlink names</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.gitignore</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add secret-volume and dagster-tmp to .gitignore</strong></p>
+</li>
+</ul>
+<p>Append to the top of <code>.gitignore</code> (after line 3, before the toptal block):</p>
+<div class="highlight"><pre><span></span><code>secret-volume
+dagster-tmp
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify entries are present</strong></li>
+</ul>
+<p>Run: <code>grep -n 'secret-volume\|dagster-tmp' .gitignore</code></p>
+<p>Expected: two matching lines.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.gitignore
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: add secret-volume and dagster-tmp to gitignore&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-sftp-transient-file-relocation">Task 3: SFTP transient file relocation</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/teamster/libraries/sftp/assets.py:180,312,334,338,454</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read the SFTP assets file</strong></p>
+</li>
+</ul>
+<p>Read <code>src/teamster/libraries/sftp/assets.py</code> around lines 178-182, 310-340, and
+452-456 to confirm the five <code>./env/</code> references.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Replace all five <code>./env/</code> references with <code>/tmp/dagster/</code></strong></li>
+</ul>
+<p>Use find-and-replace. All five occurrences use the pattern
+<code>f"./env/{context.asset_key</code> — replace <code>./env/</code> with <code>/tmp/dagster/</code> in each.</p>
+<p>Specific locations:</p>
+<ul class="task-list">
+<li>Line 180: <code>build_sftp_file_asset</code> — <code>sftp_get</code> local path</li>
+<li>Line 312: <code>build_sftp_archive_asset</code> — <code>sftp_get</code> local path</li>
+<li>Line 334: <code>build_sftp_archive_asset</code> — <code>zipfile.extract</code> output path</li>
+<li>Line 338: <code>build_sftp_archive_asset</code> — extracted file path</li>
+<li>
+<p>Line 454: <code>build_sftp_folder_asset</code> — <code>sftp_get</code> local path</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify no <code>./env/</code> references remain</strong></p>
+</li>
+</ul>
+<p>Run: <code>grep -n '\./env/' src/teamster/libraries/sftp/assets.py</code></p>
+<p>Expected: no output (all replaced).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run lint check</strong></li>
+</ul>
+<p>Run: <code>trunk check src/teamster/libraries/sftp/assets.py</code></p>
+<p>Expected: no new issues.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/teamster/libraries/sftp/assets.py
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor: relocate SFTP transient files from ./env/ to /tmp/dagster/&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-claude-code-sandbox-configuration">Task 4: Claude Code sandbox configuration</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.claude/settings.json</code> (manual — protected path)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read current settings.json</strong></p>
+</li>
+</ul>
+<p>Confirm the file structure and find the insertion point.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Draft updated settings.json</strong></li>
+</ul>
+<p>Add the <code>"sandbox"</code> key at the top level. Write complete updated file to
+<code>/tmp/settings.json</code>. The sandbox block:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">&quot;sandbox&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;enableWeakerNestedSandbox&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;filesystem&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;denyRead&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;~/.ssh&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;~/.config/gcloud&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;~/.kube&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;/etc/secret-volume&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./secret-volume&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;/proc/&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;/dev/fd/&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./.devcontainer/tpl/&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./env/&quot;</span>
+<span class="w">    </span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;denyWrite&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;./.claude/settings.json&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./.claude/settings.local.json&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./.claude/hooks/&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./.claude/shell-snapshots/&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./.devcontainer/scripts/&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./.git/hooks/&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;./.trunk/&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Present draft to user for manual application</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Validate JSON</strong></p>
+</li>
+</ul>
+<p>Run: <code>cat .claude/settings.json | jq .</code></p>
+<p>Expected: valid JSON with <code>sandbox</code> block present.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<p>Write commit message to <code>/tmp/commit-msg.txt</code> and run
+<code>git commit -F /tmp/commit-msg.txt</code>.</p>
+<hr />
+<h3 id="task-5-postcreatesh-bubblewrap-symlinks-sudo-removal">Task 5: postCreate.sh — bubblewrap, symlinks, sudo removal</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.devcontainer/scripts/postCreate.sh</code> (manual — protected path)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read the current postCreate.sh</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Draft the updated postCreate.sh to <code>/tmp/postCreate.sh</code></strong></p>
+</li>
+</ul>
+<p>Three changes from current:</p>
+<ol>
+<li><strong>Line 8:</strong> Add <code>bubblewrap socat</code> to the apt install command:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>sudo<span class="w"> </span>apt-get<span class="w"> </span>-y<span class="w"> </span>install<span class="w"> </span>--no-install-recommends<span class="w"> </span>sshpass<span class="w"> </span>bubblewrap<span class="w"> </span>socat<span class="w"> </span><span class="o">&amp;&amp;</span>
+</code></pre></div>
+<ol>
+<li>
+<p><strong>Remove lines 14 and 20:</strong> <code>sudo mkdir -p /etc/secret-volume</code> and
+   <code>sudo chmod 700 /etc/secret-volume</code> are no longer needed — the tmpfs mount in
+   devcontainer.json handles creation, and the chown in the privileged sequence
+   handles ownership.</p>
+</li>
+<li>
+<p><strong>After line 106 (after <code>wait</code>):</strong> Append the privileged sequence:</p>
+</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="c1"># transfer tmpfs ownership to vscode</span>
+sudo<span class="w"> </span>chown<span class="w"> </span>vscode:vscode<span class="w"> </span>/etc/secret-volume
+
+<span class="c1"># inject secrets</span>
+.devcontainer/scripts/inject-secrets.sh
+
+<span class="c1"># create convenience symlinks</span>
+ln<span class="w"> </span>-sf<span class="w"> </span>/etc/secret-volume<span class="w"> </span>/workspaces/teamster/secret-volume
+ln<span class="w"> </span>-sf<span class="w"> </span>/etc/secret-volume/.env<span class="w"> </span>/workspaces/teamster/env/.env
+mkdir<span class="w"> </span>-p<span class="w"> </span>/tmp/dagster
+ln<span class="w"> </span>-sf<span class="w"> </span>/tmp/dagster<span class="w"> </span>/workspaces/teamster/dagster-tmp
+
+<span class="c1"># remove sudo — must be last privileged step</span>
+sudo<span class="w"> </span>rm<span class="w"> </span>-f<span class="w"> </span>/usr/local/bin/sudo<span class="w"> </span>/usr/bin/sudo
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Present draft to user for manual application</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the file was applied</strong></p>
+</li>
+</ul>
+<p>Run: <code>head -10 .devcontainer/scripts/postCreate.sh</code> and
+<code>tail -15 .devcontainer/scripts/postCreate.sh</code></p>
+<p>Expected: bubblewrap/socat in apt install, privileged sequence at end.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<p>Write commit message to <code>/tmp/commit-msg.txt</code> and run
+<code>git commit -F /tmp/commit-msg.txt</code>.</p>
+<hr />
+<h3 id="task-6-inject-secretssh-remove-sudo-update-paths">Task 6: inject-secrets.sh — remove sudo, update paths</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.devcontainer/scripts/inject-secrets.sh</code> (manual — protected path)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Read the current inject-secrets.sh</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Draft the updated inject-secrets.sh to
+      <code>/tmp/inject-secrets.sh</code></strong></p>
+</li>
+</ul>
+<p>Changes:</p>
+<ol>
+<li>Replace the sudo block for secret file installation:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="c1"># before (remove):</span>
+sudo<span class="w"> </span>chown<span class="w"> </span>root:root<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">TMP_SECRET</span><span class="si">}</span><span class="s2">&quot;</span>
+sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">TMP_SECRET</span><span class="si">}</span><span class="s2">&quot;</span>
+sudo<span class="w"> </span>mv<span class="w"> </span>-f<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">TMP_SECRET</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;/etc/secret-volume/</span><span class="si">${</span><span class="nv">tpl</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># after:</span>
+install<span class="w"> </span>-m<span class="w"> </span><span class="m">600</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">TMP_SECRET</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="s2">&quot;/etc/secret-volume/</span><span class="si">${</span><span class="nv">tpl</span><span class="si">}</span><span class="s2">&quot;</span>
+</code></pre></div>
+<ol class="task-list">
+<li>
+<p>Change <code>.env</code> write target from <code>env/.env</code> to <code>/etc/secret-volume/.env</code>.</p>
+</li>
+<li>
+<p>Remove <code>env/.env.tmp</code> references from cleanup trap.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Present draft to user for manual application</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the file was applied</strong></p>
+</li>
+</ol>
+<p>Run: <code>grep -n 'sudo' .devcontainer/scripts/inject-secrets.sh</code></p>
+<p>Expected: no sudo references remain.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<p>Write commit message to <code>/tmp/commit-msg.txt</code> and run
+<code>git commit -F /tmp/commit-msg.txt</code>.</p>
+<hr />
+<h3 id="task-7-check-outputsh-remove-edit-from-matcher">Task 7: check-output.sh — remove Edit from matcher</h3>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>Modify: <code>.claude/hooks/check-output.sh</code> (manual — protected path)</li>
+<li>
+<p>Modify: <code>tests/hooks/test_output_scanner.sh</code> (manual)</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Draft updated check-output.sh to <code>/tmp/check-output.sh</code></strong></p>
+</li>
+</ul>
+<p>The only change is on line 9 — remove <code>Edit|</code> from the matcher regex:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># before (line 9):</span>
+<span class="o">[[</span><span class="w"> </span>!<span class="w"> </span><span class="si">${</span><span class="nv">tool_name</span><span class="si">}</span><span class="w"> </span><span class="o">=</span>~<span class="w"> </span>^<span class="o">(</span>Bash<span class="p">|</span>Read<span class="p">|</span>Edit<span class="p">|</span>Grep<span class="p">|</span>NotebookEdit<span class="p">|</span>WebFetch<span class="p">|</span>WebSearch<span class="p">|</span>mcp__.*<span class="o">)</span>$<span class="w"> </span><span class="o">]]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+
+<span class="c1"># after:</span>
+<span class="o">[[</span><span class="w"> </span>!<span class="w"> </span><span class="si">${</span><span class="nv">tool_name</span><span class="si">}</span><span class="w"> </span><span class="o">=</span>~<span class="w"> </span>^<span class="o">(</span>Bash<span class="p">|</span>Read<span class="p">|</span>Grep<span class="p">|</span>NotebookEdit<span class="p">|</span>WebFetch<span class="p">|</span>WebSearch<span class="p">|</span>mcp__.*<span class="o">)</span>$<span class="w"> </span><span class="o">]]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">0</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Draft updated test_output_scanner.sh to
+      <code>/tmp/test_output_scanner.sh</code></strong></li>
+</ul>
+<p>Add after line 90 (after the existing Write test):</p>
+<div class="highlight"><pre><span></span><code>check_output<span class="w"> </span><span class="s2">&quot;Edit tool output not scanned&quot;</span><span class="w"> </span>clean<span class="w"> </span>Edit<span class="w"> </span><span class="s2">&quot;op://vault/item/field&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Present both drafts to user for manual application</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Run hook tests to verify</strong></p>
+</li>
+</ul>
+<p>Run: <code>bash tests/hooks/test_output_scanner.sh</code></p>
+<p>Expected: all tests pass, including the new Edit test.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.claude/hooks/check-output.sh<span class="w"> </span>tests/hooks/test_output_scanner.sh
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;chore: remove Edit from output scanner matcher&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-8-check-sensitivesh-restructure-by-tool-type">Task 8: check-sensitive.sh — restructure by tool type</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>.claude/hooks/check-sensitive.sh</code> (manual — protected path)</li>
+<li>Modify: <code>tests/hooks/test_bypass_protection.sh</code> (manual)</li>
+<li>Modify: <code>tests/hooks/test_sensitive_paths.sh</code> (manual)</li>
+</ul>
+<p>This is the largest task. The hook is restructured from a flat rule list into
+three tool-type sections. Rule 6 is removed entirely. Rules 1/1b/2 remain
+applied to ALL tools (including Bash) — the verification gate in Task 10
+determines whether they can be removed from Bash scope later.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Draft the restructured check-sensitive.sh to
+      <code>/tmp/check-sensitive.sh</code></strong></li>
+</ul>
+<p>Reorganize the script into three sections. All regex patterns stay identical —
+only the structure changes:</p>
+<p><strong>Key structural changes:</strong></p>
+<ul>
+<li><strong>Rule 6</strong> (<code>/proc/*/</code>, <code>/dev/fd/</code>) — <strong>removed entirely</strong> (lines 119-122)</li>
+<li><strong>Rules 3, 3b, 3c, 4, 5, 5a-5d, 7</strong> — <strong>wrapped in
+  <code>if [[ ${tool_name} == "Bash" ]]; then ... fi</code></strong></li>
+<li><strong>Rules 1, 1b, 2</strong> — <strong>unchanged</strong>, still apply to ALL tools (including Bash)
+  pending the verification gate</li>
+<li><strong>Rule 8</strong> — <strong>unchanged</strong>, already scoped to <code>mcp__bigquery__*</code></li>
+</ul>
+<p>Section structure:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># ═══════════════════════════════════════════════════════════════════</span>
+<span class="c1"># Section 1: All tools — path-based protection</span>
+<span class="c1"># ═══════════════════════════════════════════════════════════════════</span>
+<span class="c1"># Rule 1: Sensitive file/directory patterns (unchanged)</span>
+<span class="c1"># Rule 1b: File-extension patterns (unchanged)</span>
+<span class="c1"># Rule 2: Hook self-protection (unchanged)</span>
+
+<span class="c1"># ═══════════════════════════════════════════════════════════════════</span>
+<span class="c1"># Section 2: Bash only — command-pattern protection</span>
+<span class="c1"># ═══════════════════════════════════════════════════════════════════</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[[</span><span class="w"> </span><span class="si">${</span><span class="nv">tool_name</span><span class="si">}</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">&quot;Bash&quot;</span><span class="w"> </span><span class="o">]]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">  </span><span class="c1"># Rule 3/3b/3c: Env var leakage (same regex)</span>
+<span class="w">  </span><span class="c1"># Rule 4: 1Password CLI (same regex)</span>
+<span class="w">  </span><span class="c1"># Rule 5/5a-5d: Encoding bypass (same regex)</span>
+<span class="w">  </span><span class="c1"># Rule 7: $VAR expansion (same regex)</span>
+<span class="k">fi</span>
+
+<span class="c1"># ═══════════════════════════════════════════════════════════════════</span>
+<span class="c1"># Section 3: BigQuery MCP — read-only enforcement</span>
+<span class="c1"># ═══════════════════════════════════════════════════════════════════</span>
+<span class="c1"># Rule 8: (unchanged)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Draft updated test_bypass_protection.sh to
+      <code>/tmp/test_bypass_protection.sh</code></strong></li>
+</ul>
+<p>Remove the "Pattern 6: Broad /proc access" section (lines 126-136) and the
+"/dev/fd/ bypass" section (lines 138-143). These rules no longer exist in the
+hook.</p>
+<p>Also add tests confirming Bash-only rules do NOT fire for file tools:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># ─── Tool-type scoping: Bash-only rules don&#39;t fire for file tools ──────</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">YELLOW</span><span class="si">}</span><span class="s2">Tool-type scoping: Bash-only rules for file tools</span><span class="si">${</span><span class="nv">NC</span><span class="si">}</span><span class="s2">&quot;</span>
+
+expect_allow<span class="w"> </span><span class="s2">&quot;Read file named printenv&quot;</span><span class="w"> </span>Read<span class="w"> </span>file_path<span class="w"> </span><span class="s2">&quot;/tmp/printenv-results.txt&quot;</span>
+expect_allow<span class="w"> </span><span class="s2">&quot;Read file named op-docs&quot;</span><span class="w"> </span>Read<span class="w"> </span>file_path<span class="w"> </span><span class="s2">&quot;/tmp/op-vault-docs.txt&quot;</span>
+expect_allow<span class="w"> </span><span class="s2">&quot;Grep for printenv in code&quot;</span><span class="w"> </span>Grep<span class="w"> </span>pattern<span class="w"> </span><span class="s2">&quot;printenv&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Draft updated test_sensitive_paths.sh to
+      <code>/tmp/test_sensitive_paths.sh</code></strong></li>
+</ul>
+<p>Add regression tests confirming Rules 1/1b still apply to Bash (since the
+verification gate hasn't passed yet):</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># ─── Bash path protection (retained pending verification gate) ──────</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<span class="nb">echo</span><span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">YELLOW</span><span class="si">}</span><span class="s2">Bash path protection (retained pending verification gate)</span><span class="si">${</span><span class="nv">NC</span><span class="si">}</span><span class="s2">&quot;</span>
+
+expect_deny<span class="w"> </span><span class="s2">&quot;bash cat .env&quot;</span><span class="w"> </span>Bash<span class="w"> </span><span class="nb">command</span><span class="w"> </span><span class="s2">&quot;cat .env&quot;</span>
+expect_deny<span class="w"> </span><span class="s2">&quot;bash cat secret-volume&quot;</span><span class="w"> </span>Bash<span class="w"> </span><span class="nb">command</span><span class="w"> </span><span class="s2">&quot;cat /etc/secret-volume/token&quot;</span>
+expect_deny<span class="w"> </span><span class="s2">&quot;bash cat .devcontainer/tpl/&quot;</span><span class="w"> </span>Bash<span class="w"> </span><span class="nb">command</span><span class="w"> </span><span class="s2">&quot;cat .devcontainer/tpl/template&quot;</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Present all drafts to user for manual application</strong></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run all hook tests</strong></p>
+</li>
+</ul>
+<p>Run: <code>bash tests/hooks/run_all.sh</code></p>
+<p>Expected: all 6 test suites pass. Rule 6 tests are removed, tool-type scoping
+tests pass, all other tests unchanged.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>.claude/hooks/check-sensitive.sh<span class="w"> </span>tests/hooks/
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;refactor: restructure check-sensitive.sh by tool type, remove Rule 6&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-9-container-rebuild-verification">Task 9: Container rebuild + verification</h3>
+<p>This task requires a container rebuild to test OS-level changes (Tasks 1, 5, 6).</p>
+<blockquote>
+<p><strong>Important:</strong> <code>devcontainer.json</code> changes (<code>mounts</code>, <code>runArgs</code>) are applied
+at container creation time and must be on the branch the Codespace is checked
+out to. The rebuild will NOT pick up changes from the feature branch if the
+Codespace is on <code>main</code>. Merge the PR first (or check out the feature branch),
+then do a <strong>Full Rebuild</strong> from the VS Code command palette.</p>
+</blockquote>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Merge PR and rebuild the codespace</strong></li>
+</ul>
+<p>Merge the PR to <code>main</code>, then rebuild via VS Code command palette:
+<code>Codespaces: Full Rebuild Container</code> (not just "Rebuild Container").</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Verify tmpfs mount</strong></li>
+</ul>
+<p>Run: <code>mount | grep secret-volume</code></p>
+<p>Expected: <code>tmpfs on /etc/secret-volume type tmpfs (rw,...,size=10240k,mode=700)</code></p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify ownership</strong></li>
+</ul>
+<p>Run: <code>ls -la /etc/ | grep secret-volume</code></p>
+<p>Expected: <code>drwx------ ... vscode vscode ... secret-volume</code></p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify sudo is removed</strong></li>
+</ul>
+<p>Run: <code>command -v sudo</code></p>
+<p>Expected: no output (sudo not found).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Verify symlinks</strong></li>
+</ul>
+<p>Run: <code>ls -la secret-volume dagster-tmp env/.env</code></p>
+<p>Expected: all three are symlinks pointing to their targets.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Verify inject-secrets.sh ran successfully</strong></li>
+</ul>
+<p>Run: <code>ls -la /etc/secret-volume/</code></p>
+<p>Expected: <code>.env</code> and any template-based secrets present with mode 600.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Verify bubblewrap is installed</strong></li>
+</ul>
+<p>Run: <code>bwrap --version</code></p>
+<p>Expected: version string output.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Confirm bwrap runs in weaker nested mode</strong></li>
+</ul>
+<p>Run: <code>bwrap --ro-bind / / -- echo "bwrap works"</code></p>
+<p>Expected: fails with "No permissions to create new namespace" — this is correct.
+Codespaces silently strips <code>--cap-add=SYS_ADMIN</code>, so full sandbox mode is
+unavailable. Claude Code falls back to <code>enableWeakerNestedSandbox</code> mode
+automatically. Verify via <code>/sandbox</code> in the Claude Code CLI.</p>
+<hr />
+<h3 id="task-10-sandbox-verification-gate-completed">Task 10: Sandbox verification gate — COMPLETED</h3>
+<p><strong>Result:</strong> Weaker nested sandbox provides <strong>no enforcement</strong>. Rules 1/1b/2
+remain for Bash.</p>
+<p>Verified 2026-03-22 with hooks disabled:</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <strong>denyRead</strong>: all paths readable — <code>/proc/self/environ</code> leaked full
+      environment including tokens and credentials</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <strong>denyWrite</strong>: all paths writable — <code>.claude/hooks/</code>, <code>.git/hooks/</code>, etc.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <strong>Network</strong>: no proxy — <code>curl</code> connected directly to arbitrary hosts</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <strong>Decision</strong>: Rules 1/1b/2 remain for Bash. Hooks + permissions are the
+      only effective security layers.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <strong>Hook test suite</strong>: 271 tests pass across 6 suites.</li>
+</ul>
+<hr />
+<h3 id="task-11-audit-verify-no-stale-envenv-references">Task 11: Audit — verify no stale env/.env references</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Search for hardcoded env/.env references</strong></li>
+</ul>
+<p>Run:
+<code>grep -r 'env/\.env' --include='*.py' --include='*.sh' --include='*.json' --include='*.yaml' --include='*.yml' .</code></p>
+<p>Expected: only the symlink creation in <code>postCreate.sh</code> and <code>.gitignore</code> entries.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Search for ./env/ references in Python code</strong></li>
+</ul>
+<p>Run: <code>grep -rn '\./env/' --include='*.py' .</code></p>
+<p>Expected: no matches (all replaced in Task 3).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

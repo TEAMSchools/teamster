@@ -1,0 +1,2326 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>AP Dashboard Exam-Only Scores Fix Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ap-dashboard-exam-only-scores-fix-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              AP Dashboard Exam-Only Scores Fix Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Global Constraints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-add-failing-unit-tests-for-the-exam-only-fix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Add failing unit tests for the exam-only fix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-restructure-the-model-and-make-the-tests-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Restructure the model and make the tests pass
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-verify-against-prod-row-diff-reconciliation-and-known-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Verify against prod — row diff, reconciliation, and known cases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-finish-the-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Finish the branch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-14-ap-dashboard-exam-only-scores.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="ap-dashboard-exam-only-scores-fix-implementation-plan">AP Dashboard Exam-Only Scores Fix Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Fix <code>rpt_tableau__ap_assessment_dashboard</code> so a student's AP exam
+score is no longer silently dropped when they have no matching AP course
+enrollment (issue <a href="https://github.com/TEAMSchools/teamster/issues/4391">#4391</a>).</p>
+<p><strong>Architecture:</strong> Restructure the model's join chain around a new <code>subjects</code>
+bridge CTE that unions AP subject codes from course enrollments and exam scores
+independently, so the exam-score join no longer chains through the
+course-enrollment join. Add a <code>subject_code</code> grain column, a third
+<code>test_subject_area</code> state (<code>'Took AP exam, not enrolled in course.'</code>), and an
+<code>ap_course_name</code> fallback to the exam's own crosswalk-resolved name.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), <code>kipptaf</code> project, dbt unit tests (dict-format
+fixtures), BigQuery MCP for manual verification queries.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Full design and validated queries:
+  <code>docs/superpowers/specs/2026-07-14-ap-dashboard-exam-only-scores-design.md</code>.</li>
+<li>Never write student names, DOB, or other PII to a committed file, PR, or issue
+  comment — chat/terminal output only (repo <code>CLAUDE.md</code> PII policy).</li>
+<li>All SQL follows <code>.trunk/config/.sqlfluff</code> (BigQuery dialect, trailing commas,
+  single-quoted strings, 88-char lines). Run
+  <code>/workspaces/teamster/.trunk/tools/trunk check --force &lt;file&gt;</code> from inside the
+  branch checkout before pushing — the pre-commit hook only runs <code>fmt</code>, not the
+  sqlfluff/yamllint checks that fire at pre-push/CI.</li>
+<li><code>given</code>/<code>expect</code> dict scalars in dbt unit tests are normally UNQUOTED per repo
+  convention, <strong>except</strong> a scalar containing a literal comma (e.g.
+  <code>"Smith, Jane"</code>, <code>"Took course, but not AP exam."</code>) — inside a YAML flow
+  mapping (<code>{ ... }</code>), an unquoted comma is parsed as a field separator, not as
+  part of the string, and silently produces a bogus extra key. Quote only those
+  values.</li>
+<li><code>dbt</code> invocations: always <code>uv run</code>, never bare <code>python</code>/<code>dbt</code>. Use
+  <code>DBT_PROFILES_DIR=/workspaces/teamster/.dbt</code> and
+  <code>--project-dir /workspaces/teamster/src/dbt/kipptaf</code> on every call from the
+  main repo (or the worktree-equivalent absolute paths per repo <code>CLAUDE.md</code> if
+  executing from a worktree).</li>
+<li>Only one other file in the repo references this model:
+  <code>src/dbt/kipptaf/models/exposures/tableau.yml</code> (the Tableau exposure
+  definition). No downstream dbt model <code>ref()</code>s it — verified via
+  <code>grep -rl "rpt_tableau__ap_assessment_dashboard" src/dbt</code>. No exposure edit is
+  needed; this fix is self-contained to the one model + its properties file.</li>
+<li>Out of scope, do not touch: the <code>int_collegeboard__ap_unpivot</code> dedup bug
+  (collapses multiple unresolved-crosswalk students via <code>dbt_utils.deduplicate</code>
+  on a shared NULL <code>powerschool_student_number</code> — not tracked yet) and the
+  PowerSchool AP-course-tagging gap tracked in #4390 (a data problem, not a
+  join-structure problem). Also out of scope: how multiple exam attempts for the
+  same subject are deduplicated (<code>int_assessments__ap_assessments.rn_highest</code> is
+  not filtered on here, same as pre-fix behavior).</li>
+</ul>
+<hr />
+<h3 id="task-1-add-failing-unit-tests-for-the-exam-only-fix">Task 1: Add failing unit tests for the exam-only fix</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml:150</code>
+  (append <code>unit_tests:</code> block at end of file; nothing else in the file changes
+  in this task)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the model's current (pre-fix) column set — <code>academic_year</code>,
+  <code>student_number</code>, <code>ap_course_subject</code>, <code>test_name</code>, <code>test_subject</code>,
+  <code>exam_score</code>, <code>data_source</code>, <code>ps_ap_course_subject_code</code>, <code>ap_course_name</code>,
+  <code>course_name</code>, <code>test_subject_area</code>, <code>expected_scope</code>, <code>expected_test_type</code>.</li>
+<li>
+<p>Produces: 5 unit tests that reference a <code>subject_code</code> output column the model
+  does not yet have — these MUST fail until Task 2 adds it. Task 2 depends on
+  these exact test names and fixture data existing:
+  <code>test_course_enrollment_no_exam</code>, <code>test_course_enrollment_and_matching_exam</code>,
+  <code>test_exam_only_no_course_enrollment</code>, <code>test_no_course_no_exam</code>,
+  <code>test_two_exam_only_subjects_produce_two_distinct_rows</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Append the unit tests block</strong></p>
+</li>
+</ul>
+<p>Append this block to the end of
+<code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml</code>
+(the file currently ends after the <code>expected_test_type</code> column's <code>description:</code>
+— add a blank line, then this):</p>
+<div class="highlight"><pre><span></span><code><span class="nt">unit_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_course_enrollment_no_exam</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">A student enrolled in an AP course who did not take the exam shows &#39;Took</span>
+<span class="w">      </span><span class="no">course, but not AP exam.&#39; and resolves ap_course_name from the course-side</span>
+<span class="w">      </span><span class="no">crosswalk. Regression check: this branch existed before the fix and must</span>
+<span class="w">      </span><span class="no">keep working.</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_tableau__ap_assessment_dashboard</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_extracts__student_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              studentid</span><span class="p">:</span><span class="w"> </span><span class="nv">101</span><span class="p p-Indicator">,</span>
+<span class="nt">              student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1001</span><span class="p p-Indicator">,</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              _dbt_source_relation</span><span class="p">:</span><span class="w"> </span><span class="nv">kippnewark_powerschool.stg_powerschool__students</span><span class="p p-Indicator">,</span>
+<span class="nt">              rn_year</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">              school_level</span><span class="p">:</span><span class="w"> </span><span class="nv">HS</span><span class="p p-Indicator">,</span>
+<span class="nt">              entrydate</span><span class="p">:</span><span class="w"> </span><span class="nv">2024-08-01</span><span class="p p-Indicator">,</span>
+<span class="nt">              exitdate</span><span class="p">:</span><span class="w"> </span><span class="nv">2025-06-15</span><span class="p p-Indicator">,</span>
+<span class="nt">              iep_status</span><span class="p">:</span><span class="w"> </span><span class="nv">No IEP</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;base_powerschool__course_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              cc_studentid</span><span class="p">:</span><span class="w"> </span><span class="nv">101</span><span class="p p-Indicator">,</span>
+<span class="nt">              cc_academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              _dbt_source_relation</span><span class="p">:</span><span class="w"> </span><span class="nv">kippnewark_powerschool.stg_powerschool__cc</span><span class="p p-Indicator">,</span>
+<span class="nt">              ap_course_subject</span><span class="p">:</span><span class="w"> </span><span class="nv">ENGLANG</span><span class="p p-Indicator">,</span>
+<span class="nt">              is_dropped_section</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span>
+<span class="nt">              rn_course_number_year</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">              courses_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP English Language</span><span class="p p-Indicator">,</span>
+<span class="nt">              cc_dateenrolled</span><span class="p">:</span><span class="w"> </span><span class="nv">2024-09-01</span><span class="p p-Indicator">,</span>
+<span class="nt">              cc_dateleft</span><span class="p">:</span><span class="w"> </span><span class="nv">2025-06-15</span><span class="p p-Indicator">,</span>
+<span class="nt">              sections_external_expression</span><span class="p">:</span><span class="w"> </span><span class="nv">P3</span><span class="p p-Indicator">,</span>
+<span class="nt">              teacher_lastfirst</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Smith,</span><span class="nv"> </span><span class="s">Jane&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;stg_google_sheets__collegeboard__ap_course_crosswalk&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              PS_AP_Course_Subject_Code</span><span class="p">:</span><span class="w"> </span><span class="nv">ENGLANG</span><span class="p p-Indicator">,</span>
+<span class="nt">              AP_Course_Name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP English Language and Composition</span><span class="p p-Indicator">,</span>
+<span class="nt">              Data_Source</span><span class="p">:</span><span class="w"> </span><span class="nv">CB File</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_assessments__ap_assessments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">ENGLANG</span><span class="p p-Indicator">,</span>
+<span class="nt">            course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP English Language</span><span class="p p-Indicator">,</span>
+<span class="nt">            ap_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP English Language and Composition</span><span class="p p-Indicator">,</span>
+<span class="nt">            test_subject_area</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Took</span><span class="nv"> </span><span class="s">course,</span><span class="nv"> </span><span class="s">but</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">AP</span><span class="nv"> </span><span class="s">exam.&quot;</span><span class="p p-Indicator">,</span>
+<span class="nt">            expected_scope</span><span class="p">:</span><span class="w"> </span><span class="nv">AP</span><span class="p p-Indicator">,</span>
+<span class="nt">            expected_test_type</span><span class="p">:</span><span class="w"> </span><span class="nv">Official</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_course_enrollment_and_matching_exam</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">A student enrolled in an AP course who also has a matching exam score</span>
+<span class="w">      </span><span class="no">shows the exam&#39;s course name as test_subject_area. Regression check for</span>
+<span class="w">      </span><span class="no">the pre-existing matched case.</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_tableau__ap_assessment_dashboard</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_extracts__student_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              studentid</span><span class="p">:</span><span class="w"> </span><span class="nv">102</span><span class="p p-Indicator">,</span>
+<span class="nt">              student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1002</span><span class="p p-Indicator">,</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              _dbt_source_relation</span><span class="p">:</span><span class="w"> </span><span class="nv">kippnewark_powerschool.stg_powerschool__students</span><span class="p p-Indicator">,</span>
+<span class="nt">              rn_year</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">              school_level</span><span class="p">:</span><span class="w"> </span><span class="nv">HS</span><span class="p p-Indicator">,</span>
+<span class="nt">              entrydate</span><span class="p">:</span><span class="w"> </span><span class="nv">2024-08-01</span><span class="p p-Indicator">,</span>
+<span class="nt">              exitdate</span><span class="p">:</span><span class="w"> </span><span class="nv">2025-06-15</span><span class="p p-Indicator">,</span>
+<span class="nt">              iep_status</span><span class="p">:</span><span class="w"> </span><span class="nv">No IEP</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;base_powerschool__course_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              cc_studentid</span><span class="p">:</span><span class="w"> </span><span class="nv">102</span><span class="p p-Indicator">,</span>
+<span class="nt">              cc_academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              _dbt_source_relation</span><span class="p">:</span><span class="w"> </span><span class="nv">kippnewark_powerschool.stg_powerschool__cc</span><span class="p p-Indicator">,</span>
+<span class="nt">              ap_course_subject</span><span class="p">:</span><span class="w"> </span><span class="nv">BIOLOGY</span><span class="p p-Indicator">,</span>
+<span class="nt">              is_dropped_section</span><span class="p">:</span><span class="w"> </span><span class="nv">false</span><span class="p p-Indicator">,</span>
+<span class="nt">              rn_course_number_year</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">              courses_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Biology</span><span class="p p-Indicator">,</span>
+<span class="nt">              cc_dateenrolled</span><span class="p">:</span><span class="w"> </span><span class="nv">2024-09-01</span><span class="p p-Indicator">,</span>
+<span class="nt">              cc_dateleft</span><span class="p">:</span><span class="w"> </span><span class="nv">2025-06-15</span><span class="p p-Indicator">,</span>
+<span class="nt">              sections_external_expression</span><span class="p">:</span><span class="w"> </span><span class="nv">P4</span><span class="p p-Indicator">,</span>
+<span class="nt">              teacher_lastfirst</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Doe,</span><span class="nv"> </span><span class="s">John&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;stg_google_sheets__collegeboard__ap_course_crosswalk&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              PS_AP_Course_Subject_Code</span><span class="p">:</span><span class="w"> </span><span class="nv">BIOLOGY</span><span class="p p-Indicator">,</span>
+<span class="nt">              AP_Course_Name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Biology</span><span class="p p-Indicator">,</span>
+<span class="nt">              Data_Source</span><span class="p">:</span><span class="w"> </span><span class="nv">CB File</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_assessments__ap_assessments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              powerschool_student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1002</span><span class="p p-Indicator">,</span>
+<span class="nt">              test_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Biology</span><span class="p p-Indicator">,</span>
+<span class="nt">              test_subject</span><span class="p">:</span><span class="w"> </span><span class="nv">Biology</span><span class="p p-Indicator">,</span>
+<span class="nt">              exam_score</span><span class="p">:</span><span class="w"> </span><span class="nv">4</span><span class="p p-Indicator">,</span>
+<span class="nt">              ps_ap_course_subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">BIOLOGY</span><span class="p p-Indicator">,</span>
+<span class="nt">              ap_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Biology</span><span class="p p-Indicator">,</span>
+<span class="nt">              data_source</span><span class="p">:</span><span class="w"> </span><span class="nv">CB File</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">BIOLOGY</span><span class="p p-Indicator">,</span>
+<span class="nt">            course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Biology</span><span class="p p-Indicator">,</span>
+<span class="nt">            ap_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Biology</span><span class="p p-Indicator">,</span>
+<span class="nt">            test_subject_area</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Biology</span><span class="p p-Indicator">,</span>
+<span class="nt">            expected_scope</span><span class="p">:</span><span class="w"> </span><span class="nv">AP</span><span class="p p-Indicator">,</span>
+<span class="nt">            expected_test_type</span><span class="p">:</span><span class="w"> </span><span class="nv">Official</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_exam_only_no_course_enrollment</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">Fix for #4391: a student with an AP exam score but no matching AP course</span>
+<span class="w">      </span><span class="no">enrollment now surfaces as its own row with &#39;Took AP exam, not enrolled in</span>
+<span class="w">      </span><span class="no">course.&#39; instead of disappearing. ap_course_name falls back to the exam&#39;s</span>
+<span class="w">      </span><span class="no">own crosswalk-resolved name since there is no course-side match.</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_tableau__ap_assessment_dashboard</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_extracts__student_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              studentid</span><span class="p">:</span><span class="w"> </span><span class="nv">103</span><span class="p p-Indicator">,</span>
+<span class="nt">              student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1003</span><span class="p p-Indicator">,</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              _dbt_source_relation</span><span class="p">:</span><span class="w"> </span><span class="nv">kippnewark_powerschool.stg_powerschool__students</span><span class="p p-Indicator">,</span>
+<span class="nt">              rn_year</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">              school_level</span><span class="p">:</span><span class="w"> </span><span class="nv">HS</span><span class="p p-Indicator">,</span>
+<span class="nt">              entrydate</span><span class="p">:</span><span class="w"> </span><span class="nv">2024-08-01</span><span class="p p-Indicator">,</span>
+<span class="nt">              exitdate</span><span class="p">:</span><span class="w"> </span><span class="nv">2025-06-15</span><span class="p p-Indicator">,</span>
+<span class="nt">              iep_status</span><span class="p">:</span><span class="w"> </span><span class="nv">No IEP</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;base_powerschool__course_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;stg_google_sheets__collegeboard__ap_course_crosswalk&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_assessments__ap_assessments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              powerschool_student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1003</span><span class="p p-Indicator">,</span>
+<span class="nt">              test_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Chemistry</span><span class="p p-Indicator">,</span>
+<span class="nt">              test_subject</span><span class="p">:</span><span class="w"> </span><span class="nv">Chemistry</span><span class="p p-Indicator">,</span>
+<span class="nt">              exam_score</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span>
+<span class="nt">              ps_ap_course_subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">CHEM</span><span class="p p-Indicator">,</span>
+<span class="nt">              ap_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Chemistry</span><span class="p p-Indicator">,</span>
+<span class="nt">              data_source</span><span class="p">:</span><span class="w"> </span><span class="nv">CB File</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">CHEM</span><span class="p p-Indicator">,</span>
+<span class="nt">            ap_course_subject</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">            course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">Not an AP course</span><span class="p p-Indicator">,</span>
+<span class="nt">            ap_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Chemistry</span><span class="p p-Indicator">,</span>
+<span class="nt">            test_subject_area</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Took</span><span class="nv"> </span><span class="s">AP</span><span class="nv"> </span><span class="s">exam,</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">enrolled</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">course.&quot;</span><span class="p p-Indicator">,</span>
+<span class="nt">            expected_scope</span><span class="p">:</span><span class="w"> </span><span class="nv">Not applicable</span><span class="p p-Indicator">,</span>
+<span class="nt">            expected_test_type</span><span class="p">:</span><span class="w"> </span><span class="nv">Not applicable</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_no_course_no_exam</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">A non-participating HS student (no AP course, no AP exam) still gets</span>
+<span class="w">      </span><span class="no">exactly one row, unchanged from pre-fix behavior.</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_tableau__ap_assessment_dashboard</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_extracts__student_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              studentid</span><span class="p">:</span><span class="w"> </span><span class="nv">104</span><span class="p p-Indicator">,</span>
+<span class="nt">              student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1004</span><span class="p p-Indicator">,</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              _dbt_source_relation</span><span class="p">:</span><span class="w"> </span><span class="nv">kippnewark_powerschool.stg_powerschool__students</span><span class="p p-Indicator">,</span>
+<span class="nt">              rn_year</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">              school_level</span><span class="p">:</span><span class="w"> </span><span class="nv">HS</span><span class="p p-Indicator">,</span>
+<span class="nt">              entrydate</span><span class="p">:</span><span class="w"> </span><span class="nv">2024-08-01</span><span class="p p-Indicator">,</span>
+<span class="nt">              exitdate</span><span class="p">:</span><span class="w"> </span><span class="nv">2025-06-15</span><span class="p p-Indicator">,</span>
+<span class="nt">              iep_status</span><span class="p">:</span><span class="w"> </span><span class="nv">No IEP</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;base_powerschool__course_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;stg_google_sheets__collegeboard__ap_course_crosswalk&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_assessments__ap_assessments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">null</span><span class="p p-Indicator">,</span>
+<span class="nt">            course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">Not an AP course</span><span class="p p-Indicator">,</span>
+<span class="nt">            ap_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">Not an AP course</span><span class="p p-Indicator">,</span>
+<span class="nt">            test_subject_area</span><span class="p">:</span><span class="w"> </span><span class="nv">Not applicable</span><span class="p p-Indicator">,</span>
+<span class="nt">            expected_scope</span><span class="p">:</span><span class="w"> </span><span class="nv">Not applicable</span><span class="p p-Indicator">,</span>
+<span class="nt">            expected_test_type</span><span class="p">:</span><span class="w"> </span><span class="nv">Not applicable</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_two_exam_only_subjects_produce_two_distinct_rows</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;-</span>
+<span class="w">      </span><span class="no">A student with exam scores in two different subjects and no course</span>
+<span class="w">      </span><span class="no">enrollment in either gets two distinct rows keyed by subject_code, proving</span>
+<span class="w">      </span><span class="no">the new grain key prevents the collision that ap_course_subject (always</span>
+<span class="w">      </span><span class="no">NULL for both rows) would cause.</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rpt_tableau__ap_assessment_dashboard</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_extracts__student_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              studentid</span><span class="p">:</span><span class="w"> </span><span class="nv">105</span><span class="p p-Indicator">,</span>
+<span class="nt">              student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1005</span><span class="p p-Indicator">,</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              _dbt_source_relation</span><span class="p">:</span><span class="w"> </span><span class="nv">kippnewark_powerschool.stg_powerschool__students</span><span class="p p-Indicator">,</span>
+<span class="nt">              rn_year</span><span class="p">:</span><span class="w"> </span><span class="nv">1</span><span class="p p-Indicator">,</span>
+<span class="nt">              school_level</span><span class="p">:</span><span class="w"> </span><span class="nv">HS</span><span class="p p-Indicator">,</span>
+<span class="nt">              entrydate</span><span class="p">:</span><span class="w"> </span><span class="nv">2024-08-01</span><span class="p p-Indicator">,</span>
+<span class="nt">              exitdate</span><span class="p">:</span><span class="w"> </span><span class="nv">2025-06-15</span><span class="p p-Indicator">,</span>
+<span class="nt">              iep_status</span><span class="p">:</span><span class="w"> </span><span class="nv">No IEP</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;base_powerschool__course_enrollments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;stg_google_sheets__collegeboard__ap_course_crosswalk&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&#39;int_assessments__ap_assessments&#39;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              powerschool_student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1005</span><span class="p p-Indicator">,</span>
+<span class="nt">              test_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Chemistry</span><span class="p p-Indicator">,</span>
+<span class="nt">              test_subject</span><span class="p">:</span><span class="w"> </span><span class="nv">Chemistry</span><span class="p p-Indicator">,</span>
+<span class="nt">              exam_score</span><span class="p">:</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span>
+<span class="nt">              ps_ap_course_subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">CHEM</span><span class="p p-Indicator">,</span>
+<span class="nt">              ap_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Chemistry</span><span class="p p-Indicator">,</span>
+<span class="nt">              data_source</span><span class="p">:</span><span class="w"> </span><span class="nv">CB File</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">              academic_year</span><span class="p">:</span><span class="w"> </span><span class="nv">2024</span><span class="p p-Indicator">,</span>
+<span class="nt">              powerschool_student_number</span><span class="p">:</span><span class="w"> </span><span class="nv">1005</span><span class="p p-Indicator">,</span>
+<span class="nt">              test_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Physics 1</span><span class="p p-Indicator">,</span>
+<span class="nt">              test_subject</span><span class="p">:</span><span class="w"> </span><span class="nv">Physics 1</span><span class="p p-Indicator">,</span>
+<span class="nt">              exam_score</span><span class="p">:</span><span class="w"> </span><span class="nv">5</span><span class="p p-Indicator">,</span>
+<span class="nt">              ps_ap_course_subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">PHYS1</span><span class="p p-Indicator">,</span>
+<span class="nt">              ap_course_name</span><span class="p">:</span><span class="w"> </span><span class="nv">AP Physics 1</span><span class="p p-Indicator">,</span>
+<span class="nt">              data_source</span><span class="p">:</span><span class="w"> </span><span class="nv">CB File</span><span class="p p-Indicator">,</span>
+<span class="w">            </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">CHEM</span><span class="p p-Indicator">,</span>
+<span class="nt">            test_subject_area</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Took</span><span class="nv"> </span><span class="s">AP</span><span class="nv"> </span><span class="s">exam,</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">enrolled</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">course.&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+<span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span>
+<span class="nt">            subject_code</span><span class="p">:</span><span class="w"> </span><span class="nv">PHYS1</span><span class="p p-Indicator">,</span>
+<span class="nt">            test_subject_area</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Took</span><span class="nv"> </span><span class="s">AP</span><span class="nv"> </span><span class="s">exam,</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">enrolled</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">course.&quot;</span><span class="p p-Indicator">,</span>
+<span class="w">          </span><span class="p p-Indicator">}</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the unit tests and confirm they fail RED</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>/workspaces/teamster/.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>test_type:unit,rpt_tableau__ap_assessment_dashboard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: <code>Done. PASS=0 WARN=0 ERROR=5 SKIP=0 NO-OP=0 TOTAL=5</code>, with each of the
+5 failures showing:</p>
+<div class="highlight"><pre><span></span><code>Compilation Error in unit_test &lt;test_name&gt; (models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml)
+  Invalid column name: &#39;subject_code&#39; in unit test fixture for expected output.
+  Accepted columns for expected output are: [&#39;academic_year&#39;, ... &#39;expected_test_type&#39;]
+</code></pre></div>
+<p>This confirms the tests correctly detect that <code>subject_code</code> doesn't exist on
+the model yet — the RED state driving Task 2.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;test: add failing unit tests for AP dashboard exam-only scores (#4391)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-2-restructure-the-model-and-make-the-tests-pass">Task 2: Restructure the model and make the tests pass</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__ap_assessment_dashboard.sql</code>
+  (full rewrite)</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml:1-149</code>
+  (model description, uniqueness test key, new <code>subject_code</code> column, updated
+  <code>ap_course_name</code>/<code>test_subject_area</code> descriptions — the <code>unit_tests:</code> block
+  from Task 1 is untouched)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the 5 unit tests from Task 1 (must all pass after this task).
+  Upstream refs unchanged: <code>int_extracts__student_enrollments</code>,
+  <code>base_powerschool__course_enrollments</code>,
+  <code>stg_google_sheets__collegeboard__ap_course_crosswalk</code>,
+  <code>int_assessments__ap_assessments</code>.</li>
+<li>
+<p>Produces: <code>subject_code</code> (STRING) — the bridged grain key other tasks/future
+  consumers would join on. <code>ap_course_subject</code> keeps its exact prior meaning
+  (course-enrollment-only, nullable).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Replace the model SQL</strong></p>
+</li>
+</ul>
+<p>Replace the full contents of
+<code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__ap_assessment_dashboard.sql</code>
+with:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">course_enrollments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cc_studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cc_academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">ap_course_subject</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cc_dateenrolled</span><span class="p">,</span>
+<span class="w">            </span><span class="n">cc_dateleft</span><span class="p">,</span>
+<span class="w">            </span><span class="n">sections_external_expression</span><span class="p">,</span>
+<span class="w">            </span><span class="n">teacher_lastfirst</span><span class="p">,</span>
+<span class="w">            </span><span class="n">courses_course_name</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;base_powerschool__course_enrollments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">rn_course_number_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">ap_course_subject</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">is_dropped_section</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">ap_assessments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">powerschool_student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">test_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">test_subject</span><span class="p">,</span>
+<span class="w">            </span><span class="n">exam_score</span><span class="p">,</span>
+<span class="w">            </span><span class="n">irregularity_code_1</span><span class="p">,</span>
+<span class="w">            </span><span class="n">irregularity_code_2</span><span class="p">,</span>
+<span class="w">            </span><span class="n">data_source</span><span class="p">,</span>
+<span class="w">            </span><span class="n">ps_ap_course_subject_code</span><span class="p">,</span>
+<span class="w">            </span><span class="n">ap_course_name</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_assessments__ap_assessments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">test_subject</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s1">&#39;Calculus BC: AB Subscore&#39;</span>
+<span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">subjects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">            </span><span class="k">c</span><span class="p">.</span><span class="n">ap_course_subject</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject_code</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_extracts__student_enrollments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">course_enrollments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">c</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">cc_studentid</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">cc_academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">union_dataset_join_clause</span><span class="p">(</span><span class="n">left_alias</span><span class="o">=</span><span class="ss">&quot;e&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">right_alias</span><span class="o">=</span><span class="ss">&quot;c&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">distinct</span>
+
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">studentid</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">            </span><span class="n">e</span><span class="p">.</span><span class="n">_dbt_source_relation</span><span class="p">,</span>
+<span class="w">            </span><span class="n">ap</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject_code</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_extracts__student_enrollments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+<span class="w">        </span><span class="k">inner</span><span class="w"> </span><span class="k">join</span>
+<span class="w">            </span><span class="n">ap_assessments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ap</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ap</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ap</span><span class="p">.</span><span class="n">powerschool_student_number</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year_display</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">region</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">schoolid</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">school</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">student_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">grade_level</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">enroll_status</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">entrydate</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">exitdate</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">cohort</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">advisory</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">is_enrolled_recent</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">is_enrolled_y1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">is_504</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">c_504_status</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">lep_status</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">gifted_and_talented</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">salesforce_id</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">contact_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">ktc_cohort</span><span class="p">,</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">graduation_year</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">sub</span><span class="p">.</span><span class="n">subject_code</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">cc_dateenrolled</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ap_date_enrolled</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">cc_dateleft</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ap_date_left</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">sections_external_expression</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ap_course_section</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">teacher_lastfirst</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ap_teacher_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">s</span><span class="p">.</span><span class="n">ap_course_subject</span><span class="p">,</span>
+
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">test_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">test_subject</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">exam_score</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">irregularity_code_1</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">irregularity_code_2</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">data_source</span><span class="p">,</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">ap_course_name</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">ap_course_name</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Not an AP course&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ap_course_name</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">courses_course_name</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Not an AP course&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">course_name</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">case</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">courses_course_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">test_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Not applicable&#39;</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">courses_course_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">test_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Took course, but not AP exam.&#39;</span>
+<span class="w">        </span><span class="k">when</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">courses_course_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">test_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="w">        </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Took AP exam, not enrolled in course.&#39;</span>
+<span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">ap_course_name</span>
+<span class="w">    </span><span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">test_subject_area</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">iep_status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;No IEP&#39;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sped</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">courses_course_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Not applicable&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;AP&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">expected_scope</span><span class="p">,</span>
+
+<span class="w">    </span><span class="k">if</span><span class="p">(</span>
+<span class="w">        </span><span class="n">s</span><span class="p">.</span><span class="n">courses_course_name</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Not applicable&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Official&#39;</span>
+<span class="w">    </span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">expected_test_type</span><span class="p">,</span>
+
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_extracts__student_enrollments&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">e</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">subjects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">sub</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">studentid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">union_dataset_join_clause</span><span class="p">(</span><span class="n">left_alias</span><span class="o">=</span><span class="ss">&quot;e&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">right_alias</span><span class="o">=</span><span class="ss">&quot;sub&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">course_enrollments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">s</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">studentid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">cc_studentid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">cc_academic_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">subject_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">ap_course_subject</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">union_dataset_join_clause</span><span class="p">(</span><span class="n">left_alias</span><span class="o">=</span><span class="ss">&quot;sub&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">right_alias</span><span class="o">=</span><span class="ss">&quot;s&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">ap_assessments</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">powerschool_student_number</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">subject_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__collegeboard__ap_course_crosswalk&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">x</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">sub</span><span class="p">.</span><span class="n">subject_code</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">ps_ap_course_subject_code</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">data_source</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;CB File&#39;</span>
+<span class="k">where</span>
+<span class="w">    </span><span class="n">e</span><span class="p">.</span><span class="n">rn_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">school_level</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;HS&#39;</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="nb">date</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">05</span><span class="p">,</span><span class="w"> </span><span class="mi">01</span><span class="p">)</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">entrydate</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="n">exitdate</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Update the properties file</strong></li>
+</ul>
+<p>In
+<code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml</code>,
+make these four edits (the <code>unit_tests:</code> block from Task 1 stays as-is at the
+end of the file):</p>
+<ol>
+<li>Model <code>description:</code> (currently ends "...who did not take the exam.") —
+   replace with:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">  </span><span class="no">AP assessment scores joined to student enrollment and course schedules for</span>
+<span class="w">  </span><span class="no">Tableau reporting. One row per student per AP course subject, including</span>
+<span class="w">  </span><span class="no">students enrolled in AP courses who did not take the exam and students who</span>
+<span class="w">  </span><span class="no">took an exam with no matching AP course enrollment.</span>
+</code></pre></div>
+<ol>
+<li><code>data_tests.dbt_utils.unique_combination_of_columns.arguments.combination_of_columns</code>
+   — change the third entry from <code>ap_course_subject</code> to <code>subject_code</code>:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">academic_year</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">student_number</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">subject_code</span>
+</code></pre></div>
+<ol>
+<li>Insert a new column entry immediately after <code>graduation_year</code> and before
+   <code>ap_date_enrolled</code>:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">subject_code</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">    </span><span class="no">AP subject code bridging course enrollment and exam records for the</span>
+<span class="w">    </span><span class="no">report grain — the course-enrollment subject code when the student is</span>
+<span class="w">    </span><span class="no">enrolled in an AP course, otherwise the exam&#39;s own College Board subject</span>
+<span class="w">    </span><span class="no">code. NULL only when the student has neither.</span>
+</code></pre></div>
+<ol>
+<li>Replace the <code>ap_course_name</code> and <code>test_subject_area</code> column <code>description:</code>
+   fields:</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ap_course_name</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">    </span><span class="no">AP course name from the College Board crosswalk when the student has an</span>
+<span class="w">    </span><span class="no">AP course enrollment; otherwise the exam&#39;s own crosswalk-resolved name</span>
+<span class="w">    </span><span class="no">when the student took the exam with no matching course; &#39;Not an AP</span>
+<span class="w">    </span><span class="no">course&#39; if neither resolves.</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_subject_area</span>
+<span class="w">  </span><span class="nt">data_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">    </span><span class="no">Derived field indicating exam relationship to course: &#39;Not applicable&#39; if</span>
+<span class="w">    </span><span class="no">no AP course and no exam, &#39;Took course, but not AP exam.&#39; if enrolled but</span>
+<span class="w">    </span><span class="no">did not test, &#39;Took AP exam, not enrolled in course.&#39; if tested with no</span>
+<span class="w">    </span><span class="no">matching course enrollment, otherwise the College Board AP course name.</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the unit tests and confirm GREEN</strong></li>
+</ul>
+<p>Run the same command as Task 1 Step 2:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>/workspaces/teamster/.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>test_type:unit,rpt_tableau__ap_assessment_dashboard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: <code>Done. PASS=5 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=5</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Full dev build and contract/uniqueness check</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>/workspaces/teamster/.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_tableau__ap_assessment_dashboard<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--state<span class="w"> </span>target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: the 5 unit tests PASS, the view builds (<code>CREATE VIEW (0 processed)</code>),
+and the uniqueness test reports <code>WARN 3</code> (not an ERROR) —
+<code>Got 3 results, configured to warn if != 0</code>. This WARN is <strong>expected and
+pre-existing</strong>, not a regression: it is the same 3-row duplicate (academic_year
+2021, <code>subject_code = '4'</code> / Calculus BC, three Newark students, each with two
+PowerSchool course-enrollment rows for distinct <code>course_number</code>s both tagged
+<code>ap_course_subject = '4'</code> — a main section plus a companion "Recitation"
+section) that already exists in prod today keyed on
+<code>(academic_year, student_number, ap_course_subject)</code>. Confirm this by running,
+via BigQuery MCP:</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">ap_course_subject</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__ap_assessment_dashboard</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span><span class="w"> </span><span class="n">ap_course_subject</span>
+<span class="k">having</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>This should return the same 3 rows. If it returns different rows or a different
+count, stop and investigate before proceeding — that would mean the fix
+introduced a new duplication source, not carried forward an old one. Do not add
+a defensive dedupe for this — it matches the repo's standing convention for the
+similar <code>base_powerschool__course_enrollments</code> double-write issue (#3900/#3915):
+downgrade/track, don't dedupe. No action needed here since the test already
+defaults to WARN (no severity override in this model's yml).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Format and lint</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>fmt<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__ap_assessment_dashboard.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__ap_assessment_dashboard.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml
+</code></pre></div>
+<p>Expected: <code>✔ No issues</code> after <code>fmt</code> resolves any formatting-only diffs. Fix
+anything <code>check</code> reports before continuing.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__ap_assessment_dashboard.sql
+git<span class="w"> </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__ap_assessment_dashboard.yml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;fix: surface AP exam scores with no matching course enrollment (#4391)&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-3-verify-against-prod-row-diff-reconciliation-and-known-cases">Task 3: Verify against prod — row diff, reconciliation, and known cases</h3>
+<p><strong>Files:</strong> none — this task is read-only verification via the BigQuery MCP
+(<code>mcp__bigquery__execute_sql</code>) against the dev build from Task 2 and the prod
+table. Nothing here is committed to git; PII-adjacent results (student names)
+stay in chat only per repo policy.</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the dev-schema table materialized in Task 2 Step 4
+  (<code>zz_&lt;your-github-username&gt;_kipptaf_tableau.rpt_tableau__ap_assessment_dashboard</code>
+  — find the exact schema name from the Task 2 Step 4 build log, or query
+  <code>INFORMATION_SCHEMA.SCHEMATA</code> per repo <code>CLAUDE.md</code> "Local dev schema naming"
+  guidance) and the prod table
+  <code>kipptaf_tableau.rpt_tableau__ap_assessment_dashboard</code>.</li>
+<li>
+<p>Produces: a chat-only summary (added/deleted counts by <code>test_subject_area</code>,
+  reconciliation result, spot-check confirmation) — no file output.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Run the null-safe row diff</strong></p>
+</li>
+</ul>
+<p>Run via BigQuery MCP (substitute <code>&lt;dev_schema&gt;</code> with your actual dev schema from
+Task 2 Step 4):</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">prod</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">ifnull</span><span class="p">(</span><span class="n">ap_course_subject</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;__none__&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject_code_key</span><span class="p">,</span>
+<span class="w">            </span><span class="n">test_subject_area</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="n">kipptaf_tableau</span><span class="p">.</span><span class="n">rpt_tableau__ap_assessment_dashboard</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">dev</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="p">,</span>
+<span class="w">            </span><span class="n">ifnull</span><span class="p">(</span><span class="n">subject_code</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;__none__&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">subject_code_key</span><span class="p">,</span>
+<span class="w">            </span><span class="n">test_subject_area</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="o">`</span><span class="n">teamster</span><span class="o">-</span><span class="mi">332318</span><span class="o">`</span><span class="p">.</span><span class="o">&lt;</span><span class="n">dev_schema</span><span class="o">&gt;</span><span class="p">.</span><span class="n">rpt_tableau__ap_assessment_dashboard</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">added</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="o">*</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">dev</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">prod</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="n">subject_code_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">subject_code_key</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">),</span>
+<span class="w">    </span><span class="n">deleted</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="o">*</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">prod</span>
+<span class="w">        </span><span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">dev</span>
+<span class="w">            </span><span class="k">on</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="n">academic_year</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="n">student_number</span>
+<span class="w">            </span><span class="k">and</span><span class="w"> </span><span class="n">prod</span><span class="p">.</span><span class="n">subject_code_key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="n">subject_code_key</span>
+<span class="w">        </span><span class="k">where</span><span class="w"> </span><span class="n">dev</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">&#39;added&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">change_type</span><span class="p">,</span><span class="w"> </span><span class="n">test_subject_area</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">row_count</span>
+<span class="k">from</span><span class="w"> </span><span class="n">added</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">test_subject_area</span>
+<span class="k">union</span><span class="w"> </span><span class="k">all</span>
+<span class="k">select</span><span class="w"> </span><span class="s1">&#39;deleted&#39;</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">change_type</span><span class="p">,</span><span class="w"> </span><span class="n">test_subject_area</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="k">row_count</span>
+<span class="k">from</span><span class="w"> </span><span class="n">deleted</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">test_subject_area</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">change_type</span>
+</code></pre></div>
+<p>Expected shape (validated 2026-07-14 against then-current prod data; your exact
+counts will differ since underlying enrollment/exam data changes daily — that's
+fine, only the <em>shape</em> matters):</p>
+<ul class="task-list">
+<li>One <code>added</code> row grouped under
+  <code>test_subject_area = 'Took AP exam, not enrolled in course.'</code> — nonzero,
+  spanning potentially many historical academic years (this bug predates 2018
+  and isn't year-scoped, so the fix surfaces more than just the 3 cases cited in
+  #4391).</li>
+<li>If <code>added</code> shows ANY other <code>test_subject_area</code> value, stop — that's unexpected
+  and needs investigation before merging.</li>
+<li>
+<p>One or more <code>deleted</code> rows, likely under
+  <code>test_subject_area = 'Not applicable'</code>.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the reconciliation check on the <code>deleted</code> bucket</strong></p>
+</li>
+</ul>
+<p>A <code>deleted</code> row is not automatically a regression — a student who was a total
+non-participant (<code>'Not applicable'</code> placeholder row) and turns out to have an
+exam-only score gets that placeholder <em>replaced</em> by a real subject row, which
+looks like one delete + one add for the same student/year, not a net loss. Run
+(reusing the <code>added</code>/<code>deleted</code> CTEs from Step 1):</p>
+<div class="highlight"><pre><span></span><code><span class="k">select</span>
+<span class="w">    </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">deleted_rows</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">accounted_for_by_an_added_row</span><span class="p">,</span>
+<span class="w">    </span><span class="n">countif</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">true_regressions</span>
+<span class="k">from</span><span class="w"> </span><span class="n">deleted</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">d</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="p">(</span><span class="k">select</span><span class="w"> </span><span class="k">distinct</span><span class="w"> </span><span class="n">academic_year</span><span class="p">,</span><span class="w"> </span><span class="n">student_number</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">added</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">academic_year</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="n">d</span><span class="p">.</span><span class="n">student_number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">student_number</span>
+</code></pre></div>
+<p>Expected: <code>true_regressions = 0</code> (validated 0/119 on 2026-07-14 prod data). If
+<code>true_regressions &gt; 0</code>, stop and investigate those specific
+<code>(academic_year, student_number)</code> pairs before merging — that means the
+restructured joins lost a row with no offsetting replacement.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Spot-check the 3 originally-reported students (chat only)</strong></li>
+</ul>
+<p>Using the 3 student identities from #4391 (kept local — do not paste them into
+any committed file, issue comment, or PR description), query the dev table and
+confirm each now shows
+<code>test_subject_area = 'Took AP exam, not enrolled in course.'</code> with a populated
+<code>ap_course_name</code>. Report the confirmation in chat as "3/3 confirmed", not by
+pasting the student rows into any persisted output.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Summarize findings in chat</strong></li>
+</ul>
+<p>Report to the user: total <code>added</code> count and its single <code>test_subject_area</code>
+bucket, total <code>deleted</code> count, <code>true_regressions</code> count (must be 0 to proceed),
+and the 3/3 spot-check confirmation. This is the deliverable for this task — no
+commit.</p>
+<hr />
+<h3 id="task-4-finish-the-branch">Task 4: Finish the branch</h3>
+<p><strong>Files:</strong> none (repo-level checks only).</p>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: the committed changes from Tasks 1–2 and the verification findings
+  from Task 3.</li>
+<li>
+<p>Produces: a PR-ready branch.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Full project sanity check</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nv">DBT_PROFILES_DIR</span><span class="o">=</span>/workspaces/teamster/.dbt<span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>parse<span class="w"> </span>--target<span class="w"> </span>prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf
+</code></pre></div>
+<p>Expected: parses cleanly with no errors (confirms nothing else in the 750-model
+kipptaf project broke from this change — no warehouse write, safe to run without
+prod-deploy approval per repo <code>CLAUDE.md</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Review the full diff</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>log<span class="w"> </span>--oneline<span class="w"> </span>main..HEAD
+git<span class="w"> </span>diff<span class="w"> </span>main..HEAD<span class="w"> </span>--stat
+</code></pre></div>
+<p>Expected: 2 commits (Task 1's test commit, Task 2's fix commit), touching only
+the model <code>.sql</code> and its <code>properties.yml</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Hand off</strong></li>
+</ul>
+<p>Report the Task 3 verification summary to the user and invoke
+<code>superpowers:finishing-a-development-branch</code> to decide on PR vs. further changes
+— do not push or open a PR without the user's go-ahead per repo <code>CLAUDE.md</code>
+conventions (dbt Cloud CI state check before pushing, PR template usage, etc.).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

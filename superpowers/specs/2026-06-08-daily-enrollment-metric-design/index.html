@@ -1,0 +1,2434 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Point-in-time daily student enrollment metric - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#point-in-time-daily-student-enrollment-metric" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Point-in-time daily student enrollment metric
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Problem">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reconciliation-ay2025-network-wide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reconciliation (AY2025, network-wide)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-day-grain-not-week-grain" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why day grain, not week grain
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why day grain, not week grain">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coverage-decision-in-session-school-days-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage decision: in-session school days only
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-not-reuse-fct_student_attendance_daily" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why not reuse fct_student_attendance_daily
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-not-just-join-the-existing-cube-to-a-date-scaffold" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why not just join the existing cube to a date scaffold
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-a-separate-cube-not-an-extension-of-student_enrollments" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why a separate cube, not an extension of student_enrollments
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Why a separate cube, not an extension of student_enrollments">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#measure-naming-the-stint-measure-is-a-stint-counter-not-a-kid-counter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measure naming: the stint measure is a stint counter, not a kid counter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#component-1-mart-fct_student_enrollment_daily" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component 1 — mart fct_student_enrollment_daily
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-2-cube-student_enrollment_daily" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component 2 — cube student_enrollment_daily
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component 2 — cube student_enrollment_daily">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#measure-descriptions-paste-into-the-cube-yaml-description-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Measure descriptions (paste into the cube YAML description: fields)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-3-view-student_enrollment_daily_summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component 3 — view student_enrollment_daily_summary
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-4-view-student_enrollment_daily_detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component 4 — view student_enrollment_daily_detail
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#population-and-point-in-time-semantics-the-alumni-question" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Population and point-in-time semantics (the alumni question)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exposure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exposure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#relationship-to-the-existing-weekly-intermediate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relationship to the existing weekly intermediate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#resolved-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolved decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Testing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-06-08-daily-enrollment-metric-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="point-in-time-daily-student-enrollment-metric">Point-in-time daily student enrollment metric</h1>
+<p>Issue: <a href="https://github.com/TEAMSchools/teamster/issues/4138">#4138</a></p>
+<blockquote>
+<p><strong>Final naming + scope (decided post-implementation).</strong> This spec uses working
+names <code>student_enrollment_daily*</code> for the new cube/views and
+<code>student_enrollments*</code> for the stint cube/views. As shipped: the daily fact
+cube is <code>student_enrollments</code> with views <code>student_enrollments_summary</code> /
+<code>_detail</code>; the stint dim cube is <code>student_enrollment_stints</code> (no views — see
+below). The dbt mart is unchanged (<code>fct_student_enrollment_daily</code>).
+<code>student_attendance</code>'s join to the stint dim was repointed
+<code>student_enrollments</code> → <code>student_enrollment_stints</code>.</p>
+<p><strong>Stint views removed.</strong> The stint summary/detail views were dropped (only the
+point-in-time daily surface is used). The stint <strong>cube</strong> remains as the
+enrollment dimension in the join graph. Stint-grain attributes still wanted as
+breakdowns of the point-in-time headcount — ELL/IEP/meal status,
+<code>graduation_year</code>, <code>is_retained_year</code> — are surfaced on the daily
+<code>student_enrollments</code> views via the <code>student_enrollment_stints</code> join path
+(they are stint-grain, documented as such). The stint measure
+<code>count_enrollments</code> and the entry/exit dates are no longer exposed.</p>
+</blockquote>
+<h2 id="problem">Problem</h2>
+<p>The Cube measure <code>student_enrollments.count_students</code> counts enrollment <em>stints</em>
+— <code>count_distinct(student_enrollment_key)</code> on <code>dim_student_enrollments</code>. That
+population is alumni-inclusive, spans all academic years, and has no
+point-in-time concept. It does not reconcile with the topline dashboard's
+<code>Total Enrollment</code> metric, which counts students enrolled in a given week via
+<code>sum(if(is_enrolled_week, 1, 0))</code> from
+<code>int_extracts__student_enrollments_weeks</code>.</p>
+<p>Analysts want period-over-period comparisons of enrolled-student counts that
+match the topline numbers, <strong>and</strong> day-exact answers to questions like "what was
+enrollment on October 1" (the NJ state fall-enrollment count date). Today Cube
+gives them neither.</p>
+<h3 id="reconciliation-ay2025-network-wide">Reconciliation (AY2025, network-wide)</h3>
+<table>
+<thead>
+<tr>
+<th>Definition</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cube <code>count_students</code> (distinct <code>student_enrollment_key</code>)</td>
+<td>14,996</td>
+</tr>
+<tr>
+<td>Distinct students (<code>student_key</code>)</td>
+<td>14,890</td>
+</tr>
+<tr>
+<td>Stints with non-null dates (drop alumni placeholders)</td>
+<td>11,384</td>
+</tr>
+<tr>
+<td>Point-in-time enrolled, one recent week</td>
+<td>9,114</td>
+</tr>
+</tbody>
+</table>
+<p>The stint count is ~64% higher than a true point-in-time headcount.
+Decomposition of the gap:</p>
+<ul>
+<li><strong>−106</strong> multi-stint students (the <code>count_distinct(student_key)</code> swap fixes
+  only this — negligible).</li>
+<li><strong>−3,612</strong> alumni / graduate placeholder rows with null dates (the dominant
+  driver, ~24% of the stint count).</li>
+<li><strong>−~2,300</strong> point-in-time effect: students with an AY2025 stint who were not
+  enrolled in the specific period measured.</li>
+</ul>
+<h2 id="why-day-grain-not-week-grain">Why day grain, not week grain</h2>
+<p>An earlier draft of this spec proposed a weekly fact over
+<code>int_extracts__student_enrollments_weeks</code>. Day grain supersedes it for one
+decisive reason: <strong>"what was enrollment on October 1" cannot be answered at week
+grain.</strong> A weekly row says "enrolled some day this week"; a student who entered
+Wednesday Oct 2 or exited Monday Sep 30 is indistinguishable from one enrolled
+all week. October 1 is not a casual example — it is the NJ state fall-enrollment
+count date (alongside Oct 15 and Mar 15), and there are already day-exact
+<code>is_enrolled_oct01</code> / <code>oct15</code> / <code>mar15</code> flags derived upstream as
+<code>date(academic_year, 10, 1) between entrydate and exitdate</code>
+(<a href="../../../src/dbt/powerschool/models/sis/intermediate/int_powerschool__student_enrollment_union.sql"><code>int_powerschool__student_enrollment_union</code></a>).</p>
+<p>A day-grain fact generalizes those one-off flags: every named count date becomes
+a plain <code>where date_key = '&lt;date&gt;'</code> filter, weekly/monthly/yearly trends come
+from the period-end anchors, and the topline weekly reconciliation still works
+by filtering to the days of one week. One grain answers all three question
+shapes; the named flags become unnecessary.</p>
+<p>This is the same shape <code>fct_student_attendance_daily</code> already has — student ×
+in-session-day, anchored — so the design mirrors a proven precedent rather than
+inventing one.</p>
+<h3 id="coverage-decision-in-session-school-days-only">Coverage decision: in-session school days only</h3>
+<p>One row per enrolled student per <strong>in-session school day</strong> (the
+<code>dim_school_calendars</code> / <code>stg_powerschool__calendar_day</code> grain,
+<code>insession = 1</code>), not every calendar day. Matches the attendance membership
+grain exactly. "Enrolled on Oct 1" is answerable whenever Oct 1 is a school day
+(it always is for the fall count date); an arbitrary non-session date (a
+Saturday) correctly returns no row.</p>
+<h2 id="why-not-reuse-fct_student_attendance_daily">Why not reuse <code>fct_student_attendance_daily</code></h2>
+<p>It is already student × in-session-day with <code>membership_value</code> and the three
+anchors — superficially a drop-in. But it is <strong>not</strong> an authoritative enrollment
+source:</p>
+<ul>
+<li>It nulls Paterson <code>membership_value</code> / <code>attendance_value</code> before AY2026
+  (explicit
+  <code>if(_dbt_source_project = 'kipppaterson' and academic_year &lt; 2026, null, ...)</code>
+  in the fact SQL).</li>
+<li>It only spans days the ADA pipeline (<code>int_powerschool__ps_adaadm_daily_ctod</code>)
+  produced — exactly the days enrollment must be complete and independent of.</li>
+</ul>
+<p>So enrollment gets its own fact, expanding stints against the complete
+per-school calendar, not the attendance-recorded subset.</p>
+<h2 id="why-not-just-join-the-existing-cube-to-a-date-scaffold">Why not just join the existing cube to a date scaffold</h2>
+<p>Cube cannot expand the stint table into a daily grain on the fly:</p>
+<ul>
+<li>Cube has <strong>no non-equi / BETWEEN join</strong> (<code>src/cube/CLAUDE.md</code>). A
+  <code>date BETWEEN entrydate AND exitdate</code> join is not expressible.</li>
+<li>A Cube dimension cannot reference a measure; "classify an aggregate by a
+  data-driven range" is explicitly unsupported.</li>
+<li>A <code>many_to_one</code> BETWEEN from stint to dates would fan a stint into N day-rows
+  and silently mis-aggregate, because Cube's fan-trap protection trusts the
+  declared relationship.</li>
+<li>The period-end anchors are <code>row_number()</code> windows over the student-day grain —
+  window functions, which Cube cannot express (<code>src/cube/CLAUDE.md</code>:
+  transformation lives in a dbt mart read via <code>sql_table</code>).</li>
+</ul>
+<p>The expansion and the anchors therefore belong in a dbt mart.</p>
+<h2 id="why-a-separate-cube-not-an-extension-of-student_enrollments">Why a separate cube, not an extension of <code>student_enrollments</code></h2>
+<p>A reasonable instinct is "all our new measures are date-bound, so fold them into
+the existing <code>student_enrollments</code> cube instead of standing up a parallel one."
+The architecture forbids the literal forms of that, for three linked reasons:</p>
+<ul>
+<li><strong><code>student_enrollments</code> is a dimension, not a fact.</strong>
+  <code>dim_student_enrollments</code> is PK'd one row per enrollment <em>stint</em>
+  (<code>hash(student_number, _dbt_source_project, academic_year, entrydate)</code>). It
+  plays the dimension role in the star schema: <code>student_attendance</code> joins it
+  <code>many_to_one</code> for location / region / grade / demographics
+  (<a href="../../../src/cube/model/cubes/student_attendance/student_attendance.yml">student_attendance.yml</a>),
+  and both attendance views traverse it. The new fact is a different grain — one
+  row per stint × in-session day (~180×). One table cannot be both grains.</li>
+<li><strong>Repointing the cube at day grain breaks the join graph.</strong> If
+  <code>student_enrollments</code> read <code>fct_student_enrollment_daily</code>, every existing
+  <code>many_to_one</code> join into it (attendance, and its views) would silently become
+  <code>many_to_many</code>. Cube's fan-trap protection trusts the <em>declared</em> relationship,
+  so attendance measures would mis-aggregate with no error.</li>
+<li><strong>Date-bound measures need day rows to bind to — which the stint cube lacks.</strong>
+  A measure like "enrollment on Oct 1" filters <code>where date_key = '&lt;date&gt;'</code>; the
+  stint dim has only <code>entry_date</code> / <code>exit_date</code> endpoints, no per-day spine.
+  Binding a date to a stint requires <code>BETWEEN entry_date AND exit_date</code> — the
+  non-equi operation Cube can't express (the constraint above). The
+  date-boundedness is exactly what <em>forces</em> the separate day-grain fact, not
+  what makes it mergeable.</li>
+</ul>
+<p>The star-schema-correct reading of "incorporate into the existing cube" is <strong>a
+new fact cube that joins the existing enrollment dimension</strong> — which is what
+Components 1–2 do: the daily fact FKs the same <code>student_enrollments</code> /
+<code>students</code> / <code>locations</code> dims (no duplication). There is still exactly one
+enrollment dimension network-wide; the daily fact hangs off it, parallel to how
+<code>student_attendance</code> already does. Only the grain — and therefore the table, and
+therefore the cube — is necessarily separate.</p>
+<h3 id="measure-naming-the-stint-measure-is-a-stint-counter-not-a-kid-counter">Measure naming: the stint measure is a stint counter, not a kid counter</h3>
+<p>The two cubes answer different questions and <strong>must not share the
+<code>count_students</code> name</strong> — the name is the strongest documentation, and today the
+stint measure is actively mis-labeled (its summary view tells analysts to
+"always use <code>count_students</code> for enrollment headcounts," which is false — it
+counts enrollment records, not distinct students: 14,996 stints vs 14,890
+students vs 9,114 point-in-time enrolled).</p>
+<p>This spec therefore <strong>renames the existing stint measure</strong>
+<code>student_enrollments.count_students</code> → <code>count_enrollments</code>
+(<code>count_distinct(student_enrollment_key)</code> — one count per enrollment <em>stint</em>,
+alumni-inclusive, all-years) and <strong>reserves <code>count_students</code> for the new daily
+cube</strong>, where it is an honest per-period distinct-student headcount. After the
+rename:</p>
+<ul>
+<li><code>student_enrollments.count_enrollments</code> — "how many enrollment records," not a
+  headcount. Gets a <code>description:</code> saying exactly that (the measure has none
+  today).</li>
+<li><code>student_enrollment_daily.count_students</code> — point-in-time student headcount,
+  valid only when a period is pinned (date filter or <code>_*_end</code> anchor).</li>
+</ul>
+<p>This is a breaking rename of a live measure, but the blast radius is contained:
+<code>student_enrollments.count_students</code> is referenced only in its own cube and its
+two views (<code>student_enrollments_summary</code> / <code>_detail</code>) — no Tableau extract or
+dbt exposure consumes it by name (verified 2026-06-09). The rename, the new
+<code>description:</code>, and the corrected view guidance (drop "always use … for
+headcounts"; point headcount/point-in-time questions at the daily cube) all land
+in this PR's implementation step.</p>
+<h2 id="design">Design</h2>
+<h3 id="component-1-mart-fct_student_enrollment_daily">Component 1 — mart <code>fct_student_enrollment_daily</code></h3>
+<p>A fact in <code>src/dbt/kipptaf/models/marts/facts/</code> that expands enrollment stints
+against the in-session school calendar and stamps the three day-grain anchors.
+This is the direct analog of
+<a href="../../../src/dbt/kipptaf/models/marts/facts/fct_student_attendance_daily.sql"><code>fct_student_attendance_daily</code></a>
+— same join shape (stints ⋈ per-school calendar days), same anchor windows.</p>
+<p>Grain: one row per <code>(student_enrollment_key, date_key)</code> — one in-session day per
+enrolled student-stint.</p>
+<p>Build shape (mirrors the attendance fact):</p>
+<div class="highlight"><pre><span></span><code><span class="c1">-- stints ⋈ in-session calendar days</span>
+<span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;int_powerschool__student_enrollment_union&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">enr</span>
+<span class="k">inner</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_powerschool__calendar_day&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">cd</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">schoolid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">schoolid</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">date_value</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">entrydate</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">date_value</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">enr</span><span class="p">.</span><span class="n">exitdate</span><span class="w">      </span><span class="c1">-- half-open; see src/dbt/CLAUDE.md</span>
+<span class="w">    </span><span class="k">and</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">union_dataset_join_clause</span><span class="p">(...)</span><span class="w"> </span><span class="err">}}</span><span class="w">  </span><span class="c1">-- or _dbt_source_project equality</span>
+<span class="k">where</span><span class="w"> </span><span class="n">cd</span><span class="p">.</span><span class="n">insession</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<p>Columns:</p>
+<ul>
+<li><code>student_enrollment_daily_key</code> — PK,
+  <code>generate_surrogate_key([student_number, _dbt_source_project, date_key])</code>
+  (mirrors attendance's <code>student_attendance_daily_key</code> shape).</li>
+<li><code>student_enrollment_key</code> — FK to <code>dim_student_enrollments</code>, hashed identically
+  (<code>student_number, _dbt_source_project, academic_year, entrydate</code>) so the fact
+  joins the existing enrollment dim <strong>and</strong> serves as the anchor window
+  partition key. Derived in a CTE — the calendar-day spine does not carry it
+  (Open item A).</li>
+<li><code>student_key</code> — FK to <code>students</code> (<code>dim_students</code>).</li>
+<li><code>location_key</code> — FK to <code>locations</code> (<code>dim_locations</code>), via <code>schoolid</code> →
+  <code>stg_powerschool__schools</code> like <code>dim_student_enrollments</code> does.</li>
+<li><code>date_key</code> — DATE = <code>cd.date_value</code>, FK to <code>dim_dates</code>.</li>
+<li><code>academic_year</code> — <strong>sourced from the calendar term, not the stint.</strong> Join the
+  calendar day to <code>stg_powerschool__terms</code>
+  (<code>date_value between firstday and lastday</code>, per school) and take the term's
+  <code>academic_year</code>, so <code>date_key</code> and <code>academic_year</code> are consistent by
+  construction. Copying <code>enr.academic_year</code> from the stint would mislabel the
+  122 of 11.7M AY2024+ rows where a stint's date falls in a different school
+  year than the stint's own label (verified 2026-06-09) — and that mislabeling
+  is exactly the year-mixing that would break the <code>mar15</code> count (March 15
+  belongs to the prior-July academic year under the KIPP convention). The terms
+  join can match multiple term rows per day (slight fan-out observed); pick one
+  deterministically (e.g. <code>portion = 4</code> quarters, or <code>isyearrec = 1</code>) so the
+  grain stays one row per <code>(student_enrollment_key, date_key)</code>.</li>
+<li><code>grade_level</code> (degenerate dim for filtering). Region is <strong>not</strong> a fact column
+  — it resolves through the <code>locations</code> → <code>regions</code> join in the view (Component
+  3).</li>
+<li><code>enroll_status</code> — INT64, carried from the stint (0 active / 2 withdrawn / 3
+  graduated). Student-level (identical across all of a student's rows), used
+  only by the <code>count_students_active</code> measure. Document the student-level caveat
+  in the column description (it is not a point-in-time status).</li>
+<li><code>is_enrolled</code> — INT64 1 for every row (each row is an enrolled in-session day;
+  per marts R3, a countable flag). Row marker, not the count base — measures use
+  <code>count_distinct(student_key)</code>, not <code>sum(is_enrolled)</code> (see Component 2).</li>
+<li>Anchor flags (INT64 0/1) — these are <strong>calendar-derived, per-school
+  period-last-day markers</strong>, NOT per-student <code>row_number()</code> windows. A row's
+  anchor is true when its <code>date_key</code> equals the school's last in-session day of
+  that period. They mark "is this the period's last day" (a calendar property,
+  same for every enrolled student at the school), so a student who withdrew
+  mid-period has no row on the period's last day and correctly drops from a
+  period-end count — that is the "still enrolled at period end" semantic. <strong>All
+  anchors are per-school</strong> (not network-global): verified 2026-06-09 that
+  schools share a month-end mid-year (Oct: all 22 schools → 2025-10-31) but
+  <strong>diverge at year-end</strong> (June: 4 distinct last days, Miami 2026-06-04 vs
+  others to 2026-06-29). A network-global "last day" would silently drop
+  early-ending schools (Miami) — the per-school anchor counts each as of its own
+  last day.</li>
+<li><code>is_current_record</code> —
+    <code>date_key = least(&lt;school's max in-session date for this academic_year&gt;, current_date('America/New_York'))</code>.
+    The school's last in-session day that <strong>has actually occurred</strong>. For a
+    completed year this is the school's June last day; for the <strong>current</strong> year
+    it is today (the future June days don't exist as rows yet, so a static
+    "school year last day" anchor would return ~0 mid-year — this
+    <code>least(..., current_date)</code> cap is what makes the default work live).
+    <strong>Build-time dependent</strong>: like the upstream <code>is_current_week_mon_sun</code>, this
+    flag shifts as <code>current_date</code> advances, so the daily mart rebuild keeps it
+    current; it is non-deterministic across build dates for the in-progress year
+    (static for completed years). Drives the default <code>count_students</code> at year /
+    no-grouping (AY2025 → 10,374 as of each school's latest occurred day; AY2023
+    → 9,630 true year-end; verified 2026-06-09).</li>
+<li><code>is_month_end_record</code> —
+    <code>date_key = least(&lt;school's last in-session day of the calendar month&gt;, current_date)</code>.
+    Per <code>(school, month)</code>.</li>
+<li><code>is_week_end_record</code> —
+    <code>date_key = least(&lt;school's last in-session day of the ISO week&gt;, current_date)</code>.
+    Per <code>(school, week)</code>. <strong>At day grain this is a real anchor</strong> (the no-op
+    concern that dogged the weekly design is gone — a week has multiple
+    day-rows, exactly one of which is the week-end).</li>
+</ul>
+<p><strong>All three period anchors share one rule:</strong>
+  <code>date_key = least(&lt;school's last in-session day of the period&gt;, current_date('America/New_York'))</code>,
+  where period ∈ {academic year (<code>is_current_record</code>), month, week}. Per-school,
+  capped at today. The current (in-progress) period anchors to today; completed
+  periods anchor to their true last day. Without the <code>current_date</code> cap, the
+  current week/month/year bucket would be empty (its last day is in the future —
+  verified 2026-06-09: today Jun 9, current week-end Jun 12, current month-end
+  Jun 29), so the cap is required for all three, not just the year. This mirrors
+  how the attendance snapshot guard treats the current period.
+  - <code>is_latest_record</code> — per-student last enrolled in-session day,
+    <code>row_number() over (partition by student_enrollment_key order by date_key desc) = 1</code>.
+    Partition by <code>student_enrollment_key</code> (which encodes <code>academic_year</code>), so it
+    is year-scoped. This is <strong>NOT</strong> a period-end marker — it is each student's
+    own last enrolled day, which exists for anyone ever enrolled, so it drives
+    the <code>count_students_served</code> measure (ever-enrolled), not the period-end
+    default. Keep it distinct from <code>is_current_record</code>.</p>
+<p>Materialization: <code>config: materialized: table</code> (in the properties yml) —
+overrides the marts <code>view</code> default. At ~18.9M rows with <code>row_number()</code> windows
+(see "Resolved decisions" E), a view would re-expand on every Cube query.</p>
+<p>Tests: <code>unique</code> on <code>student_enrollment_daily_key</code> (or
+<code>dbt_utils.unique_combination_of_columns</code> on the hash inputs); <code>relationships</code>
+on each FK; singular tests (<code>tests/test_*.sql</code>) for the single-row anchor
+invariants — exactly one <code>is_latest_record</code> per <code>student_enrollment_key</code>, one
+<code>is_week_end_record</code> per <code>(student_enrollment_key, iso-week)</code>, one
+<code>is_month_end_record</code> per <code>(student_enrollment_key, month)</code>.</p>
+<h3 id="component-2-cube-student_enrollment_daily">Component 2 — cube <code>student_enrollment_daily</code></h3>
+<p><code>src/cube/model/cubes/students/student_enrollment_daily.yml</code>, <code>public: false</code>,
+<code>sql_table: kipptaf_marts.fct_student_enrollment_daily</code>.</p>
+<ul>
+<li>Dimensions: PK, the three FKs (<code>relationship: many_to_one</code> joins to
+  <code>students</code>, <code>locations</code>, <code>student_enrollments</code>), <code>date</code> (cast to TIMESTAMP per
+  cube time-dimension rule), <code>academic_year</code>, <code>grade_level</code>, and the three
+  <code>is_*_record</code> anchors + <code>is_enrolled</code>. Region and grade-level breakdowns come
+  through the <code>students</code> / <code>locations.regions</code> join paths in the view — no
+  degenerate <code>region</code> dim on the cube (this is the attendance convention).</li>
+<li><strong>All measures are <code>count_distinct(student_key)</code>, not <code>sum(is_enrolled)</code>.</strong>
+  This matters: at a single pinned day the two agree (verified 2026-06-09: Oct 1
+  2025 → 10,637 rows = 10,637 distinct stints = 10,637 distinct students, no
+  same-day concurrent stints), but over a multi-day window <code>sum</code> yields
+  student-<em>days</em> (a week → ~51,837) while <code>count_distinct</code> yields a sensible
+  unique-student count (~10,654). <code>count_distinct</code> degrades gracefully when
+  under-specified — the worst an analyst gets is "distinct students enrolled at
+  some point in the queried window," a real metric, not garbage. This matches
+  the attendance CA measures, which are also <code>count_distinct</code>. <code>is_enrolled</code>
+  stays on the fact as the row marker, but the measures count distinct students.
+  <strong>Measure model — period-end-as-of-now is the default, "served" is the named
+  escape hatch.</strong> The bare <code>count_students</code> is governed by the <code>cube.js</code>
+  snapshot guard (it goes <em>into</em> <code>SNAPSHOT_MEASURE_STEMS</code>), so it is <strong>always a
+  point-in-time snapshot as of the last active in-session day of whatever period
+  the query groups by, capped at today</strong> — never an unanchored day-sum and never
+  an "ever-enrolled" count. The guard injects the matching anchor by
+  granularity, with the per-school, <code>current_date</code>-capped flags from Component
+  1:
+  <code>SNAPSHOT_ANCHOR_DIMENSIONS = {default: is_current_record, month: is_month_end_record, week: is_week_end_record}</code>.
+  (Note the <code>default</code> is <code>is_current_record</code>, <strong>not</strong> <code>is_latest_record</code> — the
+  period-end-as-of-now flag, not the per-student-last-day flag.) "How many
+  students in 2025" returns the headcount as of each school's last active day;
+  "by month" each month-end; a pinned date that day.</li>
+<li>
+<p><code>count_students</code>: <code>count_distinct(student_key)</code>. <strong>In
+    <code>SNAPSHOT_MEASURE_STEMS</code>.</strong> By granularity:</p>
+<ul>
+<li>no time grouping (e.g. <code>academic_year = 2025</code>) → <code>is_current_record</code> →
+  enrolled as of each school's last occurred in-session day (AY2025 →
+  10,374; AY2023 → 9,630).</li>
+<li>granularity <code>month</code> → <code>is_month_end_record</code>; <code>week</code> →
+  <code>is_week_end_record</code>.</li>
+<li>single <code>date_key</code> pin → that exact day (~10,637 on 2025-10-01).</li>
+</ul>
+<p>All point-in-time, all <code>count_distinct(student_key)</code>. The stint cube's
+counter is renamed <code>count_enrollments</code> (see "Measure naming"). <strong>Do not
+filter <code>enroll_status</code></strong> — it is student-level and would drop a mid-year
+withdrawal from days they were still enrolled. Because the default IS
+year-end-as-of-now at year grain, <strong>no separate <code>count_students_year_end</code>
+measure is needed</strong> — <code>count_students</code> filtered to a completed year already
+gives that year's year-end (per-school last day); for the current year it
+gives as-of-today.</p>
+</li>
+<li>
+<p><code>count_students_served</code>: <code>count_distinct(student_key)</code> with measure filter
+    <code>{CUBE}.is_latest_record = true</code>, <strong>self-anchored suffix so the guard leaves
+    it alone</strong>. Counts distinct students enrolled <strong>at any point</strong> in the
+    queried period — "ever enrolled" (AY2023 10,381, AY2025 11,261; verified
+    2026-06-09). <code>is_latest_record</code> is year-scoped (partitioned by the
+    academic-year-encoding <code>student_enrollment_key</code>), so each served student has
+    exactly one flagged row per year and the distinct count is exact. The
+    difference from the default (10,381 served vs 9,630 year-end for AY2023) is
+    the ~750 within-year leavers — the deliberate "students we served" question
+    vs "still enrolled at period end."</p>
+</li>
+<li>
+<p><code>count_students_active</code>: <code>count_distinct(student_key)</code> with measure filter
+    <code>{CUBE}.enroll_status = 0</code>, self-anchored (guard leaves it alone).
+    Active-status headcount (~10,374 for AY2025 — note it ≈ the date-membership
+    default for the current year, an independent cross-check). Needed for a
+    downstream use; <strong>by design does NOT match topline</strong>. Caveat:
+    <code>enroll_status</code> is student-level, so for a <em>past</em> date it reflects the
+    student's <em>current</em> status, not status on that date — current-roster
+    questions only, not historical point-in-time.</p>
+</li>
+<li>
+<p><strong>Named state-count-date measures — filter, do NOT add fact flags.</strong> The
+  regulatory count dates (<code>oct01</code>, <code>oct15</code>, <code>mar15</code>) are filterable date
+  predicates at day grain, not row properties. Expose them as named measures
+  (discoverable in BI, analogous to the <code>_*_end</code> anchor measures), each
+  <code>count_distinct(student_key)</code> with a measure filter on <code>date_key</code>:</p>
+</li>
+<li><code>count_students_oct01</code>: filter
+    <code>extract(month from {CUBE}.date_key) = 10 and extract(day from {CUBE}.date_key) = 1</code>.</li>
+<li><code>count_students_oct15</code>: month 10, day 15.</li>
+<li><code>count_students_mar15</code>: month 3, day 15.</li>
+</ul>
+<p><strong>Filter on the row's own month/day, never on <code>academic_year + 1</code>.</strong> Each fact
+  row already carries the correct <code>academic_year</code> (sourced from the calendar
+  term — see Component 1) and a real <code>date_key</code>, so March 15 2026 self-labels as
+  <code>academic_year = 2025</code> (KIPP July–June convention; verified 2026-06-09 that
+  AY2025 spans 2025-07-01 → 2026-06-30 and contains both 2025-10-01 and
+  2026-03-15). The upstream <code>is_enrolled_mar15 = date(academic_year + 1, 3, 15)</code>
+  arithmetic exists only because the <em>stint</em> row knows just its start year; the
+  day-grain row needs no such adjustment, which is exactly what removes the
+  year-mixing risk. A multi-year query (<code>group by academic_year</code>) then returns
+  one correct Oct-1 / Mar-15 headcount per school year with no <code>+1</code> bookkeeping.</p>
+<ul>
+<li><strong>Do NOT materialize <code>is_oct01</code> / <code>is_mar15</code> flags on the fact.</strong> They would
+  store three INT64 columns of information already in <code>date_key</code> (redundant on
+  an ~18.9M-row table), and a change to a count date would force a full rebuild
+  instead of a one-line measure edit. Keep them as measure filters.</li>
+<li>A date join to <code>dates</code> on <code>date_key</code> for day/week/month/quarter granularity in
+  the view. The day-grain <code>date</code> dimension is itself the answer to "enrollment
+  on a specific date" — a single-date filter on <code>count_students</code> answers any
+  arbitrary date (not just the named ones) and needs no anchor.</li>
+</ul>
+<h4 id="measure-descriptions-paste-into-the-cube-yaml-description-fields">Measure descriptions (paste into the cube YAML <code>description:</code> fields)</h4>
+<p>Production-ready text — self-contained so an analyst reading only the BI field
+list understands the measure and its footguns. Use verbatim.</p>
+<ul>
+<li>
+<p><strong><code>count_students</code></strong> — "Distinct students enrolled, point-in-time. Counts each
+  student once as of the most recent in-session school day in your query: the
+  exact date if you filter to one, otherwise each school's latest in-session day
+  in the period (today for the current year, the last day of school for
+  completed years). Matches the topline Total Enrollment methodology —
+  enrollment is by entry/exit dates, not status. Note: when no single date is
+  pinned, schools that end on different days are each counted as of their own
+  last day, so a network total can mix as-of dates within the final weeks of a
+  year. For 'how many students did we serve at any point' use
+  count_students_served; for active-status roster use count_students_active."</p>
+</li>
+<li>
+<p><strong><code>count_students_served</code></strong> — "Distinct students enrolled at any point during
+  the queried period. A student who enrolled and then withdrew mid-year is still
+  counted. Use for 'how many students did we serve this year.' This is higher
+  than count_students (point-in-time) by the number of mid-period
+  enrollments/withdrawals. Not a point-in-time headcount — for that use
+  count_students."</p>
+</li>
+<li>
+<p><strong><code>count_students_active</code></strong> — "Distinct students with an active enrollment
+  status (excludes withdrawn and graduated). Use for current active-roster
+  questions. WARNING: enrollment status is the student's current status, not
+  their status on a past date — do not use this for historical point-in-time
+  counts (use count_students with a date filter). Does not match topline Total
+  Enrollment, which counts by enrollment dates rather than status."</p>
+</li>
+<li>
+<p><strong><code>count_students_oct01</code> / <code>count_students_oct15</code> / <code>count_students_mar15</code></strong> —
+  "Distinct students enrolled on the [October 1 / October 15 / March 15] state
+  count date of the queried academic year. Point-in-time headcount for the
+  regulatory fall/spring enrollment count. Group by academic_year to compare
+  count dates across years. (March 15 falls in the spring of the academic year —
+  e.g. academic_year 2025 = March 15, 2026 — and is handled automatically.)"</p>
+</li>
+</ul>
+<p><code>cube.js</code> wiring:</p>
+<ul>
+<li><strong>No domain-gating edit needed.</strong> Access gating is prefix-derived
+  (<code>isStudentMember = (m) =&gt; m.startsWith("student")</code>,
+  <a href="../../../src/cube/cube.js">cube.js</a>); the cube name
+  <code>student_enrollment_daily</code> is gated automatically. The old <code>STUDENT_CUBES</code>
+  array no longer exists.</li>
+<li>Append <code>"student_enrollment_daily"</code> to <code>SNAPSHOT_CUBES</code>.</li>
+<li>Add the <code>count_students</code> stem to <code>SNAPSHOT_MEASURE_STEMS</code> so the guard governs
+  the base measure (this is the inversion from attendance, where the bare count
+  is unanchored). <code>count_students_served</code> and <code>count_students_active</code> carry a
+  <code>SNAPSHOT_SELF_ANCHORED_SUFFIXES</code> suffix (e.g. <code>_served</code>, <code>_active</code>) so the
+  guard leaves them alone — <strong>add <code>_served</code> and <code>_active</code> to that array</strong> (today
+  it holds <code>_year_end</code> / <code>_month_end</code> / <code>_week_end</code>).</li>
+<li><strong><code>cube.js</code> per-cube default anchor — small, isolated, additive change.</strong> The
+  guard's <code>SNAPSHOT_ANCHOR_DIMENSIONS.default</code> is hardcoded <code>is_latest_record</code>;
+  this cube needs the no-granularity default to inject <strong><code>is_current_record</code></strong>
+  (per-school period-end-as-of-now), not <code>is_latest_record</code> (per-student last
+  day = served). Make the anchor map per-cube with fallback to the shared map,
+  so attendance's resolved map is byte-for-byte unchanged:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kd">const</span><span class="w"> </span><span class="nx">SNAPSHOT_ANCHOR_OVERRIDES</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="nx">student_enrollment_daily</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">default</span><span class="o">:</span><span class="w"> </span><span class="s2">&quot;is_current_record&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">};</span>
+<span class="c1">// in the loop, per cubePrefix:</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">anchorMap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">  </span><span class="p">...</span><span class="nx">SNAPSHOT_ANCHOR_DIMENSIONS</span><span class="p">,</span>
+<span class="w">  </span><span class="p">...(</span><span class="nx">SNAPSHOT_ANCHOR_OVERRIDES</span><span class="p">[</span><span class="nx">cubePrefix</span><span class="p">]</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="p">{}),</span>
+<span class="p">};</span>
+<span class="kd">const</span><span class="w"> </span><span class="nx">anchorDimension</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">anchorMap</span><span class="p">[</span><span class="nx">granularity</span><span class="p">]</span><span class="w"> </span><span class="o">??</span><span class="w"> </span><span class="nx">anchorMap</span><span class="p">.</span><span class="k">default</span><span class="p">;</span>
+</code></pre></div>
+<p>Also change the <code>alreadyAnchored</code> check's
+  <code>Object.values(SNAPSHOT_ANCHOR_DIMENSIONS)</code> to <code>Object.values(anchorMap)</code> so a
+  manually-supplied <code>is_current_record</code> filter is recognized as
+  already-anchored. Scope: <strong>3 lines, the anchor-<em>selection</em> logic only — NOT
+  the access-control / location-scope path of <code>queryRewrite</code>, which is
+  untouched.</strong> Add a hooks/cube regression check that attendance's injected
+  anchors are unchanged.</p>
+<ul>
+<li><strong>Quarter granularity is unsupported by the guard</strong>
+  (<a href="../../../src/cube/cube.js">cube.js</a> rejects granularities outside
+  day/week/month) — same limit attendance has. Document that enrollment
+  quarter-trends aren't available; use month.</li>
+<li>The cube must expose <code>is_current_record</code>, <code>is_month_end_record</code>,
+  <code>is_week_end_record</code>, and <code>is_latest_record</code> dimensions (the guard and the
+  named measures require them).</li>
+<li><strong>Deliberate design note — config lives in <code>cube.js</code>, not the cube YAML.</strong>
+  Per-cube anchor selection is resolved by cube-name lookup in
+  <code>SNAPSHOT_ANCHOR_OVERRIDES</code> (keyed off the <code>cubePrefix</code> loop variable, the
+  same pattern as the existing <code>SNAPSHOT_CUBES</code> / <code>SNAPSHOT_MEASURE_STEMS</code>
+  cube-name-keyed config). This means a cube's default-anchor behavior is
+  declared in <code>cube.js</code>, not in its own YAML — a mild separation-of-concerns
+  trade-off, chosen for consistency with the existing snapshot config rather
+  than a heavier metadata-driven refactor. Tracked in
+  <a href="https://github.com/TEAMSchools/teamster/issues/4155">#4155</a> for a future move
+  to YAML so all of a cube's behavior is viewable in one place.</li>
+</ul>
+<h3 id="component-3-view-student_enrollment_daily_summary">Component 3 — view <code>student_enrollment_daily_summary</code></h3>
+<p><code>src/cube/model/views/students/student_enrollment_daily_summary.yml</code>. Summary
+pattern (no direct identifiers): single <code>cube-access-student-data</code> policy,
+<code>includes: "*"</code>. Use
+<a href="../../../src/cube/model/views/student_attendance/student_attendance_summary.yml"><code>student_attendance_summary.yml</code></a>
+as the structural template:</p>
+<ul>
+<li>Surfaces <code>count_students</code>, <code>count_students_served</code>, <code>count_students_active</code>,
+  the three named state-count-date variants (<code>count_students_oct01</code> / <code>_oct15</code> /
+  <code>_mar15</code>), and the four <code>is_*_record</code> anchor dimensions (under a <code>Filter</code>
+  folder, as attendance does).</li>
+<li><strong>The view description must spell out the measure ladder</strong> (all
+  <code>count_distinct(student_key)</code>, all alumni-free because the year/date filter
+  selects on the calendar day's school year, not student status — a prior-year
+  graduate has no rows labeled the queried year). Verified 2026-06-09:</li>
+<li><code>count_students</code> + year filter → <strong>enrolled as of each school's last
+    occurred in-session day</strong> (period-end-as-of-now): AY2025 → 10,374, AY2023 →
+    9,630. Mixed as-of date across schools mid-year (Miami's last day Jun 4 vs
+    Newark's Jun 9) — by design; each school as of its own last real day.</li>
+<li><code>count_students</code> + single <code>date_key</code> (e.g. 2025-10-01) → <strong>~10,637 =
+    enrolled <em>on that day</em></strong>, all schools as of the same calendar date.</li>
+<li><code>count_students_served</code> + year → <strong>ever enrolled that year</strong>: AY2025 →
+    11,261, AY2023 → 10,381 (includes mid-year leavers). The topline
+    <code>Total Enrollment</code> analog.</li>
+<li><code>count_students_active</code> + year → <strong>~10,374 = active-status students</strong>
+    (status 0). Does <strong>not</strong> match topline by design; current-roster only.</li>
+</ul>
+<p>These answer different questions; the description must steer analysts to bare
+  <code>count_students</code> (or a <code>date_key</code> pin) for point-in-time enrollment,
+  <code>count_students_served</code> for "students we served," and <code>count_students_active</code>
+  only for current active-roster questions (not historical point-in-time — see
+  the Component 2 caveat).</p>
+<ul>
+<li>Time dimension via <code>join_path: student_enrollment_daily.dates</code>, <code>prefix: true</code>
+  → <code>dates_*</code> members (day/week/month/quarter granularity).</li>
+<li><strong>Region and grade breakdowns come through join paths, not degenerate dims</strong>:
+  <code>join_path: student_enrollment_daily.locations.regions</code> (<code>prefix: true</code> →
+  <code>regions_region_name</code>, <code>regions_state</code>) and
+  <code>join_path: student_enrollment_daily.students</code> (<code>prefix: false</code>) for
+  demographics. Resolves Open item C (region is not a fact column). Grade-level
+  may stay a degenerate dim on the fact (<code>prefix: false</code>, bare <code>grade_level</code>) as
+  attendance does.</li>
+<li>Folder grouping per the conformed-prefix convention: bare names for top-cube
+  members, <code>&lt;last-join-segment&gt;_&lt;member&gt;</code> for <code>prefix: true</code> joins
+  (<code>dates_date_day</code>, <code>regions_region_name</code>).</li>
+</ul>
+<h3 id="component-4-view-student_enrollment_daily_detail">Component 4 — view <code>student_enrollment_daily_detail</code></h3>
+<p><code>src/cube/model/views/students/student_enrollment_daily_detail.yml</code>. Row-level
+drill-down to individual students (e.g. "who was enrolled on Oct 1?", roster
+exports). Uses
+<a href="../../../src/cube/model/views/students/student_enrollments_detail.yml"><code>student_enrollments_detail.yml</code></a>
+as the structural template — same join paths and folders as the summary view,
+plus the student-identifier members.</p>
+<ul>
+<li>Exposes the same measures and the <code>date</code> time dimension as the summary view,
+  plus the PK <code>student_enrollment_daily_key</code> and the <code>students</code> identifier
+  members (<code>student_key</code>, <code>full_name</code>, <code>birth_date</code>, <code>lea_student_identifier</code>,
+  <code>state_student_identifier</code>, <code>enrollment_status</code>) and <code>student_enrollment_key</code>
+  for stint-level joins.</li>
+<li><strong>Two-policy PII access</strong> (per <code>src/cube/CLAUDE.md</code> detail-view rule):</li>
+<li><code>cube-access-student-data</code> — <code>includes: "*"</code> with <code>excludes:</code> listing every
+    direct identifier (<code>full_name</code>, <code>birth_date</code>, <code>lea_student_identifier</code>,
+    <code>state_student_identifier</code>, <code>district_student_identifier</code>,
+    <code>salesforce_contact_id</code> — copy the existing <code>student_enrollments_detail</code>
+    exclude list verbatim, adjusting for which of those members this view
+    actually includes).<ul>
+<li><code>cube-access-student-pii</code> — <code>includes: "*"</code>.</li>
+</ul>
+</li>
+<li>Same folder structure as <code>student_enrollments_detail</code> (Enrollment / Status /
+  Location / Student), plus a Date folder and the <code>Filter</code> anchor folder from
+  the summary view.</li>
+</ul>
+<p>This was previously scoped out as YAGNI; it is now a confirmed requirement
+(drill-down to students), so it ships in this spec.</p>
+<h3 id="population-and-point-in-time-semantics-the-alumni-question">Population and point-in-time semantics (the alumni question)</h3>
+<p>The fact is a <strong>complete historical student-day record</strong>, not a pre-filtered
+"currently enrolled" table — exactly like
+<code>int_extracts__student_enrollments_weeks</code>, which carries 467k enrolled-week rows
+for graduates and 1.15M for withdrawn students across 14 years (verified
+2026-06-09). Point-in-time-ness is a <strong>query/measure concern (date filter +
+anchors), never a row filter.</strong></p>
+<p>This is the resolution to "won't old school calendars capture alumni?" — yes, at
+the row level, and that is correct:</p>
+<ul>
+<li><code>enroll_status</code> is <strong>student-level, not per-stint</strong> (see
+  <code>src/dbt/kipptaf/CLAUDE.md</code>), so a 2025 graduate carries <code>enroll_status = 3</code>
+  on all their historical stints. Of 42,940 status-3 stints, only 22,565 are
+  null-dated placeholders; the other <strong>20,375 have real dates</strong> spanning every
+  historical year and <em>will</em> materialize as enrolled day-rows in old calendars.</li>
+<li>That is harmless because every count is date-pinned. "Enrollment on
+  2025-10-01" filters <code>date_key = '2025-10-01'</code>; a 2025 grad's 2019 rows and a
+  2019 grad's rows alike simply don't match. Alumni fall out <strong>by date</strong>, the
+  same way they do in the weeks intermediate — which reconciles to topline
+  despite containing all that history.</li>
+<li><strong>Do NOT add an <code>enroll_status</code> filter to scope alumni out of the table.</strong> It
+  would break the historical reconciliation (the weeks int doesn't filter, so
+  the daily fact must not either) and is the wrong axis — point-in-time is a
+  date question, not a status question. The only role-of-the-table filters are
+  <code>insession = 1</code> (coverage decision) and the half-open date predicate (which
+  correctly drops the null-dated placeholders, but is not the alumni mechanism).</li>
+<li>This is also why the base <code>count_students</code> must never be used unanchored:
+  summing <code>is_enrolled</code> across all of history is precisely the alumni-inclusive
+  footgun the anchors and date filters exist to prevent.</li>
+</ul>
+<h3 id="data-flow">Data flow</h3>
+<div class="highlight"><pre><span></span><code>int_powerschool__student_enrollment_union  (stints)   stg_powerschool__calendar_day
+        │                                                      │  (insession = 1)
+        └──────────────── stint ⋈ calendar-day ────────────────┘
+                          │  (date-range join + anchor windows)
+                          ▼
+        fct_student_enrollment_daily         (new mart, Cube-readable)
+                          │  sql_table
+                          ▼
+        student_enrollment_daily (cube)       (+ snapshot anchors in cube.js)
+                          │
+            ┌─────────────┴─────────────┐
+            ▼                           ▼
+   _daily_summary (view)        _daily_detail (view, PII-gated)
+   (aggregate breakdowns)       (row-level student drill-down)
+            └──────────── → MCP / Tableau / analysts
+</code></pre></div>
+<h3 id="exposure">Exposure</h3>
+<p>Add <code>fct_student_enrollment_daily</code> to <code>cube.yml</code>'s
+<code>cube_semantic_layer.depends_on</code> (every Cube-consumed mart must appear there).</p>
+<h3 id="relationship-to-the-existing-weekly-intermediate">Relationship to the existing weekly intermediate</h3>
+<p><code>int_extracts__student_enrollments_weeks</code> is <strong>not</strong> touched — it has 17
+downstream consumers (the entire topline weekly suite plus 4 Tableau extracts)
+and stays as-is. The day-grain fact is independent; the topline reconciliation
+(Open item D) compares the two for one week as a correctness check, not a
+dependency.</p>
+<h2 id="resolved-decisions">Resolved decisions</h2>
+<p>All five open items were closed against the warehouse on 2026-06-09; the
+diagnostic figures are recorded inline so the plan inherits them.</p>
+<ul>
+<li><strong>A. Hash compatibility — RESOLVED (confirmed).</strong> <code>_dbt_source_project</code> is
+  present and non-null on all four districts in
+  <code>int_powerschool__student_enrollment_union</code>. The reconstructed
+  <code>student_enrollment_key</code>
+  (<code>hash(student_number, _dbt_source_project, academic_year, entrydate)</code>) is
+  unique across all 123,126 stints and matches <code>dim_student_enrollments</code> exactly
+  for all 100,561 real-dated stints (the 22,565 unmatched are precisely the
+  null-entrydate placeholders the fact drops). So the FK joins cleanly and the
+  anchor windows partition by it — no fallback needed.</li>
+<li><strong>B. Graduate / historical stints — RESOLVED.</strong> The half-open join drops the
+  22,565 null-<code>entrydate</code> <code>enroll_status = 3</code> placeholders and retains the
+  real-dated historical stints by design (see "Population and point-in-time
+  semantics"). Alumni exclusion is a date-filter concern, never an
+  <code>enroll_status</code> table filter. Plan-time check: assert 0 rows with NULL
+  <code>entrydate</code> survive the join, and that a pinned recent-date count excludes
+  prior-year grads.</li>
+<li><strong>C. Region scoping — RESOLVED.</strong> Region resolves via the <code>locations</code> →
+  <code>regions</code> join in the view, not a fact column. The mart is left <strong>complete</strong>
+  (no Paterson filter, no year filter — see D) so it is reusable; scope happens
+  in the view / query. Paterson is sparse (37K historical + 159K recent daily
+  rows; its PowerSchool data effectively starts ~2024) but is not filtered out.</li>
+<li><strong>D. Reconciliation acceptance gate — TARGET ESTABLISHED.</strong> Daily-fact
+  <code>count_students</code> for the week containing 2025-10-01, filtered to that week's
+  days, must equal the topline <code>is_enrolled_week</code> count from
+  <code>int_extracts__student_enrollments_weeks</code> (verified 2026-06-09):</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Region</th>
+<th>Expected enrolled</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Camden</td>
+<td>2,161</td>
+</tr>
+<tr>
+<td>Miami</td>
+<td>1,347</td>
+</tr>
+<tr>
+<td>Newark</td>
+<td>6,611</td>
+</tr>
+<tr>
+<td>Paterson</td>
+<td>521</td>
+</tr>
+<tr>
+<td>Total</td>
+<td>10,640</td>
+</tr>
+</tbody>
+</table>
+<p>Also spot-check <code>count_students</code> at <code>date_key = date(academic_year, 10, 1)</code>
+  against the upstream <code>is_enrolled_oct01</code> count for the same year.</p>
+<ul>
+<li><strong>E. Volume and materialization — RESOLVED.</strong> Actual full-history volume is
+  <strong>~18.9M rows</strong> (verified by joining stints to in-session calendar days,
+  2026-06-09): Newark 13.0M (10.6M historical + 2.4M recent — 70% of the table),
+  Camden 3.3M, Miami 1.4M, Paterson 0.2M. <strong>Decision: full history, no year
+  bound</strong> (keeps the mart complete and makes historical point-in-time queries
+  like "enrollment on 2019-10-01" answerable). At ~19M rows with <code>row_number()</code>
+  windows, the mart <strong>must be <code>materialized: table</code></strong> (override the marts <code>view</code>
+  default) — a windowed view would re-expand on every Cube query. Benchmark the
+  build time during implementation.</li>
+</ul>
+<h2 id="testing">Testing</h2>
+<ul>
+<li>dbt:
+  <code>uv run dbt build --select fct_student_enrollment_daily+ --project-dir src/dbt/kipptaf</code>
+  (mart + its tests). Singular tests for the single-anchor invariants.</li>
+<li>Cube: validate compilation in Cube Cloud Dev Mode (manual; no local compile),
+  and confirm the summary view returns counts matching the BigQuery
+  point-in-time query for a fixed date and a fixed week.</li>
+<li>Detail view: confirm the two-policy PII gate — a <code>cube-access-student-data</code>
+  (non-PII) context must not surface <code>full_name</code> / identifiers (a <code>/load</code> 500
+  "hidden member" is the expected signal), while <code>cube-access-student-pii</code>
+  resolves them; and that detail-view <code>count_students</code> for a fixed date equals
+  the summary view's for the same filter.</li>
+<li>Reconciliation queries (Open item D) as the acceptance gate — both the
+  one-week topline match and the Oct 1 day-exact match.</li>
+</ul>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>Changing the <em>semantics</em> of the existing stint measure — it stays
+  <code>count_distinct(student_enrollment_key)</code>; this spec only renames it to
+  <code>count_enrollments</code> and documents it (see "Measure naming"), it does not alter
+  what it counts.</li>
+<li>Touching <code>int_extracts__student_enrollments_weeks</code> or its 17 consumers.</li>
+<li>An every-calendar-day (incl. non-session) grain — in-session days only, per
+  the coverage decision above.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2001 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Link Student-Data Domains to Responsible Teacher — Cube Design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#link-student-data-domains-to-responsible-teacher-cube-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Link Student-Data Domains to Responsible Teacher — Cube Design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-the-resolution-must-live-in-dbt-not-a-cube-join" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the resolution must live in dbt, not a Cube join
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#teacher-source-bridge_course_section_teachers-validated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Teacher source: bridge_course_section_teachers (validated)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anchor-enrollment-grain-not-event-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Anchor: enrollment-grain, not event-date
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confirmed-facts-from-data-and-code-exploration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confirmed facts (from data and code exploration)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-dbt-resolve-one-teacher-per-enrollment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. dbt — resolve one teacher per enrollment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-cube-widen-the-two-existing-dim-cubes-one-measure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Cube — widen the two existing dim cubes (+ one measure)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-cube-edits-to-existing-views" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Cube — edits to existing views
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-cube-new-student_section_enrollments_view-roster-view" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Cube — new student_section_enrollments_view roster view
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fan-out-and-measure-safety-the-key-risk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fan-out and measure safety (the key risk)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#implementation-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Implementation order
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#follow-up-co-taught-multi-lead-sections" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow-up: co-taught / multi-lead sections
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deferred-blocked-on-4269" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deferred (blocked on #4269)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-06-26-student-teacher-manager-cube-linkage-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="link-student-data-domains-to-responsible-teacher-cube-design">Link Student-Data Domains to Responsible Teacher — Cube Design</h1>
+<p><strong>Date:</strong> 2026-06-26 (revised 2026-07-01) <strong>Status:</strong> Active <strong>Branch:</strong>
+<code>cristinabaldor/feat/claude-student-teacher-manager-cube-linkage</code> <strong>Issue:</strong>
+<a href="https://github.com/TEAMSchools/teamster/issues/4273">#4273</a></p>
+<h2 id="context">Context</h2>
+<p>Analysts need to slice student-data views by the <strong>responsible teacher</strong>
+(point-in-time) and to answer teacher-roster questions:</p>
+<ul>
+<li><strong>Attendance</strong> → the student's <strong>homeroom/advisory</strong> teacher.</li>
+<li><strong>Assessments</strong> → the <strong>subject-area section lead</strong> for each kid.</li>
+<li><strong>Headcount</strong> → "how many students does this teacher teach?" (homeroom and
+  section).</li>
+<li><strong>Class roster</strong> → the student list for a teacher's section(s).</li>
+<li>Later (out of scope here, but the primitive is reused): gradebooks and other
+  section-scoped student data.</li>
+</ul>
+<p>The teacher's <strong>manager and reporting chain</strong> are deferred
+(<a href="#deferred-blocked-on-4269">Deferred</a>); the <strong>co-lead / co-teacher</strong> breakdown
+is a separate follow-up
+(<a href="#follow-up-co-taught--multi-lead-sections">Follow-up</a>).</p>
+<p>Confirmed decisions: both domains in one spec; Lead Teacher only;
+enrollment-grain anchor; bridge as the teacher source; single lead teacher this
+PR (co-teacher breakdown and manager/chain deferred); headcount + roster folded
+into this PR.</p>
+<h2 id="why-the-resolution-must-live-in-dbt-not-a-cube-join">Why the resolution must live in dbt, not a Cube join</h2>
+<p>The obvious question is whether Cube can just join a fact to the teacher tables
+and skip new dbt work. Cube <em>can</em> host multi-table joins inline —
+<code>staff_work_history.yml</code> does a 7-table SCD2 period-intersection in inline
+<code>sql:</code>. The blocker is narrower:</p>
+<ul>
+<li><strong>Uniqueness must be <em>enforced</em>, and only dbt can do that.</strong> Resolving the
+  responsible teacher requires filtering to <code>Lead Teacher</code>, overlapping dates,
+  then <strong>deduplicating</strong> sections with more than one lead to a single value.
+  Cube has no window functions and no dedup, and its <code>many_to_one</code> fan-trap
+  protection <strong>trusts the declared relationship</strong> rather than verifying it — a
+  Cube-only join that is not perfectly 1:1 silently double-counts attendance
+  days and assessment scores. dbt is where the value is deduped <strong>and</strong> pinned
+  with a <code>unique</code> test. That test is the entire safety guarantee.</li>
+<li><strong>The fact-to-teacher path spans a derived grain.</strong> Attendance is keyed on
+  <code>student_enrollment_key</code> with no section key at all; "homeroom teacher" is a
+  derived path (enrollment → <code>HR</code>-credit section → lead teacher) that does not
+  exist as joinable keys.</li>
+</ul>
+<p>The resolution therefore lives in dbt. But it does <strong>not</strong> need new <code>dim_</code>
+models or new cubes — it is columns on the two enrollment dims that already back
+the cubes wired into these views (below).</p>
+<h2 id="teacher-source-bridge_course_section_teachers-validated">Teacher source: <code>bridge_course_section_teachers</code> (validated)</h2>
+<p>The teacher resolves from <code>bridge_course_section_teachers</code>
+(<code>role = 'Lead Teacher'</code>), <strong>not</strong> the legacy PowerSchool teacher-of-record path
+the Tableau dashboards use (<code>int_powerschool__advisory</code> for homeroom;
+<code>base_powerschool__course_enrollments.teachernumber</code> for assessments).
+Rationale:</p>
+<ul>
+<li>The bridge is the marts-native primitive: it is <strong>already keyed on
+  <code>staff_key</code></strong> (via <code>int_people__staff_roster</code>), which is exactly what Cube's
+  <code>staff</code> cube joins on. The legacy path emits a raw <code>teachernumber</code> that would
+  need the same crosswalk re-derived to reach Cube.</li>
+<li>The bridge is <strong>role-aware</strong> (<code>Lead Teacher</code> vs <code>Co-teacher</code> /
+  <code>Gradebook Access</code>), so it names the actual lead in a co-taught room; the
+  legacy teacher-of-record does not distinguish.</li>
+</ul>
+<p><strong>Validation (enrollment-weighted agreement, bridge Lead Teacher vs legacy
+teacher-of-record, where both assign a teacher):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Section kind</th>
+<th>Enrollments</th>
+<th>Agreement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2025-26</td>
+<td>HR (homeroom)</td>
+<td>10,883</td>
+<td>98.1%</td>
+</tr>
+<tr>
+<td>2025-26</td>
+<td>non-HR (assessments)</td>
+<td>66,032</td>
+<td>94.8%</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>HR (homeroom)</td>
+<td>10,674</td>
+<td>98.4%</td>
+</tr>
+<tr>
+<td>2024-25</td>
+<td>non-HR (assessments)</td>
+<td>65,403</td>
+<td>97.8%</td>
+</tr>
+</tbody>
+</table>
+<p>Two consequences carried into the design:</p>
+<ul>
+<li><strong>Cube will not reconcile row-for-row with the Tableau dashboards</strong> in
+  co-taught / multi-lead sections (~2% of homeroom, ~2–5% of academic-section
+  enrollments). The divergence is the bridge being <em>more</em> precise about the lead
+  teacher, not a defect. Flag this to analysts who compare the two surfaces.</li>
+<li><strong>A <code>NULL</code> teacher is expected</strong> for a minority of enrollments (~4% homeroom,
+  ~7–8% academic sections): neither source assigns a teacher. The teacher FK is
+  nullable by design (null-wrapped surrogate).</li>
+</ul>
+<h2 id="anchor-enrollment-grain-not-event-date">Anchor: enrollment-grain, not event-date</h2>
+<p>The teacher is a <strong>dimensional attribute of the enrollment</strong>, not a per-event
+measurement. The existing Tableau dashboards are already enrollment-grain —
+<code>rpt_tableau__attendance_dashboard</code> attaches one advisor per enrollment, and
+<code>rpt_tableau__assessment_dashboard</code> picks one section per
+<code>(student, year, subject)</code> (<code>rn_student_year_illuminate_subject_desc = 1</code>),
+neither anchored to the test/attendance date. An event-date anchor (teacher as
+of the day the test was taken) is technically possible — assessments carry an
+administration date — but it would be a new, divergent per-fact measurement, not
+a reusable dimension, and would be far heavier on the daily attendance fact for
+a vanishingly small set of mid-year-handoff days. Enrollment-grain replicates
+the established behavior and yields one reusable column per dim (also feeding
+the headcount, roster, and future gradebook use cases).</p>
+<p>Handoff sections (&gt;1 lead overlapping the enrollment — ~5.5% of academic-section
+enrollments when weighted by students) collapse to one value by
+<code>dbt_utils.deduplicate</code> ordering <code>effective_start_date desc</code> (most-recent lead —
+matches the dashboards' most-recent-section convention and picks the current
+teacher).</p>
+<h2 id="confirmed-facts-from-data-and-code-exploration">Confirmed facts (from data and code exploration)</h2>
+<ul>
+<li><code>bridge_course_section_teachers</code> (<code>kipptaf_marts</code>): grain section x teacher x
+  period; cols <code>course_section_key</code>, <code>staff_key</code>, <code>role</code>,
+  <code>effective_start_date</code>, <code>effective_end_date</code>. Built from
+  <code>stg_powerschool__sectionteacher</code> + <code>stg_powerschool__roledef</code> +
+  <code>int_people__staff_roster</code> (which supplies <code>staff_key</code>). <code>role</code> values:
+  <code>Lead Teacher</code>, <code>Co-teacher</code>, <code>Gradebook Access (edit)</code>, <code>Blended Learning</code>,
+  <code>Job Share Teacher</code>, <code>PhysEd Share</code>.</li>
+<li><code>dim_student_section_enrollments</code> (grain <code>student_section_enrollment_key</code>):
+  FKs <code>student_enrollment_key</code>, <code>course_section_key</code>; <code>entry_date</code>, <code>exit_date</code>,
+  <code>is_dropped_section</code>. Already reads <code>base_powerschool__course_enrollments</code> and
+  is read by the <code>student_section_enrollments</code> cube — which has <strong>no measures
+  today</strong>. <code>dim_courses.credit_type = 'HR'</code> marks homeroom courses.</li>
+<li><code>dim_student_enrollments</code> (grain <code>student_enrollment_key</code>): the school-stint
+  dim. Read by the <code>student_school_enrollments</code> cube (which has
+  <code>count_enrollments</code>, a stint count — not a headcount).</li>
+<li><code>student_enrollments</code> cube reads <code>fct_student_attendance_daily</code> and owns
+  <code>count_students</code> (the point-in-time headcount, <code>count_distinct</code>); it backs the
+  existing <code>student_enrollments_view</code>.</li>
+<li><code>fct_assessment_scores_enrollment_scoped</code>: FK <code>student_section_enrollment_key</code>
+  (already subject-resolved) plus <code>enrollment_resolution</code> value
+  <code>subject_section</code> or <code>homeroom</code>. Its cube already joins <code>many_to_one</code> to
+  <code>student_section_enrollments</code>.</li>
+<li><code>fct_student_attendance_daily</code>: daily grain, FK <code>student_enrollment_key</code>
+  (school stint, <strong>no section key</strong>). Its cubes already join <code>many_to_one</code> to
+  <code>student_school_enrollments</code>. A SNAPSHOT cube.</li>
+<li>Cube conventions: cubes <code>public: false</code>, views public; derived grains / dedup
+  / multi-table resolution live in dbt read via <code>sql_table</code>; student-domain
+  cubes are named <code>student*</code> (drives <code>isStudentMember</code> gating).</li>
+</ul>
+<h2 id="design">Design</h2>
+<p>Everything reads tables already in <code>kipptaf_marts</code>. <strong>No new dbt models, no new
+cubes</strong> — the fact-to-enrollment joins already exist. One <strong>new roster view</strong> is
+added (§4).</p>
+<h3 id="1-dbt-resolve-one-teacher-per-enrollment">1. dbt — resolve one teacher per enrollment</h3>
+<p><strong><code>dim_student_section_enrollments</code></strong> — add resolved columns (grain unchanged:
+one row per <code>student_section_enrollment_key</code>):</p>
+<ul>
+<li>LEFT JOIN <code>bridge_course_section_teachers</code> on <code>course_section_key</code>,
+  <code>role = 'Lead Teacher'</code>, and a <strong>half-open date overlap</strong> of the bridge
+  effective window with the section <code>entry_date</code>/<code>exit_date</code>
+  (<code>src/dbt/CLAUDE.md</code> date-range-join rule: <code>start &lt;= x and x &lt; end</code>).</li>
+<li>Collapse handoff sections to one value with <code>dbt_utils.deduplicate</code> (partition
+  by <code>student_section_enrollment_key</code>, order by <code>effective_start_date desc</code> —
+  most-recent) — <strong>no</strong> <code>qualify</code>/<code>distinct</code>.</li>
+<li>New columns: <code>lead_teacher_staff_key</code>, <code>teacher_role</code>.</li>
+<li>Null-wrap <code>lead_teacher_staff_key</code> per the nullable-surrogate-key rule (the
+  ~7–8% coverage gap is real, not an error); add a <code>relationships</code> test
+  <code>lead_teacher_staff_key -&gt; dim_staff.staff_key</code>. The dim's existing PK
+  <code>unique</code> test guarantees the added columns did not change the grain (the
+  fan-out guard).</li>
+</ul>
+<p><strong><code>dim_student_enrollments</code></strong> — add <code>homeroom_teacher_staff_key</code> (grain
+unchanged: one row per <code>student_enrollment_key</code>):</p>
+<ul>
+<li>Resolve the stint's <code>HR</code>-credit section (<code>dim_courses.credit_type = 'HR'</code>),
+  then its <code>Lead Teacher</code> from the bridge, deduped to one value per
+  <code>student_enrollment_key</code> (rare mid-year homeroom change → most-recent). The
+  resolution SQL may live in a supporting <code>int_</code> model that this dim reads
+  rather than inline — an implementation-plan detail.</li>
+<li>New column: <code>homeroom_teacher_staff_key</code> (nullable, null-wrapped).
+  <code>relationships</code> test to <code>dim_staff.staff_key</code>; existing PK <code>unique</code> test is
+  the fan-out guard.</li>
+</ul>
+<h3 id="2-cube-widen-the-two-existing-dim-cubes-one-measure">2. Cube — widen the two existing dim cubes (+ one measure)</h3>
+<p>No new cubes. Each existing dim cube exposes the teacher FK and gains one
+<code>many_to_one</code> join to <code>staff</code> for the teacher name.</p>
+<ul>
+<li><strong><code>student_section_enrollments</code></strong> — add dims <code>lead_teacher_staff_key</code> (FK,
+  degenerate) and <code>teacher_role</code>; add join <code>many_to_one</code> to <code>staff</code> on
+  <code>lead_teacher_staff_key</code> (prefixed so members read <code>staff_full_name</code> etc.).
+  <strong>Add a <code>count_students</code> measure</strong> (<code>count_distinct</code> on the student, reached
+  via the existing <code>student_school_enrollments</code> join) — this is what answers
+  "how many students does this section teacher teach?" and is fan-safe.</li>
+<li><strong><code>student_school_enrollments</code></strong> (reads <code>dim_student_enrollments</code>) — add dim
+  <code>homeroom_teacher_staff_key</code>; add the same <code>many_to_one</code> join to <code>staff</code>.</li>
+</ul>
+<p>The fact cubes (<code>student_attendance</code>, <code>student_assessment_scores</code>,
+<code>student_enrollments</code>) are <strong>unchanged</strong> — they already join to these enrollment
+cubes.</p>
+<h3 id="3-cube-edits-to-existing-views">3. Cube — edits to existing views</h3>
+<p>Add teacher members (prefix the <code>staff</code> join so members read <code>staff_full_name</code>,
+etc.). New <code>Teacher</code> folder on each view. The teacher members ride each view's
+existing <code>student-region</code> / <code>student-school</code> / <code>student-network</code> access groups
+(all <code>member_level.includes: "*"</code> with <code>row_level</code> location scoping) — no PII
+excludes; teacher name/<code>staff_key</code> are staff-directory-tier info, not student
+PII, so any scope-specific <code>student-*</code> group already sees them.</p>
+<ul>
+<li><strong><code>student_attendance_view</code></strong> — homeroom teacher (name + <code>staff_key</code>).</li>
+<li><strong><code>student_assessment_scores_view</code></strong> — section lead teacher (name +
+  <code>staff_key</code> + <code>teacher_role</code>).</li>
+<li><strong><code>student_enrollments_view</code></strong> — homeroom teacher. With the cube's existing
+  <code>count_students</code>, this answers homeroom headcount ("students in this teacher's
+  advisory") and the <strong>advisory roster</strong>.</li>
+</ul>
+<h3 id="4-cube-new-student_section_enrollments_view-roster-view">4. Cube — new <code>student_section_enrollments_view</code> roster view</h3>
+<p>A per-teacher <strong>class roster</strong> and section headcount need a section-grained
+analyst surface, which does not exist today. Add a single
+<code>student_section_enrollments_view</code> (<code>src/cube/model/views/students/</code>):</p>
+<ul>
+<li><strong>Members</strong>: section (course/section descriptors via existing joins), lead
+  teacher (name + <code>staff_key</code> + <code>teacher_role</code>), student identity, <code>entry_date</code>
+  / <code>exit_date</code>, <code>is_dropped_section</code>, non-PII groupers (teacher <code>staff_key</code>,
+  <code>teacher_role</code>, section, <code>academic_year</code>), and the new <code>count_students</code>
+  measure. Filtering to a teacher yields their class roster; grouping by teacher
+  yields per-teacher headcount.</li>
+<li><strong>Access</strong>: the three <code>student-*</code> groups (<code>student-region</code> / <code>student-school</code>
+  / <code>student-network</code>), each <code>member_level.includes: "*"</code> with <code>row_level</code>
+  location filters. No PII split — the collapsed view carries every field
+  (including student PII and teacher name) under the wildcard include, gated
+  only by the caller's location scope.</li>
+</ul>
+<h3 id="fan-out-and-measure-safety-the-key-risk">Fan-out and measure safety (the key risk)</h3>
+<ul>
+<li>Fact/enrollment-to-teacher is <code>many_to_one</code> (one value per enrollment after
+  dbt resolution) → <strong>no fan-out</strong>; <code>count_students</code> / <code>count_scores</code> /
+  <code>avg_daily_attendance</code> unchanged whether or not the teacher dim is in the
+  query.</li>
+<li>The new section <code>count_students</code> is <code>count_distinct</code> on the student, so it is
+  correct at every grouping (per-teacher and grand total) even before the
+  co-teacher follow-up introduces fan.</li>
+<li><code>student_attendance</code> is a SNAPSHOT cube (#4160). We add <strong>dimensions only, no
+  measures</strong>, and the join is row-preserving, so the snapshot anchor injection
+  is unaffected. Verify a snapshot measure (e.g.
+  <code>count_chronically_absent_year_end</code>) grouped by teacher returns the same total
+  as ungrouped.</li>
+<li>Assessments: the fact's <code>student_section_enrollment_key</code> already points at the
+  subject section (or homeroom fallback per <code>enrollment_resolution</code>), so the
+  section dim yields the subject teacher automatically; consumers can filter
+  <code>enrollment_resolution = 'subject_section'</code> for strict subject matches.</li>
+</ul>
+<h2 id="files">Files</h2>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modify</td>
+<td><code>dim_student_section_enrollments.sql</code> plus its <code>.yml</code> (marts/dimensions)</td>
+</tr>
+<tr>
+<td>Modify</td>
+<td><code>dim_student_enrollments.sql</code> plus its <code>.yml</code> (marts/dimensions)</td>
+</tr>
+<tr>
+<td>Modify</td>
+<td><code>src/cube/model/cubes/students/student_section_enrollments.yml</code> (dims, join, count)</td>
+</tr>
+<tr>
+<td>Modify</td>
+<td><code>src/cube/model/cubes/students/student_school_enrollments.yml</code> (dim, join)</td>
+</tr>
+<tr>
+<td>Modify</td>
+<td><code>views/student_attendance/student_attendance_view.yml</code></td>
+</tr>
+<tr>
+<td>Modify</td>
+<td><code>views/student_assessments/student_assessment_scores_view.yml</code></td>
+</tr>
+<tr>
+<td>Modify</td>
+<td><code>views/students/student_enrollments_view.yml</code></td>
+</tr>
+<tr>
+<td>Create</td>
+<td><code>views/students/student_section_enrollments_view.yml</code></td>
+</tr>
+</tbody>
+</table>
+<p>Possibly one new <code>int_</code> helper model feeding the homeroom resolution
+(implementation-plan call). No <code>cube.js</code> change (existing student-prefixed cubes
+keep their <code>isStudentMember</code> gating; no new SNAPSHOT cube).</p>
+<h2 id="implementation-order">Implementation order</h2>
+<ol>
+<li>dbt: resolve <code>lead_teacher_staff_key</code> / <code>teacher_role</code> on
+   <code>dim_student_section_enrollments</code>, then <code>homeroom_teacher_staff_key</code> on
+   <code>dim_student_enrollments</code> (plus properties, tests).
+   <code>uv run dbt build --select dim_student_section_enrollments dim_student_enrollments --project-dir src/dbt/kipptaf --target dev</code>.</li>
+<li>Cube: widen <code>student_section_enrollments</code> (+ <code>count_students</code>) and
+   <code>student_school_enrollments</code>.</li>
+<li>Edit the three existing views; create the new
+   <code>student_section_enrollments_view</code> roster view with access policies and
+   folders.</li>
+</ol>
+<h2 id="verification">Verification</h2>
+<ul>
+<li><strong>dbt</strong>: build the two dims in dev; assert PK uniqueness still holds and the
+  new <code>relationships</code> tests pass. Cross-check in BigQuery: one teacher per
+  <code>student_section_enrollment_key</code>; homeroom teacher present for current-year
+  enrollments; spot-check a known section's Lead Teacher; confirm the
+  null-teacher share is in the expected ~4–8% band (not a broken join).</li>
+<li><strong>Cube</strong> (point cube <code>sql_table</code> at the dev <code>zz_&lt;user&gt;_kipptaf_marts</code> copies
+  per <code>src/cube/CLAUDE.md</code>, revert before commit): <code>/sql</code> compiles the teacher
+  members and the section <code>count_students</code>; <code>/load</code> returns the teacher and a
+  class roster for a sample teacher.</li>
+<li><strong>Measure safety</strong>: via the cube MCP, confirm <code>count_students</code> (attendance,
+  enrollments, section) and <code>count_scores</code> (assessments) are <strong>identical</strong>
+  grouped-by-teacher vs. ungrouped over the same filter; repeat for one snapshot
+  measure.</li>
+<li><strong>Access</strong>: confirm the teacher members and the new roster view are hidden
+  without a <code>student-*</code> group, and that a caller in one <code>student-*</code> scope sees
+  only their location's rows (<code>row_level</code> filter) while still seeing every field
+  — teacher name/<code>staff_key</code> and student PII alike — under the wildcard include.</li>
+</ul>
+<h2 id="follow-up-co-taught-multi-lead-sections">Follow-up: co-taught / multi-lead sections</h2>
+<p>This spec resolves <strong>one</strong> Lead Teacher per enrollment (most-recent on a
+handoff), which under-represents <strong>co-taught / multi-lead sections</strong> — exactly
+where Cube diverges from the Tableau dashboards (~2% homeroom, ~2–5% academic;
+~5.5% of academic-section enrollments sit in a &gt;1-lead section). Analysts want
+both to <strong>group by</strong> every teacher (incl. co-teachers, by role) and to
+<strong>filter</strong> to a teacher's sections. Design worked out for that follow-up:</p>
+<ul>
+<li><strong>Isolate the fan.</strong> Keep the existing views on the single-lead <code>many_to_one</code>
+  field (fully additive, no fan). Add a <strong>dedicated teacher-attribution view per
+  domain</strong>, backed by a new <strong>many-to-many bridge cube</strong> (section-enrollment ×
+  teacher × <code>role</code>, <code>one_to_many</code> from the enrollment). Do NOT put the fanning
+  join on the ADA/average-bearing views.</li>
+<li><strong>One surface serves both needs.</strong> A single-teacher <em>filter</em> on the bridge
+  view does not fan (only that teacher's rows match → each student once → all
+  measures correct, including averages). Fan-out only bites a genuine <em>group-by</em>
+  across teachers, and only in cross-teacher totals.</li>
+<li><strong>Measure audit on the bridge view.</strong> Reformulate every flag/count additive to
+  <code>count_distinct(fact_PK)</code> filtered by the flag (<code>count_scores</code> →
+  <code>count_distinct(assessment_score_key)</code>; <code>count_absent_days</code> →
+  <code>count_distinct(student_attendance_daily_key)</code> filtered <code>is_absent = 1</code>;
+  <code>_sum_proficient</code> / <code>_sum_tardy</code> / <code>_count_present_days</code> likewise). Because
+  the PK is unique these return identical values on the non-fan path — a pure
+  robustness upgrade — and stay correct under fan. Reformulate numerator and
+  denominator of each ratio together.</li>
+<li><strong>Residue to decide.</strong> Continuous-sum ratios (<code>avg_daily_attendance</code>,
+  <code>avg_scale_score</code>, <code>avg_percent_correct</code>) cannot be count-distinct'd. They are
+  correct per-teacher and for single-teacher filters, but their cross-teacher
+  grand total is fan-weighted. Either expose with a "don't read the all-teachers
+  total" description or omit them from the teacher-attribution view.</li>
+<li><strong>Pre-agg note.</strong> Exact <code>count_distinct</code> is non-additive for pre-aggregations;
+  switch to <code>count_distinct_approx</code> (HLL) if those views get pre-aggregated.</li>
+</ul>
+<p>Track this as its own issue (linked to #4273) with the fan-out analysis above.</p>
+<h2 id="deferred-blocked-on-4269">Deferred (blocked on #4269)</h2>
+<p>Manager and reporting-chain linkage — direct manager, plus AP
+(<code>Assistant School Leader</code>) and School Leader tiers — is deferred until
+<a href="https://github.com/TEAMSchools/teamster/pull/4269">#4269</a> merges. That PR
+introduces <code>dim_staff_reporting_chain</code> (the transitive org closure) and
+<code>dim_staff_cube_access</code>. The point-in-time anchoring approach for the manager
+join is <strong>TBD</strong> and will be decided when that model lands (we may take a
+different route entirely). The teacher <code>staff_key</code> resolved here is the join
+anchor; adding managers will not rework the teacher layer built in this spec.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

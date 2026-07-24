@@ -1,0 +1,2103 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Finalsite NJ Contacts — Phase 1 (Newark Ingestion + Discovery) Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-nj-contacts-phase-1-newark-ingestion-discovery-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite NJ Contacts — Phase 1 (Newark Ingestion + Discovery) Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confirmed-config-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confirmed config values
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-newark-finalsiteresource" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Newark FinalsiteResource
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-newark-contacts-asset-schema-and-schedule" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Newark contacts asset, schema, and schedule
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-wire-finalsite-into-kippnewarkdefinitionspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Wire Finalsite into kippnewark/definitions.py
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-declare-the-newark-finalsite-1password-item" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Declare the Newark Finalsite 1Password item
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-k8s-secret-env-var-wiring-in-dagster-cloudyaml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: k8s secret env-var wiring in dagster-cloud.yaml
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-open-the-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Open the PR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-deploy-discovery-unblocks-phase-3-dbt-modeling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-deploy: discovery (unblocks Phase 3 dbt modeling)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-review notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-08-finalsite-contacts-nj-phase1-ingestion.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-nj-contacts-phase-1-newark-ingestion-discovery-implementation-plan">Finalsite NJ Contacts — Phase 1 (Newark Ingestion + Discovery) Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Wire the Finalsite Contacts API <code>contacts</code> asset into the <code>kippnewark</code>
+Dagster code location (mirroring the existing <code>kippmiami</code> integration), deploy
+it, and run the discovery queries that unblock the dbt modeling phase.</p>
+<p><strong>Architecture:</strong> <code>kippnewark</code> gains a location-local <code>resources.py</code> holding a
+<code>FinalsiteResource</code> instance, a <code>contacts</code> Avro asset built from the shared
+<code>build_finalsite_asset()</code> factory, a daily schedule, and the k8s secret env-var
+wiring in <code>dagster-cloud.yaml</code>. No library changes in this phase — the
+<code>Relationship</code> schema extension for the rank field is deferred to Phase 3, after
+discovery reveals the field name.</p>
+<p><strong>Tech Stack:</strong> Dagster (Python 3.13), <code>dagster-k8s</code>, <code>py_avro_schema</code>, GCS Avro
+IO manager, BigQuery external tables.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Python</strong>: always <code>uv run</code> — never bare <code>python</code>/<code>python3</code>.
+  <code>requires-python = "&gt;=3.13"</code>.</li>
+<li><strong>Worktree</strong>: all work happens in
+  <code>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj</code>.
+  Every <code>git</code> call uses <code>git -C &lt;worktree&gt;</code>; every Python call uses
+  <code>VIRTUAL_ENV= uv --directory &lt;worktree&gt; run python ...</code> with an absolute
+  script path (or run from the worktree cwd).</li>
+<li><strong>Asset key convention</strong>: <code>[code_location, integration, asset_name]</code> →
+  <code>["kippnewark", "finalsite", "contacts"]</code>.</li>
+<li><strong>Library/code-location split</strong>: no edits to <code>libraries/finalsite/</code> in this
+  phase. Reuse <code>build_finalsite_asset()</code> and <code>FinalsiteResource</code> unchanged.</li>
+<li><strong>Do not commit secret VALUES.</strong> <code>dagster-cloud.yaml</code> references k8s secret
+  NAMES and keys only (<code>op-finalsite-api-kippnewark</code>), never the credential
+  itself.</li>
+<li><strong>Conventional commits</strong>; branch <code>cbini/feat/claude-finalsite-contacts-nj</code>
+  (already created, linked to #4346).</li>
+</ul>
+<h2 id="confirmed-config-values">Confirmed config values</h2>
+<ul>
+<li><strong>Finalsite server subdomain for Newark:</strong> <code>kippnewark.fsenrollment.com</code>
+  (confirmed) — matches the <code>server=CODE_LOCATION</code> default, so Task 1 needs no
+  change.</li>
+<li><strong>Newark 1Password item:</strong> <code>vaults/Data Team/items/Finalsite API - Newark</code>
+  (confirmed). The <code>op-finalsite-api-kippnewark</code> k8s secret does NOT exist yet —
+  Task 4 declares the <code>OnePasswordItem</code> that syncs it. The field internal names
+  are ASSUMED to be <code>username</code> (credential id) / <code>password</code> (secret), mirroring
+  the Miami item; Task 4 Step 4 verifies this against the synced secret before
+  Task 5 wires <code>secretKeyRef.key</code>.</li>
+</ul>
+<hr />
+<h2 id="task-1-newark-finalsiteresource">Task 1: Newark <code>FinalsiteResource</code></h2>
+<p><code>kippnewark</code> currently has no <code>resources.py</code> — every resource comes from
+<code>core.resources</code>. Finalsite is location-specific (per-instance credentials), so
+it needs a location-local resource file, exactly as <code>kippmiami</code> has.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/teamster/code_locations/kippnewark/resources.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Produces: <code>FINALSITE_RESOURCE: FinalsiteResource</code> — imported by
+  <code>definitions.py</code> (Task 3) as the <code>"finalsite"</code> resource.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create the resource file</strong></p>
+</li>
+</ul>
+<p>Create <code>src/teamster/code_locations/kippnewark/resources.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">EnvVar</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">FinalsiteResource</span>
+
+<span class="c1"># NOTE: server defaults to CODE_LOCATION (&quot;kippnewark&quot;) →</span>
+<span class="c1"># kippnewark.fsenrollment.com. Confirm Newark&#39;s actual Finalsite subdomain</span>
+<span class="c1"># before deploy (see plan &quot;Open config value&quot;); pass an explicit string here if</span>
+<span class="c1"># it differs.</span>
+<span class="n">FINALSITE_RESOURCE</span> <span class="o">=</span> <span class="n">FinalsiteResource</span><span class="p">(</span>
+    <span class="n">server</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span>
+    <span class="n">credential_id</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FINALSITE_CREDENTIAL_ID&quot;</span><span class="p">),</span>
+    <span class="n">secret</span><span class="o">=</span><span class="n">EnvVar</span><span class="p">(</span><span class="s2">&quot;FINALSITE_SECRET&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Validate it imports</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from teamster.code_locations.kippnewark.resources import FINALSITE_RESOURCE; print(type(FINALSITE_RESOURCE).__name__)&quot;</span>
+</code></pre></div>
+<p>Expected: prints <code>FinalsiteResource</code> with no import error.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span>src/teamster/code_locations/kippnewark/resources.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kippnewark): add FinalsiteResource. Refs #4346&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-newark-contacts-asset-schema-and-schedule">Task 2: Newark <code>contacts</code> asset, schema, and schedule</h2>
+<p>Add the Avro schema, the asset, and a daily schedule to the existing
+<code>kippnewark/finalsite/</code> module, and export the schedule from its <code>__init__.py</code>.
+<code>kippnewark/finalsite/schema.py</code> currently defines only <code>STATUS_REPORT_SCHEMA</code>;
+<code>assets.py</code> currently defines only the <code>status_report</code> SFTP asset; there is no
+<code>schedules.py</code> yet.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/finalsite/schema.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/finalsite/assets.py</code></li>
+<li>Create: <code>src/teamster/code_locations/kippnewark/finalsite/schedules.py</code></li>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/finalsite/__init__.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>build_finalsite_asset()</code> (library), <code>Contact</code> Pydantic model
+  (library), <code>CODE_LOCATION</code> / <code>LOCAL_TIMEZONE</code> (unchanged; <code>LOCAL_TIMEZONE</code>
+  must be added to the <code>kippnewark</code> <code>__init__.py</code> import in Step 3).</li>
+<li>
+<p>Produces: <code>assets</code> list (now includes <code>contacts</code>), <code>schedules</code> list — both
+  consumed by <code>definitions.py</code> (Task 3).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Add <code>CONTACTS_SCHEMA</code> to <code>schema.py</code></strong></p>
+</li>
+</ul>
+<p>Edit <code>src/teamster/code_locations/kippnewark/finalsite/schema.py</code> to import the
+<code>Contact</code> model and generate its Avro schema. Final file contents:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">py_avro_schema</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">Contact</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.sftp.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">StatusReport</span>
+
+<span class="n">pas_options</span> <span class="o">=</span> <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">Option</span><span class="o">.</span><span class="n">NO_DOC</span> <span class="o">|</span> <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">Option</span><span class="o">.</span><span class="n">NO_AUTO_NAMESPACE</span>
+
+<span class="n">STATUS_REPORT_SCHEMA</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+    <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">py_type</span><span class="o">=</span><span class="n">StatusReport</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">pas_options</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">CONTACTS_SCHEMA</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+    <span class="n">py_avro_schema</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">py_type</span><span class="o">=</span><span class="n">Contact</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">pas_options</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the <code>contacts</code> asset to <code>assets.py</code></strong></li>
+</ul>
+<p>Edit <code>src/teamster/code_locations/kippnewark/finalsite/assets.py</code>. Add the
+<code>build_finalsite_asset</code> and <code>CONTACTS_SCHEMA</code> imports, define the <code>contacts</code>
+asset, and add it to the <code>assets</code> list. The <code>status_report</code> asset stays
+unchanged. Resulting imports + additions:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">CURRENT_FISCAL_YEAR</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.finalsite.schema</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CONTACTS_SCHEMA</span><span class="p">,</span>
+    <span class="n">STATUS_REPORT_SCHEMA</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.api.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_finalsite_asset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.finalsite.sftp.assets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">get_finalsite_school_year_partition_keys</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.libraries.sftp.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_sftp_file_asset</span>
+
+<span class="c1"># ... existing status_report asset unchanged ...</span>
+
+<span class="n">contacts</span> <span class="o">=</span> <span class="n">build_finalsite_asset</span><span class="p">(</span>
+    <span class="n">code_location</span><span class="o">=</span><span class="n">CODE_LOCATION</span><span class="p">,</span>
+    <span class="n">asset_name</span><span class="o">=</span><span class="s2">&quot;contacts&quot;</span><span class="p">,</span>
+    <span class="n">schema</span><span class="o">=</span><span class="n">CONTACTS_SCHEMA</span><span class="p">,</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;includes&quot;</span><span class="p">:</span> <span class="s2">&quot;contacts.relationships&quot;</span><span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">assets</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">status_report</span><span class="p">,</span>
+    <span class="n">contacts</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Create <code>schedules.py</code></strong></li>
+</ul>
+<p><code>kippnewark/__init__.py</code> currently exports <code>CODE_LOCATION</code> and
+<code>CURRENT_FISCAL_YEAR</code> but not <code>LOCAL_TIMEZONE</code> — it IS defined there, so the
+import works. Create
+<code>src/teamster/code_locations/kippnewark/finalsite/schedules.py</code> mirroring
+Miami's (daily 04:00 ET):</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dagster</span><span class="w"> </span><span class="kn">import</span> <span class="n">ScheduleDefinition</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark</span><span class="w"> </span><span class="kn">import</span> <span class="n">CODE_LOCATION</span><span class="p">,</span> <span class="n">LOCAL_TIMEZONE</span>
+
+<span class="n">finalsite_contacts_daily_asset_job_schedule</span> <span class="o">=</span> <span class="n">ScheduleDefinition</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">__finalsite__contacts__daily_asset_job_schedule&quot;</span><span class="p">,</span>
+    <span class="n">cron_schedule</span><span class="o">=</span><span class="s2">&quot;0 4 * * *&quot;</span><span class="p">,</span>
+    <span class="n">execution_timezone</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">LOCAL_TIMEZONE</span><span class="p">),</span>
+    <span class="n">target</span><span class="o">=</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">CODE_LOCATION</span><span class="si">}</span><span class="s2">/finalsite/contacts&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">schedules</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">finalsite_contacts_daily_asset_job_schedule</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Export <code>schedules</code> from <code>__init__.py</code></strong></li>
+</ul>
+<p>Edit <code>src/teamster/code_locations/kippnewark/finalsite/__init__.py</code> to match
+Miami's export shape:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.finalsite.assets</span><span class="w"> </span><span class="kn">import</span> <span class="n">assets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.finalsite.schedules</span><span class="w"> </span><span class="kn">import</span> <span class="n">schedules</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;assets&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;schedules&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Validate imports (schema generation + module load)</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from teamster.code_locations.kippnewark import finalsite; print(len(finalsite.assets), &#39;assets&#39;, len(finalsite.schedules), &#39;schedules&#39;)&quot;</span>
+</code></pre></div>
+<p>Expected: prints <code>2 assets 1 schedules</code> (Avro schema generation for <code>Contact</code>
+succeeds, no import error).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span>src/teamster/code_locations/kippnewark/finalsite/
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kippnewark): add Finalsite contacts asset and daily schedule. Refs #4346&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-3-wire-finalsite-into-kippnewarkdefinitionspy">Task 3: Wire Finalsite into <code>kippnewark/definitions.py</code></h2>
+<p>The asset auto-loads via <code>load_assets_from_modules([... finalsite ...])</code>
+(already present). What is missing: the <code>"finalsite"</code> resource and the
+<code>finalsite.schedules</code> registration.</p>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify: <code>src/teamster/code_locations/kippnewark/definitions.py</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>
+<p>Consumes: <code>FINALSITE_RESOURCE</code> (Task 1), <code>finalsite.schedules</code> (Task 2).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Import <code>FINALSITE_RESOURCE</code></strong></p>
+</li>
+</ul>
+<p>Edit <code>src/teamster/code_locations/kippnewark/definitions.py</code>. After the
+<code>from teamster.code_locations.kippnewark import (...)</code> block, add:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">teamster.code_locations.kippnewark.resources</span><span class="w"> </span><span class="kn">import</span> <span class="n">FINALSITE_RESOURCE</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Register the schedule</strong></li>
+</ul>
+<p>In the <code>schedules=[...]</code> list, add <code>*finalsite.schedules,</code> (keep existing
+entries):</p>
+<div class="highlight"><pre><span></span><code>    <span class="n">schedules</span><span class="o">=</span><span class="p">[</span>
+        <span class="o">*</span><span class="n">extracts</span><span class="o">.</span><span class="n">schedules</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">deanslist</span><span class="o">.</span><span class="n">schedules</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">finalsite</span><span class="o">.</span><span class="n">schedules</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">overgrad</span><span class="o">.</span><span class="n">schedules</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">powerschool</span><span class="o">.</span><span class="n">schedules</span><span class="p">,</span>
+    <span class="p">],</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Register the resource</strong></li>
+</ul>
+<p>In the <code>resources={...}</code> dict, add the <code>"finalsite"</code> key (alphabetical slot,
+after <code>"dbt_cli"</code>/<code>"deanslist"</code> and before <code>"gcs"</code>):</p>
+<div class="highlight"><pre><span></span><code>        <span class="s2">&quot;finalsite&quot;</span><span class="p">:</span> <span class="n">FINALSITE_RESOURCE</span><span class="p">,</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Validate the full code location</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>dagster<span class="w"> </span>definitions<span class="w"> </span>validate<span class="w"> </span>-m<span class="w"> </span>teamster.code_locations.kippnewark.definitions
+</code></pre></div>
+<p>Expected: <code>Validation successful</code>. If it fails ONLY on missing env vars /
+manifest (codespace has no prod secrets), fall back to the import check:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;from teamster.code_locations.kippnewark.definitions import defs; print(&#39;ok&#39;)&quot;</span>
+</code></pre></div>
+<p>Expected: prints <code>ok</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span>src/teamster/code_locations/kippnewark/definitions.py
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kippnewark): register Finalsite resource and contacts schedule. Refs #4346&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-4-declare-the-newark-finalsite-1password-item">Task 4: Declare the Newark Finalsite 1Password item</h2>
+<p>The <code>op-finalsite-api-kippnewark</code> k8s secret does not exist. The
+1Password-Connect operator creates each k8s secret from an <code>OnePasswordItem</code>
+manifest declared in <code>.k8s/1password/items.yaml</code>. Add Newark's, mirroring the
+Miami entry (lines 385-392). Applying the manifest to the cluster is a manual
+<code>kubectl</code> step (Step 3) that needs cluster access — hand it to the user if
+Claude lacks <code>kubectl</code> context.</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>.k8s/1password/items.yaml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Append the Newark <code>OnePasswordItem</code></strong></p>
+</li>
+</ul>
+<p>Append to the end of <code>.k8s/1password/items.yaml</code> (each item is a <code>---</code>-separated
+document; match the Miami finalsite entry shape exactly):</p>
+<div class="highlight"><pre><span></span><code><span class="nn">---</span>
+<span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">onepassword.com/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OnePasswordItem</span>
+<span class="nt">metadata</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">op-finalsite-api-kippnewark</span>
+<span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dagster-cloud</span>
+<span class="nt">spec</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">itemPath</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vaults/Data Team/items/Finalsite API - Newark</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Validate YAML + trunk-check</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import yaml; docs=list(yaml.safe_load_all(open(&#39;.k8s/1password/items.yaml&#39;))); print(sum(1 for d in docs if d and d[&#39;metadata&#39;][&#39;name&#39;]==&#39;op-finalsite-api-kippnewark&#39;), &#39;newark item&#39;)&quot;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>.k8s/1password/items.yaml
+</code></pre></div>
+<p>Expected: prints <code>1 newark item</code>, then <code>✔ No issues</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Apply to the cluster (manual / user)</strong></li>
+</ul>
+<p>Requires <code>dagster-cloud</code> cluster credentials (see <code>.k8s/setup.sh</code>). Hand to the
+user if Claude has no <code>kubectl</code> context:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>apply<span class="w"> </span>-f<span class="w"> </span>.k8s/1password/items.yaml
+</code></pre></div>
+<p>The operator then creates the <code>op-finalsite-api-kippnewark</code> secret from the
+1Password item (may take a few seconds to sync).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Verify the synced secret's key names</strong></li>
+</ul>
+<p>k8s secret keys come from the 1Password field's INTERNAL name, not the UI label
+(<code>.k8s/CLAUDE.md</code> — SFTP items remap <code>password</code> → <code>newPassword</code>, etc.). Confirm
+Task 5's <code>secretKeyRef.key</code> values before wiring:</p>
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>-n<span class="w"> </span>dagster-cloud<span class="w"> </span>get<span class="w"> </span>secret<span class="w"> </span>op-finalsite-api-kippnewark<span class="w"> </span>-o<span class="w"> </span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">&#39;{.data}&#39;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>keys
+</code></pre></div>
+<p>Expected: includes <code>"username"</code> and <code>"password"</code>. If the Newark item uses
+different field names, use those exact names as the <code>key:</code> values in Task 5
+instead of <code>username</code>/<code>password</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span>.k8s/1password/items.yaml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(k8s): declare Newark Finalsite API 1Password item. Refs #4346&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-5-k8s-secret-env-var-wiring-in-dagster-cloudyaml">Task 5: k8s secret env-var wiring in <code>dagster-cloud.yaml</code></h2>
+<p><code>FinalsiteResource</code> reads <code>FINALSITE_CREDENTIAL_ID</code> and <code>FINALSITE_SECRET</code> from
+the environment. These must be projected from the k8s secret into BOTH the
+<code>server_k8s_config</code> (code-server pod) and <code>run_k8s_config</code> (run pod) env blocks,
+mirroring <code>kippmiami/dagster-cloud.yaml</code> lines 190-199 (server) and 218-227
+(run). Miami sources them from secret <code>op-finalsite-api-kippmiami</code>; Newark uses
+<code>op-finalsite-api-kippnewark</code> (declared in Task 4). Use the key names verified
+in Task 4 Step 4 (defaults <code>username</code>/<code>password</code> below).</p>
+<p><strong>Files:</strong></p>
+<ul class="task-list">
+<li>
+<p>Modify: <code>src/teamster/code_locations/kippnewark/dagster-cloud.yaml</code></p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Inspect Newark's current env blocks</strong></p>
+</li>
+</ul>
+<p>Read <code>src/teamster/code_locations/kippnewark/dagster-cloud.yaml</code> and locate the
+<code>server_k8s_config.container_config.env</code> list and the
+<code>run_k8s_config.container_config.env</code> list.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add the two env vars to the <code>server_k8s_config</code> env list</strong></li>
+</ul>
+<p>Append to the <code>server_k8s_config.container_config.env</code> list (2-space list-item
+indentation matching siblings):</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FINALSITE_CREDENTIAL_ID</span>
+<span class="w">  </span><span class="nt">valueFrom</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">secretKeyRef</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">op-finalsite-api-kippnewark</span>
+<span class="w">      </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">username</span>
+<span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FINALSITE_SECRET</span>
+<span class="w">  </span><span class="nt">valueFrom</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">secretKeyRef</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">op-finalsite-api-kippnewark</span>
+<span class="w">      </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">password</span>
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the same two env vars to the <code>run_k8s_config</code> env list</strong></li>
+</ul>
+<p>Append the identical block to the <code>run_k8s_config.container_config.env</code> list.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Validate YAML parses</strong></li>
+</ul>
+<p>Run:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">VIRTUAL_ENV</span><span class="o">=</span><span class="w"> </span>uv<span class="w"> </span>--directory<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>run<span class="w"> </span>python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import yaml,sys; d=yaml.safe_load(open(&#39;src/teamster/code_locations/kippnewark/dagster-cloud.yaml&#39;)); print(&#39;parsed&#39;, d[&#39;locations&#39;][0][&#39;location_name&#39;])&quot;</span>
+</code></pre></div>
+<p>Expected: prints <code>parsed kippnewark</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Trunk-check the edited YAML</strong></li>
+</ul>
+<p>Run from inside the worktree:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/teamster/code_locations/kippnewark/dagster-cloud.yaml
+</code></pre></div>
+<p>Expected: <code>✔ No issues</code> (or auto-fixed formatting applied).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span>src/teamster/code_locations/kippnewark/dagster-cloud.yaml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(kippnewark): project Finalsite API credentials into k8s env. Refs #4346&quot;</span>
+</code></pre></div>
+<blockquote>
+<p><strong>Deploy note:</strong> merging a change to a code location's <code>dagster-cloud.yaml</code>
+triggers that location's prod deploy. Confirm the
+<code>op-finalsite-api-kippnewark</code> k8s secret exists (Task 4 applied + synced)
+BEFORE merge, or the code server boots without the credential and the first
+<code>contacts</code> run fails auth.</p>
+</blockquote>
+<hr />
+<h2 id="task-6-open-the-pr">Task 6: Open the PR</h2>
+<p><strong>Files:</strong> none (PR only).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Push the branch</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-contacts-nj<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>cbini/feat/claude-finalsite-contacts-nj
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Create the PR</strong></li>
+</ul>
+<p>Use <code>mcp__github__create_pull_request</code> with base <code>main</code>, head
+<code>cbini/feat/claude-finalsite-contacts-nj</code>, body from
+<code>.github/pull_request_template.md</code>, and <code>Refs #4346</code> in the body. Title:
+<code>feat(kippnewark): add Finalsite contacts ingestion</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Verify CI</strong></li>
+</ul>
+<p>Wait for Trunk / CodeQL check-runs to go green
+(<code>mcp__github__pull_request_read get_check_runs</code>). dbt Cloud CI is a no-op here
+(no dbt models changed). Address any Trunk failures and re-push.</p>
+<hr />
+<h2 id="post-deploy-discovery-unblocks-phase-3-dbt-modeling">Post-deploy: discovery (unblocks Phase 3 dbt modeling)</h2>
+<p>These steps are OPERATIONAL, not code — they run AFTER the PR merges, the
+<code>kippnewark</code> location redeploys, and the <code>contacts</code> asset materializes at least
+once in prod. They produce the spec addendum that pins the dbt SQL shape. Do NOT
+mark Phase 1 "done" until the discovery findings are recorded.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Materialize the Newark contacts asset in prod</strong></li>
+</ul>
+<p>Hand off to the user (prod materialization is classifier-blocked for Claude), or
+via Dagster UI: materialize <code>kippnewark/finalsite/contacts</code>. Confirm success and
+a non-zero <code>record_count</code> via
+<code>mcp__dagster__get_asset_materializations(asset_key="kippnewark/finalsite/contacts")</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Stage the external source for the new region</strong></li>
+</ul>
+<p>The <code>finalsite</code> package's <code>api/</code> models are <code>+enabled: false</code> for <code>kippnewark</code>
+today (Phase 3 flips this). The raw external table lands under the Newark
+Finalsite dataset regardless. Confirm the external exists via BigQuery MCP
+(<code>&lt;dataset&gt;.__TABLES__</code>, look for the <code>contacts</code> external).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the discovery queries</strong></li>
+</ul>
+<p>Against the Newark <code>contacts</code> external / <code>stg</code>-equivalent, answer each spec
+discovery-checklist item. Keep all PII in the Codespace / scratch — write only
+aggregates and field NAMES to the addendum. Queries (BigQuery MCP):</p>
+<ul>
+<li><strong>Rank field on relationships</strong> — inspect the <code>relationships</code> repeated field's
+  subfields and whether any encodes rank/order distinct from <code>primary</code>:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="n">rel_type</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="p">.</span><span class="k">primary</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">newark_finalsite_dataset</span><span class="o">&gt;</span><span class="p">.</span><span class="n">src_finalsite__contacts</span><span class="o">`</span><span class="p">,</span>
+<span class="w">  </span><span class="k">unnest</span><span class="p">(</span><span class="n">relationships</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">r</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">3</span><span class="w"> </span><span class="k">desc</span>
+</code></pre></div>
+<p>Also list the raw JSON keys present on a relationship element (the Avro/struct
+  field list) to see if a rank/order/sequence field exists that the current
+  <code>Relationship</code> Pydantic model omits.</p>
+<ul>
+<li><strong>Non-student contact records reachable via <code>rel_id</code></strong> — check whether the
+  contacts payload includes parent/guardian records that <code>rel_id</code> joins to, and
+  which detail fields (phone/email/address) they carry:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">n_total</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">array_length</span><span class="p">(</span><span class="n">relationships</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="n">n_with_rel</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">email</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="n">n_with_email</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">array_length</span><span class="p">(</span><span class="n">households</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="n">n_with_household</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">newark_finalsite_dataset</span><span class="o">&gt;</span><span class="p">.</span><span class="n">src_finalsite__contacts</span><span class="o">`</span>
+</code></pre></div>
+<ul>
+<li><strong>Emergency-contact custom field sets</strong> — list every <code>custom_attributes</code>
+  <code>field_name</code> and its populated value subtype, to identify the 4 emergency
+  sets:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">ca</span><span class="p">.</span><span class="n">field_name</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">ca</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="n">string_value</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="n">n_str</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">ca</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="n">boolean_value</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="n">n_bool</span><span class="p">,</span>
+<span class="w">  </span><span class="n">countif</span><span class="p">(</span><span class="n">ca</span><span class="p">.</span><span class="n">value</span><span class="p">.</span><span class="n">array_string_value</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="n">n_arr</span><span class="p">,</span>
+<span class="w">  </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="n">n</span>
+<span class="k">from</span><span class="w"> </span><span class="o">`&lt;</span><span class="n">newark_finalsite_dataset</span><span class="o">&gt;</span><span class="p">.</span><span class="n">src_finalsite__contacts</span><span class="o">`</span><span class="p">,</span>
+<span class="w">  </span><span class="k">unnest</span><span class="p">(</span><span class="n">custom_attributes</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ca</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span>
+</code></pre></div>
+<ul class="task-list">
+<li>
+<p><strong>Track-siloed vs global</strong> — repeat the field_name listing over
+  <code>track_attributes</code> to determine whether the emergency sets are global
+  (<code>custom_attributes</code>) or per-track (<code>track_attributes</code>).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Record findings as a spec addendum</strong></p>
+</li>
+</ul>
+<p>Append an <code>## Addendum: Discovery findings (YYYY-MM-DD)</code> section to
+<code>docs/superpowers/specs/2026-07-08-finalsite-contacts-nj-design.md</code> on this
+branch (or a Phase-3 branch): the rank field name + semantics, the 4 emergency
+field-set names and their attributes, whether <code>rel_id</code> resolves to a
+detail-bearing record, and the custom-vs-track placement. Commit. This addendum
+is the input to the Phase 3 dbt plan.</p>
+<hr />
+<h2 id="self-review-notes">Self-review notes</h2>
+<ul>
+<li><strong>Spec coverage (Phase 1 scope only):</strong> Tasks 1-5 cover the spec's "Dagster
+  ingestion (per NJ region)" bullets for Newark (resource, asset, schedule,
+  1Password secret sync, k8s env wiring); Task 6 opens the PR; the discovery
+  section covers the spec's "Discovery checklist (Phase 2)". The <code>Relationship</code>
+  schema extension, finalsite package models, kipptaf union/pivot/dim/bridge,
+  consumer updates, and the <code>+enabled</code> flip are Phase 3+ and intentionally OUT
+  of this plan.</li>
+<li><strong>No library edits</strong> this phase — the rank field can't be added to the
+  <code>Relationship</code> model until discovery names it. The <code>contacts</code> asset ingests
+  the full raw payload regardless, so discovery has everything it needs without
+  the schema change.</li>
+<li><strong>Confirmed config:</strong> Newark subdomain <code>kippnewark.fsenrollment.com</code>; secret
+  item <code>vaults/Data Team/items/Finalsite API - Newark</code> (secret not yet synced —
+  Task 4 declares + applies it; Task 4 Step 4 verifies key names before Task 5
+  wires them).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,1964 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Finalsite Contact Phone Normalization Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finalsite-contact-phone-normalization-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Finalsite Contact Phone Normalization Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File structure
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-clean_phone-macro-apply-in-int_finalsite__student_contacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: clean_phone macro + apply in int_finalsite__student_contacts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-deanslist-numbers-or-x-formatting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: DeansList "numbers or x" formatting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#post-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-implementation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-review
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-22-finalsite-phone-normalization.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="finalsite-contact-phone-normalization-implementation-plan">Finalsite Contact Phone Normalization Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Normalize Finalsite contact phone numbers to a canonical E.164 form
+for all consumers, and format them to DeansList's "numbers or x" rule in the
+DeansList extract — de-garbling mojibake and salvaging malformed values without
+dropping anything.</p>
+<p><strong>Architecture:</strong> A <code>clean_phone()</code> macro (finalsite package) normalizes each
+phone to E.164 (US <code>+1…</code>, international preserved, extensions appended) or
+passes through the de-garbled original; it is applied to the four phone columns
+in <code>int_finalsite__student_contacts</code>, so every downstream consumer inherits
+clean phones. <code>rpt_deanslist__family_contacts</code> then strips its phone columns to
+<code>[0-9x]</code>.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery), Jinja macro, dbt unit tests, trunk.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li>Work in the worktree
+  <code>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization</code>.
+  Every <code>git</code>, <code>dbt</code>, Read/Edit/Write path targets that worktree.</li>
+<li>Issue <a href="https://github.com/TEAMSchools/teamster/issues/4498">#4498</a>. Spec:
+  <code>docs/superpowers/specs/2026-07-22-finalsite-phone-normalization-design.md</code>.</li>
+<li>The <code>clean_phone</code> E.164 logic below is already verified against BigQuery (14
+  representative cases pass) — implement it verbatim; do not redesign the regex.</li>
+<li>Never emit NULL for a non-null input in <code>clean_phone</code> — unparseable values
+  pass through de-garbled so they stay visible.</li>
+<li>SQL follows <code>src/dbt/CLAUDE.md</code> (BigQuery dialect, trailing commas, single
+  quotes, ST06 column order). Prefer inline <code>regexp_extract</code> over
+  <code>extract_code_location</code> is NOT relevant here.</li>
+<li><code>uv run</code> for all dbt. <code>int_finalsite__student_contacts</code> is a finalsite
+  <strong>package</strong> model — build/test it through a consuming district (<code>kippnewark</code>)
+  with <code>--defer</code>. Run <code>uv run dbt deps</code> in each project-dir first.</li>
+<li>PII stays local — spot-check phone values only in the terminal, never in the
+  PR/issue/commit.</li>
+</ul>
+<hr />
+<h2 id="file-structure">File structure</h2>
+<ul>
+<li>Create: <code>src/dbt/finalsite/macros/clean_phone.sql</code> — the E.164 normalization
+  macro (single source of truth, reusable).</li>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_contacts.sql</code>
+  — wrap the final union in an <code>all_contacts</code> CTE and apply <code>clean_phone()</code> to
+  <code>phone_mobile</code> / <code>phone_home</code> / <code>phone_work</code> / <code>phone_primary</code>.</li>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__student_contacts.yml</code>
+  — add a unit test covering the phone normalization.</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql</code>
+  — strip <code>HomePhone</code> / <code>WorkPhone</code> / <code>CellPhone</code> to <code>[0-9x]</code>.</li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml</code>
+  — add phone assertions to the unit test.</li>
+</ul>
+<hr />
+<h2 id="task-1-clean_phone-macro-apply-in-int_finalsite__student_contacts">Task 1: <code>clean_phone</code> macro + apply in <code>int_finalsite__student_contacts</code></h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Create: <code>src/dbt/finalsite/macros/clean_phone.sql</code></li>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_contacts.sql</code></li>
+<li>Modify:
+  <code>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__student_contacts.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Produces: <code>clean_phone(column)</code> — a Jinja macro emitting a STRING expression.
+  Given a raw phone column, returns E.164 (<code>+1XXXXXXXXXX</code>, international
+  <code>+&lt;cc&gt;…</code>, extension <code>…x&lt;ext&gt;</code>) when confidently parseable, else the de-garbled
+  original. Never NULL for a non-null input.</li>
+<li>
+<p><code>int_finalsite__student_contacts</code> keeps its 18-column output; only the four
+  phone columns' values change.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Create the macro</strong></p>
+</li>
+</ul>
+<p>Create <code>src/dbt/finalsite/macros/clean_phone.sql</code> with exactly:</p>
+<div class="highlight"><pre><span></span><code><span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">macro</span><span class="w"> </span><span class="n">clean_phone</span><span class="p">(</span><span class="k">column</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{</span><span class="o">#-</span>
+<span class="w">      </span><span class="n">Normalize</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">raw</span><span class="w"> </span><span class="n">phone</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">E</span><span class="p">.</span><span class="mi">164</span><span class="p">:</span>
+<span class="w">        </span><span class="o">-</span><span class="w"> </span><span class="n">US</span><span class="w"> </span><span class="p">(</span><span class="n">bare</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="mi">11</span><span class="o">-</span><span class="n">digit</span><span class="w"> </span><span class="k">leading</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">NANP</span><span class="o">-</span><span class="k">valid</span><span class="p">)</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="o">+</span><span class="mi">1</span><span class="n">XXXXXXXXXX</span>
+<span class="w">        </span><span class="o">-</span><span class="w"> </span><span class="n">explicit</span><span class="w"> </span><span class="n">international</span><span class="w"> </span><span class="p">(</span><span class="o">+&lt;</span><span class="n">cc</span><span class="o">!=</span><span class="mi">1</span><span class="o">&gt;</span><span class="w"> </span><span class="k">or</span><span class="w"> </span><span class="mi">011</span><span class="o">&lt;</span><span class="n">cc</span><span class="o">&gt;</span><span class="p">)</span><span class="w">         </span><span class="o">-&gt;</span><span class="w"> </span><span class="o">+&lt;</span><span class="n">cc</span><span class="o">&gt;&lt;</span><span class="k">national</span><span class="o">&gt;</span>
+<span class="w">        </span><span class="o">-</span><span class="w"> </span><span class="n">explicit</span><span class="w"> </span><span class="n">x</span><span class="o">/</span><span class="n">ext</span><span class="w"> </span><span class="n">extension</span><span class="w">                            </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">append</span><span class="w"> </span><span class="n">x</span><span class="o">&lt;</span><span class="n">ext</span><span class="o">&gt;</span>
+<span class="w">      </span><span class="n">Anything</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">confidently</span><span class="w"> </span><span class="n">parseable</span><span class="w"> </span><span class="n">passes</span><span class="w"> </span><span class="n">through</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">de</span><span class="o">-</span><span class="n">garbled</span><span class="w"> </span><span class="n">original</span>
+<span class="w">      </span><span class="p">(</span><span class="n">control</span><span class="w"> </span><span class="n">chars</span><span class="w"> </span><span class="n">stripped</span><span class="p">).</span><span class="w"> </span><span class="n">Never</span><span class="w"> </span><span class="k">returns</span><span class="w"> </span><span class="k">NULL</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">non</span><span class="o">-</span><span class="k">null</span><span class="w"> </span><span class="k">input</span><span class="p">.</span>
+<span class="w">    </span><span class="o">-#</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">degarbled</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">        </span><span class="k">trim</span><span class="p">(</span><span class="n">regexp_replace</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="k">column</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;[^\x20-\x7E]&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">))</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endset</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">ext</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">        </span><span class="n">regexp_extract</span><span class="p">(</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="n">degarbled</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;(?i)(?:ext\.?|extension|x)\s*(\d{1,6})\s*$&#39;</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endset</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">        </span><span class="n">regexp_replace</span><span class="p">(</span>
+<span class="w">            </span><span class="err">{{</span><span class="w"> </span><span class="n">degarbled</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;(?i)\s*(?:ext\.?|extension|x)\s*\d{1,6}\s*$&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span>
+<span class="w">        </span><span class="p">)</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endset</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span><span class="w"> </span><span class="n">regexp_replace</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;\D&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="w"> </span><span class="err">{</span><span class="o">%-</span><span class="w"> </span><span class="n">endset</span><span class="w"> </span><span class="o">-%</span><span class="err">}</span>
+<span class="w">    </span><span class="k">coalesce</span><span class="p">(</span>
+<span class="w">        </span><span class="k">case</span>
+<span class="w">            </span><span class="k">when</span>
+<span class="w">                </span><span class="n">regexp_contains</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;^\s*\+&#39;</span><span class="p">)</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="n">regexp_contains</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;^\s*\+\s*1&#39;</span><span class="p">)</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="k">length</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">8</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="mi">15</span>
+<span class="w">            </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;+&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">            </span><span class="k">when</span>
+<span class="w">                </span><span class="n">starts_with</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;011&#39;</span><span class="p">)</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="k">length</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="mi">11</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="mi">18</span>
+<span class="w">            </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;+&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">substr</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span>
+<span class="w">            </span><span class="k">when</span>
+<span class="w">                </span><span class="k">length</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">regexp_contains</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;^[2-9]\d{2}[2-9]\d{6}$&#39;</span><span class="p">)</span>
+<span class="w">            </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;+1&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">            </span><span class="k">when</span>
+<span class="w">                </span><span class="k">length</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">11</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">starts_with</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
+<span class="w">                </span><span class="k">and</span><span class="w"> </span><span class="n">regexp_contains</span><span class="p">(</span>
+<span class="w">                    </span><span class="n">substr</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;^[2-9]\d{2}[2-9]\d{6}$&#39;</span>
+<span class="w">                </span><span class="p">)</span>
+<span class="w">            </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;+1&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">substr</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">digits</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span>
+<span class="w">        </span><span class="k">end</span>
+<span class="w">        </span><span class="o">||</span><span class="w"> </span><span class="k">if</span><span class="p">(</span><span class="err">{{</span><span class="w"> </span><span class="n">ext</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;x&#39;</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">ext</span><span class="w"> </span><span class="err">}}</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">),</span>
+<span class="w">        </span><span class="err">{{</span><span class="w"> </span><span class="n">degarbled</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="err">{</span><span class="o">%</span><span class="w"> </span><span class="n">endmacro</span><span class="w"> </span><span class="o">%</span><span class="err">}</span>
+</code></pre></div>
+<p>The <code>coalesce(&lt;case&gt; || &lt;ext-suffix&gt;, degarbled)</code> returns the de-garbled
+original whenever the CASE is NULL (BigQuery <code>NULL || x</code> is NULL), giving the
+passthrough behavior without re-evaluating the CASE.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Wrap the union and apply the macro in the model</strong></li>
+</ul>
+<p>In
+<code>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_contacts.sql</code>,
+replace the final two-branch <code>SELECT … UNION ALL SELECT …</code> (the tail after the
+<code>emergency as (…)</code> CTE) with an <code>all_contacts</code> CTE plus a normalizing final
+select. The two union branches keep their existing 18 columns unchanged; only
+the final select changes:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="p">),</span>
+
+<span class="w">    </span><span class="n">all_contacts</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">contact_slot</span><span class="p">,</span>
+<span class="w">            </span><span class="n">finalsite_contact_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">contact_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">contact_first_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">contact_last_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">relationship</span><span class="p">,</span>
+<span class="w">            </span><span class="n">email</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_mobile</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_home</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_work</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_daytime</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_primary</span><span class="p">,</span>
+<span class="w">            </span><span class="n">home_address</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_pickup</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_custodial</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_household_member</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_emergency</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">contact_1</span>
+
+<span class="w">        </span><span class="k">union</span><span class="w"> </span><span class="k">all</span>
+
+<span class="w">        </span><span class="k">select</span>
+<span class="w">            </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">contact_slot</span><span class="p">,</span>
+<span class="w">            </span><span class="n">finalsite_contact_id</span><span class="p">,</span>
+<span class="w">            </span><span class="n">contact_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">contact_first_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">contact_last_name</span><span class="p">,</span>
+<span class="w">            </span><span class="n">relationship</span><span class="p">,</span>
+<span class="w">            </span><span class="n">email</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_mobile</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_home</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_work</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_daytime</span><span class="p">,</span>
+<span class="w">            </span><span class="n">phone_primary</span><span class="p">,</span>
+<span class="w">            </span><span class="n">home_address</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_pickup</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_custodial</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_household_member</span><span class="p">,</span>
+<span class="w">            </span><span class="n">is_emergency</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="n">emergency</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span>
+<span class="w">    </span><span class="n">finalsite_enrollment_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">contact_slot</span><span class="p">,</span>
+<span class="w">    </span><span class="n">finalsite_contact_id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">contact_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">contact_first_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">contact_last_name</span><span class="p">,</span>
+<span class="w">    </span><span class="n">relationship</span><span class="p">,</span>
+<span class="w">    </span><span class="n">email</span><span class="p">,</span>
+<span class="w">    </span><span class="n">phone_daytime</span><span class="p">,</span>
+<span class="w">    </span><span class="n">home_address</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_pickup</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_custodial</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_household_member</span><span class="p">,</span>
+<span class="w">    </span><span class="n">is_emergency</span><span class="p">,</span>
+
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">clean_phone</span><span class="p">(</span><span class="ss">&quot;phone_mobile&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">phone_mobile</span><span class="p">,</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">clean_phone</span><span class="p">(</span><span class="ss">&quot;phone_home&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">phone_home</span><span class="p">,</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">clean_phone</span><span class="p">(</span><span class="ss">&quot;phone_work&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">phone_work</span><span class="p">,</span>
+<span class="w">    </span><span class="err">{{</span><span class="w"> </span><span class="n">clean_phone</span><span class="p">(</span><span class="ss">&quot;phone_primary&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">phone_primary</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">all_contacts</span>
+</code></pre></div>
+<p>(<code>phone_daytime</code> is always NULL upstream, so it is left as a plain passthrough
+column, not cleaned. The four cleaned phones sort last per ST06 — plain columns
+first, then function-wrapped columns.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Add the failing unit test</strong></li>
+</ul>
+<p>Append to
+<code>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__student_contacts.yml</code>
+(top-level <code>unit_tests:</code> key). It drives a <code>contact_1</code> row whose Cell phone is
+garbled and whose Home phone is a bare-10; both must normalize to E.164. The
+emergency input is mocked empty.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">unit_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test_student_contacts_phone_normalization</span>
+<span class="w">    </span><span class="nt">description</span><span class="p">:</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">A contact_1 row with a control-char-garbled cell phone and a bare-10 home</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">phone normalizes both to E.164 (+1XXXXXXXXXX).</span>
+<span class="w">    </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">int_finalsite__student_contacts</span>
+<span class="w">    </span><span class="nt">given</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&quot;stg_finalsite__contact_relationships&quot;)</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select</span>
+<span class="w">            </span><span class="no">&quot;stu1&quot; as finalsite_enrollment_id,</span>
+<span class="w">            </span><span class="no">&quot;rel1&quot; as relationship_id,</span>
+<span class="w">            </span><span class="no">&quot;con1&quot; as rel_id,</span>
+<span class="w">            </span><span class="no">&quot;Jane Doe&quot; as rel_name,</span>
+<span class="w">            </span><span class="no">&quot;parent&quot; as rel_type,</span>
+<span class="w">            </span><span class="no">true as is_primary,</span>
+<span class="w">            </span><span class="no">true as is_financial</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&quot;stg_finalsite__contacts&quot;)</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">          </span><span class="no">select</span>
+<span class="w">            </span><span class="no">&quot;con1&quot; as finalsite_enrollment_id,</span>
+<span class="w">            </span><span class="no">&quot;jane@example.com&quot; as email,</span>
+<span class="w">            </span><span class="no">&quot;Jane&quot; as first_name,</span>
+<span class="w">            </span><span class="no">&quot;Doe&quot; as last_name,</span>
+<span class="w">            </span><span class="no">code_points_to_string([8234])</span>
+<span class="w">              </span><span class="no">|| &quot;+1 (862) 300&quot; || code_points_to_string([8209]) || &quot;7240&quot;</span>
+<span class="w">              </span><span class="no">|| code_points_to_string([8236]) as phone_1_number,</span>
+<span class="w">            </span><span class="no">&quot;Cell&quot; as phone_1_type,</span>
+<span class="w">            </span><span class="no">&quot;(929) 225-5670&quot; as phone_2_number,</span>
+<span class="w">            </span><span class="no">&quot;Home&quot; as phone_2_type,</span>
+<span class="w">            </span><span class="no">cast(null as string) as phone_3_number,</span>
+<span class="w">            </span><span class="no">cast(null as string) as phone_3_type,</span>
+<span class="w">            </span><span class="no">cast(null as string) as address_1,</span>
+<span class="w">            </span><span class="no">cast(null as string) as address_2,</span>
+<span class="w">            </span><span class="no">cast(null as string) as city,</span>
+<span class="w">            </span><span class="no">cast(null as string) as state,</span>
+<span class="w">            </span><span class="no">cast(null as string) as zip</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ref(&quot;int_finalsite__contact_custom_attributes&quot;)</span>
+<span class="w">        </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[]</span>
+<span class="w">    </span><span class="nt">expect</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sql</span>
+<span class="w">      </span><span class="nt">rows</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<span class="w">        </span><span class="no">select</span>
+<span class="w">          </span><span class="no">&quot;stu1&quot; as finalsite_enrollment_id,</span>
+<span class="w">          </span><span class="no">&quot;contact_1&quot; as contact_slot,</span>
+<span class="w">          </span><span class="no">&quot;con1&quot; as finalsite_contact_id,</span>
+<span class="w">          </span><span class="no">&quot;Jane Doe&quot; as contact_name,</span>
+<span class="w">          </span><span class="no">&quot;Jane&quot; as contact_first_name,</span>
+<span class="w">          </span><span class="no">&quot;Doe&quot; as contact_last_name,</span>
+<span class="w">          </span><span class="no">&quot;parent&quot; as relationship,</span>
+<span class="w">          </span><span class="no">&quot;jane@example.com&quot; as email,</span>
+<span class="w">          </span><span class="no">cast(null as string) as phone_daytime,</span>
+<span class="w">          </span><span class="no">cast(null as string) as home_address,</span>
+<span class="w">          </span><span class="no">cast(null as boolean) as is_pickup,</span>
+<span class="w">          </span><span class="no">cast(null as boolean) as is_custodial,</span>
+<span class="w">          </span><span class="no">cast(null as boolean) as is_household_member,</span>
+<span class="w">          </span><span class="no">false as is_emergency,</span>
+<span class="w">          </span><span class="no">&quot;+18623007240&quot; as phone_mobile,</span>
+<span class="w">          </span><span class="no">&quot;+19292255670&quot; as phone_home,</span>
+<span class="w">          </span><span class="no">cast(null as string) as phone_work,</span>
+<span class="w">          </span><span class="no">&quot;+18623007240&quot; as phone_primary</span>
+</code></pre></div>
+<p>(<code>phone_primary</code> in the <code>contact_1</code> branch is <code>phone_1_number</code> — the garbled
+cell — so it normalizes to <code>+18623007240</code> too. Use <code>format: sql</code> for <code>expect</code> to
+control column types precisely; list all 18 output columns.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Install deps and run the unit test — expect FAIL</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization/src/dbt/kippnewark
+
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s2">&quot;int_finalsite__student_contacts,test_type:unit&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization/src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod
+</code></pre></div>
+<p>Expected before Steps 1-2 are applied: FAIL (phones not normalized). After Steps
+1-2: run again → PASS. (Author the test first, watch it fail against the
+unmodified model, then apply the macro + model change and watch it pass.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the unit test — expect PASS</strong></li>
+</ul>
+<p>Re-run the Step 4 <code>dbt test</code> command. Expected: <code>PASS=1</code>.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the model against prod data and spot-check</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>int_finalsite__student_contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization/src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod
+</code></pre></div>
+<p>Expected: builds; existing tests pass. Then via the BigQuery MCP, query the
+dev-built table
+(<code>zz_&lt;user&gt;_kippnewark_finalsite.int_finalsite__student_contacts</code>) for a handful
+of previously-garbled emergency rows and confirm <code>phone_mobile</code> etc. are now
+<code>+1…</code> / passthrough (PII stays in the terminal). Confirm row count is unchanged
+vs prod.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint and commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/macros/clean_phone.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__student_contacts.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null
+
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span>src/dbt/finalsite/macros/clean_phone.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/int_finalsite__student_contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__student_contacts.yml
+
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(finalsite): normalize contact phones to E.164 via clean_phone</span>
+
+<span class="s2">Refs #4498&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="task-2-deanslist-numbers-or-x-formatting">Task 2: DeansList "numbers or x" formatting</h2>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>int_finalsite__student_contacts.phone_home</code> / <code>phone_work</code> /
+  <code>phone_mobile</code>, now E.164 (from Task 1, via the kipptaf union).</li>
+<li>
+<p>Produces: <code>HomePhone</code> / <code>WorkPhone</code> / <code>CellPhone</code> containing only digits and
+  <code>x</code> (leading US <code>1</code> kept, extensions kept).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Apply the strip in the final select</strong></p>
+</li>
+</ul>
+<p>In
+<code>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql</code>,
+change the three phone projections in the final <code>SELECT</code> from plain passthrough
+to a <code>[0-9x]</code> strip (one level of nesting — <code>lower</code> inside <code>regexp_replace</code> — is
+allowed):</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="n">regexp_replace</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="k">c</span><span class="p">.</span><span class="n">phone_home</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;[^0-9x]&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">HomePhone</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">regexp_replace</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="k">c</span><span class="p">.</span><span class="n">phone_work</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;[^0-9x]&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">WorkPhone</span><span class="o">`</span><span class="p">,</span>
+<span class="w">    </span><span class="n">regexp_replace</span><span class="p">(</span><span class="k">lower</span><span class="p">(</span><span class="k">c</span><span class="p">.</span><span class="n">phone_mobile</span><span class="p">),</span><span class="w"> </span><span class="n">r</span><span class="s1">&#39;[^0-9x]&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="o">`</span><span class="n">CellPhone</span><span class="o">`</span><span class="p">,</span>
+</code></pre></div>
+<p>Leave the other columns unchanged. Note the ST06 order: these become
+function-wrapped columns, so they must sort after the plain-column projections
+(<code>StudentID</code>, <code>ParentFirstName</code>, <code>ParentLastName</code>) — reorder the final <code>SELECT</code>
+so the three phones, <code>Email</code> passthrough, <code>Relationship</code>, and the
+<code>cast(null …) Language</code> follow the plain columns, phones grouped with the other
+function/expression columns. Confirm the exact ordering with <code>trunk check</code> in
+Step 4 and adjust to satisfy ST06.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add phone assertions to the unit test</strong></li>
+</ul>
+<p>In
+<code>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml</code>,
+edit the existing <code>test_family_contacts_emergency_numbering</code> unit test: give the
+<code>int_finalsite__student_contacts</code> mock input E.164-shaped phones and assert the
+stripped output. In the mock's <code>contact_1</code> row set
+<code>phone_home = '+19292255670'</code>, <code>phone_mobile = '+18623007240x216'</code>; in the
+<code>expect</code> rows for that student set <code>HomePhone: 9292255670</code>,
+<code>CellPhone: 18623007240x216</code> (unquoted — digits/<code>x</code> only), <code>WorkPhone: null</code>.
+Update the other expect rows' phone columns to the stripped form to match.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Run the rpt unit tests — expect PASS after Step 1</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span><span class="s2">&quot;rpt_deanslist__family_contacts,test_type:unit&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+</code></pre></div>
+<p>Expected: <code>PASS</code> for both unit tests. (Run once before Step 1's SQL edit to see
+the phone assertions fail, then after to see them pass.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build the rpt against prod data, lint</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--select<span class="w"> </span>rpt_deanslist__family_contacts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization/src/dbt/kipptaf<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--target<span class="w"> </span>dev<span class="w"> </span>--defer<span class="w"> </span>--favor-state<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kipptaf/target/prod
+
+<span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">&amp;&amp;</span><span class="w"> </span>/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: builds; tests pass (the <code>ParentLastName</code> warn is still expected).
+Query the dev-built view and confirm <code>HomePhone</code>/<code>WorkPhone</code>/<code>CellPhone</code> contain
+only <code>[0-9x]</code> (no <code>+</code>, parens, spaces).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span>src/dbt/kipptaf/models/extracts/deanslist/rpt_deanslist__family_contacts.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/kipptaf/models/extracts/deanslist/properties/rpt_deanslist__family_contacts.yml
+
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-phone-normalization<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(deanslist): format phones to numbers-or-x from E.164 canonical</span>
+
+<span class="s2">Refs #4498&quot;</span>
+</code></pre></div>
+<hr />
+<h2 id="post-implementation">Post-implementation</h2>
+<ul>
+<li>Push and open a PR (<code>.github/pull_request_template.md</code> body, <code>Closes #4498</code>).</li>
+<li>The <code>int_finalsite__student_contacts</code> change is value-only → kipptaf dbt Cloud
+  CI compiles unchanged; the <code>rpt_deanslist__family_contacts</code> change is
+  CI-exercised. After CI passes, fetch warnings
+  (<code>get_job_run_error(warning_only=true)</code>) — the <code>ParentLastName</code> warn is
+  expected.</li>
+<li>Post-merge, district <code>int_finalsite__student_contacts</code> tables rebuild via
+  Dagster automation; normalized phones then flow to all consumers.</li>
+</ul>
+<h2 id="self-review">Self-review</h2>
+<ul>
+<li><strong>Spec coverage:</strong> E.164 macro (Task 1 Step 1), applied at
+  <code>int_finalsite__student_contacts</code> on the four phone columns (Task 1 Step 2),
+  never-NULL passthrough (macro <code>coalesce</code>), DeansList <code>[0-9x]</code> strip (Task 2
+  Step 1), unit tests both layers, value-only rollout — all covered.</li>
+<li><strong>No placeholders:</strong> macro and both model edits are complete, BQ-verified SQL.</li>
+<li><strong>Type consistency:</strong> <code>clean_phone</code> returns STRING; phone columns stay STRING;
+  DeansList outputs STRING. Macro arg name is <code>column</code> throughout.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

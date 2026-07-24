@@ -1,0 +1,2122 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Batch M — grades hardening design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#batch-m-grades-hardening-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Batch M — grades hardening design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/gradebook-audit-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problem
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification-of-issue-claims" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification of issue claims
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Verification of issue claims">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#3677-source-duplicate-in-stg_google_sheets__reporting__terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        #3677 — source duplicate in stg_google_sheets__reporting__terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3688-split-polymorphic-fct_grades_assignmentsscore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        #3688 — split polymorphic fct_grades_assignments.score
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3691-city-vs-region-in-stg_google_sheets__reporting__terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        #3691 — city vs region in stg_google_sheets__reporting__terms
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3738-defensive-qualify-in-fct_grades_category" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        #3738 — defensive QUALIFY in fct_grades_category
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3739-regex-region-extraction-in-mart-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        #3739 — regex region extraction in mart models
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#section-1-paterson-case-fix-3691-3677-enabler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 1 — Paterson CASE fix (#3691, #3677 enabler)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-2-dim_terms-join-refactor-3691-3739" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 2 — dim_terms join refactor (#3691, #3739)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-3-test-coverage-for-term-staging-3677-3738" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 3 — Test coverage for term staging (#3677, #3738)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-4-replace-regex-region-extraction-3739-partial-3142" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 4 — Replace regex region extraction (#3739, partial #3142)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 4 — Replace regex region extraction (#3739, partial #3142)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#section-41-add-_dbt_source_project-to-three-union-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 4.1 — Add _dbt_source_project to three union models
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-42-mart-join-rewrites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 4.2 — Mart join rewrites
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-5-split-polymorphic-score-3688" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 5 — Split polymorphic score (#3688)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Section 5 — Split polymorphic score (#3688)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#section-51-intermediate-model-additive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 5.1 — Intermediate model (additive)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#section-52-mart-fact" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Section 5.2 — Mart fact
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#risk-and-rollout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Risk and rollout
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-merge-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-merge checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope-follow-ups-captured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out-of-scope follow-ups captured
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-05-05-batch-m-grades-hardening-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="batch-m-grades-hardening-design">Batch M — grades hardening design</h1>
+<p>Closes <a href="https://github.com/TEAMSchools/teamster/issues/3677">#3677</a>,
+<a href="https://github.com/TEAMSchools/teamster/issues/3688">#3688</a>,
+<a href="https://github.com/TEAMSchools/teamster/issues/3691">#3691</a>,
+<a href="https://github.com/TEAMSchools/teamster/issues/3738">#3738</a>,
+<a href="https://github.com/TEAMSchools/teamster/issues/3739">#3739</a>.</p>
+<h2 id="problem">Problem</h2>
+<p>Five open issues in <a href="https://github.com/orgs/TEAMSchools/projects/4">PR batch M</a>
+target the grades-mart join chain and its term-staging dependency. The fixes are
+independent at the file level but share a thematic surface
+(<code>stg_google_sheets__reporting__terms</code>, <code>dim_terms</code>, <code>fct_grades_*</code>,
+<code>bridge_course_section_terms</code>, <code>int_powerschool__gradebook_assignments_scores</code>).</p>
+<p>Each issue's claims were verified against current code and live data. Several
+required reframing — captured per-section below.</p>
+<h2 id="goals">Goals</h2>
+<ul>
+<li>Resolve the grades-mart hardening backlog atomically as one PR.</li>
+<li>Keep all changes outside <code>marts/</code> strictly <strong>additive</strong>: no rename, drop, or
+  semantic shift of any column consumed by a non-mart model. Mart-internal
+  changes are unconstrained.</li>
+<li>Fix the Paterson CASE bug in <code>stg_google_sheets__reporting__terms</code> (data
+  correctness).</li>
+<li>Replace the brittle regex+initcap region join in <code>dim_terms</code> with a
+  <code>_dbt_source_project</code>-keyed lookup against canonical staging locations
+  (covered jointly with #3739).</li>
+<li>Replace brittle <code>regexp_extract(_dbt_source_relation, 'kipp(\w+)_')</code> region
+  derivation in three mart models with a join to canonical staging locations,
+  keyed on a new materialized <code>_dbt_source_project</code> column added to the three
+  upstream union models the marts read.</li>
+<li>Defend the term-staging RT grain against future drift via a uniqueness test.</li>
+<li>Expose Ed-Fi-aligned <code>points_earned</code> / <code>numeric_grade_earned</code> on
+  <code>fct_grades_assignments</code> while preserving the legacy <code>score_entered</code> /
+  <code>scoretype</code> outputs in the upstream intermediate model for tableau-extract
+  consumers.</li>
+</ul>
+<h2 id="non-goals">Non-goals</h2>
+<ul>
+<li>Renaming <code>stg_google_sheets__reporting__terms.city</code> to <code>region</code>. After
+  scrutiny, <code>city</code> is not a misnomer — Newark / Camden / Miami / Paterson are
+  city names that double as region identifiers in this org. The original framing
+  of #3691 as a "naming bug" does not hold.</li>
+<li>Migrating the 13 non-mart consumers of <code>rt.city</code> / <code>rt.region</code> to canonical
+  values. The raw-region staging contract carries inconsistent long/short values
+  that are real data debt, but resolving it requires upstream cleanup
+  coordinated with consumers — out of scope for this batch.</li>
+<li>Cube semantic-layer updates for the dropped <code>score</code> / <code>score_type</code> mart
+  columns. Cube is outside the dbt project; consumer-side update happens
+  separately.</li>
+<li>A defensive <code>qualify</code> tiebreaker in <code>fct_grades_category</code> (originally proposed
+  by #3738). The project's no-manual-deduplication convention
+  (<code>src/dbt/CLAUDE.md</code>) prohibits it, and the issue itself notes no current
+  fan-out. A staging-layer uniqueness test catches future drift more cleanly.</li>
+<li>Full network-wide implementation of
+  <a href="https://github.com/TEAMSchools/teamster/issues/3142">#3142</a> (rename
+  <code>extract_code_location</code> → <code>extract_source_project</code>, add <code>_dbt_source_project</code>
+  to all ~73 union models, replace ~268 <code>union_dataset_join_clause</code> usages,
+  remove the macro). Batch M adopts the materialized-column pattern only for the
+  three upstream union models its three mart files read; the rest of the
+  network-wide refactor stays scoped to #3142. This is partial — the macro is
+  not renamed, and existing call sites are not migrated.</li>
+</ul>
+<h2 id="verification-of-issue-claims">Verification of issue claims</h2>
+<p>Five issues, audited against production data:</p>
+<h3 id="3677-source-duplicate-in-stg_google_sheets__reporting__terms">#3677 — source duplicate in <code>stg_google_sheets__reporting__terms</code></h3>
+<p><strong>Claim</strong>: <code>unique_dim_terms_term_key</code> warns on 1 duplicate row.</p>
+<p><strong>Reality</strong>: Production staging has zero duplicates today. The duplicate may
+have already been resolved at source, or only manifested during a specific
+historical full-refresh. The raw external sheet cannot be queried via BigQuery
+MCP (Drive credentials denied), so post-merge confirmation requires a CI
+rebuild.</p>
+<p><strong>Implication</strong>: Treat as a test-severity follow-up — promote
+<code>unique_dim_terms_term_key</code> from <code>warn</code> to <code>error</code> once a clean rebuild confirms
+no duplicates. If a fresh rebuild surfaces duplicates, fix at the sheet first.</p>
+<h3 id="3688-split-polymorphic-fct_grades_assignmentsscore">#3688 — split polymorphic <code>fct_grades_assignments.score</code></h3>
+<p><strong>Claim</strong>: <code>score</code> carries POINTS / PERCENT / GRADESCALE / COLLECTED values
+disambiguated by sibling <code>score_type</code>. Row counts: 20M / 4.4M / 197K / 9.7K.</p>
+<p><strong>Reality</strong>: Counts confirmed (20.3M / 4.4M / 197K / 9.7K). The
+<code>points_possible → max_points</code> rename mentioned in the issue body shipped
+already in PR #3676.</p>
+<p><strong>Reframe</strong>: Issue says the work is in "the staging models that drive
+<code>fct_grades_assignments</code>." Actually the polymorphic branching already lives in
+the <strong>intermediate</strong> model <code>int_powerschool__gradebook_assignments_scores</code>
+(lines 47-51 today branch a single <code>score_entered</code> value off <code>scoretype</code>). The
+fix splits at the intermediate layer, not staging.</p>
+<p>The intermediate model also exposes <code>score_entered</code> and <code>scoretype</code> directly to
+downstream tableau extracts:
+<code>int_tableau__gradebook_audit_assignments_student.sql</code>,
+<code>int_tableau__gradebook_audit_assignments_teacher.sql</code>,
+<code>int_tableau__gradebook_audit_categories_teacher.sql</code>,
+<code>int_tableau__gradebook_audit_flags.sql</code>, plus <code>rpt_tableau__gradebook_audit</code> (5
+sites), <code>rpt_tableau__gradebook_es_comments</code>,
+<code>rpt_tableau__gradebook_ms_hs_comments</code>. Removing those columns from the
+intermediate model would break all of them.</p>
+<h3 id="3691-city-vs-region-in-stg_google_sheets__reporting__terms">#3691 — <code>city</code> vs <code>region</code> in <code>stg_google_sheets__reporting__terms</code></h3>
+<p><strong>Claim</strong>: The <code>city</code> column holds canonical region values and should be renamed
+to <code>region</code>. <code>dim_terms.region_key</code> derives from <code>t.city</code>.</p>
+<p><strong>Reality, three findings</strong>:</p>
+<ol>
+<li>
+<p>There is no <code>region_key</code> column in <code>dim_terms</code>. The model exposes <code>term_key</code>,
+   <code>location_key</code>, <code>type</code>, <code>term_code</code>, <code>term_name</code>, dates, <code>academic_year</code>,
+   <code>fiscal_year</code>, <code>grade_band</code>, <code>data_freeze_date</code>, <code>is_current</code> — region is
+   <strong>not</strong> a column on the dim. <code>t.region</code> (raw) feeds the <code>term_key</code> hash;
+   <code>t.city</code> (canonical) feeds the <code>sch.location_key</code> join. The two fields serve
+   two different purposes (row identity vs schools-table join key), not one
+   purpose used inconsistently — initially flagged as a bug during
+   brainstorming, then retracted after verifying that nine consumer marts also
+   hash <code>term_key</code> from <code>rt.region</code> (raw), so producer + consumers are
+   internally consistent today.</p>
+</li>
+<li>
+<p>The CASE expression at lines 4-13 has a bug: it matches <code>'KIPP Paterson'</code> but
+   not bare <code>'Paterson'</code>. 30 rows have raw <code>region = 'Paterson'</code> and canonical
+   <code>city = NULL</code>.</p>
+</li>
+<li>
+<p>The "rename" framing doesn't hold up. Newark / Camden / Miami / Paterson are
+   city names; calling a column of city values <code>city</code> is correct. The confusion
+   is conceptual, not a column-naming bug. Renaming would also break 5 non-mart
+   consumers (<code>int_topline__state_assessments_weekly.sql:18</code>,
+   <code>int_topline__star_assessment_weekly.sql:13</code>,
+   <code>int_topline__dibels_benchmark_weekly.sql:17</code>,
+   <code>int_topline__iready_diagnostic_weekly.sql:48</code>,
+   <code>rpt_tableau__iready_apm.sql:92</code>) and silently change values for 8 more that
+   read <code>rt.region</code> (raw).</p>
+</li>
+</ol>
+<p><strong>Reframe</strong>: Fix the Paterson CASE bug. Don't switch the <code>dim_terms</code> hash input
+— region is load-bearing for term-row uniqueness (599 collision groups in
+<code>(type, code, name, start_date)</code> alone, 519 of which require region to
+disambiguate). Switching the hash on <code>dim_terms</code> alone would orphan FKs from the
+nine consumer marts that hash from <code>rt.region</code>; switching all of them is a
+network-wide change beyond the scope of this batch and produces no behavior
+benefit (RT-row consumers already see <code>region == city</code> after the Paterson fix).</p>
+<h3 id="3738-defensive-qualify-in-fct_grades_category">#3738 — defensive <code>QUALIFY</code> in <code>fct_grades_category</code></h3>
+<p><strong>Claim</strong>: Add a <code>qualify row_number() = 1</code> tiebreaker to the <code>reporting_terms</code>
+join, mirroring <code>fct_grades_assignments.sql:124-129</code>. Verified no fan-out today.</p>
+<p><strong>Reality</strong>: The qualify at <code>fct_grades_assignments.sql:128-133</code> is the
+<strong>enrollment-date fan-out tiebreaker</strong> (TODO #3633), not an RT-term defense.
+There is no existing RT-term qualify pattern in the codebase to copy.</p>
+<p><strong>Reframe</strong>: <code>src/dbt/CLAUDE.md</code> prohibits manual <code>qualify</code>-based deduplication.
+With no current fan-out, the operationally correct response is a uniqueness test
+on the term-staging RT grain — duplicates would fail at build time before
+reaching any mart. No mart-level <code>qualify</code>.</p>
+<h3 id="3739-regex-region-extraction-in-mart-models">#3739 — regex region extraction in mart models</h3>
+<p><strong>Claim</strong>: <code>fct_grades_term.sql:101</code> and <code>bridge_course_section_terms.sql:30</code>
+derive region via <code>initcap(regexp_extract(_dbt_source_relation, 'kipp(\w+)_'))</code>.
+Replace with <code>extract_code_location()</code> macro or
+<code>int_people__location_crosswalk</code>.</p>
+<p><strong>Reality</strong>:</p>
+<ul>
+<li>Line numbers off — actual locations are <code>fct_grades_term.sql:117</code> and
+  <code>bridge_course_section_terms.sql:30</code>.</li>
+<li><code>extract_code_location()</code> returns the full code-location (<code>kippcamden</code>,
+  <code>kippnewark</code>, etc.), not the short capitalized region name (<code>Camden</code>,
+  <code>Newark</code>). The current regex captures the suffix and <code>initcap()</code>s it, which
+  produces the short form. Direct macro substitution does not work.</li>
+<li>The same anti-pattern lives in <code>dim_terms.sql:34-35</code> —
+  <code>lower(concat('kipp', t.city)) = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')</code>.
+  Issue body doesn't mention it but it should be fixed in this batch.</li>
+</ul>
+<p><strong>Reframe</strong>: Use <code>stg_google_sheets__people__locations</code> (canonical-grain, one
+row per logical school) rather than <code>int_people__location_crosswalk</code>
+(alias-grain). The canonical staging model exposes both <code>dagster_code_location</code>
+and <code>location_region</code> and is already the source for <code>dim_locations</code>. Three sites
+in scope: <code>fct_grades_term</code>, <code>bridge_course_section_terms</code>, <code>dim_terms</code>.</p>
+<p>Per direction on this batch, also adopt the
+<a href="https://github.com/TEAMSchools/teamster/issues/3142">#3142</a> pattern at the
+union-model layer for the three upstream models these marts read
+(<code>base_powerschool__final_grades</code>, <code>base_powerschool__sections</code>,
+<code>stg_powerschool__schools</code>): add a materialized <code>_dbt_source_project</code> column
+that captures <code>regexp_extract(_dbt_source_relation, r'(kipp\w+)_')</code> once per
+row. Mart joins then read the column directly instead of recomputing the regex
+per query, and the join key matches the form
+<code>stg_google_sheets__people__locations.dagster_code_location</code> already exposes.
+This is a targeted, additive subset of #3142 — the macro is not renamed and
+other union-model call sites stay on <code>union_dataset_join_clause</code>.</p>
+<h2 id="design">Design</h2>
+<h3 id="section-1-paterson-case-fix-3691-3677-enabler">Section 1 — Paterson CASE fix (#3691, #3677 enabler)</h3>
+<p>Edit the CASE expression in <code>stg_google_sheets__reporting__terms.sql</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">case</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;Newark&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;TEAM Academy Charter School&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Newark&#39;</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;Camden&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;KIPP Cooper Norcross Academy&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Camden&#39;</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;KIPP Miami&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Miami&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Miami&#39;</span>
+<span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="n">region</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;KIPP Paterson&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;Paterson&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="s1">&#39;Paterson&#39;</span>
+<span class="k">end</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">city</span><span class="p">,</span>
+</code></pre></div>
+<p>Only change: <code>('KIPP Paterson')</code> → <code>('KIPP Paterson', 'Paterson')</code>. Effect: 30
+rows that today have <code>city = NULL</code> will gain <code>city = 'Paterson'</code>. No existing
+consumer reads those NULL values as non-NULL, so the change is purely additive
+to the <code>city</code> column's value distribution.</p>
+<h3 id="section-2-dim_terms-join-refactor-3691-3739">Section 2 — <code>dim_terms</code> join refactor (#3691, #3739)</h3>
+<p><code>dim_terms.sql</code> lines 30-35 use a brittle pattern to derive <code>sch.location_key</code>:
+<code>lower(concat('kipp', t.city)) = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')</code>.
+Rewritten under Section 4 to read <code>sch._dbt_source_project</code> (added in Section
+4.1) and join to canonical locations, matching the pattern applied to
+<code>fct_grades_term</code>, <code>bridge_course_section_terms</code>.</p>
+<p>The <code>term_key</code> hash inputs are <strong>not</strong> changed. Region is load-bearing for
+term-row uniqueness (599 collision groups in <code>(type, code, name, start_date)</code>
+alone, 519 of which require region to disambiguate); switching the hash on
+<code>dim_terms</code> alone would orphan FKs from nine consumer marts that hash from
+<code>rt.region</code> (raw). RT rows already have <code>region == city</code> after the Paterson fix,
+so the existing internal consistency holds.</p>
+<h3 id="section-3-test-coverage-for-term-staging-3677-3738">Section 3 — Test coverage for term staging (#3677, #3738)</h3>
+<p>Two changes in
+<code>src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__reporting__terms.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data_tests</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">dbt_utils.unique_combination_of_columns</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">arguments</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">combination_of_columns</span><span class="p">:</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">name</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">school_id</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">region</span>
+<span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">powerschool_year_id</span>
+<span class="w">      </span><span class="nt">config</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">severity</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">error</span>
+<span class="w">        </span><span class="nt">where</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;type</span><span class="nv"> </span><span class="s">=</span><span class="nv"> </span><span class="s">&#39;RT&#39;&quot;</span>
+</code></pre></div>
+<p>This catches future RT-grain drift at staging build time, before mart fan-out.
+Replaces the proposed mart-level <code>qualify</code> (#3738).</p>
+<p>In <code>src/dbt/kipptaf/models/marts/dimensions/properties/dim_terms.yml</code>, promote
+<code>unique_dim_terms_term_key</code> severity from <code>warn</code> to <code>error</code>. Verify during
+PR-branch CI that no duplicates surface; if any do, fix at the sheet before
+merge.</p>
+<h3 id="section-4-replace-regex-region-extraction-3739-partial-3142">Section 4 — Replace regex region extraction (#3739, partial #3142)</h3>
+<h4 id="section-41-add-_dbt_source_project-to-three-union-models">Section 4.1 — Add <code>_dbt_source_project</code> to three union models</h4>
+<p>Targeted subset of #3142. Each model adds one new column derived once via
+<code>extract_code_location()</code>:</p>
+<ul>
+<li><code>src/dbt/kipptaf/models/powerschool/base/base_powerschool__final_grades.sql</code></li>
+<li><code>src/dbt/kipptaf/models/powerschool/base/base_powerschool__sections.sql</code></li>
+<li><code>src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__schools.sql</code></li>
+</ul>
+<p>For <code>base_powerschool__final_grades.sql</code> (currently a bare <code>union_relations()</code>),
+wrap in a CTE and select through:</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="err">{{</span>
+<span class="w">            </span><span class="n">dbt_utils</span><span class="p">.</span><span class="n">union_relations</span><span class="p">(</span>
+<span class="w">                </span><span class="n">relations</span><span class="o">=</span><span class="p">[</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippnewark_powerschool&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">.</span><span class="n">name</span><span class="p">),</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippcamden_powerschool&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">.</span><span class="n">name</span><span class="p">),</span>
+<span class="w">                    </span><span class="k">source</span><span class="p">(</span><span class="ss">&quot;kippmiami_powerschool&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">model</span><span class="p">.</span><span class="n">name</span><span class="p">),</span>
+<span class="w">                </span><span class="p">]</span>
+<span class="w">            </span><span class="p">)</span>
+<span class="w">        </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">ur</span><span class="p">.</span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="n">extract_code_location</span><span class="p">(</span><span class="ss">&quot;ur&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">_dbt_source_project</span><span class="p">,</span>
+<span class="k">from</span><span class="w"> </span><span class="n">union_relations</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">ur</span>
+</code></pre></div>
+<p>For <code>base_powerschool__sections.sql</code> and <code>stg_powerschool__schools.sql</code> (already
+wrap union in a CTE plus a join), append <code>_dbt_source_project</code> to the existing
+final SELECT.</p>
+<p>This change is purely additive — adds one column, no existing column changes
+shape or value. Other consumers of these union models continue to read what they
+read today; new consumers can opt into <code>_dbt_source_project</code> to skip the regex.</p>
+<p>If the upstream model has a contract-enforced properties.yml, add the
+<code>_dbt_source_project</code> column entry. Per <code>kipptaf/CLAUDE.md</code>: <code>base_*</code> models use
+<code>dbt_utils.star()</code> and don't have enforced contracts; <code>stg_powerschool__schools</code>
+is a kipptaf-level union view treated as a functional intermediate (no enforced
+contract). Verify property file state per file before editing.</p>
+<h4 id="section-42-mart-join-rewrites">Section 4.2 — Mart join rewrites</h4>
+<p>Three mart files: <code>fct_grades_term.sql</code>, <code>bridge_course_section_terms.sql</code>,
+<code>dim_terms.sql</code>. Each adds a CTE pulling the canonical mapping from the
+locations sheet, then joins on <code>dagster_code_location</code> to retrieve
+<code>location_region</code>.</p>
+<p>Pattern (illustrative, applied per file with site-specific aliases):</p>
+<div class="highlight"><pre><span></span><code><span class="k">with</span>
+<span class="w">    </span><span class="c1">-- ... existing CTEs ...</span>
+<span class="w">    </span><span class="n">location_regions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="p">(</span>
+<span class="w">        </span><span class="k">select</span><span class="w"> </span><span class="n">dagster_code_location</span><span class="p">,</span><span class="w"> </span><span class="n">location_region</span><span class="p">,</span>
+<span class="w">        </span><span class="k">from</span><span class="w"> </span><span class="err">{{</span><span class="w"> </span><span class="k">ref</span><span class="p">(</span><span class="ss">&quot;stg_google_sheets__people__locations&quot;</span><span class="p">)</span><span class="w"> </span><span class="err">}}</span>
+<span class="w">    </span><span class="p">)</span>
+<span class="c1">-- ...</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span>
+<span class="w">    </span><span class="n">location_regions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">lr</span>
+<span class="w">    </span><span class="k">on</span><span class="w"> </span><span class="n">lr</span><span class="p">.</span><span class="n">dagster_code_location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="n">upstream_alias</span><span class="o">&gt;</span><span class="p">.</span><span class="n">_dbt_source_project</span>
+<span class="c1">-- then: rt.region = lr.location_region</span>
+</code></pre></div>
+<p>Replaces:</p>
+<ul>
+<li><code>fct_grades_term.sql:117</code>:
+  <code>initcap(regexp_extract(fg._dbt_source_relation, r'kipp(\w+)_')) = rt.region</code></li>
+<li><code>bridge_course_section_terms.sql:30</code>:
+  <code>initcap(regexp_extract(sec._dbt_source_relation, r'kipp(\w+)_')) = rt.region</code></li>
+<li><code>dim_terms.sql:34-35</code>:
+  <code>lower(concat('kipp', t.city)) = regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')</code></li>
+</ul>
+<p><strong>Verification before commit</strong>: confirm
+<code>(dagster_code_location → location_region)</code> is functionally unique in
+<code>stg_google_sheets__people__locations</code>. The canonical model has one row per
+logical school, so multiple schools may share a code-location, but they should
+all share a region. A <code>select distinct dagster_code_location, location_region</code>
+should produce one row per code-location.</p>
+<p><code>kipptaf</code> itself never appears in <code>_dbt_source_relation</code> for these models — they
+source from per-region district packages (<code>kippnewark</code>, <code>kippcamden</code>,
+<code>kippmiami</code>, <code>kipppaterson</code>), so <code>_dbt_source_project</code> carries one of those four
+district names per row. No fallback needed.</p>
+<h3 id="section-5-split-polymorphic-score-3688">Section 5 — Split polymorphic score (#3688)</h3>
+<h4 id="section-51-intermediate-model-additive">Section 5.1 — Intermediate model (additive)</h4>
+<p>In
+<code>src/dbt/kipptaf/models/powerschool/intermediate/int_powerschool__gradebook_assignments_scores.sql</code>,
+add two new columns alongside the existing <code>score_entered</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="k">if</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">scoretype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;POINTS&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">.</span><span class="n">scorepoints</span><span class="p">,</span><span class="w"> </span><span class="k">null</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">points_earned</span><span class="p">,</span>
+<span class="k">if</span><span class="p">(</span>
+<span class="w">    </span><span class="n">a</span><span class="p">.</span><span class="n">scoretype</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">(</span><span class="s1">&#39;PERCENT&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;GRADESCALE&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;COLLECTED&#39;</span><span class="p">),</span>
+<span class="w">    </span><span class="n">safe_cast</span><span class="p">(</span><span class="n">s</span><span class="p">.</span><span class="n">actualscoreentered</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nb">numeric</span><span class="p">),</span>
+<span class="w">    </span><span class="k">null</span>
+<span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">numeric_grade_earned</span><span class="p">,</span>
+</code></pre></div>
+<p><code>scoretype</code> and <code>score_entered</code> remain unchanged for the
+<code>int_tableau__gradebook_audit_*</code> and <code>rpt_tableau__gradebook_*</code> consumers.</p>
+<h4 id="section-52-mart-fact">Section 5.2 — Mart fact</h4>
+<p>In <code>src/dbt/kipptaf/models/marts/facts/fct_grades_assignments.sql</code>, replace the
+<code>asg.score_entered as score</code> and <code>asg.scoretype as score_type</code> lines with the
+typed columns:</p>
+<div class="highlight"><pre><span></span><code><span class="n">asg</span><span class="p">.</span><span class="n">points_earned</span><span class="p">,</span>
+<span class="n">asg</span><span class="p">.</span><span class="n">numeric_grade_earned</span><span class="p">,</span>
+<span class="n">asg</span><span class="p">.</span><span class="n">totalpointvalue</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">max_points</span><span class="p">,</span>
+<span class="n">asg</span><span class="p">.</span><span class="n">assign_final_score_percent</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">score_percent</span><span class="p">,</span>
+</code></pre></div>
+<p><code>fct_grades_assignments.yml</code> updated: drop <code>score</code> and <code>score_type</code> column
+entries; add <code>points_earned</code> and <code>numeric_grade_earned</code> with
+<code>data_type: float64</code>, descriptions, and the standard column metadata.</p>
+<p>Cube is the only known consumer of the dropped mart columns; consumer-side
+update happens in the Cube repo, separately.</p>
+<h2 id="risk-and-rollout">Risk and rollout</h2>
+<table>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Source</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Stale view definitions for downstream consumers of <code>dim_terms</code> after column-derivation change</td>
+<td>Section 4</td>
+<td>Per <code>src/dbt/CLAUDE.md</code> "Column-rename refactors strand dependent prod views," check <code>INFORMATION_SCHEMA.VIEWS.view_definition</code> post-merge; rematerialize stragglers via Dagster <code>launch_run</code>.</td>
+</tr>
+<tr>
+<td>Crosswalk join produces fan-out if <code>dagster_code_location → location_region</code> is not functionally unique</td>
+<td>Section 4</td>
+<td>Verify in CI before merge; if fanout, switch to <code>select distinct</code> CTE form.</td>
+</tr>
+<tr>
+<td>Cube break on dropped <code>score</code> / <code>score_type</code></td>
+<td>Section 5.2</td>
+<td>Cube update tracked separately. PR body lists affected mart columns.</td>
+</tr>
+<tr>
+<td><code>unique_dim_terms_term_key</code> fires post-severity-bump if a sheet duplicate exists</td>
+<td>Section 3</td>
+<td>Verify via PR-branch CI rebuild before flipping severity; if dup found, fix at sheet.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="validation">Validation</h2>
+<p>Before merge, run on PR branch:</p>
+<ul>
+<li><code>dbt build --select stg_google_sheets__reporting__terms+ --exclude resource_type:test</code>
+  to rebuild affected staging.</li>
+<li><code>dbt test --select stg_google_sheets__reporting__terms</code> to confirm new
+  uniqueness test passes.</li>
+<li><code>dbt build --select dim_terms fct_grades_term fct_grades_category fct_grades_assignments bridge_course_section_terms int_powerschool__gradebook_assignments_scores</code>
+  to rebuild affected marts and the intermediate.</li>
+<li><code>dbt test --select dim_terms+1</code> to verify <code>unique_dim_terms_term_key</code> passes
+  at error severity.</li>
+<li>BigQuery MCP query against PR-branch schema: confirm
+  <code>(dagster_code_location → location_region)</code> unique in
+  <code>stg_google_sheets__people__locations</code>.</li>
+<li>BigQuery MCP query: confirm row counts on <code>fct_grades_assignments</code> unchanged
+  vs. main, and <code>points_earned + numeric_grade_earned</code> non-null counts match the
+  prior <code>score</code>-non-null count by <code>scoretype</code>.</li>
+</ul>
+<h2 id="pre-merge-checklist">Pre-merge checklist</h2>
+<p>Required by <code>src/dbt/kipptaf/models/marts/CLAUDE.md</code>.</p>
+<ul>
+<li><strong>Diamond path scan</strong>: confirm no fact in scope (<code>fct_grades_term</code>,
+  <code>fct_grades_category</code>, <code>fct_grades_assignments</code>,
+  <code>bridge_course_section_terms</code>) gains a second FK route to a shared dim.
+  Verified during brainstorming — no new FKs introduced; all changes are joins
+  to derive existing values.</li>
+<li><strong>Column-naming rubric scan (R1–R10)</strong> on all touched mart columns:
+  <code>points_earned</code>, <code>numeric_grade_earned</code>, <code>max_points</code>, <code>score_percent</code> on
+  <code>fct_grades_assignments</code> align with R1 (no source prefix), R3 (no <code>is_</code> needed
+  for measures), R4 (no date concerns), R6 (Ed-Fi-aligned). New
+  <code>_dbt_source_project</code> column on union models is plumbing per R8 — kept on
+  staging/intermediate, must not leak to any mart SELECT.</li>
+<li><strong>Project-board bonus scan</strong>: re-check
+  <a href="https://github.com/orgs/TEAMSchools/projects/4/views/1">project board</a> for
+  issues incidentally resolved by these changes; close them in the PR body.</li>
+<li><strong>New-issue triage</strong>: file any newly surfaced errors as issues on the board,
+  classified with <code>Tier</code>, <code>PR batch</code>, and <code>Driver</code>.</li>
+</ul>
+<h2 id="out-of-scope-follow-ups-captured">Out-of-scope follow-ups captured</h2>
+<ul>
+<li>Upstream cleanup of the raw <code>region</code> column in
+  <code>stg_google_sheets__reporting__terms</code> (consistent canonical values across the
+  8 non-mart consumers that read it).</li>
+<li>Migrating the 5 non-mart consumers of <code>rt.city</code> to a future canonical column
+  if/when the rename happens.</li>
+<li>Cube schema update for <code>fct_grades_assignments</code> column changes.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
