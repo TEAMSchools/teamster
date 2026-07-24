@@ -1,7 +1,7 @@
 with
     att_mem as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             yearid,
 
@@ -9,7 +9,7 @@ with
             sum(membershipvalue) as n_membership,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         where membershipvalue = 1
-        group by studentid, yearid, _dbt_source_relation
+        group by studentid, yearid, _dbt_source_project
     ),
 
     target_union as (
@@ -25,7 +25,7 @@ with
             at_risk_and_lep_ratio,
             lep_only_ratio,
             sped_ratio,
-            _dbt_source_relation,
+            _dbt_source_project,
         from {{ ref("int_finance__enrollment_targets") }}
 
         union all
@@ -45,18 +45,17 @@ with
             null as lep_only_ratio,
             null as sped_ratio,
 
-            _dbt_source_relation,
+            _dbt_source_project,
         from {{ ref("int_extracts__student_enrollments") }}
         where
             (is_self_contained or is_out_of_district)
             and rn_year = 1
-            and regexp_extract(_dbt_source_relation, r'(kipp\w+)_')
-            in ('kippnewark', 'kippmiami')
+            and _dbt_source_project in ('kippnewark', 'kippmiami')
     ),
 
     targets as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             academic_year,
             schoolid,
             is_self_contained,
@@ -71,11 +70,7 @@ with
             max(sped_ratio) as sped_ratio,
         from target_union
         group by
-            academic_year,
-            schoolid,
-            grade_level,
-            is_self_contained,
-            _dbt_source_relation
+            academic_year, schoolid, grade_level, is_self_contained, _dbt_source_project
     )
 
 select
@@ -180,17 +175,17 @@ left join
     on se.schoolid = cal.schoolid
     and se.yearid = cal.yearid
     and se.track = cal.track
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="cal") }}
+    and se._dbt_source_project = cal._dbt_source_project
 left join
     att_mem
     on se.studentid = att_mem.studentid
     and se.yearid = att_mem.yearid
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="att_mem") }}
+    and se._dbt_source_project = att_mem._dbt_source_project
 left join
     targets as t
     on se.academic_year = t.academic_year
     and se.reporting_schoolid = t.schoolid
     and se.grade_level = t.grade_level
     and se.is_self_contained = t.is_self_contained
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="t") }}
+    and se._dbt_source_project = t._dbt_source_project
 where se.rn_year = 1

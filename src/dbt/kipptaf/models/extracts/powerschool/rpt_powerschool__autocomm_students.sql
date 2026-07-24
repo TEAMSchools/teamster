@@ -1,12 +1,12 @@
 with
     grad_path as (
-        select _dbt_source_relation, student_number, discipline, final_grad_path_code,
+        select _dbt_source_project, student_number, discipline, final_grad_path_code,
         from {{ ref("int_students__graduation_path_codes") }}
     ),
 
     grad_path_pivot as (
         select
-            _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             s_nj_stu_x__graduation_pathway_math,
             s_nj_stu_x__graduation_pathway_ela,
@@ -77,20 +77,20 @@ from {{ ref("int_extracts__student_enrollments") }} as se
 left join
     {{ ref("stg_powerschool__students") }} as s
     on se.student_number = s.student_number
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="s") }}
+    and se._dbt_source_project = s._dbt_source_project
 left join
     {{ ref("int_powerschool__district_entry_date") }} as de
     on se.studentid = de.studentid
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="de") }}
+    and se._dbt_source_project = de._dbt_source_project
     and de.rn_entry = 1
 left join
     grad_path_pivot as g
     on se.student_number = g.student_number
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="g") }}
+    and se._dbt_source_project = g._dbt_source_project
 left join
     {{ ref("stg_powerschool__s_stu_x") }} as pfs
     on se.students_dcid = pfs.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="se", right_alias="pfs") }}
+    and se._dbt_source_project = pfs._dbt_source_project
 where
     se.academic_year = {{ var("current_academic_year") }}
     and se.rn_year = 1
