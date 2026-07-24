@@ -1,8 +1,8 @@
 models:
-  - name: int_focus__school_year_first_day
+  - name: stg_focus__attendance_calendar
     description: >-
       Kipptaf-level union_relations passthrough of kippmiami's
-      int_focus__school_year_first_day, following the same pattern as the
+      stg_focus__attendance_calendar, following the same pattern as the
       finalsite contact unions. Focus is Miami-only today; this shape lets a
       future region's Focus ingestion union in without a rewrite. Column
       docs/tests live on the kippmiami source model.
