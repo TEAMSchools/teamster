@@ -56,6 +56,7 @@ nav:
       - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
       - dbt Conventions: reference/dbt-conventions.md
       - Finalsite to Focus Import: reference/finalsite-focus-import.md
+      - FRESH Dashboard Data Model: reference/fresh-dashboard-data-model.md
       - Marts Data Models: reference/marts-data-models.md
       - Automation Conditions: reference/automation-conditions.md
   - Models:

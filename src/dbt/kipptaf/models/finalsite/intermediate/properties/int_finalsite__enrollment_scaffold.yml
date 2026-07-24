@@ -1,0 +1,80 @@
+models:
+  - name: int_finalsite__enrollment_scaffold
+    description: >
+      School x grade spine for the FRESH dashboard, replacing the fully
+      hand-maintained stg_google_sheets__finalsite__school_scaffold. Source is
+      controlled by var finalsite_scaffold_source ('gsheet' | 'powerschool' |
+      'blend', default 'blend'): the PowerSchool builder derives grade
+      membership from actual current enrollment in stg_powerschool__students
+      (enroll_status = 0), not stg_powerschool__schools.low_grade/high_grade --
+      that field encodes a school's eventual, fully-built-out grade span, not
+      what it currently serves. Tradeoff: a school's very first student in a
+      newly-opening grade may not be in PowerSchool yet even though Finalsite is
+      already recruiting for it, so that grade won't appear until PowerSchool
+      has at least one enrolled student in it. The sheet builder covers what
+      PowerSchool can't -- every school's grade_level = -1 whole-school row
+      (PowerSchool never supplies this row), genuinely new schools/grades not
+      yet live in PowerSchool, and all of Miami (deliberate, temporary carve-out
+      -- Miami's SIS moved to Focus and Focus isn't ready as a scaffold source
+      yet). In blend mode, PowerSchool wins on any overlapping (schoolid,
+      grade_level) key; the sheet fills everything else -- the same single rule
+      naturally covers -1 rows, genuinely-new grades/schools, and the entire
+      Miami region, with no special-casing. 'powerschool' mode is NOT a complete
+      standalone source and isn't meant to be used in production as currently
+      deployed (the default, only currently-deployed mode is 'blend') -- the -1
+      whole-school row and all of Miami are structurally never derivable from
+      PowerSchool, so selecting 'powerschool' alone drops both entirely, with
+      nothing else backfilling them. Treat it as a debug/comparison mode (e.g.
+      to inspect PowerSchool's own coverage in isolation), not a production
+      toggle, unless a future change gives PowerSchool a way to supply -1 rows
+      and Miami data.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - region
+              - schoolid
+              - grade_level
+          config:
+            severity: error
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: >
+          The current Finalsite recruitment cycle. Hardcoded (2026 as of this
+          writing) rather than derived -- SRE's own cycle timeline is too fluid
+          to reliably compute from ingestion data; see the fresh-dashboard
+          skill's year-toggle procedure for how this gets updated.
+      - name: region
+        data_type: string
+        description: One of "Newark", "Camden", "Miami", "Paterson".
+      - name: schoolid
+        data_type: int64
+        description: PowerSchool school_number.
+      - name: school
+        data_type: string
+        description: Short school abbreviation (e.g. "KURA", "Legacy ES").
+      - name: grade_level
+        data_type: int64
+        description: >
+          -1 = whole-school total row (never PowerSchool-sourced -- see
+          scaffold_source), else 0-12.
+      - name: org
+        data_type: string
+        description: Always "KTAF" (verified constant, network-wide).
+      - name: school_level
+        data_type: string
+        description: >
+          ES / MS / HS. On PowerSchool-sourced rows, derived per enrolled
+          grade_level (>=9 HS, >=5 MS, >=0 ES) -- NOT read from
+          stg_powerschool__schools.school_level, which is a single per-school
+          value and would incorrectly apply one classification to a school
+          spanning two bands. On gsheet-sourced rows, whatever the analyst
+          entered.
+      - name: scaffold_source
+        data_type: string
+        description: >
+          'powerschool' or 'gsheet' -- per-row lineage tag, not a mode-level
+          constant. In blend mode a given row is tagged with whichever builder
+          actually produced it.

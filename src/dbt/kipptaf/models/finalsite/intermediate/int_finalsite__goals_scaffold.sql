@@ -26,7 +26,7 @@ select
         else 'Current'
     end as grouped_status_timeframe,
 
-from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as b
+from {{ ref("int_finalsite__enrollment_scaffold") }} as b
 inner join
     {{ ref("stg_google_sheets__finalsite__goals") }} as g
     on b.academic_year = g.enrollment_academic_year

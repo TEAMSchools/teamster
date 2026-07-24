@@ -18,6 +18,7 @@ with
             r.detailed_status,
             r.status_start_date,
             r.status_order,
+            r.latest_status_date,
 
             x.status_group_name,
             x.status_group_value,
@@ -37,6 +38,11 @@ with
                 order by r.status_start_date desc, r.status_order desc
             ) as latest_status,
 
+            countif(r.status_start_date = r.latest_status_date) over (
+                partition by r.finalsite_enrollment_id
+            )
+            > 1 as is_same_day_status_duplicate,
+
         from {{ ref("int_finalsite__status_report_unpivot") }} as r
         inner join
             {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
@@ -45,8 +51,7 @@ with
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
             and not x.qa_flag
-        /* hardcoding year here to ensure the correct enrollment academic year from FS
-           is being used. the status_crosswalk is set to one year only */
+        -- finalsite year toggle: see skill
         where r.enrollment_academic_year = 2026
     ),
 
@@ -73,6 +78,7 @@ with
             grouped_status_order,
             grouped_status_timeframe,
             latest_status,
+            is_same_day_status_duplicate,
 
             max(status_start_date) over (
                 partition by finalsite_id, status_group_value
@@ -111,6 +117,7 @@ with
             enrollment_type,
             grouped_status,
             latest_status,
+            is_same_day_status_duplicate,
             aligned_enrollment_type,
             grouped_status_order,
             grouped_status_timeframe,
@@ -160,6 +167,7 @@ with
             r.enrollment_type,
             r.grouped_status,
             r.latest_status,
+            r.is_same_day_status_duplicate,
             r.aligned_enrollment_type,
             r.grouped_status_order,
             r.grouped_status_timeframe,
@@ -253,15 +261,20 @@ with
     enrollment_lookup as (
         select
             academic_year,
+            schoolid,
+            school,
             infosnap_id,
             student_number,
+            grade_level,
             enroll_status,
             is_enrolled_fdos,
             is_enrolled_oct01,
             is_enrolled_oct15,
             is_enrolled_mar15,
+
         from {{ ref("int_extracts__student_enrollments") }}
-        where rn_year = 1 and infosnap_id is not null
+        -- finalsite year toggle: see skill
+        where rn_year = 1 and infosnap_id is not null and academic_year = 2026
     ),
 
     -- rn_year is computed per student, so two PowerSchool records sharing one
@@ -278,7 +291,7 @@ with
         }}
     ),
 
-    final_roster as (
+    expanded_roster as (
         select
             enrollment_academic_year,
             enrollment_academic_year_display,
@@ -296,6 +309,7 @@ with
             self_contained,
             enrollment_type,
             latest_status,
+            is_same_day_status_duplicate,
             aligned_enrollment_type,
             grouped_status_timeframe,
 
@@ -325,6 +339,7 @@ with
             d.self_contained,
             d.enrollment_type,
             d.latest_status,
+            d.is_same_day_status_duplicate,
             d.aligned_enrollment_type,
             d.grouped_status_timeframe,
 
@@ -340,95 +355,140 @@ with
         where
             d.grouped_status_timeframe = 'Current'
             and d.grouped_status = 'Pending Offers'
+    ),
+
+    final_roster as (
+
+        -- maintain pending offers general
+        select
+            r.enrollment_academic_year,
+            r.enrollment_academic_year_display,
+            r.org,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.powerschool_student_number,
+            r.first_name,
+            r.last_name,
+            r.grade_level,
+            r.gender,
+            r.birthdate,
+            r.self_contained,
+            r.enrollment_type,
+            r.latest_status,
+            r.is_same_day_status_duplicate,
+            r.aligned_enrollment_type,
+            r.grouped_status_timeframe,
+            r.goal_name,
+            r.goal_type,
+
+            d.days_in_grouped_status,
+
+            e.enroll_status,
+            e.grade_level as ps_grade_level,
+            e.schoolid as ps_schoolid,
+            e.school as ps_school,
+            e.is_enrolled_fdos,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
+            e.is_enrolled_mar15,
+
+            case
+                when r.latest_status = 'Enrolled'
+                then 0
+                when
+                    r.latest_status
+                    in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
+                then 1
+            end as ps_enroll_status,
+
+        from expanded_roster as r
+        left join
+            filter_days_in_status as d
+            on r.enrollment_academic_year = d.enrollment_academic_year
+            and r.finalsite_id = d.finalsite_id
+            and r.enrollment_type = d.enrollment_type
+            and r.goal_type = d.goal_type
+            and r.goal_name = d.goal_name
+        left join
+            deduplicate_enrollments as e
+            on r.enrollment_academic_year = e.academic_year
+            and r.finalsite_id = e.infosnap_id
+        where r.goal_name not in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+
+        union all
+        -- ensure pending offers timeframes have day in status
+        select
+            r.enrollment_academic_year,
+            r.enrollment_academic_year_display,
+            r.org,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.powerschool_student_number,
+            r.first_name,
+            r.last_name,
+            r.grade_level,
+            r.gender,
+            r.birthdate,
+            r.self_contained,
+            r.enrollment_type,
+            r.latest_status,
+            r.is_same_day_status_duplicate,
+            r.aligned_enrollment_type,
+            r.grouped_status_timeframe,
+            r.goal_name,
+            r.goal_type,
+
+            d.days_in_grouped_status,
+
+            e.enroll_status,
+            e.grade_level as ps_grade_level,
+            e.schoolid as ps_schoolid,
+            e.school as ps_school,
+            e.is_enrolled_fdos,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
+            e.is_enrolled_mar15,
+
+            case
+                when r.latest_status = 'Enrolled'
+                then 0
+                when
+                    r.latest_status
+                    in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
+                then 1
+            end as ps_enroll_status,
+
+        from expanded_roster as r
+        inner join
+            filter_days_in_status as d
+            on r.enrollment_academic_year = d.enrollment_academic_year
+            and r.finalsite_id = d.finalsite_id
+            and r.enrollment_type = d.enrollment_type
+            and r.goal_type = d.goal_type
+            and r.goal_name = d.goal_name
+        left join
+            deduplicate_enrollments as e
+            on r.enrollment_academic_year = e.academic_year
+            and r.finalsite_id = e.infosnap_id
+        where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
     )
 
--- maintain pending offers general
 select
-    r.enrollment_academic_year,
-    r.enrollment_academic_year_display,
-    r.org,
-    r.region,
-    r.schoolid,
-    r.school,
-    r.finalsite_id,
-    r.powerschool_student_number,
-    r.first_name,
-    r.last_name,
-    r.grade_level,
-    r.gender,
-    r.birthdate,
-    r.self_contained,
-    r.enrollment_type,
-    r.latest_status,
-    r.aligned_enrollment_type,
-    r.grouped_status_timeframe,
-    r.goal_name,
-    r.goal_type,
+    *,
 
-    d.days_in_grouped_status,
+    if(
+        (ps_enroll_status = 0 and enroll_status in (2, 3))
+        or (ps_enroll_status = 1 and enroll_status = 0),
+        true,
+        false
+    ) as is_active_inactive_mismatch,
 
-    e.enroll_status,
-    e.is_enrolled_fdos,
-    e.is_enrolled_oct01,
-    e.is_enrolled_oct15,
-    e.is_enrolled_mar15,
+    if(grade_level != ps_grade_level, true, false) as is_grade_level_mismatch,
 
-from final_roster as r
-left join
-    filter_days_in_status as d
-    on r.enrollment_academic_year = d.enrollment_academic_year
-    and r.finalsite_id = d.finalsite_id
-    and r.enrollment_type = d.enrollment_type
-    and r.goal_type = d.goal_type
-    and r.goal_name = d.goal_name
-left join
-    deduplicate_enrollments as e
-    on r.enrollment_academic_year = e.academic_year
-    and r.finalsite_id = e.infosnap_id
-where r.goal_name not in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+    if(schoolid != ps_schoolid, true, false) as is_school_mismatch,
 
-union all
--- ensure pending offers timeframes have day in status
-select
-    r.enrollment_academic_year,
-    r.enrollment_academic_year_display,
-    r.org,
-    r.region,
-    r.schoolid,
-    r.school,
-    r.finalsite_id,
-    r.powerschool_student_number,
-    r.first_name,
-    r.last_name,
-    r.grade_level,
-    r.gender,
-    r.birthdate,
-    r.self_contained,
-    r.enrollment_type,
-    r.latest_status,
-    r.aligned_enrollment_type,
-    r.grouped_status_timeframe,
-    r.goal_name,
-    r.goal_type,
-
-    d.days_in_grouped_status,
-
-    e.enroll_status,
-    e.is_enrolled_fdos,
-    e.is_enrolled_oct01,
-    e.is_enrolled_oct15,
-    e.is_enrolled_mar15,
-
-from final_roster as r
-inner join
-    filter_days_in_status as d
-    on r.enrollment_academic_year = d.enrollment_academic_year
-    and r.finalsite_id = d.finalsite_id
-    and r.enrollment_type = d.enrollment_type
-    and r.goal_type = d.goal_type
-    and r.goal_name = d.goal_name
-left join
-    deduplicate_enrollments as e
-    on r.enrollment_academic_year = e.academic_year
-    and r.finalsite_id = e.infosnap_id
-where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+from final_roster

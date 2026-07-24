@@ -57,6 +57,11 @@ models:
         data_type: boolean
       - name: latest_status
         data_type: string
+      - name: is_same_day_status_duplicate
+        data_type: boolean
+        description: >-
+          True when a student has more than one Finalsite status set on the same
+          calendar day.
       - name: aligned_enrollment_type
         data_type: string
       - name: grouped_status_timeframe
@@ -67,3 +72,36 @@ models:
         data_type: string
       - name: days_in_grouped_status
         data_type: int64
+      - name: ps_enroll_status
+        data_type: int64
+        description: >-
+          Enrollment status implied by the Finalsite latest_status (0 =
+          Enrolled, 1 = Mid Year Withdrawal/Never Attended/Summer Withdraw), for
+          comparison against PowerSchool's actual enroll_status.
+      - name: ps_grade_level
+        data_type: int64
+        description: >-
+          Grade level from the matched PowerSchool enrollment record, for
+          comparison against the Finalsite-reported grade_level.
+      - name: ps_school
+        data_type: string
+        description: School name from the matched PowerSchool enrollment record.
+      - name: ps_schoolid
+        data_type: int64
+        description: >-
+          School ID from the matched PowerSchool enrollment record, for
+          comparison against schoolid.
+      - name: is_active_inactive_mismatch
+        data_type: boolean
+        description: >-
+          True when the Finalsite-implied enrollment status (ps_enroll_status)
+          disagrees with PowerSchool's actual enroll_status.
+      - name: is_grade_level_mismatch
+        data_type: boolean
+        description: >-
+          True when the Finalsite-reported grade_level differs from
+          PowerSchool's ps_grade_level.
+      - name: is_school_mismatch
+        data_type: boolean
+        description: >-
+          True when schoolid differs from PowerSchool's ps_schoolid.
