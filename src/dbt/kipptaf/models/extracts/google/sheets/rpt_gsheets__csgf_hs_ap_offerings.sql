@@ -16,7 +16,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as s
             on e.academic_year = s.cc_academic_year
             and e.studentid = s.cc_studentid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+            and e._dbt_source_project = s._dbt_source_project
             and s.rn_course_number_year = 1
             and s.is_ap_course
             and not s.is_dropped_section

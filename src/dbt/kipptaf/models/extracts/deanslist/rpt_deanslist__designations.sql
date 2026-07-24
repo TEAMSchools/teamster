@@ -2,6 +2,7 @@ with
     student_enrollments as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             student_number,
             studentid,
             yearid,
@@ -47,13 +48,13 @@ with
             {{ ref("int_powerschool__gpa_term") }} as gpa
             on co.studentid = gpa.studentid
             and co.yearid = gpa.yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+            and co._dbt_source_project = gpa._dbt_source_project
             and rt.name = gpa.term_name
         left join
             {{ ref("int_powerschool__final_grades_rollup") }} as ps
             on co.studentid = ps.studentid
             and co.academic_year = ps.academic_year
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="ps") }}
+            and co._dbt_source_project = ps._dbt_source_project
             and rt.name = ps.storecode
     )
 
@@ -63,7 +64,7 @@ inner join
     {{ ref("int_powerschool__spenrollments") }} as sp
     on co.studentid = sp.studentid
     and co.academic_year = sp.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
+    and co._dbt_source_project = sp._dbt_source_project
     and sp.is_current
     and sp.specprog_name in (
         'Counseling Services',

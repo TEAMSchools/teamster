@@ -33,19 +33,19 @@ with
             and co.yearid = y.yearid
             and co.schoolid = y.schoolid
             and y.is_current
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="y") }}
+            and co._dbt_source_project = y._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_term") }} as gpa
             on co.studentid = gpa.studentid
             and co.yearid = gpa.yearid
             and term = gpa.term_name
             and co.schoolid = gpa.schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+            and co._dbt_source_project = gpa._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on co.studentid = gc.studentid
             and co.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="gc") }}
+            and co._dbt_source_project = gc._dbt_source_project
         where
             co.academic_year = {{ var("current_academic_year") }}
             and co.rn_year = 1
