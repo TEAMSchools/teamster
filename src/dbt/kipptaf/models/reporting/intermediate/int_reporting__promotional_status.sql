@@ -2,6 +2,7 @@ with
     attendance as (
         select
             mem._dbt_source_relation,
+            mem._dbt_source_project,
             mem.studentid,
             mem.yearid,
 
@@ -19,7 +20,7 @@ with
             ) as n_absences_y1_running_non_susp_no_tardy,
 
             case
-                regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
+                mem._dbt_source_project
                 when 'kippnewark'
                 then 27
                 when 'kippcamden'
@@ -27,13 +28,9 @@ with
             end as hs_at_risk_absences,
 
             case
-                when
-                    regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
-                    = 'kippnewark'
+                when mem._dbt_source_project = 'kippnewark'
                 then 6 * safe_cast(right(rt.name, 1) as int)
-                when
-                    regexp_extract(mem._dbt_source_relation, r'(kipp\w+)_')
-                    = 'kippcamden'
+                when mem._dbt_source_project = 'kippcamden'
                 then 9 * safe_cast(right(rt.name, 1) as int)
             end as hs_off_track_absences,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }} as mem
@@ -47,12 +44,18 @@ with
         where
             mem.membershipvalue = 1
             and mem.calendardate <= current_date('{{ var("local_timezone") }}')
-        group by mem._dbt_source_relation, mem.yearid, mem.studentid, rt.name
+        group by
+            mem._dbt_source_relation,
+            mem._dbt_source_project,
+            mem.yearid,
+            mem.studentid,
+            rt.name
     ),
 
     credits as (
         select
             fg._dbt_source_relation,
+            fg._dbt_source_project,
             fg.studentid,
             fg.academic_year,
             fg.storecode,
@@ -68,7 +71,7 @@ with
             {{ ref("int_powerschool__gpa_cumulative") }} as gc
             on fg.studentid = gc.studentid
             and fg.schoolid = gc.schoolid
-            and {{ union_dataset_join_clause(left_alias="fg", right_alias="gc") }}
+            and fg._dbt_source_project = gc._dbt_source_project
     ),
 
     iready_dr as (
@@ -164,6 +167,7 @@ with
     ps_log as (
         select
             lg._dbt_source_relation,
+            lg._dbt_source_project,
             lg.studentid,
             lg.academic_year,
             lg.entry_date,
@@ -181,6 +185,7 @@ with
     exempt_override as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             academic_year,
             entry_date,
@@ -197,6 +202,7 @@ with
     force_retention as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             studentid,
             academic_year,
             entry_date,
@@ -501,13 +507,13 @@ with
             on co.studentid = att.studentid
             and co.yearid = att.yearid
             and rt.name = att.term_name
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="att") }}
+            and co._dbt_source_project = att._dbt_source_project
         left join
             credits as c
             on co.studentid = c.studentid
             and co.academic_year = c.academic_year
             and rt.name = c.storecode
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="c") }}
+            and co._dbt_source_project = c._dbt_source_project
         left join
             iready as ir
             on co.student_number = ir.student_id
@@ -526,17 +532,17 @@ with
         left join
             {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
             on co.students_dcid = nj.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+            and co._dbt_source_project = nj._dbt_source_project
         left join
             exempt_override as lg
             on co.studentid = lg.studentid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="lg") }}
+            and co._dbt_source_project = lg._dbt_source_project
             and co.academic_year = lg.academic_year
             and lg.rn_log = 1
         left join
             force_retention as fr
             on co.studentid = fr.studentid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="fr") }}
+            and co._dbt_source_project = fr._dbt_source_project
             and co.academic_year = fr.academic_year
             and fr.rn_log = 1
         where co.rn_year = 1

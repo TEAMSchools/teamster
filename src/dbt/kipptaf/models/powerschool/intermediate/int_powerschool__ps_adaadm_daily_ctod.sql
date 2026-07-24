@@ -24,9 +24,15 @@ with
         }}
     ),
 
+    memberships as (
+        select *, {{ extract_source_project() }} as _dbt_source_project,
+        from union_relations
+    ),
+
     calcs as (
         select
             mem._dbt_source_relation,
+            mem._dbt_source_project,
             mem.studentid,
             mem.student_number,
             mem.schoolid,
@@ -51,10 +57,6 @@ with
             cw.week_start_monday,
             cw.week_end_sunday,
             cw.week_number_academic_year,
-
-            regexp_extract(
-                mem._dbt_source_relation, r'(kipp\w+)_'
-            ) as _dbt_source_project,
 
             abs(mem.attendancevalue - 1) as is_absent,
 
@@ -83,13 +85,13 @@ with
             mem.calendardate
             <= current_date('{{ var("local_timezone") }}') as is_realized,
 
-        from union_relations as mem
+        from memberships as mem
         inner join
             {{ ref("int_powerschool__terms") }} as t
             on mem.yearid = t.yearid
             and mem.schoolid = t.schoolid
             and mem.calendardate between t.term_start_date and t.term_end_date
-            and {{ union_dataset_join_clause(left_alias="mem", right_alias="t") }}
+            and mem._dbt_source_project = t._dbt_source_project
         inner join
             {{ ref("int_powerschool__calendar_week") }} as cw
             on mem.yearid = cw.yearid

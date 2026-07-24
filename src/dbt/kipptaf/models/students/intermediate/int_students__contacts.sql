@@ -124,7 +124,7 @@ with
     -- Finalsite-sourced and drop out of ps_base above, so their person-contact
     -- enrichment rows would never match. Add a region back here if it reverts
     -- to the PowerSchool branch.
-    ps_person_contacts as (
+    ps_person_contacts_union as (
         {{
             dbt_utils.union_relations(
                 relations=[
@@ -136,9 +136,15 @@ with
         }}
     ),
 
+    ps_person_contacts as (
+        select *, {{ extract_source_project() }} as _dbt_source_project,
+        from ps_person_contacts_union
+    ),
+
     ps_methods_ranked as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             personid,
             contact_category,
             contact_type,
@@ -155,6 +161,7 @@ with
     ps_typed as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             personid,
 
             max(
@@ -193,12 +200,13 @@ with
             ) as address_home,
         from ps_methods_ranked
         where method_rank = 1
-        group by _dbt_source_relation, personid
+        group by _dbt_source_relation, _dbt_source_project, personid
     ),
 
     ps_primary_phone_ranked as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             personid,
             contact as phone_primary,
 
@@ -211,13 +219,13 @@ with
     ),
 
     ps_primary_phone as (
-        select _dbt_source_relation, personid, phone_primary,
+        select _dbt_source_relation, _dbt_source_project, personid, phone_primary,
         from ps_primary_phone_ranked
         where phone_rank = 1
     ),
 
     students as (
-        select _dbt_source_relation, dcid, student_number,
+        select _dbt_source_relation, _dbt_source_project, dcid, student_number,
         from {{ ref("stg_powerschool__students") }}
         where dcid >= 1
     ),
@@ -250,15 +258,15 @@ with
         inner join
             students as s
             on sl.studentdcid = s.dcid
-            and {{ union_dataset_join_clause(left_alias="sl", right_alias="s") }}
+            and sl._dbt_source_project = s._dbt_source_project
         left join
             ps_typed as pt
             on sl.personid = pt.personid
-            and {{ union_dataset_join_clause(left_alias="sl", right_alias="pt") }}
+            and sl._dbt_source_project = pt._dbt_source_project
         left join
             ps_primary_phone as pp
             on sl.personid = pp.personid
-            and {{ union_dataset_join_clause(left_alias="sl", right_alias="pp") }}
+            and sl._dbt_source_project = pp._dbt_source_project
     )
 
 select
