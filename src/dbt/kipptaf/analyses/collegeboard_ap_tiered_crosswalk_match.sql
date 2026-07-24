@@ -37,7 +37,7 @@
 -- PS course code like 'ENG01005C3' that never matches),
 -- filtered to rn_course_number_year=1 and not
 -- is_dropped_section, bridged across district-union tables
--- via union_dataset_join_clause (studentid values aren't
+-- via _dbt_source_project (studentid values aren't
 -- globally unique across districts). Presence corroborates;
 -- absence proves nothing (testing without the class, and
 -- vice versa, is normal -- CB doesn't require course
@@ -74,7 +74,7 @@ with
             dob,
             gender,
             academic_year,
-            _dbt_source_relation,
+            _dbt_source_project,
 
             regexp_replace(
                 normalize(upper(last_name), nfd), r'\pM', ''
@@ -335,7 +335,7 @@ with
             cc.ap_number_ap_id,
             cc.enrollment_school_year,
             p.studentid as ps_internal_studentid,
-            p._dbt_source_relation,
+            p._dbt_source_project,
         from cd_candidates as cc
         inner join
             ps as p
@@ -353,7 +353,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as ce
             on cb.ps_internal_studentid = ce.cc_studentid
             and cb.enrollment_school_year = ce.cc_academic_year
-            and {{ union_dataset_join_clause(left_alias="cb", right_alias="ce") }}
+            and cb._dbt_source_project = ce._dbt_source_project
             and ce.rn_course_number_year = 1
             and not ce.is_dropped_section
             and etc.ps_ap_course_subject_code = ce.ap_course_subject

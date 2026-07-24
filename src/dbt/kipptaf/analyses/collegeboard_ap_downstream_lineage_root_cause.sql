@@ -25,7 +25,7 @@ inner join
     {{ ref("base_powerschool__student_enrollments") }} as se
     on ce.cc_studentid = se.studentid
     and ce.cc_academic_year = se.academic_year
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="se") }}
+    and ce._dbt_source_project = se._dbt_source_project
 where
     se.student_number in unnest({{ var("missing_student_numbers", []) }})
     and ce.cc_academic_year = {{ var("current_academic_year") }}

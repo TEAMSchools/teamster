@@ -456,10 +456,41 @@ mechanical — see the corrected snapshot note below.
 All seven are disabled models or analyses — no build-time column resolution, so
 a mechanical swap ships latent errors (this is how #4543 nearly shipped
 `asg._dbt_source_project` against a CTE carrying only `_dbt_source_relation`).
-The three gradebook models are additionally stale: their producer
-`int_powerschool__gradebook_assignments_scores` no longer exposes
-`_dbt_source_relation` at all. Investigate-or-delete, not swap. **This gates
-Batch 3.**
+Investigate-or-delete, not swap.
+
+**Resolved 2026-07-24 — the seven split three ways:**
+
+- **Gradebook trio (kept as-is, no change).** They belong to a closed,
+  fully-disabled subgraph of seven models (`int_tableau__gradebook_audit_flags`,
+  the two `*_scaffold`s, and `rpt_tableau__assignment_checks` alongside them)
+  that reference only each other. Nothing enabled reaches them — the live
+  `gradebook_audit` exposure depends solely on `rpt_tableau__gradebook_audit`.
+  They were disabled 2026-06-23 by `7fb33d117`, the AY 2026-2027 rebuild that
+  superseded them, and their SQL was last meaningfully edited 2025-08-02. They
+  are also unbuildable: `int_powerschool__gradebook_assignments_scores` now
+  exposes only `_dbt_source_project`, while their `asg` CTE selects
+  `_dbt_source_relation`.
+- **QA pair (deleted).** Every QA model in the project was disabled together on
+  2025-08-28 by `fa62b5ae8`; nothing references these two. Precedent: a fifth
+  view disabled by that same commit,
+  `qa_powerschool__course_enrollment_overlap`, was converted to a singular test
+  and deleted (`aa1cd57bc`). Deleting also required dropping a stale asset-key
+  selection from `tests/assets/test_assets_dbt.py`.
+- **Collegeboard analyses (migrated).** Created 2026-07-21 by `e88cdca33` and
+  actively referenced by
+  `.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md`. They are also
+  **not** unverifiable, contrary to the framing above — `dbt compile` plus a
+  BigQuery **dry run** of the compiled SQL resolves every column against real
+  prod schemas, which is a stronger check than the `--empty` gate used for
+  models.
+
+**Correction — PR D does NOT gate Batch 3.** An earlier revision of this section
+asserted it did. Verified empirically 2026-07-24: with the macro definition
+deleted and all five disabled callers left in place,
+`dbt parse --no-partial-parse` exits 0. The disabled models are genuinely parsed
+(they appear in `manifest.disabled`), but dbt does not render a disabled model's
+Jinja deeply enough to fail on an undefined macro. Batch 3 is therefore gated
+only on PRs B and C merging.
 
 PRs A, B and C touch disjoint files and can run in parallel.
 
