@@ -18,7 +18,7 @@ select
     sch._dbt_source_project,
 
     '`{{ target.database }}`.`'
-    || regexp_extract(sch._dbt_source_relation, r'(kipp\w+)_')
+    || sch._dbt_source_project
     || '_powerschool'
     || '`.`base_powerschool__student_enrollments`' as _dbt_source_relation,
 from {{ ref("stg_google_sheets__finance__enrollment_targets") }} as et
