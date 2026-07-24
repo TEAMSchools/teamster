@@ -1,14 +1,17 @@
 views:
   - name: student_assessment_scores_view
     description: >-
-      Assessment scores across internal Illuminate interims and NJ/FL state
-      assessments — row-level (one row per student x assessment x administration
-      x response type) and aggregate breakdowns in a single view. pct_proficient
-      (mastery rate) is the source-agnostic headline; scale_score is null for
-      internal rows and percent_correct is null for state rows. response_type /
-      response_type_code carry the standard/skill breakdown. State rows have
-      null administration dates by design (no exact administered date). Contains
-      direct student identifiers — see access_policy for PII gating.
+      Assessment scores across internal Illuminate interims, NJ/FL state
+      assessments, and vendor benchmarks (i-Ready, DIBELS, STAR) — row-level
+      (one row per student x assessment x administration x response type) and
+      aggregate breakdowns in a single view. pct_proficient (mastery rate) is
+      the source-agnostic headline; scale_score is null for internal rows and
+      percent_correct is null for state and vendor rows. response_type /
+      response_type_code carry the standard/skill breakdown (Illuminate only).
+      State and vendor administrations have no single administered date, but
+      academic_year / academic_year_label still resolve for every source (scoped
+      by the test date). Contains direct student identifiers — see access_policy
+      for PII gating.
 
     cubes:
       - join_path: student_assessment_scores
@@ -52,11 +55,11 @@ views:
           - test_type
           - source_assessment_id
 
-      - join_path: >-
-          student_assessment_scores.student_assessment_administrations.dates
+      - join_path: student_assessment_scores.dates
         includes:
           - date_day
           - academic_year
+          - academic_year_label
           - month_number
           - month_name
 
@@ -179,6 +182,7 @@ views:
           members:
             - date_day
             - academic_year
+            - academic_year_label
             - month_number
             - month_name
         - name: Course

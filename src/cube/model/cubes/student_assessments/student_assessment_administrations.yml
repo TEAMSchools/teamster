@@ -4,17 +4,12 @@ cubes:
     sql_table: kipptaf_marts.dim_assessment_administrations
 
     joins:
-      # administration date -> the conformed dates cube (no role-play); the fact
-      # surfaces the completion date (date_taken) as an unjoined degenerate dim,
-      # so dates is reached by a single path and there is no diamond.
-      # Join on the raw DATE key, not the date_day time dimension — Cube wraps
-      # time dimensions in the query-timezone conversion (convertTz) inside
-      # join predicates, which breaks the equality against the unconverted
-      # fact-side date under any non-UTC timezone (#4298).
-      - name: dates
-        sql: "{dates.date_key} = {CUBE}.administered_date_key"
-        relationship: many_to_one
-
+      # The calendar / dates join lives on student_assessment_scores (keyed on
+      # calendar_date_key), NOT here: state and vendor administrations carry a
+      # null administered_date_key, so joining dates on it returned null
+      # academic_year for every non-Illuminate source (#4546). The scores cube
+      # joins dates on the coalesced calendar date instead, which is populated
+      # for all sources. This cube keeps only its FK to student_assessments.
       - name: student_assessments
         sql: "{student_assessments.assessment_key} = {CUBE}.assessment_key"
         relationship: many_to_one

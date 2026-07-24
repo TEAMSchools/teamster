@@ -31,6 +31,14 @@ with
 
             c.administered_date,
 
+            -- calendar_date_key: the date used for academic-year / calendar
+            -- rollups -- administration date where present (internal/college),
+            -- else the student's test date. State/vendor administrations span a
+            -- window and carry no single administration date, so the join to
+            -- dim_dates must key on this to resolve academic_year for them
+            -- (#4546).
+            coalesce(c.administered_date, rr.date_taken) as calendar_date_key,
+
             cast(null as numeric) as scale_score,
 
             rr.performance_band_label as proficiency_level,
@@ -370,6 +378,7 @@ select
     sr.student_section_enrollment_key,
 
     ia.test_date as test_date_key,
+    ia.calendar_date_key,
 
     ia.scale_score,
     ia.percent_correct,
@@ -432,6 +441,9 @@ select
     sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
+    -- state administrations carry no administration date; test_date is the
+    -- calendar date used for academic-year rollups (#4546)
+    su.test_date as calendar_date_key,
 
     su.scale_score,
     su.percent_correct,
@@ -499,6 +511,9 @@ select
     sr.student_section_enrollment_key,
 
     va.test_date as test_date_key,
+    -- vendor administrations carry no administration date; test_date is the
+    -- calendar date used for academic-year rollups (#4546)
+    va.test_date as calendar_date_key,
 
     va.scale_score,
 
