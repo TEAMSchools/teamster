@@ -80,11 +80,11 @@ with
         inner join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
             on f.student_id = suf.fleid
-            and {{ union_dataset_join_clause(left_alias="f", right_alias="suf") }}
+            and f._dbt_source_project = suf._dbt_source_project
         inner join
             {{ ref("stg_powerschool__students") }} as s
             on suf.studentsdcid = s.dcid
-            and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
+            and suf._dbt_source_project = s._dbt_source_project
             and s.grade_level >= 4
         where
             f.assessment_name = 'FAST'
@@ -114,11 +114,11 @@ with
         inner join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
             on f.student_id = suf.fleid
-            and {{ union_dataset_join_clause(left_alias="f", right_alias="suf") }}
+            and f._dbt_source_project = suf._dbt_source_project
         inner join
             {{ ref("stg_powerschool__students") }} as s
             on suf.studentsdcid = s.dcid
-            and {{ union_dataset_join_clause(left_alias="suf", right_alias="s") }}
+            and suf._dbt_source_project = s._dbt_source_project
             and s.grade_level = 3
         where
             f.assessment_name = 'FAST'
@@ -299,7 +299,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
+            and co._dbt_source_project = cc._dbt_source_project
             and co.illuminate_subject_area = cc.illuminate_subject_area
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
@@ -367,7 +367,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
+            and co._dbt_source_project = cc._dbt_source_project
             and co.illuminate_subject_area = cc.illuminate_subject_area
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1
@@ -433,7 +433,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as cc
             on co.studentid = cc.cc_studentid
             and co.yearid = cc.cc_yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="cc") }}
+            and co._dbt_source_project = cc._dbt_source_project
             and co.illuminate_subject_area = cc.illuminate_subject_area
             and not cc.is_dropped_section
             and cc.rn_student_year_illuminate_subject_desc = 1

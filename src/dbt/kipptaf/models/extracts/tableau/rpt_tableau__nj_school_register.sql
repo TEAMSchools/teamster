@@ -4,6 +4,7 @@ with
             studentid,
             yearid,
             _dbt_source_relation,
+            _dbt_source_project,
 
             sum(attendancevalue) as n_att,
             sum(membershipvalue) as n_mem,
@@ -16,7 +17,7 @@ with
             ) as n_mem_ytd,
         from {{ ref("int_powerschool__ps_adaadm_daily_ctod") }}
         where membershipvalue = 1
-        group by studentid, yearid, _dbt_source_relation
+        group by studentid, yearid, _dbt_source_relation, _dbt_source_project
     )
 
 select
@@ -48,11 +49,11 @@ inner join
     att_mem as sub
     on co.studentid = sub.studentid
     and co.yearid = sub.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sub") }}
+    and co._dbt_source_project = sub._dbt_source_project
 left join
     {{ ref("int_powerschool__calendar_rollup") }} as d
     on co.schoolid = d.schoolid
     and co.yearid = d.yearid
     and co.track = d.track
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="d") }}
+    and co._dbt_source_project = d._dbt_source_project
 where co.rn_year = 1 and co.region != 'Miami' and co.grade_level != 99
