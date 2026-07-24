@@ -42,3 +42,11 @@ models:
       - name: valid_to
         data_type: date
         description: Conditional on valid_from, valid_to.
+      - name: is_deleted
+        data_type: boolean
+        description: >-
+          TRUE when this snapshot-sourced seat no longer exists in the live
+          AppSheet seat tracker source (hard-deleted at source). Always FALSE
+          for rows sourced from the manual log archive. Derived by anti-join to
+          stg_google_appsheet__seat_tracker__seats, independent of the snapshot
+          dbt_is_deleted meta column.
