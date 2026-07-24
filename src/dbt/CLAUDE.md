@@ -309,10 +309,12 @@ instead of `{{ my_macro() }}` is valid SQL — it passes `dbt parse` and sqlfluf
 then fails at BigQuery build with `Function not found`. Build the model to catch
 it; parse/lint won't.
 
-**A disabled model calling a deleted macro does NOT fail `dbt parse`.** Disabled
-nodes are parsed into `manifest.disabled`, but dbt never renders their Jinja
-deeply enough to resolve macros — so stale disabled callers don't gate a macro
-removal. Confirm with `dbt parse --no-partial-parse`.
+**`dbt parse` never resolves macros** — it renders Jinja only far enough to
+capture `ref`/`source`/`config`, so a call to a DELETED macro parses clean
+whether the caller is enabled or disabled. Parse therefore cannot prove a macro
+removal is safe; compilation is the gate, and disabled models are never
+compiled. Prove a removal with `grep` for zero enabled call sites plus
+`dbt build --empty` over the affected graph.
 
 **`analyses/` are verifiable — compile + BigQuery dry run.** `dbt build` never
 runs them, but `dbt compile --select "path:analyses/<f>.sql" --target prod`
