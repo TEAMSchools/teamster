@@ -16,11 +16,6 @@ select
     et.sped_ratio,
 
     sch._dbt_source_project,
-
-    '`{{ target.database }}`.`'
-    || sch._dbt_source_project
-    || '_powerschool'
-    || '`.`base_powerschool__student_enrollments`' as _dbt_source_relation,
 from {{ ref("stg_google_sheets__finance__enrollment_targets") }} as et
 inner join
     {{ ref("stg_powerschool__schools") }} as sch on et.schoolid = sch.school_number

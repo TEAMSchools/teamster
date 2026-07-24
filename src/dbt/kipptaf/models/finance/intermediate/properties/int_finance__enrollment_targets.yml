@@ -12,14 +12,12 @@ models:
               - schoolid
               - grade_level
     columns:
-      - name: _dbt_source_relation
-        data_type: string
-        description: >-
-          Synthesized relation path referencing the source district's
-          base_powerschool__student_enrollments, used for cross-district joins.
       - name: _dbt_source_project
         data_type: string
-        description: District code location derived from `_dbt_source_relation`.
+        description: >-
+          District code location, passed through from
+          `stg_powerschool__schools`. Used to join enrollment targets to
+          district-scoped models.
       - name: fiscal_year
         data_type: int64
       - name: academic_year

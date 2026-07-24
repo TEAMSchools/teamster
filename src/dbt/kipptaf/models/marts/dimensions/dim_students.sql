@@ -73,8 +73,8 @@ left join
 left join
     {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
     on s.dcid = suf.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="suf") }}
+    and s._dbt_source_project = suf._dbt_source_project
 left join
     {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
     on s.dcid = njs.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="njs") }}
+    and s._dbt_source_project = njs._dbt_source_project

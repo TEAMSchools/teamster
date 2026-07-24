@@ -16,16 +16,16 @@ from {{ ref("base_powerschool__sections") }} as sec
 inner join
     {{ ref("stg_powerschool__sectionteacher") }} as st
     on sec.sections_id = st.sectionid
-    and {{ union_dataset_join_clause(left_alias="sec", right_alias="st") }}
+    and sec._dbt_source_project = st._dbt_source_project
 inner join
     {{ ref("int_powerschool__teachers") }} as t
     on st.teacherid = t.id
     and sec.sections_schoolid = t.schoolid
-    and {{ union_dataset_join_clause(left_alias="st", right_alias="t") }}
+    and st._dbt_source_project = t._dbt_source_project
 inner join
     {{ ref("stg_powerschool__roledef") }} as r
     on st.roleid = r.id
-    and {{ union_dataset_join_clause(left_alias="st", right_alias="r") }}
+    and st._dbt_source_project = r._dbt_source_project
 inner join
     {{ ref("int_people__staff_roster") }} as sr
     on t.teachernumber = sr.powerschool_teacher_number
