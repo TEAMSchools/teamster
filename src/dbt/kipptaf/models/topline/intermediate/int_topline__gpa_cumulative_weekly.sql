@@ -10,6 +10,11 @@ with
 
             cast(dbt_valid_from as date) as dbt_valid_from_date,
             cast(dbt_valid_to as date) as dbt_valid_to_date,
+
+            /* Snapshot-fed, so derive locally rather than passing the stored
+               column through: the check strategy only writes columns onto rows
+               it touches, leaving snapshot history ~99% null. */
+            {{ extract_source_project() }} as _dbt_source_project,
         from {{ ref("snapshot_powerschool__gpa_cumulative") }}
     ),
 
@@ -36,7 +41,7 @@ left join
     on co.studentid = gpa.studentid
     and co.schoolid = gpa.schoolid
     and co.week_start_monday between gpa.dbt_valid_from_date and gpa.dbt_valid_to_date
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+    and co._dbt_source_project = gpa._dbt_source_project
 where
     co.is_enrolled_week
     and co.school_level in ('MS', 'HS')
