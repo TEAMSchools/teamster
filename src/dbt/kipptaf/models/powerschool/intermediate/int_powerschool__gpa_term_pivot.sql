@@ -1,6 +1,13 @@
 with
     gpa as (
-        select _dbt_source_relation, studentid, yearid, term_name, gpa_term, gpa_y1,
+        select
+            _dbt_source_relation,
+            studentid,
+            yearid,
+            term_name,
+            gpa_term,
+            gpa_y1,
+            _dbt_source_project,
         from {{ ref("int_powerschool__gpa_term") }}
 
         union all
@@ -12,6 +19,7 @@ with
             'CUR' as term_name,
             gpa_term,
             gpa_y1,
+            _dbt_source_project,
         from {{ ref("int_powerschool__gpa_term") }}
         where is_current
     )
@@ -32,6 +40,7 @@ select
     gpa_y1_q2,
     gpa_y1_q3,
     gpa_y1_q4,
+    _dbt_source_project,
 from
     gpa pivot (
         max(gpa_term) as gpa_term,

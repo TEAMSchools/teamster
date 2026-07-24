@@ -213,7 +213,9 @@ unit_tests:
       student has a custom-attributes row whose lang_parent_ss has no crosswalk
       entry, confirming the language columns fall through to null (not the raw
       label). The fourth student has no int_finalsite__contact_id_attributes row
-      (no minted Focus id) and is excluded from the extract.
+      (no minted Focus id) and is excluded from the extract. The fifth student
+      has status 'applied' (not 'enrolled') and a minted Focus id, confirming
+      the enrolled-only filter — not the missing-id filter — excludes them.
     model: rpt_focus__demographics
     given:
       - input: ref('stg_finalsite__contacts')
@@ -227,24 +229,35 @@ unit_tests:
               email: jane.smith@example.com,
               gender: Female,
               birth_date: 2012-03-15,
+              status: enrolled,
             }
           - {
               finalsite_enrollment_id: enr-002,
               last_name: Doe,
               first_name: John,
               birth_date: 2013-05-20,
+              status: enrolled,
             }
           - {
               finalsite_enrollment_id: enr-003,
               last_name: Mara,
               first_name: Worf,
               birth_date: 2011-01-10,
+              status: enrolled,
             }
           - {
               finalsite_enrollment_id: enr-004,
               last_name: Kim,
               first_name: Harry,
               birth_date: 2010-07-04,
+              status: enrolled,
+            }
+          - {
+              finalsite_enrollment_id: enr-005,
+              last_name: Torres,
+              first_name: Alex,
+              birth_date: 2009-09-09,
+              status: applied,
             }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
@@ -252,6 +265,7 @@ unit_tests:
           - { finalsite_enrollment_id: enr-002 }
           - { finalsite_enrollment_id: enr-003 }
           - { finalsite_enrollment_id: enr-004 }
+          - { finalsite_enrollment_id: enr-005 }
       - input: ref('int_finalsite__contact_custom_attributes')
         format: sql
         rows: |
@@ -282,6 +296,8 @@ unit_tests:
           select 'enr-002', '84001001002'
           union all
           select 'enr-003', '84001001003'
+          union all
+          select 'enr-005', '84001001005'
     expect:
       rows:
         - {

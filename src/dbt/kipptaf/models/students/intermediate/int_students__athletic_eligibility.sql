@@ -4,6 +4,7 @@ with
             _dbt_source_relation,
             yearid,
             studentid,
+            _dbt_source_project,
 
             sum(earnedcrhrs) as py_credits,
 
@@ -12,7 +13,7 @@ with
         from {{ ref("stg_powerschool__storedgrades") }}
         where
             storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
-        group by _dbt_source_relation, yearid, studentid
+        group by _dbt_source_relation, yearid, studentid, _dbt_source_project
     ),
 
     cy_credits as (
@@ -20,6 +21,7 @@ with
             _dbt_source_relation,
             yearid,
             studentid,
+            _dbt_source_project,
 
             if(
                 sum(if(y1_letter_grade_adjusted in ('F', 'F*'), 1, 0)) = 0, true, false
@@ -27,7 +29,7 @@ with
 
         from {{ ref("base_powerschool__final_grades") }}
         where storecode = 'Q2'
-        group by _dbt_source_relation, yearid, studentid
+        group by _dbt_source_relation, yearid, studentid, _dbt_source_project
     ),
 
     base as (
@@ -49,6 +51,7 @@ with
             e.ada_weighted_semester_s1 as cy_weighted_s1_ada,
             e.ada_unweighted_year_prev as py_y1_unweighted_ada,
             e.ada_weighted_year_prev as py_y1_weighted_ada,
+            e._dbt_source_project,
 
             gpa.gpa_term_q1 as cy_q1_gpa,
             gpa.gpa_y1_q2 as cy_s1_gpa,
@@ -80,20 +83,20 @@ with
             {{ ref("int_powerschool__gpa_term_pivot") }} as gpa
             on e.studentid = gpa.studentid
             and e.yearid = gpa.yearid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="gpa") }}
+            and e._dbt_source_project = gpa._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_term_pivot") }} as gpapy
             on e.studentid = gpapy.studentid
             and e.yearid = (gpapy.yearid + 1)
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="gpapy") }}
+            and e._dbt_source_project = gpapy._dbt_source_project
         left join
             py_credits as pyc
             on e.studentid = pyc.studentid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="pyc") }}
+            and e._dbt_source_project = pyc._dbt_source_project
         left join
             cy_credits as cyc
             on e.studentid = cyc.studentid
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="cyc") }}
+            and e._dbt_source_project = cyc._dbt_source_project
         where
             e.academic_year = {{ var("current_academic_year") }}
             and e.rn_year = 1
@@ -129,6 +132,7 @@ select
     met_cy_credits,
     is_first_time_ninth,
     is_age_eligible,
+    _dbt_source_project,
 
     case
         when not is_age_eligible

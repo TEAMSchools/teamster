@@ -22,11 +22,11 @@ from {{ ref("stg_powerschool__storedgrades") }} as sg
 left join
     {{ ref("stg_powerschool__students") }} as s
     on sg.studentid = s.id
-    and {{ union_dataset_join_clause(left_alias="sg", right_alias="s") }}
+    and sg._dbt_source_project = s._dbt_source_project
 left join
     {{ ref("stg_powerschool__u_storedgrades_de") }} as de
     on sg.dcid = de.storedgradesdcid
-    and {{ union_dataset_join_clause(left_alias="sg", right_alias="de") }}
+    and sg._dbt_source_project = de._dbt_source_project
     and de.de_course_name is not null
 -- TODO: establish storecode policy for DE grades as institutions now submit
 -- twice yearly (fall → Q2, spring → ?). If spring grades land on Y1 in the

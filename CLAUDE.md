@@ -82,6 +82,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   path breaks — pass an absolute script path or run it from the main repo.
   Otherwise prefer absolute paths.
 
+- **Bash cwd does NOT persist across calls** — every Bash command (including
+  `run_in_background`) starts at the main repo root, so a prior `cd <worktree>`
+  does not carry over. Tools that resolve relative paths from cwd (`trunk check`
+  with relative paths, `pytest`) must include `cd <worktree> &&` in the SAME
+  command, or they silently operate on the main checkout's (unmodified) copies
+  and report a false "clean". Prefix with `pwd &&` to confirm the directory.
+
 - **Worktree Read/Edit/Write must target the worktree path**, not the main
   checkout: editing `/workspaces/teamster/<path>` instead of
   `/workspaces/teamster/.worktrees/<branch>/<path>` silently leaves the worktree
@@ -92,6 +99,18 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   resolves imports against the MAIN checkout, so worktree-only signature/symbol
   changes surface phantom `unknown import` / `no parameter named X` errors.
   Trust `uv run` executed inside the worktree, not the IDE.
+
+- **Worktree file Read/Edit and Bash `cd <worktree>` re-inject that worktree's
+  CLAUDE.md files (~40KB each) into context on every call**; `git -C <worktree>`
+  and `uv run dbt --project-dir <abs-worktree>` from the MAIN cwd, and `Write`
+  (content-exempt), do NOT. For a large multi-file worktree refactor, delegate
+  the edits to subagents (their context absorbs the injection) and verify via
+  `git -C <worktree> diff` from the main repo.
+
+- **`git worktree add` with a RELATIVE path resolves against the shell cwd**,
+  which drifts after a foreground `cd` into another worktree — pass an ABSOLUTE
+  path (`git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`) or
+  it nests one worktree inside another.
 
 - **Branch switch**: with an issue,
   `gh issue develop <number> --name <branch> --checkout`; if the user explicitly
@@ -248,7 +267,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   comments — an initial "Reviewing…" status stub and a separate final findings
   comment — and the stub can stay stuck mid-render even after the check-run
   reports `success`. Fetch ALL issue comments and read the newest / longest, not
-  the first.
+  the first. It may instead EDIT its checklist stub comment in place with the
+  findings, minutes AFTER the check-run reports `success` — so a findings-poll
+  must gate on the comment's `updated_at` / body growing, not the check-run
+  conclusion or a naive length threshold (the ~500-char checklist stub trips
+  it).
 
 - **`dagster-cloud-deploy / deploy` emits one same-named check-run per code
   location** (~5) — `get_check_runs` returns duplicates; wait for ALL to reach a
@@ -292,7 +315,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   check-only linters fire at `pre-push` and in CI. If a session reports "trunk
   clean" on a SQL/YAML change based on commit hooks alone, run
   `.trunk/tools/trunk check --force <files>` to verify before claiming the
-  change is lint-clean. Run from inside the worktree —
+  change is lint-clean. A clean pre-PUSH `trunk-check-pre-push` is not
+  sufficient either — it is git-diff-scoped (no `--force`) and can MISS a
+  sqlfluff violation (e.g. ST06) on already-committed lines that CI's full check
+  flags, so a push succeeds and CI still fails on lint; `trunk check --force`
+  the changed SQL before pushing. Run from inside the worktree —
   `trunk check --force <abs-worktree-paths>` from the main repo silently returns
   "no applicable linters". The `trunk` binary lives only in the main repo
   (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
@@ -413,6 +440,27 @@ tagging.
   tracking issue, (b) creating a branch or worktree, (c) modifying protected
   files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
 
+## Compact Instructions
+
+When summarizing the conversation, always preserve:
+
+- The original task/request verbatim, plus constraints and scope decisions the
+  user stated ("don't touch X", "we decided against Y" — and why).
+- Worktree state: the absolute worktree path, branch name, and which checkout
+  (main vs worktree) each pending change lives in; what is committed vs
+  uncommitted; open PR/issue numbers.
+- Verification state: which tests/builds/lints ran and their results; what is
+  verified working vs not yet checked.
+- Unresolved items: open questions awaiting the user, known failures not yet
+  fixed, and the agreed next step.
+- Exact identifiers over descriptions: file paths, model/column names, run IDs,
+  verbatim error messages.
+- Dead ends already tried, gotchas discovered, and workarounds applied this
+  session.
+
+Discard freely: full file contents already on disk, verbose tool output, and
+exploration that led nowhere (keep only the conclusion).
+
 ## CLAUDE.md Editing Rules
 
 - **Before adding to any CLAUDE.md file**: beyond the skill's
@@ -430,7 +478,9 @@ launcher. Package internals: see
 
 - **MCP outages**: If an MCP tool returns "server disconnected" or clearly
   impaired responses, surface to the user before working around with raw `gh` /
-  BigQuery calls.
+  BigQuery calls. Same if an EXPECTED MCP tool is absent from the deferred-tools
+  list (ToolSearch returns "No matching deferred tools") — flag it immediately
+  so the user can reconnect; do not silently fall back.
 
 - **MCP subprocess logs**: stdio MCP stderr captured at
   `~/.cache/claude-cli-nodejs/-workspaces-teamster/mcp-logs-<name>/<ts>.jsonl`.

@@ -5,6 +5,7 @@ select
     p.gpversionid as plan_gpversionid,
     p.parentid as plan_parentid,
     p.name as plan_name,
+    p._dbt_source_project,
 
     o.creditcapacity as plan_credit_capacity,
 
@@ -19,13 +20,13 @@ from {{ ref("stg_powerschool__gpnode") }} as p
 inner join
     {{ ref("stg_powerschool__gpnode") }} as o
     on p.id = o.parentid
-    and {{ union_dataset_join_clause(left_alias="p", right_alias="o") }}
+    and p._dbt_source_project = o._dbt_source_project
 inner join
     {{ ref("stg_powerschool__gpnode") }} as d
     on o.id = d.parentid
-    and {{ union_dataset_join_clause(left_alias="o", right_alias="d") }}
+    and o._dbt_source_project = d._dbt_source_project
 left join
     {{ ref("stg_powerschool__gpnode") }} as s
     on d.id = s.parentid
-    and {{ union_dataset_join_clause(left_alias="d", right_alias="s") }}
+    and d._dbt_source_project = s._dbt_source_project
 where p.parentid is null

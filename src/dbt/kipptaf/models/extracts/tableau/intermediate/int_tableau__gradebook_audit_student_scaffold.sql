@@ -7,6 +7,7 @@ with
             sectionid,
             storecode,
             percent_grade as category_quarter_percent_grade,
+            _dbt_source_project,
 
             round(
                 avg(percent_grade) over (
@@ -30,6 +31,7 @@ with
             studentid,
             sectionid,
             storecode,
+            _dbt_source_project,
             termbin_start_date,
             term_percent_grade_adjusted as quarter_course_percent_grade,
             term_grade_points as quarter_course_grade_points,
@@ -49,6 +51,7 @@ with
             studentid,
             sectionid,
             storecode,
+            _dbt_source_project,
             null as termbin_start_date,
             `percent` as quarter_course_percent_grade,
             gpa_points as quarter_course_grade_points,
@@ -102,6 +105,7 @@ select
     s.is_student_athlete,
     s.`ada`,
     s.ada_above_or_at_80,
+    s._dbt_source_project,
 
     ce.cc_sectionid as sectionid,
     ce.cc_course_number as course_number,
@@ -256,23 +260,23 @@ inner join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on s.studentid = ce.cc_studentid
     and s.yearid = ce.terms_yearid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
+    and s._dbt_source_project = ce._dbt_source_project
     and not ce.is_dropped_section
     and ce.sections_no_of_students != 0
 inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
     on ce.terms_yearid = sec.yearid
     and ce.cc_sectionid = sec.sectionid
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
+    and ce._dbt_source_project = sec._dbt_source_project
     and sec.scaffold_name = 'teacher_scaffold'
 left join
     quarter_course_grades as qg
     on ce.terms_yearid = qg.yearid
     and ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
+    and ce._dbt_source_project = qg._dbt_source_project
     and sec.quarter = qg.storecode
-    and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
+    and sec._dbt_source_project = qg._dbt_source_project
     and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
     and qg.grades_type = 'current_year'
 where
@@ -321,6 +325,7 @@ select
     s.is_student_athlete,
     s.`ada`,
     s.ada_above_or_at_80,
+    s._dbt_source_project,
 
     ce.cc_sectionid as sectionid,
     ce.cc_course_number as course_number,
@@ -428,14 +433,14 @@ inner join
     {{ ref("base_powerschool__course_enrollments") }} as ce
     on s.studentid = ce.cc_studentid
     and s.yearid = ce.terms_yearid
-    and {{ union_dataset_join_clause(left_alias="s", right_alias="ce") }}
+    and s._dbt_source_project = ce._dbt_source_project
     and not ce.is_dropped_section
     and ce.sections_no_of_students != 0
 inner join
     {{ ref("int_tableau__gradebook_audit_teacher_scaffold") }} as sec
     on ce.terms_yearid = sec.yearid
     and ce.cc_sectionid = sec.sectionid
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="sec") }}
+    and ce._dbt_source_project = sec._dbt_source_project
     and sec.scaffold_name = 'teacher_category_scaffold'
 inner join
     {{ ref("stg_google_sheets__gradebook_expectations_assignments") }} as ge
@@ -450,9 +455,9 @@ left join
     on ce.terms_yearid = qg.yearid
     and ce.cc_studentid = qg.studentid
     and ce.cc_sectionid = qg.sectionid
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="qg") }}
+    and ce._dbt_source_project = qg._dbt_source_project
     and sec.quarter = qg.storecode
-    and {{ union_dataset_join_clause(left_alias="sec", right_alias="qg") }}
+    and sec._dbt_source_project = qg._dbt_source_project
     and qg.termbin_start_date <= current_date('{{ var("local_timezone") }}')
     and qg.grades_type = 'current_year'
 left join
@@ -460,7 +465,7 @@ left join
     on ce.terms_yearid = cg.yearid
     and ce.cc_studentid = cg.studentid
     and ce.cc_sectionid = cg.sectionid
-    and {{ union_dataset_join_clause(left_alias="ce", right_alias="cg") }}
+    and ce._dbt_source_project = cg._dbt_source_project
     and ge.assignment_category_term = cg.storecode
 where
     s.academic_year = {{ var("current_academic_year") }}

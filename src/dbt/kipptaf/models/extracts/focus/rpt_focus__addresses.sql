@@ -22,3 +22,4 @@ inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on c.finalsite_enrollment_id = ida.finalsite_enrollment_id
     and ida.focus_student_id_prefixed is not null
+where c.status = 'enrolled'

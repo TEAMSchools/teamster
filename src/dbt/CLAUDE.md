@@ -304,6 +304,11 @@ re-stage YOUR copy first:
 (personal schema, NOT classifier-blocked, unlike `--target staging`), then
 `dbt build --select <model> --target dev`.
 
+**A macro call missing its `{{ }}` fails only at build.** A bare `my_macro()`
+instead of `{{ my_macro() }}` is valid SQL — it passes `dbt parse` and sqlfluff,
+then fails at BigQuery build with `Function not found`. Build the model to catch
+it; parse/lint won't.
+
 ## Local dev schema naming
 
 Local dev builds land in `zz_<GITHUB_USER>_<district>[_<source>]` (repo
@@ -393,6 +398,20 @@ into `zz_stg_<district>_<source>` so CI's wrapper rebuild sees the column. The
 stale from the CI error's `compiled_code` `from` clause: a ref resolving to
 `zz_stg_*` was deferred to the stale staging copy; one resolving to
 `dbt_cloud_pr_*` was rebuilt on the PR branch.
+
+A value-only change that alters a value's **format** (e.g. raw phone → E.164) is
+schema-safe but can silently break downstream extracts with positional / format
+assumptions — the shared `int_finalsite__student_contacts` E.164 change broke
+`rpt_clever__students`' `left(regexp_replace(phone, '\W'), 10)` (it truncated
+the 11-digit `+1…`). Before reformatting a value at a shared model, grep
+consumers for `left(` / `substr(` / digit-count assumptions on that column — CI
+won't catch it (compiles fine; no error).
+
+A doc-only inline SQL comment on a heavily-consumed intermediate still marks it
+`state:modified`, fanning CI's `state:modified+` rebuild across its whole
+descendant graph and surfacing unrelated pre-existing warn-tests as noise. Put
+documentation notes in the properties `description` (doesn't mark modified), not
+an inline SQL comment, on hub models.
 
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 
@@ -725,17 +744,23 @@ in every row, `null` for empties.
 
 ### Date-range joins
 
-Use half-open intervals for enrollment date-range joins — `BETWEEN` causes
-fan-out when consecutive enrollments share a boundary date:
+Use half-open intervals when joining a point date to intervals that can **abut
+or overlap**. Consecutive student enrollment stints share a boundary date (a
+stint's `exitdate` equals the next stint's `entrydate`), so `BETWEEN` matches
+both and fans out:
 
 ```sql
--- wrong: matches both enrollments on the shared boundary
+-- wrong: matches both stints on the shared boundary
 and cc.dateenrolled between enr.entrydate and enr.exitdate
 
 -- right: half-open interval
 and enr.entrydate <= cc.dateenrolled
 and enr.exitdate > cc.dateenrolled
 ```
+
+`BETWEEN` is fine — and is the repo norm — for joins to **non-overlapping,
+non-abutting** windows (calendar weeks, reporting terms, topline period rows),
+where a point date matches at most one interval.
 
 ### Row picking, dedup & surrogate keys
 

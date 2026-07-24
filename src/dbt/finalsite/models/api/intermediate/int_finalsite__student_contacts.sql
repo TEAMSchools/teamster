@@ -281,6 +281,52 @@ with
             cast(null as string) as phone_daytime,
             cast(null as string) as home_address,
         from emergency_long
+    ),
+
+    all_contacts as (
+        select
+            finalsite_enrollment_id,
+            contact_slot,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email,
+            phone_mobile,
+            phone_home,
+            phone_work,
+            phone_daytime,
+            phone_primary,
+            home_address,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+            is_emergency,
+        from contact_1
+
+        union all
+
+        select
+            finalsite_enrollment_id,
+            contact_slot,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email,
+            phone_mobile,
+            phone_home,
+            phone_work,
+            phone_daytime,
+            phone_primary,
+            home_address,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+            is_emergency,
+        from emergency
     )
 
 select
@@ -292,37 +338,15 @@ select
     contact_last_name,
     relationship,
     email,
-    phone_mobile,
-    phone_home,
-    phone_work,
     phone_daytime,
-    phone_primary,
     home_address,
     is_pickup,
     is_custodial,
     is_household_member,
     is_emergency,
-from contact_1
 
-union all
-
-select
-    finalsite_enrollment_id,
-    contact_slot,
-    finalsite_contact_id,
-    contact_name,
-    contact_first_name,
-    contact_last_name,
-    relationship,
-    email,
-    phone_mobile,
-    phone_home,
-    phone_work,
-    phone_daytime,
-    phone_primary,
-    home_address,
-    is_pickup,
-    is_custodial,
-    is_household_member,
-    is_emergency,
-from emergency
+    {{ clean_phone("phone_mobile") }} as phone_mobile,
+    {{ clean_phone("phone_home") }} as phone_home,
+    {{ clean_phone("phone_work") }} as phone_work,
+    {{ clean_phone("phone_primary") }} as phone_primary,
+from all_contacts

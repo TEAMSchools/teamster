@@ -18,9 +18,8 @@ models:
         description: Normalized from `period` ('FallBlock' → 'Fall').
       - name: _dbt_source_project
         data_type: string
-        description: Source project
-          (extract_code_location(_dbt_source_relation)) — e.g., 'kippnewark' /
-          'kippcamden'. Per #3142, materialized at the union model so consumers don't re-derive per-call.
+        description: Source project (extract_source_project()) — e.g.,
+          'kippnewark' / 'kippcamden'. Per #3142, materialized at the union model so consumers don't re-derive per-call.
       - name: test_date
         data_type: date
         description: >-

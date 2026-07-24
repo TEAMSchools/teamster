@@ -19,6 +19,8 @@ models:
                 severity: error
       - name: _dbt_source_relation
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
       - name: finalsite_enrollment_id
         data_type: string
       - name: _dagster_partition_key

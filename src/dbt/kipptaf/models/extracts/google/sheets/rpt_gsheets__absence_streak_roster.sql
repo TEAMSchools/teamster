@@ -23,12 +23,12 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on st.studentid = co.studentid
     and st.yearid = co.yearid
-    and {{ union_dataset_join_clause(left_alias="st", right_alias="co") }}
+    and st._dbt_source_project = co._dbt_source_project
 left join
     {{ ref("int_deanslist__comm_log") }} as c
     on co.student_number = c.student_school_id
     and c.call_date between st.streak_start_date and st.streak_end_date
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="c") }}
+    and co._dbt_source_project = c._dbt_source_project
     and c.reason like 'Att:%'
 where
     st.att_code in ('A', 'AD', 'M')
