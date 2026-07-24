@@ -31,7 +31,7 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@f87768c6d25f92ae6efa7175e223ef77d4cbf97f # v1.0.166
+        uses: anthropics/claude-code-action@44423bdec74b97d67543eb16c110546762c110b2 # v1.0.181
         with:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
@@ -41,8 +41,9 @@ jobs:
             https://github.com/anthropics/claude-plugins-official.git
             https://github.com/dbt-labs/dbt-agent-skills.git
             https://github.com/dagster-io/skills.git
+            https://github.com/obra/superpowers.git
           plugins: |
-            superpowers@claude-plugins-official
+            superpowers@superpowers-dev
             context7@claude-plugins-official
             dagster-expert@dagster
             dignified-python@dagster
