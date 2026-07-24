@@ -1,86 +1,165 @@
 # Assessment Cube — Data-Usage Reference
 
-This file documents settled Cube data-usage conventions for assessment work —
-what fields mean and how the cube behaves, verified where noted. Undecided
-policy defaults are never stated here as rules; they are only flagged and
-logged, per the `Flag, don't invent` rule in `assessment-cube-orchestrator.md`.
+Settled mechanics and true field meanings for `student_assessment_scores_view`,
+the single Cube view covering KIPP internal (Illuminate) interims, vendor normed
+diagnostics (i-Ready, DIBELS, STAR), and NJ/FL state assessments. This file
+documents how the cube behaves. It does not decide undecided policy defaults —
+the `Flag, don't invent` rule in `assessment-cube-orchestrator.md` governs
+those.
 
 ## Shared conventions
 
-- **`response_type`** takes the values `overall`, `standard`, `group`, or `null`
-  (singular `standard` / `group` — not the older `standards` / `groups`). Values
-  are not additive across types. Default to `overall` unless a standard- or
-  group-level breakdown is explicitly requested.
-- **Grain.** `count_scores` is additive and resilient — it succeeded across
-  every logged session. `count_students` is a distinct count and is heavy and
-  fragile at standard grain (timeouts, and an intermittent location-`US` 400
-  error on the `dim_student_enrollments` dependency); prefer `count_scores` as
-  the fallback at fine grain. Which measure is the _default_ for a count/share
-  question is an open decision — flag and log it, don't answer it.
-- **Performance bands.** Use the numeric `performance_band_label_number`, not
-  the `proficiency_level` label string — `proficiency_level`'s label set is
-  inconsistent across assessment families. The abbreviation crosswalk (band 1 =
-  "Far Below", band 2 = "Below"; `FB`, `B`, `B/FB` = bands 1-2) is **[VERIFY]**
-  — confirm it against the live label set before publishing or relying on it.
-- **Subject fields.** `discipline` is the course/section subject crosswalk
-  (value `Math`); `academic_subject` is the tested subject (value `Mathematics`,
-  full word). They answer different questions — do not use one in place of the
-  other.
-- **Enrollment resolution.** Filter `enrollment_resolution = subject_section`
-  for course- or section-level rollups. `homeroom` rows also exist in the same
-  field — don't mix the two without an explicit reason.
-- **Teacher attribution.** Lead-teacher fields are in the schema as of
-  2026-07-24 (`staff_lead_teacher_full_name`, `lead_teacher_staff_key`), aliased
-  onto the assessment view from `student_section_enrollments`. They require the
-  `student_section_enrollments_view` to be present — force-refresh `meta` if the
-  fields appear to be missing.
-- **Domain rollup.** `response_type_root_description` is the CCSS domain rollup.
-  It is reliable for CCSS-aligned content and **unreliable for FL state-aligned
-  standards** — do not use it for FL domain rollups (see FL state, below).
+Apply to every assessment source unless a source section overrides them.
 
-## Internal (Illuminate)
+- **Pick the source with `assessment_type`, not `is_internal_assessment`.**
+  `is_internal_assessment` is TRUE only for Illuminate (KIPP-authored interims);
+  i-Ready, DIBELS, and STAR are FALSE despite being used internally. To select a
+  source, filter `assessment_type`. The full value list: `illuminate`, `iready`,
+  `dibels`, `star`, `state_nj_njsla`, `state_nj_njsla_science`,
+  `state_nj_njgpa`, `state_fl_fast`, `state_fl_science`, `state_fl_eoc`.
+  - The field's own description lists coarser values (`state_nj` / `state_fl` /
+    `college` / `ap`) that are NOT the real values — trust this list (verified
+    against the live connector 2026-07-24).
+- **`response_type` — always filter it explicitly.** Values: `overall`,
+  `standard`, `group`, `null` (singular `standard` / `group`, not the older
+  `standards` / `groups`). Not additive across types. Default to `overall`
+  unless a standard- or group-level breakdown is explicitly requested. Only
+  Illuminate populates `standard` / `group`; every other source is
+  `response_type = null` (overall only).
+- **Headline metric: `pct_proficient`.** It is the one score measure comparable
+  across the incompatible scales of all sources (proficient scores / total).
+  `is_mastery` is the underlying per-score proficient flag. `scale_score`,
+  `percent_correct`, `avg_scale_score`, and `avg_percent_correct` are
+  scope-bound — meaningful only within one source/subject/grade; pooling them
+  across sources returns a valid-looking but meaningless number. Use
+  `pct_proficient` / `is_mastery` for any cross-source comparison.
+- **Grain.** `count_scores` is additive and resilient (scored-response count) —
+  it succeeded across every logged session. `count_students` is a distinct
+  student count and is heavier and historically fragile at fine (standard) grain
+  (timeouts, and an intermittent location-`US` 400 on the
+  `dim_student_enrollments` dependency); `count_scores` is the reliable fallback
+  there.
+- **Performance bands are Illuminate-only.** `performance_band_label_number`
+  (integer 1–5) is populated only for Illuminate; it is null for state and for
+  i-Ready/DIBELS/STAR. Where it applies, band 1 = the "Far Below" tier and band
+  2 = "Below" (`FB` = band 1, `B` = band 2, `B/FB` = bands 1–2). **Use the
+  integer `performance_band_label_number`, never the `proficiency_level` label
+  text** — the label strings are wildly inconsistent (dozens of variants per
+  band number). Other sources use their own `proficiency_level` scales (see each
+  section).
+- **Two different subject fields.** `academic_subject` is the subject _tested_
+  (e.g., `Mathematics`, `English Language Arts`); `discipline` is the _course_
+  subject from the course crosswalk (e.g., `Math`, `ELA`). They answer different
+  questions — do not use one in place of the other.
+- **Section/teacher rollups: filter `enrollment_resolution = subject_section`**
+  (`homeroom` rows also exist in the same field). Lead-teacher attribution is
+  available via `staff_lead_teacher_full_name` / `lead_teacher_staff_key`,
+  aliased from `student_section_enrollments`; force-refresh `meta` if the
+  lead-teacher fields appear to be missing.
+- **Time.** `academic_year` is a July-start integer (2025 = the 2025-26 school
+  year). It is populated for Illuminate but **null for state AND for
+  i-Ready/DIBELS/STAR** — for those sources filter the school year via a
+  `date_taken` window (`date_taken` is fully populated there). `date_taken` is
+  nullable for a small share of Illuminate rows with no recorded sitting.
+- **Domain rollup: `response_type_root_description`** is the CCSS domain rollup
+  — reliable for CCSS-aligned content, unreliable for FL state-aligned
+  standards. Illuminate only (null elsewhere, since `response_type` is null
+  elsewhere).
+- **Open decisions — flag, never assume a value** (per the orchestrator):
+  minimum-sample suppression threshold; intervention tier cut-scores;
+  pool-vs-per-instrument for multi-module "overall mastery"; which subjects
+  count as "math"; and the default grain (record vs distinct-student) for
+  count/share questions. None has a documented network default — surface the
+  assumption and log it.
 
-- Module types are `QA`, `MQQ`, and `CRQ` (`module_type`); `module_code` values
-  look like `QA3`. The exact internal `assessment_type` enum value is
-  **[VERIFY]** — confirm it against the live connector before publishing or
-  relying on it.
-- Pooling `QA` / `MQQ` / `CRQ` mixes instruments of differing difficulty (in one
-  region, `CRQ` was ~60% of that region's middle-school math records). Whether a
-  multi-instrument mastery question should pool instruments or report per
-  instrument is an open decision — flag and log it, don't answer it.
+## Internal — Illuminate (KIPP interims)
+
+- `assessment_type = 'illuminate'`; `is_internal_assessment = true`. The only
+  source with standards breakdowns.
+- **Module types:** `module_type` / `module_code` cover QA (Quick Assessments),
+  MQQ (Multiple-Choice Quick Questions), and CRQ (Constructed Response
+  Questions); `module_code` looks like `QA1`, `QA3`.
+- **Measures:** `pct_proficient_formative` pools all three formative module
+  types (QA + MQQ + CRQ); `pct_proficient_crq` isolates CRQ. (Whether to pool
+  across module types or report per-instrument is an open decision — flag it.)
+- **`response_type`:** `overall` / `standard` / `group`. Use `overall` unless a
+  standard/group breakdown is requested.
+- **Bands:** `performance_band_label_number` applies (band 1 = Far Below … 5 =
+  Above); use the integer, not the label.
 - `response_type_root_description` (the CCSS domain rollup) is reliable here.
-- **Sanity-check watch-out.** Internal "overall" mastery cut-scores may be
+- **Sanity-check watch-out:** Illuminate "overall" mastery cut-scores can be
   calibrated far lower than state proficiency — in one region, `QA3` overall
   math mastery ran approximately 8.6% against a 50%+ FAST PM3 rate on the same
   population. Flag a large internal-vs-state gap for team review rather than
-  treating it as a finding; the internal mastery threshold is trusted from the
-  field description, not independently verified.
+  reporting it as a finding.
 
-## NJ state
+## Vendor normed diagnostics — i-Ready
 
-- `assessment_type` enum values: `state_nj_njsla`, `state_nj_njsla_science`,
-  `state_nj_njgpa`.
-- `academic_year` is unreliable/null for some state slices — filter school year
-  via a `date_taken` window until a reliable crosswalk exists.
-- Student identifier: the district ID field is null for NJ rows; only
-  `lea_student_identifier` is populated. The canonical NJ student identifier is
-  **[VERIFY]** — confirm it against the live connector before publishing or
-  relying on it.
-- `response_type_root_description` (the CCSS domain rollup) is reliable for NJ.
+- `assessment_type = 'iready'`; `is_internal_assessment = false`. Subjects
+  (`category`): Math and ELA.
+- `response_type = null` (overall only — no standards breakdown).
+- **Proficiency:** `proficiency_level` is i-Ready's grade-level placement scale
+  — `3 or More Grade Levels Below`, `2 Grade Levels Below`,
+  `1 Grade Level Below`, `Early On Grade Level`, `Mid or Above Grade Level`.
+  `is_mastery` is populated. `performance_band_label_number` is null (band
+  shorthand does not apply).
+- **Time:** `academic_year` is null — filter the school year via `date_taken`.
+- Not exercised in the working-group sessions; documented from the live schema —
+  confirm interpretations before external use.
 
-## FL state
+## Vendor normed diagnostics — DIBELS
 
-- `assessment_type` enum values: `state_fl_fast`, `state_fl_science`,
-  `state_fl_eoc`.
-- FAST administration windows are `PM1` / `PM2` / `PM3` (field
-  `administration_period`); `PM3` is typically the spring window.
-- **Hard rule: `academic_year` is 100% null for `state_fl_fast`.** The standard
-  year filter does not work for FAST rows. Map the school year from the
-  `date_taken` calendar year instead (for example, `PM3` in calendar 2026 = the
-  2025-26 school year).
-- `is_mastery = True` matches Level 3+ for FAST (verified).
-- "Florida region" resolves to `state = FL` / `region_name = Miami`. Empirically
-  all FL rows are Miami, but flag this when it matters — no documented semantic
-  link ties `state = FL` to `region_name = Miami`.
-- **Hard rule: `response_type_root_description` is unreliable for FL
-  state-aligned standards.** Do not use it for FL domain rollups.
+- `assessment_type = 'dibels'`; `is_internal_assessment = false`. Subject
+  (`category`): ELA.
+- `response_type = null` (overall only).
+- **Proficiency:** `proficiency_level` is the DIBELS benchmark tier —
+  `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
+  `is_mastery` is populated. `performance_band_label_number` is null.
+- **Time:** `academic_year` is null — filter via `date_taken`.
+- Not exercised in the working-group sessions; documented from the live schema —
+  confirm before external use.
+
+## Vendor normed diagnostics — STAR
+
+- `assessment_type = 'star'`; `is_internal_assessment = false`. Subjects
+  (`category`): ELA and Math.
+- `response_type = null` (overall only).
+- **Proficiency:** `proficiency_level` is `Level 1`–`Level 5` (a share of rows
+  have null `proficiency_level` / `is_mastery`). `performance_band_label_number`
+  is null.
+- **Time:** `academic_year` is null — filter via `date_taken`.
+- Not exercised in the working-group sessions; documented from the live schema —
+  confirm before external use.
+
+## NJ state assessments
+
+- `assessment_type` values: `state_nj_njsla` (NJSLA ELA/Math),
+  `state_nj_njsla_science` (NJSLA Science), `state_nj_njgpa` (NJGPA). `category`
+  carries the subject (ELA / Math / Science).
+- `response_type = null` (overall only — no standards breakdown for state).
+- **Proficiency:** `proficiency_level` is the state achievement level;
+  `is_mastery` is the proficient flag. `performance_band_label_number` is null.
+- **Time:** `academic_year` is null for state — filter the school year via a
+  `date_taken` window. `administration_period` is the testing season (Fall /
+  Winter / Spring).
+- **Student identifier:** for NJ, `lea_student_identifier` (KIPP's SIS number)
+  is the canonical student number; `district_student_identifier` is null for NJ
+  (host-district IDs are Miami-only). `state_student_identifier` is the
+  state-assigned number.
+
+## FL state assessments
+
+- `assessment_type` values: `state_fl_fast` (FAST ELA/Math), `state_fl_science`
+  (Science), `state_fl_eoc` (end-of-course, e.g. Civics). `category` carries the
+  subject.
+- `response_type = null` (overall only).
+- **Proficiency:** `is_mastery` is the proficient flag — for FAST this matches
+  Level 3+. `proficiency_level` carries the achievement level.
+  `performance_band_label_number` is null.
+- **Time:** `academic_year` is null for FL (100% null for FAST) — filter the
+  school year via a `date_taken` window (for example, `PM3` in calendar 2026 =
+  the 2025-26 school year). `administration_period` is the FLDOE window (FAST
+  `PM1` / `PM2` / `PM3`).
+- FL is the Miami region (`region_name = 'Miami'` / `state = 'FL'`).
+- `response_type_root_description` is unreliable for FL state-aligned standards
+  — do not use it for FL domain rollups.

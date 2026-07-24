@@ -90,18 +90,24 @@ section of `assessment-cube-reference.md`:
 - **Region hint.** NJ regions are Newark, Camden, and Paterson; the FL region is
   Miami.
 - **Assessment hint.** `QA` / `MQQ` / `CRQ` implies the internal (Illuminate)
-  family; NJSLA / NJGPA implies NJ state; FAST / EOC implies FL state.
+  family; i-Ready, DIBELS, or STAR each map to their own vendor-diagnostic
+  section; NJSLA / NJGPA implies NJ state; FAST / EOC implies FL state. Select a
+  source with `assessment_type`, not `is_internal_assessment` (see Shared
+  conventions).
 - **If the family is ambiguous, ask before querying** — do not guess and query
   anyway.
 
-`assessment-cube-reference.md` has four sections; go to the one that matches:
+`assessment-cube-reference.md` has these sections; go to the one that matches:
 
 1. **Shared conventions** — mechanics that apply across every assessment family:
    `response_type`, grain, performance bands, subject fields, enrollment
    resolution, teacher attribution, domain rollup.
-2. **Internal (Illuminate)** — `QA` / `MQQ` / `CRQ` module conventions.
-3. **NJ state** — NJSLA, NJSLA-Science, and NJGPA conventions.
-4. **FL state** — FAST, FL-Science, and EOC conventions.
+2. **Internal — Illuminate** — `QA` / `MQQ` / `CRQ` module conventions.
+3. **Vendor normed diagnostics — i-Ready** — grade-level placement scale.
+4. **Vendor normed diagnostics — DIBELS** — benchmark tiers.
+5. **Vendor normed diagnostics — STAR** — `Level 1`–`Level 5`.
+6. **NJ state** — NJSLA, NJSLA-Science, and NJGPA conventions.
+7. **FL state** — FAST, FL-Science, and EOC conventions.
 
 Always check Shared conventions first, then the family-specific section — each
 family section assumes the shared mechanics and only adds what differs.
