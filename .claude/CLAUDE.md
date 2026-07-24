@@ -129,6 +129,26 @@ context budget dumps to `~/.claude/projects/.../tool-results/`; Bash
 subagent (as the spill message suggests) or reconstruct the data from prior tool
 output instead.
 
+## Context injection (`tool-gotchas.sh`)
+
+A third hook adds context instead of blocking. `tool-gotchas.sh` (PreToolUse,
+matcher `mcp__.*`) injects `.claude/context/<server>.md` the first time each MCP
+server is used in a session, keyed on the server segment of the tool name
+(`mcp__<server>__<tool>`). Add or change guidance for a server by editing that
+file — no hook or settings change needed.
+
+- It fails **open** (unparseable payload → exit 0, call proceeds) because it
+  only adds context. The two guard hooks fail closed — do not copy this pattern
+  into them.
+- `additionalContext` is consumed by PreToolUse at runtime but is NOT in the
+  harness's documented PreToolUse schema (only `permissionDecision`,
+  `permissionDecisionReason`, `updatedInput` are). If injection silently stops
+  after an upgrade, move the matcher to PostToolUse, where the field IS
+  documented; the script echoes the event name back, so it needs no edit.
+- Fires once per session per server, tracked by
+  `.claude/scratch/.gotchas-<session>-<server>`. A SessionStart `compact` hook
+  deletes those markers so the guidance survives a compaction.
+
 ## Git authentication for new repos
 
 The Codespace `GITHUB_TOKEN` (`ghu_*`) only has access to the repo it was
