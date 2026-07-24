@@ -16,6 +16,7 @@ on:
       - Dockerfile
       - uv.lock
       - src/dbt/amplify/**
+      - src/dbt/deanslist/**
       - src/dbt/finalsite/**
       - src/dbt/kipppaterson/**
       - src/dbt/pearson/**
@@ -24,10 +25,12 @@ on:
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/sftp/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - "!**/CLAUDE.md"
@@ -41,10 +44,12 @@ on:
       - src/teamster/core/**
       - src/teamster/libraries/amplify/**
       - src/teamster/libraries/couchdrop/**
+      - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
+      - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/sftp/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
       - "!**/CLAUDE.md"

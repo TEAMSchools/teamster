@@ -42,7 +42,7 @@ left join
     {{ ref("int_students__athletic_eligibility") }} as a
     on e.academic_year = a.academic_year
     and e.student_number = a.student_number
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
+    and e._dbt_source_project = a._dbt_source_project
 where
     e.academic_year = {{ var("current_academic_year") }}
     and e.grade_level >= 5

@@ -31,7 +31,7 @@ with
             {{ ref("base_powerschool__student_enrollments") }} as co
             on ce.cc_studentid = co.studentid
             and ce.cc_academic_year = co.academic_year
-            and {{ union_dataset_join_clause(left_alias="ce", right_alias="co") }}
+            and ce._dbt_source_project = co._dbt_source_project
             and co.rn_year = 1
         where not ce.is_dropped_course
 

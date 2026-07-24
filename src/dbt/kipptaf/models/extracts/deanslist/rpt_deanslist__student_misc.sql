@@ -1,6 +1,6 @@
 with
     ug_school as (
-        select studentid, schoolid, _dbt_source_relation,
+        select studentid, schoolid, _dbt_source_relation, _dbt_source_project,
         from {{ ref("int_extracts__student_enrollments") }}
         where rn_undergrad = 1 and grade_level != 99
     ),
@@ -10,16 +10,18 @@ with
             studentid,
             schoolid,
             _dbt_source_relation,
+            _dbt_source_project,
 
             min(entrydate) as school_entrydate,
             max(exitdate) as school_exitdate,
         from {{ ref("int_extracts__student_enrollments") }}
-        group by studentid, schoolid, _dbt_source_relation
+        group by studentid, schoolid, _dbt_source_relation, _dbt_source_project
     ),
 
     students as (
         select
             co._dbt_source_relation,
+            co._dbt_source_project,
             co.studentid,
             co.student_number,
             co.state_studentnumber as `SID`,
@@ -87,24 +89,24 @@ with
         inner join
             ug_school as ug
             on co.studentid = ug.studentid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="ug") }}
+            and co._dbt_source_project = ug._dbt_source_project
         left join
             {{ ref("int_powerschool__gpa_term") }} as gpa
             on co.studentid = gpa.studentid
             and co.yearid = gpa.yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+            and co._dbt_source_project = gpa._dbt_source_project
             and gpa.is_current
         left join
             {{ ref("stg_powerschool__schools") }} as sch
             on co.schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="sch") }}
+            and co._dbt_source_project = sch._dbt_source_project
         where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1
     )
 
-select co.*, ed.school_entrydate, ed.school_exitdate,
+select co.* except (_dbt_source_project), ed.school_entrydate, ed.school_exitdate,
 from students as co
 left join
     enroll_dates as ed
     on co.studentid = ed.studentid
     and co.schoolid = ed.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ed") }}
+    and co._dbt_source_project = ed._dbt_source_project
