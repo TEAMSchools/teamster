@@ -99,11 +99,11 @@ Apply to every assessment source unless a source section overrides them.
 - **Bands:** `performance_band_label_number` applies (band 1 = Far Below … 5 =
   Above); use the integer, not the label.
 - `response_type_root_description` (the CCSS domain rollup) is reliable here.
-- **Sanity-check watch-out:** Illuminate "overall" mastery cut-scores can be
-  calibrated far lower than state proficiency — in one region, `QA3` overall
-  math mastery ran approximately 8.6% against a 50%+ FAST PM3 rate on the same
-  population. Flag a large internal-vs-state gap for team review rather than
-  reporting it as a finding.
+- **Sanity-check watch-out:** Illuminate "overall" mastery cut-scores can read
+  much lower than state proficiency for the same students — the two scales are
+  not directly comparable, so a wide internal-vs-state gap is often a
+  calibration artifact. Flag such a gap for team review rather than reporting it
+  as a finding.
 
 ## Vendor normed diagnostics — i-Ready
 
