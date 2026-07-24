@@ -334,6 +334,7 @@ with
         select
             cc.ap_number_ap_id,
             cc.enrollment_school_year,
+
             p.studentid as ps_internal_studentid,
             p._dbt_source_project,
         from cd_candidates as cc
