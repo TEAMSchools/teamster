@@ -119,7 +119,7 @@ with
             {{ ref("int_pearson__all_assessments") }} as a
             on e.academic_year = a.academic_year
             and e.pearson_local_student_identifier = a.localstudentidentifier
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
+            and e._dbt_source_project = a._dbt_source_project
             and a.`admin` = 'Spring'
             and a.testscalescore is not null
         where
@@ -209,7 +209,7 @@ with
             {{ ref("int_pearson__student_list_report") }} as a
             on e.academic_year = a.academic_year
             and e.pearson_local_student_identifier = a.local_student_identifier
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
+            and e._dbt_source_project = a._dbt_source_project
             -- see prelim_assessments CTE
             and a.academic_year >= 2024
             and a.administration = 'Spring'
@@ -279,7 +279,7 @@ with
             {{ ref("int_fldoe__all_assessments") }} as a
             on e.academic_year = a.academic_year
             and e.state_studentnumber = a.student_id
-            and {{ union_dataset_join_clause(left_alias="e", right_alias="a") }}
+            and e._dbt_source_project = a._dbt_source_project
             and a.results_type = 'Actual'
             and a.scale_score is not null
             and a.season = 'Spring'

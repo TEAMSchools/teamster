@@ -62,10 +62,12 @@
   event — use `!` negation patterns instead (e.g., `!**/*.md`).
 - YAML values should not be redundantly quoted — Trunk flags it. Only quote when
   required (e.g., `!` negation patterns need quotes).
-- All workflows use `actions/checkout` v6 (some pin the full SHA for the v6 tag)
-  — keep the major version consistent.
-- Dagster Cloud actions are pinned to a specific version tag (not `@latest`) —
-  update all occurrences together when upgrading.
+- Every external action `uses:` is pinned to a full 40-char commit SHA with a
+  trailing `# vX.Y.Z` comment (Dependabot's `github-actions` ecosystem proposes
+  bumps). Local reusable-workflow refs (`./.github/workflows/*.yaml`) are not
+  SHA-pinnable. Keep `actions/checkout` on one version across workflows.
+- Dagster Cloud actions are pinned to a commit SHA (all `uses:` point at the
+  same tag) — update all occurrences together when upgrading.
 - All workflows gate on `github.actor != 'dependabot[bot]'` — maintain this when
   adding new workflows.
 - `DAGSTER_CLOUD_API_TOKEN` is scoped to the `prerun` and `deploy` jobs only —

@@ -21,6 +21,10 @@ models:
         data_type: string
         description: Source relation identifier from dbt_utils.union_relations.
 
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from `_dbt_source_relation`.
+
       - name: academic_year
         data_type: int64
         description: Academic year the assessment was administered.
