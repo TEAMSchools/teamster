@@ -42,6 +42,7 @@ jobs:
             https://github.com/anthropics/claude-plugins-official.git
             https://github.com/dbt-labs/dbt-agent-skills.git
             https://github.com/dagster-io/skills.git
+            https://github.com/obra/superpowers.git
           plugins: |
             superpowers@superpowers-dev
             context7@claude-plugins-official
