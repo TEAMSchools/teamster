@@ -11,9 +11,8 @@ with
             cast(dbt_valid_from as date) as dbt_valid_from_date,
             cast(dbt_valid_to as date) as dbt_valid_to_date,
 
-            /* Snapshot-fed, so derive locally rather than passing the stored
-               column through: the check strategy only writes columns onto rows
-               it touches, leaving snapshot history ~99% null. */
+            /* snapshot-fed: derive locally — the check strategy never backfills
+               the stored column across history (see kipptaf CLAUDE.md) */
             {{ extract_source_project() }} as _dbt_source_project,
         from {{ ref("snapshot_powerschool__gpa_cumulative") }}
     ),

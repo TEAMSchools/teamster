@@ -12,10 +12,10 @@ with
             cast(dbt_valid_from as date) as dbt_valid_from_date,
             cast(dbt_valid_to as date) as dbt_valid_to_date,
 
-            /* Snapshot-fed, so derive locally. This snapshot does not carry
-               _dbt_source_project at all, and adding it upstream would not help
-               — the check strategy only writes columns onto rows it touches, so
-               snapshot history would stay null. */
+            /* snapshot-fed: derive locally — this snapshot has no stored
+               _dbt_source_project, and adding it upstream would not help since
+               the check strategy never backfills history (see kipptaf
+               CLAUDE.md) */
             {{ extract_source_project() }} as _dbt_source_project,
         from {{ ref("snapshot_powerschool__gpa_term") }}
     ),
