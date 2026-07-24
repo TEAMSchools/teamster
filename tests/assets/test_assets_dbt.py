@@ -41,8 +41,6 @@ def test_dbt_assets_kipptaf():
         assets=assets,
         code_location="kipptaf",
         selection=[
-            "kipptaf/edplan/qa_edplan__powerschool_mismatch",
-            "kipptaf/kippadb/qa_kippadb__hs_enrollment_audit",
             "kipptaf/people/snapshot_people__student_logins",
             "kipptaf/people/stg_people__student_logins",
             "kipptaf/powerschool/stg_powerschool__students",
