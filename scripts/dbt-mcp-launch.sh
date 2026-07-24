@@ -27,4 +27,8 @@ export DBT_TOKEN
 #   our service token (legacy Team plan — no Developer scope; remote MCP not
 #   available on this plan tier).
 
-exec uvx dbt-mcp
+# Use the persistent uv-tool install (kept current with `uv tool upgrade dbt-mcp`)
+# instead of `uvx dbt-mcp`. uvx re-resolves the latest release on every launch, so
+# a new upstream version triggers a cold env rebuild (~30-40s) that overruns Claude
+# Code's 30s MCP connect timeout — the pinned local install has no such tail.
+exec "${HOME}/.local/bin/dbt-mcp"
