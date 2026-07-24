@@ -97,6 +97,7 @@ with
             on mem.yearid = cw.yearid
             and mem.schoolid = cw.schoolid
             and mem.calendardate between cw.week_start_monday and cw.week_end_sunday
+            and mem._dbt_source_project = cw._dbt_source_project
     ),
 
     anchors as (
