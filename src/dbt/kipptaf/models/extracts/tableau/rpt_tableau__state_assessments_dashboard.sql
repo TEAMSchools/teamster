@@ -40,7 +40,6 @@ with
 
     schedules_current as (
         select
-            c._dbt_source_relation,
             c.cc_academic_year,
             c.students_student_number,
             c.courses_credittype,
