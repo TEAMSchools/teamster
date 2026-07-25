@@ -198,9 +198,9 @@ Section 6.
 - Pooling QA/MQQ/CRQ mixes instruments of differing difficulty (CRQ was ~60% of
   one region's MS math records) — pooling vs per-instrument is an open decision.
 - `response_type_root_description` (CCSS domain rollup) is reliable here.
-- **Sanity-check watch-out:** internal "overall" mastery cut-scores may be
-  calibrated far lower than state proficiency (one region's QA3 overall math
-  mastery was ~8.6% against a ~50%+ FAST PM3 rate on the same population). Flag
+- **Sanity-check watch-out:** internal "overall" mastery cut-scores may read
+  much lower than state proficiency for the same students — the two scales are
+  not directly comparable, so a wide gap is often a calibration artifact. Flag
   large internal-vs-state gaps for team review rather than treating them as
   findings; the internal mastery threshold is trusted from the field
   description, not independently verified.
