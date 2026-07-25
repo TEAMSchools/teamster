@@ -33,6 +33,11 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
+- **Deleting or disabling a dbt model silently breaks
+  `tests/assets/test_assets_dbt.py`** — it selects hardcoded asset keys
+  (`kipptaf/<folder>/<model>`) and `materialize()` raises on a missing one. Not
+  run in CI, so it rots unnoticed. Grep it before removing a model, and check
+  the neighbouring keys are still enabled while you're there.
 - **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields and
   `EnvVar.int("X")` for `int` fields (e.g. ports) inside `build_resources()` —
   both resolve lazily at resource init and never read the environment at

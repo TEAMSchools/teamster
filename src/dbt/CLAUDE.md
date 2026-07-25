@@ -309,6 +309,19 @@ instead of `{{ my_macro() }}` is valid SQL — it passes `dbt parse` and sqlfluf
 then fails at BigQuery build with `Function not found`. Build the model to catch
 it; parse/lint won't.
 
+**`dbt parse` never resolves macros** — it renders Jinja only far enough to
+capture `ref`/`source`/`config`, so a call to a DELETED macro parses clean
+whether the caller is enabled or disabled. Parse therefore cannot prove a macro
+removal is safe; compilation is the gate, and disabled models are never
+compiled. Prove a removal with `grep` for zero enabled call sites plus
+`dbt build --empty` over the affected graph.
+
+**`analyses/` are verifiable — compile + BigQuery dry run.** `dbt build` never
+runs them, but `dbt compile --select "path:analyses/<f>.sql" --target prod`
+followed by `bq query --dry_run` on `target/compiled/.../<f>.sql` resolves every
+column against prod schemas — stronger than the `--empty` gate used for models.
+Strip leading `--` comment lines first.
+
 ## Local dev schema naming
 
 Local dev builds land in `zz_<GITHUB_USER>_<district>[_<source>]` (repo
@@ -663,6 +676,13 @@ legitimately-superseded inactive rows that repeat the key.
   `error`. To restore `error`, set `config: severity: error` explicitly.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
+
+### An FK check belongs on the pre-join model, as a column `relationships` test
+
+A `relationships` test on a model built through an INNER JOIN to its parent is
+vacuous — the join already dropped every unmatched row. Put it on the staging
+model feeding the join, as a column-level generic (precedent:
+`stg_collegeboard__ap.yml`), not a bespoke `*_resolves` singular test.
 
 ### `dbt_utils.expression_is_true` window-function limit
 
