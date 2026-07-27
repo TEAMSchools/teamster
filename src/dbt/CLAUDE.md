@@ -229,6 +229,24 @@ before parsing.
 Use `config: materialized: <kind>` in `properties/<model>.yml`, not inline
 `{{ config(...) }}` in SQL. Create the yml if absent.
 
+## View→table flips for BigQuery plan depth
+
+A table model with a plan of hundreds of stages (straggler-fragile, e.g.
+[#4153](https://github.com/TEAMSchools/teamster/issues/4153)) usually inherits
+the depth from view upstreams: BigQuery inlines each view's full SQL per
+reference, recursively — a view ref'd 4x expands 4x. Check upstream
+materializations before flattening SQL. When flipping views to cron tables:
+
+- Map EVERY consumer's refresh cadence first (exposure `cron_schedule`, Dagster
+  schedules). An intraday consumer (hourly ops dashboard, 5x/day DDI suite)
+  vetoes a nightly-cron table — leave that view a view.
+- Give the whole flipped chain the SAME `automation_condition.cron_schedule`
+  tick as its downstream — the `~any_deps_in_progress` guard serializes the pass
+  (upstreams build first); no stagger needed.
+- A properties-yml-only flip does NOT fire `code_version_changed` at deploy
+  (`code_version` is a SHA1 of raw SQL). The relation stays a view until the
+  first cron tick — don't judge the deploy by BigQuery object types.
+
 ## Table→view materialization conversion needs a drop
 
 `create or replace view` does not drop a pre-existing table at the same path —

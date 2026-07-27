@@ -239,6 +239,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   (this session: a `_at`-vs-`_date` column-naming rule that no model follows).
   Verify each convention claim against existing models before applying — its
   findings are advisory, and `git grep` settles it faster than complying.
+  **Always invoke `superpowers:receiving-code-review` BEFORE processing
+  `claude-review` findings** — verify each claim (including its file:line
+  citations) against the code before relaying or replying, not after.
 
 - **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
   authoritative** — one over-read the `unnest` scalar-aggregate carve-out to
