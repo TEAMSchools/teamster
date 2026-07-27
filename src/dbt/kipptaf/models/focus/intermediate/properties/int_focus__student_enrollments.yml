@@ -28,16 +28,31 @@ models:
         description: >-
           Focus student id (10-digit, FLDOE-district-prefixed) — the student
           this enrollment stint belongs to.
+        config:
+          meta:
+            contains_pii: true
       - name: student_first_name
         description: Student's first name.
+        config:
+          meta:
+            contains_pii: true
       - name: student_last_name
         description: Student's last name.
+        config:
+          meta:
+            contains_pii: true
       - name: fteid
         description: >-
           Florida Education Identifier (FLEID), Focus's state student
           identifier.
+        config:
+          meta:
+            contains_pii: true
       - name: student_email
         description: Student's school-issued email address.
+        config:
+          meta:
+            contains_pii: true
       - name: academic_year
         description:
           Focus school year (start-year form) the enrollment belongs to.
@@ -93,6 +108,9 @@ models:
         description: Literal 'KTAF' — Focus is network-managed under KTAF.
       - name: dob
         description: Student's date of birth.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         description: Student's display name, formatted as "Last, First".
       - name: region
@@ -142,11 +160,6 @@ models:
         description: >-
           True when the enrollment spans March 15 of the following calendar year
           (startdate through exitdate).
-      - name: is_enrolled_y1
-        description: >-
-          True when exitdate is populated. Since exitdate is always coalesced to
-          a value, this is always true — kept for parity with PowerSchool's
-          equally-vestigial column of the same name.
       - name: is_pre_year_withdrawal
         description: >-
           True when the enrollment's exitdate falls before the school year's

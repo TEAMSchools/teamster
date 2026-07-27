@@ -1,4 +1,3 @@
--- force state:modified to rebuild a stale pre-#4536 per-PR schema shadow
 with
     union_relations as (
         {{

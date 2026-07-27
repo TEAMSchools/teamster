@@ -1,4 +1,12 @@
 with
+    finalsite_ids as (
+        select
+            _dbt_source_project,
+            finalsite_enrollment_id,
+            cast(focus_student_id_prefixed as int) as focus_student_id,
+        from {{ ref("int_finalsite__contact_id_attributes") }}
+    ),
+
     enrollment as (
         select
             s._dbt_source_relation,
@@ -98,8 +106,8 @@ with
             on e.drop_code = dc.id
             and e._dbt_source_project = dc._dbt_source_project
         left join
-            {{ ref("int_finalsite__contact_id_attributes") }} as f
-            on e.student_id = cast(f.focus_student_id_prefixed as int)
+            finalsite_ids as f
+            on e.student_id = f.focus_student_id
             and e._dbt_source_project = f._dbt_source_project
         left join
             {{ ref("int_focus__school_year_first_day") }} as fd on e.syear = fd.syear
@@ -126,8 +134,6 @@ with
                 true,
                 false
             ) as is_enrolled_mar15,
-
-            if(exitdate is not null, true, false) as is_enrolled_y1,
 
             if(exitdate < first_day_of_school, true, false) as is_pre_year_withdrawal,
 

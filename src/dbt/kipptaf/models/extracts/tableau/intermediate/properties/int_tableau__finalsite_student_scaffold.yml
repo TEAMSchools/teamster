@@ -61,7 +61,17 @@ models:
         data_type: boolean
         description: >-
           True when a student has more than one Finalsite status set on the same
-          calendar day.
+          calendar day. Scoped by finalsite_enrollment_id within a query already
+          filtered to one enrollment_academic_year (see
+          int_finalsite__status_report_unpivot's latest_status_date, which
+          partitions explicitly by finalsite_enrollment_id +
+          enrollment_academic_year) — not by _dagster_partition_key. That column
+          is the nominal school-year export file a row was ingested from, not a
+          student-relevant boundary: Finalsite tracks a student continuously, so
+          a single enrollment's status history can legitimately span or land in
+          a file whose nominal year differs from enrollment_academic_year.
+          Partitioning by _dagster_partition_key instead would substitute an
+          arbitrary ingestion artifact for the correct business key.
       - name: aligned_enrollment_type
         data_type: string
       - name: grouped_status_timeframe
