@@ -37,6 +37,8 @@ select
 
     safe_cast(birth_date as date) as birth_date,
 
+    households[safe_offset(0)].id as household_1_id,
+
     -- normalize the household address: Finalsite emits empty strings (not null)
     -- and mixed-case states, which flow unchanged into the Focus ADDRESS and
     -- CONTACTS feeds. Blank -> null; uppercase the state code.
@@ -46,4 +48,8 @@ select
     nullif(upper(trim(households[safe_offset(0)].state)), '') as state,
     nullif(trim(households[safe_offset(0)].zip), '') as zip,
     households[safe_offset(0)].country as country,
+
+    array(
+        select h.id, from unnest(households) as h where h.id is not null
+    ) as household_ids,
 from {{ source("finalsite", "contacts") }}
