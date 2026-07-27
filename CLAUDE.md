@@ -448,6 +448,10 @@ tagging.
   tracking issue, (b) creating a branch or worktree, (c) modifying protected
   files (hook scripts, `.devcontainer/scripts/`, `.claude/settings*.json`).
 
+- **At the investigation→build pivot, ask about `superpowers:brainstorming`** —
+  a design settled in conversation doesn't waive it on its own. Ask the user
+  whether to run it; skip only when they say so.
+
 ## Compact Instructions
 
 When summarizing the conversation, always preserve:
@@ -591,6 +595,9 @@ the allowlist.
   with `gh project item-edit` to set fields after add.
 - `gh api graphql` ProjectV2 `items(first: N)` is capped at 100. Paginate with
   `pageInfo.endCursor` for boards with >100 items.
+- `gh pr checks <n> --json name,bucket,state` — combined commit statuses + check
+  runs for CI poll loops (Monitor); no single `mcp__github__*` tool covers both
+  surfaces.
 - `gh run *` — Actions run inspection/control; no MCP coverage.
 - `gh workflow *` — Actions workflow inspection/dispatch; no MCP coverage.
 - `gh repo edit` — repo settings; `gh repo create/view/list` have MCP
