@@ -1,7 +1,30 @@
 "use strict";
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const a = require("./access");
+
+// Member names a staff view file lists. The views are YAML and no parser is
+// installed (src/cube depends only on the Cube server + driver, and the suite
+// must run without node_modules), so match the bare `- <member>` sequence
+// entries — that covers both the `includes:` blocks and the meta.folders
+// lists, and skips `- group:` / `- name:` / `- join_path:` mapping entries.
+// Enough to assert a member is absent from a view file entirely, which is the
+// property the open staff-directory tier depends on.
+function viewMembers(file) {
+  const text = fs.readFileSync(
+    path.join(__dirname, "model", "views", "staff", file),
+    "utf8",
+  );
+  return new Set(
+    text
+      .split("\n")
+      .map((line) => /^\s+- ([a-z0-9_]+)\s*$/.exec(line))
+      .filter((m) => m !== null)
+      .map((m) => m[1]),
+  );
+}
 
 // Refold-c access row: open staff directory + summary, sensitive staff fields
 // gated by the shared remit (staff_location_scope ∩ staff_department_scope) plus
@@ -283,5 +306,39 @@ test("STAFF_SENSITIVE_MEMBERS lists all gated sensitive columns", () => {
     "personal_email",
     "race",
     "salary",
+    "status_reason",
   ]);
+});
+
+// status_reason is the leave type (Medical / Family / Disability) or the
+// termination reason behind a period's status. It used to sit on the open
+// staff_directory view, so every resolved viewer — including one whose every
+// scope is "none" — could read it for all staff network-wide. It is now a
+// staff_pii_scope-gated member of staff_pii.
+test("status_reason is gated by staff_pii_scope", () => {
+  assert.equal(
+    a.STAFF_SENSITIVE_SCOPE_BY_MEMBER.status_reason,
+    "staff_pii_scope",
+  );
+});
+
+test("a full-deny viewer holds no group exposing status_reason", () => {
+  const directory = viewMembers("staff_directory.yml");
+  const pii = viewMembers("staff_pii.yml");
+  // Guard against a path/regex regression making the assertions vacuous.
+  assert.ok(directory.has("status_name") && pii.has("status_name"));
+
+  const denied = {
+    ...SL,
+    student_location_scope: "none",
+    staff_location_scope: "none",
+    staff_department_scope: "none",
+    staff_pii_scope: "none",
+  };
+  // The only tier this viewer holds is the open directory...
+  assert.deepEqual(a.buildGroups(denied), ["staff-directory"]);
+  // ...which no longer exposes status_reason at all — the member moved to
+  // staff_pii, whose every policy requires a staff-pii-<scope> group.
+  assert.ok(!directory.has("status_reason"));
+  assert.ok(pii.has("status_reason"));
 });

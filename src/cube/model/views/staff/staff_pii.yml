@@ -1,8 +1,8 @@
 views:
   - name: staff_pii
     description: >-
-      Sensitive staff PII — personal contact info, date of birth, and
-      demographics — split out of the open staff directory (see
+      Sensitive staff PII — personal contact info, date of birth, demographics,
+      and leave/termination reason — split out of the open staff directory (see
       staff_directory). One row per employee x employment period; always apply a
       date filter or each period fans out to one row per calendar day in its
       effective range. Filter is_primary_position = true and status_name =
@@ -23,6 +23,11 @@ views:
           - count_employees
           - is_primary_position
           - status_name
+          # Leave type (Medical / Family / Disability) or termination reason —
+          # sensitive, so it lives here behind the staff_pii_scope remit rather
+          # than on the open staff_directory view. status_name (the state
+          # itself) stays open there.
+          - status_reason
 
       - join_path: staff_work_history.dates
         prefix: true
@@ -65,6 +70,7 @@ views:
           members:
             - is_primary_position
             - status_name
+            - status_reason
         - name: Date
           members:
             - dates_date_day

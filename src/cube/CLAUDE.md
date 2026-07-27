@@ -150,12 +150,12 @@ combination to reason about.
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
   `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
-  every resolved staff viewer gets this group. `staff_pii` (the six sensitive
+  every resolved staff viewer gets this group. `staff_pii` (the seven sensitive
   fields — `personal_email`, `personal_cell_phone`, `birth_date`,
-  `gender_identity`, `race`, `is_hispanic` — plus the identity/remit keys needed
-  to filter on) has one policy per `staff_pii_scope`: `staff-pii-all_in_scope`
-  (`locations_abbreviation` ∩ `department_group` remit),
-  `staff-pii-teaching_staff` (that remit +
+  `gender_identity`, `race`, `is_hispanic`, `status_reason` — plus the
+  identity/remit keys needed to filter on) has one policy per `staff_pii_scope`:
+  `staff-pii-all_in_scope` (`locations_abbreviation` ∩ `department_group`
+  remit), `staff-pii-teaching_staff` (that remit +
   `job_function_code IN ('TEACH', 'TIR')`), `staff-pii-reporting_chain`
   (`staff_key IN reportee_staff_keys`),
   `staff-pii-reporting_chain_or_below_rank` (OR of the remit-plus-rank check and

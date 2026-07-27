@@ -6,8 +6,8 @@ views:
       which status, job, worker type, org unit, and location all held
       simultaneously — with point-in-time manager context. Use for the staff
       roster, drill-down, and individual investigations. Contains no personal or
-      sensitive data (personal contact, DOB, demographics) — see staff_pii for
-      those fields.
+      sensitive data (personal contact, DOB, demographics, leave/termination
+      reason) — see staff_pii for those fields.
 
       Always apply a date filter. Without one, each employment period fans out
       to one row per calendar day in its effective range. For a current roster,
@@ -21,7 +21,6 @@ views:
         includes:
           - count_employees
           - status_name
-          - status_reason
           - position_title
           - job_code
           - worker_type
@@ -94,7 +93,6 @@ views:
         - name: Employment
           members:
             - status_name
-            - status_reason
             - position_title
             - job_code
             - job_function_code
@@ -145,10 +143,13 @@ views:
 
     access_policy:
       # Open staff-directory tier: roster/employment structure without personal
-      # or sensitive data. Personal contact, DOB, and demographics live in
-      # staff_pii instead — they are simply absent here, so no excludes are
-      # needed. Work-directory info (names, work/google email, AD username,
-      # manager contacts) stays visible — already internally public.
+      # or sensitive data. Personal contact, DOB, demographics, and the
+      # leave/termination reason (status_reason) live in staff_pii instead —
+      # they are simply absent here, so no excludes are needed. status_name
+      # (Active / Leave / Terminated) stays: it is the employment state every
+      # roster query filters on, and it carries no reason. Work-directory info
+      # (names, work/google email, AD username, manager contacts) stays visible
+      # — already internally public.
       - group: staff-directory
         member_level:
           includes: "*"
