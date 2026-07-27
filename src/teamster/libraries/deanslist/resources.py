@@ -1,4 +1,6 @@
 import pathlib
+import re
+from collections.abc import Iterable
 
 import fastavro
 import fastavro.types
@@ -7,6 +9,36 @@ from dagster_shared import check
 from pydantic import PrivateAttr
 from requests import Session
 from requests.exceptions import HTTPError
+
+_REDACTED = "***"
+
+_APIKEY_QUERY_PATTERN = re.compile(pattern=r"apikey=[^&\s]*", flags=re.IGNORECASE)
+
+
+def redact_api_keys(text: str, api_keys: Iterable[str] = ()) -> str:
+    """Mask DeansList API keys in text bound for a log or an exception message.
+
+    The credential travels as an ``apikey`` query parameter, so it appears in
+    every rendered URL -- ``response.url``, ``response.request.url``, and the
+    message ``requests`` builds for ``HTTPError`` -- as well as in any rendering
+    of a params mapping that still carries it.
+
+    Args:
+        text: Text that may contain a key.
+        api_keys: Known key values, masked literally so that renderings which do
+            not use the ``apikey=`` query form (a params dict, for instance) are
+            covered too.
+
+    Returns:
+        The text with every key occurrence replaced by ``***``.
+    """
+    redacted = _APIKEY_QUERY_PATTERN.sub(repl=f"apikey={_REDACTED}", string=text)
+
+    for api_key in api_keys:
+        if api_key:
+            redacted = redacted.replace(api_key, _REDACTED)
+
+    return redacted
 
 
 def load_deanslist_config(
@@ -54,7 +86,14 @@ class DeansListResource(ConfigurableResource):
             return f"{self._base_url}/{api_version}/{endpoint}"
 
     def _request(self, method: str, url: str, school_id: int, params: dict, **kwargs):
-        self._log.info(f"GET:\t{url}\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}")
+        api_keys = self._api_key_map.values()
+
+        self._log.info(
+            redact_api_keys(
+                text=f"GET:\t{url}\nSCHOOL_ID:\t{school_id}\nPARAMS:\t{params}",
+                api_keys=api_keys,
+            )
+        )
 
         api_key = self._api_key_map.get(school_id)
 
@@ -65,12 +104,15 @@ class DeansListResource(ConfigurableResource):
                 "district's DeansList 1Password item, then re-sync the secret."
             )
 
-        params["apikey"] = api_key
+        # send the credential from a copy: `params` belongs to the caller and is
+        # shared across an asset's partitions, so a key left behind in it lands
+        # in the log line above on the next call
+        request_params = {**params, "apikey": api_key}
 
         response = self._session.request(
             method=method,
             url=url,
-            params=params,
+            params=request_params,
             timeout=self.request_timeout,
             **kwargs,
         )
@@ -78,10 +120,17 @@ class DeansListResource(ConfigurableResource):
         try:
             response.raise_for_status()
         except HTTPError as e:
-            self._log.exception(e)
-            raise e
+            # `str(e)` is "<status> <Client|Server> Error: <reason> for url:
+            # <url>" -- the rendered URL, api key and all
+            message = redact_api_keys(text=str(e), api_keys=api_keys)
 
-        params.pop("apikey")
+            self._log.error(msg=f"{message}\nSCHOOL_ID:\t{school_id}")
+
+            # `from None` drops the original from the traceback: its message
+            # carries the unredacted URL, and Dagster serializes an unsuppressed
+            # __context__ into the run event log
+            raise HTTPError(message, response=response) from None
+
         return response
 
     def get(
