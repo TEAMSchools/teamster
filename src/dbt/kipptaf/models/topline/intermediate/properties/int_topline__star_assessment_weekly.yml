@@ -2,3 +2,10 @@ models:
   - name: int_topline__star_assessment_weekly
     config:
       materialized: table
+      meta:
+        dagster:
+          # nightly instead of eager: sole consumer is
+          # int_topline__student_metrics, itself on the same midnight cron.
+          # Refs #4153
+          automation_condition:
+            cron_schedule: 0 0 * * *
