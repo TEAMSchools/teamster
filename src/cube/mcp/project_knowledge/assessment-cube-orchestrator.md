@@ -79,6 +79,11 @@ leadership:
   per instrument
 - which subjects count as `math` for network reporting
 - how `grade_level_tested` should be handled when it reflects a prior grade
+- what counts as high vs low growth, or high vs low proficiency, for
+  quadrant-style school reporting — a median split of the charted population is
+  a convenience, not a ratified threshold
+- how to attribute a mid-year transfer student in growth reporting: to the
+  school they started the year at, or the one they ended it at
 
 Some individual fields also carry their own narrower open question (for example,
 which count measure is the default for a count/share question) — those are
@@ -131,7 +136,8 @@ WG_LOG_<YYYY-MM-DD>_<HHMM>_<participant>.md
 
 - `<YYYY-MM-DD>_<HHMM>` — session start, 24-hour clock. State in the header
   which timezone you used; if you only have a UTC clock, say UTC.
-- `<participant>` — the participant's last name, lowercased (`walters`). Two
+- `<participant>` — the participant's name, lowercased, as a single word:
+  whichever of last or first name you have (`walters`, `anthony`). Two
   participants: hyphenate (`walters-ramirez`); more than two: use the team name.
   No name given: use initials, then `unknown` as a last resort.
 - Example: `WG_LOG_2026-07-24_1430_walters.md`

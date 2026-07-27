@@ -77,6 +77,18 @@ Apply to every assessment source unless a source section overrides them.
   "scores in May") mixes those two date concepts. `date_taken` is a standalone
   field (nullable for a small share of internal rows); prefer the
   `academic_year` / `academic_year_label` members for year rollups.
+- **`administration_period` is populated for every source except Illuminate**,
+  but the vocabulary differs by source — so never filter it without also scoping
+  `assessment_type`. i-Ready and DIBELS use `BOY` / `MOY` / `EOY`; STAR and NJ
+  state use `Fall` / `Winter` / `Spring`; FL state uses the FLDOE window (`PM1`
+  / `PM2` / `PM3`). It is null only for `illuminate`. (The field's own
+  description covers the state and college windows only — it does not mention
+  the vendor values.)
+- **There is no growth measure.** The view carries point-in-time scores only —
+  no native growth, gain, or progress-to-target measure exists for any source.
+  Any growth figure is therefore constructed by the analyst: say so explicitly,
+  and see the i-Ready section for why cross-grade-band growth comparisons are a
+  trap.
 - **Domain rollup: `response_type_root_description`** is the CCSS domain rollup
   — reliable for CCSS-aligned content, unreliable for FL state-aligned
   standards. Illuminate only (null elsewhere, since `response_type` is null
@@ -121,11 +133,30 @@ Apply to every assessment source unless a source section overrides them.
   shorthand does not apply).
 - **Time:** `academic_year` / `academic_year_label` now resolve (derived from
   the completion/test date) — filter the school year with them.
+- **Administrations:** `administration_period` = `BOY` / `MOY` / `EOY`, plus
+  `Outside Round` for sittings taken outside the three benchmark windows.
+  Filtering to only `BOY` / `MOY` / `EOY` silently drops the `Outside Round`
+  rows — scope deliberately and state which windows you used.
+- **Region coverage: Newark, Camden, and Miami only — there is no i-Ready data
+  for Paterson.** A "compare i-Ready across all regions" question therefore
+  returns three of the four regions; say so rather than implying network-wide
+  coverage.
+- **Growth is not in the model, and scale scores do not normalize across grade
+  bands.** i-Ready's vendor growth norms (typical growth, percent progress to
+  typical growth) are not ingested, so that metric cannot be computed — do not
+  approximate it and label it with the vendor's name. A BOY-to-EOY scale-score
+  delta _is_ computable, but it compresses at higher grades, and dividing by the
+  BOY baseline makes the distortion worse because the baseline itself rises with
+  grade. Report growth **within** a grade band, never pooled across ES and MS:
+  pooling makes every MS school look low-growth from scale mechanics alone, not
+  from instruction.
 - **`is_replacement` is Illuminate-only by design** — null for i-Ready (and all
-  vendor/state sources), not a gap. For a genuine multiple sitting, pick the
-  authoritative score by most recent `date_taken`.
-- Documented from the live schema and one working-group session (Camden ES ELA
-  DIBELS-vs-i-Ready concordance) — confirm interpretations before external use.
+  vendor/state sources), not a gap. Genuine multiple sittings occur even within
+  a single benchmark window, so dedup to the most recent `date_taken` per
+  student per window before computing anything student-level.
+- Documented from the live schema and two working-group sessions (a Camden ES
+  ELA DIBELS-vs-i-Ready concordance, and a BOY-to-EOY growth-quadrant analysis)
+  — confirm interpretations before external use.
 
 ## Vendor normed diagnostics — DIBELS
 
@@ -137,6 +168,8 @@ Apply to every assessment source unless a source section overrides them.
   `is_mastery` is populated. `performance_band_label_number` is null.
 - **Time:** `academic_year` / `academic_year_label` now resolve — filter the
   school year with them.
+- **Administrations:** `administration_period` = `BOY` / `MOY` / `EOY`, the same
+  benchmark-window vocabulary as i-Ready.
 - Documented from the live schema and one working-group session (used as the
   comparison instrument in a Camden ES ELA concordance) — confirm before
   external use.
@@ -151,6 +184,9 @@ Apply to every assessment source unless a source section overrides them.
   is null.
 - **Time:** `academic_year` / `academic_year_label` now resolve — filter the
   school year with them.
+- **Administrations:** `administration_period` = `Fall` / `Winter` / `Spring` —
+  season names, **not** the `BOY` / `MOY` / `EOY` vocabulary i-Ready and DIBELS
+  use. Do not carry a benchmark-window filter across from those sources.
 - Not exercised in the working-group sessions; documented from the live schema —
   confirm before external use.
 
