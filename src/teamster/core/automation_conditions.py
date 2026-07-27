@@ -200,7 +200,7 @@ def dbt_table_automation_condition() -> AutomationCondition:
 
 
 def dbt_cron_automation_condition(
-    cron_schedule: str, cron_timezone: str = "America/New_York"
+    cron_schedule: str, cron_timezone: str | None = None
 ) -> AutomationCondition:
     """Automation condition for expensive dbt TABLE models on a cron cadence.
 
@@ -218,9 +218,14 @@ def dbt_cron_automation_condition(
 
     Triggers: newly_missing, cron_tick_passed, code_version_changed (deploys
     still rebuild immediately). Retains the deps-missing/in-progress guards.
+
+    A None cron_timezone falls back to Dagster's cron_tick_passed default
+    (UTC). The dbt translator passes its code location's LOCAL_TIMEZONE, so
+    dbt models get local ticks without hardcoding a zone here.
     """
     return _build_dbt_condition(
         AutomationCondition.cron_tick_passed(
-            cron_schedule=cron_schedule, cron_timezone=cron_timezone
+            cron_schedule=cron_schedule,
+            cron_timezone=cron_timezone or "UTC",
         )
     )

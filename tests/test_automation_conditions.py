@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import pytest
 from dagster import (
     AssetKey,
@@ -1960,7 +1962,6 @@ def test_cron_table_not_requested_on_upstream_update():
     This is the whole point of the condition: an expensive table whose
     consumers refresh nightly should not rebuild on every upstream refresh.
     """
-    from datetime import datetime, timezone
 
     @asset(tags=_TABLE_TAG)
     def upstream_table():
@@ -1982,7 +1983,7 @@ def test_cron_table_not_requested_on_upstream_update():
 
     materialize(assets=all_assets, instance=instance)
 
-    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=timezone.utc)
+    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=UTC)
     result = evaluate_automation_conditions(
         defs=defs, instance=instance, evaluation_time=t0
     )
@@ -1995,7 +1996,7 @@ def test_cron_table_not_requested_on_upstream_update():
         defs=defs,
         instance=instance,
         cursor=result.cursor,
-        evaluation_time=datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc),
+        evaluation_time=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
     )
     assert result.get_num_requested(AssetKey("cron_table")) == 0
 
@@ -2004,7 +2005,7 @@ def test_cron_table_not_requested_on_upstream_update():
         defs=defs,
         instance=instance,
         cursor=result.cursor,
-        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=timezone.utc),
+        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=UTC),
     )
     assert result.get_num_requested(AssetKey("cron_table")) == 1
 
@@ -2013,7 +2014,7 @@ def test_cron_table_not_requested_on_upstream_update():
         defs=defs,
         instance=instance,
         cursor=result.cursor,
-        evaluation_time=datetime(2026, 1, 2, 0, 2, tzinfo=timezone.utc),
+        evaluation_time=datetime(2026, 1, 2, 0, 2, tzinfo=UTC),
     )
     assert result.get_num_requested(AssetKey("cron_table")) == 0
 
@@ -2022,7 +2023,6 @@ def test_cron_table_requested_on_code_version_change():
     """Deploys still rebuild cron tables immediately, without waiting for
     the next tick — code_version_changed is retained from the shared
     condition skeleton."""
-    from datetime import datetime, timezone
 
     @asset(tags=_TABLE_TAG, code_version="1")
     def versioned_cron_table():
@@ -2041,7 +2041,7 @@ def test_cron_table_requested_on_code_version_change():
 
     materialize(assets=[versioned_cron_table], instance=instance)
 
-    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=timezone.utc)
+    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=UTC)
     result = evaluate_automation_conditions(
         defs=defs, instance=instance, evaluation_time=t0
     )
@@ -2065,7 +2065,7 @@ def test_cron_table_requested_on_code_version_change():
         defs=defs_v2,
         instance=instance,
         cursor=result.cursor,
-        evaluation_time=datetime(2026, 1, 1, 6, 5, tzinfo=timezone.utc),
+        evaluation_time=datetime(2026, 1, 1, 6, 5, tzinfo=UTC),
     )
     assert result.get_num_requested(AssetKey("versioned_cron_table")) == 1
 
@@ -2077,8 +2077,11 @@ def test_translator_meta_cron_schedule_override():
         CustomDagsterDbtTranslator,
     )
 
-    translator = CustomDagsterDbtTranslator(code_location="kipptaf")
+    translator = CustomDagsterDbtTranslator(
+        code_location="kipptaf", local_timezone="America/New_York"
+    )
 
+    # no cron_timezone in meta: the translator's local_timezone applies
     cron_props = {
         "config": {
             "materialized": "table",
@@ -2089,8 +2092,9 @@ def test_translator_meta_cron_schedule_override():
     }
     assert translator.get_automation_condition(
         cron_props
-    ) == dbt_cron_automation_condition("0 0 * * *")
+    ) == dbt_cron_automation_condition("0 0 * * *", cron_timezone="America/New_York")
 
+    # explicit meta cron_timezone wins over the translator's local_timezone
     tz_props = {
         "config": {
             "materialized": "table",
@@ -2119,3 +2123,99 @@ def test_translator_meta_cron_schedule_override():
         translator.get_automation_condition(plain_view_props)
         == dbt_view_automation_condition()
     )
+
+    # top-level meta (no config.meta) is the fallback arm of _get_dbt_meta
+    top_level_meta_props = {
+        "config": {"materialized": "table"},
+        "meta": {"dagster": {"automation_condition": {"cron_schedule": "0 0 * * *"}}},
+    }
+    assert translator.get_automation_condition(
+        top_level_meta_props
+    ) == dbt_cron_automation_condition("0 0 * * *", cron_timezone="America/New_York")
+
+    # the override is table-only: a view carrying the meta key keeps its
+    # view condition (union_relations detection must not be lost)
+    view_with_cron_props = {
+        "config": {
+            "materialized": "view",
+            "meta": {
+                "dagster": {"automation_condition": {"cron_schedule": "0 0 * * *"}}
+            },
+        }
+    }
+    assert (
+        translator.get_automation_condition(view_with_cron_props)
+        == dbt_view_automation_condition()
+    )
+
+    # an empty cron_schedule fails the truthiness guard and falls through
+    empty_cron_props = {
+        "config": {
+            "materialized": "table",
+            "meta": {"dagster": {"automation_condition": {"cron_schedule": ""}}},
+        }
+    }
+    assert (
+        translator.get_automation_condition(empty_cron_props)
+        == dbt_table_automation_condition()
+    )
+
+
+def test_cron_table_tick_latched_while_dep_missing():
+    """A tick that fires while a dep is missing is not lost: the
+    .since(newly_requested | newly_updated) wrapper latches the trigger and
+    the request goes out once the dep guard clears — no new tick needed.
+
+    This is the deps-guard behavior the docstring advertises, and what the
+    same-tick run batching of response_rollup -> assessment star relies on.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def latch_upstream():
+        return 1
+
+    @asset(
+        deps=[latch_upstream],
+        automation_condition=dbt_cron_automation_condition(
+            "0 0 * * *", cron_timezone="UTC"
+        ),
+        tags=_TABLE_TAG,
+    )
+    def latch_cron_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[latch_upstream, latch_cron_table])
+
+    # only the cron table exists; its dep is missing
+    materialize(
+        assets=[latch_upstream, latch_cron_table],
+        instance=instance,
+        selection=[latch_cron_table],
+    )
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        evaluation_time=datetime(2026, 1, 1, 6, 0, tzinfo=UTC),
+    )
+    assert result.total_requested == 0
+
+    # tick crosses midnight while the dep is still missing: blocked
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("latch_cron_table")) == 0
+
+    # dep materializes — no new tick — and the latched trigger fires
+    materialize(assets=[latch_upstream], instance=instance, selection=[latch_upstream])
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 10, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("latch_cron_table")) == 1

@@ -2,7 +2,7 @@ import json
 
 from dagster import AssetSpec
 
-from teamster.code_locations.kipptaf import CODE_LOCATION, DBT_PROJECT
+from teamster.code_locations.kipptaf import CODE_LOCATION, DBT_PROJECT, LOCAL_TIMEZONE
 from teamster.code_locations.kipptaf.adp.payroll.assets import (
     GENERAL_LEDGER_FILE_PARTITIONS_DEF,
 )
@@ -11,7 +11,9 @@ from teamster.libraries.dbt.dagster_dbt_translator import CustomDagsterDbtTransl
 
 manifest = json.loads(s=DBT_PROJECT.manifest_path.read_text())
 
-dagster_dbt_translator = CustomDagsterDbtTranslator(code_location=CODE_LOCATION)
+dagster_dbt_translator = CustomDagsterDbtTranslator(
+    code_location=CODE_LOCATION, local_timezone=str(LOCAL_TIMEZONE)
+)
 
 core_dbt_assets = build_dbt_assets(
     manifest=manifest,
