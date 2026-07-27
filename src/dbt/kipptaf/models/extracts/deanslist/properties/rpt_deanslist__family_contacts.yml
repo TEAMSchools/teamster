@@ -3,18 +3,21 @@ models:
     description:
       DeansList nightly Family Contacts import (`contacts.txt`) for the NJ
       regions — one row per Finalsite contact for each currently enrolled
-      student, covering the primary parent (`contact_1`, the relationship
-      flagged primary, falling back to financial) plus emergency contacts
-      (`emergency_1` through `emergency_4`). Emergency contacts carry a numbered
-      `Emergency N` relationship so Ops can exclude them from DeansList guardian
-      messaging; the primary parent keeps its real Finalsite relationship.
-      Column names match the DeansList import template headers exactly.
-      Delivered by the Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
+      student, covering the parents (`contact_1`, the relationship flagged
+      primary, falling back to financial; `contact_2`, the second parent from
+      the student's household 1) plus emergency contacts (`emergency_1` through
+      `emergency_4`). `ContactType` distinguishes `Parent1` / `Parent2` /
+      `Emergency` so DeansList can scope automated guardian messaging; emergency
+      contacts additionally carry a numbered `Emergency N` relationship, while
+      parents keep their real Finalsite relationship. Column names match the
+      DeansList import template headers exactly. Delivered by the Dagster asset
+      `kipptaf/extracts/deanslist/contacts_txt`.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - StudentID
+              - ContactType
               - Relationship
           config:
             severity: error
@@ -47,13 +50,28 @@ models:
       - name: Relationship
         data_type: string
         description:
-          Relationship of the contact to the student. For the primary parent
-          (`contact_1`) this is the Finalsite `rel_type` (`parent`,
+          Relationship of the contact to the student. For parents (`contact_1`
+          and `contact_2`) this is the Finalsite `rel_type` (`parent`,
           `stepparent`, `guardian`, `grandparent`, etc.). For emergency contacts
           this is `Emergency N`, numbered by the Finalsite emergency slot
           (`emergency_1` through `emergency_4`).
         data_tests:
           - not_null
+      - name: ContactType
+        data_type: string
+        description:
+          DeansList contact classification — `Parent1` for the `contact_1` slot,
+          `Parent2` for the `contact_2` slot, `Emergency` for every emergency
+          slot. DeansList sends automated reports, texts, and emails only to
+          `Parent1`/`Parent2` contacts.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Parent1
+                  - Parent2
+                  - Emergency
       - name: HomePhone
         data_type: string
         description: Parent contact's phone number typed `Home`, if any.
@@ -88,10 +106,11 @@ models:
 unit_tests:
   - name: test_family_contacts_emergency_numbering
     description:
-      One enrolled student with a primary parent plus all four emergency slots.
-      Asserts the primary parent keeps its Finalsite relationship and each
-      emergency slot is relabeled Emergency N by slot number (exercising every
-      case branch).
+      One enrolled student with two parents plus all four emergency slots.
+      Asserts the parents keep their Finalsite relationship and get
+      Parent1/Parent2 contact types, and each emergency slot is relabeled
+      Emergency N by slot number with an Emergency contact type (exercising
+      every case branch).
     model: rpt_deanslist__family_contacts
     given:
       - input: ref('int_finalsite__student_contacts')
@@ -108,6 +127,11 @@ unit_tests:
             '+19292255670' as phone_home,
             cast(null as string) as phone_work,
             '+18623007240x216' as phone_mobile
+          union all
+          select
+            'enr-001', 'kippnewark', 'contact_2', 'stepparent',
+            'Adam', 'Johnson', 'adam@example.com', cast(null as string),
+            cast(null as string), cast(null as string)
           union all
           select
             'enr-001', 'kippnewark', 'emergency_1', 'grandparent',
@@ -153,6 +177,19 @@ unit_tests:
             CellPhone: 18623007240x216,
             Email: alice@example.com,
             Relationship: parent,
+            ContactType: Parent1,
+            Language: null,
+          }
+        - {
+            StudentID: 123456,
+            ParentFirstName: Adam,
+            ParentLastName: Johnson,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: adam@example.com,
+            Relationship: stepparent,
+            ContactType: Parent2,
             Language: null,
           }
         - {
@@ -164,6 +201,7 @@ unit_tests:
             CellPhone: "13055550200",
             Email: null,
             Relationship: Emergency 1,
+            ContactType: Emergency,
             Language: null,
           }
         - {
@@ -175,6 +213,7 @@ unit_tests:
             CellPhone: null,
             Email: null,
             Relationship: Emergency 2,
+            ContactType: Emergency,
             Language: null,
           }
         - {
@@ -186,6 +225,7 @@ unit_tests:
             CellPhone: null,
             Email: null,
             Relationship: Emergency 3,
+            ContactType: Emergency,
             Language: null,
           }
         - {
@@ -197,6 +237,7 @@ unit_tests:
             CellPhone: null,
             Email: null,
             Relationship: Emergency 4,
+            ContactType: Emergency,
             Language: null,
           }
 
@@ -272,5 +313,6 @@ unit_tests:
             CellPhone: null,
             Email: null,
             Relationship: parent,
+            ContactType: Parent1,
             Language: null,
           }

@@ -2,7 +2,7 @@ models:
   - name: bridge_student_contacts
     description: >-
       Bridge resolving the many-to-many between students and their contact
-      persons under the Finalsite 1+4 contact shape. One row per (student,
+      persons under the Finalsite 2+4 contact shape. One row per (student,
       contact person, contact slot). The relationship and the emergency flags
       that vary per student-contact pair live here; stable person attributes
       (name, email, phones, address) live on dim_student_contact_persons.
@@ -66,27 +66,28 @@ models:
       - name: contact_slot
         data_type: string
         description: >-
-          Which contact this pairing represents — contact_1 or emergency_1
-          through emergency_4.
+          Which contact this pairing represents — contact_1, contact_2, or
+          emergency_1 through emergency_4.
 
       - name: is_emergency
         data_type: boolean
-        description: True for every emergency slot; false for contact_1.
+        description:
+          True for every emergency slot; false for contact_1 and contact_2.
 
       - name: is_pickup
         data_type: boolean
         description: >-
           Whether the contact is authorized to pick the student up. Null for
-          Finalsite contact_1 rows.
+          Finalsite contact_1 and contact_2 rows.
 
       - name: is_custodial
         data_type: boolean
         description: >-
           Whether the contact has custody of the student. Null for Finalsite
-          contact_1 rows.
+          contact_1 and contact_2 rows.
 
       - name: is_household_member
         data_type: boolean
         description: >-
           Whether the student lives with the contact. Null for Finalsite
-          contact_1 rows.
+          contact_1 and contact_2 rows.

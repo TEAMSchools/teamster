@@ -33,8 +33,8 @@ models:
       - name: contact_slot
         data_type: string
         description:
-          Which contact this row represents — `contact_1` or `emergency_1`
-          through `emergency_4`.
+          Which contact this row represents — `contact_1`, `contact_2`, or
+          `emergency_1` through `emergency_4`.
         data_tests:
           - not_null:
               config:
@@ -43,6 +43,7 @@ models:
               arguments:
                 values:
                   - contact_1
+                  - contact_2
                   - emergency_1
                   - emergency_2
                   - emergency_3
@@ -68,9 +69,9 @@ models:
         data_type: string
         description:
           Finalsite contact UUID of the contact person, for Finalsite-sourced
-          `contact_1` rows; null for PowerSchool regions and for emergency slots
-          (which have no linked contact record). Used to key the contact person
-          in the dimension.
+          `contact_1`/`contact_2` rows; null for PowerSchool regions and for
+          emergency slots (which have no linked contact record). Used to key the
+          contact person in the dimension.
       - name: contact_name
         data_type: string
         description: The contact's full name.
@@ -130,18 +131,21 @@ models:
             contains_pii: true
       - name: is_emergency
         data_type: boolean
-        description: False for `contact_1`; true for every `emergency_*` slot.
+        description:
+          False for `contact_1` and `contact_2`; true for every `emergency_*`
+          slot.
       - name: is_pickup
         data_type: boolean
         description:
           Whether the contact is authorized for pickup. Null for Finalsite
-          `contact_1` rows.
+          `contact_1` and `contact_2` rows.
       - name: is_custodial
         data_type: boolean
         description:
-          Whether the contact has custody. Null for Finalsite `contact_1` rows.
+          Whether the contact has custody. Null for Finalsite `contact_1` and
+          `contact_2` rows.
       - name: is_household_member
         data_type: boolean
         description:
           Whether the contact lives with the student. Null for Finalsite
-          `contact_1` rows.
+          `contact_1` and `contact_2` rows.
