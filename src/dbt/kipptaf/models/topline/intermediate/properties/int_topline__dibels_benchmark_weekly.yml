@@ -1,5 +1,5 @@
 models:
-  - name: int_topline__college_entrance_exams_weekly
+  - name: int_topline__dibels_benchmark_weekly
     config:
       materialized: table
       meta:

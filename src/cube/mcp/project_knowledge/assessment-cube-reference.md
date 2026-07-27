@@ -17,9 +17,9 @@ Apply to every assessment source unless a source section overrides them.
   source, filter `assessment_type`. The full value list: `illuminate`, `iready`,
   `dibels`, `star`, `state_nj_njsla`, `state_nj_njsla_science`,
   `state_nj_njgpa`, `state_fl_fast`, `state_fl_science`, `state_fl_eoc`.
-  - The field's own description lists coarser values (`state_nj` / `state_fl` /
-    `college` / `ap`) that are NOT the real values — trust this list (verified
-    against the live connector 2026-07-24).
+  - Treat this list as current, not closed: other categories exist upstream
+    (`college`, `ap`, `state_nj_parcc`, `state_fl_fsa`, plus `_unknown`
+    fallbacks) but carry no scores on this view today.
 - **`response_type` — always filter it explicitly.** Values: `overall`,
   `standard`, `group`, `null` (singular `standard` / `group`, not the older
   `standards` / `groups`). Not additive across types. Default to `overall`
@@ -45,7 +45,7 @@ Apply to every assessment source unless a source section overrides them.
 - **A dimension-only pull silently de-duplicates.** A query with no measure
   collapses identical rows and hides true row counts; add a measure (e.g.
   `count_scores`) or the primary key (`assessment_score_key`) to see the real
-  count. This is how the i-Ready row duplication (below) was found.
+  row count.
 - **Performance bands are Illuminate-only.** `performance_band_label_number`
   (integer 1–5) is populated only for Illuminate; it is null for state and for
   i-Ready/DIBELS/STAR. Where it applies, band 1 = the "Far Below" tier and band
@@ -68,11 +68,15 @@ Apply to every assessment source unless a source section overrides them.
   available via `staff_lead_teacher_full_name` / `lead_teacher_staff_key`,
   aliased from `student_section_enrollments`; force-refresh `meta` if the
   lead-teacher fields appear to be missing.
-- **Time.** `academic_year` is a July-start integer (2025 = the 2025-26 school
-  year). It is populated for Illuminate but **null for state AND for
-  i-Ready/DIBELS/STAR** — for those sources filter the school year via a
-  `date_taken` window (`date_taken` is fully populated there). `date_taken` is
-  nullable for a small share of Illuminate rows with no recorded sitting.
+- **Time.** `academic_year` (July-start integer; 2025 = the 2025-26 school year)
+  and `academic_year_label` (the `"2025-2026"` string form) now resolve for
+  every source — use `academic_year_label` as the canonical year filter. One
+  nuance: the date each source's year is derived from differs — the
+  administration date for Illuminate/college, the student's completion (test)
+  date for state and vendor — so a within-month _cross-source_ date cut (e.g.
+  "scores in May") mixes those two date concepts. `date_taken` is a standalone
+  field (nullable for a small share of internal rows); prefer the
+  `academic_year` / `academic_year_label` members for year rollups.
 - **Domain rollup: `response_type_root_description`** is the CCSS domain rollup
   — reliable for CCSS-aligned content, unreliable for FL state-aligned
   standards. Illuminate only (null elsewhere, since `response_type` is null
@@ -99,11 +103,11 @@ Apply to every assessment source unless a source section overrides them.
 - **Bands:** `performance_band_label_number` applies (band 1 = Far Below … 5 =
   Above); use the integer, not the label.
 - `response_type_root_description` (the CCSS domain rollup) is reliable here.
-- **Sanity-check watch-out:** Illuminate "overall" mastery cut-scores can be
-  calibrated far lower than state proficiency — in one region, `QA3` overall
-  math mastery ran approximately 8.6% against a 50%+ FAST PM3 rate on the same
-  population. Flag a large internal-vs-state gap for team review rather than
-  reporting it as a finding.
+- **Sanity-check watch-out:** Illuminate "overall" mastery cut-scores can read
+  much lower than state proficiency for the same students — the two scales are
+  not directly comparable, so a wide internal-vs-state gap is often a
+  calibration artifact. Flag such a gap for team review rather than reporting it
+  as a finding.
 
 ## Vendor normed diagnostics — i-Ready
 
@@ -115,15 +119,10 @@ Apply to every assessment source unless a source section overrides them.
   `1 Grade Level Below`, `Early On Grade Level`, `Mid or Above Grade Level`.
   `is_mastery` is populated. `performance_band_label_number` is null (band
   shorthand does not apply).
-- **Time:** `academic_year` is null — filter the school year via `date_taken`.
-- **Known duplication (handle before counting).** i-Ready score rows are
-  currently duplicated roughly 2x per student per administration — identical in
-  every field except the `assessment_score_key` surrogate key (a suspected
-  ingestion fan-out, tracked as a Cube-model defect). De-duplicate on
-  `assessment_score_key`, or use `count_students` rather than `count_scores`,
-  until it is fixed.
-- **Authoritative attempt.** `is_replacement` is not populated for i-Ready, so
-  when a student has genuine multiple attempts in a window, pick the
+- **Time:** `academic_year` / `academic_year_label` now resolve (derived from
+  the completion/test date) — filter the school year with them.
+- **`is_replacement` is Illuminate-only by design** — null for i-Ready (and all
+  vendor/state sources), not a gap. For a genuine multiple sitting, pick the
   authoritative score by most recent `date_taken`.
 - Documented from the live schema and one working-group session (Camden ES ELA
   DIBELS-vs-i-Ready concordance) — confirm interpretations before external use.
@@ -136,7 +135,8 @@ Apply to every assessment source unless a source section overrides them.
 - **Proficiency:** `proficiency_level` is the DIBELS benchmark tier —
   `Well Below Benchmark`, `Below Benchmark`, `At Benchmark`, `Above Benchmark`.
   `is_mastery` is populated. `performance_band_label_number` is null.
-- **Time:** `academic_year` is null — filter via `date_taken`.
+- **Time:** `academic_year` / `academic_year_label` now resolve — filter the
+  school year with them.
 - Documented from the live schema and one working-group session (used as the
   comparison instrument in a Camden ES ELA concordance) — confirm before
   external use.
@@ -149,7 +149,8 @@ Apply to every assessment source unless a source section overrides them.
 - **Proficiency:** `proficiency_level` is `Level 1`–`Level 5` (a share of rows
   have null `proficiency_level` / `is_mastery`). `performance_band_label_number`
   is null.
-- **Time:** `academic_year` is null — filter via `date_taken`.
+- **Time:** `academic_year` / `academic_year_label` now resolve — filter the
+  school year with them.
 - Not exercised in the working-group sessions; documented from the live schema —
   confirm before external use.
 
@@ -161,9 +162,9 @@ Apply to every assessment source unless a source section overrides them.
 - `response_type = null` (overall only — no standards breakdown for state).
 - **Proficiency:** `proficiency_level` is the state achievement level;
   `is_mastery` is the proficient flag. `performance_band_label_number` is null.
-- **Time:** `academic_year` is null for state — filter the school year via a
-  `date_taken` window. `administration_period` is the testing season (Fall /
-  Winter / Spring).
+- **Time:** `academic_year` / `academic_year_label` now resolve for state
+  (derived from the test date) — filter the school year with them.
+  `administration_period` is the testing season (Fall / Winter / Spring).
 - **Student identifier:** for NJ, `lea_student_identifier` (KIPP's SIS number)
   is the canonical student number; `district_student_identifier` is null for NJ
   (host-district IDs are Miami-only). `state_student_identifier` is the
@@ -178,10 +179,10 @@ Apply to every assessment source unless a source section overrides them.
 - **Proficiency:** `is_mastery` is the proficient flag — for FAST this matches
   Level 3+. `proficiency_level` carries the achievement level.
   `performance_band_label_number` is null.
-- **Time:** `academic_year` is null for FL (100% null for FAST) — filter the
-  school year via a `date_taken` window (for example, `PM3` in calendar 2026 =
-  the 2025-26 school year). `administration_period` is the FLDOE window (FAST
-  `PM1` / `PM2` / `PM3`).
+- **Time:** `academic_year` / `academic_year_label` now resolve for FL (derived
+  from the test date) — filter the school year with them (e.g. `PM3` in spring
+  2026 lands in the 2025-26 year). `administration_period` is the FLDOE window
+  (FAST `PM1` / `PM2` / `PM3`).
 - FL is the Miami region (`region_name = 'Miami'` / `state = 'FL'`).
 - `response_type_root_description` is unreliable for FL state-aligned standards
   — do not use it for FL domain rollups.

@@ -142,8 +142,8 @@ In Python, get this slash form with `key.to_user_string()` —
 
 See `core/CLAUDE.md` for automation condition builders
 (`dbt_view_automation_condition`, `dbt_union_relations_automation_condition`,
-`dbt_table_automation_condition`). Non-dbt assets use
-`AutomationCondition.eager()` or sensor/schedule triggers.
+`dbt_table_automation_condition`, `dbt_cron_automation_condition`). Non-dbt
+assets use `AutomationCondition.eager()` or sensor/schedule triggers.
 
 ## IO Managers
 

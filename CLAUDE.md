@@ -2,15 +2,6 @@
 
 ## Layout
 
-```text
-src/
-  teamster/   # Dagster orchestration code (Python)
-  dbt/        # dbt projects, one per warehouse target
-tests/        # pytest suites
-docs/         # MkDocs site (the "docs" folder; NOT CLAUDE.mds)
-.claude/      # Hooks, settings, skills
-```
-
 **Read the relevant subdirectory CLAUDE.md before any work there** (reading,
 explaining, reviewing, or modifying). Project-wide conventions live in this
 file; domain specifics live in the nearest subdirectory CLAUDE.md.
@@ -53,7 +44,8 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Worktree**: with an issue, `gh issue develop <number> --name <branch>` (no
   `--checkout`), then `git worktree add .worktrees/<branch> <branch>`. If the
   user explicitly declined an issue, skip `gh issue develop` and create the
-  branch directly: `git worktree add -b <branch> .worktrees/<branch>`.
+  branch directly: `git worktree add -b <branch> <abs-path> origin/main` (name
+  the base — local `main` is often behind).
 
 - **Stacked branch** (build on an unmerged branch):
   `gh issue develop <num> --name <branch> --base <parent-branch>` links a branch
@@ -247,6 +239,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   (this session: a `_at`-vs-`_date` column-naming rule that no model follows).
   Verify each convention claim against existing models before applying — its
   findings are advisory, and `git grep` settles it faster than complying.
+  **Always invoke `superpowers:receiving-code-review` BEFORE processing
+  `claude-review` findings** — verify each claim (including its file:line
+  citations) against the code before relaying or replying, not after.
 
 - **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
   authoritative** — one over-read the `unnest` scalar-aggregate carve-out to
@@ -272,6 +267,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   must gate on the comment's `updated_at` / body growing, not the check-run
   conclusion or a naive length threshold (the ~500-char checklist stub trips
   it).
+
+- **A merged PR's CI status is not evidence the change was validated** — a PR
+  merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
+  not a build failure (mechanics in `.claude/context/dbt.md`).
 
 - **`dagster-cloud-deploy / deploy` emits one same-named check-run per code
   location** (~5) — `get_check_runs` returns duplicates; wait for ALL to reach a
@@ -325,7 +324,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   (`.trunk/tools/` is gitignored, absent in worktrees) — invoke the absolute
   path `/workspaces/teamster/.trunk/tools/trunk` with cwd set to the worktree;
   relative paths run from the main repo check the main-repo copies, not your
-  worktree edits.
+  worktree edits. A `--force` check over
+  `git diff --name-only origin/main...HEAD` hard-errors with
+  `'<path>' does not exist` when the PR deletes files — filter to existing paths
+  first.
 
 - **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
@@ -355,6 +357,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `trunk fmt` renumbers items sequentially (1, 2, 3), but each fence restarts
   the list so an item numbered >1 is invalid. Use `1.` for every item. Fires at
   CI only.
+
+- **Widening a markdown table cell trips markdownlint MD060** (table column
+  style) until `trunk fmt` re-pads the table. Commit and let the fmt hook fix it
+  — don't hand-align.
 
 - **Claude CLI**: Not on `$PATH` — user must run `claude` commands in their
   terminal, not via Bash tool.
@@ -467,6 +473,13 @@ exploration that led nowhere (keep only the conclusion).
   brevity/avoid-list, apply the necessity test — name the specific decision or
   action Claude will make differently because of the line. If you can't name
   one, cut it, even when the line is concise and non-obvious.
+
+- **Where a new line goes**: if it is specific to one MCP server's behavior, put
+  it in `.claude/context/<server>.md` (auto-injected on first use of that
+  server). If it is specific to one directory, put it in that directory's
+  CLAUDE.md. Keep it in this file only when it must be known BEFORE any tool
+  runs — safety prohibitions, branch/PR etiquette, and rules whose violation
+  produces a silently wrong answer rather than a loud error.
 
 ## MCP Servers
 
@@ -606,338 +619,19 @@ the allowlist.
 - `mcp__github__search_issues` returns full issue **bodies** — a broad query
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.
+- `gh api` reporting `unexpected end of JSON input` means an empty response
+  body, not a bad request — re-run with `-i` to see the HTTP status. A 500 on
+  `POST /pulls` is usually a GitHub incident; check
+  `githubstatus.com/api/v2/incidents/unresolved.json` before bisecting.
 
-### Dagster asset diagnosis
+**Per-MCP gotchas load automatically.** The `tool-gotchas` PreToolUse hook
+injects `.claude/context/<server>.md` the first time each MCP server is used in
+a session (and again after a compaction), so this file no longer carries them.
+The file name must match the server segment of the tool name
+(`mcp__<server>__<tool>`). To add or change guidance for a server, edit that
+file — no hook or settings change is needed. Current files: `bigquery`,
+`dagster`, `dbt`, `gke`, `gcp-observability`, `claude_ai_Asana`.
 
-When verifying failures, fetch the most recent run per job (`list_runs` with
-`job_name=..., limit=1`, no status filter) — bulk cross-referencing capped
-result sets misses retries and recoveries.
-
-Asset keys do NOT include dbt subdirectory layers (`staging/`, `intermediate/`,
-or mart `facts`/`dimensions`/`bridges`) —
-`kipptaf/people/int_people__location_crosswalk` (not `.../intermediate/...`) and
-`kipptaf/marts/fct_x` (not `kipptaf/facts/fct_x`).
-
-`get_asset_condition_evaluations` paginates with
-`cursor=<evaluationId of the oldest record returned>` — not a timestamp or
-opaque token.
-
-- **The dagster MCP targets a branch deployment via a `deployment` arg.**
-  `launch_run`, `launch_multiple_runs`, `get_run`, `get_run_logs`,
-  `get_run_compute_logs`, and `terminate_runs` all accept `deployment=<name>`
-  (omit for prod). `list_deployments` may return only `prod` — recover a PR's
-  branch-deployment name (an opaque hash) from its `deploy` job log line
-  `Deploying to branch deployment <hash>` (job id from the
-  `dagster-cloud-deploy / deploy` check-run `details_url` `/job/<id>`, then
-  `gh api repos/<owner>/<repo>/actions/jobs/<id>/logs`). A dormant branch
-  deployment throws `DagsterUserCodeUnreachableError` / `InvalidSubsetError` on
-  the first call — retry after ~90s to let the code location warm. BigQuery/GCS
-  reads are deployment-agnostic, so downstream data validation via the BigQuery
-  MCP works regardless of which deployment wrote the data.
-- **Prod dbt models are materialized by `<loc>__automation_condition_sensor`
-  runs** (job `__ASSET_JOB`, tag `dagster/from_automation_condition`), NOT dbt
-  Cloud (CI-only) or crons. A merged model SQL change goes stale on CODE and is
-  rematerialized — including view models (distinct from the data-change
-  condition, which skips views) — within minutes of the post-merge location
-  deploy. To confirm a rollout landed: `get_location_load_history` (new commit
-  LOADED) → `list_runs` / `get_asset_materializations` for the asset.
-- **Schedule/sensor-launched runs report `assetSelection: null`** in
-  `list_runs`. Read `stepKeysToExecute` and convert `__` → `/` to recover asset
-  keys (`kipptaf__tableau__ops_dashboard` → `kipptaf/tableau/ops_dashboard`).
-  Cross-check with `get_asset_health` before declaring a backfill complete —
-  failure-triage groupings keyed on `assetSelection` silently drop these.
-- `mcp__dagster__list_runs` caps at `limit=100` with no truncation signal;
-  paginate via `cursor` for incident triage that may exceed 100 runs.
-- A running backfill's `get_backfill` `status` can read `REQUESTED` with empty
-  `partitionStatusCounts` while its partition runs already execute — use
-  `list_runs(tags={"dagster/backfill": "<id>"})` for real per-partition
-  progress.
-- `mcp__dagster__launch_multiple_runs` requires non-empty `asset_keys` per run —
-  jobName alone won't queue. Resolve null-`assetSelection` failures to asset
-  keys first.
-- `mcp__dagster__launch_run` for a **partitioned** asset takes the partition via
-  `tags={"dagster/partition": "<key>"}` — there is no partition arg. The key
-  must match the asset's `partitions_def` fmt (e.g. `DailyPartitionsDefinition`
-  `%m/%d/%Y` → `05/11/2026`). Preview with `confirm=False` first.
-- A run-level **SUCCESS can still carry a FAILED asset check** (e.g.
-  `zero_api_errors`) that fired an alert — `list_runs(statuses=["FAILURE"])` and
-  day2 step_01 both miss it; check `get_asset_check_executions` (day2 step_16).
-  The check payload often lacks the offending entity id — recover it from the
-  run's `LogMessageEvent` compute logs (`context.log.info` lines).
-- `mcp__dagster__search_assets` `cursor` is the JSON-string form returned by the
-  prior call (`"[\"a\",\"b\"]"`), not a bare list.
-- **`ASSET_FAILED_TO_MATERIALIZE` on a SUCCESS run is usually benign**: planned
-  events are written at run creation from the execution plan (the op cannot
-  retract them); the Dagster+ PROD backend — not OSS, not branch deployments —
-  reconciles planned-vs-materialized post-run and emits the event for each
-  unmaterialized planned asset. For `can_subset` multiassets that yield nothing
-  (e.g. dlt idle ticks) they are `failure_type=SKIPPED`, level INFO: no health
-  degradation, no alert. Only a real materialization reconciles a planned asset
-  — avoid the events by not planning (subset the RunRequest / launch no run),
-  never by yielding fake materializations (bumps data versions, fires downstream
-  automation). `get_run_logs` hides `materializationFailureType` — confirm
-  FAILED-vs-SKIPPED via GraphQL `FailedToMaterializeEvent` fields.
-- `get_run_logs` needs the full run UUID (abbreviated ids fail). To find a
-  schedule's runs: `list_runs` with `tags={"dagster/schedule_name": "<name>"}`.
-
-### Dagster run failure diagnosis
-
-A step failure's real exception is the **bottom of the error chain**:
-`get_run_logs(filter_types=["ExecutionStepFailureEvent"])` →
-`error.errorChain[-1].error.message`. The top-level
-`DagsterExecutionStepExecutionError` and the day2 collector's
-`errorClass`/`errorDetail` only show the wrapper — read the chain bottom before
-theorizing about cause (e.g. ADP "Code error" was a transient gateway 404, not
-rate-limiting).
-
-Step pod stdout is filtered from `k8s_container` logs. For per-step execution
-logs, use Dagster's compute log manager:
-`get_run_logs(filter_types=["LogsCapturedEvent"])` →
-`get_run_compute_logs(log_key=[run_id, "compute_logs", <logKey>])`. The captured
-`context.log.info` output lands in the result's `stderr` field — `stdout` is
-`null` for these step pods. `mcp__gke__query_logs` surfaces only run-pod logs.
-
-To map a step Job hash to its actual pod name (random suffix):
-`protoPayload.methodName="io.k8s.core.v1.pods.create" protoPayload.resourceName=~"namespaces/dagster-cloud/pods/dagster-step-<hash>"`.
-
-`dagster/max_runtime` clock starts at `STARTED` and includes step-pod scheduling
-wait — no `step_execution_timeout` knob exists. When a run hits `max_runtime`
-having done little work, suspect step-pod `FailedScheduling`, not slow code or
-upstream APIs.
-
-Concurrency-**pool**-blocked runs stay QUEUED, not STARTED (run blocking is the
-Dagster >=1.10 default; repo is 1.13), so pool queue-wait does NOT burn
-`dagster/max_runtime` (it counts from STARTED). With `k8s_job_executor` (all
-locations) each step runs in its own pod (compute is `pid 1`) and a resource's
-`setup_for_execution` runs there only after the op's pool slot is claimed — so a
-pooled resource's short-lived token/session is not aged by queue-wait. Size a
-pooled asset's `max_runtime` for its own run, not for waiting behind siblings.
-
-GKE Autopilot top-of-hour fan-out is the dominant cause of step-pod scheduling
-latency. `FailedScheduling` events trace to "Insufficient cpu/memory" (3-9 min
-waits) while nodes provision. Image pull is ~2s on cached nodes — don't chase
-image slimming.
-
-### Dagster Cloud GraphQL (direct, not via MCP)
-
-Host is `kipptaf.dagster.cloud/<deployment>/graphql` (org is `kipptaf`).
-`assetChecksOrError` is nested under `assetNodeOrError`; the evaluation success
-field is `success` (not `successful`). `assetMaterializations`
-`beforeTimestampMillis` / `afterTimestampMillis` are `String`, not `Float` —
-pass quoted numeric strings or the request fails with "type 'Float' used in
-position expecting type 'String'".
-
-Claude cannot authenticate direct GraphQL calls — the token comes from `op read`
-(hook-blocked). Hand queries to the user to run in the Dagster+ UI GraphQL
-playground; the MCP's fixed field selections omit some fields (e.g.
-`materializationFailureType` on `FailedToMaterializeEvent`).
-
-### GKE MCP
-
-Authenticates as impersonated service account
-`codespaces@teamster-332318.iam.gserviceaccount.com`. If `PermissionDenied`,
-check the `CodespacesRole` custom IAM role, not user IAM bindings.
-
-`gcloud` via Bash is denied by a `Bash(gcloud *)` deny rule (full-path or
-variable-aliased invocations are classifier-flagged as evasion — don't). Prefer
-the GKE MCP (`list_clusters`/`get_cluster`) and gcp-observability MCP; for
-Compute resources with no MCP coverage (Cloud NAT, routers) or the gcloud
-commands noted elsewhere in this file, hand them to the user to run.
-
-`mcp__gke__query_logs` uses snake_case keys in `time_range` (`start_time`,
-`end_time`), not camelCase. Results cap at 100 — paginate by using the last
-entry's timestamp as the next `start_time`. The LQL filter truncates
-`time_range` bounds to second precision, so sub-second offsets (e.g.
-`...:30.534Z`) are silently rounded down and refetch the same first page. To
-page past a sub-second boundary or fetch the tail of a traceback, fall back to
-`mcp__gcp-observability__list_log_entries` with `orderBy: "timestamp desc"`.
-
-`query_logs` format templates reject hyphens in dotted key paths
-(`{{.labels.k8s-pod/dagster/op}}` fails to parse). Use the Go template `index`
-function instead: `{{index .labels "k8s-pod/dagster/op"}}`. Fall back to full
-JSON + jq only when nesting is deeper than `index` can express.
-
-For pod-level logs, prefer `mcp__gke__query_logs` over
-`mcp__gcp-observability__list_log_entries` — the GKE MCP returns pod labels
-(run-id, op, code-location) that the gcp-observability MCP does not.
-
-### GCP Observability MCP
-
-If any tool returns permission denied, flag it to the user — don't assume no
-data. `list_time_series` `alignmentPeriod` must end with `s` (e.g., `"60s"` not
-`"60"`). Container metrics (`kubernetes.io/container/*`) are keyed by `pod_name`
-— no `node_name` label; use `kubernetes.io/node/*` for node-level data.
-
-`list_log_entries` over a busy day at WARNING+ severity routinely exceeds the
-context budget. Pre-filter (`severity`, `resource.type`), cap with `pageSize`,
-or dump the result to a file and hand it to a subagent.
-
-Drive and other Workspace APIs (Sheets, Calendar, Gmail) do NOT emit to GCP
-Cloud Logging by default — filtering audit logs for
-`protoPayload.serviceName="drive.googleapis.com"` returns empty unless Workspace
-audit log export is set up separately.
-
-To verify which SA a GKE pod authenticates as, query Cloud Audit logs with
-`protoPayload.authenticationInfo.principalEmail="<sa-email>"`.
-`iamcredentials.GenerateAccessToken` entries also log the requested OAuth scopes
-— disambiguates Workload Identity vs ADC vs SA-file paths.
-
-### BigQuery MCP
-
-Truncates results at 50 rows. When querying `INFORMATION_SCHEMA.COLUMNS` for
-wide tables, paginate with `WHERE ordinal_position > N`.
-
-`<dataset>.__TABLES__` exposes `last_modified_time` and `type` (1=table, 2=view)
-— use it to check whether a model rebuilt or is a live view.
-`INFORMATION_SCHEMA.TABLES` has neither. `__TABLES__.row_count` lags — it can
-read `0` for a table that already holds rows (e.g. just after a CI rebuild);
-confirm population with `COUNT(*)`, not `__TABLES__.row_count`.
-
-Verifying a just-re-materialized partition: the external-table query can read
-the **stale pre-overwrite file for minutes even with `_FILE_NAME`**
-(file-listing lag after `create or replace`) — a re-pull that changed the data
-still shows the OLD rows/count. Cross-check the run's materialization
-`record_count` + `data_version` via `mcp__dagster__get_asset_materializations`
-(ground truth) before concluding a re-pull did or didn't change anything.
-
-Hyphenated identifiers in INFORMATION_SCHEMA paths need backticks — `region-us`
-as a bare token fails with "Syntax error: Expected end of input but got '-'".
-Write `` `teamster-332318`.`region-us`.INFORMATION_SCHEMA.TABLES ``.
-
-Single quotes inside a BigQuery string literal escape with a **backslash**
-(`'O\'odham'`), not by doubling (`''`) — the doubled form fails with
-"concatenated string literals must be separated by whitespace".
-
-The BigQuery MCP service account **cannot read GOOGLE_SHEETS external tables**
-("Access Denied: ... while getting Drive credentials", 403) — it lacks Drive
-scope. To inspect a sheet-backed source's rows, build the staging model via dbt
-(`dbt build --select <stg_model> --target staging`; ADC has Drive scope), then
-query the materialized `zz_stg_*` table — a native BQ table, not Drive-backed.
-
-`bq` CLI fallback for shell contexts (Monitor poll loops): binary at
-`/usr/local/share/google-cloud-sdk/bin/bq`, `--project_id=teamster-332318`. Same
-SELECT-only constraints apply. `bq query` with the SQL passed as a positional
-arg crashes its flag parser when the query text starts with a `--` comment
-("Unknown command line flag ..." / RecursionError) — the `--` end-of-flags
-separator does NOT help. Start the query with `WITH`/`SELECT` (strip leading
-comment lines). Pass backtick/quote-heavy SQL via `"$(cat file.sql)"` to dodge
-shell-quoting. `--max_rows` defaults to 100 — raise it for full dumps. To hand
-PII to Ops, redirect to a local `.claude/scratch/*.csv`
-(`bq query --format=csv ... > file`; the `>` keeps PII out of the tool result),
-verify with `wc -l`, and reference the FILE (never the values) in any tracker.
-
-**`bq` CLI auth expires mid-session** — it uses gcloud USER creds (not the MCP's
-SA), so SELECTs that worked early fail later with "Reauthentication failed"
-(non-interactive can't `gcloud auth login`). The BQ MCP keeps working but is
-SELECT-only, so **DML/DDL (`DELETE`/`CREATE`/`DROP`) must be handed to the
-user's terminal**.
-
-**BQ merge/upsert cost**: clustering the target does NOT prune a dynamic-join
-`MERGE` / `DELETE ... WHERE EXISTS` (only partitioning + a _static_ predicate
-prunes). `--dry_run` reflects partition pruning but NOT clustering pruning —
-measure clustering via actual `total_bytes_billed` in
-`INFORMATION_SCHEMA.JOBS_BY_PROJECT`.
-
-Pre-merge queries against PR-branch schema use
-`dbt_cloud_pr_<job_definition_id>_<pr_num>_<schema>`. `<job_definition_id>` is
-the dbt Cloud CI job ID (stable across runs); read from
-`mcp__dbt__get_job_run_details(run_id)` step name
-`"Create profile from connection BigQuery (override schema to '...')"`. Prod
-`<schema>` lacks unmerged renames. The PR-branch marts schema holds only
-`state:modified+` models (often just the fact) — for unmodified dimensional
-context, join the PR-branch fact to PROD dims (`kipptaf_marts.dim_*`), which are
-absent from the PR schema and unchanged anyway.
-
-Chained joins through PR-branch marts (mart-view → mart-view → upstream-view)
-hit BigQuery's 16-view nesting limit. Query materialized prod tables instead, or
-split the query.
-
-Three BQ query-shape failure modes (not interchangeable):
-
-- `exceeds the maximum allowed number of nested views` — chain depth >16.
-  Materialize a mid-chain model.
-- `Resources exceeded during query execution: Not enough resources for query planning - query is too complex`
-  — fan-out width, can fire well below 16. Materialize the fan-out point.
-- `Correlated subqueries that reference other tables are not supported` —
-  `array(select ... from unnest(<col>) inner join <table> ...)`. View DDL
-  succeeds; reads fail. Restructure to a CTE:
-  `cross join unnest + standard join + array_agg`.
-
-`INFORMATION_SCHEMA.JOBS.referenced_tables` lists base tables reached via view
-expansion, NOT a directly-selected view. To find consumers of a view, filter by
-`REGEXP_CONTAINS(query, '<view_name>')`.
-
-For NULL-safe distinct counts on composite keys, use
-`count(distinct format("%T|%T", a, b))` — `concat()` returns NULL when any arg
-is NULL and silently miscounts violations.
-
-**Cross-district queries**: Always use `teamster-332318.kipptaf_*` datasets for
-queries spanning multiple districts — never manually `UNION ALL` across
-`kippnewark_*`, `kippcamden_*`, `kippmiami_*`. Extract district from
-`_dbt_source_relation` with
-`REGEXP_EXTRACT(_dbt_source_relation, r'`(kipp[^`]+\_<source>)`')`.
-
-Slow/timed-out dbt model: in `JOBS_BY_PROJECT`, same `total_bytes_processed` +
-N× `total_slot_ms` across runs of the same model = BigQuery straggler/shard
-re-execution (transient), NOT slot contention or a code/data change — confirm
-via the `timeline` array (`active_units` not starved) and low competing
-slot-minutes in the window. A cancelled BQ job ends `state=DONE` with
-`error_result.reason="stopped"`; natural completion has `error_result=null`.
-
-### dbt MCP
-
-Auth via `scripts/dbt-mcp-launch.sh` — do not add `DBT_TOKEN` to `.mcp.json`
-directly. Static `DBT_*` and `DISABLE_*` config lives in `.mcp.json`'s `env`
-block; only `DBT_TOKEN` is fetched per-launch. `list_jobs` is hard-filtered to
-`DBT_PROD_ENV_ID`, currently staging (70403104014899); per-call `environment_id`
-/ `project_id` args exposed by the schema are ignored. Run-inspection tools
-(`list_jobs_runs`, `get_job_run_details`, `get_job_run_error`) ignore env scope
-and work across environments by `job_id` / `run_id`. `list_jobs_runs` for the
-shared CI job (`Build - CI (Modified)`) interleaves runs from ALL open PRs with
-`git_branch=null` — cross-check a run's `git_sha` against your branch
-(`git branch -r --contains <sha>`) before attributing a run or its failure to
-your PR. For successful runs, call `get_job_run_error` with `warning_only=true`
-to surface test warnings — status=Success does not mean warning-free.
-
-For job inspection, query Staging env (70403104014899) by job id — Production
-env (70403104000025) has no scheduled dbt Cloud jobs.
-
-Job config changes must go through the dbt Cloud UI — no mutation tools exist in
-the MCP. Live step logs (`debug_logs`, `structured_logs`) and
-`list_job_run_artifacts` return nothing until `artifacts_saved: true` — don't
-try to diagnose in-flight runs.
-
-`mcp__github__pull_request_read get_status` surfaces dbt Cloud check status
-(state + target_url to run page) — fallback when dbt MCP is down.
-
-Remote MCP (`/api/ai/v1/mcp/`) is not available on this account — `team_2022`
-plan doesn't expose the `Developer` service-token scope the endpoint requires.
-Local MCP only.
-
-### Asana MCP
-
-The "TEAMster" project is the canonical tracker for engineering work. Tasks are
-named `#NNNN | title` (NNNN = GitHub issue or PR number) — parse to map Asana ↔
-GitHub. The Type custom field tags each task `Issue`, `Pull Request`, or
-`Ad Hoc`. PR tasks are subtasks of their issue task (parent resolved via
-`Closes/Fixes/Refs #N` in the PR body).
-
-- `create_tasks` `html_notes` only accepts this tag allowlist: `body`, `strong`,
-  `em`, `u`, `s`, `code`, `ol`, `ul`, `li`, `a`, `blockquote`, `pre`, `h1`,
-  `h2`, `hr/`, `img`. `<p>` and `<br>` are rejected with "XML is invalid" —
-  structure content with headings + lists, no paragraph tags.
-- `create_tasks.custom_fields` is a JSON-encoded string, not a nested object:
-  `"{\"<field_gid>\":\"<option_gid>\"}"`.
-- `search_tasks` rejects this workspace's custom-field GIDs
-  (`Not a valid search parameter`). Paginate with `get_tasks` and filter
-  client-side.
-- `get_tasks.completed_since` requires a full ISO 8601 datetime. Pass a
-  far-future date (`"2030-01-01T00:00:00Z"`) to list only incomplete tasks.
-- `update_tasks` supports `parent` for re-parenting; `null` flattens.
-- Pagination cursors return as `next_page.offset` — pass to `get_tasks.offset`
-  until null.
-- **VS Code extension swallows `create_task_preview*` widgets.** Use
-  `create_tasks` directly.
-- Resolve GitHub-login → Asana email via
-  `search_objects(resource_type: "user")`. Workspace spans three email domains
-  (`teamschools.org`, `kippteamandfamily.org`, `kippnj.org`).
+**Warehouse writes stay with the user**: the BigQuery MCP is SELECT-only, and
+the `bq` CLI runs on user credentials that expire mid-session, so warehouse
+DML/DDL must be handed to the user's terminal — never worked around.
