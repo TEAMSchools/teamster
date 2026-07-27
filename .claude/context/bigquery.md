@@ -105,3 +105,11 @@ re-execution (transient), NOT slot contention or a code/data change — confirm
 via the `timeline` array (`active_units` not starved) and low competing
 slot-minutes in the window. A cancelled BQ job ends `state=DONE` with
 `error_result.reason="stopped"`; natural completion has `error_result=null`.
+
+Cost triage ("why did BigQuery costs go up"): query
+`` `region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT `` grouping
+`total_bytes_billed` by `date(creation_time, 'America/New_York')` and
+`destination_table.table_id` — attributes spend and rebuild counts directly to
+dbt models (on-demand ≈ $6.25/TiB billed; filter `statement_type != 'SCRIPT'` to
+avoid double-counting parent jobs). Group by `user_email` to split Dagster vs
+dbt Cloud CI vs humans.

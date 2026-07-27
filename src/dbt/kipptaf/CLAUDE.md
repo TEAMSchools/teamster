@@ -357,6 +357,11 @@ config:
           cron_schedule: "0 7 * * *" # only if Dagster-managed
 ```
 
+These crons become real Dagster refresh schedules
+(`code_locations/kipptaf/tableau/schedules.py`) and set the freshness floor for
+upstream cadence decisions — check them before moving an upstream model to a
+cron automation condition (see `src/dbt/CLAUDE.md` → View→table flips).
+
 ## kipptaf-Specific Variables
 
 `bigquery_external_connection_name`:
