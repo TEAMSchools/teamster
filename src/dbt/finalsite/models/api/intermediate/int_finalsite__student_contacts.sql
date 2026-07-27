@@ -1,6 +1,6 @@
 with
     contact_1_candidates as (
-        -- contact_1 is the student's ONE reportable parent contact. Finalsite
+        -- contact_1 is the student's FIRST reportable parent contact. Finalsite
         -- has no explicit contact rank, so we take the relationship it flags
         -- `primary` (its parent1 designation) and fall back to the one flagged
         -- `financial` when no primary is set — the two flags Ops maintains to
@@ -34,6 +34,8 @@ with
             rel_id,
             rel_name,
             rel_type,
+            is_primary,
+            is_financial,
 
             row_number() over (
                 partition by finalsite_enrollment_id
@@ -105,6 +107,112 @@ with
             cast(null as boolean) as is_custodial,
             cast(null as boolean) as is_household_member,
         from contact_1_typed
+    ),
+
+    contact_2_candidates as (
+        -- contact_2 is the student's SECOND reportable parent (DeansList
+        -- "Parent 2"). Finalsite encodes it as an additional relationship
+        -- flagged `financial` without `primary` (`primary` is a per-student
+        -- singleton — Parent 1). Scoped conservatively per Ops: only when the
+        -- student's own `is_parent2` custom field is true AND the related
+        -- contact is a member of the student's first household ("household
+        -- 1") — second parents in other households are intentionally
+        -- excluded. rn > 1 skips the row already picked as contact_1 (the
+        -- financial fallback when no primary is set).
+        select r.finalsite_enrollment_id, r.rel_id, r.rel_name, r.rel_type, r.rn,
+        from contact_1_ranked as r
+        inner join
+            {{ ref("int_finalsite__contact_custom_attributes") }} as ca
+            on r.finalsite_enrollment_id = ca.finalsite_enrollment_id
+            and ca.is_parent2
+        inner join
+            {{ ref("stg_finalsite__contacts") }} as st
+            on r.finalsite_enrollment_id = st.finalsite_enrollment_id
+        inner join
+            {{ ref("stg_finalsite__contacts") }} as cp
+            on r.rel_id = cp.finalsite_enrollment_id
+            and st.household_1_id in unnest(cp.household_ids)
+        where r.rn > 1 and r.is_financial and not r.is_primary
+    ),
+
+    contact_2_ranked as (
+        -- Multiple qualifying second-parent relationships tie-break by the
+        -- contact_1 ordering (rn carries the relationship_id tiebreak).
+        select
+            finalsite_enrollment_id,
+            rel_id,
+            rel_name,
+            rel_type,
+
+            row_number() over (
+                partition by finalsite_enrollment_id order by rn asc
+            ) as rn_contact_2,
+        from contact_2_candidates
+    ),
+
+    contact_2_typed as (
+        select
+            r.finalsite_enrollment_id,
+            r.rel_name,
+            r.rel_type,
+
+            cp.finalsite_enrollment_id as finalsite_contact_id,
+            cp.email,
+            cp.phone_1_number,
+            cp.first_name,
+            cp.last_name,
+
+            coalesce(
+                if(cp.phone_1_type = 'Cell', cp.phone_1_number, null),
+                if(cp.phone_2_type = 'Cell', cp.phone_2_number, null),
+                if(cp.phone_3_type = 'Cell', cp.phone_3_number, null)
+            ) as phone_mobile,
+            coalesce(
+                if(cp.phone_1_type = 'Home', cp.phone_1_number, null),
+                if(cp.phone_2_type = 'Home', cp.phone_2_number, null),
+                if(cp.phone_3_type = 'Home', cp.phone_3_number, null)
+            ) as phone_home,
+            coalesce(
+                if(cp.phone_1_type = 'Work', cp.phone_1_number, null),
+                if(cp.phone_2_type = 'Work', cp.phone_2_number, null),
+                if(cp.phone_3_type = 'Work', cp.phone_3_number, null)
+            ) as phone_work,
+            nullif(
+                array_to_string(
+                    [cp.address_1, cp.address_2, cp.city, cp.state, cp.zip], ', '
+                ),
+                ''
+            ) as home_address,
+        from contact_2_ranked as r
+        inner join
+            {{ ref("stg_finalsite__contacts") }} as cp
+            on r.rel_id = cp.finalsite_enrollment_id
+        where r.rn_contact_2 = 1
+    ),
+
+    contact_2 as (
+        select
+            finalsite_enrollment_id,
+            finalsite_contact_id,
+            email,
+            phone_mobile,
+            phone_home,
+            phone_work,
+            home_address,
+            first_name as contact_first_name,
+            last_name as contact_last_name,
+            rel_name as contact_name,
+            rel_type as relationship,
+            phone_1_number as phone_primary,
+
+            'contact_2' as contact_slot,
+            false as is_emergency,
+
+            cast(null as string) as phone_daytime,
+            cast(null as boolean) as is_pickup,
+            cast(null as boolean) as is_custodial,
+            cast(null as boolean) as is_household_member,
+        from contact_2_typed
     ),
 
     emergency_long as (
@@ -304,6 +412,29 @@ with
             is_household_member,
             is_emergency,
         from contact_1
+
+        union all
+
+        select
+            finalsite_enrollment_id,
+            contact_slot,
+            finalsite_contact_id,
+            contact_name,
+            contact_first_name,
+            contact_last_name,
+            relationship,
+            email,
+            phone_mobile,
+            phone_home,
+            phone_work,
+            phone_daytime,
+            phone_primary,
+            home_address,
+            is_pickup,
+            is_custodial,
+            is_household_member,
+            is_emergency,
+        from contact_2
 
         union all
 
