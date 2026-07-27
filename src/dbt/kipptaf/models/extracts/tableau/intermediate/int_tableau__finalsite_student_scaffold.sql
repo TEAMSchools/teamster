@@ -275,6 +275,26 @@ with
         from {{ ref("int_extracts__student_enrollments") }}
         -- finalsite year toggle: see skill
         where rn_year = 1 and infosnap_id is not null and academic_year = 2026
+
+        union all
+
+        select
+            academic_year,
+            ps_schoolid as schoolid,
+            school,
+            finalsite_enrollment_id as infosnap_id,
+            student_number,
+            grade_level,
+            enroll_status,
+            is_enrolled_fdos,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            is_enrolled_mar15,
+
+        from {{ ref("int_focus__student_enrollments") }}
+        -- finalsite year toggle: see skill
+        where
+            rn_year = 1 and finalsite_enrollment_id is not null and academic_year = 2026
     ),
 
     -- rn_year is computed per student, so two PowerSchool records sharing one
