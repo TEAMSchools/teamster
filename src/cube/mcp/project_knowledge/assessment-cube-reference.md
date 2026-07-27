@@ -54,10 +54,19 @@ Apply to every assessment source unless a source section overrides them.
   text** — the label strings are wildly inconsistent (dozens of variants per
   band number). Other sources use their own `proficiency_level` scales (see each
   section).
-- **Two different subject fields.** `academic_subject` is the subject _tested_
-  (e.g., `Mathematics`, `English Language Arts`); `discipline` is the _course_
-  subject from the course crosswalk (e.g., `Math`, `ELA`). They answer different
-  questions — do not use one in place of the other.
+- **Two different subject fields, and `academic_subject` values are
+  source-dependent.** `academic_subject` is the subject _tested_; `discipline`
+  is the _course_ subject from the course crosswalk (e.g. `Math`, `ELA`). They
+  answer different questions — do not use one in place of the other.
+  - **Illuminate has no `English Language Arts` value** — filtering for it
+    returns zero rows. Illuminate's ELA-equivalent is **`Text Study`** (4.7M
+    scores), alongside `Writing`, `English 100`–`400`, `CCR 1`–`4`,
+    `Composition 200`, and AP Language / AP Literature. Math-side it uses
+    `Mathematics` plus `Algebra I`, `Algebra I MS`, `Algebra II`, `Geometry`,
+    `Pre-Calculus`, `Math 4`.
+  - State and vendor sources use the plainer labels (`English Language Arts`,
+    `Mathematics`). Check the values for the source you are querying before
+    filtering — a wrong label returns zero rows silently, not an error.
 - **Three different grade fields.** `grade_band` is a school-level attribute
   (the band a location serves — `ES` / `MS` / `HS`), not a per-student grade;
   filtering `grade_band = 'MS'` is a school proxy, not a student-grade filter.
@@ -93,10 +102,19 @@ Apply to every assessment source unless a source section overrides them.
   — reliable for CCSS-aligned content, unreliable for FL state-aligned
   standards. Illuminate only (null elsewhere, since `response_type` is null
   elsewhere).
+- **The view is enrollment-scoped — its totals are not the vendor's or the
+  state's totals.** A score appears only if it resolves to a section enrollment;
+  scores that don't resolve are out of scope by design. For 2025-26 i-Ready that
+  is about 6% of tests, unevenly: Newark 8.0%, Camden 4.2%, Miami 2.5% — and
+  `Outside Round` sittings lose roughly a third. So a Cube count will not
+  reconcile to a vendor or state report, and the gap is expected, not a bug. Say
+  which one you are quoting.
 - **Open decisions — flag, never assume a value** (per the orchestrator):
   minimum-sample suppression threshold; intervention tier cut-scores;
   pool-vs-per-instrument for multi-module "overall mastery"; which subjects
-  count as "math"; and the default grain (record vs distinct-student) for
+  count as "math" _and_ which count as "ELA" (see the Illuminate subject list
+  above); whether grade-band reporting keys on `grade_level` or
+  `grade_level_tested`; and the default grain (record vs distinct-student) for
   count/share questions. None has a documented network default — surface the
   assumption and log it.
 
@@ -137,6 +155,22 @@ Apply to every assessment source unless a source section overrides them.
   `Outside Round` for sittings taken outside the three benchmark windows.
   Filtering to only `BOY` / `MOY` / `EOY` silently drops the `Outside Round`
   rows — scope deliberately and state which windows you used.
+- **`Outside Round` is also the least complete round.** Roughly a third of
+  `Outside Round` sittings never resolve to a section enrollment, so they never
+  reach this view (Newark loses ~40%); the named rounds lose under 10%. Treat
+  `Outside Round` counts as a floor, not a census.
+- **Resolving "the most recent diagnostic":** take the latest _named_ round
+  (`BOY` / `MOY` / `EOY`) within the latest `academic_year_label` — do **not**
+  take the maximum `date_taken`. The literal latest rows are usually one-off
+  `Outside Round` makeup sittings, and a July test date lands in the _next_
+  July-start academic year, so a max-date pick returns a single student rather
+  than the administration.
+- **Proficiency cutoff:** `is_mastery` is TRUE for `Early On Grade Level` and
+  `Mid or Above Grade Level`, FALSE for the three below-grade-level bands. Note
+  that `Early On Grade Level` counts as proficient — a looser bar than "at or
+  above grade level", and it is roughly half of all proficient scores. If a
+  participant means the stricter definition, filter `proficiency_level` directly
+  instead of using `pct_proficient`.
 - **Region coverage: Newark, Camden, and Miami only — there is no i-Ready data
   for Paterson.** A "compare i-Ready across all regions" question therefore
   returns three of the four regions; say so rather than implying network-wide
@@ -154,9 +188,14 @@ Apply to every assessment source unless a source section overrides them.
   vendor/state sources), not a gap. Genuine multiple sittings occur even within
   a single benchmark window, so dedup to the most recent `date_taken` per
   student per window before computing anything student-level.
-- Documented from the live schema and two working-group sessions (a Camden ES
-  ELA DIBELS-vs-i-Ready concordance, and a BOY-to-EOY growth-quadrant analysis)
-  — confirm interpretations before external use.
+- **Query this view, not the upstream i-Ready model.** i-Ready arrives with
+  fiscal-year re-pull duplicates — the same physical test landing under two
+  partitions. The mart collapses them, so counts here are right; a query
+  straight against the warehouse source double-counts nearly every row.
+- Documented from the live schema and four working-group sessions (a Camden ES
+  ELA DIBELS-vs-i-Ready concordance, a BOY-to-EOY growth-quadrant analysis, and
+  two Camden proficiency-by-grade pulls) — confirm interpretations before
+  external use.
 
 ## Vendor normed diagnostics — DIBELS
 
@@ -170,6 +209,10 @@ Apply to every assessment source unless a source section overrides them.
   school year with them.
 - **Administrations:** `administration_period` = `BOY` / `MOY` / `EOY`, the same
   benchmark-window vocabulary as i-Ready.
+- **Coverage starts in 2023-24**, and that first year is partial (about a third
+  of a normal year's volume, consistent with mid-year adoption). Earlier years
+  are simply absent — do not read a pre-2023-24 gap as a load failure, and don't
+  trend across the 2023-24 boundary.
 - Documented from the live schema and one working-group session (used as the
   comparison instrument in a Camden ES ELA concordance) — confirm before
   external use.
@@ -187,6 +230,8 @@ Apply to every assessment source unless a source section overrides them.
 - **Administrations:** `administration_period` = `Fall` / `Winter` / `Spring` —
   season names, **not** the `BOY` / `MOY` / `EOY` vocabulary i-Ready and DIBELS
   use. Do not carry a benchmark-window filter across from those sources.
+- **Coverage starts in 2023-24** at a steady but small volume (~2.3-2.5k scores
+  per year, far below the other sources). Earlier years are absent, not lost.
 - Not exercised in the working-group sessions; documented from the live schema —
   confirm before external use.
 

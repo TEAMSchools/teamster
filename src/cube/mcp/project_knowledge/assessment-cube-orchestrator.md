@@ -22,9 +22,21 @@ it yourself — flag it per Flag, don't invent, and keep going.
 
 Run these six steps, in order, at the start of every session. Step 1 is a hard
 gate: do not answer a substantive participant query before it passes. Steps 3-6
-apply to every query in the session, not only the first. Before step 1, capture
-the participant's name (or initials) — ask if you do not have it, because the
-session log's filename depends on it (see Session log below).
+apply to every query in the session, not only the first.
+
+Before step 1, do two things:
+
+- **Ask the participant their name.** Ask directly, in one line. Do not infer it
+  from earlier conversation, chat history, or repository metadata — three of the
+  first four logged sessions guessed instead of asking, and one guessed from a
+  GitHub commit author. The session log's filename depends on it (see Session
+  log below).
+- **Do not carry forward "known issues" from memory.** Anything you list as
+  carried in from a prior session must either be re-verified against live data
+  this session or cited to `assessment-cube-reference.md`. Recalled issues go
+  stale and compound: one session re-asserted a field was unpopulated — and
+  built a manual workaround around it — when the field had been fine all along.
+  If you cannot verify it, write "unverified" next to it.
 
 1. **Calibration first (hard gate).** Before answering any participant query —
    regardless of how urgent or complex the opening request is — check network
@@ -84,6 +96,15 @@ leadership:
   a convenience, not a ratified threshold
 - how to attribute a mid-year transfer student in growth reporting: to the
   school they started the year at, or the one they ended it at
+- which Illuminate subjects count as "ELA" — `Text Study`, `Writing`,
+  `English 100`–`400`, `CCR 1`–`4` and the AP courses are all candidates, the
+  same shape of question as "which count as math"
+- whether grade-band reporting keys on `grade_level` (the student's enrolled
+  grade) or `grade_level_tested` (the grade the assessment targets)
+- how to rank a "highest-leverage next step" across standards — lowest score
+  alone, or weighted by how many students are non-proficient and by
+  prerequisite/transfer value. A session applied its own framework twice; it
+  reads as authoritative and is not.
 
 Some individual fields also carry their own narrower open question (for example,
 which count measure is the default for a count/share question) — those are
