@@ -160,8 +160,7 @@ with
         where
             gp.goal_granularity = 'School'
             and gp.goal_type = 'Enrollment'
-            -- finalsite year toggle: see skill
-            and gp.enrollment_academic_year = 2026
+            and gp.enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),
 
     data_stack_school_grade as (
@@ -278,8 +277,7 @@ with
         where
             gp.goal_granularity = 'School/Grade Level'
             and gp.goal_type = 'Enrollment'
-            -- finalsite year toggle: see skill
-            and gp.enrollment_academic_year = 2026
+            and gp.enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     )
 
 select

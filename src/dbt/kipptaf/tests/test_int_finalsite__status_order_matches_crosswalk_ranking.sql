@@ -2,8 +2,7 @@ with
     crosswalk_ranking as (
         select distinct x.fs_status_field, x.detailed_status_ranking,
         from {{ ref("stg_google_sheets__finalsite__status_crosswalk") }} as x
-        -- finalsite year toggle: see skill
-        where x.file_year = 2026
+        where x.file_year = {{ var("finalsite_recruitment_year") }}
     ),
 
     -- Mirrors the hardcoded status_order CASE in

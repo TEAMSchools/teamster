@@ -66,8 +66,7 @@ with
             gm.region,
             gm.grade_level,
 
-            -- finalsite year toggle: see skill
-            2026 as academic_year,
+            {{ var("finalsite_recruitment_year") }} as academic_year,
 
             'KTAF' as org,
             'powerschool' as scaffold_source,
@@ -105,8 +104,7 @@ with
                 'gsheet' as scaffold_source,
 
             from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
-            -- finalsite year toggle: see skill
-            where s.academic_year = 2026
+            where s.academic_year = {{ var("finalsite_recruitment_year") }}
         )
     {% endif %}
 

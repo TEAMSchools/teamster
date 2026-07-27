@@ -20,8 +20,7 @@ with
             status_start_date,
             latest_status_date,
         from {{ ref("int_finalsite__status_report_unpivot") }}
-        -- finalsite year toggle: see skill
-        where enrollment_academic_year = 2026
+        where enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),
 
     same_day_duplicate_flags as (
@@ -85,8 +84,7 @@ with
         inner join
             same_day_duplicate_flags as sd
             on r.finalsite_enrollment_id = sd.finalsite_enrollment_id
-        -- finalsite year toggle: see skill
-        where r.enrollment_academic_year = 2026
+        where r.enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -307,8 +305,10 @@ with
             is_enrolled_mar15,
 
         from {{ ref("int_extracts__student_enrollments") }}
-        -- finalsite year toggle: see skill
-        where rn_year = 1 and infosnap_id is not null and academic_year = 2026
+        where
+            rn_year = 1
+            and infosnap_id is not null
+            and academic_year = {{ var("finalsite_recruitment_year") }}
 
         union all
 
@@ -326,9 +326,10 @@ with
             is_enrolled_mar15,
 
         from {{ ref("int_focus__student_enrollments") }}
-        -- finalsite year toggle: see skill
         where
-            rn_year = 1 and finalsite_enrollment_id is not null and academic_year = 2026
+            rn_year = 1
+            and finalsite_enrollment_id is not null
+            and academic_year = {{ var("finalsite_recruitment_year") }}
     ),
 
     -- rn_year is computed per student, so two PowerSchool records sharing one

@@ -232,29 +232,30 @@ Only once both checks are clean — status_crosswalk has real rows for
 `<new_year>`, and the pasted `-1` rows are confirmed in the sheet — proceed to
 the file edits below.
 
-**Files to edit** — every occurrence is marked
-`-- finalsite year toggle: see skill` (or the block-comment form) immediately
-above or beside the literal:
+**Files to edit** — every dbt model/test site reads from one shared var:
 
-- `src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__enrollment_scaffold.sql`
-  (2 occurrences — `powerschool_scaffold`'s `academic_year` literal and
-  `gsheet_scaffold`'s `where` filter)
-- `src/dbt/kipptaf/models/extracts/tableau/intermediate/int_tableau__finalsite_student_scaffold.sql`
-  (2 occurrences — `latest_status_calc`'s `where` filter, and
-  `enrollment_lookup`'s `where` filter)
-- `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__fresh_dashboard_progress_to_goals.sql`
-  (2 occurrences — the `School` and `School/Grade Level` goal CTEs)
-- `src/dbt/kipptaf/tests/test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
-  (1 occurrence — `crosswalk_ranking`'s `where` filter)
-- This file (1 occurrence — the `-1` candidate-row generator query above)
+- `src/dbt/kipptaf/dbt_project.yml` — bump `finalsite_recruitment_year` (e.g.
+  `2026` → `2027`). This alone updates every site below; none of them hold their
+  own literal any more.
+  - `int_finalsite__enrollment_scaffold.sql` (`powerschool_scaffold`'s
+    `academic_year` and `gsheet_scaffold`'s `where` filter)
+  - `int_tableau__finalsite_student_scaffold.sql` (`same_day_status_dates`'s
+    `where` filter and `enrollment_lookup`'s two branches)
+  - `rpt_tableau__fresh_dashboard_progress_to_goals.sql` (the `School` and
+    `School/Grade Level` goal CTEs)
+  - `test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
+    (`crosswalk_ranking`'s `where` filter)
+- This file (1 occurrence — the `-1` candidate-row generator query above) is the
+  one remaining independent literal: it's an ad hoc BigQuery query, not a dbt
+  model, so it can't read `{{ var(...) }}` — substitute `<new_year>` by hand
+  each time you run it.
 
-In each, replace the old year literal with the new one (e.g. `2026` → `2027`).
-None of these read from a shared var — each is an independent literal, by design
-(see "Why this is hardcoded" above), so every site must be changed individually.
-Grep to confirm you found them all:
+Grep to confirm every model site still reads the var (none reverted to a bare
+literal) and that this file's generator query is the only literal left:
 
 ```bash
-grep -rn "finalsite year toggle" src/dbt/kipptaf .claude/skills/fresh-dashboard
+grep -rn 'var("finalsite_recruitment_year")' src/dbt/kipptaf
+grep -n "as academic_year" .claude/skills/fresh-dashboard/SKILL.md
 ```
 
 Build and verify after all changes:
