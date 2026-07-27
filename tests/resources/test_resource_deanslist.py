@@ -4,6 +4,7 @@ import traceback
 
 import pytest
 from requests import PreparedRequest, Response
+from requests.exceptions import ConnectionError as RequestsConnectionError
 from requests.exceptions import HTTPError
 
 from teamster.libraries.deanslist.resources import (
@@ -44,7 +45,33 @@ class _FakeSession:
         return response
 
 
-def _build_offline_resource(session: _FakeSession, logger_name: str):
+class _FakeConnectionErrorSession:
+    """Fails in transport, with the rendered URL in the message.
+
+    Mirrors urllib3, whose `MaxRetryError` embeds `url: <path>?apikey=<key>` —
+    the reason a transport failure leaks the same credential a 4xx does.
+    """
+
+    def __init__(self) -> None:
+        self.sent_params: list[dict] = []
+
+    def request(self, method: str, url: str, params: dict, timeout: float, **kwargs):
+        self.sent_params.append(dict(params))
+
+        prepared = PreparedRequest()
+        prepared.prepare(method=method, url=url, params=params)
+
+        error = RequestsConnectionError(
+            f"HTTPSConnectionPool(host='kippnj.deanslistsoftware.com', port=443): "
+            f"Max retries exceeded with url: {prepared.url} "
+            "(Caused by NewConnectionError('Connection refused'))"
+        )
+        error.request = prepared
+
+        raise error
+
+
+def _build_offline_resource(session, logger_name: str):
     """Instantiate the resource without the secret-volume setup path."""
     resource = DeansListResource(api_key_dir="/etc/deanslist")
 
@@ -153,6 +180,48 @@ def test_request_error_never_logs_or_raises_the_api_key(
     # the same exception type still propagates, with the response attached
     assert exc_info.value.response is not None
     assert exc_info.value.response.status_code == 500
+
+    # `__context__` must be None, not merely suppressed. `raise ... from None`
+    # sets `__suppress_context__`, which `traceback` honors — but the original
+    # exception object, whose message holds the unredacted URL, stays reachable
+    # on `__context__` for any consumer that walks the chain unconditionally.
+    # Raising outside the `except` block is what actually drops it.
+    assert exc_info.value.__context__ is None
+
+
+def test_transport_error_never_raises_the_api_key(caplog: pytest.LogCaptureFixture):
+    """A connection failure must not leak the key either.
+
+    `raise_for_status()` is never reached when the request dies in transport, and
+    urllib3 renders the full URL — query string included — into the
+    `ConnectionError` message, which then propagates uncaught for Dagster to
+    serialize. Same credential, same surface, different trigger.
+    """
+    session = _FakeConnectionErrorSession()
+    resource = _build_offline_resource(session, "test_deanslist_transport")
+
+    with caplog.at_level(logging.INFO, logger="test_deanslist_transport"):
+        with pytest.raises(RequestsConnectionError) as exc_info:
+            resource._request(
+                method="GET",
+                url="https://kippnj.deanslistsoftware.com/api/v1/students",
+                school_id=121,
+                params={"IncludeInactive": "Y"},
+            )
+
+    rendered_traceback = "".join(traceback.format_exception(exc_info.value))
+
+    assert PLACEHOLDER_KEY not in caplog.text
+    assert PLACEHOLDER_KEY not in str(exc_info.value)
+    assert PLACEHOLDER_KEY not in rendered_traceback
+    assert exc_info.value.__context__ is None
+
+    # the subclass is preserved so the documented retry predicate still matches
+    assert isinstance(exc_info.value, RequestsConnectionError)
+
+    # and the diagnostic survives
+    assert "apikey=***" in str(exc_info.value)
+    assert "/api/v1/students" in str(exc_info.value)
 
 
 def test_request_does_not_retain_the_api_key_in_the_caller_params(

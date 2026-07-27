@@ -1,21 +1,21 @@
 import pathlib
 import re
-from collections.abc import Iterable
+from collections.abc import Collection
 
 import fastavro
 import fastavro.types
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from pydantic import PrivateAttr
-from requests import Session
-from requests.exceptions import HTTPError
+from requests import Response, Session
+from requests.exceptions import HTTPError, RequestException
 
 _REDACTED = "***"
 
 _APIKEY_QUERY_PATTERN = re.compile(pattern=r"apikey=[^&\s]*", flags=re.IGNORECASE)
 
 
-def redact_api_keys(text: str, api_keys: Iterable[str] = ()) -> str:
+def redact_api_keys(text: str, api_keys: Collection[str] = ()) -> str:
     """Mask DeansList API keys in text bound for a log or an exception message.
 
     The credential travels as an ``apikey`` query parameter, so it appears in
@@ -27,7 +27,9 @@ def redact_api_keys(text: str, api_keys: Iterable[str] = ()) -> str:
         text: Text that may contain a key.
         api_keys: Known key values, masked literally so that renderings which do
             not use the ``apikey=`` query form (a params dict, for instance) are
-            covered too.
+            covered too. A ``Collection`` rather than an ``Iterable`` because
+            callers pass the same object to more than one call -- a one-shot
+            generator would silently redact nothing on the second.
 
     Returns:
         The text with every key occurrence replaced by ``***``.
@@ -85,7 +87,9 @@ class DeansListResource(ConfigurableResource):
         else:
             return f"{self._base_url}/{api_version}/{endpoint}"
 
-    def _request(self, method: str, url: str, school_id: int, params: dict, **kwargs):
+    def _request(
+        self, method: str, url: str, school_id: int, params: dict, **kwargs
+    ) -> Response:
         api_keys = self._api_key_map.values()
 
         self._log.info(
@@ -109,13 +113,40 @@ class DeansListResource(ConfigurableResource):
         # in the log line above on the next call
         request_params = {**params, "apikey": api_key}
 
-        response = self._session.request(
-            method=method,
-            url=url,
-            params=request_params,
-            timeout=self.request_timeout,
-            **kwargs,
-        )
+        # a transport failure never reaches `raise_for_status` below, and its
+        # message renders the URL too -- urllib3's MaxRetryError embeds
+        # "url: <path>?apikey=<key>" -- so it needs the same redaction
+        transport_error: RequestException | None = None
+        maybe_response: Response | None = None
+
+        try:
+            maybe_response = self._session.request(
+                method=method,
+                url=url,
+                params=request_params,
+                timeout=self.request_timeout,
+                **kwargs,
+            )
+        except RequestException as e:
+            # rebuild as the same subclass: the retry predicate documented in
+            # src/teamster/CLAUDE.md matches on (RequestsConnectionError,
+            # Timeout, HTTPError), so flattening to the base class would break a
+            # future tenacity wrapper here
+            transport_error = type(e)(
+                redact_api_keys(text=str(e), api_keys=api_keys), request=e.request
+            )
+
+        # raised outside the `except` block on purpose. `raise ... from None`
+        # only sets __suppress_context__; __context__ still references the
+        # original, whose message carries the unredacted URL, and any consumer
+        # that walks the chain re-leaks the key. Raising once the block has
+        # exited leaves __context__ None, so the original is unreachable.
+        if transport_error is not None:
+            raise transport_error
+
+        response = check.not_none(value=maybe_response)
+
+        http_error: HTTPError | None = None
 
         try:
             response.raise_for_status()
@@ -126,10 +157,10 @@ class DeansListResource(ConfigurableResource):
 
             self._log.error(msg=f"{message}\nSCHOOL_ID:\t{school_id}")
 
-            # `from None` drops the original from the traceback: its message
-            # carries the unredacted URL, and Dagster serializes an unsuppressed
-            # __context__ into the run event log
-            raise HTTPError(message, response=response) from None
+            http_error = HTTPError(message, response=response)
+
+        if http_error is not None:
+            raise http_error
 
         return response
 
@@ -204,10 +235,17 @@ class DeansListResource(ConfigurableResource):
         fo = data_filepath.open("a+b")
 
         while page <= total_pages:
-            params.update({"page_size": page_size, "page": page})
+            # a copy, for the same reason `_request` copies before adding the
+            # key: `params` belongs to the caller and is shared across an
+            # asset's partitions
+            request_params = {**params, "page_size": page_size, "page": page}
 
             response_json = self._request(
-                method="GET", url=url, school_id=school_id, params=params, **kwargs
+                method="GET",
+                url=url,
+                school_id=school_id,
+                params=request_params,
+                **kwargs,
             ).json()
 
             total_count = response_json["total_count"]
