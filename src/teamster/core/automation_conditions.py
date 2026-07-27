@@ -197,3 +197,30 @@ def dbt_table_automation_condition() -> AutomationCondition:
     return _build_dbt_condition(
         _build_any_ancestor_updated(view_selection=_VIEW_SELECTION)
     )
+
+
+def dbt_cron_automation_condition(
+    cron_schedule: str, cron_timezone: str = "America/New_York"
+) -> AutomationCondition:
+    """Automation condition for expensive dbt TABLE models on a cron cadence.
+
+    For wide/expensive tables whose consumers refresh on a schedule (nightly
+    extracts, Cube pre-aggregation refresh keys), the eager table condition
+    wastes warehouse spend: every upstream data refresh triggers a full
+    rebuild whose freshness nothing consumes. This condition swaps the
+    ancestor-updated trigger for a cron tick.
+
+    Deliberately NOT AutomationCondition.on_cron(): its
+    all_deps_updated_since_cron gate never fires when any dep on a slower
+    cadence (e.g. a weekly model) skips the window. cron_tick_passed is
+    unconditional — a rebuild on a tick where nothing upstream changed is
+    accepted waste (a single scan) in exchange for a deadlock-free cadence.
+
+    Triggers: newly_missing, cron_tick_passed, code_version_changed (deploys
+    still rebuild immediately). Retains the deps-missing/in-progress guards.
+    """
+    return _build_dbt_condition(
+        AutomationCondition.cron_tick_passed(
+            cron_schedule=cron_schedule, cron_timezone=cron_timezone
+        )
+    )

@@ -11,6 +11,13 @@ models:
       for drilldown.
     config:
       materialized: table
+      meta:
+        dagster:
+          # nightly instead of eager: all consumers are nightly extracts or
+          # the assessment-scores star (also nightly) — same-tick requests
+          # batch into one run, so dbt orders this before the star. Refs #4559
+          automation_condition:
+            cron_schedule: 0 0 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

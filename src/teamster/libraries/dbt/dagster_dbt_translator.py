@@ -5,6 +5,7 @@ from dagster import AssetKey, AutomationCondition
 from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from teamster.core.automation_conditions import (
+    dbt_cron_automation_condition,
     dbt_table_automation_condition,
     dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
@@ -40,6 +41,22 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         self, dbt_resource_props: Mapping[str, Any]
     ) -> AutomationCondition | None:
         materialized = dbt_resource_props.get("config", {}).get("materialized", "view")
+
+        # per-model override: meta.dagster.automation_condition.cron_schedule
+        # puts an expensive table on a cron cadence instead of the eager
+        # (rebuild-on-any-upstream-update) table condition
+        dbt_meta = dbt_resource_props.get("config", {}).get(
+            "meta", {}
+        ) or dbt_resource_props.get("meta", {})
+
+        condition_meta = dbt_meta.get("dagster", {}).get("automation_condition", {})
+        cron_schedule = condition_meta.get("cron_schedule")
+
+        if cron_schedule is not None:
+            return dbt_cron_automation_condition(
+                cron_schedule=cron_schedule,
+                cron_timezone=condition_meta.get("cron_timezone", "America/New_York"),
+            )
 
         # union_relations views need dep-aware refresh: their compiled SQL
         # resolves columns at run time via the macro and becomes stale when

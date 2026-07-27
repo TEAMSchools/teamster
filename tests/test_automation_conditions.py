@@ -13,6 +13,7 @@ from dagster import (
 )
 
 from teamster.core.automation_conditions import (
+    dbt_cron_automation_condition,
     dbt_table_automation_condition,
     dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
@@ -1951,3 +1952,170 @@ def test_union_relations_view_triggered_by_ancestor_code_version_change():
         defs=defs_v2, instance=instance, cursor=result.cursor
     )
     assert result.get_num_requested(AssetKey("union_relations_view")) == 1
+
+
+def test_cron_table_not_requested_on_upstream_update():
+    """Cron tables ignore upstream data updates; only the tick triggers.
+
+    This is the whole point of the condition: an expensive table whose
+    consumers refresh nightly should not rebuild on every upstream refresh.
+    """
+    from datetime import datetime, timezone
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        deps=[upstream_table],
+        automation_condition=dbt_cron_automation_condition(
+            "0 0 * * *", cron_timezone="UTC"
+        ),
+        tags=_TABLE_TAG,
+    )
+    def cron_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, cron_table]
+    defs = Definitions(assets=all_assets)
+
+    materialize(assets=all_assets, instance=instance)
+
+    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=timezone.utc)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=t0
+    )
+    assert result.total_requested == 0
+
+    # upstream data refresh mid-day: eager tables would rebuild; cron must not
+    materialize(assets=[upstream_table], instance=instance, selection=[upstream_table])
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc),
+    )
+    assert result.get_num_requested(AssetKey("cron_table")) == 0
+
+    # midnight tick crossed: requested exactly once
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=timezone.utc),
+    )
+    assert result.get_num_requested(AssetKey("cron_table")) == 1
+
+    # trigger consumed by the request: not re-requested before the next tick
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 2, tzinfo=timezone.utc),
+    )
+    assert result.get_num_requested(AssetKey("cron_table")) == 0
+
+
+def test_cron_table_requested_on_code_version_change():
+    """Deploys still rebuild cron tables immediately, without waiting for
+    the next tick — code_version_changed is retained from the shared
+    condition skeleton."""
+    from datetime import datetime, timezone
+
+    @asset(tags=_TABLE_TAG, code_version="1")
+    def versioned_cron_table():
+        return 1
+
+    versioned_cron_table = versioned_cron_table.map_asset_specs(
+        lambda spec: spec.replace_attributes(
+            automation_condition=dbt_cron_automation_condition(
+                "0 0 * * *", cron_timezone="UTC"
+            )
+        )
+    )
+
+    instance = DagsterInstance.ephemeral()
+    defs = Definitions(assets=[versioned_cron_table])
+
+    materialize(assets=[versioned_cron_table], instance=instance)
+
+    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=timezone.utc)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=t0
+    )
+    assert result.total_requested == 0
+
+    # simulate deploy: code version changes, no cron tick crossed
+    @asset(key="versioned_cron_table", tags=_TABLE_TAG, code_version="2")
+    def versioned_cron_table_v2():
+        return 1
+
+    versioned_cron_table_v2 = versioned_cron_table_v2.map_asset_specs(
+        lambda spec: spec.replace_attributes(
+            automation_condition=dbt_cron_automation_condition(
+                "0 0 * * *", cron_timezone="UTC"
+            )
+        )
+    )
+
+    defs_v2 = Definitions(assets=[versioned_cron_table_v2])
+    result = evaluate_automation_conditions(
+        defs=defs_v2,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 1, 6, 5, tzinfo=timezone.utc),
+    )
+    assert result.get_num_requested(AssetKey("versioned_cron_table")) == 1
+
+
+def test_translator_meta_cron_schedule_override():
+    """meta.dagster.automation_condition.cron_schedule overrides the
+    materialized-type condition; absent meta falls through unchanged."""
+    from teamster.libraries.dbt.dagster_dbt_translator import (
+        CustomDagsterDbtTranslator,
+    )
+
+    translator = CustomDagsterDbtTranslator(code_location="kipptaf")
+
+    cron_props = {
+        "config": {
+            "materialized": "table",
+            "meta": {
+                "dagster": {"automation_condition": {"cron_schedule": "0 0 * * *"}}
+            },
+        }
+    }
+    assert translator.get_automation_condition(
+        cron_props
+    ) == dbt_cron_automation_condition("0 0 * * *")
+
+    tz_props = {
+        "config": {
+            "materialized": "table",
+            "meta": {
+                "dagster": {
+                    "automation_condition": {
+                        "cron_schedule": "0 0 * * *",
+                        "cron_timezone": "UTC",
+                    }
+                }
+            },
+        }
+    }
+    assert translator.get_automation_condition(
+        tz_props
+    ) == dbt_cron_automation_condition("0 0 * * *", cron_timezone="UTC")
+
+    plain_table_props = {"config": {"materialized": "table", "meta": {}}}
+    assert (
+        translator.get_automation_condition(plain_table_props)
+        == dbt_table_automation_condition()
+    )
+
+    plain_view_props = {"config": {"materialized": "view", "meta": {}}}
+    assert (
+        translator.get_automation_condition(plain_view_props)
+        == dbt_view_automation_condition()
+    )
