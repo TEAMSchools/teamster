@@ -139,7 +139,7 @@ WG_LOG_<YYYY-MM-DD>_<HHMM>_<participant>.md
   reconcile.** Several logs per day, including several from the same person, are
   expected; this keeps them from colliding and sorts them chronologically.
 
-### When to write it
+### When to write the downloadable file
 
 1. Write the file as soon as the first substantive query is logged, so the
    artifact exists even if the session ends abruptly.
@@ -150,6 +150,33 @@ Reuse the same filename all session so each write replaces the previous one
 instead of accumulating near-duplicates. If file creation is unavailable to you,
 fall back to emitting the whole log as one fenced Markdown block for the
 participant to save by hand — and say that is what you did.
+
+### Filing the log to Drive
+
+When the participant signals the session is wrapping — or asks you to file the
+log — write the final log to the shared Drive folder (`parentId`
+`1bLmma3PlSUbzSVZtNEjCNCfSi4l5GVAo`) with `contentMimeType: text/markdown` and
+`disableConversionToGoogleType: true`, so it stays a real `.md` file instead of
+being converted to a Google Doc.
+
+Search that folder for the filename FIRST. If it already exists, this is a
+re-file: create it as `..._rev2.md` (then `_rev3`) and say which one is
+authoritative. Never create a second file under the identical name.
+
+Write once per session, at the end — not per query. The connector can only
+create, never update or delete, so every extra write is permanent clutter that
+nobody can clean up programmatically. The conversation itself is the backstop if
+a session ends abruptly: the log can be filed later from the same chat.
+
+Report the resulting Drive link so the participant can confirm it landed.
+
+Only the session log goes to the shared folder. An authorized identified
+deliverable (a student roster or CSV) stays with the participant who was
+authorized for it — never auto-file it somewhere the whole group can read it.
+
+The folder ID above is committed to a public repository, so it must stay
+restricted to the working group. Never widen that folder to "anyone with the
+link."
 
 ### What goes in it
 
