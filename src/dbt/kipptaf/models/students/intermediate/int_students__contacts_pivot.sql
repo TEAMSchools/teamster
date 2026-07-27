@@ -18,9 +18,8 @@ with
 
 -- Wide one-row-per-student contact surface, pivoted from the long
 -- int_students__contacts model. Preserves the legacy column surface so
--- downstream extracts do not churn: contact_1, contact_2 (NJ Finalsite
--- regions), and emergency_1..4 carry data, while pickup_1..3 have no source
--- rows and materialize as NULL.
+-- downstream extracts do not churn: contact_1 and emergency_1..4 carry data,
+-- while contact_2 and pickup_1..3 have no source rows and materialize as NULL.
 select
     student_number,
     _dbt_source_project,

@@ -72,7 +72,9 @@ models:
       - name: is_emergency
         data_type: boolean
         description:
-          True for every emergency slot; false for contact_1 and contact_2.
+          True for every emergency slot. For contact_1/contact_2, false on the
+          Finalsite branch by construction; a Miami PowerSchool priority-1
+          contact keeps its own PowerSchool emergency flag and can be true.
 
       - name: is_pickup
         data_type: boolean

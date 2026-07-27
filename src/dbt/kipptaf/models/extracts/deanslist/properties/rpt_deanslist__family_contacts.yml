@@ -129,7 +129,7 @@ unit_tests:
             '+18623007240x216' as phone_mobile
           union all
           select
-            'enr-001', 'kippnewark', 'contact_2', 'stepparent',
+            'enr-001', 'kippnewark', 'contact_2', 'parent',
             'Adam', 'Johnson', 'adam@example.com', cast(null as string),
             cast(null as string), cast(null as string)
           union all
@@ -188,7 +188,7 @@ unit_tests:
             WorkPhone: null,
             CellPhone: null,
             Email: adam@example.com,
-            Relationship: stepparent,
+            Relationship: parent,
             ContactType: Parent2,
             Language: null,
           }
