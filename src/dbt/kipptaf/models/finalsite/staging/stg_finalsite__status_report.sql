@@ -23,6 +23,11 @@ select
 
     {{ extract_source_project() }} as _dbt_source_project,
 
+    -- TODO: no PK-labeled application_grade has appeared in Finalsite data yet
+    -- (see accepted_values in stg_finalsite__status_report.yml, which already
+    -- allows -1 for when it does). Add a WHEN branch here once a district
+    -- recruits PK through Finalsite and we know the actual raw value(s) to
+    -- match -- don't let a PK string silently regexp-match into a digit grade.
     if(
         application_grade in ('K', 'Kindergarten'),
         0,
