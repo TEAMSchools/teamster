@@ -13,7 +13,10 @@
 with
     powerschool_region as (
         select
-            sps.school_number, sps.abbreviation, {{ extract_region("sps") }} as region,
+            sps.school_number,
+            sps.abbreviation,
+            sps._dbt_source_project,
+            {{ extract_region("sps") }} as region,
 
         from {{ ref("stg_powerschool__schools") }} as sps
         where sps.state_excludefromreporting = 0
@@ -26,7 +29,7 @@ with
     -- until Focus is ready as a scaffold source. Remove this filter (and
     -- update the sheet-side builder's Miami note below) once that happens.
     powerschool_schools as (
-        select school_number, abbreviation, region,
+        select school_number, abbreviation, _dbt_source_project, region,
         from powerschool_region
         where region != 'Miami'
     ),
@@ -46,8 +49,13 @@ with
     -- may not be entered in PowerSchool yet even though Finalsite is already
     -- recruiting for that grade -- this scaffold won't carry that grade
     -- until PowerSchool has at least one enrolled student in it.
+    -- Carries _dbt_source_project so grade_membership's join can't collide
+    -- across districts on a repeated numeric schoolid -- each PowerSchool
+    -- instance assigns schoolid independently, so an excluded/out-of-scope
+    -- school in one district can share a schoolid with a reporting school in
+    -- another.
     current_grade_levels as (
-        select distinct schoolid, grade_level,
+        select distinct schoolid, grade_level, _dbt_source_project,
         from {{ ref("stg_powerschool__students") }}
         where enroll_status = 0 and grade_level >= 0
     ),
@@ -56,7 +64,10 @@ with
         select ps.school_number, ps.abbreviation, ps.region, cgl.grade_level,
 
         from powerschool_schools as ps
-        inner join current_grade_levels as cgl on ps.school_number = cgl.schoolid
+        inner join
+            current_grade_levels as cgl
+            on ps.school_number = cgl.schoolid
+            and ps._dbt_source_project = cgl._dbt_source_project
     ),
 
     powerschool_scaffold as (
