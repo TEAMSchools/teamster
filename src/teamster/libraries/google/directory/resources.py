@@ -571,15 +571,22 @@ class GoogleDirectoryResource(ConfigurableResource):
             retry_on=(_TransientHttpError,),
         )
 
-    def batch_update_users(self, users: list[dict]) -> list[str]:
+    def batch_update_users(self, users: list[dict]) -> list[dict]:
         """Update multiple users in batches of 40.
+
+        Like :meth:`batch_insert_users` (and unlike the remaining batch helpers,
+        which return error strings), this returns structured per-user errors:
+        the update payload carries the password hash on rows that rotate a
+        password, and the structured form keeps it out of logs and asset-check
+        metadata.
 
         Args:
             users: User resource dicts to update; each must include
                 ``primaryEmail``.
 
         Returns:
-            Error strings for any failed requests.
+            One ``{"primaryEmail": ..., "error": ...}`` dict per user whose
+            update ultimately failed (empty if all succeeded).
         """
         exceptions = []
 
@@ -604,9 +611,16 @@ class GoogleDirectoryResource(ConfigurableResource):
                     try:
                         self._retry_update_user(user)
                     except errors.HttpError as retry_e:
-                        exceptions.append(f"{user} {retry_e}")
+                        exceptions.append(
+                            {
+                                "primaryEmail": user["primaryEmail"],
+                                "error": str(retry_e),
+                            }
+                        )
                 else:
-                    exceptions.append(f"{user} {e}")
+                    exceptions.append(
+                        {"primaryEmail": user["primaryEmail"], "error": str(e)}
+                    )
 
             if i < len(batches) - 1:
                 time.sleep(1)

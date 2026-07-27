@@ -31,11 +31,12 @@ a per-sub-request 5xx. All four batch methods route through
 (429/5xx) sub-requests in follow-up batches (bounded by `_MAX_BATCH_ATTEMPTS`);
 already-succeeded sub-requests are not re-sent (re-sending would 409).
 
-**`batch_insert_users` returns `list[dict]`** (`{"primaryEmail", "error"}`), NOT
-`list[str]` like the other three batch methods — the create asset needs the
-failed emails to skip group membership for uncreated users (via
-`members_for_created_users`), and the dict form keeps the create payload (which
-includes the password hash) out of logs and asset-check metadata.
+**`batch_insert_users` and `batch_update_users` return `list[dict]`**
+(`{"primaryEmail", "error"}`), NOT `list[str]` like the other two batch methods
+— the dict form keeps the user payload (which includes the password hash on
+create and update rows alike) out of logs and asset-check metadata. The create
+asset additionally needs the failed emails to skip group membership for
+uncreated users (via `members_for_created_users`).
 
 **409 conflict handling**: 409 is deliberately excluded from
 `_TRANSIENT_HTTP_CODES` because its meaning is method-specific: for
