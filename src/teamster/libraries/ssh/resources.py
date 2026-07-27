@@ -1,4 +1,5 @@
 import logging
+import os
 import select
 import socket
 import socketserver
@@ -45,6 +46,30 @@ _LegacyRSAKey = type(
     (RSAKey,),
     {"HASHES": {**RSAKey.HASHES, "ssh-rsa": hashes.SHA1}},
 )
+
+
+def _check_listing_filename(filename: str, remote_dir: str) -> None:
+    """Reject a directory entry that is not a single, non-traversing name.
+
+    Entry names come from the remote server and are joined onto ``remote_dir``
+    to build the paths callers list, match, and download. A real SFTP entry is
+    always one path component (paramiko already drops the exact ``.`` and
+    ``..`` entries, nothing else), so a name carrying a separator or a ``..``
+    could steer that join — and the local download path derived from it —
+    outside the directory being walked.
+
+    Raises:
+        ValueError: if the entry name is empty, a relative-directory reference,
+            or contains a path separator.
+    """
+    separators = {"/", os.sep, os.altsep}
+
+    if filename in ("", ".", "..") or any(
+        sep is not None and sep in filename for sep in separators
+    ):
+        raise ValueError(
+            f"Illegal filename in SFTP listing of '{remote_dir}': '{filename}'"
+        )
 
 
 def _persist_legacy_rsa(transport: Transport) -> None:
@@ -161,6 +186,8 @@ class SSHResource(DagsterSSHResource):
 
         files: list[tuple[SFTPAttributes, str]] = []
         for file in sftp_client.listdir_attr(remote_dir):
+            _check_listing_filename(filename=file.filename, remote_dir=remote_dir)
+
             path = str(Path(remote_dir) / file.filename)
             mtime = check.not_none(value=file.st_mtime)
 
