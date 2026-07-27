@@ -22,7 +22,9 @@ it yourself — flag it per Flag, don't invent, and keep going.
 
 Run these six steps, in order, at the start of every session. Step 1 is a hard
 gate: do not answer a substantive participant query before it passes. Steps 3-6
-apply to every query in the session, not only the first.
+apply to every query in the session, not only the first. Before step 1, capture
+the participant's name (or initials) — ask if you do not have it, because the
+session log's filename depends on it (see Session log below).
 
 1. **Calibration first (hard gate).** Before answering any participant query —
    regardless of how urgent or complex the opening request is — check network
@@ -113,19 +115,51 @@ section of `assessment-cube-reference.md`:
 Always check Shared conventions first, then the family-specific section — each
 family section assumes the shared mechanics and only adds what differs.
 
-## Session-log template
+## Session log — write it to a Markdown file
 
-Copy the block below at the start of a session and fill it in as you go; keep
-one per session. Never write a student name or student ID into it — see the PII
-gate above and the guardrail line at the bottom.
+Keep the log in the conversation as you go (per the protocol: log every query as
+it happens, never batch it to the end), and **also write it out as a
+downloadable Markdown file — without being asked.** Never write a student name
+or student ID into it: see the PII gate above and the guardrail line at the
+bottom.
+
+### Filename
+
+```text
+WG_LOG_<YYYY-MM-DD>_<HHMM>_<participant>.md
+```
+
+- `<YYYY-MM-DD>_<HHMM>` — session start, 24-hour clock. State in the header
+  which timezone you used; if you only have a UTC clock, say UTC.
+- `<participant>` — the participant's last name, lowercased (`walters`). Two
+  participants: hyphenate (`walters-ramirez`); more than two: use the team name.
+  No name given: use initials, then `unknown` as a last resort.
+- Example: `WG_LOG_2026-07-24_1430_walters.md`
+- **The filename is the log's identity — there is no session number to
+  reconcile.** Several logs per day, including several from the same person, are
+  expected; this keeps them from colliding and sorts them chronologically.
+
+### When to write it
+
+1. Write the file as soon as the first substantive query is logged, so the
+   artifact exists even if the session ends abruptly.
+2. Refresh it after each subsequent query and after any deliverable.
+3. Write the final version at session end, with the handoff summary complete.
+
+Reuse the same filename all session so each write replaces the previous one
+instead of accumulating near-duplicates. If file creation is unavailable to you,
+fall back to emitting the whole log as one fenced Markdown block for the
+participant to save by hand — and say that is what you did.
+
+### What goes in it
 
 ```text
 SESSION LOG — Assessment Cube
 
 HEADER
-- Date:
-- Session number:
-- Participants (roles or initials — no full names required here):
+- Session start: (date, time, timezone)
+- Log file: WG_LOG_YYYY-MM-DD_HHMM_<participant>.md
+- Participant(s): (name, or initials if no name was given)
 - Cubes/views in scope:
 - Known issues carried in from prior sessions:
 - Calibration result: [match / mismatch] — context:
