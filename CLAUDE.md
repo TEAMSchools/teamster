@@ -74,12 +74,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   path breaks — pass an absolute script path or run it from the main repo.
   Otherwise prefer absolute paths.
 
-- **Bash cwd does NOT persist across calls** — every Bash command (including
-  `run_in_background`) starts at the main repo root, so a prior `cd <worktree>`
-  does not carry over. Tools that resolve relative paths from cwd (`trunk check`
-  with relative paths, `pytest`) must include `cd <worktree> &&` in the SAME
-  command, or they silently operate on the main checkout's (unmodified) copies
-  and report a false "clean". Prefix with `pwd &&` to confirm the directory.
+- **Bash cwd persistence is version-dependent — treat it as unknown.** Older
+  builds reset every call to the main repo root; current builds carry a `cd`
+  forward (the harness notes "Session cwd remains ..."). Rely on neither: prefix
+  commands with `pwd &&`, and for worktree work include `cd <worktree> &&` in
+  the SAME command (or use absolute paths) — tools that resolve relative paths
+  from cwd (`trunk check`, `pytest`, `sed -i`) silently operate on the wrong
+  checkout's copies and report a false "clean".
 
 - **Worktree Read/Edit/Write must target the worktree path**, not the main
   checkout: editing `/workspaces/teamster/<path>` instead of
@@ -203,9 +204,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   (splitting into per-partition `launch_run`s to dodge the bulk classifier
   bypasses intent — don't).
 
-- **`git push origin main` is hard-blocked by the classifier** regardless of
-  in-conversation consent (AskUserQuestion answers or plain-text
-  re-confirmation). Hand the push to the user — do not retry.
+- **Pushing to `main` is forbidden** (user policy, and the classifier
+  hard-blocks it regardless of in-conversation consent) — hand any main push to
+  the user; do not retry. Editing and committing on LOCAL `main` is allowed when
+  the user asks; anything remote goes through a branch + PR.
 
 - **Smoke-test the runtime path, not just imports**: `hasattr(cls, "method")`
   and `python -c "import X"` pass even when a third-party SDK sub-resource (e.g.
