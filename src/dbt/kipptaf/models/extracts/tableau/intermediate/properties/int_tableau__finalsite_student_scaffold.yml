@@ -60,18 +60,15 @@ models:
       - name: is_same_day_status_duplicate
         data_type: boolean
         description: >-
-          True when a student has more than one Finalsite status set on the same
-          calendar day. Scoped by finalsite_enrollment_id within a query already
-          filtered to one enrollment_academic_year (see
-          int_finalsite__status_report_unpivot's latest_status_date, which
-          partitions explicitly by finalsite_enrollment_id +
-          enrollment_academic_year) — not by _dagster_partition_key. That column
-          is the nominal school-year export file a row was ingested from, not a
-          student-relevant boundary: Finalsite tracks a student continuously, so
-          a single enrollment's status history can legitimately span or land in
-          a file whose nominal year differs from enrollment_academic_year.
-          Partitioning by _dagster_partition_key instead would substitute an
-          arbitrary ingestion artifact for the correct business key.
+          True when a student has more than one distinct Finalsite status set on
+          the same calendar day. Computed in same_day_duplicate_flags (in the
+          model SQL) directly off int_finalsite__status_report_unpivot, before
+          the crosswalk join fans a single detailed_status out to multiple
+          status_group_value rows (by design) -- counting after that fan-out
+          inflated this flag from a handful of genuine same-day duplicates to
+          ~30% of enrollments, verified empirically. Also deduplicates a same
+          (enrollment, status, date) recurring under more than one loaded
+          _dagster_partition_key.
       - name: aligned_enrollment_type
         data_type: string
       - name: grouped_status_timeframe

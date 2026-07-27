@@ -1,4 +1,38 @@
 with
+    -- Computed directly off int_finalsite__status_report_unpivot, before the
+    -- crosswalk join below fans a single detailed_status out to multiple
+    -- status_group_value rows (by design -- one status can count toward
+    -- several goal groupings). Counting after that fan-out would double-count
+    -- a single real status change as a "duplicate" whenever it happens to
+    -- also be multi-grouped. distinct also collapses a genuine
+    -- partition-repeated row (the same enrollment/status/date can recur under
+    -- more than one loaded _dagster_partition_key, per
+    -- int_finalsite__status_report_unpivot's own documented grain) --
+    -- _dagster_partition_key is not projected here, so those collapse to one
+    -- byte-identical tuple.
+    -- grain projection: every column here is functionally determined by
+    -- (finalsite_enrollment_id, detailed_status, status_start_date); not a
+    -- mask for upstream duplicates.
+    same_day_status_dates as (
+        select distinct
+            finalsite_enrollment_id,
+            detailed_status,
+            status_start_date,
+            latest_status_date,
+        from {{ ref("int_finalsite__status_report_unpivot") }}
+        -- finalsite year toggle: see skill
+        where enrollment_academic_year = 2026
+    ),
+
+    same_day_duplicate_flags as (
+        select
+            finalsite_enrollment_id,
+            countif(status_start_date = latest_status_date)
+            > 1 as is_same_day_status_duplicate,
+        from same_day_status_dates
+        group by finalsite_enrollment_id
+    ),
+
     latest_status_calc as (
         select
             r.enrollment_academic_year,
@@ -25,6 +59,8 @@ with
             x.grouped_status_order,
             x.grouped_status_timeframe,
 
+            sd.is_same_day_status_duplicate,
+
             'All' as aligned_enrollment_type,
 
             if(
@@ -38,11 +74,6 @@ with
                 order by r.status_start_date desc, r.status_order desc
             ) as latest_status,
 
-            countif(r.status_start_date = r.latest_status_date) over (
-                partition by r.finalsite_enrollment_id
-            )
-            > 1 as is_same_day_status_duplicate,
-
         from {{ ref("int_finalsite__status_report_unpivot") }} as r
         inner join
             {{ ref("int_google_sheets__finalsite__status_crosswalk_unpivot") }} as x
@@ -51,6 +82,9 @@ with
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
             and not x.qa_flag
+        inner join
+            same_day_duplicate_flags as sd
+            on r.finalsite_enrollment_id = sd.finalsite_enrollment_id
         -- finalsite year toggle: see skill
         where r.enrollment_academic_year = 2026
     ),
