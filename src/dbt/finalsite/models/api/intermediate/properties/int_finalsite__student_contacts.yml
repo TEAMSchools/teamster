@@ -237,10 +237,12 @@ unit_tests:
 
   - name: test_student_contacts_parent_2
     description:
-      A student with a primary relationship (Parent 1), a second financial
-      relationship to a household-1 co-member, and the is_parent2 custom flag
-      set yields a contact_1 row and a contact_2 row; a third financial
-      relationship outside household 1 is excluded.
+      Two gated students. stu1 has a primary relationship (Parent 1), a second
+      financial relationship to a household-1 co-member, and a third financial
+      relationship outside household 1 — yields contact_1 + contact_2 with the
+      outsider excluded. stu2 has no primary and two financial household-1
+      relationships — contact_1 falls back to the first financial and contact_2
+      takes the next, never duplicating the same person.
     model: int_finalsite__student_contacts
     given:
       - input: ref('stg_finalsite__contact_relationships')
@@ -269,6 +271,24 @@ unit_tests:
             'rel3' as relationship_id,
             'con3' as rel_id,
             'Jim Poe' as rel_name,
+            'parent' as rel_type,
+            cast(null as boolean) as is_primary,
+            true as is_financial
+          union all
+          select
+            'stu2' as finalsite_enrollment_id,
+            'rel4' as relationship_id,
+            'con4' as rel_id,
+            'Fay Ray' as rel_name,
+            'parent' as rel_type,
+            cast(null as boolean) as is_primary,
+            true as is_financial
+          union all
+          select
+            'stu2' as finalsite_enrollment_id,
+            'rel5' as relationship_id,
+            'con5' as rel_id,
+            'Gus Ray' as rel_name,
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial
@@ -350,9 +370,67 @@ unit_tests:
             cast(null as string) as zip,
             'hh2' as household_1_id,
             ['hh2'] as household_ids
+          union all
+          select
+            'stu2' as finalsite_enrollment_id,
+            cast(null as string) as email,
+            'Stu' as first_name,
+            'Dent' as last_name,
+            cast(null as string) as phone_1_number,
+            cast(null as string) as phone_1_type,
+            cast(null as string) as phone_2_number,
+            cast(null as string) as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            'hh3' as household_1_id,
+            ['hh3'] as household_ids
+          union all
+          select
+            'con4' as finalsite_enrollment_id,
+            'fay@example.com' as email,
+            'Fay' as first_name,
+            'Ray' as last_name,
+            cast(null as string) as phone_1_number,
+            cast(null as string) as phone_1_type,
+            cast(null as string) as phone_2_number,
+            cast(null as string) as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            'hh3' as household_1_id,
+            ['hh3'] as household_ids
+          union all
+          select
+            'con5' as finalsite_enrollment_id,
+            'gus@example.com' as email,
+            'Gus' as first_name,
+            'Ray' as last_name,
+            cast(null as string) as phone_1_number,
+            cast(null as string) as phone_1_type,
+            cast(null as string) as phone_2_number,
+            cast(null as string) as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            'hh3' as household_1_id,
+            ['hh3'] as household_ids
       - input: ref('int_finalsite__contact_custom_attributes')
         rows:
           - { finalsite_enrollment_id: stu1, is_parent2: true }
+          - { finalsite_enrollment_id: stu2, is_parent2: true }
     expect:
       format: sql
       rows: |
@@ -385,6 +463,46 @@ unit_tests:
           'Doe' as contact_last_name,
           'stepparent' as relationship,
           'john@example.com' as email,
+          cast(null as string) as phone_daytime,
+          cast(null as string) as home_address,
+          cast(null as boolean) as is_pickup,
+          cast(null as boolean) as is_custodial,
+          cast(null as boolean) as is_household_member,
+          false as is_emergency,
+          cast(null as string) as phone_mobile,
+          cast(null as string) as phone_home,
+          cast(null as string) as phone_work,
+          cast(null as string) as phone_primary
+        union all
+        select
+          'stu2' as finalsite_enrollment_id,
+          'contact_1' as contact_slot,
+          'con4' as finalsite_contact_id,
+          'Fay Ray' as contact_name,
+          'Fay' as contact_first_name,
+          'Ray' as contact_last_name,
+          'parent' as relationship,
+          'fay@example.com' as email,
+          cast(null as string) as phone_daytime,
+          cast(null as string) as home_address,
+          cast(null as boolean) as is_pickup,
+          cast(null as boolean) as is_custodial,
+          cast(null as boolean) as is_household_member,
+          false as is_emergency,
+          cast(null as string) as phone_mobile,
+          cast(null as string) as phone_home,
+          cast(null as string) as phone_work,
+          cast(null as string) as phone_primary
+        union all
+        select
+          'stu2' as finalsite_enrollment_id,
+          'contact_2' as contact_slot,
+          'con5' as finalsite_contact_id,
+          'Gus Ray' as contact_name,
+          'Gus' as contact_first_name,
+          'Ray' as contact_last_name,
+          'parent' as relationship,
+          'gus@example.com' as email,
           cast(null as string) as phone_daytime,
           cast(null as string) as home_address,
           cast(null as boolean) as is_pickup,
