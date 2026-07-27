@@ -515,7 +515,8 @@ class GoogleDirectoryResource(ConfigurableResource):
         each individual sub-request within it — is retried on transient errors
         (5xx, 429) with backoff.
 
-        Unlike the sibling batch helpers (which return error strings), this
+        Like :meth:`batch_update_users`, and unlike ``batch_insert_members`` /
+        ``batch_insert_role_assignments`` (which return error strings), this
         returns structured per-user errors. Callers use the returned emails to
         skip follow-on group membership for users that were not created (see
         ``members_for_created_users``), and the structured form keeps the create

@@ -378,6 +378,10 @@ def test_batch_update_users_error_dict_omits_user_payload():
     assert set(exceptions[0].keys()) == {"primaryEmail", "error"}
     assert exceptions[0]["primaryEmail"] == "a@b.com"
     assert "deadbeefsecrethash" not in str(exceptions[0])
+    # the diagnostic the redaction is meant to preserve must actually survive:
+    # an empty "error" would satisfy every assertion above
+    assert "400" in exceptions[0]["error"]
+    assert "Bad Request" in exceptions[0]["error"]
 
 
 def test_batch_update_users_409_retry_error_dict_omits_user_payload():
