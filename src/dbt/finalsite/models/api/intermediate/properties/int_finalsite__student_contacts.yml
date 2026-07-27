@@ -184,7 +184,9 @@ unit_tests:
             'Jane Doe' as rel_name,
             'parent' as rel_type,
             true as is_primary,
-            true as is_financial
+            true as is_financial,
+            cast(null as string) as household_1_id,
+            cast(null as boolean) as is_parent2
       - input: ref('stg_finalsite__contacts')
         format: sql
         rows: |
@@ -255,7 +257,9 @@ unit_tests:
             'Jane Doe' as rel_name,
             'parent' as rel_type,
             true as is_primary,
-            true as is_financial
+            true as is_financial,
+            'hh1' as household_1_id,
+            true as is_parent2
           union all
           select
             'stu1' as finalsite_enrollment_id,
@@ -264,7 +268,9 @@ unit_tests:
             'John Doe' as rel_name,
             'stepparent' as rel_type,
             cast(null as boolean) as is_primary,
-            true as is_financial
+            true as is_financial,
+            'hh1' as household_1_id,
+            true as is_parent2
           union all
           select
             'stu1' as finalsite_enrollment_id,
@@ -273,7 +279,9 @@ unit_tests:
             'Jim Poe' as rel_name,
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
-            true as is_financial
+            true as is_financial,
+            'hh1' as household_1_id,
+            true as is_parent2
           union all
           select
             'stu2' as finalsite_enrollment_id,
@@ -282,7 +290,9 @@ unit_tests:
             'Fay Ray' as rel_name,
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
-            true as is_financial
+            true as is_financial,
+            'hh3' as household_1_id,
+            true as is_parent2
           union all
           select
             'stu2' as finalsite_enrollment_id,
@@ -291,29 +301,12 @@ unit_tests:
             'Gus Ray' as rel_name,
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
-            true as is_financial
+            true as is_financial,
+            'hh3' as household_1_id,
+            true as is_parent2
       - input: ref('stg_finalsite__contacts')
         format: sql
         rows: |
-          select
-            'stu1' as finalsite_enrollment_id,
-            cast(null as string) as email,
-            'Stu' as first_name,
-            'Dent' as last_name,
-            cast(null as string) as phone_1_number,
-            cast(null as string) as phone_1_type,
-            cast(null as string) as phone_2_number,
-            cast(null as string) as phone_2_type,
-            cast(null as string) as phone_3_number,
-            cast(null as string) as phone_3_type,
-            cast(null as string) as address_1,
-            cast(null as string) as address_2,
-            cast(null as string) as city,
-            cast(null as string) as state,
-            cast(null as string) as zip,
-            'hh1' as household_1_id,
-            ['hh1'] as household_ids
-          union all
           select
             'con1' as finalsite_enrollment_id,
             'jane@example.com' as email,
@@ -372,25 +365,6 @@ unit_tests:
             ['hh2'] as household_ids
           union all
           select
-            'stu2' as finalsite_enrollment_id,
-            cast(null as string) as email,
-            'Stu' as first_name,
-            'Dent' as last_name,
-            cast(null as string) as phone_1_number,
-            cast(null as string) as phone_1_type,
-            cast(null as string) as phone_2_number,
-            cast(null as string) as phone_2_type,
-            cast(null as string) as phone_3_number,
-            cast(null as string) as phone_3_type,
-            cast(null as string) as address_1,
-            cast(null as string) as address_2,
-            cast(null as string) as city,
-            cast(null as string) as state,
-            cast(null as string) as zip,
-            'hh3' as household_1_id,
-            ['hh3'] as household_ids
-          union all
-          select
             'con4' as finalsite_enrollment_id,
             'fay@example.com' as email,
             'Fay' as first_name,
@@ -428,9 +402,7 @@ unit_tests:
             'hh3' as household_1_id,
             ['hh3'] as household_ids
       - input: ref('int_finalsite__contact_custom_attributes')
-        rows:
-          - { finalsite_enrollment_id: stu1, is_parent2: true }
-          - { finalsite_enrollment_id: stu2, is_parent2: true }
+        rows: []
     expect:
       format: sql
       rows: |

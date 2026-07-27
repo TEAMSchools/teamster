@@ -16,6 +16,8 @@ with
             rel_id,
             rel_name,
             rel_type,
+            household_1_id,
+            is_parent2,
 
             coalesce(is_primary, false) as is_primary,
             coalesce(is_financial, false) as is_financial,
@@ -34,6 +36,8 @@ with
             rel_id,
             rel_name,
             rel_type,
+            household_1_id,
+            is_parent2,
             is_primary,
 
             row_number() over (
@@ -62,7 +66,9 @@ with
         -- excluded. rn > 1 skips the ROW picked as contact_1 (the financial
         -- fallback when no primary is set); the rel_id inequality against the
         -- pick additionally skips any other relationship row to the same
-        -- PERSON, so contact_2 can never duplicate contact_1.
+        -- PERSON, so contact_2 can never duplicate contact_1. The student-side
+        -- gate fields (is_parent2, household_1_id) ride on the relationships
+        -- staging grain, so only the related contact's record is joined here.
         select r.finalsite_enrollment_id, r.rel_id, r.rel_name, r.rel_type, r.rn,
         from contact_1_ranked as r
         inner join
@@ -70,17 +76,10 @@ with
             on r.finalsite_enrollment_id = p.finalsite_enrollment_id
             and r.rel_id != p.rel_id
         inner join
-            {{ ref("int_finalsite__contact_custom_attributes") }} as ca
-            on r.finalsite_enrollment_id = ca.finalsite_enrollment_id
-            and ca.is_parent2
-        inner join
-            {{ ref("stg_finalsite__contacts") }} as st
-            on r.finalsite_enrollment_id = st.finalsite_enrollment_id
-        inner join
             {{ ref("stg_finalsite__contacts") }} as cp
             on r.rel_id = cp.finalsite_enrollment_id
-            and st.household_1_id in unnest(cp.household_ids)
-        where r.rn > 1 and not r.is_primary
+            and r.household_1_id in unnest(cp.household_ids)
+        where r.rn > 1 and not r.is_primary and r.is_parent2
     ),
 
     contact_2_ranked as (
