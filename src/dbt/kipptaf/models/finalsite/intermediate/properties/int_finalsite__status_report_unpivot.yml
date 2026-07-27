@@ -33,20 +33,48 @@ models:
         description: Finalsite contact/enrollment UUID.
       - name: powerschool_student_number
         data_type: int64
+        description: >
+          PowerSchool student number, from stg_finalsite__status_report. Null
+          for applicants/inquiries not yet matched to a PowerSchool record.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
+        description: Student's first name, title-cased.
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        description: Student's last name.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
+        description: >
+          Numeric grade level parsed from Finalsite's application_grade (K = 0),
+          from stg_finalsite__status_report.
       - name: enrollment_type
         data_type: string
+        description: >
+          Raw Finalsite enrollment type (e.g. new vs. returning); null values
+          default to 'New'.
       - name: self_contained
         data_type: string
+        description: >
+          Raw Finalsite self-contained classroom flag, from
+          stg_finalsite__status_report.
       - name: gender
         data_type: string
+        description: Student's gender, from stg_finalsite__status_report.
       - name: birthdate
         data_type: date
+        description: Student's date of birth.
+        config:
+          meta:
+            contains_pii: true
       - name: enrollment_academic_year
         data_type: int64
         description: >
@@ -56,6 +84,9 @@ models:
           fresh-dashboard-data-model.md's notes on active_school_year.
       - name: enrollment_academic_year_display
         data_type: string
+        description: >
+          Human-readable form of enrollment_academic_year, derived from
+          active_school_year (e.g. "2025-26").
       - name: fs_status_field
         data_type: string
         description: >
