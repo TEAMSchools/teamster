@@ -4,8 +4,6 @@ with
             _dagster_partition_key,
             finalsite_enrollment_id,
             last_name,
-            first_name,
-            enrollment_type,
             active_school_year,
             self_contained,
             assigned_school,
@@ -53,6 +51,22 @@ with
             cast(summer_withdraw_date as timestamp) as summer_withdraw_timestamp,
 
             cast(left(active_school_year, 4) as int) as active_school_year_int,
+
+            initcap(first_name) as first_name,
+
+            initcap(coalesce(enrollment_type, 'New')) as enrollment_type,
+
+            regexp_replace(
+                active_school_year, r'-\d{2}', '-'
+            ) as active_school_year_display,
+
+            case
+                when application_grade in ('PK', 'Prekindergarten')
+                then -1
+                when application_grade in ('K', 'Kindergarten')
+                then 0
+                else cast(regexp_extract(application_grade, r'\d+') as int)
+            end as grade_level,
         from {{ source("finalsite", "status_report") }}
         where powerschool_student_number is null or powerschool_student_number != 'test'
     )
