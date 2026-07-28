@@ -19,6 +19,7 @@ test.beforeEach(() => {
   delete process.env.CUBE_GROUP_MAP;
   delete process.env.NODE_ENV; // dev bypass in resolveAccess requires !== "production"
   delete process.env.CUBEJS_SQL_PASSWORD;
+  delete process.env.CUBE_IMPERSONATORS;
 });
 
 // resolveAccess caches per-email at module scope (until midnight ET) and the
@@ -260,4 +261,157 @@ test("resolveAccess (production path) fails closed to default-deny when BigQuery
   } finally {
     cached.exports = origExports;
   }
+});
+
+// --- Admin-gated emulation, REST surface (#4526) ----------------------------
+
+test("checkAuth: an impersonator's act_as resolves the TARGET's context", async () => {
+  process.env.CUBE_IMPERSONATORS = "admin1@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "admin1@apps.teamschools.org": ["staff-directory"],
+    "target1@apps.teamschools.org": ["student-network", "staff-directory"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "admin1@apps.teamschools.org",
+    act_as: "target1@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  assert.deepEqual(req.securityContext.groups, [
+    "student-network",
+    "staff-directory",
+  ]);
+});
+
+test("checkAuth: a NON-impersonator's act_as is ignored — own scope, not the target's", async () => {
+  // The critical negative case. act_as is attacker-controlled here: the caller
+  // signed their own valid token and asked for a broader identity.
+  process.env.CUBE_IMPERSONATORS = "admin2@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "teacher2@apps.teamschools.org": ["staff-directory"],
+    "target2@apps.teamschools.org": [
+      "student-network",
+      "staff-pii-all_in_scope",
+    ],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "teacher2@apps.teamschools.org",
+    act_as: "target2@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  assert.deepEqual(req.securityContext.groups, ["staff-directory"]);
+  assert.ok(!req.securityContext.groups.includes("staff-pii-all_in_scope"));
+});
+
+test("checkAuth: an impersonator with no act_as resolves their own context", async () => {
+  process.env.CUBE_IMPERSONATORS = "admin3@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "admin3@apps.teamschools.org": ["staff-directory"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "admin3@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  assert.deepEqual(req.securityContext.groups, ["staff-directory"]);
+});
+
+test("checkAuth: act_as for an unresolvable target fails closed to default-deny", async () => {
+  process.env.CUBE_IMPERSONATORS = "admin4@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "admin4@apps.teamschools.org": ["staff-directory"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "admin4@apps.teamschools.org",
+    act_as: "nobody4@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  // Emulating a non-existent viewer must NOT fall back to the caller's scope.
+  assert.deepEqual(req.securityContext.groups, []);
+});
+
+test("checkAuth: the impersonator list tolerates spacing and case", async () => {
+  process.env.CUBE_IMPERSONATORS =
+    " ADMIN5@Apps.Teamschools.Org , other@x.org ";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "admin5@apps.teamschools.org": ["staff-directory"],
+    "target5@apps.teamschools.org": ["student-network"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "admin5@apps.teamschools.org",
+    act_as: "target5@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  assert.deepEqual(req.securityContext.groups, ["student-network"]);
+});
+
+test("checkAuth: with no impersonators configured, act_as is inert", async () => {
+  // The production default until the variable is set: emulation is off.
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "caller6@apps.teamschools.org": ["staff-directory"],
+    "target6@apps.teamschools.org": ["student-network"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "caller6@apps.teamschools.org",
+    act_as: "target6@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  assert.deepEqual(req.securityContext.groups, ["staff-directory"]);
+});
+
+test("checkAuth: the target email reaches resolveAccess with its case intact", async () => {
+  // resolveAccess matches google_email exactly and keys its cache on the raw
+  // string, so the hook must not normalize what it forwards.
+  process.env.CUBE_IMPERSONATORS = "admin7@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "MixedTarget7@Apps.Teamschools.Org": ["student-network"],
+    "mixedtarget7@apps.teamschools.org": ["staff-directory"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "admin7@apps.teamschools.org",
+    act_as: "MixedTarget7@Apps.Teamschools.Org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const req = {};
+  await cube.checkAuth(req, token);
+
+  // The mixed-case key resolved, not the lowercased one.
+  assert.deepEqual(req.securityContext.groups, ["student-network"]);
 });

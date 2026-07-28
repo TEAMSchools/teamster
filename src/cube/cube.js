@@ -197,6 +197,20 @@ const SNAPSHOT_MEASURE_STEMS = {
   student_enrollments: ["count_students"],
 };
 
+// Emulation moves PII visibility, so every emulated request leaves a trail in
+// the deployment logs. Identities and a timestamp only — never row data.
+function logEmulation(surface, caller, target) {
+  console.log(
+    JSON.stringify({
+      event: "cube_emulation",
+      surface,
+      caller,
+      target,
+      at: new Date().toISOString(),
+    }),
+  );
+}
+
 module.exports = {
   driverFactory: () => ({
     type: "bigquery",
@@ -215,7 +229,7 @@ module.exports = {
     // way, and this lets an unauthenticated capability probe get a no-access
     // context rather than an error. The 403 is reserved for a token that is
     // present but invalid.
-    let email;
+    let payload;
     if (auth) {
       try {
         // maxAge is a defense-in-depth cap independent of the token's own
@@ -225,7 +239,7 @@ module.exports = {
         // maxAge is set (fails closed). `mcp/server.py`'s `_mint_token` sets
         // both `iat` and a 5-minute `exp`, so this 12h ceiling is a backstop,
         // not the primary control.
-        const payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
+        payload = jwt.verify(auth, process.env.CUBEJS_API_SECRET, {
           algorithms: ["HS256"],
           maxAge: "12h",
           // Absorb minor minter/server clock skew so a short-lived (5-min) token
@@ -234,14 +248,24 @@ module.exports = {
           // still rejected.
           clockTolerance: 30,
         });
-        email = payload?.email;
       } catch (err) {
         // Mirror Cube's default checkAuth: a bad/expired token is a clean 403,
         // not a bare-Error 500 (only CubejsHandlerError carries a status).
         throw new CubejsHandlerError(403, "Forbidden", "Invalid token", err);
       }
     }
-    req.securityContext = await resolveAccess(email);
+    // Admin-gated emulation (#4526): an approved impersonator may pass an
+    // `act_as` claim and get that target's real HR-derived context. For anyone
+    // else `act_as` is ignored and they keep their own scope. The gate reads the
+    // SIGNED `email` claim, so it is unforgeable. A future API-key branch
+    // (#4501) slots in beside this one — it resolves a different context source,
+    // not a different emulation rule.
+    const { caller, target, emulating } = access.resolveEmulationTarget({
+      ...access.emulationInputsFromToken(payload),
+      impersonators: access.parseImpersonators(process.env.CUBE_IMPERSONATORS),
+    });
+    if (emulating) logEmulation("rest", caller, target);
+    req.securityContext = await resolveAccess(target);
   },
 
   checkSqlAuth: async (req, user, password) => {
