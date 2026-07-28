@@ -58,11 +58,12 @@ with
 
             row_number() over (
                 partition by person_id, phone_type
-                order by detail_priority asc nulls last
+                order by detail_priority asc nulls last, value asc
             ) as type_rank,
 
             row_number() over (
-                partition by person_id order by detail_priority asc nulls last
+                partition by person_id
+                order by detail_priority asc nulls last, value asc
             ) as overall_rank,
         from phones
         where phone_type is not null
