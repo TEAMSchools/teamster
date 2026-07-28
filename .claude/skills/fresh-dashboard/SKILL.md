@@ -117,10 +117,12 @@ staleness).
 
 ### `-1` candidate-row generator (scaffold sheet)
 
-Lists every currently-existing, non-Miami school missing its `grade_level = -1`
-row in `stg_google_sheets__finalsite__school_scaffold` for the current academic
-year — Miami needs its full spine, not just this generator's output (see the
-Miami note above).
+Lists every currently-existing, non-Miami school missing its whole-school-total
+row (`grade_level = -9` in `stg_google_sheets__finalsite__school_scaffold`, the
+staging model's recode of the sheet's own `-1`) for the current academic year —
+Miami needs its full spine, not just this generator's output (see the Miami note
+above). The query's own paste value stays `-1` (see the join comment below for
+why).
 
 ```sql
 select distinct
@@ -131,9 +133,14 @@ select distinct
   -1 as grade_level,
   'KTAF' as org,
 from `teamster-332318`.kipptaf_powerschool.stg_powerschool__schools as ps
+-- NOTE the asymmetry: -1 above is the value to PASTE INTO THE SHEET (Ops
+-- convention). This join reads stg_google_sheets__finalsite__school_scaffold,
+-- which RECODES that same sheet's -1 to -9 on the way in -- so the anti-join
+-- below must match -9, or it matches zero rows and this query would
+-- (incorrectly) flag every non-Miami school as missing its whole-school row.
 left join `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__school_scaffold as s
   on ps.school_number = s.schoolid
-  and s.grade_level = -1
+  and s.grade_level = -9
   and s.academic_year = 2026 -- finalsite year toggle: see skill
 where
   ps.state_excludefromreporting = 0
@@ -155,12 +162,14 @@ goals sheet. A genuinely new school/grade has no prior-year pattern to project �
 flag it for the analyst to pick goal types manually rather than silently
 skipping it.
 
-- **`School` rows** (`grade_level = -1`) — keyed by `schoolid`. Copy that
-  school's own existing `(goal_type, goal_name)` combo-set forward. Verified
-  during design: this set is uniform across almost every school, with one real
-  exception (Miami's MTH lacks the lottery-based categories — Accepted / Offers
-  / Pending Offers — at `School` granularity) that a per-school copy-forward
-  rule handles correctly without special-casing.
+- **`School` rows** (`grade_level = -9` in `stg_google_sheets__finalsite__goals`
+  and the enrollment scaffold; the goals sheet itself still stores this as `-1`)
+  — keyed by `schoolid`. Copy that school's own existing
+  `(goal_type, goal_name)` combo-set forward. Verified during design: this set
+  is uniform across almost every school, with one real exception (Miami's MTH
+  lacks the lottery-based categories — Accepted / Offers / Pending Offers — at
+  `School` granularity) that a per-school copy-forward rule handles correctly
+  without special-casing.
 - **`School/Grade Level` rows** — keyed by `(schoolid, grade_level)`, same
   copy-forward rule applied per grade in the new scaffold.
 - **`Region/Grade Level` rows** (Inquiries, Applications, Deferred, Waitlisted,
@@ -179,17 +188,19 @@ Finalsite-status → category mapping is institutional judgment, not computable)
 year", "bump the Finalsite recruitment year", "the goals sheet is now on [year],
 update the dashboard"
 
-**Why this is hardcoded, not derived:** two separate attempts to compute "the
-current Finalsite cycle" automatically were built and then reverted (see
-`git log` on `int_tableau__finalsite_student_scaffold.sql` for both). Finalsite
-can carry two concurrent academic years of live student data at once — students
-and regions roll over on their own uncoordinated timeline — so there's no
-reliable signal in the ingested data itself for "which year is current now."
-Unlike PowerSchool's `var("current_academic_year")`, which bumps on a
-predictable July 1 cadence, SRE's recruitment-cycle timeline is fluid — there is
-no fixed date to key an automatic bump off of. **Always confirm the new year
-with SRE (or by reading the goals sheet directly) before changing anything below
-— don't infer it from a calendar date or from ingestion data.**
+**Why this is a dedicated, manually-bumped var, not derived:** the value lives
+in `finalsite_recruitment_year` (`src/dbt/kipptaf/dbt_project.yml`), but that
+var doesn't compute itself — two separate attempts to compute "the current
+Finalsite cycle" automatically were built and then reverted (see `git log` on
+`int_tableau__finalsite_student_scaffold.sql` for both). Finalsite can carry two
+concurrent academic years of live student data at once — students and regions
+roll over on their own uncoordinated timeline — so there's no reliable signal in
+the ingested data itself for "which year is current now." Unlike PowerSchool's
+`var("current_academic_year")`, which bumps on a predictable July 1 cadence,
+SRE's recruitment-cycle timeline is fluid — there is no fixed date to key an
+automatic bump off of. **Always confirm the new year with SRE (or by reading the
+goals sheet directly) before changing anything below — don't infer it from a
+calendar date or from ingestion data.**
 
 **Step 0 — pre-flight: confirm the sheets are actually ready for the new year.**
 Toggling the literal before the source sheets carry the new year's data doesn't
@@ -213,18 +224,21 @@ until both are resolved:
    would make `latest_status_calc`'s `inner join` (and every other site below)
    silently return zero rows for the new year.
 
-2. **`school_scaffold` has its `-1` rows for the new year, for every
-   currently-existing non-Miami school:** run the `-1` candidate-row generator
-   above, but with `<new_year>` substituted for `2026` in both places (the
-   generator's own hardcoded year is a pre-toggle artifact — it's still pointed
-   at the outgoing year until you do this substitution). For a brand-new
+2. **`school_scaffold` (the sheet) has its `-1` whole-school rows for the new
+   year, for every currently-existing non-Miami school** — all sheet-world
+   references below use the sheet's own `-1` convention, not the recoded `-9`
+   that appears once these rows reach
+   `stg_google_sheets__finalsite__school_scaffold`: run the `-1` candidate-row
+   generator above, but with `<new_year>` substituted for `2026` in both places
+   (the generator's own hardcoded year is a pre-toggle artifact — it's still
+   pointed at the outgoing year until you do this substitution). For a brand-new
    academic year the sheet typically has **zero** rows yet, so this isn't a
    partial-gap check — the generator's full output _is_ the complete `-1` row
-   set the new year needs. Since the PowerSchool builder can never produce `-1`
-   rows (structural, not a gap that closes on its own), don't just report that
-   gaps exist: **run the query now and hand the user its full result as a
-   ready-to-paste block** (plain delimited rows in a fenced code block, one row
-   per line, matching the "Goals-sheet gap-row generator" batch-delivery
+   set the new year needs. Since the PowerSchool builder can never produce a
+   whole-school row (structural, not a gap that closes on its own), don't just
+   report that gaps exist: **run the query now and hand the user its full result
+   as a ready-to-paste block** (plain delimited rows in a fenced code block, one
+   row per line, matching the "Goals-sheet gap-row generator" batch-delivery
    convention — not a markdown table), so they can paste it directly into
    `stg_google_sheets__finalsite__school_scaffold` before or alongside the
    toggle. Leaving this until "later" means every affected school's

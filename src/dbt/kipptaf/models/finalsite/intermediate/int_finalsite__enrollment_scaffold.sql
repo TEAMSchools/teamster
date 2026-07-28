@@ -29,10 +29,11 @@ with
     -- low_grade years below any student they've ever enrolled). enroll_status
     -- = 0 is "Currently Enrolled" -- this table has no academic_year column,
     -- so status (not a date range) is what scopes it to now. Also filters
-    -- out negative grade_level (PowerSchool's own domain for
-    -- pre-registration / pre-K, a different, real meaning) so it can never
-    -- collide with the scaffold's grade_level = -9 "whole school total"
-    -- sentinel, which always comes from gsheet_scaffold below.
+    -- out negative grade_level: PowerSchool uses negative values for its own
+    -- pre-registration / pre-K domain, and since this pipeline's convention
+    -- is grade_level = -1 means PK, an unfiltered PowerSchool negative row
+    -- would masquerade as a legitimate PK enrollment instead of being
+    -- excluded as pre-registration noise.
     -- Known caveat: a school's very first student in a newly-opening grade
     -- may not be entered in PowerSchool yet even though Finalsite is already
     -- recruiting for that grade -- this scaffold won't carry that grade

@@ -77,10 +77,12 @@ totals, genuinely new schools/grades, all of Miami).
   `stg_powerschool__schools` is filtered to `state_excludefromreporting = 0`
   first — it includes non-reporting/ administrative rows (e.g. the `999999`
   "Graduated Students" sentinel) that would otherwise produce garbage scaffold
-  rows. `current_grade_levels` also filters `grade_level >= 0` — PowerSchool's
-  own grade-level domain uses negative values for a different, real meaning
-  (pre-registration/pre-K), and must never produce a `grade_level = -1` row
-  indistinguishable from the scaffold's own `-9` sentinel (see below).
+  rows. `current_grade_levels` also filters `grade_level >= 0` — PowerSchool
+  uses negative `grade_level` values for its own pre-registration/pre-K domain,
+  and now that this pipeline's convention is `grade_level = -1` means PK (see
+  below), an unfiltered PowerSchool negative-grade row would masquerade as a
+  legitimate PK enrollment row rather than being excluded as pre-registration
+  noise.
 - **Sheet builder** — `stg_google_sheets__finalsite__school_scaffold`, filtered
   to `finalsite_recruitment_year` (see "The current academic year" section below
   -- so a stale row from a prior, closed cycle can never look like "PowerSchool

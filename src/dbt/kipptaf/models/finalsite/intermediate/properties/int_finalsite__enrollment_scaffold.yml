@@ -29,6 +29,22 @@ models:
               - grade_level
           config:
             severity: error
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - schoolid
+              - grade_level
+          config:
+            severity: warn
+          description: >
+            Drift guard for the PowerSchool/sheet blend's anti-join key (region,
+            schoolid, grade_level). That key is correct but strictly narrower
+            than (schoolid, grade_level) alone -- if the sheet's typed region
+            ever disagrees with extract_region()'s output for the same school,
+            the sheet row stops being suppressed and this uniqueness check
+            (which drops region) catches the resulting duplicate school/grade
+            pair under two region labels.
     columns:
       - name: academic_year
         data_type: int64
