@@ -336,6 +336,11 @@ with
     -- infosnap_id both carry rn_year = 1 and fan out the enrollment joins below.
     -- Prefer the actively-enrolled record, then the newest student record.
     -- TODO: remove once the duplicate PowerSchool student records are merged (#4326)
+    -- Cross-source tiebreak: when a student appears in both the frozen
+    -- pre-migration PowerSchool snapshot and live Focus data with the same
+    -- enroll_status, student_number desc prefers the Focus record (Focus ids
+    -- are 10-digit FLDOE-prefixed, PowerSchool ids are shorter) -- intentional:
+    -- Focus is Miami's live SIS. TODO(#4326) covers duplicate PS records.
     deduplicate_enrollments as (
         {{
             dbt_utils.deduplicate(

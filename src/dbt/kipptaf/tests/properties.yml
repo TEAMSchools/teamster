@@ -36,7 +36,6 @@ data_tests:
       same school/grade -- that row is being silently dropped from
       int_finalsite__goals_scaffold's inner join.
     config:
-      severity: warn
       meta:
         dagster:
           ref:

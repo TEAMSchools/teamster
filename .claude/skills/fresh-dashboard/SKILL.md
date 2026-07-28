@@ -24,13 +24,16 @@ description: >-
 **Key facts to confirm before touching anything:**
 
 - `academic_year` is start-year form (AY2026-2027 = `2026`).
-- Miami is **always** 100% sheet-sourced, regardless of
-  `finalsite_scaffold_source` — a deliberate, temporary carve-out (Miami's SIS
-  moved to Focus, not ready yet as a scaffold source). Don't "fix" this by
-  trying to onboard Miami schools into `stg_powerschool__schools` — ask first.
-- `grade_level = -1` means "whole-school total row" in this scaffold's
+- Miami is **always** 100% sheet-sourced — a deliberate, temporary carve-out
+  (Miami's SIS moved to Focus, not ready yet as a scaffold source). Don't "fix"
+  this by trying to onboard Miami schools into `stg_powerschool__schools` — ask
+  first.
+- `grade_level = -9` means "whole-school total row" in this scaffold's
   convention — never conflate with PowerSchool's own use of negative grade
-  levels (pre-registration/pre-K).
+  levels (pre-registration/pre-K). The scaffold sheet itself still stores this
+  row as `-1`; it's recoded to `-9` at
+  `stg_google_sheets__finalsite__school_scaffold` so `-1` can mean PK everywhere
+  downstream.
 - The goals sheet is a **live-read** Google Sheets external table — a number can
   change between two queries run seconds apart if someone is editing it. A
   mismatch against a materialized table doesn't necessarily mean a bug; check

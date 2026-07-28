@@ -23,15 +23,29 @@ stg_finalsite__status_report ─▶ int_finalsite__status_report_unpivot ─┐
                                                                         ├─▶ int_tableau__finalsite_student_scaffold ─▶ both rpt_ models above
 stg_google_sheets__finalsite__status_crosswalk ─▶ int_google_sheets__finalsite__status_crosswalk_unpivot ─┘                    ▲
                                                                                                                                   │
-int_extracts__student_enrollments (PowerSchool-only, zero Miami rows) ──────────────────────────────────────────────────────────┘
-
-"the current cycle" ─▶ hardcoded literal at each model above needing it (not derived -- see "The current academic year" section below)
+int_extracts__student_enrollments (PowerSchool-only, zero Miami rows) ──────────────────────────────────────────────────────────┤
+int_focus__student_enrollments (Miami-only, Focus-sourced) ──────────────────────────────────────────────────────────────────────┘
 ```
 
 The **scaffold** (school × grade spine) and the **goals** (numeric targets) are
 two independent inputs that get joined together. The **actuals** (where students
 actually are in the recruitment funnel) come from a completely separate
 Finalsite pipeline, joined in downstream.
+
+**Package boundaries**: `stg_finalsite__status_report`'s cleaning (grade decode,
+`enrollment_type` default/initcap, `first_name` initcap,
+`active_school_year_display`) lives in the `finalsite` source-system package
+(`src/dbt/finalsite/models/sftp/staging/`); the kipptaf-level model of the same
+name is a thin `union_relations` wrapper over the four district sources plus
+`region` / `_dbt_source_project` / the `exclude_ids` filter.
+`int_focus__student_enrollments` (plural) is likewise a thin kipptaf wrapper —
+adding the Finalsite-ID crosswalk, the locations crosswalk, `region`,
+`district`, `region_school_level` — over the `focus` package's
+`int_focus__student_enrollment` (singular), which carries the full enrollment
+derivation. The three `stg_focus__*` passthroughs this used to depend on
+(`school_gradelevels`, `student_enrollment_codes`,
+`custom_field_select_options`) no longer exist — their source entries were
+removed along with them.
 
 ## The scaffold: `int_finalsite__enrollment_scaffold`
 
@@ -40,14 +54,11 @@ This model produces one row per `(academic_year, region, schoolid, grade_level)`
 Google Sheet with a model that prefers PowerSchool-native data and falls back to
 the sheet only where PowerSchool doesn't have it.
 
-**Two builders, blended, controlled by one dbt var (`finalsite_scaffold_source`,
-`kipptaf/dbt_project.yml`, default `blend`):**
-
-| Value             | Behavior                                                                                                                             |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `gsheet`          | Sheet builder only.                                                                                                                  |
-| `powerschool`     | PowerSchool builder only. Never produces `-1` rows on its own.                                                                       |
-| `blend` (default) | PowerSchool builder, plus sheet rows whose `(schoolid, grade_level)` key is absent from it. PowerSchool wins on any overlapping key. |
+**Two builders, always blended** — there is no mode switch. PowerSchool rows
+form the base; sheet rows are anti-joined in on the composite key
+`(region, schoolid, grade_level)`, so PowerSchool wins on any overlapping key
+and the sheet fills in everything PowerSchool doesn't cover (whole-school
+totals, genuinely new schools/grades, all of Miami).
 
 - **PowerSchool builder** — grade membership comes from actual current
   enrollment (`stg_powerschool__students`, `enroll_status = 0`), joined to
@@ -69,35 +80,37 @@ the sheet only where PowerSchool doesn't have it.
   rows. `current_grade_levels` also filters `grade_level >= 0` — PowerSchool's
   own grade-level domain uses negative values for a different, real meaning
   (pre-registration/pre-K), and must never produce a `grade_level = -1` row
-  indistinguishable from the scaffold's own `-1` sentinel (see below).
+  indistinguishable from the scaffold's own `-9` sentinel (see below).
 - **Sheet builder** — `stg_google_sheets__finalsite__school_scaffold`, filtered
-  to the current academic year (a hardcoded literal -- see "The current academic
-  year" section below -- so a stale row from a prior, closed cycle can never
-  look like "PowerSchool doesn't have this yet"). Supplies what PowerSchool
-  structurally can't: every school's `grade_level = -1` whole-school-total row,
-  and genuinely new schools/grades not yet live in PowerSchool.
+  to `finalsite_recruitment_year` (see "The current academic year" section below
+  -- so a stale row from a prior, closed cycle can never look like "PowerSchool
+  doesn't have this yet"). Supplies what PowerSchool structurally can't: every
+  school's whole-school-total row, and genuinely new schools/grades not yet live
+  in PowerSchool.
 
-**Important: `grade_level = -1` means "whole-school total row" in this
+**Important: `grade_level = -9` means "whole-school total row" in this
 scaffold's convention** — a reporting convenience, not a PowerSchool concept.
-The PowerSchool builder never synthesizes a `-1` row — it's always
+The sheet itself still stores this row as `-1` (Ops changes nothing there); the
+staging model (`stg_google_sheets__finalsite__school_scaffold`) recodes `-1` to
+`-9` so that `-1` can mean PK everywhere downstream (PK = `-1`, K = `0`, 1-12 =
+`1`-`12`). The PowerSchool builder never synthesizes a `-9` row — it's always
 sheet-sourced, by design.
 
 **Miami carve-out (deliberate and temporary):** Miami is excluded from the
-PowerSchool builder entirely, unconditionally, regardless of the
-`finalsite_scaffold_source` var. Miami's SIS moved to Focus
+PowerSchool builder entirely, unconditionally. Miami's SIS moved to Focus
 (`src/dbt/powerschool/CLAUDE.md`, #4441) and no longer consumes the PowerSchool
 package — `stg_powerschool__schools`' Miami rows are a frozen pre-migration
 snapshot, not a live source of truth. Some actively-recruited Miami schools
 (Legacy ES, Legacy MS, MTH as of AY2026) were never onboarded to PowerSchool
 post-migration at all — a permanent gap, not a transitional one PowerSchool
 coverage will ever close on its own. Miami stays 100% sheet-sourced (a full
-spine — every school, every grade, not just `-1` rows and net-new entries) until
+spine — every school, every grade, not just `-9` rows and net-new entries) until
 Focus is ready as a scaffold source and this is revisited.
 
-Because the PowerSchool builder never emits a `-1` row and never covers Miami,
-`blend`'s single rule ("PowerSchool wins on any overlapping key; sheet fills the
-rest") naturally and correctly handles `-1` rows, genuinely-new grades/schools,
-and all of Miami — no special-casing needed for any of them.
+Because the PowerSchool builder never emits a `-9` row and never covers Miami,
+the blend's single rule ("PowerSchool wins on any overlapping key; sheet fills
+the rest") naturally and correctly handles `-9` rows, genuinely-new
+grades/schools, and all of Miami — no special-casing needed for any of them.
 
 **`school_level` on PowerSchool-sourced rows is derived per expanded
 grade_level** (`>=9` HS, `>=5` MS, else ES) — **not** read from
@@ -109,12 +122,12 @@ downstream models that need that override). Because this scaffold computes
 `school_level` fresh, per grade, it already gets Sumner right (`ES` for grades
 0–4, `MS` for grades 5/6) with zero special-casing.
 
-## The current academic year: hardcoded, not derived
+## The current academic year: a dedicated var, not `current_academic_year`
 
-"The current Finalsite recruitment cycle" is a **hardcoded literal** (`2026` as
-of this writing) at each site that needs it, not a column, var, or joined value.
-Two attempts to derive it automatically were built and reverted (see `git log`
-on `int_tableau__finalsite_student_scaffold.sql`): Finalsite can carry **two
+"The current Finalsite recruitment cycle" is the `finalsite_recruitment_year`
+dbt var (`src/dbt/kipptaf/dbt_project.yml`), read at every FRESH site that needs
+it — not a column or joined value, and not the same var as
+`current_academic_year`. It's a distinct var because Finalsite can carry **two
 concurrent academic years of live student data at once** during a transition
 period — individual students and regions roll over on their own uncoordinated
 timeline, with no standardized cadence — so there's no reliable signal in the
@@ -123,17 +136,16 @@ timeline is similarly fluid, with no fixed date (unlike PowerSchool's
 `var('current_academic_year')`, which bumps on a predictable July 1 cadence) to
 key an automatic bump off of.
 
-Every hardcode site is marked `-- finalsite year toggle: see skill` (or the
-block-comment form). See the fresh-dashboard skill's "Procedure: Update the
-Finalsite recruitment year" section for the full file list and update steps —
-always confirm the new year with SRE before changing any of them.
+See the fresh-dashboard skill's "Procedure: Update the Finalsite recruitment
+year" section for the full file list and update steps — always confirm the new
+year with SRE before changing it.
 
 `status_crosswalk` still holds config for **exactly one academic year at a
 time** by convention, guarded by
 `test_stg_google_sheets__finalsite__status_crosswalk_single_year` (asserting
 `count(distinct file_year) = 1`) — this guards against the sheet's config ever
-drifting out of sync with whatever year is currently hardcoded across the
-consumers above.
+drifting out of sync with whatever year `finalsite_recruitment_year` is
+currently set to.
 
 ## Goal definitions
 
@@ -333,8 +345,8 @@ numbers and the dashboard:
   under, and it's genuinely mixed at any moment (verified: as of this writing
   27,511 rows sit on `2026-2027`, 1,492 are still on the prior `2025-2026`, and
   a handful are already on `2027-2028`/`2028-2029`). Comparing this per-record
-  value against the current hardcoded year (see "The current academic year"
-  section above) could give `int_finalsite__enrollment_scaffold`'s blend mode a
+  value against `finalsite_recruitment_year` (see "The current academic year"
+  section above) could give `int_finalsite__enrollment_scaffold`'s blend a
   per-student or per-school rollover signal, instead of relying solely on the
   single network-wide current-year anchor. Not yet designed or implemented -- an
   idea to explore, not a decision.
