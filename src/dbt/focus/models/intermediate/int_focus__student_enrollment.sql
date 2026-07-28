@@ -5,6 +5,7 @@ with
             s.last_name as student_last_name,
             s.florida_education_identifier as fteid,
             s.student_e_mail_address as student_email,
+            s.student_id as student_number,
 
             e.id as student_enrollment_id,
             e.syear as academic_year,
@@ -23,8 +24,6 @@ with
             dc.short_name as exitcode,
 
             fd.first_day_of_school,
-
-            s.student_id as student_number,
 
             cast(s.birthdate as date) as dob,
 
