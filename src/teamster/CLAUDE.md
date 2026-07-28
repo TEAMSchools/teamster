@@ -154,8 +154,11 @@ All use Hive-style partitioned GCS paths.
 
 **Avro schema validation**: All asset factories yielding Avro output call
 `build_check_spec_avro_schema_valid()` + `check_avro_schema_valid()` from
-`core/asset_checks.py` (warns on extra fields, doesn't fail). Clear a drift
-warning by adding the field to the **Pydantic model** in
+`core/asset_checks.py` (warns on extra fields, doesn't fail). The check compares
+TOP-LEVEL record keys only — extra fields inside a nested struct (e.g. a new
+`households` subfield) are silently dropped by the Avro writer and never
+flagged; a clean check is not evidence of nested coverage. Clear a drift warning
+by adding the field to the **Pydantic model** in
 `libraries/<integration>/.../schema.py` (the code-location `schema.py` only
 regenerates the Avro via `py_avro_schema.generate()`) — there is no allowlist,
 the fix is always to declare the field. Shared models (e.g. amplify mclass

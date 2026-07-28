@@ -46,3 +46,18 @@ models:
       - name: has_portal_access
         data_type: boolean
         description: Whether the related person has Finalsite portal access.
+      - name: household_1_id
+        data_type: string
+        description:
+          Finalsite id of the OWNING contact's first household ("household 1") —
+          a record-owner field carried onto the relationship grain, matching
+          `stg_finalsite__contacts.household_1_id` for
+          `finalsite_enrollment_id`. It never describes the related person
+          (`rel_id`).
+      - name: is_parent2
+        data_type: boolean
+        description:
+          Boolean value of the OWNING contact's `is_parent2` custom field ("this
+          student has a Parent 2"); null when the field is unset. A record-owner
+          field carried onto the relationship grain — it never describes the
+          related person (`rel_id`).
