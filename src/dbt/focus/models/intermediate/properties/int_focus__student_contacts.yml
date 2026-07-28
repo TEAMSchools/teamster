@@ -5,11 +5,16 @@ models:
       (students_join_people), enriched with the person's name and email, typed
       phone numbers pivoted from people_join_contacts, the link's address, and
       household membership (the link address matches one of the student's own
-      addresses). Unslotted and uncapped by design — contact_slot assignment
-      (contact_1 / emergency_N) happens at the kipptaf reporting layer. Flag
-      booleans are null-preserving — null means the flag is unmaintained in
-      Focus, not false. Internal-only; a rpt_ view must sit between this model
-      and any external consumer.
+      residence addresses). Unslotted and uncapped by design — contact_slot
+      assignment (contact_1 / emergency_N) happens at the kipptaf reporting
+      layer. Flag booleans are null-preserving — null means the flag is
+      unmaintained in Focus, not false. Internal-only; a rpt_ view must sit
+      between this model and any external consumer. The (student_id, person_id)
+      grain test is error-severity but not enforced upstream
+      (stg_focus__students_join_people is unique on id only). If it fires, Focus
+      has emitted multiple link rows for one student-person pair — expected
+      cause is one row per address — so collapse to the residence-flagged
+      address in this model rather than relaxing the test.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -115,4 +120,6 @@ models:
       - name: is_household_member
         description: >-
           Whether the contact's linked address matches one of the student's own
-          addresses. Null when the link carries no address.
+          residence addresses (residence = 'Y' in
+          stg_focus__students_join_address — not mailing or bus-stop addresses).
+          Null when the link carries no address.

@@ -24,18 +24,23 @@ with
             last_name as contact_last_name,
             email,
 
-            array_to_string([first_name, last_name], ' ') as contact_name,
+            nullif(array_to_string([first_name, last_name], ' '), '') as contact_name,
         from {{ ref("stg_focus__people") }}
     ),
 
     -- contact detail rows are free-typed by title; map to the phone-type
-    -- vocabulary shared with the Finalsite contacts intermediate. Unmapped
-    -- titles are surfaced by the focus_unmapped_phone_contact_titles test.
+    -- vocabulary shared with the Finalsite contacts intermediate. Email-shaped
+    -- titles (e.g. "Home Email") also match the home/work substrings below, so
+    -- they are excluded up front rather than mistyped as phones. value is
+    -- blank-normalized here so phones_ranked can filter the plain column.
+    -- Unmapped titles are surfaced by the focus_unmapped_phone_contact_titles
+    -- test.
     phones as (
         select
             person_id,
-            value,
             detail_priority,
+
+            nullif(trim(value), '') as `value`,
 
             case
                 when regexp_contains(lower(title), r'cell|mobile')
@@ -48,6 +53,7 @@ with
                 then 'daytime'
             end as phone_type,
         from {{ ref("stg_focus__people_join_contacts") }}
+        where not regexp_contains(lower(title), r'e-?mail')
     ),
 
     phones_ranked as (
@@ -66,7 +72,7 @@ with
                 order by detail_priority asc nulls last, value asc
             ) as overall_rank,
         from phones
-        where phone_type is not null
+        where phone_type is not null and value is not null
     ),
 
     phones_typed as (
@@ -82,7 +88,7 @@ with
         group by person_id
     ),
 
-    -- read off the unfiltered rank, not phones_typed's type_rank = 1 filter --
+    -- read off the unfiltered rank, not phones_typed's type_rank = 1 filter
     -- the overall_rank = 1 row can belong to a phone_type the type_rank filter
     -- has already discarded, so this must not read through that filter.
     primary_phone as (
@@ -101,11 +107,15 @@ with
         from {{ ref("stg_focus__address") }}
     ),
 
-    -- grain projection: one row per (student, address) the student resides at
+    -- one row per (student, address) the student resides at — residence = 'Y'
+    -- only, matching the Finalsite lives_with_yn semantics is_household_member
+    -- maps onto in Phase 2.
+    -- grain projection: student_id, address_id are the partition key itself;
+    -- not a mask for upstream duplicates
     student_addresses as (
-        select student_id, address_id,
+        select distinct student_id, address_id,
         from {{ ref("stg_focus__students_join_address") }}
-        group by student_id, address_id
+        where residence = 'Y'
     )
 
 select
