@@ -1,3 +1,26 @@
+with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    responses as (
+        select
+            employee_number,
+            academic_year,
+            survey_code,
+            survey_response_id,
+            date_submitted,
+        from {{ ref("rpt_tableau__survey_responses") }}
+        where round_rn <= 1
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="responses",
+                partition_by="employee_number, academic_year, survey_code",
+                order_by="date_submitted desc",
+            )
+        }}
+    )
+
 select
     sl.employee_number,
     sl.assignment_status,
@@ -12,15 +35,14 @@ select
     sl.survey_round,
     sl.is_current,
     sl.mail,
+
     sr.survey_response_id,
+
     if(sr.survey_response_id is not null, 1, 0) as completion,
 from {{ ref("rpt_tableau__survey_links") }} as sl
 left join
-    {{ ref("rpt_tableau__survey_responses") }} as sr
+    deduplicate as sr
     on sl.employee_number = sr.employee_number
     and sl.academic_year = sr.academic_year
     and sl.survey_round = sr.survey_code
-where
-    sr.round_rn is null
-    or sr.round_rn <= 1
-    and sl.survey not in ('TNTP Insight Survey', 'Gallup Q12 Survey')
+where sl.survey not in ('TNTP Insight Survey', 'Gallup Q12 Survey')
