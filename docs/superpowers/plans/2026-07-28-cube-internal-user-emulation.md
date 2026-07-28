@@ -33,6 +33,15 @@ tool, `uv` for all Python execution.
   negative test in every task that touches a hook.
 - **Fail closed.** An absent, unknown, or unresolvable caller or target resolves
   to the empty default-deny context, never to a broader one.
+- **Never rewrite the email handed to `resolveAccess`** — not case, not
+  whitespace. It runs `WHERE google_email = @email` and keys its cache on the
+  raw string, and `checkSqlAuth` passes the connecting user through verbatim, so
+  any normalization here silently desyncs the two auth paths. Compare
+  case-insensitively where you must (impersonator membership, the self-check);
+  pass the original value downstream. All 1,614 `dim_staff_cube_access` rows are
+  lowercase today, but the model applies no `lower()` and the column's only test
+  is `not_null` — that is an incidental property of the upstream source, not an
+  invariant to build on.
 - **Impersonator source v1 is the `CUBE_IMPERSONATORS` deployment variable**
   (comma-separated emails). The warehouse-column source
   (`dim_staff_cube_access.is_cube_impersonator`) is explicitly out of scope;
@@ -164,6 +173,33 @@ test("resolveEmulationTarget: an impersonator resolves the requested target", ()
   });
 });
 
+test("resolveEmulationTarget: the returned emails keep their original case", () => {
+  // resolveAccess queries `WHERE google_email = @email` and keys its cache on
+  // the raw string, so lowercasing here would change resolution for every
+  // request and fail-close any non-lowercase google_email. Membership matching
+  // is case-insensitive; the value passed downstream is not rewritten.
+  const r = a.resolveEmulationTarget({
+    callerEmail: "Admin@X.org",
+    requestedTarget: "Teacher@X.org",
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.equal(r.caller, "Admin@X.org");
+  assert.equal(r.target, "Teacher@X.org");
+  assert.equal(r.emulating, true);
+});
+
+test("resolveEmulationTarget: a non-emulated caller is passed through unchanged", () => {
+  // The regression guard for every ordinary request: the email reaching
+  // resolveAccess must be byte-identical to the one in the token.
+  const r = a.resolveEmulationTarget({
+    callerEmail: "MixedCase@Apps.Teamschools.Org",
+    requestedTarget: null,
+    impersonators: a.parseImpersonators(""),
+  });
+  assert.equal(r.target, "MixedCase@Apps.Teamschools.Org");
+  assert.equal(r.emulating, false);
+});
+
 test("resolveEmulationTarget: a NON-impersonator gets their OWN scope, not the target", () => {
   // The critical negative case: supplying a target must never elevate.
   const r = a.resolveEmulationTarget({
@@ -291,19 +327,26 @@ function isImpersonator(email, impersonators) {
 // block — gets their OWN scope, never the target's. Fail-closed: no caller
 // means no emulation and a null target, which resolveAccess turns into the
 // empty default-deny context.
+//
+// CASE IS PRESERVED on the returned emails, deliberately. Comparisons here are
+// case-insensitive, but `target` is handed to resolveAccess, which queries
+// `WHERE google_email = @email` and keys its cache on the raw string. Returning
+// a lowercased email would change resolution for EVERY request (not just
+// emulated ones), silently fail-closing any staff row whose google_email is not
+// already lowercase, and desyncing this path from checkSqlAuth, which passes
+// the connecting user through verbatim.
 function resolveEmulationTarget({
   callerEmail,
   requestedTarget,
   impersonators,
 }) {
-  const caller = callerEmail ? String(callerEmail).toLowerCase() : null;
-  const requested = requestedTarget
-    ? String(requestedTarget).toLowerCase()
-    : null;
+  const caller = callerEmail ?? null;
+  const requested = requestedTarget ?? null;
   // No target, or the caller's own email: an ordinary request, not an emulation
   // (also keeps no-op self-emulation out of the audit log).
-  if (!requested || requested === caller)
-    return { caller, target: caller, emulating: false };
+  const isSelf =
+    caller && requested && requested.toLowerCase() === caller.toLowerCase();
+  if (!requested || isSelf) return { caller, target: caller, emulating: false };
   if (!isImpersonator(caller, impersonators))
     return { caller, target: caller, emulating: false };
   return { caller, target: requested, emulating: true };
@@ -679,8 +722,31 @@ embeds real viewer emails. The committed version must take them as input.
 
 - [ ] **Step 1: Create the tool**
 
-Note `psycopg` **3** is already a project dependency (`pyproject.toml:27`) — do
-**not** add `psycopg2` or use `uv run --with`.
+`psycopg` **3** is already a project dependency (`pyproject.toml:27`), so prefer
+it over adding `psycopg2`. But **verify it actually works against Cube's SQL API
+before building on it**: the scratch prototype was proven with `psycopg2`, and
+psycopg 3 uses the extended query protocol and auto-prepares repeated
+statements, while Cube's SQL API is only a partial Postgres implementation.
+
+Smoke-test the connection first, with one viewer:
+
+```bash
+cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-internal-emulation
+uv run python -c "
+import psycopg
+with psycopg.connect(host='127.0.0.1', port=15432, user='you@apps.teamschools.org',
+                     password='<local sql password>', dbname='cube') as c, c.cursor() as cur:
+    cur.execute('SELECT MEASURE(count_employees) FROM staff_directory')
+    print(cur.fetchall())
+"
+```
+
+If that errors on the protocol rather than on auth or SQL, fall back to the
+proven path — `import psycopg2` plus
+`uv run --with psycopg2-binary scripts/cube_rls_matrix.py` — and say so in the
+module docstring so the next person does not "upgrade" it back. Do not spend
+time debugging psycopg 3 against a partial Postgres implementation; the tool's
+job is validating RLS, not exercising a driver.
 
 ```python
 """Validate Cube row-level security by emulating each viewer over the SQL API.
@@ -1334,9 +1400,37 @@ sign-off procedure.
 
 - Consumes: `scripts/cube_rls_matrix.py` (Task 3); the working emulation path
   (Task 2 and Task 6).
-- Produces: no code interface — a documented, repeatable procedure.
+- Produces: no code interface — a documented, repeatable procedure, plus the
+  production configuration decision below.
 
-- [ ] **Step 1: Run the matrix against the real pilot viewer set**
+- [ ] **Step 1: Decide whether to enable emulation in production — explicitly**
+
+Every step up to here ran against the **branch** environment. Emulating a real
+pilot user against real production data requires `CUBE_IMPERSONATORS` set on the
+**production** deployment, and nothing earlier in this plan does that. Do not
+treat it as a config detail that follows automatically from merging.
+
+What enabling it means: the listed emails gain the ability to resolve any
+internal user's full context on production, including student PII and the six
+sensitive staff fields, for as long as they are listed. What it does not mean:
+no new data leaves the network, no view or policy changes, and the ability is
+unforgeable — a caller who is not listed keeps their own scope.
+
+Bring it to the analytics-engineer code owners as its own decision, with the
+list of emails and the reason (pre-pilot scope sign-off). Two live options:
+
+- **Enable on production**, scoped to the smallest possible data-team list, and
+  agree when it gets removed — after pilot sign-off, or on a fixed date.
+- **Leave production off** and sign off scopes on the branch environment, which
+  reads production `kipptaf_marts` anyway (so the identity data is real even
+  though the deployment is not). Slower for the pilot, and it means the exact
+  production surface is never itself exercised.
+
+Record the decision and the agreed removal date in the PR before merge. If
+production stays off, say so in the guide too, so the next person does not spend
+an afternoon wondering why the documented procedure returns their own scope.
+
+- [ ] **Step 2: Run the matrix against the real pilot viewer set**
 
 ```bash
 cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-internal-emulation
@@ -1346,13 +1440,13 @@ uv run scripts/cube_rls_matrix.py --viewers-file /workspaces/teamster/.claude/sc
 Expected: every pilot user's returned scope matches their intended scope. Keep
 the output local — record only "N viewers checked, all scopes as intended".
 
-- [ ] **Step 2: Confirm the Explore surface for one pilot user**
+- [ ] **Step 3: Confirm the Explore surface for one pilot user**
 
 Using the Task 6 path, emulate one pilot user in Cube Cloud Explore and confirm
 the same scope the matrix reported for them, and that a member outside their
 tier is absent rather than erroring.
 
-- [ ] **Step 3: Document the sign-off procedure**
+- [ ] **Step 4: Document the sign-off procedure**
 
 Add to `docs/guides/cube.md` under `## Testing row-level security locally`:
 
@@ -1378,7 +1472,7 @@ mechanism (`canSwitchSqlUser` plus `__user`); emulation does not change or
 broaden it.
 ```
 
-- [ ] **Step 4: Update the domain notes**
+- [ ] **Step 5: Update the domain notes**
 
 In `src/cube/CLAUDE.md`, `## cube.js security model`, add one bullet after the
 `contextToGroups` bullet:
@@ -1395,7 +1489,7 @@ In `src/cube/CLAUDE.md`, `## cube.js security model`, add one bullet after the
   (identities only).
 ```
 
-- [ ] **Step 5: Lint and commit**
+- [ ] **Step 6: Lint and commit**
 
 ```bash
 cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-internal-emulation
@@ -1602,6 +1696,30 @@ is defined in Task 2 and called with `"rest"` there and `"cubecloud"` in Task 6.
 The adapters return `{ callerEmail, requestedTarget }`, matching
 `resolveEmulationTarget`'s parameter names, so the spread in both hooks
 resolves.
+
+**Gap found and closed (4):** the first draft's `resolveEmulationTarget`
+lowercased the emails it returned, and Task 2 feeds that value straight into
+`resolveAccess` — which matches `google_email` exactly and caches on the raw
+string. That would have changed resolution for **every** request, not only
+emulated ones, and left `checkSqlAuth` on the un-normalized value. Verified
+against the warehouse: all 1,614 rows are already lowercase, so it was latent
+rather than live — but the model applies no `lower()` and tests only `not_null`,
+so the property is incidental. Case is now preserved, with a dedicated
+regression test asserting a non-emulated caller passes through byte-identical.
+
+**Gap found and closed (5):** Task 3 originally switched the matrix tool from
+the `psycopg2` the prototype was proven with to `psycopg` 3, purely because 3
+was already a dependency. psycopg 3 uses the extended query protocol against
+what is only a partial Postgres implementation, so the plan now smoke-tests the
+connection first and names `psycopg2-binary` via `uv run --with` as the
+documented fallback.
+
+**Gap found and closed (6):** nothing in the plan enabled `CUBE_IMPERSONATORS`
+on **production**, yet Task 7 asks you to sign off real pilot users. Task 7 Step
+1 is now an explicit decision — enable on production with a named list and an
+agreed removal date, or sign off on the branch environment (which reads
+production `kipptaf_marts`, so the identity data is real) and say so in the
+guide.
 
 **Sequencing note.** Tasks 1-3 are unblocked and entirely local. Task 4 is the
 hinge: it needs one push (Claude can do that) plus Cube Cloud console
