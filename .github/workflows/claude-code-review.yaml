@@ -93,4 +93,4 @@ jobs:
           include_fix_links: false
           use_sticky_comment: true
           display_report: true
-          claude_args: --model opus
+          claude_args: --model opus --effort medium

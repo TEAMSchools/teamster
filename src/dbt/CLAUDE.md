@@ -229,6 +229,33 @@ before parsing.
 Use `config: materialized: <kind>` in `properties/<model>.yml`, not inline
 `{{ config(...) }}` in SQL. Create the yml if absent.
 
+## Moving a model between directories changes its inherited config
+
+`git mv` of a model silently re-parents it to a different `dbt_project.yml`
+config tree — `+schema` (its BigQuery dataset) and `+contract` most often. A
+move into `extracts/` or `marts/` newly ENFORCES the contract, so the properties
+yml needs a complete column list with `data_type` or the build fails. Diff both
+config blocks before the move, and rename the model's singular tests and their
+`tests/properties.yml` entries with it.
+
+## View→table flips for BigQuery plan depth
+
+A table model with a plan of hundreds of stages (straggler-fragile, e.g.
+[#4153](https://github.com/TEAMSchools/teamster/issues/4153)) usually inherits
+the depth from view upstreams: BigQuery inlines each view's full SQL per
+reference, recursively — a view ref'd 4x expands 4x. Check upstream
+materializations before flattening SQL. When flipping views to cron tables:
+
+- Map EVERY consumer's refresh cadence first (exposure `cron_schedule`, Dagster
+  schedules). An intraday consumer (hourly ops dashboard, 5x/day DDI suite)
+  vetoes a nightly-cron table — leave that view a view.
+- Give the whole flipped chain the SAME `automation_condition.cron_schedule`
+  tick as its downstream — the `~any_deps_in_progress` guard serializes the pass
+  (upstreams build first); no stagger needed.
+- A properties-yml-only flip does NOT fire `code_version_changed` at deploy
+  (`code_version` is a SHA1 of raw SQL). The relation stays a view until the
+  first cron tick — don't judge the deploy by BigQuery object types.
+
 ## Table→view materialization conversion needs a drop
 
 `create or replace view` does not drop a pre-existing table at the same path —
@@ -309,10 +336,12 @@ instead of `{{ my_macro() }}` is valid SQL — it passes `dbt parse` and sqlfluf
 then fails at BigQuery build with `Function not found`. Build the model to catch
 it; parse/lint won't.
 
-**A disabled model calling a deleted macro does NOT fail `dbt parse`.** Disabled
-nodes are parsed into `manifest.disabled`, but dbt never renders their Jinja
-deeply enough to resolve macros — so stale disabled callers don't gate a macro
-removal. Confirm with `dbt parse --no-partial-parse`.
+**`dbt parse` never resolves macros** — it renders Jinja only far enough to
+capture `ref`/`source`/`config`, so a call to a DELETED macro parses clean
+whether the caller is enabled or disabled. Parse therefore cannot prove a macro
+removal is safe; compilation is the gate, and disabled models are never
+compiled. Prove a removal with `grep` for zero enabled call sites plus
+`dbt build --empty` over the affected graph.
 
 **`analyses/` are verifiable — compile + BigQuery dry run.** `dbt build` never
 runs them, but `dbt compile --select "path:analyses/<f>.sql" --target prod`
@@ -456,6 +485,13 @@ Conversely, to validate a consumer of a NEW column on an unmerged upstream,
 lacks the column) and the consumer build fails; selecting the upstream builds it
 into dev with the column first.
 
+A re-run with a NARROWER `--select` invalidates a prior parity comparison:
+`--favor-state` re-points every unselected upstream to prod, so a model you
+changed earlier silently reverts to its prod definition and the dev-vs-prod
+counts diverge for reasons unrelated to your edit. Re-validate with the SAME
+full selection, or the delta is an artifact. Confirm which schema a dev view
+actually reads via `INFORMATION_SCHEMA.VIEWS.view_definition`.
+
 Also manifests as false row-count / row-presence deltas (not just
 `relationships`/PK tests): a stale dev `int_people__staff_roster` missing recent
 hires makes a dev-built rpt look like it dropped rows. Confirm which upstreams
@@ -558,6 +594,10 @@ column) is picked up by rebuilding the `stg_` model into your dev schema
 (`dbt build --select <model> --target dev --defer --state <abs prod manifest>`)
 — no `stage_external_sources` needed (it's classifier-blocked anyway). Use this
 to verify an Ops sheet fix, then query the rebuilt `zz_<user>_*` table.
+
+Never judge CURRENT sheet content from the prod `stg_*` table — it is a table
+frozen at the last prod build, not a live read, so it reports pre-edit values
+indefinitely. Rebuild into dev (or query the external directly) first.
 
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 
@@ -674,6 +714,13 @@ legitimately-superseded inactive rows that repeat the key.
   `error`. To restore `error`, set `config: severity: error` explicitly.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
+
+### An FK check belongs on the pre-join model, as a column `relationships` test
+
+A `relationships` test on a model built through an INNER JOIN to its parent is
+vacuous — the join already dropped every unmatched row. Put it on the staging
+model feeding the join, as a column-level generic (precedent:
+`stg_collegeboard__ap.yml`), not a bespoke `*_resolves` singular test.
 
 ### `dbt_utils.expression_is_true` window-function limit
 

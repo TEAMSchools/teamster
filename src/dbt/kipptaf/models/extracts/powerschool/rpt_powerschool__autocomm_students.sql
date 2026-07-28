@@ -27,6 +27,7 @@ select
     se.lunch_balance as total_balance,
     se.advisor_lastfirst as home_room,
     se.student_email as u_studentsuserfields__studentemail,
+    se._dbt_source_project as code_location,
 
     g.s_nj_stu_x__graduation_pathway_math,
     g.s_nj_stu_x__graduation_pathway_ela,
@@ -36,8 +37,6 @@ select
 
     format_date('%m/%d/%Y', de.district_entry_date) as district_entry_date,
     format_date('%m/%d/%Y', de.district_entry_date) as school_entry_date,
-
-    regexp_extract(se._dbt_source_relation, r'(kipp\w+)_') as code_location,
 
     if(se.enroll_status = 0, 1, 0) as student_allowwebaccess,
     if(se.enroll_status = 0, 1, 0) as allowwebaccess,

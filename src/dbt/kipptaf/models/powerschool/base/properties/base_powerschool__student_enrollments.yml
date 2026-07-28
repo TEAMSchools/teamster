@@ -389,9 +389,9 @@ models:
           `regexp_extract(..., r'(kipp\w+)_')`. Used as a region discriminator
           in downstream surrogate keys, consistent across all upstream union
           tables.
-      - name: code_location
-        data_type: string
       - name: region
+        data_type: string
+      - name: code_location
         data_type: string
       - name: advisor_email
         data_type: string

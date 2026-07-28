@@ -3,10 +3,12 @@ models:
     description:
       Network-wide union of the per-region Finalsite
       `int_finalsite__student_contacts` models — the SIS-agnostic long-format
-      contact list (one row per student per contact slot, `contact_1` plus
-      `emergency_1` through `emergency_4`). Enabled only where the Finalsite API
-      layer is wired (today KIPP Miami and KIPP Newark); carries
-      `_dbt_source_relation` and the derived `_dbt_source_project`.
+      contact list (one row per student per contact slot, `contact_1` and
+      `contact_2` plus `emergency_1` through `emergency_4`). Unions the NJ
+      cutover regions (Newark, Camden, Paterson) only — Miami has the API wired
+      but is excluded to avoid double-counting against the PowerSchool branch of
+      `int_students__contacts`. Carries `_dbt_source_relation` and the derived
+      `_dbt_source_project`.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -23,5 +25,17 @@ models:
       - name: contact_slot
         data_type: string
         description:
-          Which contact this row represents — `contact_1` or `emergency_1`
-          through `emergency_4`.
+          Which contact this row represents — `contact_1`, `contact_2`, or
+          `emergency_1` through `emergency_4`.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - contact_1
+                  - contact_2
+                  - emergency_1
+                  - emergency_2
+                  - emergency_3
+                  - emergency_4
+              config:
+                severity: error

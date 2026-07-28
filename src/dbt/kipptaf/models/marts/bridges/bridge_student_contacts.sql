@@ -26,10 +26,11 @@ with
 
             {{ dbt_utils.generate_surrogate_key(["student_number"]) }} as student_key,
 
-            -- keyed identically to dim_student_contact_persons: contact_1 by the
-            -- person's real identity, emergency by student + contact slot
+            -- keyed identically to dim_student_contact_persons: parent slots
+            -- (contact_1/contact_2) by the person's real identity, emergency by
+            -- student + contact slot
             if(
-                contact_slot = 'contact_1',
+                contact_slot in ('contact_1', 'contact_2'),
                 {{
                     dbt_utils.generate_surrogate_key(
                         ["_dbt_source_project", "person_identity"]

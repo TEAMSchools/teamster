@@ -31,6 +31,14 @@ with
 
             c.administered_date,
 
+            -- assessment_date_key: the date used for academic-year / calendar
+            -- rollups -- administration date where present (internal/college),
+            -- else the student's test date. State/vendor administrations span a
+            -- window and carry no single administration date, so the join to
+            -- dim_dates must key on this to resolve academic_year for them
+            -- (#4546).
+            coalesce(c.administered_date, rr.date_taken) as assessment_date_key,
+
             cast(null as numeric) as scale_score,
 
             rr.performance_band_label as proficiency_level,
@@ -194,8 +202,15 @@ with
     ),
 
     -- TODO(#4387): stg_iready__diagnostic_results has no uniqueness test;
-    -- same-day retests and duplicate rows exist upstream. Remove this dedupe
-    -- when staging is fixed.
+    -- same-day retests and fiscal-year re-pull duplicates exist upstream.
+    -- partition_by deliberately omits academic_year: a physical test pulled
+    -- under two fiscal-year partitions has the same test_date but a differing
+    -- pull-derived academic_year, so keying on academic_year would keep both
+    -- rows -- they then double-count once academic_year is resolved from the
+    -- test date (#4546). A date belongs to exactly one academic year, so
+    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
+    -- never distinct sittings. academic_year desc makes the survivor
+    -- deterministic. Remove this dedupe when staging is fixed.
     iready_scores as (
         {{
             dbt_utils.deduplicate(
@@ -203,12 +218,11 @@ with
                 partition_by="""
                     _dbt_source_project,
                     student_number,
-                    academic_year,
                     administration_period,
                     module_code,
                     test_date
                 """,
-                order_by="start_date desc, scale_score desc",
+                order_by="start_date desc, scale_score desc, academic_year desc",
             )
         }}
     ),
@@ -240,8 +254,15 @@ with
     ),
 
     -- TODO(#4388): stg_renlearn__star holds fiscal-year re-pull duplicates
-    -- (same assessment_id in two partitions) and same-day retests. Remove
-    -- this dedupe when staging is fixed.
+    -- (same assessment_id in two partitions) and same-day retests.
+    -- partition_by deliberately omits academic_year: a physical test pulled
+    -- under two fiscal-year partitions has the same test_date but a differing
+    -- pull-derived academic_year, so keying on academic_year would keep both
+    -- rows -- they then double-count once academic_year is resolved from the
+    -- test date (#4546). A date belongs to exactly one academic year, so
+    -- collapsing on test_date (sans academic_year) only ever merges re-pulls,
+    -- never distinct sittings. academic_year desc makes the survivor
+    -- deterministic. Remove this dedupe when staging is fixed.
     star_scores as (
         {{
             dbt_utils.deduplicate(
@@ -249,12 +270,11 @@ with
                 partition_by="""
                     _dbt_source_project,
                     student_number,
-                    academic_year,
                     administration_period,
                     module_code,
                     test_date
                 """,
-                order_by="scale_score desc, assessment_id desc",
+                order_by="scale_score desc, assessment_id desc, academic_year desc",
             )
         }}
     ),
@@ -370,6 +390,7 @@ select
     sr.student_section_enrollment_key,
 
     ia.test_date as test_date_key,
+    ia.assessment_date_key,
 
     ia.scale_score,
     ia.percent_correct,
@@ -432,6 +453,9 @@ select
     sr.student_section_enrollment_key,
 
     su.test_date as test_date_key,
+    -- state administrations carry no administration date; test_date is the
+    -- calendar date used for academic-year rollups (#4546)
+    su.test_date as assessment_date_key,
 
     su.scale_score,
     su.percent_correct,
@@ -499,6 +523,9 @@ select
     sr.student_section_enrollment_key,
 
     va.test_date as test_date_key,
+    -- vendor administrations carry no administration date; test_date is the
+    -- calendar date used for academic-year rollups (#4546)
+    va.test_date as assessment_date_key,
 
     va.scale_score,
 

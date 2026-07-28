@@ -37,7 +37,6 @@ with
             *,
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
@@ -45,6 +44,10 @@ with
 
 select
     ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
+
+    -- same value as _dbt_source_project, named for the Dagster code location;
+    -- projected here rather than re-derived from _dbt_source_relation (#3142)
+    ar._dbt_source_project as code_location,
 
     -- Pearson reports the KIPP student_number as LocalStudentIdentifier for all
     -- NJ regions, including Paterson (#4103); no legacy district-id translation

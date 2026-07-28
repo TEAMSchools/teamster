@@ -93,7 +93,7 @@ All asset factories that yield Avro output call both of these.
 
 ### `automation_conditions.py`
 
-Three dbt-specific `AutomationCondition` builders, all sharing a common skeleton
+Four dbt-specific `AutomationCondition` builders, all sharing a common skeleton
 via `_build_dbt_condition()`:
 
 - `dbt_view_automation_condition()` — for VIEW models: re-runs on
@@ -103,6 +103,13 @@ via `_build_dbt_condition()`:
   `union_relations` macro: adds recursive ancestor `code_version_changed`
   detection (but NOT `any_deps_updated`) to the view condition. Triggers only on
   code deploys that change upstream model definitions, not on data refreshes.
+- `dbt_cron_automation_condition(cron_schedule, cron_timezone)` — for expensive
+  TABLE models whose consumers refresh on a schedule: replaces the
+  ancestor-updated trigger with `cron_tick_passed`. NOT stock `on_cron()` (its
+  all-deps-updated gate starves on mixed-cadence upstreams). Opted into per
+  model via `meta.dagster.automation_condition.cron_schedule` (tables only; the
+  translator ignores it on views). Timezone defaults to the code location's
+  `LOCAL_TIMEZONE` via the translator.
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
   `_build_any_ancestor_updated()` (recursive `any_deps_match` up to
