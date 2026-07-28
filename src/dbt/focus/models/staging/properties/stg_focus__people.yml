@@ -79,3 +79,11 @@ models:
       - name: updated_at
         description: Record last-update timestamp in Focus.
         data_type: timestamp
+      - name: contact_name
+        description: >-
+          The contact's full name (first + last). Null when both name parts are
+          absent, rather than an empty string.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true

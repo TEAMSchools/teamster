@@ -14,5 +14,7 @@ select
     uuid,
     created_at,
     updated_at,
+
+    nullif(array_to_string([first_name, last_name], ' '), '') as contact_name,
 from {{ source("focus", "people") }}
 where deleted is null

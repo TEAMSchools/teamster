@@ -12,10 +12,11 @@ data_tests:
             package: focus
   - name: focus_unmapped_phone_contact_titles
     description: >-
-      Warns when a people_join_contacts title matches neither the phone-type nor
-      email regexes used by int_focus__student_contacts (an unmapped title
-      needing a new mapping), or matches both (an ambiguous title the model
-      silently excludes as email, potentially dropping a real phone value).
+      Warns when a stg_focus__people_join_contacts row has neither phone_type
+      nor is_email_title set (an unmapped title needing a new mapping), or has
+      both set (an ambiguous title the model silently excludes as email,
+      potentially dropping a real phone value). A null title is treated as
+      unmapped.
     config:
       meta:
         dagster:
