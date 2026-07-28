@@ -2,12 +2,14 @@ models:
   - name: int_focus__student_enrollments
     description: >-
       Focus student enrollment stints (Focus is kippmiami's live SIS today), one
-      row per stg_focus__student_enrollment record, enriched with a derived
-      numeric grade level, resolved enrollment/withdrawal code labels, an
-      exitdate that's coalesced to June 30 of the following calendar year for
-      still-open enrollments, point-in-time enrollment flags and
+      row per enrollment stint. The full derivation (numeric grade level,
+      resolved enrollment/withdrawal code labels, the June 30 open-enrollment
+      exitdate default, point-in-time enrollment flags, and
       year-in-school/year-in-network counters mirroring PowerSchool's equivalent
-      coding, and the matching Finalsite enrollment id where one exists.
+      coding) now lives in the focus package's int_focus__student_enrollment.
+      This wrapper unions the district relation, then adds the Finalsite
+      enrollment id crosswalk, location enrichment from
+      stg_google_sheets__people__locations, and the region/network constants.
     columns:
       - name: student_enrollment_id
         description: Primary key — Focus student_enrollment id.
