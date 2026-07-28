@@ -1,0 +1,87 @@
+models:
+  - name: stg_google_sheets__gpa_goals
+    description: >-
+      Analyst-maintained Google Sheet defining GPA goal targets by org level
+      (network, region, or school) and grade band. Each row is one goal for a
+      single GPA metric, scoped to an org level and grade band, evaluated
+      against a threshold in a given direction.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - org_level
+              - region
+              - schoolid
+              - grade_low
+              - grade_high
+              - metric
+          config:
+            severity: error
+    columns:
+      - name: org_level
+        data_type: string
+        description: >-
+          Scope of the goal aggregation — `org` (network-wide), `region`, or
+          `school`.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [org, region, school]
+              config:
+                severity: error
+      - name: metric
+        data_type: string
+        description: >-
+          GPA metric the goal targets — `y1_gpa_weighted`, `y1_gpa_unweighted`,
+          `cumulative_gpa_unweighted`, or `on_pace`.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - y1_gpa_weighted
+                  - y1_gpa_unweighted
+                  - cumulative_gpa_unweighted
+                  - on_pace
+              config:
+                severity: error
+      - name: direction
+        data_type: string
+        description: >-
+          Comparison operator determining whether a student/aggregate value must
+          be `>=` or `<=` the threshold to count toward the goal.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [">=", <=]
+              config:
+                severity: error
+      - name: academic_year
+        data_type: int64
+        description: KIPP academic year (July start) this goal applies to.
+      - name: region
+        data_type: string
+        description: >-
+          Region label when `org_level` is `region` or `school`. Null for
+          `org`-level rows.
+      - name: schoolid
+        data_type: int64
+        description: >-
+          PowerSchool school ID when `org_level` is `school`. Null for `org`- or
+          `region`-level rows.
+      - name: grade_low
+        data_type: int64
+        description: Lower bound grade of the grade band this goal covers.
+      - name: grade_high
+        data_type: int64
+        description: Upper bound grade of the grade band this goal covers.
+      - name: threshold
+        data_type: numeric
+        description: >-
+          Cutoff value that `metric` is compared against, per `direction`, to
+          determine whether a student/aggregate meets the goal.
+      - name: goal
+        data_type: numeric
+        description: >-
+          Target value (e.g., percent of students meeting the threshold) for
+          this org level, grade band, and metric.
