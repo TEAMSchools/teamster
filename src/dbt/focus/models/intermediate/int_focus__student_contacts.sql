@@ -63,17 +63,22 @@ select
     p.last_name as contact_last_name,
     p.email,
 
-    a.home_address,
+    -- emitted raw, exactly as stored in Focus (native format for
+    -- natively-entered numbers is (NNN) NNN-NNNN) -- this package has no
+    -- dependency on the finalsite package, so E.164 normalization is deferred
+    -- to the kipptaf consumer in Phase 2 rather than done here
+    pt.phone_mobile,
+    pt.phone_home,
+    pt.phone_work,
+    pt.phone_daytime,
 
-    {{ finalsite.clean_phone("pt.phone_mobile") }} as phone_mobile,
-    {{ finalsite.clean_phone("pt.phone_home") }} as phone_home,
-    {{ finalsite.clean_phone("pt.phone_work") }} as phone_work,
-    {{ finalsite.clean_phone("pt.phone_daytime") }} as phone_daytime,
     -- read off the unfiltered rank, not phones_typed's type_rank = 1 filter.
     -- the overall_rank = 1 row can belong to a phone_type that type_rank has
     -- already discarded, so this must not read through that filter. Two prior
     -- fix rounds exist because of this.
-    {{ finalsite.clean_phone("pp.value") }} as phone_primary,
+    pp.value as phone_primary,
+
+    a.home_address,
 
     if(l.address_id is null, null, sa.address_id is not null) as is_household_member,
 from {{ ref("stg_focus__students_join_people") }} as l

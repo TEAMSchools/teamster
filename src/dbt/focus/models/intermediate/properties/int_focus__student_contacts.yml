@@ -91,29 +91,43 @@ models:
           meta:
             contains_pii: true
       - name: phone_mobile
-        description: Contact mobile/cell phone, normalized to E.164.
+        description: >-
+          Contact mobile/cell phone, raw as stored in Focus (native format for
+          natively-entered numbers is (NNN) NNN-NNNN). Not normalized here — the
+          downstream kipptaf consumer applies E.164 normalization.
         config:
           meta:
             contains_pii: true
       - name: phone_home
-        description: Contact home phone, normalized to E.164.
+        description: >-
+          Contact home phone, raw as stored in Focus (native format for
+          natively-entered numbers is (NNN) NNN-NNNN). Not normalized here — the
+          downstream kipptaf consumer applies E.164 normalization.
         config:
           meta:
             contains_pii: true
       - name: phone_work
-        description: Contact work phone, normalized to E.164.
+        description: >-
+          Contact work phone, raw as stored in Focus (native format for
+          natively-entered numbers is (NNN) NNN-NNNN). Not normalized here — the
+          downstream kipptaf consumer applies E.164 normalization.
         config:
           meta:
             contains_pii: true
       - name: phone_daytime
-        description: Contact daytime phone, normalized to E.164.
+        description: >-
+          Contact daytime phone, raw as stored in Focus (native format for
+          natively-entered numbers is (NNN) NNN-NNNN). Not normalized here — the
+          downstream kipptaf consumer applies E.164 normalization.
         config:
           meta:
             contains_pii: true
       - name: phone_primary
         description: >-
           Contact primary phone — the highest-priority (lowest detail_priority)
-          phone-typed contact detail, normalized to E.164.
+          phone-typed contact detail. Raw as stored in Focus (native format for
+          natively-entered numbers is (NNN) NNN-NNNN); not normalized here — the
+          downstream kipptaf consumer applies E.164 normalization.
         config:
           meta:
             contains_pii: true

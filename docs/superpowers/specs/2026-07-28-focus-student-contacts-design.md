@@ -67,6 +67,13 @@ Facts that shape the design:
 - For new (post-PowerSchool) Miami students, `stg_people__student_logins`
   already uses the **prefixed** Focus id cast to int64 as `student_number` — the
   Miami student-number space is in transition (see Phase 2 open question).
+- Focus's natively-entered phone format is `(NNN) NNN-NNNN` — all 3 rows
+  currently in `people_join_contacts` are punctuated, 14 characters, and carry
+  `imported = null` (i.e. registrar-entered in Focus, not seeded by the
+  Finalsite import feed). The Finalsite import payload itself is ~99% bare
+  10-digit. Because both shapes can land in the same column, read-path
+  normalization is required regardless of what the import feed sends — cleaning
+  only at the import boundary cannot cover natively-entered numbers.
 
 ## Phase 1 — build the Focus contacts models (PR 1)
 
@@ -97,7 +104,10 @@ Properties yml with full column descriptions and `data_type`s.
     emergency-qualifying)
   - phones: `phone_mobile` / `phone_home` / `phone_work` / `phone_daytime`
     pivoted from `people_join_contacts.title`, `phone_primary` = lowest
-    `detail_priority` phone; all through `clean_phone`
+    `detail_priority` phone; emitted raw, exactly as stored in Focus — no
+    `clean_phone` call, since the `focus` package declares no dependency on
+    `finalsite` and must not reference its macros (see Phase 2 for the
+    normalization obligation this defers)
   - address: `home_address` assembled from `address` via the link's
     `address_id`; `is_household_member` = link `address_id` matches one of the
     student's own `students_join_address` rows
@@ -140,6 +150,20 @@ Gate: Focus `students_join_people` link count reaches the same order of
 magnitude as enrolled students (~4k), i.e. the Finalsite contacts import has run
 (Ops-owned; timing unknown).
 
+> **Required obligation — phone normalization.** `int_focus__student_contacts`
+> emits Focus phone values raw (Phase 1 decision, to avoid a cross-package macro
+> dependency). The Finalsite branch of `int_students__contacts` is already
+> E.164-normalized. Both branches feed the SAME output phone columns, so the
+> Focus branch's phone values MUST be normalized to E.164 at the kipptaf layer
+> before or as part of this swap — otherwise one column carries two formats, the
+> exact silent-format-mismatch failure documented in `src/dbt/CLAUDE.md` (the
+> E.164 change that broke `rpt_clever__students`'
+> `left(regexp_replace(phone, '\W'), 10)`). Practical wrinkle: kipptaf installs
+> no local packages, so it has no `clean_phone` macro available today — this
+> swap must resolve where that macro lives (a kipptaf-local copy, or a shared
+> package both `kipptaf` and `finalsite` depend on) before or as part of the
+> flip.
+
 - In `int_students__contacts` (kipptaf): replace the `ps_*` CTE chain (base,
   slotting, person-contacts enrichment, primary-phone ranking, frozen-students
   join) with a `focus` branch reading the kipptaf wrapper:
@@ -178,6 +202,10 @@ magnitude as enrolled students (~4k), i.e. the Finalsite contacts import has run
    (legacy 6-digit vs `8400`-prefixed) — depends on the parallel SIS-portfolio
    enrollment work.
 1. Timing of the Focus contacts import (Ops-owned) — sets the Phase 2 date.
+1. **Normalize the Focus branch's phone values to E.164 before/as part of the
+   `int_students__contacts` swap** (the Finalsite branch is already E.164 and
+   both share the same output columns) — and resolve where the `clean_phone`
+   macro lives for kipptaf, which installs no local packages today.
 
 ## Out of scope
 
