@@ -1,5 +1,22 @@
 models:
   - name: rpt_tableau__survey_completion
+    description: >-
+      One row per staff survey assignment, at the grain of employee_number,
+      survey, academic_year, and survey_round. Each assignment from
+      rpt_tableau__survey_links is joined to the latest response for that round,
+      so completion is a per-assignment flag rather than a per-question one.
+      TNTP Insight and Gallup Q12 are excluded because both are administered
+      outside Google Forms and never produce a trackable response here.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - survey
+              - academic_year
+              - survey_round
+          config:
+            severity: error
     columns:
       - name: employee_number
         data_type: int64
