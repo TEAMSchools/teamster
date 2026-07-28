@@ -8,7 +8,7 @@ with
             survey_response_id,
             date_submitted,
         from {{ ref("rpt_tableau__survey_responses") }}
-        where round_rn <= 1
+        where round_rn = 1
     ),
 
     deduplicate as (
