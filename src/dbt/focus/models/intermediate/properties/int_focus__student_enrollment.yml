@@ -103,8 +103,20 @@ models:
       - name: school_level
         description: >-
           School level abbreviation — ES, MS, or HS — mapped from the school's
-          decoded level label in int_focus__schools__pivot. Null where the
-          school carries no level, or a level with no abbreviation (Combined).
+          decoded level label in int_focus__schools. Null where the school
+          carries no level, or a level with no abbreviation (Combined).
+      - name: prior_district_label
+        description: Decoded label for the enrollment's prior_district field.
+      - name: prior_state_label
+        description: Decoded label for the enrollment's prior_state field.
+      - name: prior_country_label
+        description: Decoded label for the enrollment's prior_country field.
+      - name: educational_choice_label
+        description:
+          Decoded label for the enrollment's educational_choice field.
+      - name: student_offender_transfer_label
+        description: >-
+          Decoded label for the enrollment's student_offender_transfer field.
       - name: first_day_of_school
         description: >-
           Network first day of school for the enrollment's academic year, from

@@ -3,7 +3,7 @@ with
         {{
             dbt_utils.union_relations(
                 relations=[
-                    source("kippmiami_focus", "int_focus__users__pivot"),
+                    source("kippmiami_focus", "int_focus__course_periods"),
                 ]
             )
         }}
