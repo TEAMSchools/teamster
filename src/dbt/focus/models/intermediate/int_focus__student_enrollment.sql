@@ -1,4 +1,19 @@
 with
+    -- cast the coded school_level once so the decode join below compares plain
+    -- columns; Focus stores a select value as either the option id or the code,
+    -- both string-typed in the options lookup
+    schools as (
+        select
+            id,
+            title,
+            state_school_id,
+            school_number,
+            state,
+
+            cast(school_level as string) as school_level_code,
+        from {{ ref("stg_focus__schools") }}
+    ),
+
     enrollment as (
         select
             s.first_name as student_first_name,
@@ -60,11 +75,12 @@ with
         inner join
             {{ ref("stg_focus__student_enrollment") }} as e
             on s.student_id = e.student_id
-        left join {{ ref("stg_focus__schools") }} as sch on e.school_id = sch.id
+        left join schools as sch on e.school_id = sch.id
         left join
-            {{ ref("stg_focus__custom_field_select_options") }} as slo
-            on sch.school_level = slo.id
-            and slo.source_class = 'CustomField'
+            {{ ref("int_focus__custom_field_options") }} as slo
+            on sch.school_level_code in (slo.option_id, slo.code)
+            and slo.source_class = 'SISSchool'
+            and slo.column_name = 'custom_100000004'
         left join
             {{ ref("stg_focus__school_gradelevels") }} as g
             on e.grade_id = g.id
