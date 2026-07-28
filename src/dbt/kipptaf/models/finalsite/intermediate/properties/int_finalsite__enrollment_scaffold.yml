@@ -52,10 +52,11 @@ models:
       - name: academic_year
         data_type: int64
         description: >
-          The current Finalsite recruitment cycle. Hardcoded (2026 as of this
-          writing) rather than derived -- SRE's own cycle timeline is too fluid
-          to reliably compute from ingestion data; see the fresh-dashboard
-          skill's year-toggle procedure for how this gets updated.
+          The current Finalsite recruitment cycle, sourced from the
+          finalsite_recruitment_year dbt variable (dbt_project.yml). The
+          variable is manually bumped each cycle, not auto-derived -- unlike
+          current_academic_year which bumps on a fixed July 1 date, SRE's
+          recruitment cycle timeline is fluid.
       - name: region
         data_type: string
         description: One of "Newark", "Camden", "Miami", "Paterson".
