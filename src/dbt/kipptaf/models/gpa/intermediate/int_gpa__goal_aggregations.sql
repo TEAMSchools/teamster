@@ -60,7 +60,7 @@ with
                 then m.cumulative_gpa_unweighted
             end as measure_value,
         from student_metrics as m
-        left join
+        inner join
             goals as g
             on m.academic_year = g.academic_year
             and m.grade_level between g.grade_low and g.grade_high
@@ -99,7 +99,7 @@ with
                 then m.cumulative_gpa_unweighted
             end as measure_value,
         from student_metrics as m
-        left join
+        inner join
             goals as g
             on m.academic_year = g.academic_year
             and m.grade_level between g.grade_low and g.grade_high
@@ -137,7 +137,7 @@ with
                 then m.cumulative_gpa_unweighted
             end as measure_value,
         from student_metrics as m
-        left join
+        inner join
             goals as g
             on m.academic_year = g.academic_year
             and m.grade_level between g.grade_low and g.grade_high

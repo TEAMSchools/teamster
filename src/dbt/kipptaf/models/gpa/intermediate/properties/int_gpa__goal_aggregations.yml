@@ -2,11 +2,12 @@ models:
   - name: int_gpa__goal_aggregations
     description:
       Rolls the per-student GPA measures spine up to the school, region, and org
-      (network-wide) grain, joins each grain's matching goal from the GPA goals
-      sheet on academic year and grade band, and evaluates whether the resulting
-      rate meets the goal. One row per academic year, metric, and goal
-      aggregation key — including a null-goal row when a grain has students but
-      no matching goal row.
+      (network-wide) grain and inner-joins each grain's matching goal from the
+      GPA goals sheet on academic year and grade band, then evaluates whether
+      the resulting rate meets the goal. Goal-driven — a grain surfaces here
+      only when it has a matching goal row; students in a grain with no goal
+      simply don't aggregate into a row. One row per academic year, metric, and
+      goal aggregation key.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -22,57 +23,51 @@ models:
         data_type: string
         description:
           GPA metric the goal targets — `y1_gpa_weighted`, `y1_gpa_unweighted`,
-          `cumulative_gpa_unweighted`, or `on_pace`. Null when no goal matches
-          this grain's students.
+          `cumulative_gpa_unweighted`, or `on_pace`.
       - name: aggregation_hash
         data_type: string
         description:
           Join key matching this aggregate to its goal — see
-          `int_google_sheets__gpa_goals`. Null when no goal matches this grain's
-          students.
+          `int_google_sheets__gpa_goals`.
       - name: org_level
         data_type: string
         description:
           Scope of the aggregate — `org` (network-wide), `region`, or `school`.
-          Null when no goal matches this grain's students.
       - name: region
         data_type: string
         description:
           Region label when `org_level` is `region` or `school`. Null for
-          `org`-level rows and when no goal matches this grain's students.
+          `org`-level rows.
       - name: schoolid
         data_type: int64
         description:
           PowerSchool school ID when `org_level` is `school`. Null for `org`- or
-          `region`-level rows and when no goal matches this grain's students.
+          `region`-level rows.
       - name: grade_band
         data_type: string
-        description:
-          Human-readable grade band from the matched goal. Null when no goal
-          matches this grain's students.
+        description: Human-readable grade band from the matched goal.
       - name: goal_proportion
         data_type: float64
-        description:
-          Target rate from the matched goal, as a proportion. Null when no goal
-          matches this grain's students.
+        description: Target rate from the matched goal, as a proportion.
       - name: metric_rate
         data_type: float64
         description:
           Share of students in this grain meeting `metric`'s threshold per
           `direction` (or, for `on_pace`, the share of the on-pace denominator
-          that is on pace), rounded to 3 decimal places.
+          that is on pace), rounded to 3 decimal places. Null when the `on_pace`
+          denominator is empty.
       - name: is_goal_met
         data_type: boolean
         description:
           Whether `metric_rate` meets the goal — `metric_rate >=
           goal_proportion` when the goal's direction favors higher values, else
-          `metric_rate <= goal_proportion`. Null when `goal_proportion` is null.
+          `metric_rate <= goal_proportion`. Null when `metric_rate` is null.
       - name: progress_to_goal
         data_type: float64
         description:
           Share that `metric_rate` represents of `goal_proportion` (or its
           inverse when lower is better), capped at 1.0 and rounded to 3 decimal
-          places. Null when `goal_proportion` is null.
+          places. Null when `metric_rate` is null.
 
 unit_tests:
   - name: unit_gpa_goal_aggregations
