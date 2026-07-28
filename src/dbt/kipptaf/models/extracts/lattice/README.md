@@ -16,6 +16,9 @@ Keep this doc in sync with the model whenever the criteria change.
 - **Miami includes additional leader roles** — gated on a title keyword match
   plus one hardcoded location ("Room 11"), rather than an explicit title or
   department list.
+- **Three network-wide rules apply everywhere** — Heads of School, Managing
+  Directors in School Support, and the whole Teaching and Learning department
+  are included no matter which entity they sit in.
 - **Part-time permanent and temporary workers are excluded; full-time temporary
   staff are included.**
 
@@ -52,6 +55,12 @@ Any one of these qualifies:
   - Managing Director of Operations
 - **Newark or Camden** — anyone in the **Technology** or **Marketing, Comms, and
   Enrollment** department.
+- **Any entity** — job title contains "Head of School." The ADP title is "Head
+  of Schools"; the substring also picks up variants such as "Head of Schools in
+  Residence."
+- **Any entity** — anyone in the **Teaching and Learning** department.
+- **Any entity** — job title contains "Managing Director" **and** their
+  department is **School Support**.
 
 #### 3. Currently employed, or very recently departed
 
