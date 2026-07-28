@@ -10,12 +10,12 @@ with
         where sps.state_excludefromreporting = 0
     ),
 
-    -- Miami's SIS moved to Focus (#4441); stg_powerschool__schools' Miami
-    -- rows are a frozen pre-migration snapshot, not a live source of truth.
-    -- Deliberate, temporary carve-out -- confirmed with the team to keep
-    -- Miami 100% sheet-sourced regardless of scaffold source until Focus is
-    -- ready as a scaffold source. Remove this filter (and update the
-    -- sheet-side builder's Miami note below) once that happens.
+    -- Miami's live SIS is Focus, not PowerSchool -- stg_powerschool__schools'
+    -- Miami rows are a frozen pre-migration snapshot, never a source of
+    -- truth for current grade membership. Miami's grade membership comes
+    -- from the focus_scaffold branch below instead. If another region ever
+    -- migrates off PowerSchool, add it to this exclusion list and give it
+    -- its own SIS-sourced branch.
     powerschool_schools as (
         select school_number, abbreviation, _dbt_source_project, region,
         from powerschool_region
@@ -82,12 +82,81 @@ with
         from grade_membership as gm
     ),
 
+    -- Miami equivalent of current_grade_levels/grade_membership above:
+    -- grade membership from actual current enrollment, not a static
+    -- school-level grade span. int_focus__student_enrollments (unlike
+    -- stg_powerschool__students) carries multiple academic_years, so the
+    -- academic_year filter is what scopes this to "currently serves" --
+    -- enroll_status = 0 alone isn't enough. Excludes negative grade_level
+    -- (-1 = PK, -9 = whole-school total row): neither is SIS grade
+    -- membership. ps_schoolid/school_abbreviation are functionally
+    -- determined by schoolid, so this DISTINCT is grain projection, not
+    -- dup-masking.
+    focus_grade_levels as (
+        select distinct ps_schoolid, school_abbreviation, region, grade_level,
+        from {{ ref("int_focus__student_enrollments") }}
+        where
+            enroll_status = 0
+            and grade_level >= 0
+            and academic_year = {{ var("current_academic_year") }}
+    ),
+
+    focus_scaffold as (
+        select
+            fgl.ps_schoolid as schoolid,
+            fgl.school_abbreviation as school,
+            fgl.region,
+            fgl.grade_level,
+
+            {{ var("finalsite_recruitment_year") }} as academic_year,
+
+            'KTAF' as org,
+            'focus' as scaffold_source,
+
+            case
+                when fgl.grade_level >= 9
+                then 'HS'
+                when fgl.grade_level >= 5
+                then 'MS'
+                else 'ES'
+            end as school_level,
+
+        from focus_grade_levels as fgl
+    ),
+
+    sis_scaffold as (
+        select
+            schoolid,
+            school,
+            region,
+            grade_level,
+            academic_year,
+            org,
+            scaffold_source,
+            school_level,
+        from powerschool_scaffold
+
+        union all
+
+        select
+            schoolid,
+            school,
+            region,
+            grade_level,
+            academic_year,
+            org,
+            scaffold_source,
+            school_level,
+        from focus_scaffold
+    ),
+
     -- Scoped to the current cycle so a stale row from a prior year (a
-    -- closed school, a dropped grade) doesn't look identical to "PS
-    -- doesn't have this yet" and get silently resurrected forever. Miami
-    -- must carry its FULL spine here (every school, every grade), not just
-    -- -9 rows and net-new entries, since the PowerSchool builder excludes
-    -- it entirely above.
+    -- closed school, a dropped grade) doesn't look identical to "the SIS
+    -- doesn't have this yet" and get silently resurrected forever. This
+    -- sheet still supplies every school's grade_level = -9 whole-school row
+    -- (no SIS branch produces it) and any genuinely new school/grade not
+    -- yet live in a SIS -- for Miami that's on top of focus_scaffold above,
+    -- not instead of it.
     gsheet_scaffold as (
         select
             s.schoolid,
@@ -113,7 +182,7 @@ select
     org,
     scaffold_source,
     school_level,
-from powerschool_scaffold
+from sis_scaffold
 
 union all
 
@@ -128,7 +197,7 @@ select
     g.school_level,
 from gsheet_scaffold as g
 left join
-    powerschool_scaffold as p
+    sis_scaffold as p
     on g.region = p.region
     and g.schoolid = p.schoolid
     and g.grade_level = p.grade_level
