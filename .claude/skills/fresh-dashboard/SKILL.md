@@ -5,7 +5,7 @@ description: >-
   lineage. Triggers: explaining the scaffold/goals pipeline, debugging a count
   that doesn't match Finalsite, adding a new school/grade/year cycle,
   troubleshooting a student's status looking wrong, or working on
-  int_finalsite__enrollment_scaffold, int_finalsite__goals_scaffold,
+  int_tableau__fresh_enrollment_scaffold, int_tableau__fresh_goals_scaffold,
   rpt_tableau__fresh_dashboard_progress_to_goals, or
   rpt_tableau__fresh_dashboard_aggregated and their upstream models.
 ---
@@ -107,9 +107,9 @@ Standard checks, roughly in order of likelihood:
 
 Both are ad hoc BigQuery queries, run on demand — not persistent dbt models.
 Both end with the same verify-and-confirm step: after the analyst pastes rows
-into the sheet, rematerialize `int_finalsite__enrollment_scaffold` (or the goals
-sheet's consumers) and confirm the change reached prod before telling them it's
-done — the same rematerialize-then-verify workflow used throughout this
+into the sheet, rematerialize `int_tableau__fresh_enrollment_scaffold` (or the
+goals sheet's consumers) and confirm the change reached prod before telling them
+it's done — the same rematerialize-then-verify workflow used throughout this
 project's own build (compare row counts / a value sample against the prod table
 via a BigQuery MCP query or `bq`, and check `__TABLES__.last_modified_time` for
 staleness).
@@ -245,7 +245,7 @@ the file edits below.
 - `src/dbt/kipptaf/dbt_project.yml` — bump `finalsite_recruitment_year` (e.g.
   `2026` → `2027`). This alone updates every site below; none of them hold their
   own literal any more.
-  - `int_finalsite__enrollment_scaffold.sql` (`powerschool_scaffold`'s
+  - `int_tableau__fresh_enrollment_scaffold.sql` (`powerschool_scaffold`'s
     `academic_year` and `gsheet_scaffold`'s `where` filter)
   - `int_tableau__finalsite_student_scaffold.sql` (`same_day_status_dates`'s
     `where` filter and `enrollment_lookup`'s two branches)
@@ -270,7 +270,7 @@ Build and verify after all changes:
 
 ```bash
 uv run dbt build \
-  --select int_finalsite__enrollment_scaffold int_tableau__finalsite_student_scaffold \
+  --select int_tableau__fresh_enrollment_scaffold int_tableau__finalsite_student_scaffold \
     rpt_tableau__fresh_dashboard_progress_to_goals \
     test_int_finalsite__status_order_matches_crosswalk_ranking \
   --project-dir src/dbt/kipptaf \

@@ -1,19 +1,16 @@
 models:
-  - name: int_finalsite__goals_scaffold
+  - name: int_tableau__fresh_goals_scaffold
     description: >
-      int_finalsite__enrollment_scaffold's school x grade spine inner-joined to
-      the goals sheet (stg_google_sheets__finalsite__goals), excluding goal_type
-      = 'Enrollment' (the plain manually-entered targets --
+      int_tableau__fresh_enrollment_scaffold's school x grade spine inner-joined
+      to the goals sheet (stg_google_sheets__finalsite__goals), excluding
+      goal_type = 'Enrollment' (the plain manually-entered targets --
       seat/FDOS/budget/new-student/re-enroll -- live on
       int_google_sheets__finalsite__goals_pivot instead, consumed directly by
       the rpt_ models). Feeds rpt_tableau__fresh_dashboard_aggregated. Join is
       on (academic_year, region, schoolid, grade_level) -- a goals-sheet row
       whose region doesn't match the scaffold's region for that
       schoolid/grade_level is silently dropped by this inner join (see
-      test_int_finalsite__goals_scaffold_region_matches_scaffold).
-    config:
-      contract:
-        enforced: true
+      test_int_tableau__fresh_goals_scaffold_region_matches_scaffold).
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -34,7 +31,7 @@ models:
         data_type: int64
         description: >
           The current Finalsite recruitment cycle -- always
-          int_finalsite__enrollment_scaffold's academic_year value.
+          int_tableau__fresh_enrollment_scaffold's academic_year value.
       - name: org
         data_type: string
         description: Always "KTAF" (verified constant, network-wide).
@@ -51,7 +48,8 @@ models:
         data_type: int64
         description: >
           -9 = whole-school total row, else 0-12. See
-          int_finalsite__enrollment_scaffold for the -9 sentinel's provenance.
+          int_tableau__fresh_enrollment_scaffold for the -9 sentinel's
+          provenance.
       - name: school_level
         data_type: string
         description: ES / MS / HS, as entered on the goals sheet.

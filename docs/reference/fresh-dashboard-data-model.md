@@ -13,11 +13,11 @@ same underlying scaffold and goals data.
 
 ```text
 stg_powerschool__schools ─┐
-stg_powerschool__students ┼─▶ int_finalsite__enrollment_scaffold ─┬─▶ rpt_tableau__fresh_dashboard_progress_to_goals
-stg_google_sheets__finalsite__school_scaffold ─┘                  │
-                                                                    └─▶ int_finalsite__goals_scaffold ─▶ rpt_tableau__fresh_dashboard_aggregated
-                                                                          ▲
-stg_google_sheets__finalsite__goals ─────────────────────────────────────┘
+stg_powerschool__students ┼─▶ int_tableau__fresh_enrollment_scaffold ─┬─▶ rpt_tableau__fresh_dashboard_progress_to_goals
+stg_google_sheets__finalsite__school_scaffold ─┘                      │
+                                                                        └─▶ int_tableau__fresh_goals_scaffold ─▶ rpt_tableau__fresh_dashboard_aggregated
+                                                                              ▲
+stg_google_sheets__finalsite__goals ─────────────────────────────────────────┘
 
 stg_finalsite__status_report ─▶ int_finalsite__status_report_unpivot ─┐
                                                                         ├─▶ int_tableau__finalsite_student_scaffold ─▶ both rpt_ models above
@@ -47,7 +47,7 @@ derivation. The three `stg_focus__*` passthroughs this used to depend on
 `custom_field_select_options`) no longer exist — their source entries were
 removed along with them.
 
-## The scaffold: `int_finalsite__enrollment_scaffold`
+## The scaffold: `int_tableau__fresh_enrollment_scaffold`
 
 This model produces one row per `(academic_year, region, schoolid, grade_level)`
 — the spine everything else joins against. It replaced a fully hand-maintained
@@ -347,7 +347,7 @@ numbers and the dashboard:
   27,511 rows sit on `2026-2027`, 1,492 are still on the prior `2025-2026`, and
   a handful are already on `2027-2028`/`2028-2029`). Comparing this per-record
   value against `finalsite_recruitment_year` (see "The current academic year"
-  section above) could give `int_finalsite__enrollment_scaffold`'s blend a
+  section above) could give `int_tableau__fresh_enrollment_scaffold`'s blend a
   per-student or per-school rollover signal, instead of relying solely on the
   single network-wide current-year anchor. Not yet designed or implemented -- an
   idea to explore, not a decision.
@@ -390,7 +390,7 @@ numbers and the dashboard:
   Focus extract so this isn't a surprise later.
 - **Full field list for "what do we need from Focus to make Miami work on FRESH"
   -- two separate gaps, not one:**
-  1. **The scaffold** (`int_finalsite__enrollment_scaffold`'s PowerSchool
+  1. **The scaffold** (`int_tableau__fresh_enrollment_scaffold`'s PowerSchool
      builder) needs a schools-equivalent (id, name/abbreviation, an
      exclude-from-reporting flag if Focus mixes in non-reporting entities) and a
      students-equivalent (schoolid, grade_level, a currently-enrolled status

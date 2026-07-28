@@ -16,7 +16,7 @@ with
 
             'School' as goal_granularity,
 
-        from {{ ref("int_finalsite__enrollment_scaffold") }} as s
+        from {{ ref("int_tableau__fresh_enrollment_scaffold") }} as s
         left join
             {{ ref("int_people__location_crosswalk") }} as x
             on s.schoolid = x.location_powerschool_school_id
@@ -41,7 +41,7 @@ with
 
             'School/Grade Level' as goal_granularity,
 
-        from {{ ref("int_finalsite__enrollment_scaffold") }} as s
+        from {{ ref("int_tableau__fresh_enrollment_scaffold") }} as s
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
         where s.grade_level != -9 and s.schoolid != 0
     ),

@@ -1,5 +1,5 @@
 models:
-  - name: int_finalsite__enrollment_scaffold
+  - name: int_tableau__fresh_enrollment_scaffold
     description: >
       School x grade spine for the FRESH dashboard, replacing the fully
       hand-maintained stg_google_sheets__finalsite__school_scaffold. Three
