@@ -17,6 +17,12 @@ with
             sch.school_number,
             sch.state,
 
+            ep.prior_district_label,
+            ep.prior_state_label,
+            ep.prior_country_label,
+            ep.educational_choice_label,
+            ep.student_offender_transfer_label,
+
             g.short_name as grade_level_short_name,
 
             ec.short_name as entrycode,
@@ -53,18 +59,25 @@ with
             end as enroll_status,
 
             case
-                slo.code when 'E' then 'ES' when 'M' then 'MS' when 'H' then 'HS'
+                sch.school_level_label
+                when 'E - Elementary'
+                then 'ES'
+                when 'M - Middle'
+                then 'MS'
+                when 'H - High'
+                then 'HS'
             end as school_level,
 
         from {{ ref("stg_focus__students") }} as s
         inner join
             {{ ref("stg_focus__student_enrollment") }} as e
             on s.student_id = e.student_id
-        left join {{ ref("stg_focus__schools") }} as sch on e.school_id = sch.id
+        -- int_focus__schools carries the decoded custom-field labels alongside
+        -- the staging columns; map its level label to the ES/MS/HS abbreviation
+        -- the network contract uses
+        left join {{ ref("int_focus__schools") }} as sch on e.school_id = sch.id
         left join
-            {{ ref("stg_focus__custom_field_select_options") }} as slo
-            on sch.school_level = slo.id
-            and slo.source_class = 'CustomField'
+            {{ ref("int_focus__student_enrollment__pivot") }} as ep on e.id = ep.id
         left join
             {{ ref("stg_focus__school_gradelevels") }} as g
             on e.grade_id = g.id

@@ -55,6 +55,11 @@ entity's populated custom fields, scan the FULL table and join the whole catalog
 on `lower(column_name)`, since filtering to `custom_*`-prefixed columns silently
 misses the semantic-named ones.
 
+**The shipped `__pivot` models are NOT a complete decode.** They cover 30 of 91
+populated decodable fields, and every covered field is `custom_*`-prefixed — no
+semantic-named field is decoded anywhere, i.e. the trap above, realized. Check
+the catalog before assuming a field is available; inventory in #4597.
+
 `source_class`→entity-table map (use the catalog's own spelling, NOT the
 entity's): `SISStudent`→students, `FocusUser`→users, `SISSchool`→schools,
 `StudentEnrollment`→student_enrollment, `CoursePeriod`→course_periods,

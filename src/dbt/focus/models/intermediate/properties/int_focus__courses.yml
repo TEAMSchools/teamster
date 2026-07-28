@@ -1,0 +1,18 @@
+models:
+  - name: int_focus__courses
+    description: >-
+      Focus courses with their select custom fields decoded to labels — every
+      stg_focus__courses column plus the int_focus__courses__pivot labels. This
+      is the model to consume; the pivot is a decode companion that drops
+      entities whose custom fields are all null, so it is not a complete spine
+      on its own. Column docs live on the two upstream models.
+    columns:
+      - name: course_id
+        description: Primary key — Focus course id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
