@@ -31,16 +31,18 @@ with
     -- contact detail rows are free-typed by title; map to the phone-type
     -- vocabulary shared with the Finalsite contacts intermediate. Email-shaped
     -- titles (e.g. "Home Email") also match the home/work substrings below, so
-    -- they are excluded up front rather than mistyped as phones. value is
-    -- blank-normalized here so phones_ranked can filter the plain column.
-    -- Unmapped titles are surfaced by the focus_unmapped_phone_contact_titles
-    -- test.
+    -- is_email_title is derived here and filtered out in phones_filtered
+    -- rather than mistyped as phones. value is blank-normalized here so
+    -- phones_ranked can filter the plain column. Unmapped and ambiguous
+    -- (matching both vocabularies) titles are surfaced by the
+    -- focus_unmapped_phone_contact_titles test.
     phones as (
         select
             person_id,
             detail_priority,
 
             nullif(trim(value), '') as `value`,
+            regexp_contains(lower(title), r'e-?mail') as is_email_title,
 
             case
                 when regexp_contains(lower(title), r'cell|mobile')
@@ -53,7 +55,14 @@ with
                 then 'daytime'
             end as phone_type,
         from {{ ref("stg_focus__people_join_contacts") }}
-        where not regexp_contains(lower(title), r'e-?mail')
+    ),
+
+    -- is_email_title is a plain boolean column here, not a function applied
+    -- to a table column in WHERE.
+    phones_filtered as (
+        select person_id, detail_priority, value, phone_type,
+        from phones
+        where not is_email_title
     ),
 
     phones_ranked as (
@@ -71,7 +80,7 @@ with
                 partition by person_id
                 order by detail_priority asc nulls last, value asc
             ) as overall_rank,
-        from phones
+        from phones_filtered
         where phone_type is not null and value is not null
     ),
 

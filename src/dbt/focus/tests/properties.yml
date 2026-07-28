@@ -12,9 +12,10 @@ data_tests:
             package: focus
   - name: focus_unmapped_phone_contact_titles
     description: >-
-      Warns when a people_join_contacts title matches none of the phone-type
-      regexes used by int_focus__student_contacts, so a newly-introduced Focus
-      contact type is surfaced instead of silently dropped from the phone pivot.
+      Warns when a people_join_contacts title matches neither the phone-type nor
+      email regexes used by int_focus__student_contacts (an unmapped title
+      needing a new mapping), or matches both (an ambiguous title the model
+      silently excludes as email, potentially dropping a real phone value).
     config:
       meta:
         dagster:
