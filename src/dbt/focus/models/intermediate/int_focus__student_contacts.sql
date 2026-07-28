@@ -49,21 +49,19 @@ with
 select
     l.student_id,
     l.person_id,
+    l.student_relation as relationship,
     l.sort_order,
     l.is_custodial,
     l.is_emergency,
     l.is_pickup,
     l.is_reunification,
 
-    l.student_relation as relationship,
-
     s.local_student_id,
 
     p.contact_name,
-    p.email,
-
     p.first_name as contact_first_name,
     p.last_name as contact_last_name,
+    p.email,
 
     a.home_address,
 
