@@ -11,10 +11,11 @@ models:
       - name: grade_level
         data_type: int64
         description: >
-          Numeric grade level derived from application_grade (K = 0, else the
-          parsed digit grade). -1 is reserved for Pre-K, mirroring PowerSchool's
-          convention -- no district currently recruits PK through Finalsite, so
-          -1 has never occurred in practice.
+          Numeric grade level derived from application_grade: K/Kindergarten =
+          0, PK/Prekindergarten = -1 (mirroring PowerSchool's Pre-K convention),
+          else the parsed digit grade. No district currently recruits PK through
+          Finalsite, so the PK match is unverified against a real raw value --
+          confirm and adjust once one does.
         data_tests:
           - accepted_values:
               arguments:
