@@ -232,9 +232,12 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   signature against `CUBEJS_API_SECRET` itself, reads the `email` claim, and
   sets `req.securityContext = await resolveAccess(email)`. No/invalid token →
   `jwt.verify` throws → Cube rejects the request; no `Authorization` header
-  resolves to the empty default-deny context. Auth is skipped entirely in Cube
-  developer mode (`CUBEJS_DEV_MODE=true`) — `checkAuth` only runs with dev mode
-  off / `NODE_ENV=production`.
+  resolves to the empty default-deny context. **It runs in developer mode too**
+  (verified on Cube 1.6.59) — so the local REST Playground resolves a pasted
+  `{"email": ...}`; do not assume `NODE_ENV=production` is needed. `jwt.verify`
+  also enforces `maxAge: "12h"` derived from `iat`, which rejects a stale cached
+  Playground token and any token with no `iat` at all — including Cube Cloud's
+  `iss: "cubecloud"` context, which bypasses `checkAuth` entirely (#4526).
 - **`checkSqlAuth` (SQL API)** returns
   `{ password: process.env.CUBEJS_SQL_PASSWORD, securityContext }` — Cube
   validates the presented password against the RETURNED one, so returning `null`

@@ -88,8 +88,9 @@ Cube YAML files, the existing manifest stays valid.
 Run the **Cube: Dev Server** VS Code task to start Cube at `localhost:4000` —
 see [Local Dev](#local-dev). To exercise **row-level security** (not just that
 models compile), see
-[Testing row-level security locally](#testing-row-level-security-locally) —
-developer mode disables auth, so RLS needs a specific setup.
+[Testing row-level security locally](#testing-row-level-security-locally) — both
+auth hooks run in developer mode, but each surface emulates a viewer
+differently.
 
 ### 4. Test in Cube Cloud
 
@@ -97,15 +98,20 @@ Push your branch, then switch to it in the Cube Cloud UI's development mode
 branch switcher. Cube Cloud activates a staging environment for the branch
 automatically.
 
-Test in the Cube Cloud Playground. Your real access row from
-`kipptaf_marts.dim_staff_cube_access` applies here — use this to verify security
-behavior against live HR data.
+Test in the Cube Cloud Playground — but **row-level security cannot be validated
+there yet** ([#4526](https://github.com/TEAMSchools/teamster/issues/4526)). Cube
+Cloud does not run our `checkAuth`; it injects its own security context
+(top-level `email`, `cubeCloud.username`, `iss: "cubecloud"`) directly, so
+`resolveAccess` never runs, `contextToGroups` finds no `groups`, and every gated
+view default-denies — the views are hidden (you see only source tables) and
+queries compile to `WHERE (1 = 0)`. Server-side enrichment of that injected
+context is the pending fix. Until it lands, validate RLS locally: see
+[Testing row-level security locally](#testing-row-level-security-locally).
 
 Check:
 
 - Cubes and views load without errors
 - Queries return expected results against live BigQuery data
-- Row-level security behaves correctly for your groups
 - Existing cubes and views still work (no regressions)
 
 ### 5. Open a PR
@@ -125,9 +131,9 @@ The reviewing analyst:
    - Do queries return expected results against live BigQuery data?
    - Do existing cubes and views still work?
 3. To test row-level security behavior, follow
-   [Testing row-level security locally](#testing-row-level-security-locally)
-   (auth must be on — developer mode bypasses it), or test in Cube Cloud dev
-   mode where your real access row applies
+   [Testing row-level security locally](#testing-row-level-security-locally) —
+   locally, not in Cube Cloud, which cannot resolve a viewer's access row yet
+   ([#4526](https://github.com/TEAMSchools/teamster/issues/4526))
 4. Leaves review comments on the PR, or approves
 
 Author and reviewer can work together in the same Cube Cloud Playground session
@@ -159,29 +165,40 @@ When a business user needs to validate changes before merge:
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
 4. Playground opens at `http://localhost:4000`
 5. Click **Edit Security Context** and set
-   `{"email": "you@apps.teamschools.org"}`. **Caveat:** in developer mode this
-   only reaches `contextToGroups` as an `email` claim — it does NOT run identity
-   resolution, so gated views return zero rows. See
+   `{"email": "you@apps.teamschools.org"}`. `checkAuth` runs in developer mode,
+   so `resolveAccess` enriches that email into the real `securityContext` and
+   gated views resolve. If every view still returns zero rows, a stale cached
+   Playground token is the usual cause — see
    [Testing row-level security locally](#testing-row-level-security-locally).
 
 ## Testing row-level security locally
 
 Row-level security is enforced by per-view `access_policy`, driven by the
 `securityContext` that `resolveAccess` builds **inside the auth hooks**
-(`checkAuth` for REST, `checkSqlAuth` for the SQL API). That placement has a
-sharp consequence for local testing:
+(`checkAuth` for REST, `checkSqlAuth` for the SQL API). Both hooks run in
+developer mode (verified on Cube 1.6.59), so **both local surfaces can emulate
+any viewer by email** — which makes them the sanctioned way to sign off a user's
+scope before granting them access:
 
-Developer mode skips `checkAuth` (REST) — so the Playground and REST `/load`
-default-deny every gated view (empty `securityContext`, `contextToGroups`
-returns `[]`) unless you turn auth on. But `checkSqlAuth` (the SQL API's hook)
-runs **even in developer mode**, which makes the SQL API the easier and
-truer-to-prod way to validate.
+| Surface                         | Emulate a viewer by                                                             | Use it for                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Local SQL API                   | connecting as the viewer's email in the SQL `user`                              | **ground truth** — the prod BI/Superset path, and one loop covers a whole matrix of viewers |
+| Local REST Playground           | pasting `{"email": "viewer@apps.teamschools.org"}` into Edit Security Context   | spot checks and response metadata (e.g. `usedPreAggregations`)                              |
+| Cube Cloud Playground / Explore | not possible yet ([#4526](https://github.com/TEAMSchools/teamster/issues/4526)) | nothing — it bypasses `checkAuth` and default-denies                                        |
 
-**Prefer the SQL API for validation.** It resolves your real identity with no
-`NODE_ENV` change, and it is the surface Superset/BI actually use — so you
-validate the production path. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`, default
-`true`) is the planner on the SQL API, and joining views is a supported feature
-there
+**First, credentials.** `resolveAccess` issues its own BigQuery reads, separate
+from the driver's. With the BigQuery credentials variable unset — the normal
+local setup — it falls back to Application Default Credentials while keeping the
+`teamster-332318` project pin, so a current ADC login is all you need. Run the
+**GCloud: Application Default Login** task if your token is stale. A uniform
+zero across _every_ viewer, including a network-scoped one, means the identity
+read itself failed rather than the policies denying; check the dev-server log
+for `resolveAccess failed for <email>`.
+
+**The SQL API is ground truth.** It is the surface Superset/BI actually use, and
+identity resolves per connection, so one script covers every viewer. Tesseract
+(`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on the SQL API,
+and joining views is a supported feature there
 ([multi-fact views](https://docs.cube.dev/docs/data-modeling/multi-fact-views)).
 Enable the SQL API in `src/cube/.env`:
 
@@ -244,16 +261,21 @@ which confirms `resolveAccess` and the `student-<scope>` policies agree. Because
 identity is the connecting `user`, one loop covers the whole viewer matrix with
 no restart.
 
-**Alternative: REST `/load` with a JWT.** The REST hook is disabled in developer
-mode, so this path needs auth **on** — run with `NODE_ENV=production` and drop
-`CUBEJS_DEV_MODE` (it overrides `NODE_ENV`):
+**Alternative: the REST Playground.** `checkAuth` runs in developer mode, so no
+`NODE_ENV` flip is needed: click **Edit Security Context**, paste
+`{"email": "someone@apps.teamschools.org"}`, and `resolveAccess` enriches it
+into that viewer's real context. One gotcha to know before you conclude a policy
+is broken — the Playground caches its signed token in `localhost` local storage,
+and `checkAuth` caps token age at 12h (`maxAge`, derived from `iat`, independent
+of the token's own `exp`). A token minted more than 12h ago fails with
+`TokenExpiredError: maxAge exceeded` and **every** view denies. Clear
+`localhost` local storage, or re-save the security context, to re-mint a fresh
+token.
 
-```bash
-NODE_ENV=production npm run dev
-```
-
-Then sign an HS256 JWT whose `email` claim is the viewer (with
-`CUBEJS_API_SECRET`) and POST it:
+**Alternative: REST `/load` with your own JWT.** Sign an HS256 JWT whose `email`
+claim is the viewer (with `CUBEJS_API_SECRET`) and POST it — again no `NODE_ENV`
+change. `jsonwebtoken` stamps `iat` automatically, so mint it fresh per session
+for the same `maxAge` reason:
 
 ```bash
 tok=$(node -e "const j=require('jsonwebtoken');console.log(j.sign({email:'you@apps.teamschools.org'},process.env.CUBEJS_API_SECRET,{algorithm:'HS256'}))")
@@ -269,8 +291,9 @@ whose placeholder value uses **stale group names** (`cube-network-detail`,
 verbatim, that map's dev-bypass **overrides real resolution with dead groups no
 policy matches → every view denies**. Comment out (or delete) `CUBE_GROUP_MAP`
 so `resolveAccess` reads real HR data. (The bypass fires whenever
-`NODE_ENV !== production`, so it is inert on the REST auth-on path but active on
-the SQL-API/dev-mode path — keep it commented out either way.)
+`NODE_ENV !== production` and the variable is set, and it sits in the resolution
+path _shared_ by both auth hooks — so it corrupts the REST and SQL surfaces
+alike. Keep it commented out.)
 
 **Testing branch models not yet in production.** The cubes and `resolveAccess`
 read `kipptaf_marts` (production). If your branch reworks a mart the cubes read
