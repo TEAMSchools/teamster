@@ -1,0 +1,158 @@
+models:
+  - name: int_google_sheets__gpa_goals
+    description: >-
+      Adds the grade-band label, aggregation join key, goal proportion, and
+      goal-direction flag to `stg_google_sheets__gpa_goals`, so downstream
+      models can join a goal to its matching aggregate without re-deriving these
+      values.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - metric
+              - aggregation_hash
+          config:
+            severity: error
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: KIPP academic year (July start) this goal applies to.
+      - name: org_level
+        data_type: string
+        description: >-
+          Scope of the goal aggregation — `org` (network-wide), `region`, or
+          `school`.
+      - name: region
+        data_type: string
+        description: >-
+          Region label when `org_level` is `region` or `school`. Null for
+          `org`-level rows.
+      - name: schoolid
+        data_type: int64
+        description: >-
+          PowerSchool school ID when `org_level` is `school`. Null for `org`- or
+          `region`-level rows.
+      - name: grade_low
+        data_type: int64
+        description: Lower bound grade of the grade band this goal covers.
+      - name: grade_high
+        data_type: int64
+        description: Upper bound grade of the grade band this goal covers.
+      - name: metric
+        data_type: string
+        description: >-
+          GPA metric the goal targets — `y1_gpa_weighted`, `y1_gpa_unweighted`,
+          `cumulative_gpa_unweighted`, or `on_pace`.
+      - name: threshold
+        data_type: numeric
+        description: >-
+          Cutoff value that `metric` is compared against, per `direction`, to
+          determine whether a student/aggregate meets the goal.
+      - name: direction
+        data_type: string
+        description: >-
+          Comparison operator determining whether a student/aggregate value must
+          be `>=` or `<=` the threshold to count toward the goal.
+      - name: goal
+        data_type: numeric
+        description: >-
+          Target value (e.g., percent of students meeting the threshold) for
+          this org level, grade band, and metric.
+      - name: goal_proportion
+        data_type: numeric
+        description: >-
+          `goal` expressed as a proportion (`goal / 100`) for comparison against
+          ratio-scale aggregate values.
+      - name: grade_band
+        data_type: string
+        description: >-
+          Human-readable grade band — the single grade when `grade_low` equals
+          `grade_high` (e.g. `10`), else `grade_low` through `grade_high` joined
+          with a hyphen (e.g. `9-12`).
+      - name: aggregation_hash
+        data_type: string
+        description: >-
+          Join key matching this goal to its target aggregate: `org_<grade
+          low-grade high>` for `org`-level goals, `<region>_<grade low-grade
+          high>` for `region`-level goals, or `<schoolid>_<grade low-grade
+          high>` for `school`-level goals. Always uses the
+          `grade_low-grade_high` form, even when `grade_low` equals
+          `grade_high`.
+      - name: higher_is_better
+        data_type: boolean
+        description: >-
+          True when `direction` is `>=` or `>` (meeting the goal means the
+          metric value is at or above `threshold`); false when `direction` is
+          `<=` or `<` (meeting the goal means the metric value is at or below
+          `threshold`).
+
+unit_tests:
+  - name: unit_gpa_goals_hash_and_direction
+    description: >-
+      Verifies `aggregation_hash` and `grade_band` for org- and school-level
+      goals, `goal_proportion` for a goal of 49, and `higher_is_better` false
+      for a `<=`-direction region-level goal.
+    model: int_google_sheets__gpa_goals
+    given:
+      - input: ref('stg_google_sheets__gpa_goals')
+        format: sql
+        rows: |
+          /* org-level goal, grade band 9-12 */
+          select
+              2026 as academic_year,
+              'org' as org_level,
+              cast(null as string) as region,
+              cast(null as int64) as schoolid,
+              9 as grade_low,
+              12 as grade_high,
+              'y1_gpa_weighted' as metric,
+              cast(3.0 as numeric) as threshold,
+              '>=' as direction,
+              cast(75 as numeric) as goal
+          union all
+          /* school-level goal, single grade 10, goal 49 */
+          select
+              2026,
+              'school',
+              cast(null as string),
+              73253,
+              10,
+              10,
+              'cumulative_gpa_unweighted',
+              cast(2.0 as numeric),
+              '>=',
+              cast(49 as numeric)
+          union all
+          /* region-level goal, single grade 11, <= direction */
+          select
+              2026,
+              'region',
+              'Newark',
+              cast(null as int64),
+              11,
+              11,
+              'on_pace',
+              cast(1.0 as numeric),
+              '<=',
+              cast(60 as numeric)
+    expect:
+      rows:
+        - {
+            aggregation_hash: org_9-12,
+            grade_band: 9-12,
+            goal_proportion: 0.75,
+            higher_is_better: true,
+          }
+        - {
+            aggregation_hash: 73253_10-10,
+            grade_band: "10",
+            goal_proportion: 0.49,
+            higher_is_better: true,
+          }
+        - {
+            aggregation_hash: Newark_11-11,
+            grade_band: "11",
+            goal_proportion: 0.60,
+            higher_is_better: false,
+          }
