@@ -3,7 +3,7 @@ with
         /* dont have a better location where only one schoolid matches a single school
            name */
         select distinct
-            s.academic_year,
+            s.enrollment_academic_year,
             s.org,
             s.region,
             s.schoolid,
@@ -21,14 +21,14 @@ with
             {{ ref("int_people__location_crosswalk") }} as x
             on s.schoolid = x.location_powerschool_school_id
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
-        where s.grade_level = -1
+        where s.grade_level = -9
 
         union all
 
         /* dont have a better location where only one schoolid matches a single school
            name */
         select distinct
-            s.academic_year,
+            s.enrollment_academic_year,
             s.org,
             s.region,
             s.schoolid,
@@ -43,7 +43,7 @@ with
 
         from {{ ref("int_finalsite__enrollment_scaffold") }} as s
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
-        where s.grade_level != -1 and s.schoolid != 0
+        where s.grade_level != -9 and s.schoolid != 0
     ),
 
     data_stack_school as (
@@ -281,7 +281,7 @@ with
     )
 
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -312,17 +312,17 @@ select
 from scaffold as s
 left join
     data_stack_school as d
-    on s.academic_year = d.enrollment_academic_year
+    on s.enrollment_academic_year = d.enrollment_academic_year
     and s.region = d.region
     and s.schoolid = d.schoolid
     and s.grade_level = d.grade_level
     and s.enrollment_type = d.enrollment_type
-where s.grade_level = -1
+where s.grade_level = -9
 
 union all
 
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -353,9 +353,9 @@ select
 from scaffold as s
 left join
     data_stack_school_grade as d
-    on s.academic_year = d.enrollment_academic_year
+    on s.enrollment_academic_year = d.enrollment_academic_year
     and s.region = d.region
     and s.schoolid = d.schoolid
     and s.grade_level = d.grade_level
     and s.enrollment_type = d.enrollment_type
-where s.grade_level != -1 and s.schoolid != 0
+where s.grade_level != -9 and s.schoolid != 0

@@ -1,5 +1,12 @@
 models:
   - name: stg_google_sheets__finalsite__school_scaffold
+    description: >
+      Retired: int_finalsite__enrollment_scaffold now computes this data from
+      PowerSchool, Focus, and Finalsite directly (see
+      docs/reference/fresh-dashboard-data-model.md). Disabled rather than
+      deleted per team convention -- no downstream consumers remain.
+    config:
+      enabled: false
     columns:
       - name: academic_year
         data_type: int64
@@ -15,3 +22,8 @@ models:
         data_type: string
       - name: school_level
         data_type: string
+      - name: school_level_alt
+        data_type: string
+        description: >
+          Alternate school level override. Set to 'MS' for KIPP Sumner
+          Elementary grade 5+ rows; otherwise equal to `school_level`.
