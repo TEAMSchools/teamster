@@ -37,6 +37,7 @@ models:
               - grade_level
           config:
             severity: warn
+            where: schoolid != 0
           description: >
             Drift guard for the PowerSchool/sheet blend's anti-join key (region,
             schoolid, grade_level). That key is correct but strictly narrower
@@ -44,7 +45,9 @@ models:
             ever disagrees with extract_region()'s output for the same school,
             the sheet row stops being suppressed and this uniqueness check
             (which drops region) catches the resulting duplicate school/grade
-            pair under two region labels.
+            pair under two region labels. Region-level placeholder rows
+            (schoolid = 0) legitimately repeat across regions and are excluded
+            from this test.
     columns:
       - name: academic_year
         data_type: int64
