@@ -1,0 +1,136 @@
+with
+    -- normalize the Y/null flags once; null is preserved as "unmaintained in
+    -- Focus" (the Finalsite import seeds these as null; registrars set them)
+    links as (
+        select
+            student_id,
+            person_id,
+            address_id,
+            sort_order,
+
+            student_relation as relationship,
+
+            custody = 'Y' as is_custodial,
+            emergency = 'Y' as is_emergency,
+            pick_up = 'Y' as is_pickup,
+            reunification = 'Y' as is_reunification,
+        from {{ ref("stg_focus__students_join_people") }}
+    ),
+
+    people as (
+        select
+            person_id,
+            first_name as contact_first_name,
+            last_name as contact_last_name,
+            email,
+
+            array_to_string([first_name, last_name], ' ') as contact_name,
+        from {{ ref("stg_focus__people") }}
+    ),
+
+    -- contact detail rows are free-typed by title; map to the phone-type
+    -- vocabulary shared with the Finalsite contacts intermediate. Unmapped
+    -- titles are surfaced by the focus_unmapped_phone_contact_titles test.
+    phones as (
+        select
+            person_id,
+            value,
+            detail_priority,
+
+            case
+                when regexp_contains(lower(title), r'cell|mobile')
+                then 'mobile'
+                when regexp_contains(lower(title), r'home')
+                then 'home'
+                when regexp_contains(lower(title), r'work|business|office')
+                then 'work'
+                when regexp_contains(lower(title), r'day')
+                then 'daytime'
+            end as phone_type,
+        from {{ ref("stg_focus__people_join_contacts") }}
+    ),
+
+    phones_ranked as (
+        select
+            person_id,
+            value,
+            phone_type,
+
+            row_number() over (
+                partition by person_id, phone_type
+                order by detail_priority asc nulls last
+            ) as type_rank,
+
+            row_number() over (
+                partition by person_id order by detail_priority asc nulls last
+            ) as overall_rank,
+        from phones
+        where phone_type is not null
+    ),
+
+    phones_typed as (
+        select
+            person_id,
+
+            max(if(phone_type = 'mobile', value, null)) as phone_mobile,
+            max(if(phone_type = 'home', value, null)) as phone_home,
+            max(if(phone_type = 'work', value, null)) as phone_work,
+            max(if(phone_type = 'daytime', value, null)) as phone_daytime,
+            max(if(overall_rank = 1, value, null)) as phone_primary,
+        from phones_ranked
+        where type_rank = 1
+        group by person_id
+    ),
+
+    addresses as (
+        select
+            address_id,
+
+            nullif(
+                array_to_string([address, address2, city, state, zipcode], ', '), ''
+            ) as home_address,
+        from {{ ref("stg_focus__address") }}
+    ),
+
+    -- grain projection: one row per (student, address) the student resides at
+    student_addresses as (
+        select student_id, address_id,
+        from {{ ref("stg_focus__students_join_address") }}
+        group by student_id, address_id
+    )
+
+select
+    l.student_id,
+    l.person_id,
+    l.relationship,
+    l.sort_order,
+    l.is_custodial,
+    l.is_emergency,
+    l.is_pickup,
+    l.is_reunification,
+
+    s.local_student_id,
+
+    p.contact_name,
+    p.contact_first_name,
+    p.contact_last_name,
+    p.email,
+
+    a.home_address,
+
+    {{ finalsite.clean_phone("pt.phone_mobile") }} as phone_mobile,
+    {{ finalsite.clean_phone("pt.phone_home") }} as phone_home,
+    {{ finalsite.clean_phone("pt.phone_work") }} as phone_work,
+    {{ finalsite.clean_phone("pt.phone_daytime") }} as phone_daytime,
+    {{ finalsite.clean_phone("pt.phone_primary") }} as phone_primary,
+
+    if(l.address_id is null, null, sa.address_id is not null) as is_household_member,
+from links as l
+inner join {{ ref("stg_focus__students") }} as s on l.student_id = s.student_id
+left join people as p on l.person_id = p.person_id
+left join phones_typed as pt on l.person_id = pt.person_id
+left join addresses as a on l.address_id = a.address_id
+left join
+    student_addresses as sa
+    on l.student_id = sa.student_id
+    and l.address_id = sa.address_id

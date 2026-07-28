@@ -1,0 +1,118 @@
+models:
+  - name: int_focus__student_contacts
+    description: >-
+      Focus student contacts — one row per live student-to-person link
+      (students_join_people), enriched with the person's name and email, typed
+      phone numbers pivoted from people_join_contacts, the link's address, and
+      household membership (the link address matches one of the student's own
+      addresses). Unslotted and uncapped by design — contact_slot assignment
+      (contact_1 / emergency_N) happens at the kipptaf reporting layer. Flag
+      booleans are null-preserving — null means the flag is unmaintained in
+      Focus, not false. Internal-only; a rpt_ view must sit between this model
+      and any external consumer.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - person_id
+          config:
+            severity: error
+    columns:
+      - name: student_id
+        description: Focus student id (links to stg_focus__students).
+        config:
+          meta:
+            contains_pii: true
+      - name: person_id
+        description: Focus person id of the contact.
+        config:
+          meta:
+            contains_pii: true
+      - name: relationship
+        description:
+          Contact relationship to the student (student_relation, e.g. Guardian).
+      - name: sort_order
+        description: >-
+          Contact ordering within the student, lowest first. Import-seeded rows
+          rank the primary caregiver 1.
+      - name: is_custodial
+        description: >-
+          Whether the contact has custody. Null-preserving — null means
+          unmaintained in Focus.
+      - name: is_emergency
+        description: >-
+          Whether the contact is an emergency contact. Null-preserving — null
+          means unmaintained in Focus.
+      - name: is_pickup
+        description: >-
+          Whether the contact may pick the student up. Null-preserving — null
+          means unmaintained in Focus.
+      - name: is_reunification
+        description: >-
+          Whether the contact is a reunification contact. Null-preserving — null
+          means unmaintained in Focus.
+      - name: local_student_id
+        description:
+          KIPP local student id from the Focus student record (custom_53).
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_name
+        description: Contact full name (first + last).
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_first_name
+        description: Contact first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_last_name
+        description: Contact last name.
+        config:
+          meta:
+            contains_pii: true
+      - name: email
+        description: Contact email address.
+        config:
+          meta:
+            contains_pii: true
+      - name: home_address
+        description: >-
+          Contact home address assembled from the link's address record (street,
+          unit, city, state, zip).
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_mobile
+        description: Contact mobile/cell phone, normalized to E.164.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_home
+        description: Contact home phone, normalized to E.164.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_work
+        description: Contact work phone, normalized to E.164.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_daytime
+        description: Contact daytime phone, normalized to E.164.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone_primary
+        description: >-
+          Contact primary phone — the highest-priority (lowest detail_priority)
+          phone-typed contact detail, normalized to E.164.
+        config:
+          meta:
+            contains_pii: true
+      - name: is_household_member
+        description: >-
+          Whether the contact's linked address matches one of the student's own
+          addresses. Null when the link carries no address.
