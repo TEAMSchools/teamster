@@ -77,10 +77,18 @@ with
             max(if(phone_type = 'home', value, null)) as phone_home,
             max(if(phone_type = 'work', value, null)) as phone_work,
             max(if(phone_type = 'daytime', value, null)) as phone_daytime,
-            max(if(overall_rank = 1, value, null)) as phone_primary,
         from phones_ranked
         where type_rank = 1
         group by person_id
+    ),
+
+    -- read off the unfiltered rank, not phones_typed's type_rank = 1 filter --
+    -- the overall_rank = 1 row can belong to a phone_type the type_rank filter
+    -- has already discarded, so this must not read through that filter.
+    primary_phone as (
+        select person_id, value as phone_primary,
+        from phones_ranked
+        where overall_rank = 1
     ),
 
     addresses as (
@@ -123,13 +131,14 @@ select
     {{ finalsite.clean_phone("pt.phone_home") }} as phone_home,
     {{ finalsite.clean_phone("pt.phone_work") }} as phone_work,
     {{ finalsite.clean_phone("pt.phone_daytime") }} as phone_daytime,
-    {{ finalsite.clean_phone("pt.phone_primary") }} as phone_primary,
+    {{ finalsite.clean_phone("pp.phone_primary") }} as phone_primary,
 
     if(l.address_id is null, null, sa.address_id is not null) as is_household_member,
 from links as l
 inner join {{ ref("stg_focus__students") }} as s on l.student_id = s.student_id
 left join people as p on l.person_id = p.person_id
 left join phones_typed as pt on l.person_id = pt.person_id
+left join primary_phone as pp on l.person_id = pp.person_id
 left join addresses as a on l.address_id = a.address_id
 left join
     student_addresses as sa
