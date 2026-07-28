@@ -1,15 +1,19 @@
 models:
   - name: int_focus__student_enrollment
     description: >-
-      Focus student enrollment spans enriched with school, grade-level, and
-      enrollment-code attributes. One row per enrollment id; every join is
-      many-to-one so the base grain is preserved. drop_code is carried as its
-      raw code id only; its label enrichment is out of scope for this model.
-      Internal-only — a rpt_ view must sit between this model and any external
-      consumer.
+      Focus enrollment stints with student attributes — decoded grade level (PK
+      becomes -1, KG becomes 0), resolved entry and exit codes, enroll_status (0
+      enrolled, 2 withdrawn, 3 graduated), a June 30 default exitdate for
+      still-open stints, network first-day-of-school point-in-time flags, and
+      rn_year / year_in_school / year_in_network counters mirroring the
+      PowerSchool enrollment-union conventions. One row per Focus enrollment
+      stint. Internal-only — a rpt_ view must sit between this model and any
+      external consumer.
     columns:
-      - name: id
-        description: Primary key — Focus student enrollment id.
+      - name: student_enrollment_id
+        description: >-
+          Primary key — Focus student enrollment id; one row per enrollment
+          stint.
         data_tests:
           - unique:
               config:
@@ -17,46 +21,123 @@ models:
           - not_null:
               config:
                 severity: error
-      - name: syear
-        description: Focus school year (start year, e.g. 2025 = 2025-26).
-      - name: school_id
+      - name: academic_year
+        description: Focus school year start year (e.g. 2025 = 2025-26).
+      - name: academic_year_display
+        description:
+          Display-formatted academic year spanning both calendar years, e.g.
+          2025-26.
+      - name: schoolid
         description: Focus school id of the enrollment.
-      - name: student_id
-        description: Focus student id (local student id).
-        config:
-          meta:
-            contains_pii: true
-      - name: grade_id
-        description: Focus grade-level id (joins school_gradelevels.id).
-      - name: enrollment_code
-        description:
-          Focus enrollment-code id (joins student_enrollment_codes.id).
-      - name: drop_code
-        description:
-          Focus withdrawal-code id (joins student_enrollment_codes.id).
-      - name: calendar_id
-        description: Focus attendance calendar id.
-      - name: start_date
-        description: Enrollment start date.
-      - name: end_date
-        description: Enrollment withdraw date.
+      - name: school_number
+        description: >-
+          School Number custom field from stg_focus__schools; used by kipptaf's
+          downstream location crosswalk join.
       - name: school_title
         description: Full school name from stg_focus__schools.
       - name: school_state_school_id
         description: State-assigned school id from stg_focus__schools.
-      - name: grade_level_title
-        description: Full grade-level name from stg_focus__school_gradelevels.
+      - name: state
+        description: State custom field from stg_focus__schools.
+      - name: startdate
+        description: Enrollment start date.
+      - name: exitdate
+        description: >-
+          Enrollment end date, defaulted to June 30 of the academic year when
+          the stint has no end_date (still open).
+      - name: entrycode
+        description: Short name of the code used to enter the enrollment.
+      - name: exitcode
+        description:
+          Short name of the code used to withdraw from the enrollment.
+      - name: grade_level
+        description: >-
+          Numeric grade-level sentinel decoded from grade_level_short_name — PK
+          becomes -1, KG becomes 0, all other grades are their parsed numeric
+          value.
       - name: grade_level_short_name
         description: >-
-          Abbreviated grade-level label from stg_focus__school_gradelevels.
-      - name: enrollment_code_title
+          Abbreviated grade-level label from stg_focus__school_gradelevels (the
+          rollover/summer code '30' is excluded from the join).
+      - name: student_number
+        description: Focus local student id.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_first_name
+        description: Student first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_last_name
+        description: Student last name.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_name
+        description:
+          Student display name, formatted as last name, comma, first name.
+        config:
+          meta:
+            contains_pii: true
+      - name: student_email
+        description: Student e-mail address.
+        config:
+          meta:
+            contains_pii: true
+      - name: fteid
+        description: Florida Education Identifier.
+        config:
+          meta:
+            contains_pii: true
+      - name: dob
+        description: Student date of birth.
+        config:
+          meta:
+            contains_pii: true
+      - name: enroll_status
         description: >-
-          Full enrollment-code name from stg_focus__student_enrollment_codes.
-      - name: enrollment_code_short_name
+          Enrollment status sentinel — 0 for enrolled, 2 for withdrawn (a drop
+          code is present), 3 for graduated (the drop code's grad_type is
+          graduated).
+      - name: school_level
         description: >-
-          Abbreviated enrollment-code label from
-          stg_focus__student_enrollment_codes.
-      - name: enrollment_code_type
+          School level decoded from the school's custom-field select-option code
+          — ES, MS, or HS.
+      - name: first_day_of_school
         description: >-
-          Enrollment-code classification from
-          stg_focus__student_enrollment_codes.
+          Network first day of school for the enrollment's academic year, from
+          int_focus__school_year_first_day.
+      - name: is_enrolled_fdos
+        description: >-
+          True when the enrollment's start date is on or before the first day of
+          school.
+      - name: is_enrolled_oct01
+        description:
+          True when the enrollment spans October 1 of the academic year.
+      - name: is_enrolled_oct15
+        description:
+          True when the enrollment spans October 15 of the academic year.
+      - name: is_enrolled_mar15
+        description: >-
+          True when the enrollment spans March 15 of the following calendar
+          year.
+      - name: is_pre_year_withdrawal
+        description: >-
+          True when the enrollment's exit date falls before the first day of
+          school.
+      - name: rn_year
+        description: >-
+          Row number of the enrollment stint within student plus academic year,
+          ordered by latest exit date first; 1 marks the canonical stint counted
+          for that year.
+      - name: year_in_school
+        description: >-
+          Sequential count of academic years the student has been enrolled at
+          this school, computed only for the canonical (rn_year = 1) stint each
+          year; null otherwise.
+      - name: year_in_network
+        description: >-
+          Sequential count of academic years the student has been enrolled
+          anywhere in the network, computed only for the canonical (rn_year = 1)
+          stint each year; null otherwise.

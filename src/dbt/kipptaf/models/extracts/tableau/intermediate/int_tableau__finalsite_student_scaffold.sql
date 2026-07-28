@@ -289,6 +289,43 @@ with
         from days_in_grouped_status_calc
     ),
 
+    finalsite_contact_ids as (
+        select
+            _dbt_source_project,
+            finalsite_enrollment_id,
+
+            cast(focus_student_id_prefixed as int) as focus_student_id,
+        from {{ ref("int_finalsite__contact_id_attributes") }}
+    ),
+
+    -- The Focus vertical (int_focus__student_enrollments) carries no
+    -- Finalsite identity of its own -- this crosswalk join is what blends the
+    -- two sources, so it belongs here (the consumer), not in the Focus
+    -- wrapper. Inner join keeps only Focus enrollments that match a Finalsite
+    -- contact record.
+    focus_enrollments_with_finalsite as (
+        select
+            e.academic_year,
+            e.ps_schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.is_enrolled_fdos,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
+            e.is_enrolled_mar15,
+
+            f.finalsite_enrollment_id,
+        from {{ ref("int_focus__student_enrollments") }} as e
+        inner join
+            finalsite_contact_ids as f
+            on e.student_number = f.focus_student_id
+            and e._dbt_source_project = f._dbt_source_project
+        where
+            e.rn_year = 1 and e.academic_year = {{ var("finalsite_recruitment_year") }}
+    ),
+
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     enrollment_lookup as (
         select
@@ -325,17 +362,18 @@ with
             is_enrolled_oct15,
             is_enrolled_mar15,
 
-        from {{ ref("int_focus__student_enrollments") }}
-        where
-            rn_year = 1
-            and finalsite_enrollment_id is not null
-            and academic_year = {{ var("finalsite_recruitment_year") }}
+        from focus_enrollments_with_finalsite
     ),
 
     -- rn_year is computed per student, so two PowerSchool records sharing one
     -- infosnap_id both carry rn_year = 1 and fan out the enrollment joins below.
     -- Prefer the actively-enrolled record, then the newest student record.
     -- TODO: remove once the duplicate PowerSchool student records are merged (#4326)
+    -- Cross-source tiebreak: when a student appears in both the frozen
+    -- pre-migration PowerSchool snapshot and live Focus data with the same
+    -- enroll_status, student_number desc prefers the Focus record (Focus ids
+    -- are 10-digit FLDOE-prefixed, PowerSchool ids are shorter) -- intentional:
+    -- Focus is Miami's live SIS. TODO(#4326) covers duplicate PS records.
     deduplicate_enrollments as (
         {{
             dbt_utils.deduplicate(

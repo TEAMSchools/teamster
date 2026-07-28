@@ -58,7 +58,7 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__school_year_first_day
-      - name: stg_focus__school_gradelevels
+      - name: int_focus__student_enrollment
         config:
           meta:
             dagster:
@@ -66,22 +66,4 @@ sources:
               asset_key:
                 - kippmiami
                 - focus
-                - stg_focus__school_gradelevels
-      - name: stg_focus__student_enrollment_codes
-        config:
-          meta:
-            dagster:
-              group: focus
-              asset_key:
-                - kippmiami
-                - focus
-                - stg_focus__student_enrollment_codes
-      - name: stg_focus__custom_field_select_options
-        config:
-          meta:
-            dagster:
-              group: focus
-              asset_key:
-                - kippmiami
-                - focus
-                - stg_focus__custom_field_select_options
+                - int_focus__student_enrollment

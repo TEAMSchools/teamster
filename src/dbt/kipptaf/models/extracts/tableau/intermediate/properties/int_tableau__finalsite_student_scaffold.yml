@@ -88,16 +88,19 @@ models:
       - name: ps_grade_level
         data_type: int64
         description: >-
-          Grade level from the matched PowerSchool enrollment record, for
-          comparison against the Finalsite-reported grade_level.
+          Grade level from the matched SIS enrollment record (PowerSchool, or
+          Focus for Miami), for comparison against the Finalsite-reported
+          grade_level.
       - name: ps_school
         data_type: string
-        description: School name from the matched PowerSchool enrollment record.
+        description: >-
+          School name from the matched SIS enrollment record (PowerSchool, or
+          Focus for Miami).
       - name: ps_schoolid
         data_type: int64
         description: >-
-          School ID from the matched PowerSchool enrollment record, for
-          comparison against schoolid.
+          School ID from the matched SIS enrollment record (PowerSchool, or
+          Focus for Miami), for comparison against schoolid.
       - name: is_active_inactive_mismatch
         data_type: boolean
         description: >-

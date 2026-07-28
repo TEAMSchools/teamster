@@ -5,7 +5,7 @@ description: >-
   lineage. Triggers: explaining the scaffold/goals pipeline, debugging a count
   that doesn't match Finalsite, adding a new school/grade/year cycle,
   troubleshooting a student's status looking wrong, or working on
-  int_finalsite__enrollment_scaffold, int_finalsite__goals_scaffold,
+  int_tableau__fresh_enrollment_scaffold, int_tableau__fresh_goals_scaffold,
   rpt_tableau__fresh_dashboard_progress_to_goals, or
   rpt_tableau__fresh_dashboard_aggregated and their upstream models.
 ---
@@ -24,13 +24,15 @@ description: >-
 **Key facts to confirm before touching anything:**
 
 - `academic_year` is start-year form (AY2026-2027 = `2026`).
-- Miami is **always** 100% sheet-sourced, regardless of
-  `finalsite_scaffold_source` — a deliberate, temporary carve-out (Miami's SIS
-  moved to Focus, not ready yet as a scaffold source). Don't "fix" this by
-  trying to onboard Miami schools into `stg_powerschool__schools` — ask first.
-- `grade_level = -1` means "whole-school total row" in this scaffold's
+- Miami is **always** 100% sheet-sourced — a deliberate, temporary carve-out
+  (Miami's SIS moved to Focus, not ready yet as a scaffold source). Don't "fix"
+  this by trying to onboard Miami schools into `stg_powerschool__schools` — ask
+  first.
+- `grade_level = -9` means "whole-school total row" in this scaffold's
   convention — never conflate with PowerSchool's own use of negative grade
-  levels (pre-registration/pre-K).
+  levels (pre-registration/pre-K). The scaffold sheet stores this row as `-9`
+  natively (Ops recodes it in the sheet, not the pipeline); `-1` is reserved for
+  Pre-K everywhere downstream.
 - The goals sheet is a **live-read** Google Sheets external table — a number can
   change between two queries run seconds apart if someone is editing it. A
   mismatch against a materialized table doesn't necessarily mean a bug; check
@@ -63,7 +65,7 @@ Start here if you're on the school/enrollment team, not an engineer.
      live, so give it a moment and re-check; if it's still wrong, ask an
      engineer to rematerialize the affected models and confirm.
 
-2. **Adding a new grade or school mid-cycle?** Ask an engineer to run the `-1`
+2. **Adding a new grade or school mid-cycle?** Ask an engineer to run the `-9`
    candidate-row generator and the goals gap-row generator (below) — don't
    hand-type full rows from scratch.
 
@@ -105,19 +107,19 @@ Standard checks, roughly in order of likelihood:
 
 Both are ad hoc BigQuery queries, run on demand — not persistent dbt models.
 Both end with the same verify-and-confirm step: after the analyst pastes rows
-into the sheet, rematerialize `int_finalsite__enrollment_scaffold` (or the goals
-sheet's consumers) and confirm the change reached prod before telling them it's
-done — the same rematerialize-then-verify workflow used throughout this
+into the sheet, rematerialize `int_tableau__fresh_enrollment_scaffold` (or the
+goals sheet's consumers) and confirm the change reached prod before telling them
+it's done — the same rematerialize-then-verify workflow used throughout this
 project's own build (compare row counts / a value sample against the prod table
 via a BigQuery MCP query or `bq`, and check `__TABLES__.last_modified_time` for
 staleness).
 
-### `-1` candidate-row generator (scaffold sheet)
+### `-9` candidate-row generator (scaffold sheet)
 
-Lists every currently-existing, non-Miami school missing its `grade_level = -1`
-row in `stg_google_sheets__finalsite__school_scaffold` for the current academic
-year — Miami needs its full spine, not just this generator's output (see the
-Miami note above).
+Lists every currently-existing, non-Miami school missing its whole-school-total
+row (`grade_level = -9` in `stg_google_sheets__finalsite__school_scaffold`) for
+the current academic year — Miami needs its full spine, not just this
+generator's output (see the Miami note above).
 
 ```sql
 select distinct
@@ -125,12 +127,15 @@ select distinct
   ps.region,
   ps.abbreviation as school,
   ps.school_number as schoolid,
-  -1 as grade_level,
+  -9 as grade_level,
   'KTAF' as org,
 from `teamster-332318`.kipptaf_powerschool.stg_powerschool__schools as ps
+-- sheet and warehouse now agree: -9 is both the value to PASTE INTO THE SHEET
+-- and what stg_google_sheets__finalsite__school_scaffold carries through
+-- unchanged (no recode).
 left join `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__school_scaffold as s
   on ps.school_number = s.schoolid
-  and s.grade_level = -1
+  and s.grade_level = -9
   and s.academic_year = 2026 -- finalsite year toggle: see skill
 where
   ps.state_excludefromreporting = 0
@@ -152,12 +157,13 @@ goals sheet. A genuinely new school/grade has no prior-year pattern to project �
 flag it for the analyst to pick goal types manually rather than silently
 skipping it.
 
-- **`School` rows** (`grade_level = -1`) — keyed by `schoolid`. Copy that
-  school's own existing `(goal_type, goal_name)` combo-set forward. Verified
-  during design: this set is uniform across almost every school, with one real
-  exception (Miami's MTH lacks the lottery-based categories — Accepted / Offers
-  / Pending Offers — at `School` granularity) that a per-school copy-forward
-  rule handles correctly without special-casing.
+- **`School` rows** (`grade_level = -9` in `stg_google_sheets__finalsite__goals`
+  and the enrollment scaffold) — keyed by `schoolid`. Copy that school's own
+  existing `(goal_type, goal_name)` combo-set forward. Verified during design:
+  this set is uniform across almost every school, with one real exception
+  (Miami's MTH lacks the lottery-based categories — Accepted / Offers / Pending
+  Offers — at `School` granularity) that a per-school copy-forward rule handles
+  correctly without special-casing.
 - **`School/Grade Level` rows** — keyed by `(schoolid, grade_level)`, same
   copy-forward rule applied per grade in the new scaffold.
 - **`Region/Grade Level` rows** (Inquiries, Applications, Deferred, Waitlisted,
@@ -176,17 +182,19 @@ Finalsite-status → category mapping is institutional judgment, not computable)
 year", "bump the Finalsite recruitment year", "the goals sheet is now on [year],
 update the dashboard"
 
-**Why this is hardcoded, not derived:** two separate attempts to compute "the
-current Finalsite cycle" automatically were built and then reverted (see
-`git log` on `int_tableau__finalsite_student_scaffold.sql` for both). Finalsite
-can carry two concurrent academic years of live student data at once — students
-and regions roll over on their own uncoordinated timeline — so there's no
-reliable signal in the ingested data itself for "which year is current now."
-Unlike PowerSchool's `var("current_academic_year")`, which bumps on a
-predictable July 1 cadence, SRE's recruitment-cycle timeline is fluid — there is
-no fixed date to key an automatic bump off of. **Always confirm the new year
-with SRE (or by reading the goals sheet directly) before changing anything below
-— don't infer it from a calendar date or from ingestion data.**
+**Why this is a dedicated, manually-bumped var, not derived:** the value lives
+in `finalsite_recruitment_year` (`src/dbt/kipptaf/dbt_project.yml`), but that
+var doesn't compute itself — two separate attempts to compute "the current
+Finalsite cycle" automatically were built and then reverted (see `git log` on
+`int_tableau__finalsite_student_scaffold.sql` for both). Finalsite can carry two
+concurrent academic years of live student data at once — students and regions
+roll over on their own uncoordinated timeline — so there's no reliable signal in
+the ingested data itself for "which year is current now." Unlike PowerSchool's
+`var("current_academic_year")`, which bumps on a predictable July 1 cadence,
+SRE's recruitment-cycle timeline is fluid — there is no fixed date to key an
+automatic bump off of. **Always confirm the new year with SRE (or by reading the
+goals sheet directly) before changing anything below — don't infer it from a
+calendar date or from ingestion data.**
 
 **Step 0 — pre-flight: confirm the sheets are actually ready for the new year.**
 Toggling the literal before the source sheets carry the new year's data doesn't
@@ -210,26 +218,26 @@ until both are resolved:
    would make `latest_status_calc`'s `inner join` (and every other site below)
    silently return zero rows for the new year.
 
-2. **`school_scaffold` has its `-1` rows for the new year, for every
-   currently-existing non-Miami school:** run the `-1` candidate-row generator
-   above, but with `<new_year>` substituted for `2026` in both places (the
-   generator's own hardcoded year is a pre-toggle artifact — it's still pointed
-   at the outgoing year until you do this substitution). For a brand-new
-   academic year the sheet typically has **zero** rows yet, so this isn't a
-   partial-gap check — the generator's full output _is_ the complete `-1` row
-   set the new year needs. Since the PowerSchool builder can never produce `-1`
-   rows (structural, not a gap that closes on its own), don't just report that
-   gaps exist: **run the query now and hand the user its full result as a
-   ready-to-paste block** (plain delimited rows in a fenced code block, one row
-   per line, matching the "Goals-sheet gap-row generator" batch-delivery
-   convention — not a markdown table), so they can paste it directly into
-   `stg_google_sheets__finalsite__school_scaffold` before or alongside the
-   toggle. Leaving this until "later" means every affected school's
-   `School`-granularity goal rollup goes silently missing from the scaffold the
-   moment the toggle lands.
+2. **`school_scaffold` (the sheet) has its `-9` whole-school rows for the new
+   year, for every currently-existing non-Miami school**: run the `-9`
+   candidate-row generator above, but with `<new_year>` substituted for `2026`
+   in both places (the generator's own hardcoded year is a pre-toggle artifact —
+   it's still pointed at the outgoing year until you do this substitution). For
+   a brand-new academic year the sheet typically has **zero** rows yet, so this
+   isn't a partial-gap check — the generator's full output _is_ the complete
+   `-9` row set the new year needs. Since the PowerSchool builder can never
+   produce a whole-school row (structural, not a gap that closes on its own),
+   don't just report that gaps exist: **run the query now and hand the user its
+   full result as a ready-to-paste block** (plain delimited rows in a fenced
+   code block, one row per line, matching the "Goals-sheet gap-row generator"
+   batch-delivery convention — not a markdown table), so they can paste it
+   directly into `stg_google_sheets__finalsite__school_scaffold` before or
+   alongside the toggle. Leaving this until "later" means every affected
+   school's `School`-granularity goal rollup goes silently missing from the
+   scaffold the moment the toggle lands.
 
 Only once both checks are clean — status_crosswalk has real rows for
-`<new_year>`, and the pasted `-1` rows are confirmed in the sheet — proceed to
+`<new_year>`, and the pasted `-9` rows are confirmed in the sheet — proceed to
 the file edits below.
 
 **Files to edit** — every dbt model/test site reads from one shared var:
@@ -237,7 +245,7 @@ the file edits below.
 - `src/dbt/kipptaf/dbt_project.yml` — bump `finalsite_recruitment_year` (e.g.
   `2026` → `2027`). This alone updates every site below; none of them hold their
   own literal any more.
-  - `int_finalsite__enrollment_scaffold.sql` (`powerschool_scaffold`'s
+  - `int_tableau__fresh_enrollment_scaffold.sql` (`powerschool_scaffold`'s
     `academic_year` and `gsheet_scaffold`'s `where` filter)
   - `int_tableau__finalsite_student_scaffold.sql` (`same_day_status_dates`'s
     `where` filter and `enrollment_lookup`'s two branches)
@@ -245,7 +253,7 @@ the file edits below.
     `School/Grade Level` goal CTEs)
   - `test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
     (`crosswalk_ranking`'s `where` filter)
-- This file (1 occurrence — the `-1` candidate-row generator query above) is the
+- This file (1 occurrence — the `-9` candidate-row generator query above) is the
   one remaining independent literal: it's an ad hoc BigQuery query, not a dbt
   model, so it can't read `{{ var(...) }}` — substitute `<new_year>` by hand
   each time you run it.
@@ -262,7 +270,7 @@ Build and verify after all changes:
 
 ```bash
 uv run dbt build \
-  --select int_finalsite__enrollment_scaffold int_tableau__finalsite_student_scaffold \
+  --select int_tableau__fresh_enrollment_scaffold int_tableau__finalsite_student_scaffold \
     rpt_tableau__fresh_dashboard_progress_to_goals \
     test_int_finalsite__status_order_matches_crosswalk_ranking \
   --project-dir src/dbt/kipptaf \

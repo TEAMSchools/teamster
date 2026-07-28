@@ -10,19 +10,10 @@ models:
                 field: name
       - name: grade_level
         data_type: int64
-        description: >
-          Numeric grade level derived from application_grade: K/Kindergarten =
-          0, PK/Prekindergarten = -1 (mirroring PowerSchool's Pre-K convention),
-          else the parsed digit grade. No district currently recruits PK through
-          Finalsite, so the PK match is unverified against a real raw value --
-          confirm and adjust once one does.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values: [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-                quote: false
-              config:
-                severity: error
+        description: >-
+          Derived in the finalsite package staging model — see
+          stg_finalsite__status_report there for the decode and sentinel scheme
+          (-1 = PK).
       - name: _dbt_source_relation
         data_type: string
       - name: _dbt_source_project
