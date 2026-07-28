@@ -92,11 +92,10 @@ totals, genuinely new schools/grades, all of Miami).
 
 **Important: `grade_level = -9` means "whole-school total row" in this
 scaffold's convention** — a reporting convenience, not a PowerSchool concept.
-The sheet itself still stores this row as `-1` (Ops changes nothing there); the
-staging model (`stg_google_sheets__finalsite__school_scaffold`) recodes `-1` to
-`-9` so that `-1` can mean PK everywhere downstream (PK = `-1`, K = `0`, 1-12 =
-`1`-`12`). The PowerSchool builder never synthesizes a `-9` row — it's always
-sheet-sourced, by design.
+The sheet stores this row as `-9` natively (Ops recodes it in the sheet); there
+is no recode in the pipeline. `-1` is reserved for Pre-K everywhere downstream
+(PK = `-1`, K = `0`, 1-12 = `1`-`12`). The PowerSchool builder never synthesizes
+a `-9` row — it's always sheet-sourced, by design.
 
 **Miami carve-out (deliberate and temporary):** Miami is excluded from the
 PowerSchool builder entirely, unconditionally. Miami's SIS moved to Focus
@@ -334,8 +333,8 @@ numbers and the dashboard:
    Finalsite test/fake records.
 2. Add the new cycle's `status_crosswalk` config row(s) — manual, no generator
    (the status→category mapping is institutional judgment, not computable).
-3. Add the scaffold sheet's `-1` rows and any genuinely new grade/school rows —
-   see the `fresh-dashboard` skill's `-1` candidate-row generator.
+3. Add the scaffold sheet's `-9` rows and any genuinely new grade/school rows —
+   see the `fresh-dashboard` skill's `-9` candidate-row generator.
 4. Add the goals sheet's gap rows for the new cycle — see the skill's
    goals-sheet gap-row generator.
 

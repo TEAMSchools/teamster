@@ -30,10 +30,9 @@ description: >-
   first.
 - `grade_level = -9` means "whole-school total row" in this scaffold's
   convention — never conflate with PowerSchool's own use of negative grade
-  levels (pre-registration/pre-K). The scaffold sheet itself still stores this
-  row as `-1`; it's recoded to `-9` at
-  `stg_google_sheets__finalsite__school_scaffold` so `-1` can mean PK everywhere
-  downstream.
+  levels (pre-registration/pre-K). The scaffold sheet stores this row as `-9`
+  natively (Ops recodes it in the sheet, not the pipeline); `-1` is reserved for
+  Pre-K everywhere downstream.
 - The goals sheet is a **live-read** Google Sheets external table — a number can
   change between two queries run seconds apart if someone is editing it. A
   mismatch against a materialized table doesn't necessarily mean a bug; check
@@ -66,7 +65,7 @@ Start here if you're on the school/enrollment team, not an engineer.
      live, so give it a moment and re-check; if it's still wrong, ask an
      engineer to rematerialize the affected models and confirm.
 
-2. **Adding a new grade or school mid-cycle?** Ask an engineer to run the `-1`
+2. **Adding a new grade or school mid-cycle?** Ask an engineer to run the `-9`
    candidate-row generator and the goals gap-row generator (below) — don't
    hand-type full rows from scratch.
 
@@ -115,14 +114,12 @@ project's own build (compare row counts / a value sample against the prod table
 via a BigQuery MCP query or `bq`, and check `__TABLES__.last_modified_time` for
 staleness).
 
-### `-1` candidate-row generator (scaffold sheet)
+### `-9` candidate-row generator (scaffold sheet)
 
 Lists every currently-existing, non-Miami school missing its whole-school-total
-row (`grade_level = -9` in `stg_google_sheets__finalsite__school_scaffold`, the
-staging model's recode of the sheet's own `-1`) for the current academic year —
-Miami needs its full spine, not just this generator's output (see the Miami note
-above). The query's own paste value stays `-1` (see the join comment below for
-why).
+row (`grade_level = -9` in `stg_google_sheets__finalsite__school_scaffold`) for
+the current academic year — Miami needs its full spine, not just this
+generator's output (see the Miami note above).
 
 ```sql
 select distinct
@@ -130,14 +127,12 @@ select distinct
   ps.region,
   ps.abbreviation as school,
   ps.school_number as schoolid,
-  -1 as grade_level,
+  -9 as grade_level,
   'KTAF' as org,
 from `teamster-332318`.kipptaf_powerschool.stg_powerschool__schools as ps
--- NOTE the asymmetry: -1 above is the value to PASTE INTO THE SHEET (Ops
--- convention). This join reads stg_google_sheets__finalsite__school_scaffold,
--- which RECODES that same sheet's -1 to -9 on the way in -- so the anti-join
--- below must match -9, or it matches zero rows and this query would
--- (incorrectly) flag every non-Miami school as missing its whole-school row.
+-- sheet and warehouse now agree: -9 is both the value to PASTE INTO THE SHEET
+-- and what stg_google_sheets__finalsite__school_scaffold carries through
+-- unchanged (no recode).
 left join `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__school_scaffold as s
   on ps.school_number = s.schoolid
   and s.grade_level = -9
@@ -163,13 +158,12 @@ flag it for the analyst to pick goal types manually rather than silently
 skipping it.
 
 - **`School` rows** (`grade_level = -9` in `stg_google_sheets__finalsite__goals`
-  and the enrollment scaffold; the goals sheet itself still stores this as `-1`)
-  — keyed by `schoolid`. Copy that school's own existing
-  `(goal_type, goal_name)` combo-set forward. Verified during design: this set
-  is uniform across almost every school, with one real exception (Miami's MTH
-  lacks the lottery-based categories — Accepted / Offers / Pending Offers — at
-  `School` granularity) that a per-school copy-forward rule handles correctly
-  without special-casing.
+  and the enrollment scaffold) — keyed by `schoolid`. Copy that school's own
+  existing `(goal_type, goal_name)` combo-set forward. Verified during design:
+  this set is uniform across almost every school, with one real exception
+  (Miami's MTH lacks the lottery-based categories — Accepted / Offers / Pending
+  Offers — at `School` granularity) that a per-school copy-forward rule handles
+  correctly without special-casing.
 - **`School/Grade Level` rows** — keyed by `(schoolid, grade_level)`, same
   copy-forward rule applied per grade in the new scaffold.
 - **`Region/Grade Level` rows** (Inquiries, Applications, Deferred, Waitlisted,
@@ -224,29 +218,26 @@ until both are resolved:
    would make `latest_status_calc`'s `inner join` (and every other site below)
    silently return zero rows for the new year.
 
-2. **`school_scaffold` (the sheet) has its `-1` whole-school rows for the new
-   year, for every currently-existing non-Miami school** — all sheet-world
-   references below use the sheet's own `-1` convention, not the recoded `-9`
-   that appears once these rows reach
-   `stg_google_sheets__finalsite__school_scaffold`: run the `-1` candidate-row
-   generator above, but with `<new_year>` substituted for `2026` in both places
-   (the generator's own hardcoded year is a pre-toggle artifact — it's still
-   pointed at the outgoing year until you do this substitution). For a brand-new
-   academic year the sheet typically has **zero** rows yet, so this isn't a
-   partial-gap check — the generator's full output _is_ the complete `-1` row
-   set the new year needs. Since the PowerSchool builder can never produce a
-   whole-school row (structural, not a gap that closes on its own), don't just
-   report that gaps exist: **run the query now and hand the user its full result
-   as a ready-to-paste block** (plain delimited rows in a fenced code block, one
-   row per line, matching the "Goals-sheet gap-row generator" batch-delivery
-   convention — not a markdown table), so they can paste it directly into
-   `stg_google_sheets__finalsite__school_scaffold` before or alongside the
-   toggle. Leaving this until "later" means every affected school's
-   `School`-granularity goal rollup goes silently missing from the scaffold the
-   moment the toggle lands.
+2. **`school_scaffold` (the sheet) has its `-9` whole-school rows for the new
+   year, for every currently-existing non-Miami school**: run the `-9`
+   candidate-row generator above, but with `<new_year>` substituted for `2026`
+   in both places (the generator's own hardcoded year is a pre-toggle artifact —
+   it's still pointed at the outgoing year until you do this substitution). For
+   a brand-new academic year the sheet typically has **zero** rows yet, so this
+   isn't a partial-gap check — the generator's full output _is_ the complete
+   `-9` row set the new year needs. Since the PowerSchool builder can never
+   produce a whole-school row (structural, not a gap that closes on its own),
+   don't just report that gaps exist: **run the query now and hand the user its
+   full result as a ready-to-paste block** (plain delimited rows in a fenced
+   code block, one row per line, matching the "Goals-sheet gap-row generator"
+   batch-delivery convention — not a markdown table), so they can paste it
+   directly into `stg_google_sheets__finalsite__school_scaffold` before or
+   alongside the toggle. Leaving this until "later" means every affected
+   school's `School`-granularity goal rollup goes silently missing from the
+   scaffold the moment the toggle lands.
 
 Only once both checks are clean — status_crosswalk has real rows for
-`<new_year>`, and the pasted `-1` rows are confirmed in the sheet — proceed to
+`<new_year>`, and the pasted `-9` rows are confirmed in the sheet — proceed to
 the file edits below.
 
 **Files to edit** — every dbt model/test site reads from one shared var:
@@ -262,7 +253,7 @@ the file edits below.
     `School/Grade Level` goal CTEs)
   - `test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
     (`crosswalk_ranking`'s `where` filter)
-- This file (1 occurrence — the `-1` candidate-row generator query above) is the
+- This file (1 occurrence — the `-9` candidate-row generator query above) is the
   one remaining independent literal: it's an ad hoc BigQuery query, not a dbt
   model, so it can't read `{{ var(...) }}` — substitute `<new_year>` by hand
   each time you run it.
