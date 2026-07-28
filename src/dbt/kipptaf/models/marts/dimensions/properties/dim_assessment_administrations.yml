@@ -14,6 +14,12 @@ models:
       source_assessment_id).
     config:
       materialized: table
+      meta:
+        dagster:
+          # nightly instead of eager: Cube-only consumer, daily refresh_key —
+          # see fct_assessment_scores_enrollment_scoped. Refs #4559
+          automation_condition:
+            cron_schedule: 0 0 * * *
     columns:
       - name: assessment_administration_key
         data_type: string

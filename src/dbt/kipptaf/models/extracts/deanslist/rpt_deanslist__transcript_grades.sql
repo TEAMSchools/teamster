@@ -22,7 +22,7 @@ with
         inner join
             {{ ref("stg_powerschool__students") }} as s
             on sg.studentid = s.id
-            and {{ union_dataset_join_clause(left_alias="sg", right_alias="s") }}
+            and sg._dbt_source_project = s._dbt_source_project
         where ifnull(sg.excludefromtranscripts, 0) = 0 and sg.storecode = 'Y1'
 
         union all
@@ -53,18 +53,18 @@ with
         inner join
             {{ ref("base_powerschool__final_grades") }} as fg
             on s.id = fg.studentid
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="fg") }}
+            and s._dbt_source_project = fg._dbt_source_project
             and fg.exclude_from_gpa = 0
             and current_date('{{ var("local_timezone") }}')
             between fg.termbin_start_date and fg.termbin_end_date
         inner join
             {{ ref("stg_powerschool__courses") }} as c
             on c.course_number = fg.course_number
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="fg") }}
+            and c._dbt_source_project = fg._dbt_source_project
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on s.schoolid = sch.school_number
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="sch") }}
+            and s._dbt_source_project = sch._dbt_source_project
         where s.grade_level >= 5
     )
 

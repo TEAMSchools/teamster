@@ -188,13 +188,13 @@ the upstream CTE that aliases the source. Compile fails with
 
 When a marts fix touches joins or surrogate-key composition involving
 `_dbt_source_project` (or `_dbt_source_relation`), promote the
-`extract_code_location()` call up to the union model itself rather than applying
-it at each consumer
+`extract_source_project()` call up to the union model itself rather than
+applying it at each consumer
 ([#3142](https://github.com/TEAMSchools/teamster/issues/3142)). Downstream
-consumers should join and hash on the materialized `code_location` column, not
-re-derive it from `_dbt_source_relation` per-call. This counts as an additive
-upstream edit under "Spec authoring context" and does not require a separate
-refactor PR.
+consumers should join and hash on the materialized `_dbt_source_project` column,
+not re-derive it from `_dbt_source_relation` per-call. This counts as an
+additive upstream edit under "Spec authoring context" and does not require a
+separate refactor PR.
 
 ## Removing a mart-level `qualify row_number() = 1`
 

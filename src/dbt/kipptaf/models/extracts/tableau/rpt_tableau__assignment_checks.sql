@@ -23,7 +23,7 @@ inner join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
     on b.sections_dcid = a.sectionsdcid
     and a.duedate between b.week_start_monday and b.week_end_sunday
-    and {{ union_dataset_join_clause(left_alias="b", right_alias="a") }}
+    and b._dbt_source_project = a._dbt_source_project
 where
     b.region_school_level not in ('CamdenES', 'NewarkES')
     and b.scaffold_name = 'teacher_scaffold'

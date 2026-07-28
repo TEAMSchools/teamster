@@ -3,6 +3,7 @@ select
     studentsdcid,
     name_column,
     values_column,
+    _dbt_source_project,
 
     if(values_column = 'N', true, false) as is_portfolio_eligible,
     if(values_column = 'M', true, false) as is_iep_eligible,

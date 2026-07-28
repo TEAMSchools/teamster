@@ -398,6 +398,102 @@ non-producer `extract_source_project` filter/alias sites in
 `int_students__fldoe_fte` — done in 2e with `int_students__` — and
 `qa_edplan__powerschool_mismatch` to plain `_dbt_source_project` refs.)
 
+### Revised cut for the remaining work (2026-07-24)
+
+The directory cut above (`2a-1` … `2f`) is **superseded** for whatever is still
+unswapped. It was sized when Batch 1 producers had not merged and ~80 files were
+in flight; that ordering constraint is gone, so every remaining change is
+self-contained within its own file. The binding constraints now are (a) whether
+a file can be build-verified and (b) descendant fan-out, which sets CI cost.
+Counts below come from the prod manifest `child_map`.
+
+#### PR A — big-fanout intermediates
+
+`int_students__contacts`, `int_powerschool__ps_adaadm_daily_ctod`,
+`int_extracts__student_enrollments_subjects`, `int_kippadb__roster`,
+`int_reporting__promotional_status`, `base_powerschool__sections`.
+
+CTE threading plus two union-derive restructures (`base_powerschool__sections`,
+`int_powerschool__ps_adaadm_daily_ctod`) whose join alias reads the raw
+`union_relations` CTE, so `_dbt_source_project` must be derived in a CTE between
+the union and the join. Combined `state:modified+` is **174** models versus
+**410** split per-model — `int_powerschool__ps_adaadm_daily_ctod` (157) and
+`int_students__contacts` (155) alone share 151 descendants, so the other four
+cost `+17`.
+
+#### PR B — leaves (reports, marts, singular test)
+
+`rpt_deanslist__promo_status`, `rpt_powerschool__autocomm_students`,
+`rpt_tableau__state_assessments_dashboard`, `rpt_tableau__ops_dashboard`,
+`int_finance__enrollment_targets`, `bridge_course_section_teachers`,
+`dim_students`, `fct_family_communications`,
+`test_incorrect_student_number_pearson`.
+
+Combined `state:modified+` is **32** versus 35 split — the four reports have
+zero descendant models each. `rpt_tableau__ops_dashboard` additionally drops the
+synthetic `_dbt_source_relation` from `int_finance__enrollment_targets` and
+rewrites `target_union` / `targets` / the join to `_dbt_source_project`,
+including turning its regexp region filter into
+`_dbt_source_project in ('kippnewark', 'kippmiami')`; verify `cal` exposes the
+column first. Marts are contract-enforced — apply Pattern C.
+
+#### PR C — topline (snapshot-derive, not a swap)
+
+`int_topline__gpa_cumulative_weekly`, `int_topline__gpa_term_weekly`,
+`int_topline__iready_diagnostic_weekly`. Combined `state:modified+` is 7. Kept
+standalone because it is the only remaining group where correctness is not
+mechanical — see the corrected snapshot note below.
+
+#### PR D — unverifiable / stale pass
+
+`int_tableau__gradebook_audit_assignments_student`,
+`int_tableau__gradebook_audit_assignments_teacher`,
+`int_tableau__gradebook_audit_categories_teacher`,
+`qa_edplan__powerschool_mismatch`, `qa_powerschool__transfer_records`,
+`collegeboard_ap_tiered_crosswalk_match`,
+`collegeboard_ap_downstream_lineage_root_cause`.
+
+All seven are disabled models or analyses — no build-time column resolution, so
+a mechanical swap ships latent errors (this is how #4543 nearly shipped
+`asg._dbt_source_project` against a CTE carrying only `_dbt_source_relation`).
+Investigate-or-delete, not swap.
+
+**Resolved 2026-07-24 — the seven split three ways:**
+
+- **Gradebook trio (kept as-is, no change).** They belong to a closed,
+  fully-disabled subgraph of seven models (`int_tableau__gradebook_audit_flags`,
+  the two `*_scaffold`s, and `rpt_tableau__assignment_checks` alongside them)
+  that reference only each other. Nothing enabled reaches them — the live
+  `gradebook_audit` exposure depends solely on `rpt_tableau__gradebook_audit`.
+  They were disabled 2026-06-23 by `7fb33d117`, the AY 2026-2027 rebuild that
+  superseded them, and their SQL was last meaningfully edited 2025-08-02. They
+  are also unbuildable: `int_powerschool__gradebook_assignments_scores` now
+  exposes only `_dbt_source_project`, while their `asg` CTE selects
+  `_dbt_source_relation`.
+- **QA pair (deleted).** Every QA model in the project was disabled together on
+  2025-08-28 by `fa62b5ae8`; nothing references these two. Precedent: a fifth
+  view disabled by that same commit,
+  `qa_powerschool__course_enrollment_overlap`, was converted to a singular test
+  and deleted (`aa1cd57bc`). Deleting also required dropping a stale asset-key
+  selection from `tests/assets/test_assets_dbt.py`.
+- **Collegeboard analyses (migrated).** Created 2026-07-21 by `e88cdca33` and
+  actively referenced by
+  `.claude/skills/collegeboard-ap-data-ingest-protocol/SKILL.md`. They are also
+  **not** unverifiable, contrary to the framing above — `dbt compile` plus a
+  BigQuery **dry run** of the compiled SQL resolves every column against real
+  prod schemas, which is a stronger check than the `--empty` gate used for
+  models.
+
+**Correction — PR D does NOT gate Batch 3.** An earlier revision of this section
+asserted it did. Verified empirically 2026-07-24: with the macro definition
+deleted and all five disabled callers left in place,
+`dbt parse --no-partial-parse` exits 0. The disabled models are genuinely parsed
+(they appear in `manifest.disabled`), but dbt does not render a disabled model's
+Jinja deeply enough to fail on an undefined macro. Batch 3 is therefore gated
+only on PRs B and C merging.
+
+PRs A, B and C touch disjoint files and can run in parallel.
+
 ---
 
 ## Batch 3 — Macro removal + docs (1 PR)
@@ -409,27 +505,27 @@ non-producer `extract_source_project` filter/alias sites in
 - Modify: `src/dbt/kipptaf/CLAUDE.md`, `src/dbt/kipptaf/models/marts/CLAUDE.md`
 - Verify: the 7 half-migrated files carry no residual macro call
 
-- [ ] **Step 1: Confirm 0 call sites**
+- [x] **Step 1: Confirm 0 ENABLED call sites**
 
 Run: `grep -rn 'union_dataset_join_clause' src/dbt/kipptaf --include='*.sql'`
-Expected: **0** results.
+Expected: 5 results, all in the disabled pre-AY2627 gradebook-audit cluster
+(`int_tableau__gradebook_audit_assignments_teacher` ×2, `_categories_teacher`
+×2, `_assignments_student` ×1). Zero enabled callers.
 
-- [ ] **Step 2: Delete the macro** from `utils.sql`.
-- [ ] **Step 3: Rewrite the docs** — in `kipptaf/CLAUDE.md`, replace the
-      `union_dataset_join_clause (critical)` section with the new rule: "Union
-      views expose `_dbt_source_project` via `extract_source_project()`; join on
-      it directly. Exception: crosswalk-resolved sources
-      (iReady/renlearn/amplify mClass) derive it from
-      `int_people__location_crosswalk`." Remove the "prefer inline" guidance.
-      Update the `marts/CLAUDE.md` hash-and-join note.
-- [ ] **Step 4: Reconcile half-migrated files** — grep the 7 files; ensure none
-      still calls the macro (all should have been swapped in Batch 2).
-- [ ] **Step 5: Compile** (`dbt parse --target dev`) — Expected: no
-      `union_dataset_join_clause` resolution errors (proves nothing still calls
-      it).
-- [ ] **Step 6: Lint** (include the `*.md`:
+- [x] **Step 2: Delete the macro** from `utils.sql`.
+- [x] **Step 3: Rewrite the docs** — `kipptaf/CLAUDE.md` (section retitled
+      _Cross-region joins (critical)_), `marts/CLAUDE.md`, and
+      `docs/reference/dbt-conventions.md`. Also corrected four stale references
+      to the long-deleted `extract_code_location` macro.
+- [x] **Step 4: Fold in the queued expression-duplication cleanups** (see _Batch
+      3 execution findings_ below).
+- [x] **Step 5: Compile** — `grep` for zero ENABLED call sites plus
+      `dbt build --empty` over the affected graph (195 models, 0 failures). Note
+      that `dbt parse` does NOT verify this; see _Batch 3 execution findings_
+      below.
+- [x] **Step 6: Lint** (include the `*.md`:
       `trunk check --force --no-fix </dev/null <files>`).
-- [ ] **Step 7: Commit + push + PR**
+- [x] **Step 7: Commit + push + PR**
       (`refactor(dbt): remove union_dataset_join_clause macro; update docs (closes #3142)`).
 
 ---
@@ -487,11 +583,22 @@ region-relevant models (`stg_renlearn__star`, `int_iready__diagnostic_results`,
 
 **Batch 1 (producer backfill) is complete** across PRs #4503 / #4504 / #4505.
 
-**Batch 2 gating (stronger than stated):** a consumer whose join alias reads a
-**snapshot** (e.g. `int_topline__gpa_term_weekly` reads
-`snapshot_powerschool__gpa_term`) cannot expose `_dbt_source_project` on that
-side until the producer PR **merges and the snapshot re-runs in prod** — so
-Batch 2 is gated on Batch 1 _merging_, not just the branch carrying the columns.
+**Batch 2 gating — CORRECTED 2026-07-24.** An earlier revision of this plan said
+a snapshot-fed consumer is merely gated on the producer PR merging and the
+snapshot re-running in prod. That is wrong, and waiting makes the failure
+_silent_ instead of loud. A `check`-strategy snapshot only writes columns onto
+rows it touches, so adding `_dbt_source_project` upstream never backfills
+history. Measured against prod: `snapshot_powerschool__gpa_term` does not carry
+the column at all (a swap there fails the build — loud), while
+`snapshot_powerschool__gpa_cumulative` does carry it with 2,151,864 of 2,178,255
+rows NULL (98.8%; only rows written since 2026-06-24 are populated). So a plain
+swap on `int_topline__gpa_cumulative_weekly` compiles, builds green, passes the
+`--empty` gate, and silently drops 98.8% of the join — the algebraic identity
+this migration rests on does not hold across snapshot history. Snapshot-fed
+consumers must **derive** `_dbt_source_project` from the snapshot's
+`_dbt_source_relation` in the CTE (the documented exception in
+`src/dbt/kipptaf/CLAUDE.md`). Only `int_topline__gpa_cumulative_weekly` and
+`int_topline__gpa_term_weekly` are snapshot-fed; no other remaining consumer is.
 
 **Two recurring build-only bugs** (both lint/parse-clean, fail at BigQuery
 build):
@@ -500,3 +607,95 @@ build):
 - per-model `contract: enforced: true` set in `properties.yml` (not the
   directory default) → a `select *` wrap breaks the contract unless the column
   is added to the yml. Check per file.
+
+---
+
+## Relation → project is 1:1 by construction
+
+Several Batch 2 swaps were justified with a prod query showing one
+`_dbt_source_relation` value per `_dbt_source_project`. That evidence is
+point-in-time; the structural argument is stronger and needs no per-site
+re-verification.
+
+A cross-district union view unions exactly one `source()` per district.
+`_dbt_source_relation` therefore takes exactly four values, and
+`regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` maps them injectively onto
+the four project names. Relation → project is 1:1 **in every target**, not just
+in today's prod data — so the old macro's expansion and
+`a._dbt_source_project = b._dbt_source_project` are the same predicate whenever
+both sides materialize the column from their own union view.
+
+The two documented exceptions stay exceptions: non-region unions (listed under
+_Execution findings_ above), where the regex yields null; and
+crosswalk-rewritten sources, where the model overwrites `_dbt_source_relation`
+with the crosswalk region before any consumer reads it.
+
+## Batch 3 execution findings
+
+**Disabled callers do not gate the macro removal.** An earlier revision of this
+plan claimed Batch 3 was blocked until the disabled gradebook-audit cluster was
+migrated. That is wrong — but the first justification offered for it was also
+wrong, and the distinction matters for future macro removals.
+
+The bad reasoning was "`dbt parse --no-partial-parse` exits 0 with the macro
+deleted and all five stale calls present, therefore disabled callers are
+harmless." A probe settles it: adding a temporary **enabled** model that calls
+the deleted macro **also** parses clean. `dbt parse` renders Jinja only far
+enough to capture `ref`/`source`/`config`; it never resolves macros at all. So a
+clean parse says nothing about whether a macro still has callers.
+
+The real reasoning is two-part: `grep` proves zero ENABLED call sites, and
+compilation — not parse — is where a missing macro fails. The
+`dbt build --empty` over 195 models is the actual evidence. Disabled models are
+never compiled, so their stale calls cannot break a build; they surface only on
+re-enable.
+
+**The five stale calls were left in place** by explicit decision — the cluster
+is the pre-AY2627 lineage superseded by `rpt_tableau__gradebook_audit`, nothing
+outside it refs those models, and migrating or deleting it is a
+gradebook-audit-domain change that belongs in its own PR. The dangling calls are
+recorded in `kipptaf/CLAUDE.md` so a future re-enable meets a documented note
+rather than an unexplained compile failure.
+
+**Folded-in cleanups** (same expression-duplication theme):
+
+- `rpt_powerschool__autocomm_students` and
+  `rpt_powerschool__autocomm_students_iep` —
+  `regexp_extract(_dbt_source_relation, ...) as code_location` →
+  `_dbt_source_project as code_location`. The `_iep` sibling was not in the
+  original queue; it carries the identical expression and was included so the
+  pair stays consistent.
+- `dim_students` — hand-rolled
+  `initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_'))` →
+  `{{ extract_region("s") }}`.
+- `base_powerschool__student_enrollments` — `_dbt_source_project` and
+  `code_location` were two byte-identical `regexp_extract` calls in the same
+  `select`. BigQuery cannot reference a select alias within the same `SELECT`,
+  so `code_location` moved to the final `select` as
+  `ar._dbt_source_project as code_location`. That reorders `code_location` after
+  `region` in the output schema, and the shift propagates: the immediate
+  consumer `int_extracts__student_enrollments` is `select e.* except (...)`, so
+  four further `int_extracts__*` models inherit the new position. It is still
+  inert, but not because consumers enumerate columns — most of that chain does
+  not. It is inert because nothing in the chain depends on ordinal position: dbt
+  contracts match columns by name, and the one order-sensitive SQL construct,
+  `UNION ALL`, appears in four models reachable from the base model
+  (`int_extracts__student_enrollments_subjects`,
+  `int_assessments__course_enrollments`, `rpt_gsheets__gpa_flags_report`,
+  `rpt_gsheets__award_ceremony_gpa`) — every branch of all four enumerates its
+  columns, with zero wildcard selects among them.
+
+**Not in this PR:** the `int_finance__enrollment_targets` yml column
+descriptions and the disabled `models/kippadb/qa/` directory ship in #4555. CRLF
+normalization was dropped — it is 70 tracked `.sql` files with no
+`.gitattributes`, and normalizing bumps every model's checksum, so a full pass
+would trigger a near-total kipptaf rebuild and prod rematerialization for zero
+behavior change (rationale recorded in #4554).
+
+**Also surfaced, worth its own PR:** the duplicated _expression_ is gone but the
+duplicated _column_ survives. `code_location` and `_dbt_source_project` carry
+byte-identical values side by side from `base_powerschool__student_enrollments`
+through five `int_extracts__*` models into two `rpt_*` extracts, with the four
+district wrappers filtering on `code_location`. Retiring `code_location` means
+swapping those wrappers' `where` clauses and dropping the column — four district
+projects and a contract-enforced surface.

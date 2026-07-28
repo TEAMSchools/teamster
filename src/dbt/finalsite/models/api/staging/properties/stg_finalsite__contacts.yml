@@ -130,6 +130,19 @@ models:
       - name: birth_date
         data_type: date
         description: Contact's date of birth, cast from the source string.
+      - name: household_1_id
+        data_type: string
+        description:
+          Finalsite id of the contact's first household ("household 1") — the
+          household whose address populates the address columns. Finalsite
+          households carry only an id and an address; membership roles do not
+          exist, so parent/guardian semantics come from `relationships` and
+          custom fields, not from the household.
+      - name: household_ids
+        data_type: array<string>
+        description:
+          Finalsite ids of every household the contact belongs to. Used to test
+          household co-membership between a student and a related contact.
       - name: address_1
         data_type: string
         description:

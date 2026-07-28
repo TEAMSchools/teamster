@@ -26,6 +26,17 @@ with
                 then 'Emergency 4'
                 else sc.relationship
             end as relationship,
+
+            -- DeansList routes guardian-only automated messaging (reports,
+            -- texts, emails) by ContactType; Relationship stays informational.
+            case
+                sc.contact_slot
+                when 'contact_1'
+                then 'Parent1'
+                when 'contact_2'
+                then 'Parent2'
+                else 'Emergency'
+            end as contact_type,
         from {{ ref("int_finalsite__student_contacts") }} as sc
         inner join
             {{ ref("int_finalsite__contact_id_attributes") }} as xw
@@ -45,6 +56,7 @@ select
     c.phone_mobile as `CellPhone`,
     c.email as `Email`,
     c.relationship as `Relationship`,
+    c.contact_type as `ContactType`,
 
     cast(null as string) as `Language`,
 from contacts as c

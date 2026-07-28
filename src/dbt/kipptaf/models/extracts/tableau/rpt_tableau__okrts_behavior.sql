@@ -2,6 +2,7 @@ with
     behaviors as (
         select
             b._dbt_source_relation,
+            b._dbt_source_project,
             b.dl_said,
             b.school_name,
             b.student_school_id,
@@ -63,7 +64,7 @@ with
         inner join
             {{ ref("int_powerschool__calendar_week") }} as w
             on b.behavior_date between w.week_start_monday and w.week_end_sunday
-            and {{ union_dataset_join_clause(left_alias="w", right_alias="b") }}
+            and w._dbt_source_project = b._dbt_source_project
             and lc.location_powerschool_school_id = w.schoolid
         where
             b.behavior_category in (
@@ -86,6 +87,7 @@ with
     behavior_aggregation as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             student_school_id,
             behavior,
             behavior_category,
@@ -102,6 +104,7 @@ with
         from behaviors
         group by
             _dbt_source_relation,
+            _dbt_source_project,
             student_school_id,
             behavior,
             behavior_category,
@@ -166,7 +169,7 @@ left join
     on co.student_number = b.student_school_id
     and co.academic_year = b.academic_year
     and co.week_start_monday = b.week_start_monday
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="b") }}
+    and co._dbt_source_project = b._dbt_source_project
 left join
     {{ ref("int_deanslist__behavior_incentive_by_term") }} as bi
     on co.student_number = bi.student_school_id

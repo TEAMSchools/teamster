@@ -71,7 +71,7 @@ with
         left join
             {{ ref("stg_powerschool__userscorefields") }} as ucf
             on u.dcid = ucf.usersdcid
-            and {{ union_dataset_join_clause(left_alias="u", right_alias="ucf") }}
+            and u._dbt_source_project = ucf._dbt_source_project
         /* import terminated staff up to 2 weeks after termination date */
         where sr.days_after_termination <= 14
 
