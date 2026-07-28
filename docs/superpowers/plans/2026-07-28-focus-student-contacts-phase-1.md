@@ -301,18 +301,23 @@ with
             last_name as contact_last_name,
             email,
 
-            array_to_string([first_name, last_name], ' ') as contact_name,
+            nullif(array_to_string([first_name, last_name], ' '), '') as contact_name,
         from {{ ref("stg_focus__people") }}
     ),
 
     -- contact detail rows are free-typed by title; map to the phone-type
-    -- vocabulary shared with the Finalsite contacts intermediate. Unmapped
-    -- titles are surfaced by the focus_unmapped_phone_contact_titles test.
+    -- vocabulary shared with the Finalsite contacts intermediate. Email-shaped
+    -- titles (e.g. "Home Email") also match the home/work substrings below, so
+    -- they are excluded up front rather than mistyped as phones. value is
+    -- blank-normalized here so phones_ranked can filter the plain column.
+    -- Unmapped titles are surfaced by the focus_unmapped_phone_contact_titles
+    -- test.
     phones as (
         select
             person_id,
-            value,
             detail_priority,
+
+            nullif(trim(value), '') as `value`,
 
             case
                 when regexp_contains(lower(title), r'cell|mobile')
@@ -325,6 +330,7 @@ with
                 then 'daytime'
             end as phone_type,
         from {{ ref("stg_focus__people_join_contacts") }}
+        where not regexp_contains(lower(title), r'e-?mail')
     ),
 
     phones_ranked as (
@@ -335,15 +341,15 @@ with
 
             row_number() over (
                 partition by person_id, phone_type
-                order by detail_priority asc nulls last
+                order by detail_priority asc nulls last, value asc
             ) as type_rank,
 
             row_number() over (
                 partition by person_id
-                order by detail_priority asc nulls last
+                order by detail_priority asc nulls last, value asc
             ) as overall_rank,
         from phones
-        where phone_type is not null
+        where phone_type is not null and value is not null
     ),
 
     phones_typed as (
@@ -354,10 +360,18 @@ with
             max(if(phone_type = 'home', value, null)) as phone_home,
             max(if(phone_type = 'work', value, null)) as phone_work,
             max(if(phone_type = 'daytime', value, null)) as phone_daytime,
-            max(if(overall_rank = 1, value, null)) as phone_primary,
         from phones_ranked
         where type_rank = 1
         group by person_id
+    ),
+
+    -- read off the unfiltered rank, not phones_typed's type_rank = 1 filter
+    -- the overall_rank = 1 row can belong to a phone_type the type_rank filter
+    -- has already discarded, so this must not read through that filter.
+    primary_phone as (
+        select person_id, value as phone_primary,
+        from phones_ranked
+        where overall_rank = 1
     ),
 
     addresses as (
@@ -365,17 +379,20 @@ with
             address_id,
 
             nullif(
-                array_to_string([address, address2, city, state, zipcode], ', '),
-                ''
+                array_to_string([address, address2, city, state, zipcode], ', '), ''
             ) as home_address,
         from {{ ref("stg_focus__address") }}
     ),
 
-    -- grain projection: one row per (student, address) the student resides at
+    -- one row per (student, address) the student resides at — residence = 'Y'
+    -- only, matching the Finalsite lives_with_yn semantics is_household_member
+    -- maps onto in Phase 2.
+    -- grain projection: student_id, address_id are the partition key itself;
+    -- not a mask for upstream duplicates
     student_addresses as (
-        select student_id, address_id,
+        select distinct student_id, address_id,
         from {{ ref("stg_focus__students_join_address") }}
-        group by student_id, address_id
+        where residence = 'Y'
     )
 
 select
@@ -401,15 +418,14 @@ select
     {{ finalsite.clean_phone("pt.phone_home") }} as phone_home,
     {{ finalsite.clean_phone("pt.phone_work") }} as phone_work,
     {{ finalsite.clean_phone("pt.phone_daytime") }} as phone_daytime,
-    {{ finalsite.clean_phone("pt.phone_primary") }} as phone_primary,
+    {{ finalsite.clean_phone("pp.phone_primary") }} as phone_primary,
 
-    if(
-        l.address_id is null, null, sa.address_id is not null
-    ) as is_household_member,
+    if(l.address_id is null, null, sa.address_id is not null) as is_household_member,
 from links as l
 inner join {{ ref("stg_focus__students") }} as s on l.student_id = s.student_id
 left join people as p on l.person_id = p.person_id
 left join phones_typed as pt on l.person_id = pt.person_id
+left join primary_phone as pp on l.person_id = pp.person_id
 left join addresses as a on l.address_id = a.address_id
 left join
     student_addresses as sa
@@ -619,6 +635,21 @@ happens at the kipptaf layer in Phase 2. Refs #4585
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
+**Deviations discovered during implementation:** a whole-branch review after
+this plan was written caught four bugs the SQL block above no longer has —
+re-executing this plan verbatim would reintroduce them. `phone_primary` reads
+`phones_ranked` (the unfiltered `overall_rank`) through a separate
+`primary_phone` CTE instead of `phones_typed`'s `type_rank = 1`-filtered rows,
+because the highest-priority row can belong to a `phone_type` that filter has
+already discarded. Contact-detail titles matching `e-?mail` are excluded from
+the `phones` CTE before typing, since an email-shaped title (e.g. "Home Email")
+also matches the `home`/`work` regexes and would otherwise land an email address
+in a phone column. `phones_ranked` also filters out blank/null `value` so an
+empty contact detail can't win the rank ahead of a row that actually carries a
+number. `student_addresses` filters to `residence = 'Y'` so
+`is_household_member` reflects residence, not any address link (mailing, bus
+pickup/dropoff).
+
 ---
 
 ### Task 3: kipptaf source entry + union wrapper (inert)
@@ -747,8 +778,13 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - [ ] **Step 1: Full selective build of the new chain**
 
 ```bash
-uv run dbt build --select stg_focus__people+ --project-dir /workspaces/teamster/.worktrees/cbini/feat/claude-focus-student-contacts/src/dbt/kippmiami --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
+uv run dbt build --select stg_focus__people+ focus_unmapped_phone_contact_titles --project-dir /workspaces/teamster/.worktrees/cbini/feat/claude-focus-student-contacts/src/dbt/kippmiami --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod --target dev
 ```
+
+`stg_focus__people+` alone does not reach `focus_unmapped_phone_contact_titles`
+— that test refs `stg_focus__people_join_contacts`, a sibling staging model
+outside `stg_focus__people`'s downstream graph — so it must be named explicitly
+to be included in this sweep.
 
 Expected: `stg_focus__people`, `int_focus__student_contacts`, and all their
 tests PASS (kippmiami side; the kipptaf wrapper was built in Task 3).
@@ -767,10 +803,13 @@ Editing `sources-kippmiami.yml` marks the whole `kippmiami_focus` source
 `state:modified`, so dbt Cloud CI (`state:modified+`) rebuilds every kipptaf
 model reading it (the `stg_focus__*` wrappers and both `int_focus__*` wrappers).
 Those reads resolve to `zz_stg_kippmiami_focus`, which does not yet contain the
-NEW models. Before (or right after) opening the PR, the staged copies must be
-seeded. **These commands recreate shared `zz_stg_*` tables — the auto-classifier
-requires the user to run or explicitly authorize them.** Present this block to
-the user; do not run it without their direct authorization:
+NEW models. The staged copies must be seeded **before** opening the PR — the
+kipptaf wrapper's `union_relations` resolves its column list at compile time
+from the staged relation, so kipptaf CI cannot even compile until the seed
+exists; seeding after PR open guarantees a CI failure at open. **These commands
+recreate shared `zz_stg_*` tables — the auto-classifier requires the user to run
+or explicitly authorize them.** Present this block to the user; do not run it
+without their direct authorization:
 
 ```bash
 # seed unchanged kippmiami focus models from prod

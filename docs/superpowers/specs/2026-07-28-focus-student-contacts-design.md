@@ -102,10 +102,16 @@ Properties yml with full column descriptions and `data_type`s.
     `address_id`; `is_household_member` = link `address_id` matches one of the
     student's own `students_join_address` rows
 - The `people_join_contacts.title` domain is nearly empty today ("Cell Phone"
-  only). Implement the pivot against Focus's documented contact-type list (see
-  `docs/superpowers/specs/references/focus-db-erd.md` and the import feed's
-  `contactN_type` values), and leave unmatched titles surfaced via a warn-level
-  accepted-values-style test so new types are caught, not dropped silently.
+  only), and it is free-typed by registrars — Focus has no documented
+  contact-type vocabulary for it
+  (`docs/superpowers/specs/references/focus-db-erd.md` documents
+  `people_join_contacts` as `title` / `value` / `callout` / `sms` only, with no
+  type enum). Implement the pivot as a best-guess regex mapping inferred from
+  observed titles, and leave unmatched titles surfaced via a warn-level
+  accepted-values-style test so new types are caught, not dropped silently —
+  that test is the control for the inferred vocabulary, not a vendor-documented
+  list. Confirming the real title domain once data lands is carried to Phase 2
+  (see Open Questions).
 
 ### kipptaf plumbing (same PR, inert)
 

@@ -127,3 +127,9 @@ landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native
 `sources-bigquery.yml` source (hardcoded schema, no target branch) — it reads
 prod in all targets, so kipptaf CI resolves it without seeding `zz_stg`. Only
 the raw dlt tables exist in prod pre-merge; district `stg_focus__*` do not.
+
+Models in this package may reference `finalsite.clean_phone` (phone
+normalization, shared with the Finalsite contacts intermediate) — this package
+declares no dependency on `finalsite` in its own `packages.yml`, so a consuming
+district project must also install the `finalsite` package or the build fails
+with a macro-not-found error.

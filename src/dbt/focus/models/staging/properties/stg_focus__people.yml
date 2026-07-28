@@ -4,10 +4,13 @@ models:
       Focus people — one row per live person record (deleted rows excluded),
       keyed on person_id. People are the guardians/contacts linked to students
       through students_join_people; their phone/email detail rows live in
-      people_join_contacts. The free-text notes column and the audit
-      (created_by/updated_by) columns are intentionally omitted — notes is
-      unneeded sensitive free text, and the audit columns are dropped across
-      this package's staging layer.
+      people_join_contacts. The free-text notes column, the audit
+      (created_by/updated_by) columns, and other unused Focus-internal
+      bookkeeping columns (e.g. last_verification_time, disclaimer_agreement,
+      edfi_identity, id_photo_file_id, deleted) are intentionally omitted —
+      notes is unneeded sensitive free text, deleted is consumed by the
+      soft-delete filter and adds no signal once filtered, and the rest are
+      unused Focus-internal fields.
     columns:
       - name: person_id
         description: Primary key — Focus person id.
