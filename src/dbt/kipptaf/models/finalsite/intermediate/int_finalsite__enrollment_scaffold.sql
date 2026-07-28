@@ -1,15 +1,3 @@
-{% set scaffold_source_mode = var("finalsite_scaffold_source", "blend") %}
-{% if scaffold_source_mode not in ("gsheet", "powerschool", "blend") %}
-    {{
-        exceptions.raise_compiler_error(
-            "finalsite_scaffold_source must be 'gsheet', 'powerschool', or"
-            ~ " 'blend' -- got '"
-            ~ scaffold_source_mode
-            ~ "'"
-        )
-    }}
-{% endif %}
-
 with
     powerschool_region as (
         select
@@ -25,9 +13,9 @@ with
     -- Miami's SIS moved to Focus (#4441); stg_powerschool__schools' Miami
     -- rows are a frozen pre-migration snapshot, not a live source of truth.
     -- Deliberate, temporary carve-out -- confirmed with the team to keep
-    -- Miami 100% sheet-sourced regardless of finalsite_scaffold_source
-    -- until Focus is ready as a scaffold source. Remove this filter (and
-    -- update the sheet-side builder's Miami note below) once that happens.
+    -- Miami 100% sheet-sourced regardless of scaffold source until Focus is
+    -- ready as a scaffold source. Remove this filter (and update the
+    -- sheet-side builder's Miami note below) once that happens.
     powerschool_schools as (
         select school_number, abbreviation, _dbt_source_project, region,
         from powerschool_region
@@ -43,7 +31,7 @@ with
     -- so status (not a date range) is what scopes it to now. Also filters
     -- out negative grade_level (PowerSchool's own domain for
     -- pre-registration / pre-K, a different, real meaning) so it can never
-    -- collide with the scaffold's grade_level = -1 "whole school total"
+    -- collide with the scaffold's grade_level = -9 "whole school total"
     -- sentinel, which always comes from gsheet_scaffold below.
     -- Known caveat: a school's very first student in a newly-opening grade
     -- may not be entered in PowerSchool yet even though Finalsite is already
@@ -91,89 +79,56 @@ with
             end as school_level,
 
         from grade_membership as gm
+    ),
+
+    -- Scoped to the current cycle so a stale row from a prior year (a
+    -- closed school, a dropped grade) doesn't look identical to "PS
+    -- doesn't have this yet" and get silently resurrected forever. Miami
+    -- must carry its FULL spine here (every school, every grade), not just
+    -- -9 rows and net-new entries, since the PowerSchool builder excludes
+    -- it entirely above.
+    gsheet_scaffold as (
+        select
+            s.schoolid,
+            s.school,
+            s.region,
+            s.grade_level,
+            s.academic_year,
+            s.org,
+            s.school_level,
+
+            'gsheet' as scaffold_source,
+
+        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
+        where s.academic_year = {{ var("finalsite_recruitment_year") }}
     )
 
-    {% if scaffold_source_mode in ("gsheet", "blend") %}
-        ,
+select
+    schoolid,
+    school,
+    region,
+    grade_level,
+    academic_year,
+    org,
+    scaffold_source,
+    school_level,
+from powerschool_scaffold
 
-        -- Scoped to the current cycle so a stale row from a prior year (a
-        -- closed school, a dropped grade) doesn't look identical to "PS
-        -- doesn't have this yet" and get silently resurrected forever. Miami
-        -- must carry its FULL spine here (every school, every grade), not just
-        -- -1 rows and net-new entries, since the PowerSchool builder excludes
-        -- it entirely above.
-        gsheet_scaffold as (
-            select
-                s.schoolid,
-                s.school,
-                s.region,
-                s.grade_level,
-                s.academic_year,
-                s.org,
-                s.school_level,
+union all
 
-                'gsheet' as scaffold_source,
-
-            from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
-            where s.academic_year = {{ var("finalsite_recruitment_year") }}
-        )
-    {% endif %}
-
-{% if scaffold_source_mode == "powerschool" %}
-
-    select
-        schoolid,
-        school,
-        region,
-        grade_level,
-        academic_year,
-        org,
-        scaffold_source,
-        school_level,
-    from powerschool_scaffold
-
-{% elif scaffold_source_mode == "gsheet" %}
-
-    select
-        schoolid,
-        school,
-        region,
-        grade_level,
-        academic_year,
-        org,
-        scaffold_source,
-        school_level,
-    from gsheet_scaffold
-
-{% else %}
-
-    select
-        schoolid,
-        school,
-        region,
-        grade_level,
-        academic_year,
-        org,
-        scaffold_source,
-        school_level,
-    from powerschool_scaffold
-
-    union all
-
-    select
-        g.schoolid,
-        g.school,
-        g.region,
-        g.grade_level,
-        g.academic_year,
-        g.org,
-        g.scaffold_source,
-        g.school_level,
-    from gsheet_scaffold as g
-    left join
-        powerschool_scaffold as p
-        on g.schoolid = p.schoolid
-        and g.grade_level = p.grade_level
-    where p.schoolid is null
-
-{% endif %}
+select
+    g.schoolid,
+    g.school,
+    g.region,
+    g.grade_level,
+    g.academic_year,
+    g.org,
+    g.scaffold_source,
+    g.school_level,
+from gsheet_scaffold as g
+left join
+    powerschool_scaffold as p
+    on g.region = p.region
+    and g.schoolid = p.schoolid
+    and g.grade_level = p.grade_level
+where p.schoolid is null
