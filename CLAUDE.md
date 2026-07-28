@@ -132,6 +132,15 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   otherwise re-introduce familiar idioms (`dbt_utils.deduplicate`,
   `select distinct`, `qualify row_number()=1`).
 
+- **Subagent model/effort**: when a skill carries its own model-selection
+  guidance (e.g. subagent-driven-development), follow the skill; this line only
+  binds its tiers to models. Mechanical scoped tasks (1-2 files, precise brief)
+  -> `haiku` (no effort parameter -- omit it); integration/debugging
+  implementers -> `sonnet` at `high`; review and re-review dispatches ->
+  `sonnet` at `xhigh`; design work -> `opus` at `high`; final whole-branch
+  review -> `opus` at `xhigh`. When none of these clearly apply, omit both
+  overrides.
+
 - **Subagent multi-step bail risk**: subagents can abandon multi-step tasks
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
