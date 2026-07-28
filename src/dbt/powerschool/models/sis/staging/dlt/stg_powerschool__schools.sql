@@ -58,6 +58,8 @@ select
     *,
 
     case
+        when abbreviation = 'Sumner'
+        then 'ES'
         when high_grade = 12
         then 'HS'
         when high_grade = 8
@@ -65,4 +67,5 @@ select
         when high_grade in (4, 5)
         then 'ES'
     end as school_level,
+
 from transformations
