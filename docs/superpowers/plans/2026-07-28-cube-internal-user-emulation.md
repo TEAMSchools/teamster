@@ -395,7 +395,7 @@ Refs #4526"
   `access.parseImpersonators` from Task 1.
 - Produces:
   `logEmulation(surface: string, caller: string, target: string) -> void` —
-  module-local in `cube.js`, reused by Task 5.
+  module-local in `cube.js`, reused by Task 6.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -877,11 +877,91 @@ Refs #4526"
 
 ---
 
-## Task 4: Cube Cloud spike (requires console access — hand to the user)
+## Task 4: Push the branch and stand it up in Cube Cloud
 
-Two open questions decide whether Task 5 is a code change or a configuration
-change. **Claude cannot reach the Cube Cloud console; this task is run by the
-user.** Everything before this task is unblocked and should be finished first.
+Every remaining task needs a live Cube Cloud deployment of this branch — the
+spike, the enrichment, and the emulation validation. Cube Cloud can only reach a
+branch that exists on the remote, and **branch environments do not create
+themselves on push**, so this is a real prerequisite rather than a formality.
+
+**Files:**
+
+- No file changes. This is a push plus Cube Cloud console configuration.
+
+**Interfaces:**
+
+- Consumes: the committed work from Tasks 1-3.
+- Produces: a live per-branch Cube Cloud environment with `CUBE_IMPERSONATORS`
+  set, reachable at two endpoints:
+  - **Dev Mode** — `/user/<urlencoded-email>/<id>/cubejs-api/v1`. The only
+    surface that shows server `console.log`, so this is where `cube.js` code
+    paths and the `cube_emulation` audit line get observed.
+  - **Branch staging** — `/staging/<branch>/cubejs-api/v1`. Stable, redeploys on
+    push.
+
+- [ ] **Step 1: Push the branch**
+
+```bash
+cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-internal-emulation
+git push -u origin cristinabaldor/feat/claude-cube-internal-emulation
+```
+
+Do **not** open the PR yet — that is Task 9. A push with no PR does not start
+`claude-review` (it only fires on PR `opened` / `ready_for_review`), and this
+branch changes no dbt models, so dbt Cloud CI has nothing to build either way.
+
+- [ ] **Step 2: Add the branch in Cube Cloud**
+
+Cube Cloud → Data Model → Dev Mode → add the branch **by name**. Adding it here
+is what spins up the per-branch staging environment; a push alone does not.
+
+- [ ] **Step 3: Verify the branch environment's configuration**
+
+Branch environments do **not** fully inherit production configuration. Confirm
+on the branch environment:
+
+1. `CUBEJS_DB_TYPE`, `CUBEJS_DB_BQ_PROJECT_ID`, and `CUBEJS_DB_BQ_CREDENTIALS`
+   are set. Without them every identity read fails and `resolveAccess`
+   fail-closes to deny-all for **every** viewer — indistinguishable from an
+   access-policy bug, and the single most likely way to waste an hour here.
+1. `CUBE_IMPERSONATORS` is set to your own email. Emulation is inert until it
+   is. That is the correct production default, but it also means "nothing
+   happened" is the _expected_ result if this step is skipped.
+1. `CUBE_GROUP_MAP` is **absent**. It is a dev bypass that supplies groups only,
+   and it would mask real resolution.
+
+- [ ] **Step 4: Confirm the model is live, as yourself**
+
+Do this over REST, not the Cube Cloud Playground: the Playground is the broken
+surface, so an empty view list there is ambiguous — it means either "model did
+not deploy" or "every view is access-hidden," and you cannot tell which. REST
+runs through `checkAuth`, which works.
+
+Mint a token with the **branch environment's** `CUBEJS_API_SECRET` (from its API
+Credentials panel — not necessarily production's) and call the branch endpoint.
+The `Authorization` header takes the raw token with **no `Bearer` prefix**:
+
+```bash
+tok=$(node -e "const j=require('jsonwebtoken');console.log(j.sign({email:'you@apps.teamschools.org'},process.env.CUBEJS_API_SECRET,{algorithm:'HS256'}))")
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{"measures":["staff_directory.count_employees"]}}' \
+  https://<deployment>.cubecloud.dev/staging/<branch>/cubejs-api/v1/load
+```
+
+Expected: a real count. If instead every view is missing, compile the same query
+through `/sql` — it compiles against `public: false` members and ignores access
+hiding, so a successful compile proves the model deployed and points at access
+rather than the deployment.
+
+---
+
+## Task 5: Cube Cloud spike and cloud emulation validation (requires console access)
+
+Two jobs on the live branch deployment: prove the Task 1-2 emulation path
+actually works in the cloud on the surface that already routes through our
+hooks, and answer the open questions that decide whether Task 6 is a code change
+or a configuration change. **Claude cannot reach the Cube Cloud console or mint
+against the branch secret; this task is run by the user.**
 
 **Files:**
 
@@ -891,12 +971,51 @@ user.** Everything before this task is unblocked and should be finished first.
 
 **Interfaces:**
 
-- Consumes: nothing.
-- Produces: a decision — **Variant A** (enrich in `contextToGroups`) or
-  **Variant B** (Cloud Auth Integration routes Cube Cloud through `checkAuth`) —
-  which selects the branch of Task 5.
+- Consumes: the live branch environment from Task 4; the `act_as` path from
+  Task 2.
+- Produces: (a) confirmation that emulation works end-to-end on a real
+  deployment, and (b) a decision — **Variant A** (enrich in `contextToGroups`)
+  or **Variant B** (Cloud Auth Integration routes Cube Cloud through
+  `checkAuth`) — which selects the branch of Task 6.
 
-- [ ] **Step 1: Experiment 1 — does Cloud Auth Integration route through our
+- [ ] **Step 1: Validate emulation on the branch deployment over REST**
+
+This is the real proof that Tasks 1-2 work, and it does not depend on the Cube
+Cloud console problem at all — REST goes through `checkAuth`, which Cube Cloud's
+Explore bypasses. Mint two tokens against the branch environment's
+`CUBEJS_API_SECRET` and compare.
+
+First, as yourself with an `act_as` for a **region-scoped** viewer:
+
+```bash
+tok=$(node -e "const j=require('jsonwebtoken');console.log(j.sign({email:'you@apps.teamschools.org',act_as:'a-region-scoped-viewer@apps.teamschools.org'},process.env.CUBEJS_API_SECRET,{algorithm:'HS256'}))")
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{
+    "measures":["student_attendance_view.count_students"],
+    "dimensions":["student_attendance_view.regions_region_name"]
+  }}' \
+  https://<deployment>.cubecloud.dev/staging/<branch>/cubejs-api/v1/load
+```
+
+Expected: **only that viewer's region** comes back, not all four — even though
+you are network-scoped. That is emulation working: your own scope would have
+returned every region.
+
+Then run the same request with `CUBE_IMPERSONATORS` **removed** from the branch
+environment (redeploy takes a moment). Expected: all four regions — `act_as`
+ignored, your own scope applied. Restore the variable afterward.
+
+Finally, have a **non-impersonator** colleague mint a token with an `act_as` for
+someone broader, or simulate it by setting `CUBE_IMPERSONATORS` to an unrelated
+email while keeping your own `act_as` request. Expected: your own scope, never
+the target's. This is the negative case the unit tests assert; confirming it
+once against a real deployment is worth the five minutes.
+
+Cross-check the Dev Mode logs panel for exactly one `cube_emulation` line per
+emulated request, carrying only the two identities and a timestamp — no row
+data.
+
+- [ ] **Step 2: Experiment 1 — does Cloud Auth Integration route through our
       hooks?**
 
 On the branch staging deployment (not production):
@@ -911,11 +1030,11 @@ Expected if it routes through `checkAuth`: gated views become visible and a
 `resolveAccess` log line appears for your email → **Variant B**, and Task 2
 already covers Cube Cloud. Expected if not: views stay hidden → **Variant A**.
 
-- [ ] **Step 2: Experiment 2 — can `contextToGroups` mutate the
+- [ ] **Step 3: Experiment 2 — can `contextToGroups` mutate the
       securityContext?**
 
-Only needed if Experiment 1 says Variant A. In Dev Mode, temporarily add to
-`contextToGroups` in `src/cube/cube.js` (uncommitted scaffold):
+Only needed if Experiment 1 (Step 2) says Variant A. In Dev Mode, temporarily
+add to `contextToGroups` in `src/cube/cube.js` (uncommitted scaffold):
 
 ```javascript
   contextToGroups: async ({ securityContext }) => {
@@ -935,18 +1054,18 @@ Expected if mutation propagates: the compiled SQL contains
 filters read the mutated object → Variant A is implementable in
 `contextToGroups`. If it still compiles to `WHERE (1 = 0)` while `console.log`
 shows the mutation happened, `contextToGroups` cannot mutate — **stop and
-re-brainstorm the cloud seam**; do not proceed to Task 5.
+re-brainstorm the cloud seam**; do not proceed to Task 6.
 
-- [ ] **Step 3: Answer the two remaining console questions**
+- [ ] **Step 4: Answer the two remaining console questions**
 
 1. What SQL `user` does Cube Cloud **Explore** connect as, and does `__user`
-   impersonation work for `CUBEJS_SQL_SUPER_USER`? (Needed by Task 6; do **not**
+   impersonation work for `CUBEJS_SQL_SUPER_USER`? (Needed by Task 7; do **not**
    change `canSwitchSqlUser` either way.)
 1. Is Cube Cloud console access already restricted to the intended admin set? If
    yes, console access is itself part of the gate and `CUBE_IMPERSONATORS` is
    defense-in-depth rather than the sole control.
 
-- [ ] **Step 4: Record the answers and revert the scaffold**
+- [ ] **Step 5: Record the answers and revert the scaffold**
 
 Replace each answered bullet under `## Open questions / verification items` in
 the spec with the finding. Then confirm the spike scaffold is gone:
@@ -958,7 +1077,10 @@ git diff --stat && grep -n SPIKE src/cube/cube.js
 
 Expected: no `SPIKE` matches, and `git diff` shows only the spec file.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit and push**
+
+Record the Step 1 emulation-validation result here too — it is the first
+end-to-end proof the feature works, and the PR body should cite it.
 
 ```bash
 cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-internal-emulation
@@ -966,13 +1088,17 @@ git add docs/superpowers/specs/2026-07-23-cube-internal-user-emulation-design.md
 git commit -m "docs(cube): record Cube Cloud emulation spike answers
 
 Refs #4526"
+git push
 ```
+
+Pushing redeploys the branch environment, so the next task starts against
+current code.
 
 ---
 
-## Task 5: Cube Cloud enrichment
+## Task 6: Cube Cloud enrichment
 
-Implement **only the variant Task 4 selected.** Both variants reuse Task 1's
+Implement **only the variant Task 5 selected.** Both variants reuse Task 1's
 resolver, so the security rule is identical across surfaces.
 
 **Files:**
@@ -1086,7 +1212,7 @@ Replace `contextToGroups` in `src/cube/cube.js` (line 206) with:
     // runs on that path, so enrich here: same admin gate as the REST act_as
     // branch, then populate the fields the access_policy row_level filters
     // interpolate. Mutating the object is required — the policies read the
-    // context, not this return value (verified by the Task 4 spike).
+    // context, not this return value (verified by the Task 5 spike).
     if (securityContext?.iss === "cubecloud" && !securityContext.groups) {
       const { caller, target, emulating } = access.resolveEmulationTarget({
         ...access.emulationInputsFromCubeCloud(securityContext),
@@ -1107,16 +1233,23 @@ cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-internal-emul
 
 Expected: PASS, all tests including every pre-existing one.
 
-- [ ] **Step A5: Verify on the branch staging deployment**
+- [ ] **Step A5: Verify in Cube Cloud Explore on the branch**
 
-Set `CUBE_IMPERSONATORS` on the branch staging environment to your own email,
-push the branch, then in Explore paste `{"email": "<a region-scoped viewer>"}`
+The branch environment is already standing with `CUBE_IMPERSONATORS` set (Task 4
+Step 3) — push this commit so it redeploys, then in **Explore** paste
+`{"email": "a-region-scoped-viewer@apps.teamschools.org"}` into Security Context
 and query `student_enrollments_view`.
 
-Expected: views are visible; results cover only that viewer's region; `/sql`
-shows the region predicate rather than `WHERE (1 = 0)`; the Dev Mode log shows
-one `cube_emulation` line. Then repeat with `CUBE_IMPERSONATORS` **unset** and
-confirm the paste is ignored (you resolve as yourself).
+This is the surface Task 5 could not fix, so it is the one that proves the
+enrichment worked. Expected: gated views are now **visible** at all (previously
+you saw only source tables); results cover only that viewer's region; `/sql`
+shows the region predicate rather than `WHERE (1 = 0)`; and the Dev Mode log
+shows exactly one `cube_emulation` line.
+
+Then repeat with `CUBE_IMPERSONATORS` **unset** on that environment and confirm
+the pasted target is ignored — you resolve as yourself, and a viewer who is not
+an approved impersonator cannot elevate through the console. Restore the
+variable afterward.
 
 - [ ] **Step A6: Lint and commit**
 
@@ -1139,13 +1272,13 @@ Refs #4526"
 
 A Cube Cloud-issued token carries **no `iat`**, and `checkAuth`'s
 `maxAge: "12h"` rejects any token without one — so if Cloud Auth Integration
-routes a `cubecloud`-issued token through `jwt.verify`, it will 403 and Task 7
+routes a `cubecloud`-issued token through `jwt.verify`, it will 403 and Task 8
 becomes a hard blocker rather than an optional cleanup. Check the Dev Mode log
 for the request outcome.
 
 Expected: a `resolveAccess` line for your email (the token was accepted and
 carries an `iat`) → proceed to Step B2. A 403 / `maxAge exceeded` → **stop**:
-this needs the Task 7 decision plus code-owner sign-off first, because the only
+this needs the Task 8 decision plus code-owner sign-off first, because the only
 fix is relaxing `maxAge` for a token whose `iss` is read _before_ verification,
 which weakens the #4269 control.
 
@@ -1184,7 +1317,7 @@ Refs #4526"
 
 ---
 
-## Task 6: Validate and document both pilot surfaces
+## Task 7: Validate and document both pilot surfaces
 
 The pilot covers Cube Cloud Explore **and** a BI tool over the SQL API. SQL-API
 scoping already works through the untouched `checkSqlAuth` + `canSwitchSqlUser`
@@ -1200,7 +1333,7 @@ sign-off procedure.
 **Interfaces:**
 
 - Consumes: `scripts/cube_rls_matrix.py` (Task 3); the working emulation path
-  (Task 2 and Task 5).
+  (Task 2 and Task 6).
 - Produces: no code interface — a documented, repeatable procedure.
 
 - [ ] **Step 1: Run the matrix against the real pilot viewer set**
@@ -1215,7 +1348,7 @@ the output local — record only "N viewers checked, all scopes as intended".
 
 - [ ] **Step 2: Confirm the Explore surface for one pilot user**
 
-Using the Task 5 path, emulate one pilot user in Cube Cloud Explore and confirm
+Using the Task 6 path, emulate one pilot user in Cube Cloud Explore and confirm
 the same scope the matrix reported for them, and that a member outside their
 tier is absent rather than erroring.
 
@@ -1275,7 +1408,7 @@ Refs #4526"
 
 ---
 
-## Task 7: The `maxAge` decision (code-owner gated, non-blocking)
+## Task 8: The `maxAge` decision (code-owner gated, non-blocking)
 
 **Recommendation: change nothing.** `maxAge: "12h"` only breaks the _local_ REST
 Playground with a stale cached token, which Phase 0 already documented as a
@@ -1285,7 +1418,7 @@ issue is the wrong trade — so this task exists to get that recorded, not to
 change code by default.
 
 Do **not** implement an alternative unless the analytics-engineer code owners
-ask for it, or unless Task 5 Variant B Step B1 proved a `cubecloud` token gets
+ask for it, or unless Task 6 Variant B Step B1 proved a `cubecloud` token gets
 403'd for having no `iat` (in which case the cloud surface genuinely needs it).
 
 **Files:**
@@ -1348,7 +1481,7 @@ Refs #4526"
 
 ---
 
-## Task 8: Open the pull request
+## Task 9: Open the pull request
 
 **Files:**
 
@@ -1380,11 +1513,14 @@ cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-internal-emul
 Expected: `No issues`. The existing-file filter matters — `--force` hard-errors
 on a deleted path.
 
-- [ ] **Step 3: Push and open the PR**
+- [ ] **Step 3: Push the remaining commits and open the PR**
+
+The branch has been on the remote since Task 4 (Cube Cloud needed it), so this
+is just catching up the tail:
 
 ```bash
 cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-cube-internal-emulation
-git push -u origin cristinabaldor/feat/claude-cube-internal-emulation
+git push
 ```
 
 Then open the PR with `mcp__github__create_pull_request` using
@@ -1424,31 +1560,59 @@ these into this plan:
 ## Self-Review
 
 **Spec coverage.** Every spec section maps to a task: Phase 0 items 1-2 →
-already committed (`af7d10303`, `b907c5f33`); Phase 1 spike remainder → Task 4;
-Phase 2(a) cloud enrichment → Task 5; Phase 2(b) `maxAge` → Task 7; Phase 2(c)
+already committed (`af7d10303`, `b907c5f33`); Phase 1 spike remainder → Task 5;
+Phase 2(a) cloud enrichment → Task 6; Phase 2(b) `maxAge` → Task 8; Phase 2(c)
 admin-gated `act_as` → Tasks 1-2; "where impersonators live" → Task 1
-(`parseImpersonators`); Audit → Task 2 (`logEmulation`, reused in Task 5);
+(`parseImpersonators`); Audit → Task 2 (`logEmulation`, reused in Task 6);
 external-compatibility constraint → Global Constraints plus the `checkAuth`
 comment in Task 2; testing strategy (unit, regression, local RLS, cloud) → Tasks
-1, 2, 3, 5, 6; invariants → Global Constraints. The spec's "turn the matrix into
-a committed tool" line → Task 3.
+1, 2, 3, 5 and 6; invariants → Global Constraints. The spec's "turn the matrix
+into a committed tool" line → Task 3.
 
-**Gap found and closed:** the spec's testing strategy asks for a `cube.js`
+**Gap found and closed (1):** the spec's testing strategy asks for a `cube.js`
 harness; one already exists (`src/cube/cube.test.js`), and it contains a
 `forged groups/securityContext claims are ignored (only email is trusted)` test
 whose premise `act_as` modifies. Task 2 Step 4 explicitly re-checks it, and Task
 2 Step 1 extends `test.beforeEach` so `CUBE_IMPERSONATORS` cannot leak across
 tests.
 
+**Gap found and closed (2):** the first draft of this plan deferred pushing the
+branch to the final PR task, yet the spike and both verification steps require a
+live Cube Cloud deployment — which cannot exist for an unpushed branch, and does
+not auto-create even after a push. Task 4 now stands the branch up explicitly
+(push → add the branch in Dev Mode → verify that environment's own configuration
+→ confirm the model is live over REST) before any console work. It also captures
+the two failure modes that otherwise masquerade as access bugs: unset BigQuery
+connection variables on the branch environment deny every viewer, and an unset
+`CUBE_IMPERSONATORS` makes emulation silently inert.
+
+**Gap found and closed (3):** nothing in the first draft proved the `act_as`
+path worked anywhere but in unit tests. Task 5 Step 1 now validates it against
+the real branch deployment over REST — which works today, because REST goes
+through `checkAuth` while only Explore bypasses it — including the negative case
+with `CUBE_IMPERSONATORS` removed. That separates "emulation works" from "Cube
+Cloud Explore works", so a failure in the harder cloud surface can no longer be
+mistaken for the feature being broken.
+
 **Type and name consistency.** `resolveEmulationTarget` returns
 `{ caller, target, emulating }` in Task 1 and is destructured with exactly those
-names in Task 2 and Task 5. `parseImpersonators` returns a `Set` and
+names in Task 2 and Task 6. `parseImpersonators` returns a `Set` and
 `isImpersonator` calls `.has()` on it. `logEmulation(surface, caller, target)`
-is defined in Task 2 and called with `"rest"` there and `"cubecloud"` in Task 5.
+is defined in Task 2 and called with `"rest"` there and `"cubecloud"` in Task 6.
 The adapters return `{ callerEmail, requestedTarget }`, matching
 `resolveEmulationTarget`'s parameter names, so the spread in both hooks
 resolves.
 
-**Sequencing note.** Tasks 1-3 are unblocked. Task 5 is gated on Task 4, which
-needs Cube Cloud console access Claude does not have. Task 7 is deliberately
-last and non-blocking, except in the one Variant B case flagged in Step B1.
+**Sequencing note.** Tasks 1-3 are unblocked and entirely local. Task 4 is the
+hinge: it needs one push (Claude can do that) plus Cube Cloud console
+configuration (the user must do that), and everything after it depends on the
+live branch environment. Task 5 then both validates emulation and picks the Task
+6 variant, so Task 6 cannot start before it. Task 8 is deliberately last and
+non-blocking, except in the one Variant B case flagged in Step B1, where it
+becomes a hard prerequisite.
+
+**Emulation is proved twice, on purpose.** Task 5 Step 1 proves it over REST on
+a real deployment (works today), and Task 6 Step A5 proves it in Cube Cloud
+Explore (the surface that needs the fix). Both include the
+un-set-`CUBE_IMPERSONATORS` negative check, because "it returned data" is not
+evidence the gate is closed.
