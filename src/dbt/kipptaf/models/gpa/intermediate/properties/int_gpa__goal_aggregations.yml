@@ -47,7 +47,7 @@ models:
         data_type: string
         description: Human-readable grade band from the matched goal.
       - name: goal_proportion
-        data_type: float64
+        data_type: numeric
         description: Target rate from the matched goal, as a proportion.
       - name: metric_rate
         data_type: float64

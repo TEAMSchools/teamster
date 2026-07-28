@@ -18,6 +18,11 @@ models:
               - metric
           config:
             severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: grade_low <= grade_high
+          config:
+            severity: error
     columns:
       - name: org_level
         data_type: string
@@ -56,6 +61,17 @@ models:
                 values: [">=", <=]
               config:
                 severity: error
+      - name: goal
+        data_type: numeric
+        description: >-
+          Target value (e.g., percent of students meeting the threshold) for
+          this org level, grade band, and metric.
+        data_tests:
+          - dbt_utils.expression_is_true:
+              arguments:
+                expression: between 0 and 100
+              config:
+                severity: error
       - name: academic_year
         data_type: int64
         description: KIPP academic year (July start) this goal applies to.
@@ -80,8 +96,3 @@ models:
         description: >-
           Cutoff value that `metric` is compared against, per `direction`, to
           determine whether a student/aggregate meets the goal.
-      - name: goal
-        data_type: numeric
-        description: >-
-          Target value (e.g., percent of students meeting the threshold) for
-          this org level, grade band, and metric.
