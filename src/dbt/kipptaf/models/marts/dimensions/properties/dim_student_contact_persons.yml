@@ -2,10 +2,10 @@ models:
   - name: dim_student_contact_persons
     description: >-
       Contact person dimension. One row per unique student contact person. A
-      contact_1 person shared across siblings appears once here (keyed by their
-      real contact identity) and has one bridge_student_contacts row per
-      student. Emergency contacts have no stable person record under the
-      Finalsite 1+4 contact shape, so each is its own person keyed by student
+      parent (contact_1 or contact_2) shared across siblings appears once here
+      (keyed by their real contact identity) and has one bridge_student_contacts
+      row per student. Emergency contacts have no stable person record under the
+      Finalsite 2+4 contact shape, so each is its own person keyed by student
       and contact slot. Person attributes (name, email, typed phones, home
       address) live on this dimension; the relationship and the emergency flags
       that vary per student-contact pair live on bridge_student_contacts.
@@ -15,9 +15,9 @@ models:
         data_type: string
         description: >-
           Surrogate key for the contact person. Primary key for this dimension.
-          For contact_1 it is hashed from the district and the contact's real
-          identity; for emergency contacts it is hashed from the district,
-          student, and contact slot.
+          For parents (contact_1 and contact_2) it is hashed from the district
+          and the contact's real identity; for emergency contacts it is hashed
+          from the district, student, and contact slot.
         constraints:
           - type: primary_key
             warn_unsupported: false
