@@ -60,10 +60,10 @@ models:
           Target value (e.g., percent of students meeting the threshold) for
           this org level, grade band, and metric.
       - name: goal_proportion
-        data_type: numeric
+        data_type: float64
         description: >-
-          `goal` expressed as a proportion (`goal / 100`) for comparison against
-          ratio-scale aggregate values.
+          `goal` expressed as a proportion (`goal / 100.0`) for comparison
+          against ratio-scale aggregate values.
       - name: grade_band
         data_type: string
         description: >-
