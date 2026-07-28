@@ -2,6 +2,7 @@ with
     suspension_dates as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             student_school_id as student_number,
             create_ts_academic_year as academic_year,
 
@@ -16,7 +17,11 @@ with
             ) as first_suspension_date_oss,
         from {{ ref("int_deanslist__incidents__penalties") }}
         where is_suspension
-        group by _dbt_source_relation, student_school_id, create_ts_academic_year
+        group by
+            _dbt_source_relation,
+            _dbt_source_project,
+            student_school_id,
+            create_ts_academic_year
     )
 
 select
@@ -81,7 +86,7 @@ left join
     suspension_dates as s
     on co.student_number = s.student_number
     and co.academic_year = s.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="s") }}
+    and co._dbt_source_project = s._dbt_source_project
 left join
     {{ ref("int_deanslist__incidents__penalties") }} as sd
     on co.student_number = sd.student_school_id

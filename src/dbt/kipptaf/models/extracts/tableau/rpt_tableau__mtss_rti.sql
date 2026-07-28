@@ -146,7 +146,7 @@ with
             on co.studentid = g.studentid
             and co.schoolid = g.schoolid
             and co.yearid = g.yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="g") }}
+            and co._dbt_source_project = g._dbt_source_project
             and g.is_current
         left join
             {{ ref("int_deanslist__referral_suspension_rollup") }} as sr

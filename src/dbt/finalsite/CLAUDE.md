@@ -50,6 +50,11 @@ housing status, not a county).
 
 ## Contact relationships and custom-attribute gotchas
 
+Vendor API ground truth lives in-repo: `docs/superpowers/specs/references/`
+(`finalsite-api-spec.yml`, plus `focus-api-spec.md` / `focus-db-erd.md`).
+Consult it before web-searching vendor docs — the hosted Finalsite API reference
+is login-gated.
+
 - `relationships` is bidirectional (a parent record carries the reverse
   `rel_type='child'` link). `relationships.primary` is a per-record singleton
   and **NULL, not false, when unset**; only child/student records carry a
@@ -57,11 +62,14 @@ housing status, not a county).
   (prospects/applicants). Filtering `where is_primary` yields ALL Finalsite
   student records — scope to enrolled students downstream via
   `powerschool_student_number`, not in this SIS-agnostic package.
-- `custom_attributes`/`id_attributes` are **per-contact** — `is_parent2/3/4`
-  (`is_parent3/4` are always false), `emrg_*`, etc. appear on ANY contact,
-  including a sibling who is also a student (carrying their own). Reading a
-  custom field via a relationship's `rel_id` measures the RELATED contact, not a
-  parent designation of the student.
+- `custom_attributes`/`id_attributes` are **per-contact**, and the parent-slot
+  fields (`is_parent2/3/4`, `p1_*`–`p4_*`, `emrg_*`) live ONLY on student
+  records — `is_parent2` means "this student has a Parent 2" and is never set on
+  the parent's own record (0 in tenant data), so never gate on it via `rel_id`.
+  Parent identity comes from `relationships`: `primary` = Parent 1 (a verified
+  per-student singleton), an additional `financial`-without-`primary`
+  relationship = Parent 2. `households` carry only id + address — membership has
+  no roles.
 
 ## Cross-Project Usage
 

@@ -10,14 +10,16 @@ with
                 ]
             )
         }}
+    ),
+
+    sections as (
+        select *, {{ extract_source_project() }} as _dbt_source_project,
+        from union_relations
     )
 
-select
-    ur.*,
-    {{ extract_source_project("ur") }} as _dbt_source_project,
-    if(cx.ap_course_subject is not null, true, false) as is_ap_course,
-from union_relations as ur
+select sec.*, if(cx.ap_course_subject is not null, true, false) as is_ap_course,
+from sections as sec
 left join
     {{ ref("stg_powerschool__s_nj_crs_x") }} as cx
-    on ur.courses_dcid = cx.coursesdcid
-    and {{ union_dataset_join_clause(left_alias="ur", right_alias="cx") }}
+    on sec.courses_dcid = cx.coursesdcid
+    and sec._dbt_source_project = cx._dbt_source_project

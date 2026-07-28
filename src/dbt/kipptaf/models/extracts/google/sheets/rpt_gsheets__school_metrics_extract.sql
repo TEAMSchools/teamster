@@ -414,6 +414,7 @@ with
     section_enrollments as (
         select
             enr._dbt_source_relation,
+            enr._dbt_source_project,
             enr.cc_studentid,
             enr.cc_yearid,
             enr.cc_sectionid,
@@ -447,7 +448,13 @@ with
     -- section records still resolve to a school/region even when their latest
     -- enrollment row has enroll_status != 0.
     section_school_context as (
-        select distinct _dbt_source_relation, studentid, schoolid, school, region,
+        select distinct
+            _dbt_source_relation,
+            _dbt_source_project,
+            studentid,
+            schoolid,
+            school,
+            region,
         from {{ ref("int_extracts__student_enrollments") }}
         where academic_year = {{ var("current_academic_year") }} and grade_level <= 8
     ),
@@ -455,6 +462,7 @@ with
     section_teacher_manager_raw as (
         select
             enr._dbt_source_relation,
+            enr._dbt_source_project,
             enr.cc_sectionid,
 
             sr.formatted_name as teacher_name,
@@ -464,7 +472,7 @@ with
         left join
             {{ ref("base_powerschool__sections") }} as sec
             on enr.cc_sectionid = sec.sections_id
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="sec") }}
+            and enr._dbt_source_project = sec._dbt_source_project
         left join
             {{ ref("int_people__staff_roster") }} as sr
             on sec.teachernumber = sr.powerschool_teacher_number
@@ -502,16 +510,16 @@ with
             on enr.cc_studentid = fg.studentid
             and enr.cc_yearid = fg.yearid
             and enr.cc_sectionid = fg.sectionid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="fg") }}
+            and enr._dbt_source_project = fg._dbt_source_project
         inner join
             section_school_context as sc
             on enr.cc_studentid = sc.studentid
             and enr.cc_schoolid = sc.schoolid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="sc") }}
+            and enr._dbt_source_project = sc._dbt_source_project
         left join
             section_teacher_manager as stm
             on enr.cc_sectionid = stm.cc_sectionid
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="stm") }}
+            and enr._dbt_source_project = stm._dbt_source_project
         -- storecode filter on right-side column makes the fg LEFT JOIN an
         -- effective INNER JOIN: sections with no final-grade records are
         -- silently excluded. This is intentional — failure rate is undefined

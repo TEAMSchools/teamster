@@ -217,7 +217,7 @@ with
             on c.cc_academic_year = g.academic_year
             and c.sections_id = g.sectionid
             and c.cc_studentid = g.studentid
-            and {{ union_dataset_join_clause(left_alias="c", right_alias="g") }}
+            and c._dbt_source_project = g._dbt_source_project
             and g.storecode = 'Y1'
         left join
             {{ ref("stg_google_sheets__crdc__sced_code_crosswalk") }} as x

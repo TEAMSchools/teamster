@@ -128,5 +128,5 @@ left join
     and co.academic_year = sp.academic_year
     and dl.hi_start_date between sp.enter_date and sp.exit_date
     and sp.specprog_name = 'Home Instruction'
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sp") }}
+    and co._dbt_source_project = sp._dbt_source_project
 where co.grade_level != 99

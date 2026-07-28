@@ -15,7 +15,7 @@ with
             {{ ref("stg_powerschool__calendar_day") }} as c
             on s.school_number = c.schoolid
             and c.insession = 1
-            and {{ union_dataset_join_clause(left_alias="s", right_alias="c") }}
+            and s._dbt_source_project = c._dbt_source_project
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as t
             on s.schoolcity = t.region
