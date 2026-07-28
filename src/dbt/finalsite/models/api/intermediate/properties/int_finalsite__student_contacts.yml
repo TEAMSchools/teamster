@@ -34,6 +34,9 @@ models:
           - not_null:
               config:
                 severity: error
+        config:
+          meta:
+            contains_pii: true
       - name: contact_slot
         data_type: string
         description:
@@ -59,6 +62,9 @@ models:
           relationship's `rel_id`. Populated for `contact_1` and `contact_2`;
           null for `emergency_*` slots, which are free-text custom-field sets
           with no linked contact record.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_name
         data_type: string
         description:

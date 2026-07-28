@@ -22,6 +22,9 @@ models:
           - not_null:
               config:
                 severity: error
+        config:
+          meta:
+            contains_pii: true
       - name: title
         description: Salutation / name title for the person (rarely populated).
         data_type: string
