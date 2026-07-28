@@ -1,0 +1,12 @@
+models:
+  - name: int_focus__student_contacts
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__student_contacts, following the same pattern as
+      int_focus__school_year_first_day. Focus is Miami-only today; this shape
+      lets a future region's Focus ingestion union in without a rewrite. Column
+      docs/tests live on the kippmiami source model. Unconsumed until the Phase
+      2 int_students__contacts swap (see issue 4585).
+    columns:
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

@@ -58,3 +58,12 @@ sources:
                 - kippmiami
                 - focus
                 - int_focus__school_year_first_day
+      - name: int_focus__student_contacts
+        config:
+          meta:
+            dagster:
+              group: focus
+              asset_key:
+                - kippmiami
+                - focus
+                - int_focus__student_contacts
