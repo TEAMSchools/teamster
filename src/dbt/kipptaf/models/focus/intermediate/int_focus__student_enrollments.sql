@@ -18,15 +18,6 @@ with
     enrollments as (
         select *, {{ extract_region("with_source_project") }} as region,
         from with_source_project
-    ),
-
-    finalsite_ids as (
-        select
-            _dbt_source_project,
-            finalsite_enrollment_id,
-
-            cast(focus_student_id_prefixed as int) as focus_student_id,
-        from {{ ref("int_finalsite__contact_id_attributes") }}
     )
 
 select
@@ -41,8 +32,6 @@ select
     loc.location_region as region_official_name,
     loc.deanslist_school_id,
 
-    f.finalsite_enrollment_id,
-
     'KTAF' as district,
 
     concat(e.region, e.school_level) as region_school_level,
@@ -51,7 +40,3 @@ from enrollments as e
 left join
     {{ ref("stg_google_sheets__people__locations") }} as loc
     on e.school_number = loc.focus_school_id
-left join
-    finalsite_ids as f
-    on e.student_number = f.focus_student_id
-    and e._dbt_source_project = f._dbt_source_project
