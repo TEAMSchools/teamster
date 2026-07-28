@@ -16,7 +16,7 @@ models:
       - name: goal_granularity
         data_type: string
         description: >
-          "School" (whole-school total, grade_level = -1), "School/Grade Level",
+          "School" (whole-school total, grade_level = -9), "School/Grade Level",
           or "Region/Grade Level" (Inquiries/Applications/Deferred/ Waitlisted
           -- not tied to a specific school).
       - name: goal_type

@@ -50,15 +50,15 @@ models:
       - name: grade_level
         data_type: int64
         description: >
-          -1 = whole-school total row, else 0-12. See
-          int_finalsite__enrollment_scaffold for the -1 sentinel's provenance.
+          -9 = whole-school total row, else 0-12. See
+          int_finalsite__enrollment_scaffold for the -9 sentinel's provenance.
       - name: school_level
         data_type: string
         description: ES / MS / HS, as entered on the goals sheet.
       - name: goal_granularity
         data_type: string
         description: >
-          "School" (whole-school total, grade_level = -1), "School/Grade Level",
+          "School" (whole-school total, grade_level = -9), "School/Grade Level",
           or "Region/Grade Level" (Inquiries/Applications/Deferred/ Waitlisted
           -- not tied to a specific school).
       - name: goal_type

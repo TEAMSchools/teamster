@@ -21,7 +21,7 @@ with
             {{ ref("int_people__location_crosswalk") }} as x
             on s.schoolid = x.location_powerschool_school_id
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
-        where s.grade_level = -1
+        where s.grade_level = -9
 
         union all
 
@@ -43,7 +43,7 @@ with
 
         from {{ ref("int_finalsite__enrollment_scaffold") }} as s
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
-        where s.grade_level != -1 and s.schoolid != 0
+        where s.grade_level != -9 and s.schoolid != 0
     ),
 
     data_stack_school as (
@@ -57,7 +57,7 @@ with
             powerschool_student_number,
             first_name,
             last_name,
-            -1 as grade_level,
+            -9 as grade_level,
             latest_status,
             self_contained,
             enroll_status,
@@ -95,7 +95,7 @@ with
             powerschool_student_number,
             first_name,
             last_name,
-            -1 as grade_level,
+            -9 as grade_level,
             latest_status,
             self_contained,
             enroll_status,
@@ -317,7 +317,7 @@ left join
     and s.schoolid = d.schoolid
     and s.grade_level = d.grade_level
     and s.enrollment_type = d.enrollment_type
-where s.grade_level = -1
+where s.grade_level = -9
 
 union all
 
@@ -358,4 +358,4 @@ left join
     and s.schoolid = d.schoolid
     and s.grade_level = d.grade_level
     and s.enrollment_type = d.enrollment_type
-where s.grade_level != -1 and s.schoolid != 0
+where s.grade_level != -9 and s.schoolid != 0
