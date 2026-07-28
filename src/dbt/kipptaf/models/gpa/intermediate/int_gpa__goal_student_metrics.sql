@@ -21,4 +21,13 @@ left join
     and sr.schoolid = gt.schoolid
     and sr._dbt_source_project = gt._dbt_source_project
     and gt.is_current
-where sr.school_level = 'HS' and sr.rn_year = 1 and sr.enroll_status = 0
+where
+    sr.school_level = 'HS'
+    and sr.rn_year = 1
+    and sr.enroll_status = 0
+    /* TODO(#4581): Paterson is excluded until int_powerschool__gpa_term and
+       int_powerschool__gpa_cumulative union kipppaterson (both are
+       newark/camden/miami only today). Without this, Paterson HS students carry
+       null GPA measures yet still count in org-level denominators, silently
+       deflating the rate. */
+    and sr._dbt_source_project != 'kipppaterson'
