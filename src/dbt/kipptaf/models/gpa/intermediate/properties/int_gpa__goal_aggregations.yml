@@ -99,10 +99,11 @@ unit_tests:
       2.8` goal proves cross-grade aggregation into a single row. A region-level
       `cumulative_gpa_unweighted <= 2.5` goal (higher_is_better false) proves
       the derived direction flips `is_goal_met` relative to a naive `>=`
-      comparison. Two Camden students carrying no measures at all, plus a
-      matching Camden school-level goal, prove that an entirely unmeasured grain
-      yields a null rate rather than 0, and that unmeasured students raise
-      `n_students_in_grain` on the org row without dragging its rate down.
+      comparison. Two Camden students carrying no measures at all, plus matching
+      Camden school-level and region-level goals, prove that an entirely
+      unmeasured grain yields a null rate rather than 0 at both of those grains,
+      and that unmeasured students raise `n_students_in_grain` on the org row
+      without dragging its rate down.
     model: int_gpa__goal_aggregations
     given:
       - input: ref('int_gpa__goal_student_metrics')
@@ -250,6 +251,23 @@ unit_tests:
               '201_9-12',
               cast(0.58 as float64),
               true
+          union all
+          /* region-level, Camden: same unmeasured cohort at the region grain */
+          select
+              2026,
+              'region',
+              'Camden',
+              cast(null as int64),
+              9,
+              12,
+              'y1_gpa_weighted',
+              cast(3.0 as numeric),
+              '>=',
+              cast(58 as numeric),
+              '9-12',
+              'Camden_9-12',
+              cast(0.58 as float64),
+              true
     expect:
       rows:
         - {
@@ -275,6 +293,22 @@ unit_tests:
             org_level: school,
             region: Camden,
             schoolid: 201,
+            grade_band: 9-12,
+            goal_proportion: 0.58,
+            n_students_in_grain: 2,
+            n_students_measured: 0,
+            n_students_met: 0,
+            metric_rate: null,
+            is_goal_met: null,
+            progress_to_goal: null,
+          }
+        - {
+            academic_year: 2026,
+            metric: y1_gpa_weighted,
+            aggregation_hash: Camden_9-12,
+            org_level: region,
+            region: Camden,
+            schoolid: null,
             grade_band: 9-12,
             goal_proportion: 0.58,
             n_students_in_grain: 2,
