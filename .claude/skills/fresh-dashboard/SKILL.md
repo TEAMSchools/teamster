@@ -367,9 +367,12 @@ updated and goals reconcile, proceed to the file edits below.
   - `test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
     (`crosswalk_ranking`'s `where` filter)
 
-**Not** `rpt_tableau__fresh_dashboard_qc` — it is `enabled: false` and
-referenced by nothing, so it never builds. Its SQL reads the var, but it is not
-a verification site unless someone is deliberately re-enabling it.
+`rpt_tableau__fresh_dashboard_qc` is a descendant of
+`int_tableau__finalsite_student_scaffold`, so it inherits the year change
+without holding a literal of its own — but it IS a verification site. It is
+enabled, contract-enforced, and wired into the `fresh_dashboard` exposure, and
+it is the SRE-facing mismatch worklist, so a bump that quietly empties or
+inflates it is worth catching. Make sure the build command below selects it.
 
 The goals gap-row generator in this file is an ad hoc BigQuery query, not a dbt
 model, so it can't read `{{ var(...) }}` — substitute the new year by hand each
@@ -386,7 +389,7 @@ Build and verify after all changes:
 
 ```bash
 uv run dbt build \
-  --select int_tableau__fresh_enrollment_scaffold+ int_tableau__finalsite_student_scaffold \
+  --select int_tableau__fresh_enrollment_scaffold+ int_tableau__finalsite_student_scaffold+ \
     test_int_finalsite__status_order_matches_crosswalk_ranking \
   --project-dir src/dbt/kipptaf \
   --target dev \

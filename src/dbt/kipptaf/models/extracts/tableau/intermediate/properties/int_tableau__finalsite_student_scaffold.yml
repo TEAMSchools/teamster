@@ -17,46 +17,132 @@ models:
     columns:
       - name: enrollment_academic_year
         data_type: int64
+        description: >-
+          The Finalsite recruitment cycle this record belongs to, in start-year
+          form (AY2026-2027 = 2026). Scoped to the finalsite_recruitment_year
+          variable, not current_academic_year.
       - name: enrollment_academic_year_display
         data_type: string
+        description: >-
+          The same cycle in hyphenated short form for reporting labels, e.g.
+          "2026-27".
       - name: org
         data_type: string
+        description: Always "KTAF" (verified constant, network-wide).
       - name: region
         data_type: string
+        description: One of "Newark", "Camden", "Miami", "Paterson".
       - name: schoolid
         data_type: int64
+        description: >-
+          PowerSchool-space school id the student is assigned to in Finalsite,
+          resolved from the free-text assigned_school through
+          int_people__location_crosswalk. 0 when Finalsite has no school
+          assigned.
       - name: school
         data_type: string
+        description: >-
+          Short school abbreviation for schoolid, from the same crosswalk. "No
+          School Assigned" when Finalsite has none.
       - name: finalsite_id
         data_type: string
+        description: >-
+          Finalsite enrollment id -- the grain of this model together with
+          enrollment_academic_year, and the key downstream QC joins on.
+        config:
+          meta:
+            contains_pii: true
       - name: powerschool_student_number
         data_type: int64
+        description: >-
+          Student number as reported by Finalsite, used to match against the SIS
+          enrollment record. Null for applicants with no SIS identity yet.
+        config:
+          meta:
+            contains_pii: true
       - name: first_name
         data_type: string
+        description: Student first name, initcapped in the finalsite package.
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        description: Student last name.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
+        description: >-
+          Grade level as reported by Finalsite, decoded to an integer in the
+          finalsite package (PK = -1, K = 0, 1-12 as themselves). Compared
+          against ps_grade_level to produce is_grade_level_mismatch.
       - name: enroll_status
         data_type: int64
+        description: >-
+          Enrollment status from the matched SIS enrollment record (PowerSchool,
+          or Focus for Miami) -- 0 currently enrolled, 2 withdrawn, 3 graduated.
+          Null when no SIS record matched, which is the case
+          is_missing_sis_record covers downstream. Distinct from
+          ps_enroll_status, which is derived from Finalsite rather than read
+          from the SIS.
       - name: gender
         data_type: string
+        description: Student gender as recorded in Finalsite.
+        config:
+          meta:
+            contains_pii: true
       - name: birthdate
         data_type: date
+        description: Student date of birth as recorded in Finalsite.
+        config:
+          meta:
+            contains_pii: true
       - name: self_contained
         data_type: string
+        description: >-
+          Finalsite self-contained special-education indicator. Values are mixed
+          in the source -- "Yes", "No", and a literal "false" -- so treat it as
+          a label rather than a clean boolean.
       - name: enrollment_type
         data_type: string
+        description: >-
+          "New" or "Returning" -- whether Finalsite is recruiting this student
+          into the network or re-enrolling them. Part of this model's grain, and
+          what valid_detailed_status on the crosswalk is scoped against.
       - name: is_enrolled_fdos
         data_type: boolean
+        description: >-
+          True when the matched SIS enrollment record has the student enrolled
+          on the first day of school. Sourced from the SIS side, so it reflects
+          PowerSchool's or Focus's own calculation rather than anything
+          Finalsite reports. Known caveat -- Focus computes this against a
+          single network-wide first day per school year, so Miami schools that
+          start later than the earliest one report false for nearly every
+          student. See docs/models/fresh-dashboard-data-model.md.
       - name: is_enrolled_oct01
         data_type: boolean
+        description: >-
+          True when the matched SIS enrollment record covers October 1 of the
+          enrollment year.
       - name: is_enrolled_oct15
         data_type: boolean
+        description: >-
+          True when the matched SIS enrollment record covers October 15 of the
+          enrollment year.
       - name: is_enrolled_mar15
         data_type: boolean
+        description: >-
+          True when the matched SIS enrollment record covers March 15 of the
+          enrollment year.
       - name: latest_status
         data_type: string
+        description: >-
+          The student's most recent Finalsite status for this cycle, picked per
+          enrollment by status date then status rank. This is the single value
+          the dashboard treats as "where the student is now", and what
+          ps_enroll_status is derived from.
       - name: is_same_day_status_duplicate
         data_type: boolean
         description: >-
@@ -71,14 +157,35 @@ models:
           _dagster_partition_key.
       - name: aligned_enrollment_type
         data_type: string
+        description: >-
+          Always "All" today. Exists so goal rows that apply regardless of New
+          vs Returning can join without duplicating per enrollment_type.
       - name: grouped_status_timeframe
         data_type: string
+        description: >-
+          "Current" for the student's status as it stands now, or "Ever" for a
+          status they passed through at any point. Funnel goal types (Inquiries,
+          Applications, Offers, Assigned School, Accepted, Conversion) are
+          counted "Ever"; everything else is counted "Current".
       - name: goal_name
         data_type: string
+        description: >-
+          The specific goal this row counts toward, from the status_crosswalk
+          goal-group mapping. See docs/models/fresh-dashboard-data-model.md for
+          the full glossary.
       - name: goal_type
         data_type: string
+        description: >-
+          The funnel bucket this row counts toward -- Inquiries, Applications,
+          Offers, Accepted, Waitlisted, Deferred, Enrolled, Conversion and the
+          rest. A single Finalsite status fans out to several goal_type rows by
+          design, which is why this model's grain includes it.
       - name: days_in_grouped_status
         data_type: int64
+        description: >-
+          Days the student has been in the current grouped status, inclusive --
+          a status set and ended on the same day counts as 1 rather than 0.
+          Feeds the Pending Offers day-bucket splits on the dashboard.
       - name: ps_enroll_status
         data_type: int64
         description: >-

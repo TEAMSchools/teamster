@@ -85,7 +85,12 @@ with
 
     /* Schools/grades Finalsite is recruiting for that don't exist in
        PowerSchool/Focus yet -- see fresh-dashboard-data-model.md and the
-       fresh-dashboard skill's rollover procedure. */
+       fresh-dashboard skill's rollover procedure.
+
+       grain projection: school and region are attributes of schoolid,
+       school_level is a pure function of grade_level, and the rest are
+       literals -- so every selected column is functionally determined by
+       (region, schoolid, grade_level); not a mask for upstream duplicates. */
     finalsite_new as (
         select distinct
             u.schoolid,
