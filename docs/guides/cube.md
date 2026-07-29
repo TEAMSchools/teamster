@@ -357,16 +357,17 @@ curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
   http://localhost:4000/cubejs-api/v1/load
 ```
 
-**The `CUBE_GROUP_MAP` trap.** `.env.example` ships a `CUBE_GROUP_MAP` line
-whose placeholder value uses **stale group names** (`cube-network-detail`,
+**The `CUBE_GROUP_MAP` trap.** `.env.example` no longer ships this variable, and
+it should stay that way — but **check an older `.env` for it**, because a copy
+made before it was removed still carries it. It is a dev bypass that supplies
+`groups` only, so it cannot validate `row_level` scoping at all, and its old
+placeholder value used group names (`cube-network-detail`,
 `cube-access-student-data`) that predate the current taxonomy (`student-<scope>`
-/ `staff-directory` / `staff-pii-<scope>`). If you `cp .env.example .env`
-verbatim, that map's dev-bypass **overrides real resolution with dead groups no
-policy matches → every view denies**. Comment out (or delete) `CUBE_GROUP_MAP`
-so `resolveAccess` reads real HR data. (The bypass fires whenever
-`NODE_ENV !== production` and the variable is set, and it sits in the resolution
-path _shared_ by both auth hooks — so it corrupts the REST and SQL surfaces
-alike. Keep it commented out.)
+/ `staff-directory` / `staff-pii-<scope>`) — dead groups no policy matches, so
+**every view denies**. The bypass fires whenever `NODE_ENV !== production` and
+the variable is set, and it sits in the resolution path _shared_ by both auth
+hooks, so it corrupts the REST and SQL surfaces alike. Leave it unset locally;
+never set it in Cube Cloud.
 
 **Testing branch models not yet in production.** The cubes and `resolveAccess`
 read `kipptaf_marts` (production). If your branch reworks a mart the cubes read
@@ -445,9 +446,15 @@ a live server.
 Do **not** set `CUBE_GROUP_MAP` in Cube Cloud. This variable is a dev bypass
 that short-circuits BigQuery identity reads; it must never be configured in
 production. It only supplies `groups` (not the `row_level` interpolation
-values), so it cannot validate row-level scoping — and `.env.example`'s
-placeholder value uses stale group names that deny everything. See
+values), so it cannot validate row-level scoping even locally. It is no longer
+in `.env.example`; leave it out. See
 [Testing row-level security locally](#testing-row-level-security-locally).
+
+Do **not** set `CUBE_IMPERSONATORS` in Cube Cloud without a decision on the list
+and an agreed removal date. Every listed email can resolve any internal user's
+full context on that deployment, including student PII and the gated staff
+fields. Unset means emulation is inert, which is the right default. See
+[Emulating another viewer with `act_as`](#emulating-another-viewer-with-act_as).
 
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,

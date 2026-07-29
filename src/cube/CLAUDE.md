@@ -10,7 +10,12 @@ Cloud deployment: [`docs/guides/cube.md`](../../docs/guides/cube.md).
 src/cube/
   cube.js                   # Auth, group resolution, queryRewrite, sql-user gating
   package.json              # Cube server + bigquery driver + googleapis
-  .env.example              # Hook-blocked — Read/Grep return errors; ask user to inspect
+  .env.example              # Hook-blocked for Claude — but its local values are
+                            # documented verbatim in docs/guides/cube.md, so read
+                            # them there instead of asking the user to paste
+  access.js                 # Pure access + emulation logic (unit-tested)
+  access.test.js            # node --test
+  cube.test.js              # node --test — hook tests, CUBE_GROUP_MAP-stubbed
   model/
     cubes/
       <domain>/<name>.yml   # Fact and dim cubes — private at cube level
@@ -463,12 +468,29 @@ exercise it; a plain dev server silently default-denies every gated view.
   `contextToGroups` default-denies (`WHERE (1=0)`, views hidden = only source
   tables). Server-side enrichment of that context is the pending fix; until then
   emulate via the local SQL API / REST Playground.
+- **The committed matrix tool is the RLS validation path** —
+  `uv run scripts/cube_rls_matrix.py --viewers-file <local file>` opens one SQL
+  connection per viewer email and runs the same query, so a scope difference is
+  attributable to policy alone. Viewer emails are PII: pass them in, never
+  hardcode, and summarize the output rather than pasting it anywhere external.
+- **`act_as` emulation is REST/MCP only** — paste
+  `{"email": "you@…", "act_as": "viewer@…"}` as the Playground security context
+  (or sign the same payload) and `checkAuth` resolves the TARGET's context.
+  Needs your email in `CUBE_IMPERSONATORS`; unset = inert. A caller not on the
+  list keeps their own scope silently. Each real emulation logs one
+  `cube_emulation` line (identities only).
+- **The dev server always serves the MAIN checkout** — the `Cube: Dev Server`
+  task runs `npm --prefix src/cube` from the workspace root, so branch changes
+  to `cube.js` in a worktree are never exercised, and a worktree has no dotenv
+  file anyway (gitignored). Check the branch out in the main checkout for local
+  Cube work. Symptom of getting this wrong: every viewer returns 0 rows while
+  ADC is healthy.
 - **`CUBE_GROUP_MAP` cannot validate `row_level`** — it supplies `groups` only,
   not the `region_key` / `allowed_abbreviations` / `reportee_staff_keys` the
-  filters interpolate. Worse, `.env.example`'s placeholder value uses stale
-  group names (`cube-network-detail`, …) that no current policy matches, so
-  `cp .env.example .env` verbatim makes its dev-bypass deny EVERYTHING. Comment
-  out `CUBE_GROUP_MAP` to force real resolution.
+  filters interpolate, and it sits in the resolution path shared by both auth
+  hooks, so it corrupts REST and SQL alike. No longer shipped in the example
+  config; leave it unset (an older local copy may still carry it, with stale
+  group names that deny everything).
 - **Branch models aren't in prod.** Cubes + `resolveAccess` read
   `kipptaf_marts`. When the branch reworks a mart they read
   (`dim_staff_cube_access`, `dim_staff_reporting_chain`): build it to your dev
