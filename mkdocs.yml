@@ -56,12 +56,19 @@ nav:
       - Fiscal Year & Partitioning: reference/fiscal-year-partitioning.md
       - dbt Conventions: reference/dbt-conventions.md
       - Finalsite to Focus Import: reference/finalsite-focus-import.md
-      - FRESH Dashboard Data Model: reference/fresh-dashboard-data-model.md
       - Marts Data Models: reference/marts-data-models.md
       - Automation Conditions: reference/automation-conditions.md
   - Models:
+      - FRESH Dashboard Data Model: models/fresh-dashboard-data-model.md
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
   - Automations: reference/automations.md
+
+plugins:
+  - search
+  - redirects:
+      redirect_maps:
+        reference/fresh-dashboard-data-model.md: models/fresh-dashboard-data-model.md
+        reference/gradebook-audit-data-model.md: models/gradebook-audit-data-model.md
 
 markdown_extensions:
   - admonition

@@ -43,7 +43,7 @@ dev = [
   "dagster-webserver",
   "pytest>=8.3",
 ]
-docs = ["mkdocs-material>=9.7"]
+docs = ["mkdocs-material>=9.7", "mkdocs-redirects>=1.2"]
 
 [build-system]
 requires = ["hatchling"]

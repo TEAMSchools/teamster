@@ -1710,6 +1710,7 @@ sources:
             sheet_range: src_google_sheets__finalsite__school_scaffold
             skip_leading_rows: 1
         config:
+          enabled: false
           meta:
             dagster:
               asset_key:
