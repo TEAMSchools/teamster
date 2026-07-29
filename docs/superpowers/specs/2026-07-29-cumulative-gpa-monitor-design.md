@@ -13,8 +13,8 @@ A local React mockup established the intended shape. This design maps every mark
 in that mockup to a real warehouse column, keeps what the data supports, and
 cuts what it does not.
 
-The metric already exists in three places-to-be, which is the core risk this
-design manages:
+The same metric is already computed in two places, and this dashboard would make
+a third. Keeping them reconciled is the core risk this design manages:
 
 1. The topline cascade publishes an indicator named
    `Projected Unweighted Cumulative GPA`, computed weekly in
