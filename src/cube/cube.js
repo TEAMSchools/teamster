@@ -217,33 +217,7 @@ module.exports = {
     database: "kipptaf_marts",
   }),
 
-  // TEMPORARY SPIKE DIAGNOSTIC (#4526) — REVERT IMMEDIATELY AFTER CAPTURE.
-  // Answers two questions that can only be observed on a Cube Cloud deployment:
-  // (1) the exact shape of the security context Cube Cloud injects on 1.7.14,
-  // since our enrichment design was drafted against a shape observed on an
-  // older version; and (2) whether mutating that object here propagates to the
-  // access_policy row_level filters, which decides whether the enrichment can
-  // live in this hook at all.
-  //
-  // Safe by construction: the sentinel region key matches no real region, so
-  // even if mutation works no student rows become visible. The guard fires only
-  // when `groups` is absent entirely — checkAuth always sets it (possibly to an
-  // empty array, which is truthy), so the REST path is untouched.
-  contextToGroups: async ({ securityContext }) => {
-    console.log(
-      "SPIKE_4526 received:",
-      JSON.stringify({
-        keys: Object.keys(securityContext ?? {}),
-        context: securityContext ?? null,
-      }),
-    );
-    if (securityContext && !securityContext.groups) {
-      securityContext.region_key = "SPIKE-REGION";
-      securityContext.groups = ["student-region"];
-      console.log("SPIKE_4526 mutated: injected student-region + SPIKE-REGION");
-    }
-    return securityContext?.groups ?? [];
-  },
+  contextToGroups: async ({ securityContext }) => securityContext?.groups ?? [],
 
   checkAuth: async (req, auth) => {
     // `auth` is the raw bearer token STRING (a custom checkAuth replaces Cube's
