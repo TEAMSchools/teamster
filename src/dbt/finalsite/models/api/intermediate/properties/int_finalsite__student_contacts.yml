@@ -103,19 +103,27 @@ models:
             contains_pii: true
       - name: phone_mobile
         data_type: string
-        description: The contact's phone number typed `Cell`, if any.
+        description:
+          The contact's phone number typed `Cell`, if any. Already normalized to
+          E.164 upstream — in `stg_finalsite__contacts` for `contact_1` and
+          `contact_2`, in `int_finalsite__contact_custom_attributes` for an
+          emergency slot.
         config:
           meta:
             contains_pii: true
       - name: phone_home
         data_type: string
-        description: The contact's phone number typed `Home`, if any.
+        description:
+          The contact's phone number typed `Home`, if any. Already normalized to
+          E.164 upstream.
         config:
           meta:
             contains_pii: true
       - name: phone_work
         data_type: string
-        description: The contact's phone number typed `Work`, if any.
+        description:
+          The contact's phone number typed `Work`, if any. Already normalized to
+          E.164 upstream.
         config:
           meta:
             contains_pii: true
@@ -131,7 +139,8 @@ models:
         data_type: string
         description:
           The contact's first phone number regardless of type — a fallback for
-          phones with a blank `_type` that the typed columns miss.
+          phones with a blank `_type` that the typed columns miss. Already
+          normalized to E.164 upstream.
         config:
           meta:
             contains_pii: true
@@ -168,10 +177,13 @@ models:
           slot.
 
 unit_tests:
-  - name: test_student_contacts_phone_normalization
+  - name: test_student_contacts_phone_typed_slots
     description:
-      A contact_1 row with a control-char-garbled cell phone and a bare-10 home
-      phone normalizes both to E.164 (+1XXXXXXXXXX).
+      A contact_1 row routes each of the related person's phones to the slot
+      matching its type label — `Cell` to phone_mobile, `Home` to phone_home, an
+      absent type to a null slot — and carries phone_1 through as phone_primary
+      regardless of type. Phones arrive already normalized to E.164 from
+      `stg_finalsite__contacts`; this model passes them through unchanged.
     model: int_finalsite__student_contacts
     given:
       - input: ref('stg_finalsite__contact_relationships')
@@ -195,13 +207,9 @@ unit_tests:
             'jane@example.com' as email,
             'Jane' as first_name,
             'Doe' as last_name,
-            code_points_to_string([8234])
-              || '+1 (862) 300'
-              || code_points_to_string([8209])
-              || '7240'
-              || code_points_to_string([8236]) as phone_1_number,
+            '+18623007240' as phone_1_number,
             'Cell' as phone_1_type,
-            '(929) 225-5670' as phone_2_number,
+            '+19292255670' as phone_2_number,
             'Home' as phone_2_type,
             cast(null as string) as phone_3_number,
             cast(null as string) as phone_3_type,
