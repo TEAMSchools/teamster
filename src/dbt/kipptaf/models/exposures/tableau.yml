@@ -101,6 +101,20 @@ exposures:
             metadata:
               id: c29963fb-8516-4148-b43f-cddc0f2b4093
               cron_schedule: 0 13 * * *
+  - name: gpa_goals_dashboard
+    label: GPA Goals Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__gpa_goals")
+    # TODO(#4581): update to the published GPA Goals workbook URL
+    url: http://SAC-RPT-01/#/site/KIPPNJ/workbooks/TBD
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
   - name: high_school_early_warning_dashboard
     label: High School Early Warning Dashboard
     type: dashboard
