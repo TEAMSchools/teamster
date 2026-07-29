@@ -189,12 +189,7 @@ current Focus via the `focus` package, which only kippmiami has). kipptaf
 `rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
 actual SFTP feed. Per feed: addresses/contacts/demographics import-once
 (presence anti-join, with a null/completeness gate #4320); enrollment diffs and
-additionally reads Focus in kipptaf via a BQ-native source (#4319). Exception:
-`rpt_focus__addresses` also filters incomplete addresses at the kipptaf level
-(it anchors on the primary contact and drops rows where that contact's
-`address_1`/`city`/`state`/`zip` is null, #4613), so that one view is not
-all-rows desired-state — the gate is deliberately duplicated across both layers.
-Spec:
+additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 
 ## `dbt_project.yml` Inherited Defaults

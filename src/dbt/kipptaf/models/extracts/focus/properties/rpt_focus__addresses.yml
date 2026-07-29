@@ -5,20 +5,13 @@ models:
         enforced: true
     description:
       One row per in-scope Finalsite student reshaped into the Focus `ADDRESS`
-      SFTP template layout. The address and phone columns are the student's
-      PRIMARY CONTACT's, not the student record's own household values — array
-      position does not identify Finalsite's primary household and the API does
-      not expose that designation, so the primary contact (Parent 1) is the
-      anchor instead. Students with no relationship flagged `primary`, and
-      students whose primary contact has no address, are excluded rather than
-      falling back to an arbitrary household. Joins `stg_finalsite__contacts` to
-      `stg_finalsite__contact_relationships` to find the primary contact, back
-      to `stg_finalsite__contacts` for that contact's address, to
+      SFTP template layout. Joins `stg_finalsite__contacts` to
       `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
-      `finalsite_enrollment_id`), then to `int_finalsite__contact_id_attributes`
-      for the Focus student ID, excluding contacts without a minted Focus id.
-      Produces 12 columns in `ADDRESS_LAYOUT` order. Focus column header casing
-      (`STUDENT_ID`, `ADDRESS`, etc.) is applied at transport time via
+      `finalsite_enrollment_id`), then inner joins
+      `int_finalsite__contact_id_attributes` for the Focus student ID, excluding
+      contacts without a minted Focus id. Produces 12 columns in
+      `ADDRESS_LAYOUT` order. Focus column header casing (`STUDENT_ID`,
+      `ADDRESS`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. Mailing address columns are always null — Focus does
       not receive a separate mailing address from Finalsite.
@@ -36,28 +29,22 @@ models:
                 severity: error
       - name: address
         data_type: string
-        description:
-          Street address line 1 of the student's primary contact (`address_1` on
-          the contact flagged `primary`).
+        description: Primary street address line 1 from Finalsite (`address_1`).
       - name: address2
         data_type: string
-        description:
-          Street address line 2 of the student's primary contact (`address_2`).
+        description: Primary street address line 2 from Finalsite (`address_2`).
       - name: city
         data_type: string
-        description: City of the student's primary contact.
+        description: City from Finalsite.
       - name: state
         data_type: string
-        description: State of the student's primary contact.
+        description: State from Finalsite.
       - name: zipcode
         data_type: string
-        description: ZIP code of the student's primary contact (`zip`).
+        description: ZIP code from Finalsite (`zip`).
       - name: phone
         data_type: string
-        description:
-          Primary phone number of the student's primary contact
-          (`phone_1_number`). Sourced from the contact rather than the student
-          record, whose own phone is null for nearly every student.
+        description: Primary phone number from Finalsite (`phone_1_number`).
       - name: mailing
         data_type: string
         description:
@@ -83,122 +70,38 @@ unit_tests:
   - name: test_addresses_shape
     description:
       Verifies the 12-column ADDRESS layout for a single student — STUDENT_ID is
-      sourced from int_finalsite__contact_id_attributes, the address and phone
-      come from the student's primary contact rather than from the student's own
-      record, and mailing columns are always null. The student rows carry
-      different address values that must not appear in the output, proving the
-      anchor. A second student has status 'applied' (not 'enrolled') and a
-      minted Focus id, confirming the enrolled-only filter excludes them. A
-      third student is enrolled with a minted Focus id and a complete address of
-      their own, but no relationship flagged primary — confirming the strict
-      anchor excludes them rather than falling back to their own address. A
-      fourth student is enrolled with a minted Focus id and HAS a primary
-      relationship, but that primary contact's address fields are blank —
-      confirming the completeness filter excludes them rather than emitting a
-      row with null address columns.
+      sourced from int_finalsite__contact_id_attributes, address columns map
+      from contacts, mailing columns are always null. A second student has
+      status 'applied' (not 'enrolled') and a minted Focus id, confirming the
+      enrolled-only filter excludes them from the extract.
     model: rpt_focus__addresses
     given:
-      - input: ref('stg_finalsite__contact_relationships')
-        rows:
-          - {
-              finalsite_enrollment_id: enr-001,
-              rel_id: enr-par-001,
-              is_primary: true,
-            }
-          - {
-              finalsite_enrollment_id: enr-002,
-              rel_id: enr-par-002,
-              is_primary: true,
-            }
-          - {
-              finalsite_enrollment_id: enr-003,
-              rel_id: enr-par-003,
-              is_primary: null,
-            }
-          - {
-              finalsite_enrollment_id: enr-004,
-              rel_id: enr-par-004,
-              is_primary: true,
-            }
       - input: ref('stg_finalsite__contacts')
         rows:
           - {
               finalsite_enrollment_id: enr-001,
-              address_1: 999 Student St,
-              address_2: null,
-              city: Hialeah,
-              state: FL,
-              zip: "33010",
-              phone_1_number: "+13055559999",
-              status: enrolled,
-            }
-          - { finalsite_enrollment_id: enr-002, status: applied }
-          - {
-              finalsite_enrollment_id: enr-003,
-              address_1: 888 Orphan Ave,
-              address_2: null,
-              city: Miami,
-              state: FL,
-              zip: "33103",
-              phone_1_number: "+13055559888",
-              status: enrolled,
-            }
-          - {
-              finalsite_enrollment_id: enr-par-001,
               address_1: 123 Main St,
               address_2: Apt 4B,
               city: Miami,
               state: FL,
               zip: "33101",
               phone_1_number: "+13055550100",
-              status: null,
+              status: enrolled,
             }
           - {
-              finalsite_enrollment_id: enr-par-002,
+              finalsite_enrollment_id: enr-002,
               address_1: 456 Oak Ave,
               address_2: null,
               city: Miami,
               state: FL,
               zip: "33102",
               phone_1_number: "+13055550200",
-              status: null,
-            }
-          - {
-              finalsite_enrollment_id: enr-par-003,
-              address_1: 789 Pine Rd,
-              address_2: null,
-              city: Miami,
-              state: FL,
-              zip: "33104",
-              phone_1_number: "+13055550300",
-              status: null,
-            }
-          - {
-              finalsite_enrollment_id: enr-004,
-              address_1: 777 Complete Way,
-              address_2: null,
-              city: Miami,
-              state: FL,
-              zip: "33105",
-              phone_1_number: "+13055559777",
-              status: enrolled,
-            }
-          - {
-              finalsite_enrollment_id: enr-par-004,
-              address_1: null,
-              address_2: null,
-              city: null,
-              state: null,
-              zip: null,
-              phone_1_number: "+13055550400",
-              status: null,
+              status: applied,
             }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
           - { finalsite_enrollment_id: enr-002 }
-          - { finalsite_enrollment_id: enr-003 }
-          - { finalsite_enrollment_id: enr-004 }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
@@ -207,10 +110,6 @@ unit_tests:
             '84004004004' as focus_student_id_prefixed
           union all
           select 'enr-002', '84004004005'
-          union all
-          select 'enr-003', '84004004006'
-          union all
-          select 'enr-004', '84004004007'
     expect:
       rows:
         - {
