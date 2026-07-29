@@ -1,4 +1,8 @@
 with
+    -- grain projection: every column here is functionally determined by
+    -- (enrollment_academic_year, finalsite_id); the source carries one row per
+    -- (goal_type, goal_name) grouping, neither of which is projected, so those
+    -- collapse to one byte-identical tuple. Not a mask for upstream duplicates.
     roster as (
         select distinct
             enrollment_academic_year,
@@ -24,6 +28,10 @@ with
             is_active_inactive_mismatch,
             is_grade_level_mismatch,
             is_school_mismatch,
+
+            if(
+                ps_enroll_status = 0 and enroll_status is null, true, false
+            ) as is_missing_sis_record,
 
         from {{ ref("int_tableau__finalsite_student_scaffold") }}
         where grouped_status_timeframe = 'Current'
@@ -59,7 +67,8 @@ from
             is_same_day_status_duplicate,
             is_active_inactive_mismatch,
             is_grade_level_mismatch,
-            is_school_mismatch
+            is_school_mismatch,
+            is_missing_sis_record
         )
     )
 where flag_value

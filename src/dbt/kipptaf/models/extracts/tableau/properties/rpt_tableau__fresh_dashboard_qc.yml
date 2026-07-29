@@ -24,9 +24,15 @@ models:
       - name: flag_name
         data_type: string
         description: >
-          Which mismatch fired -- is_same_day_status_duplicate,
-          is_active_inactive_mismatch, is_grade_level_mismatch, or
-          is_school_mismatch.
+          Which problem fired -- is_same_day_status_duplicate,
+          is_active_inactive_mismatch, is_grade_level_mismatch,
+          is_school_mismatch, or is_missing_sis_record. The first four are
+          computed on int_tableau__finalsite_student_scaffold;
+          is_missing_sis_record is derived here, and fires when Finalsite says a
+          student is Enrolled but no SIS enrollment record matched at all --
+          distinct from is_active_inactive_mismatch, which compares a status
+          against a record that does exist. The two need different fixes: create
+          or link the record, versus correct a status.
       - name: flag_value
         data_type: bool
         description: >
