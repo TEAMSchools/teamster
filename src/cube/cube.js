@@ -217,46 +217,7 @@ module.exports = {
     database: "kipptaf_marts",
   }),
 
-  // TEMPORARY SPIKE (#4526) — REVERT AFTER CAPTURE.
-  // Records the SHAPE of the security context Cube Cloud injects on 1.7.14, so
-  // the pending enrichment reads keys that actually exist rather than ones
-  // observed on an older version. Both production and this branch environment
-  // are on 1.7.14; local dev is 1.6.59.
-  //
-  // Emits key names and value TYPES only, never values. The injected context
-  // carries staff emails, and its 1.7.14 contents are precisely what we do not
-  // know — dumping an unknown object is how a token reaches a log. It also does
-  // not mutate anything and grants no group, so behavior is unchanged and
-  // Explore stays dark: this observes, it does not fix.
   contextToGroups: async ({ securityContext }) => {
-    const shape = (obj) =>
-      Object.fromEntries(
-        Object.entries(obj ?? {}).map(([key, value]) => [
-          key,
-          Array.isArray(value)
-            ? `array[${value.length}]`
-            : value === null
-              ? "null"
-              : typeof value,
-        ]),
-      );
-    console.log(
-      "SPIKE_4526 shape:",
-      JSON.stringify({
-        top: shape(securityContext),
-        cubeCloud: shape(securityContext?.cubeCloud),
-        // Hunting for where a pasted Security Context target arrives, since
-        // 1.7.14 has no top-level `email`. userCredentials is deliberately NOT
-        // introspected — we do not need it and its name says why.
-        userAttributes: shape(securityContext?.cubeCloud?.userAttributes),
-        meta: shape(securityContext?.cubeCloud?.meta),
-        // `iss` is an allowlisted VALUE: a JWT issuer identifier, not PII and
-        // not a credential. Needed because a guard keyed on it cannot be
-        // designed from its type alone. Nothing else here emits a value.
-        iss: securityContext?.iss ?? null,
-      }),
-    );
-
     // Cube Cloud bypasses checkAuth and injects its own context, so
     // resolveAccess never runs on this path and every gated view default-denied
     // for console users (#4526). Enrich it here.
