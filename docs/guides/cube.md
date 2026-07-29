@@ -228,11 +228,25 @@ Enable the SQL API in `src/cube/.env`:
 CUBEJS_PG_SQL_PORT=15432
 CUBEJS_SQL_USER=cube_dev
 CUBEJS_SQL_PASSWORD=local-dev-sql
+# Signs REST/Playground tokens. Cube Cloud generates its OWN value per
+# deployment, so this local one is a fixed placeholder, never a real credential.
+CUBEJS_API_SECRET=local-dev-secret
+# Who may emulate another viewer via an `act_as` claim (#4526). Unset means
+# emulation is inert, which is the correct production default.
+CUBE_IMPERSONATORS=you@apps.teamschools.org
 # Optional: pin EVERY connection to one viewer (dev-only override of the
 # connecting user). Leave it commented to resolve as the connecting SQL user
 # instead, which lets you switch viewers per connection with no restart.
 # CUBE_SQL_DEV_EMAIL=someone@apps.teamschools.org
 ```
+
+The local values above are **fixed placeholders, deliberately documented here**
+rather than treated as secrets. Local Cube binds to `127.0.0.1`, and Cube Cloud
+generates its own `CUBEJS_API_SECRET` per deployment, so nothing here reaches
+production. The payoff is that anyone — a teammate, or Claude Code, which is
+blocked from reading dotenv files — can run the local validation tooling without
+handling a real credential. Keep it that way: never set a local value equal to a
+production secret, and never document a Cube Cloud value here.
 
 Restart the **Cube: Dev Server** task. Identity resolves from the **SQL `user`
 you connect as** (unless `CUBE_SQL_DEV_EMAIL` is set, which overrides it) — so
@@ -300,6 +314,36 @@ of the token's own `exp`). A token minted more than 12h ago fails with
 `TokenExpiredError: maxAge exceeded` and **every** view denies. Clear
 `localhost` local storage, or re-save the security context, to re-mint a fresh
 token.
+
+### Emulating another viewer with `act_as`
+
+On the REST surface an approved caller can resolve **another** viewer's real
+context, which is how a pilot user's scope gets signed off
+([#4526](https://github.com/TEAMSchools/teamster/issues/4526)). Put your own
+email in `CUBE_IMPERSONATORS` and restart, then pass both claims:
+
+```json
+{
+  "email": "you@apps.teamschools.org",
+  "act_as": "a-viewer@apps.teamschools.org"
+}
+```
+
+`checkAuth` resolves the target's context and the query returns **their** scope,
+not yours. Each emulated request writes one `cube_emulation` line to the
+dev-server log carrying both identities and a timestamp — identities only, no
+row data.
+
+The gate reads the **signed `email` claim**, so it cannot be forged: a caller
+who is not in `CUBE_IMPERSONATORS` keeps their own scope, and their `act_as` is
+silently ignored rather than rejected. Verify that yourself before trusting the
+feature — mint a token as a narrowly-scoped viewer with `act_as` set to a
+broader one and confirm you get the narrow scope back. With `CUBE_IMPERSONATORS`
+unset entirely, emulation is inert, which is the correct production default.
+
+`act_as` is REST/MCP only. The SQL API resolves identity from the connecting
+user, so switch viewers there by reconnecting (see the matrix tool above); Cube
+Cloud's Explore surface is tracked separately in #4526.
 
 **Alternative: REST `/load` with your own JWT.** Sign an HS256 JWT whose `email`
 claim is the viewer (with `CUBEJS_API_SECRET`) and POST it — again no `NODE_ENV`
