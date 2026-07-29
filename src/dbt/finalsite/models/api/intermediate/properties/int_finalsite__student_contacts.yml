@@ -184,7 +184,6 @@ unit_tests:
             'parent' as rel_type,
             true as is_primary,
             true as is_financial,
-            cast(null as string) as household_1_id,
             cast(null as boolean) as is_parent2
       - input: ref('stg_finalsite__contacts')
         format: sql
@@ -209,7 +208,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            cast(null as string) as household_1_id,
             array<string>[] as household_ids
       - input: ref('int_finalsite__contact_custom_attributes')
         rows: []
@@ -259,7 +257,6 @@ unit_tests:
             'parent' as rel_type,
             true as is_primary,
             true as is_financial,
-            'hh1' as household_1_id,
             false as is_parent2
           union all
           select
@@ -270,7 +267,6 @@ unit_tests:
             'stepparent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial,
-            'hh1' as household_1_id,
             false as is_parent2
           union all
           select
@@ -281,7 +277,6 @@ unit_tests:
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial,
-            'hh1' as household_1_id,
             false as is_parent2
           union all
           select
@@ -292,7 +287,6 @@ unit_tests:
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial,
-            'hh3' as household_1_id,
             false as is_parent2
           union all
           select
@@ -303,7 +297,6 @@ unit_tests:
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial,
-            'hh3' as household_1_id,
             false as is_parent2
       - input: ref('stg_finalsite__contacts')
         format: sql
@@ -324,7 +317,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh1' as household_1_id,
             ['hh1'] as household_ids
           union all
           select
@@ -343,7 +335,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh1' as household_1_id,
             ['hh1', 'hh2'] as household_ids
           union all
           select
@@ -362,7 +353,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh2' as household_1_id,
             ['hh2'] as household_ids
           union all
           select
@@ -381,7 +371,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh3' as household_1_id,
             ['hh3'] as household_ids
           union all
           select
@@ -400,7 +389,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh3' as household_1_id,
             ['hh3'] as household_ids
       - input: ref('int_finalsite__contact_custom_attributes')
         rows: []
