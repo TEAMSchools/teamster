@@ -174,7 +174,6 @@ with
     -- exactly as if it didn't exist.
     individual_exceptions_live as (
         select
-            employee_number,
             additional_location_type,
             additional_location_name,
             include_student_data,
@@ -183,6 +182,11 @@ with
             staff_compensation_scope,
             staff_observations_scope,
             staff_benefits_scope,
+
+            -- the sheet's employee_number is STRING (avoids Sheets autodetect
+            -- mangling leading zeros); dim_staff's is INT64 (staff_unique_id) --
+            -- cast once here so every downstream join is a plain column match.
+            safe_cast(employee_number as int64) as employee_number,
         from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
         where
             status = 'active'
@@ -253,37 +257,37 @@ with
             rp.job_function_level,
 
             coalesce(
-                ovr.student_location_scope, rl.student_location_scope, 'none'
+                ovr.student_location_scope, rp.student_location_scope, 'none'
             ) as student_location_scope,
 
             coalesce(
-                ovr.staff_location_scope, rl.staff_location_scope, 'none'
+                ovr.staff_location_scope, rp.staff_location_scope, 'none'
             ) as staff_location_scope,
             coalesce(
                 iex.staff_department_scope,
                 ovr.staff_department_scope,
-                rl.staff_department_scope,
+                rp.staff_department_scope,
                 'none'
             ) as staff_department_scope,
             coalesce(
-                iex.staff_pii_scope, ovr.staff_pii_scope, rl.staff_pii_scope, 'none'
+                iex.staff_pii_scope, ovr.staff_pii_scope, rp.staff_pii_scope, 'none'
             ) as staff_pii_scope,
             coalesce(
                 iex.staff_compensation_scope,
                 ovr.staff_compensation_scope,
-                rl.staff_compensation_scope,
+                rp.staff_compensation_scope,
                 'none'
             ) as staff_compensation_scope,
             coalesce(
                 iex.staff_observations_scope,
                 ovr.staff_observations_scope,
-                rl.staff_observations_scope,
+                rp.staff_observations_scope,
                 'none'
             ) as staff_observations_scope,
             coalesce(
                 iex.staff_benefits_scope,
                 ovr.staff_benefits_scope,
-                rl.staff_benefits_scope,
+                rp.staff_benefits_scope,
                 'none'
             ) as staff_benefits_scope,
 
