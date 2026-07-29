@@ -197,6 +197,26 @@ const SNAPSHOT_MEASURE_STEMS = {
   student_enrollments: ["count_students"],
 };
 
+// Turns a jsonwebtoken failure into a message that names the failed check, so a
+// 403 is diagnosable without server access. jsonwebtoken reports both the maxAge
+// cap and the token's own `exp` as TokenExpiredError, distinguished only by the
+// message text — hence the string check rather than a type check.
+function jwtRejectionReason(err) {
+  if (err?.name === "TokenExpiredError") {
+    return String(err.message).includes("maxAge")
+      ? "Token too old: exceeds the 12h maxAge cap measured from `iat`. Re-mint it (in the Playground, clear localhost local storage or re-save the security context)."
+      : "Token expired: past its own `exp`.";
+  }
+  if (err?.name === "JsonWebTokenError") {
+    // Covers a bad signature, a wrong/absent CUBEJS_API_SECRET on this
+    // deployment, a missing `iat` under maxAge, and alg:none. Naming the secret
+    // matters: an unset one on a branch environment is the likeliest cause and
+    // is otherwise invisible.
+    return `Invalid token: ${err.message}. Check the signing secret matches this deployment's CUBEJS_API_SECRET, and that the token carries an \`iat\`.`;
+  }
+  return "Invalid token";
+}
+
 // Emulation moves PII visibility, so every emulated request leaves a trail in
 // the deployment logs. Identities and a timestamp only — never row data.
 function logEmulation(surface, caller, target) {
@@ -305,7 +325,21 @@ module.exports = {
       } catch (err) {
         // Mirror Cube's default checkAuth: a bad/expired token is a clean 403,
         // not a bare-Error 500 (only CubejsHandlerError carries a status).
-        throw new CubejsHandlerError(403, "Forbidden", "Invalid token", err);
+        //
+        // Say WHICH check failed. A single "Invalid token" for every failure is
+        // what makes the maxAge cap a trap rather than a control: a Playground
+        // token cached over 12h denies every view, and the symptom is
+        // indistinguishable from a wrong secret or a missing one — so it reads as
+        // an access-policy bug and costs an hour. The status stays 403 and the
+        // control is unchanged; only the message differs. This leaks nothing
+        // useful: a caller already knows their own token's age, and learning
+        // "too old" versus "bad signature" does not help forge a signature.
+        throw new CubejsHandlerError(
+          403,
+          "Forbidden",
+          jwtRejectionReason(err),
+          err,
+        );
       }
     }
     // Admin-gated emulation (#4526): an approved impersonator may pass an

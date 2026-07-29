@@ -223,6 +223,72 @@ test("checkAuth: forged groups/securityContext claims are ignored (email and act
   assert.deepEqual(req.securityContext.groups, ["staff-directory"]);
 });
 
+// --- 403 diagnosability (#4526) ----------------------------------------------
+// Every jwt failure used to return a bare "Invalid token", which is what turned
+// the maxAge cap into a trap: a stale Playground token, a wrong secret, and an
+// unset secret all looked identical, and all render as "no data". The status
+// stays 403; only the message distinguishes them.
+
+async function rejectionMessage(token) {
+  let captured;
+  await assert.rejects(
+    () => cube.checkAuth({}, token),
+    (err) => {
+      assert.equal(err.status, 403);
+      captured = String(err.message);
+      return true;
+    },
+  );
+  return captured;
+}
+
+test("checkAuth: a maxAge rejection says the token is too old and to re-mint", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const message = await rejectionMessage(
+    sign({
+      email: "stale-msg@apps.teamschools.org",
+      iat: now - 13 * 60 * 60,
+      exp: now + 300,
+    }),
+  );
+  assert.match(message, /too old/i);
+  assert.match(message, /maxAge/);
+  assert.match(message, /re-mint/i);
+});
+
+test("checkAuth: an exp rejection is distinguishable from a maxAge one", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const message = await rejectionMessage(
+    sign({
+      email: "exp-msg@apps.teamschools.org",
+      iat: now - 600,
+      exp: now - 120,
+    }),
+  );
+  assert.match(message, /expired/i);
+  // The two must not be confusable - that confusion is the whole bug.
+  assert.doesNotMatch(message, /maxAge/);
+});
+
+test("checkAuth: a signature rejection points at the deployment's signing secret", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const message = await rejectionMessage(
+    jwt.sign(
+      {
+        email: "wrongsecret-msg@apps.teamschools.org",
+        iat: now,
+        exp: now + 300,
+      },
+      "not-the-real-secret",
+      { algorithm: "HS256" },
+    ),
+  );
+  // The likeliest real cause is a secret that is wrong or unset on a branch
+  // environment, which is otherwise invisible from the client side.
+  assert.match(message, /signing secret|CUBEJS_API_SECRET/);
+  assert.doesNotMatch(message, /too old/i);
+});
+
 test("checkSqlAuth: an unset SQL password rejects the connection (fail-closed)", async () => {
   delete process.env.CUBEJS_SQL_PASSWORD;
   const res = await cube.checkSqlAuth({}, "sqlnopw@apps.teamschools.org", "x");
