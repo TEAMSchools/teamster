@@ -58,6 +58,13 @@ models:
       - name: fafsa_opt_out
         data_type: string
       - name: fafsa_status_custom
+        description: >-
+          FAFSA status as assessed by counselors, decoded from the Overgrad
+          custom field named FAFSA Status. Distinct from the `fafsa_status`
+          column on `stg_overgrad__students`, which carries Overgrad's own
+          submission lifecycle and can disagree with this assessment. Scoped to
+          students by the custom field's resource class, so it is null for
+          admission-grain rows.
         data_type: string
       - name: intended_major
         data_type: string
