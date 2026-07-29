@@ -57,7 +57,12 @@ models:
         description: Cumulative weighted Y1 GPA through this academic year.
       - name: cumulative_y1_gpa_unweighted
         data_type: float64
-        description: Cumulative unweighted Y1 GPA through this academic year.
+        description:
+          Cumulative unweighted Y1 GPA as of the end of that academic year. On
+          the current-year row this is the projected end-of-year value, matching
+          `cumulative_y1_gpa_projected_unweighted` in the course-grain extract,
+          so it is the correct basis for goal comparison. Use
+          `cumulative_y1_gpa_unweighted_as_of_today` for the running value.
       - name: student_number
         data_type: int64
         description: District student number (Tableau relationship key).
@@ -160,3 +165,25 @@ models:
       - name: school_leader_tableau_username
         data_type: string
         description: School leader Tableau username (row-level security).
+      - name: cumulative_y1_gpa_unweighted_as_of_today
+        data_type: float64
+        description:
+          Cumulative unweighted Y1 GPA as of the last gradebook sync, on
+          current-year rows only. Distinct from `cumulative_y1_gpa_unweighted`
+          on the same row, which is the year-end or projected value.
+      - name: gpa_needed_for_cumulative_3_0
+        data_type: float64
+        description:
+          Weighted Y1 GPA needed across this year's GPA credits to finish with a
+          3.00 projected unweighted cumulative. Current-year rows only. A
+          negative value means the outcome is already guaranteed.
+      - name: is_cumulative_3_0_attainable
+        data_type: boolean
+        description:
+          True when `gpa_needed_for_cumulative_3_0` is at or below the
+          credit-weighted maximum achievable this year. Current-year rows only.
+      - name: potential_gpa_credits_current_year
+        data_type: float64
+        description:
+          GPA credit hours in progress this year, used as the
+          credits-in-progress figure on the cusp roster. Current-year rows only.

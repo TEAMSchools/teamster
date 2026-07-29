@@ -45,6 +45,11 @@ select
     e.school_leader,
     e.school_leader_tableau_username,
 
+    gcc.cumulative_y1_gpa_unweighted as cumulative_y1_gpa_unweighted_as_of_today,
+    gcc.gpa_needed_for_cumulative_3_0,
+    gcc.is_cumulative_3_0_attainable,
+    gcc.potential_gpa_credits_current_year,
+
 from {{ ref("int_powerschool__gpa_cumulative_year") }} as gcy
 /* the inner join on the year's rn_year = 1 enrollment (including schoolid)
    dedupes the union model's student x school x year grain to one row per
@@ -55,6 +60,15 @@ inner join
     and gcy.academic_year = e.academic_year
     and gcy.schoolid = e.schoolid
     and gcy._dbt_source_project = e._dbt_source_project
+left join
+    {{ ref("int_powerschool__gpa_cumulative") }} as gcc
+    on gcy.studentid = gcc.studentid
+    and gcy.schoolid = gcc.schoolid
+    and gcy._dbt_source_project = gcc._dbt_source_project
+    /* int_powerschool__gpa_cumulative is current-state, with no academic year.
+       Gating on is_projected attaches it to the current-year row only; without
+       the gate today's values get stamped onto every prior year. */
+    and gcy.is_projected
 where
     e.rn_year = 1
     and not e.is_out_of_district
