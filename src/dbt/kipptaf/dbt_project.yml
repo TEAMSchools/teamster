@@ -165,6 +165,8 @@ models:
           +meta:
             dagster:
               tags: google_sheet
+    gpa:
+      +schema: gpa
     illuminate:
       +schema: illuminate
       dlt:
