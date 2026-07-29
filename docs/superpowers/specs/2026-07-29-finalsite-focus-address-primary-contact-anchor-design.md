@@ -182,16 +182,21 @@ Against the 1,498 enrolled Miami students currently in the feed:
 | ----------------------------------------------------- | -------- |
 | Exported today                                        | 1,406    |
 | Exported after this change                            | 1,377    |
-| Address unchanged                                     | 1,304    |
-| Address changes value                                 | 60       |
+| Address unchanged                                     | 1,305    |
+| Address changes value                                 | 59       |
 | Newly exported — blank today, complete via Parent 1   | 13       |
 | — of which had exactly one complete address elsewhere | 9        |
 | — of which had no complete address of their own       | 4        |
 | Dropped — no primary relationship                     | 35       |
 | Dropped — Parent 1's own address incomplete           | 7        |
-| Phones newly populated                                | ~1,414   |
+| Phones newly populated                                | 1,365    |
 
 Net coverage is 29 students lower. Ambiguous cases resolved: 11 of 167.
+
+These are the validated counts, measured by compiling the model against prod and
+comparing to the deployed view. The phone figure is 1,365 rather than the ~1,414
+first estimated because the completeness filter reduces the row set to 1,377, of
+which 12 primary contacts carry no phone.
 
 ### Consequences accepted
 
@@ -203,12 +208,26 @@ Net coverage is 29 students lower. Ambiguous cases resolved: 11 of 167.
   student's. This is a literal consequence of "the address of their primary
   contact."
 - **Parent 1's address is itself offset-0-derived.** Where Parent 1 belongs to
-  several households, their own address is an arbitrary pick, and the student
+  several households, their own address is an unverified pick, and the student
   inherits it. Resolving that would require the primary-household designation,
-  which does not exist in the API.
+  which does not exist in the API. Note the tension with
+  `int_finalsite__student_contacts`, which asserts that
+  `households[safe_offset(0)]` is the UI's Household 2 for confirmed students:
+  if array order were deterministic this would be a systematic pull of the
+  secondary household, not a coin flip. That assertion rests on a single
+  observed student record from #4610 and was never established for guardian
+  contacts, which is a different record type — so it is not evidence of
+  determinism here, and this change does not assume either way. Establishing the
+  ordering rule would need Finalsite support or a UI-to-API comparison across
+  many records.
 - **35 students lose their address** because Finalsite has no `primary`
   relationship recorded for them. These should be routed to Ops as a data-entry
   gap.
+- **A primary contact absent from the contacts pull is a third exclusion path.**
+  The `p1` inner join drops any student whose primary `rel_id` has no row in
+  `stg_finalsite__contacts` — possible because relationship links can point at
+  people outside the pulled cohort. Zero students hit this today; the validated
+  counts leave no room for a third bucket.
 
 ## Out of scope
 
@@ -232,11 +251,18 @@ Net coverage is 29 students lower. Ambiguous cases resolved: 11 of 167.
 - Add a unit-test case for a student with no `primary` relationship, asserting
   the row is absent from the extract.
 - Run the whole directory, not just this model:
-  `dbt build --select "test_type:unit,extracts.focus"`. Sibling models mock the
-  same refs and break on the same changes.
-- The existing `unique` and `not_null` tests on `student_id` are the guard
-  against a duplicate `primary` relationship fanning out the grain. No new test
-  is needed for that — the loud failure is intended.
+  `dbt test --select "test_type:unit,extracts.focus"`. Sibling models mock the
+  same refs and break on the same changes. `dbt build` no-ops on a unit-only
+  selector.
+- The existing `unique` and `not_null` tests on `student_id` guard against a
+  duplicate `primary` relationship fanning out the grain — but only partially.
+  When two primary contacts exist and one has an incomplete address, the
+  completeness filter drops that branch and the duplicate never surfaces, so the
+  model resolves it silently. Asserting the singleton at its source
+  (`stg_finalsite__contact_relationships`, one `is_primary` row per
+  `finalsite_enrollment_id`) would be loud regardless of downstream filters and
+  would also protect `int_finalsite__student_contacts`, which depends on the
+  same unstated invariant. Tracked as follow-up, not in this change.
 - Validate the measured effect against prod before merge by running the compiled
   model and comparing row count and address values to the current extract.
 

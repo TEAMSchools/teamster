@@ -8,8 +8,11 @@ with
     -- Parent 1 is the relationship Finalsite flags `primary`. That flag is a
     -- per-student singleton and is never `false` — it is `true` or NULL — so a
     -- bare `where is_primary` selects exactly the Parent 1 row. A second primary
-    -- on one student would duplicate `student_id` and fail this model's `unique`
-    -- test, which is the intended loud failure.
+    -- on one student duplicates `student_id` and fails this model's `unique`
+    -- test — but ONLY when both contacts clear the completeness filter below.
+    -- If one carries a blank address the filter drops it and the duplicate
+    -- resolves silently, so that test is a partial guard. Nothing currently
+    -- asserts the singleton at its source in stg_finalsite__contact_relationships.
     primary_contact as (
         select finalsite_enrollment_id, rel_id,
         from {{ ref("stg_finalsite__contact_relationships") }}
