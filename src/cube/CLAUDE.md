@@ -264,6 +264,15 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   `!securityContext.groups` guard here — that guard IS the bypass. A REST
   context (no `cubeCloud` key) is passed through untouched, since `checkAuth`
   already resolved it.
+- **Every securityContext field a policy interpolates MUST be returned by
+  `access.buildSecurityContext`.** This is what makes the overwrite above a
+  COMPLETE one, and it is the load-bearing assumption of the paste fix — not a
+  style preference. Add a policy-read field anywhere else (computed in a hook,
+  spread in from elsewhere) and `Object.assign` will not overwrite a pasted
+  value for it, reopening the Cube Cloud paste vector for that field alone,
+  silently and only on that surface. When adding a `row_level` filter that
+  interpolates a new `securityContext.*` value, add the field to
+  `buildSecurityContext`'s return in the same change.
 - **Emulation gate, both surfaces**: caller is the signed `email` claim on
   REST/MCP and `cubeCloud.username` on Cube Cloud; target is `act_as` on REST
   and a pasted top-level `email` (mirrored at `cubeCloud.userAttributes.email`)
