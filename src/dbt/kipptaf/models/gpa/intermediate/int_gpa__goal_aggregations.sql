@@ -156,25 +156,25 @@ with
             goal_proportion,
             higher_is_better,
 
-            round(
+            count(student_number) as n_students_in_grain,
+
+            countif(
                 case
                     when metric = 'on_pace'
-                    then
-                        safe_divide(
-                            countif(is_on_pace and is_on_pace_denominator),
-                            countif(is_on_pace_denominator)
-                        )
+                    then is_on_pace_denominator
+                    else measure_value is not null
+                end
+            ) as n_students_measured,
+
+            countif(
+                case
+                    when metric = 'on_pace'
+                    then is_on_pace and is_on_pace_denominator
                     else
-                        safe_divide(
-                            countif(
-                                (direction = '>=' and measure_value >= threshold)
-                                or (direction = '<=' and measure_value <= threshold)
-                            ),
-                            count(student_number)
-                        )
-                end,
-                3
-            ) as metric_rate,
+                        (direction = '>=' and measure_value >= threshold)
+                        or (direction = '<=' and measure_value <= threshold)
+                end
+            ) as n_students_met,
         from joined_school
         group by
             academic_year,
@@ -200,25 +200,25 @@ with
             goal_proportion,
             higher_is_better,
 
-            round(
+            count(student_number) as n_students_in_grain,
+
+            countif(
                 case
                     when metric = 'on_pace'
-                    then
-                        safe_divide(
-                            countif(is_on_pace and is_on_pace_denominator),
-                            countif(is_on_pace_denominator)
-                        )
+                    then is_on_pace_denominator
+                    else measure_value is not null
+                end
+            ) as n_students_measured,
+
+            countif(
+                case
+                    when metric = 'on_pace'
+                    then is_on_pace and is_on_pace_denominator
                     else
-                        safe_divide(
-                            countif(
-                                (direction = '>=' and measure_value >= threshold)
-                                or (direction = '<=' and measure_value <= threshold)
-                            ),
-                            count(student_number)
-                        )
-                end,
-                3
-            ) as metric_rate,
+                        (direction = '>=' and measure_value >= threshold)
+                        or (direction = '<=' and measure_value <= threshold)
+                end
+            ) as n_students_met,
         from joined_region
         group by
             academic_year,
@@ -244,25 +244,25 @@ with
             goal_proportion,
             higher_is_better,
 
-            round(
+            count(student_number) as n_students_in_grain,
+
+            countif(
                 case
                     when metric = 'on_pace'
-                    then
-                        safe_divide(
-                            countif(is_on_pace and is_on_pace_denominator),
-                            countif(is_on_pace_denominator)
-                        )
+                    then is_on_pace_denominator
+                    else measure_value is not null
+                end
+            ) as n_students_measured,
+
+            countif(
+                case
+                    when metric = 'on_pace'
+                    then is_on_pace and is_on_pace_denominator
                     else
-                        safe_divide(
-                            countif(
-                                (direction = '>=' and measure_value >= threshold)
-                                or (direction = '<=' and measure_value <= threshold)
-                            ),
-                            count(student_number)
-                        )
-                end,
-                3
-            ) as metric_rate,
+                        (direction = '>=' and measure_value >= threshold)
+                        or (direction = '<=' and measure_value <= threshold)
+                end
+            ) as n_students_met,
         from joined_org
         group by
             academic_year,
@@ -287,7 +287,9 @@ with
             metric,
             goal_proportion,
             higher_is_better,
-            metric_rate,
+            n_students_in_grain,
+            n_students_measured,
+            n_students_met,
         from agg_school
 
         union all
@@ -302,7 +304,9 @@ with
             metric,
             goal_proportion,
             higher_is_better,
-            metric_rate,
+            n_students_in_grain,
+            n_students_measured,
+            n_students_met,
         from agg_region
 
         union all
@@ -317,8 +321,33 @@ with
             metric,
             goal_proportion,
             higher_is_better,
-            metric_rate,
+            n_students_in_grain,
+            n_students_measured,
+            n_students_met,
         from agg_org
+    ),
+
+    rates as (
+        select
+            academic_year,
+            metric,
+            aggregation_hash,
+            org_level,
+            region,
+            schoolid,
+            grade_band,
+            goal_proportion,
+            higher_is_better,
+            n_students_in_grain,
+            n_students_measured,
+            n_students_met,
+
+            /* denominator is students with a measurable value, not every student
+               in the grain — an unmeasured student is not a non-achiever. Yields
+               null (not 0) when nothing is measured yet, e.g. before a year's
+               grades post. */
+            round(safe_divide(n_students_met, n_students_measured), 3) as metric_rate,
+        from agg_union
     ),
 
     progress as (
@@ -331,6 +360,9 @@ with
             schoolid,
             grade_band,
             goal_proportion,
+            n_students_in_grain,
+            n_students_measured,
+            n_students_met,
             metric_rate,
 
             if(
@@ -344,7 +376,7 @@ with
                 safe_divide(metric_rate, goal_proportion),
                 safe_divide(goal_proportion, metric_rate)
             ) as progress_to_goal_raw,
-        from agg_union
+        from rates
     )
 
 select
@@ -356,6 +388,9 @@ select
     schoolid,
     grade_band,
     goal_proportion,
+    n_students_in_grain,
+    n_students_measured,
+    n_students_met,
     metric_rate,
     is_goal_met,
 
