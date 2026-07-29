@@ -14,6 +14,20 @@ function sign(payload) {
   return jwt.sign(payload, SECRET, { algorithm: "HS256" });
 }
 
+// Captures the cube_emulation audit lines a call emits. The audit trail is the
+// compliance half of emulation, so it is asserted rather than eyeballed.
+async function capturedEmulationLog(fn) {
+  const lines = [];
+  const original = console.log;
+  console.log = (...args) => lines.push(args.join(" "));
+  try {
+    await fn();
+  } finally {
+    console.log = original;
+  }
+  return lines.filter((line) => line.includes("cube_emulation"));
+}
+
 test.beforeEach(() => {
   process.env.CUBEJS_API_SECRET = SECRET;
   delete process.env.CUBE_GROUP_MAP;
@@ -187,7 +201,7 @@ test("checkAuth: a token signed with the wrong secret is rejected", async () => 
   );
 });
 
-test("checkAuth: forged groups/securityContext claims are ignored (only email is trusted)", async () => {
+test("checkAuth: forged groups/securityContext claims are ignored (email and act_as are the only claims read)", async () => {
   process.env.CUBE_GROUP_MAP = JSON.stringify({
     "forged@apps.teamschools.org": ["staff-directory"],
   });
@@ -391,6 +405,77 @@ test("checkAuth: with no impersonators configured, act_as is inert", async () =>
   await cube.checkAuth(req, token);
 
   assert.deepEqual(req.securityContext.groups, ["staff-directory"]);
+});
+
+test("checkAuth: a real emulation emits exactly one audit line, identities only", async () => {
+  process.env.CUBE_IMPERSONATORS = "admin8@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "target8@apps.teamschools.org": ["student-network"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "admin8@apps.teamschools.org",
+    act_as: "target8@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const lines = await capturedEmulationLog(() => cube.checkAuth({}, token));
+
+  assert.equal(lines.length, 1);
+  const entry = JSON.parse(lines[0]);
+  assert.equal(entry.event, "cube_emulation");
+  assert.equal(entry.surface, "rest");
+  assert.equal(entry.caller, "admin8@apps.teamschools.org");
+  assert.equal(entry.target, "target8@apps.teamschools.org");
+  // Identities and a timestamp ONLY — never groups, scopes, or row data.
+  assert.deepEqual(Object.keys(entry).sort(), [
+    "at",
+    "caller",
+    "event",
+    "surface",
+    "target",
+  ]);
+});
+
+test("checkAuth: an IGNORED act_as emits no audit line", async () => {
+  // A line here would assert an emulation that did not happen — worse than no
+  // trail, because it would implicate a caller who never gained the target's
+  // scope.
+  process.env.CUBE_IMPERSONATORS = "admin9@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "teacher9@apps.teamschools.org": ["staff-directory"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "teacher9@apps.teamschools.org",
+    act_as: "admin9@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const lines = await capturedEmulationLog(() => cube.checkAuth({}, token));
+
+  assert.deepEqual(lines, []);
+});
+
+test("checkAuth: act_as pointing at yourself emits no audit line", async () => {
+  // Self-targeting is a no-op, not an emulation — keeps the trail free of noise.
+  process.env.CUBE_IMPERSONATORS = "admin10@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "admin10@apps.teamschools.org": ["staff-directory"],
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const token = sign({
+    email: "admin10@apps.teamschools.org",
+    act_as: "ADMIN10@apps.teamschools.org",
+    iat: now,
+    exp: now + 300,
+  });
+
+  const lines = await capturedEmulationLog(() => cube.checkAuth({}, token));
+
+  assert.deepEqual(lines, []);
 });
 
 test("checkAuth: the target email reaches resolveAccess with its case intact", async () => {
