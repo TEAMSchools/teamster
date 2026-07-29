@@ -20,9 +20,19 @@ under `.claude/scratch/`, which is gitignored). Never commit a viewer list, and
 never paste this script's output into a PR, issue, or Slack message — summarize
 it instead ("5 viewers checked, all scopes as intended").
 
-Requires the local Cube dev server with the SQL API enabled
-(`CUBEJS_PG_SQL_PORT`, `CUBEJS_SQL_USER`, `CUBEJS_SQL_PASSWORD`) — see
-`docs/guides/cube.md`. Start it with the "Cube: Dev Server" VS Code task.
+Requires the local Cube server with the SQL API enabled (`CUBEJS_PG_SQL_PORT`,
+`CUBEJS_SQL_USER`, `CUBEJS_SQL_PASSWORD`) — see `docs/guides/cube.md`.
+
+Start it with auth ON, not the plain "Cube: Dev Server" task:
+
+    cd src/cube && NODE_ENV=production CUBEJS_DEV_MODE=false npm run dev
+
+Scoped viewers report the same rows either way, but a DEV-MODE server downgrades
+an out-of-tier member request to a quiet "0 rows" where production hard-fails
+("Table or CTE with name '<view>' not found"). Signing off from a dev-mode run
+therefore reports a falsely benign result for out-of-tier members. This is a
+mode difference, not a Cube version difference — measured identical on 1.6.59
+and 1.7.14 (#4605).
 
 Usage:
     uv run scripts/cube_rls_matrix.py --viewers a@x.org b@x.org

@@ -181,12 +181,29 @@ When a business user needs to validate changes before merge:
    is stale
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
 4. Playground opens at `http://localhost:4000`
+
+!!! tip "Claude can start the dev server itself — it does not need to ask you."
+
+    Claude runs `npm run dev` (cwd `src/cube`) as a **backgrounded** shell call,
+    redirecting output to a log under `.claude/scratch/` and polling it for
+    `is listening on 4000`. Only a foreground call fails, because a server never
+    exits and the call hangs until timeout.
+
+    The task and Claude's invocation are the same command with the same
+    configuration, so they are interchangeable. Use the task when you want the
+    server visible in a terminal panel or under your own control; let Claude
+    start one when it is verifying its own work. Claude stops it with
+    `pkill -f 'cubejs[-]server'`.
+
+    Two servers cannot both bind port 4000 — if Claude reports the port in use,
+    one of you already has it running.
+
 5. Click **Edit Security Context** and set
-   `{"email": "you@apps.teamschools.org"}`. `checkAuth` runs in developer mode,
-   so `resolveAccess` enriches that email into the real `securityContext` and
-   gated views resolve. If every view still returns zero rows, a stale cached
-   Playground token is the usual cause — see
-   [Testing row-level security locally](#testing-row-level-security-locally).
+`{"email": "you@apps.teamschools.org"}`. `checkAuth` runs in developer mode, so
+`resolveAccess` enriches that email into the real `securityContext` and gated
+views resolve. If every view still returns zero rows, a stale cached Playground
+token is the usual cause — see
+[Testing row-level security locally](#testing-row-level-security-locally).
 
 !!! warning "The dev server always serves the main checkout — never a worktree."
 
@@ -455,37 +472,47 @@ Before granting someone access, confirm what they will actually see. The point
 is to catch a wrong scope while it is still a spreadsheet row, not after they
 open a dashboard.
 
-1. **Check ground truth over the SQL API.** Put their email in a local,
-   gitignored viewer file and run
-   `uv run scripts/cube_rls_matrix.py --viewers-file <file>`. Include a
-   network-scoped viewer in the same run as a control — if everyone returns
-   zero, the identity read failed rather than the policies denying, and the tool
-   says so.
+1. **Check ground truth over the SQL API**, against a server started with auth
+   on (see the warning below). Put their email in a local, gitignored viewer
+   file and run `uv run scripts/cube_rls_matrix.py --viewers-file <file>`.
+   Include a network-scoped viewer in the same run as a control — if everyone
+   returns zero, the identity read failed rather than the policies denying, and
+   the tool says so.
 1. **Compare against their intended scope.** A region lead should see one
    region; a school leader a subset of it; someone with no student scope, no
    rows. A mismatch is an HR-data problem in `dim_staff_cube_access`, so fix it
    upstream rather than adding a policy to compensate.
 1. **Check the surface they will actually use.** For a BI tool over the SQL API,
    step 1 already exercised the real path. For Cube Cloud, emulate them in
-   Explore — that catches surface-specific behavior the SQL API does not,
-   notably that an out-of-tier member **hard-errors** on Cube Cloud where it
-   returns zero rows locally (see the version note below).
+   Explore — that catches surface-specific behavior the SQL API does not. Note
+   that an out-of-tier member **hard-errors** on Cube Cloud; it also hard-errors
+   locally, but only with auth on — see the warning below.
 1. **Record the sign-off without the emails.** "5 viewers checked, all scopes as
    intended" is the durable artifact; the identities are PII and stay local.
 
-!!! warning "Local validation is not a faithful production simulation."
+!!! warning "Run the matrix with auth ON, or denials read as falsely benign."
 
-    Local dev is pinned to Cube 1.6.59 by `package-lock.json`; Cube Cloud
-    production runs 1.7.14. At least one enforcement behavior differs: a viewer
-    requesting a member their tier excludes gets a hard
-    `You requested hidden member` error on 1.7.14, but silently returns zero rows
-    locally. So "no rows" locally can mean "query fails" in production — a
-    materially different experience for a dashboard user.
+    A **dev-mode** server reports an out-of-tier member request as a quiet zero
+    rows. With auth on it is a hard failure — `You requested hidden member` (500)
+    on REST, and `Table or CTE with name '{view}' not found` on the SQL API,
+    because the view is absent from that viewer's schema entirely. Cube Cloud runs
+    with auth on, so a dev-mode "no rows" can mean "the query fails" in
+    production: an empty chart versus an error.
 
-    Until the versions converge
-    ([#4605](https://github.com/TEAMSchools/teamster/issues/4605)), treat the
-    local matrix as authoritative for **which rows** a viewer can reach, and Cube
-    Cloud as authoritative for **how a denial behaves**.
+    This is a **mode** difference, not a version difference. Measured on both
+    Cube 1.6.59 and 1.7.14, all four combinations, the denial shape tracks the
+    mode and is identical across versions (#4605). Upgrading Cube does not change
+    it.
+
+    So start the server with auth enabled before signing off:
+
+    ```bash
+    cd src/cube && NODE_ENV=production CUBEJS_DEV_MODE=false npm run dev
+    ```
+
+    Scoped viewers return **identical** row counts either way, so a dev-mode run
+    is still authoritative for **which rows** a viewer can reach. Only the shape
+    of a denial needs auth on.
 
 ### SQL-level RLS invariants to check
 

@@ -451,8 +451,16 @@ before merge:
 3. Test in the local dev server — launch the **`Cube: Dev Server`** VS Code task
    (`.vscode/tasks.json`; installs `src/cube/node_modules` if missing, then
    `npm --prefix src/cube run dev`). Hot-reloads on file save, no push required.
-   Claude can't run it (long-running server) — ask the user to start the task
-   and report back. Or commit+push for Cube Cloud Dev Mode.
+   **Claude CAN start the dev server** — run `npm run dev` with cwd `src/cube`
+   as a BACKGROUNDED Bash call, redirect output to a log under
+   `.claude/scratch/`, then poll that log for `is listening on 4000`. Only a
+   FOREGROUND call fails (a server never exits, so it hangs to timeout); that is
+   what the old "ask the user" guidance was working around. The VS Code task
+   runs the identical command and injects no extra configuration, so prefer it
+   only when the user wants the server visible in a terminal panel. Stop it with
+   `pkill -f 'cubejs[-]server'` — the bracket is required, or the pattern
+   matches the killing shell's own command line and kills it instead. Or
+   commit+push for Cube Cloud Dev Mode.
 4. Revert all dev-schema redirects to `kipptaf_marts.<table>` before committing.
    Verify with `grep -r "zz_" src/cube/` before pushing.
 
@@ -492,15 +500,30 @@ exercise it; a plain dev server silently default-denies every gated view.
   `JoinDefinitionStatic` note was a Playground observation, not a SQL-API limit
   — verified `student_attendance_view` / `staff_directory` /
   `student_assessment_scores_view` query cleanly. **`checkAuth` DOES run in dev
-  mode (Cube 1.6.59)** — the prior "REST skips auth in dev mode / needs
-  `NODE_ENV=production`" claim was WRONG. To emulate over the REST Playground,
-  paste `{"email": "<viewer>"}` into its Security Context editor and
-  `resolveAccess` enriches it. Two gotchas: (1) a stale cached Playground token
-  trips `checkAuth`'s `maxAge: "12h"` cap (`TokenExpiredError: maxAge exceeded`)
-  — clear `localhost` local storage / re-save the context to re-mint a fresh
-  token; (2) `resolveAccess` fail-closes to deny-all locally unless
-  `CUBEJS_DB_BQ_CREDENTIALS` is set or the ADC fallback is present (a bare
-  `JSON.parse("")` throws on the unset var). See #4526.
+  mode (verified on Cube 1.6.59 and 1.7.14)** — the prior "REST skips auth in
+  dev mode / needs `NODE_ENV=production`" claim was WRONG, and Cube's own
+  `🔓 Authentication checks are disabled in developer mode` boot banner is
+  misleading here: a signed `email` claim still resolves a full scope. To
+  emulate over the REST Playground, paste `{"email": "<viewer>"}` into its
+  Security Context editor and `resolveAccess` enriches it. Two gotchas: (1) a
+  stale cached Playground token trips `checkAuth`'s `maxAge: "12h"` cap
+  (`TokenExpiredError: maxAge exceeded`) — clear `localhost` local storage /
+  re-save the context to re-mint a fresh token; (2) `resolveAccess` fail-closes
+  to deny-all locally unless `CUBEJS_DB_BQ_CREDENTIALS` is set or the ADC
+  fallback is present (a bare `JSON.parse("")` throws on the unset var). See
+  #4526.
+- **Dev mode downgrades an out-of-tier DENIAL to a quiet 0 rows — run the
+  sign-off with auth ON**
+  (`NODE_ENV=production CUBEJS_DEV_MODE=false npm run dev`). With auth on, a
+  viewer requesting a member their tier excludes gets
+  `You requested hidden member` (500) on REST and
+  `Table or CTE with name '<view>' not found` on the SQL API; in dev mode both
+  surfaces report 0 rows, which reads as a clean default-deny and is what makes
+  a dev-mode matrix run falsely benign. **This is a MODE difference, not a Cube
+  version difference** — verified across all four combinations of {1.6.59,
+  1.7.14} × {dev, auth-on}, denial shape tracking the mode only (#4605). Scoped
+  viewers return identical rows in both modes, so only the denial shape needs
+  auth on.
 - **Cube Cloud works via `contextToGroups` enrichment, not `checkAuth`
   (#4526).** Cube Cloud injects
   `{ cubeCloud: { username, groups, roles, userAttributes, meta, userCredentials }, iss: "cubecloud", exp }`
