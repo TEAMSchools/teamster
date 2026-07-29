@@ -78,5 +78,6 @@
     "kippcamden": "src/dbt/kippcamden/target/prod",
     "kippmiami": "src/dbt/kippmiami/target/prod",
     "kipppaterson": "src/dbt/kipppaterson/target/prod"
-  }
+  },
+  "python.analysis.exclude": [".worktrees"]
 }
