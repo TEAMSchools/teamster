@@ -235,25 +235,32 @@ PY
 real `securityContext`, and the policies enforce. Compare a scoped viewer's
 counts against a network viewer's breakdown to confirm scoping.
 
-A quick region-isolation check on student data — loop the SAME query over a few
-viewer emails (a region-scoped viewer, a network viewer, a `none`-scope viewer):
+For the whole viewer matrix at once, use the committed tool rather than an
+ad-hoc script. It takes the viewer list as input, so no staff emails land in the
+repo:
 
 ```bash
-uv run --with psycopg2-binary python - <<'PY'
-import psycopg2
+# one email per line; .claude/scratch/ is gitignored
+uv run scripts/cube_rls_matrix.py --viewers-file .claude/scratch/viewers.txt
 
-for email in ["a-region-scoped-viewer@apps.teamschools.org",
-              "a-network-viewer@apps.teamschools.org",
-              "a-none-scope-viewer@apps.teamschools.org"]:
-    conn = psycopg2.connect(host="127.0.0.1", port=15432, user=email,
-                            password="local-dev-sql", dbname="cube")
-    cur = conn.cursor()
-    cur.execute("SELECT regions_region_name, MEASURE(count_students) "
-                "FROM student_enrollments_view GROUP BY 1 ORDER BY 1")
-    print(email, cur.fetchall())
-    conn.close()
-PY
+# or inline
+uv run scripts/cube_rls_matrix.py --viewers a-viewer@apps.teamschools.org
 ```
+
+Include a network-scoped, a region-scoped, a school-scoped, a `none`-scope, and
+one deliberately unresolvable viewer. Expect the network viewer to return all
+four regions, the region viewer only their own, the school viewer a subset of
+that region, and the last two no rows at all (default-deny) — which confirms
+`resolveAccess` and the `student-<scope>` policies agree. Because identity is
+the connecting `user`, one run covers the matrix with no restart.
+
+It exits non-zero if any viewer's connection or query fails, and calls out the
+one ambiguous result explicitly: if **every** viewer returns zero rows,
+including a network-scoped one, the identity read itself failed rather than the
+policies denying — check the dev-server log for `resolveAccess failed for`.
+
+Treat the output as PII. Summarize it ("5 viewers checked, all scopes as
+intended") rather than pasting it into a PR, issue, or Slack message.
 
 Expect the region-scoped viewer to return only their own region, the network
 viewer all four regions, and the `none`-scope viewer no rows (default-deny) —
