@@ -118,8 +118,7 @@ Check:
 - Your own scope is what you expect (a region-scoped viewer sees one region)
 - Existing cubes and views still work (no regressions)
 
-!!! warning "Never paste `groups` or scope values into the Security Context
-editor."
+!!! warning "Pasted groups and scope values are discarded."
 
     Cube Cloud merges whatever you paste into the top level of the security
     context. `contextToGroups` therefore treats every top-level value as
@@ -369,6 +368,44 @@ Emulation works on two surfaces, with the same gate on each:
 The SQL API needs neither: identity is the connecting user, so switch viewers by
 reconnecting (that is what the matrix tool does).
 
+### Choosing the impersonator list
+
+`CUBE_IMPERSONATORS` is read from the environment on every request, so it is
+purely deployment configuration — nothing is committed to enable it, and it
+takes effect on the next deploy or dev-server restart.
+
+Where you set it determines whether it is a control at all:
+
+| Where                                  | Effect                                                                                                                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cube Cloud production / branch staging | A real control — the config is not the user's to edit                                                                                                                                                               |
+| Local `src/cube/.env`                  | **Not** a control. Any developer can list themselves; running the local server already requires ADC credentials that grant direct `kipptaf_marts` access, so emulation grants nothing they could not query directly |
+
+So treat the local line in `.env.example` as developer convenience, and spend
+the scrutiny on the deployment values.
+
+**Selection rule: prefer callers whose own scope already covers anything they
+could emulate.** For a viewer who already holds `network` student scope and
+`all_in_scope` staff PII, emulating someone else can only ever show them a
+_subset_ of what they already see — emulation is a viewport change, not a grant.
+For anyone narrower, it is a genuine privilege grant and should be decided on
+its own merits rather than folded into a team roster.
+
+To see who qualifies today:
+
+```sql
+select google_email
+from `teamster-332318.kipptaf_marts.dim_staff_cube_access`
+where department_group = 'data_technology'
+  and student_location_scope = 'network'
+  and staff_pii_scope = 'all_in_scope'
+order by google_email
+```
+
+Those emails are staff PII: they belong in deployment configuration, never in a
+commit, PR, or issue. Re-run the query when the team changes — the list does not
+maintain itself, and a departure leaves a live grant behind.
+
 **Alternative: REST `/load` with your own JWT.** Sign an HS256 JWT whose `email`
 claim is the viewer (with `CUBEJS_API_SECRET`) and POST it — again no `NODE_ENV`
 change. `jsonwebtoken` stamps `iat` automatically, so mint it fresh per session
@@ -474,11 +511,11 @@ values), so it cannot validate row-level scoping even locally. It is no longer
 in `.env.example`; leave it out. See
 [Testing row-level security locally](#testing-row-level-security-locally).
 
-Do **not** set `CUBE_IMPERSONATORS` in Cube Cloud without a decision on the list
-and an agreed removal date. Every listed email can resolve any internal user's
-full context on that deployment, including student PII and the gated staff
-fields. Unset means emulation is inert, which is the right default. See
-[Emulating another viewer with `act_as`](#emulating-another-viewer-with-act_as).
+Do **not** set `CUBE_IMPERSONATORS` in Cube Cloud without deciding the list
+deliberately. Every listed email can resolve any internal user's full context on
+that deployment, including student PII and the gated staff fields. Unset means
+emulation is inert, which is the right default. See
+[Choosing the impersonator list](#choosing-the-impersonator-list).
 
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,

@@ -273,6 +273,15 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   is inert. Each real emulation logs one `cube_emulation` line (identities
   only). Case is preserved on the resolved email — `resolveAccess` matches
   `google_email` exactly and keys its cache on the raw string.
+- **`CUBE_IMPERSONATORS` is a deployment control, not a local one.** Read from
+  the environment per request, so nothing is committed to enable it. Locally it
+  is self-asserted (the dotenv file is the developer's own) and grants nothing
+  they could not already query directly, since running the server needs ADC
+  access to `kipptaf_marts`. It only bites on Cube Cloud. **Selection rule:**
+  prefer callers whose own scope already covers anything they could emulate
+  (`network` student scope + `all_in_scope` staff PII) — for them emulation is a
+  viewport change, not a grant. Anyone narrower gains real access and needs its
+  own decision. Those emails are PII: deployment config only, never a commit.
 - **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`
   (`student-region` / `student-school` / `student-network`); `staff-directory`
   (always, for any resolved row); `staff-pii-<staff_pii_scope>`
