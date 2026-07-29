@@ -1,0 +1,183 @@
+models:
+  - name: int_gpa__goal_student_metrics
+    description:
+      Per-student-year GPA measures spine for the 2030 GPA goal rollup. One row
+      per HS-enrolled student per academic year, carrying the definitive Y1 GPA
+      (weighted and unweighted) for that year and the projected end-of-year
+      unweighted cumulative GPA. A `LEFT JOIN` to the GPA source preserves
+      enrolled students who have no GPA on record yet (measures null) so the
+      goal aggregation can count them as not-yet-meeting rather than dropping
+      them from the denominator.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - schoolid
+              - student_number
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: The academic year of the enrollment record.
+      - name: region
+        data_type: string
+        description: The region of the student's enrolling school.
+      - name: schoolid
+        data_type: int64
+        description: The School_Number of the student's enrolling school.
+      - name: grade_level
+        data_type: int64
+        description: The grade level of the enrollment record.
+      - name: student_number
+        data_type: int64
+        description: Student Number assigned by the school.
+      - name: cumulative_gpa_unweighted
+        data_type: float64
+        description:
+          Projected end-of-year unweighted cumulative GPA, carried through from
+          the student enrollments extract.
+      - name: y1_gpa_weighted
+        data_type: float64
+        description:
+          Weighted year-to-date GPA from the student's current-term GPA record
+          for the academic year; null when the student has no GPA record yet.
+      - name: y1_gpa_unweighted
+        data_type: float64
+        description:
+          Unweighted year-to-date GPA from the student's current-term GPA record
+          for the academic year; null when the student has no GPA record yet.
+      - name: is_on_pace
+        data_type: boolean
+        description:
+          Whether the student is on pace toward the GPA goal; null until the
+          on-pace follow-on populates it.
+      - name: is_on_pace_denominator
+        data_type: boolean
+        description:
+          Whether the student counts toward the on-pace denominator; null until
+          the on-pace follow-on populates it.
+
+unit_tests:
+  - name: unit_gpa_goal_student_metrics_grain
+    description:
+      Verifies one output row per student-year — two students matched to their
+      current-term GPA row, and a third enrolled student with no matching GPA
+      row surviving the `LEFT JOIN` with null measures. A non-current GPA term
+      row for the first student proves the `is_current` selection excludes it in
+      favor of the current-term row.
+    model: int_gpa__goal_student_metrics
+    given:
+      - input: ref('int_extracts__student_enrollments')
+        format: sql
+        rows: |
+          select
+              2025 as academic_year,
+              'Newark' as region,
+              101 as schoolid,
+              9 as grade_level,
+              90001 as student_number,
+              1001 as studentid,
+              35 as yearid,
+              'HS' as school_level,
+              1 as rn_year,
+              0 as enroll_status,
+              'kippnewark' as _dbt_source_project,
+              cast(3.10 as float64) as cumulative_y1_gpa_projected_unweighted
+          union all
+          select
+              2025,
+              'Newark',
+              101,
+              9,
+              90002,
+              1002,
+              35,
+              'HS',
+              1,
+              0,
+              'kippnewark',
+              cast(2.75 as float64)
+          union all
+          select
+              2025,
+              'Newark',
+              101,
+              9,
+              90003,
+              1003,
+              35,
+              'HS',
+              1,
+              0,
+              'kippnewark',
+              cast(3.40 as float64)
+      - input: ref('int_powerschool__gpa_term')
+        format: sql
+        rows: |
+          /* student 1001: non-current Q1 row, must be excluded */
+          select
+              1001 as studentid,
+              35 as yearid,
+              101 as schoolid,
+              'kippnewark' as _dbt_source_project,
+              false as is_current,
+              cast(2.50 as float64) as gpa_y1,
+              cast(2.40 as float64) as gpa_y1_unweighted
+          union all
+          /* student 1001: current Q4 row, must be selected */
+          select
+              1001,
+              35,
+              101,
+              'kippnewark',
+              true,
+              cast(3.20 as float64),
+              cast(3.05 as float64)
+          union all
+          /* student 1002: current row */
+          select
+              1002,
+              35,
+              101,
+              'kippnewark',
+              true,
+              cast(2.80 as float64),
+              cast(2.65 as float64)
+    expect:
+      rows:
+        - {
+            academic_year: 2025,
+            region: Newark,
+            schoolid: 101,
+            grade_level: 9,
+            student_number: 90001,
+            cumulative_gpa_unweighted: 3.10,
+            y1_gpa_weighted: 3.20,
+            y1_gpa_unweighted: 3.05,
+            is_on_pace: null,
+            is_on_pace_denominator: null,
+          }
+        - {
+            academic_year: 2025,
+            region: Newark,
+            schoolid: 101,
+            grade_level: 9,
+            student_number: 90002,
+            cumulative_gpa_unweighted: 2.75,
+            y1_gpa_weighted: 2.80,
+            y1_gpa_unweighted: 2.65,
+            is_on_pace: null,
+            is_on_pace_denominator: null,
+          }
+        - {
+            academic_year: 2025,
+            region: Newark,
+            schoolid: 101,
+            grade_level: 9,
+            student_number: 90003,
+            cumulative_gpa_unweighted: 3.40,
+            y1_gpa_weighted: null,
+            y1_gpa_unweighted: null,
+            is_on_pace: null,
+            is_on_pace_denominator: null,
+          }
