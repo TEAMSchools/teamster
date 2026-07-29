@@ -47,4 +47,13 @@ inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on c.finalsite_enrollment_id = ida.finalsite_enrollment_id
     and ida.focus_student_id_prefixed is not null
-where c.status = 'enrolled'
+where
+    c.status = 'enrolled'
+    -- the primary contact must have a mailable address; a contact whose address
+    -- fields are blank would otherwise emit null address columns. Mirrors the
+    -- kippmiami completeness gate (#4320) so this view and the feed agree.
+    -- address_2 is excluded deliberately — it is legitimately null.
+    and p1.address_1 is not null
+    and p1.city is not null
+    and p1.state is not null
+    and p1.zip is not null
