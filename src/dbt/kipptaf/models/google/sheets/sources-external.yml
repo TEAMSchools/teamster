@@ -1882,10 +1882,12 @@ sources:
         columns:
           - name: employee_number
             data_type: string
-          - name: student_location_scope
+          - name: additional_location_type
             data_type: string
-          - name: staff_location_scope
+          - name: additional_location_name
             data_type: string
+          - name: include_student_data
+            data_type: boolean
           - name: staff_department_scope
             data_type: string
           - name: staff_pii_scope
@@ -1895,6 +1897,18 @@ sources:
           - name: staff_observations_scope
             data_type: string
           - name: staff_benefits_scope
+            data_type: string
+          - name: business_justification
+            data_type: string
+          - name: requested_by
+            data_type: string
+          - name: approved_by
+            data_type: string
+          - name: grant_date
+            data_type: date
+          - name: expiry_date
+            data_type: date
+          - name: status
             data_type: string
           - name: notes
             data_type: string

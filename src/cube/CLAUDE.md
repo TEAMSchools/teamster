@@ -138,15 +138,27 @@ combination to reason about.
 
 - **Student views are single, collapsed views** — each student domain
   (`student_attendance_view`, `student_assessment_scores_view`,
-  `student_enrollments_view`) exposes both row-level identifiers and
-  aggregate-breakdown dimensions on the same view; there is no separate
-  detail/summary pair. Three policies, one per non-`none`
-  `student_location_scope` — `student-region` (`row_level` on the region key),
-  `student-school` (`row_level` on the school abbreviation), `student-network`
-  (no `row_level` — every location). All three use
-  `member_level: { includes: "*" }` — any viewer holding one of these groups
-  sees every field on every student view, including PII. `none` scope → no group
-  → default-deny (zero rows).
+  `student_enrollments_view`, `student_section_enrollments_view`) exposes both
+  row-level identifiers and aggregate-breakdown dimensions on the same view;
+  there is no separate detail/summary pair. **One flat `student` policy**,
+  `row_level` on
+  `abbreviation IN { securityContext.allowed_student_abbreviations }` (the
+  view's own flat member name — `locations_abbreviation` on three of the four;
+  bare `abbreviation` on `student_assessment_scores_view`, whose `locations`
+  join is unprefixed). `member_level: { includes: "*" }` — any viewer holding
+  the `student` group sees every field on every student view, including PII.
+  `allowed_student_abbreviations` is precomputed server-side
+  (`resolveAccess`/`unionAdditionalGrants` in `src/cube/access.js`): the
+  viewer's base `student_location_scope` resolved to an abbreviation set via
+  `computeAllowedAbbreviations`, UNIONED with every
+  `dim_staff_cube_access.additional_location_grants` element that has
+  `includes_student_data` true. An empty array → no `student` group emitted →
+  default-deny (zero rows) — same empty-array guard as `staff-pii-*` below (Cube
+  hard-errors on `equals []` rather than compiling to zero rows). This replaced
+  an earlier three-policy design (`student-region`/`student-school`/
+  `student-network`, one tier-group each) that could only express "my whole
+  region/network" — never "my region plus one specific other school," which
+  individual-exception grants require.
 - **Staff views are split.** `staff_directory` (roster/employment/work-contact
   fields — no personal or sensitive data) has one open block:
   `member_level: { includes: "*" }` under `staff-directory`, no `row_level` —
@@ -244,10 +256,10 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
 - **`contextToGroups`** is now a one-line read: `securityContext?.groups ?? []`
   — the BigQuery reads and all group-building logic moved to `resolveAccess` /
   `access.buildGroups`.
-- **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`
-  (`student-region` / `student-school` / `student-network`); `staff-directory`
-  (always, for any resolved row); `staff-pii-<staff_pii_scope>`
-  (`staff-pii-all_in_scope` / `-reporting_chain` /
+- **Group taxonomy (`access.buildGroups`)**: flat `student` (emitted when
+  `allowed_student_abbreviations` is non-empty, not one group per tier);
+  `staff-directory` (always, for any resolved row);
+  `staff-pii-<staff_pii_scope>` (`staff-pii-all_in_scope` / `-reporting_chain` /
   `-reporting_chain_or_below_rank` / `-teaching_staff`); plus forward-compat
   flat `staff-compensation` / `-observations` / `-benefits` (emitted per
   non-`none` scope; no view consumes them yet). `none` on any axis → no group

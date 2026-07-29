@@ -1,15 +1,17 @@
 {#-
   One row per active, primary staff member, keyed on staff_key. Resolves each
   person's current role to the Cube access model: the student location scope,
-  the staff sensitive-field remit (location + department), and the per-field
-  sensitive scopes. Read by Cube's contextToGroups (by google_email) to build
-  the access group list and the queryRewrite filters; not exposed as a Cube.
-  Assembled intra-mart from the current primary work assignment; mappings come
-  from the Google Sheets crosswalks (department override wins over the role
-  mapping). entity (KTAF/Region) is derived from business_unit_name. The viewer
-  identity keys (region_key, location_abbreviation, department_group) are carried
-  so cube.js builds location/department filters from the scope level. Rows that
-  resolve to no role emit 'none' (deny) rather than NULL.
+  the staff sensitive-field remit (location + department), the per-field
+  sensitive scopes, and any individual-exception grants. Read by Cube's
+  contextToGroups (by google_email) to build the access group list and the
+  queryRewrite filters; not exposed as a Cube. Assembled intra-mart from the
+  current primary work assignment; mappings come from the Google Sheets
+  crosswalks (individual exception wins over department override, which wins
+  over the role mapping, for the five staff_*_scope remit columns). entity
+  (KTAF/Region) is derived from business_unit_name. The viewer identity keys
+  (region_key, location_abbreviation, department_group) are carried so cube.js
+  builds location/department filters from the scope level. Rows that resolve
+  to no role emit 'none' (deny) rather than NULL.
 
   Role crosswalk precedence: when the cube_access_role sheet carries both a
   wildcard row (entity='any') and a specific row (entity=KTAF/Region) for the
@@ -17,6 +19,19 @@
   entity match ahead of the wildcard and keeps one row per staff, so the overlap
   cannot fan out staff_key (previously it would have, caught only by the unique
   test). Wildcard rows remain the entity-agnostic fallback.
+
+  Individual exceptions (stg_google_sheets__people__cube_access_individual_exceptions)
+  are additive, not override, for location: an employee may have several live
+  rows (status='active', not past expiry_date, not before grant_date), each
+  granting ONE additional network/region/school that is unioned into their
+  normal remit downstream in cube.js/access.js (see additional_location_grants
+  below) rather than replacing student_location_scope/staff_location_scope,
+  which resolve from department override and role only, unchanged. The five
+  staff_*_scope remit columns are still override-style (highest priority), but
+  at most one live row per employee may set them -- enforced by
+  test_cube_access_individual_exceptions_single_remit_row -- since they
+  describe the person, not a location, and don't multiply across a person's
+  location-grant rows.
 -#}
 with
     -- one current primary work assignment per staff (dedup'd below)
@@ -153,6 +168,77 @@ with
 
     role_picked as (select *, from role_ranked where role_rank = 1),
 
+    -- Individual exceptions live for this run: status active, not before
+    -- grant_date, not past expiry_date. Every other row (revoked, expired,
+    -- not-yet-granted) is excluded entirely -- it contributes nothing below,
+    -- exactly as if it didn't exist.
+    individual_exceptions_live as (
+        select
+            employee_number,
+            additional_location_type,
+            additional_location_name,
+            include_student_data,
+            staff_department_scope,
+            staff_pii_scope,
+            staff_compensation_scope,
+            staff_observations_scope,
+            staff_benefits_scope,
+        from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
+        where
+            status = 'active'
+            and (expiry_date is null or expiry_date >= current_date('America/New_York'))
+            and (grant_date is null or grant_date <= current_date('America/New_York'))
+    ),
+
+    -- At most one live row per employee sets these (enforced by
+    -- test_cube_access_individual_exceptions_single_remit_row), so max() is a
+    -- safe deterministic pick, not an arbitrary one.
+    individual_exception_scopes as (
+        select
+            employee_number,
+            max(staff_department_scope) as staff_department_scope,
+            max(staff_pii_scope) as staff_pii_scope,
+            max(staff_compensation_scope) as staff_compensation_scope,
+            max(staff_observations_scope) as staff_observations_scope,
+            max(staff_benefits_scope) as staff_benefits_scope,
+        from individual_exceptions_live
+        group by employee_number
+    ),
+
+    -- One struct per live location-grant row, array_agg'd per employee so this
+    -- mart keeps its 1-row-per-staff_key grain while carrying however many
+    -- grants that person has. access.js unions the abbreviations from every
+    -- element (see src/cube/access.js and src/cube/CLAUDE.md).
+    individual_exception_grants as (
+        select
+            iel.employee_number,
+            array_agg(
+                struct(
+                    case
+                        iel.additional_location_type
+                        when 'network'
+                        then 'network'
+                        when 'region'
+                        then 'region'
+                        when 'school'
+                        then 'school'
+                        else 'none'
+                    end as location_scope,
+                    reg.region_key,
+                    loc.abbreviation as location_abbreviation,
+                    coalesce(iel.include_student_data, false) as includes_student_data
+                )
+            ) as additional_location_grants,
+        from individual_exceptions_live as iel
+        left join
+            {{ ref("dim_regions") }} as reg
+            on iel.additional_location_name = reg.legal_entity
+        left join
+            {{ ref("dim_locations") }} as loc on iel.additional_location_name = loc.name
+        where iel.additional_location_type is not null
+        group by iel.employee_number
+    ),
+
     matched as (
         select
             e.staff_key,
@@ -173,25 +259,41 @@ with
                 ovr.staff_location_scope, rl.staff_location_scope, 'none'
             ) as staff_location_scope,
             coalesce(
-                ovr.staff_department_scope, rl.staff_department_scope, 'none'
+                iex.staff_department_scope,
+                ovr.staff_department_scope,
+                rl.staff_department_scope,
+                'none'
             ) as staff_department_scope,
             coalesce(
-                ovr.staff_pii_scope, rl.staff_pii_scope, 'none'
+                iex.staff_pii_scope, ovr.staff_pii_scope, rl.staff_pii_scope, 'none'
             ) as staff_pii_scope,
             coalesce(
-                ovr.staff_compensation_scope, rl.staff_compensation_scope, 'none'
+                iex.staff_compensation_scope,
+                ovr.staff_compensation_scope,
+                rl.staff_compensation_scope,
+                'none'
             ) as staff_compensation_scope,
             coalesce(
-                ovr.staff_observations_scope, rl.staff_observations_scope, 'none'
+                iex.staff_observations_scope,
+                ovr.staff_observations_scope,
+                rl.staff_observations_scope,
+                'none'
             ) as staff_observations_scope,
             coalesce(
-                ovr.staff_benefits_scope, rl.staff_benefits_scope, 'none'
+                iex.staff_benefits_scope,
+                ovr.staff_benefits_scope,
+                rl.staff_benefits_scope,
+                'none'
             ) as staff_benefits_scope,
+
+            coalesce(ieg.additional_location_grants, []) as additional_location_grants,
         from enriched as e
         left join
-            {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
-            as exc
-            on e.employee_number = exc.employee_number
+            individual_exception_scopes as iex
+            on e.employee_number = iex.employee_number
+        left join
+            individual_exception_grants as ieg
+            on e.employee_number = ieg.employee_number
         left join
             {{ ref("stg_google_sheets__people__cube_access_department_override") }}
             as ovr
@@ -217,4 +319,6 @@ select
     staff_compensation_scope,
     staff_observations_scope,
     staff_benefits_scope,
+
+    additional_location_grants,
 from matched

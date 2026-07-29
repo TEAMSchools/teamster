@@ -45,6 +45,8 @@ nav:
       - Claude Code & Superpowers: guides/superpowers.md
       - Cube: guides/cube.md
       - Claude + Cube Connector: guides/claude-cube-connector.md
+      - Cube Access - Individual Exceptions:
+          guides/cube-access-individual-exceptions.md
   - Troubleshooting:
       - Dagster: troubleshooting/dagster.md
       - dbt: troubleshooting/dbt.md

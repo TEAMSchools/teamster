@@ -4,13 +4,15 @@ models:
       Cube access-control resolution, one row per active primary staff member
       keyed on staff_key. Resolves each person's current role to the student
       location scope, the staff sensitive-field remit (location + department),
-      and the per-field sensitive scopes, derived from the current primary work
-      assignment and the Google Sheets access crosswalks (department
-      special-access override taking precedence over the role mapping). Read by
-      Cube's contextToGroups, matched on google_email, to build the access group
-      list and queryRewrite filters; not exposed as a Cube. The staff directory
-      and aggregate summary are open — these scopes only constrain sensitive
-      fields. Unresolved roles emit 'none' (deny), never NULL.
+      the per-field sensitive scopes, and any individual-exception grants,
+      derived from the current primary work assignment and the Google Sheets
+      access crosswalks (individual exception, then department special-access
+      override, then role mapping, in that priority order for the five
+      staff_*_scope remit columns). Read by Cube's contextToGroups, matched on
+      google_email, to build the access group list and queryRewrite filters; not
+      exposed as a Cube. The staff directory and aggregate summary are open —
+      these scopes only constrain sensitive fields. Unresolved roles emit 'none'
+      (deny), never NULL.
     columns:
       - name: staff_key
         data_type: string
@@ -176,3 +178,16 @@ models:
                   - reporting_chain_or_below_rank
                   - reporting_chain
                   - teaching_staff
+
+      - name: additional_location_grants
+        data_type: |
+          ARRAY<STRUCT<location_scope STRING, region_key STRING, location_abbreviation STRING, includes_student_data BOOL>>
+        description: >-
+          Individual-exception location grants for this person, one struct per
+          live grant row (empty array when they have none) -- location_scope is
+          network/region/school; region_key is populated only when
+          location_scope = region; location_abbreviation only when
+          location_scope = school; includes_student_data is per-grant. Unioned
+          into the person's normal location remit by cube.js/access.js
+          (computeAllowedAbbreviations, called once per element), never
+          replacing student_location_scope/staff_location_scope.
