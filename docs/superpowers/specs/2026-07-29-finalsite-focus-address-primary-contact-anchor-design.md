@@ -136,11 +136,25 @@ inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on c.finalsite_enrollment_id = ida.finalsite_enrollment_id
     and ida.focus_student_id_prefixed is not null
-where c.status = 'enrolled'
+where
+    c.status = 'enrolled'
+    and p1.address_1 is not null
+    and p1.city is not null
+    and p1.state is not null
+    and p1.zip is not null
 ```
 
 The student's own row `c` is retained for the `status = 'enrolled'` filter and
 as the relationship join key.
+
+The four-column completeness filter on `p1` excludes a student whose primary
+contact exists but has blank address fields, rather than emitting a row with
+null address columns. `address_2` is deliberately not filtered — it is
+legitimately null. This duplicates the kippmiami wrapper's #4320 completeness
+gate in a second layer, which is a knowing trade: the two layers can drift, but
+this view no longer claims a completeness it does not enforce, and desired-state
+and feed agree on which students have a usable address. It does not change what
+Focus receives, because the kippmiami gate already dropped those rows.
 
 Both new joins are `inner`. That is what "emit nothing without a primary
 contact" means operationally, and it matches the precedent in

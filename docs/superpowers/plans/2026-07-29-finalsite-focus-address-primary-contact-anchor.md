@@ -104,8 +104,9 @@ Replace the ENTIRE existing `unit_tests:` block at the bottom of
 this. It keeps the original student `enr-001` and the `applied`-status exclusion
 case `enr-002`, moves the exported address and phone onto new primary-contact
 rows, gives the students deliberately different address values that must NOT
-appear in the output, and adds `enr-003` to prove the strict anchor excludes a
-student with no primary relationship.
+appear in the output, adds `enr-004` to prove the completeness filter excludes a
+student whose primary contact has a blank address, and adds `enr-003` to prove
+the strict anchor excludes a student with no primary relationship.
 
 ```yaml
 unit_tests:
@@ -139,6 +140,11 @@ unit_tests:
               finalsite_enrollment_id: enr-003,
               rel_id: enr-par-003,
               is_primary: null,
+            }
+          - {
+              finalsite_enrollment_id: enr-004,
+              rel_id: enr-par-004,
+              is_primary: true,
             }
       - input: ref('stg_finalsite__contacts')
         rows:
@@ -193,11 +199,32 @@ unit_tests:
               phone_1_number: "+13055550300",
               status: null,
             }
+          - {
+              finalsite_enrollment_id: enr-004,
+              address_1: 777 Complete Way,
+              address_2: null,
+              city: Miami,
+              state: FL,
+              zip: "33105",
+              phone_1_number: "+13055559777",
+              status: enrolled,
+            }
+          - {
+              finalsite_enrollment_id: enr-par-004,
+              address_1: null,
+              address_2: null,
+              city: null,
+              state: null,
+              zip: null,
+              phone_1_number: "+13055550400",
+              status: null,
+            }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
           - { finalsite_enrollment_id: enr-002 }
           - { finalsite_enrollment_id: enr-003 }
+          - { finalsite_enrollment_id: enr-004 }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
@@ -208,6 +235,8 @@ unit_tests:
           select 'enr-002', '84004004005'
           union all
           select 'enr-003', '84004004006'
+          union all
+          select 'enr-004', '84004004007'
     expect:
       rows:
         - {
@@ -308,7 +337,16 @@ inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on c.finalsite_enrollment_id = ida.finalsite_enrollment_id
     and ida.focus_student_id_prefixed is not null
-where c.status = 'enrolled'
+where
+    c.status = 'enrolled'
+    -- the primary contact must have a mailable address; a contact whose address
+    -- fields are blank would otherwise emit null address columns. Mirrors the
+    -- kippmiami completeness gate (#4320) so this view and the feed agree.
+    -- address_2 is excluded deliberately — it is legitimately null.
+    and p1.address_1 is not null
+    and p1.city is not null
+    and p1.state is not null
+    and p1.zip is not null
 ```
 
 The student's own row `c` is retained for the `status = 'enrolled'` filter and
@@ -398,8 +436,12 @@ their sourcing has not changed.
 Sibling models mock the same refs, so a change here can break their fixtures.
 Run the directory, not just this model.
 
+Use `dbt test`, not `dbt build`. Verified on dbt-core 1.11.12: `dbt build` with
+a unit-only selector returns "Nothing to do", because `BuildTask` runs a unit
+test only when its parent model also survives a unit-type-stripped selection.
+
 ```bash
-uv run dbt build --select "test_type:unit,extracts.focus" --target dev \
+uv run dbt test --select "test_type:unit,extracts.focus" --target dev \
   --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod \
   --project-dir /workspaces/teamster/.worktrees/cbini/fix/claude-finalsite-address-primary-contact-anchor/src/dbt/kipptaf
 ```
