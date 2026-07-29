@@ -229,6 +229,15 @@ before parsing.
 Use `config: materialized: <kind>` in `properties/<model>.yml`, not inline
 `{{ config(...) }}` in SQL. Create the yml if absent.
 
+## Moving a model between directories changes its inherited config
+
+`git mv` of a model silently re-parents it to a different `dbt_project.yml`
+config tree — `+schema` (its BigQuery dataset) and `+contract` most often. A
+move into `extracts/` or `marts/` newly ENFORCES the contract, so the properties
+yml needs a complete column list with `data_type` or the build fails. Diff both
+config blocks before the move, and rename the model's singular tests and their
+`tests/properties.yml` entries with it.
+
 ## View→table flips for BigQuery plan depth
 
 A table model with a plan of hundreds of stages (straggler-fragile, e.g.
@@ -444,6 +453,14 @@ descendant graph and surfacing unrelated pre-existing warn-tests as noise. Put
 documentation notes in the properties `description` (doesn't mark modified), not
 an inline SQL comment, on hub models.
 
+**Validating a NEW union wrapper locally**: the column list resolves at compile
+from the source relation's `INFORMATION_SCHEMA`, so a dev-target compile expands
+to nothing — the `zz_<user>_*` dataset holds no copy.
+`dbt compile --select <wrapper> --target staging` resolves against the same
+`zz_stg_*` relations dbt Cloud CI reads, and is not a warehouse write so it
+needs no authorization. Read the compiled SQL to confirm columns were listed; an
+empty expansion still compiles clean.
+
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 
 Changing a source's schema (e.g. adding a `target=staging` branch) marks the
@@ -475,6 +492,13 @@ Conversely, to validate a consumer of a NEW column on an unmerged upstream,
 `--select` BOTH: `--favor-state` resolves the unselected upstream to prod (which
 lacks the column) and the consumer build fails; selecting the upstream builds it
 into dev with the column first.
+
+A re-run with a NARROWER `--select` invalidates a prior parity comparison:
+`--favor-state` re-points every unselected upstream to prod, so a model you
+changed earlier silently reverts to its prod definition and the dev-vs-prod
+counts diverge for reasons unrelated to your edit. Re-validate with the SAME
+full selection, or the delta is an artifact. Confirm which schema a dev view
+actually reads via `INFORMATION_SCHEMA.VIEWS.view_definition`.
 
 Also manifests as false row-count / row-presence deltas (not just
 `relationships`/PK tests): a stale dev `int_people__staff_roster` missing recent
@@ -578,6 +602,10 @@ column) is picked up by rebuilding the `stg_` model into your dev schema
 (`dbt build --select <model> --target dev --defer --state <abs prod manifest>`)
 — no `stage_external_sources` needed (it's classifier-blocked anyway). Use this
 to verify an Ops sheet fix, then query the rebuilt `zz_<user>_*` table.
+
+Never judge CURRENT sheet content from the prod `stg_*` table — it is a table
+frozen at the last prod build, not a live read, so it reports pre-edit values
+indefinitely. Rebuild into dev (or query the external directly) first.
 
 ## Shipped Profiles (`src/dbt/*/profiles.yml`)
 

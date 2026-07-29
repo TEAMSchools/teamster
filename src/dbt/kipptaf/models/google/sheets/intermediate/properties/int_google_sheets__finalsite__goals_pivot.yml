@@ -34,11 +34,21 @@ models:
         data_type: string
       - name: seat_target
         data_type: numeric
+        description: Total seats/capacity the school is targeting for the year.
       - name: fdos_target
         data_type: numeric
+        description: Enrollment target as of First Day of School.
       - name: budget_target
         data_type: numeric
+        description:
+          The enrollment number the school's budget was built against.
       - name: new_student_target
         data_type: numeric
+        description: Target count of new (not returning) students to enroll.
       - name: re_enroll_projection
         data_type: numeric
+        description: >
+          Projected count of currently-enrolled students expected to persist
+          (return) -- "persistence," not "retention"; retention refers to grade
+          repetition in this org's vocabulary and is a distinct, unrelated
+          concept.

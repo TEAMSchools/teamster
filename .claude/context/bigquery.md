@@ -113,3 +113,16 @@ Cost triage ("why did BigQuery costs go up"): query
 dbt models (on-demand ≈ $6.25/TiB billed; filter `statement_type != 'SCRIPT'` to
 avoid double-counting parent jobs). Group by `user_email` to split Dagster vs
 dbt Cloud CI vs humans.
+
+Per-column population on a wide table (which optional/custom columns actually
+carry data) without dynamic SQL: `to_json(t)` the row, unnest its keys,
+subscript. `json_value`'s path argument must be CONSTANT so it cannot take the
+unnested key — use `j[k]` and compare `to_json_string`, since a JSON null is not
+a SQL NULL:
+
+```sql
+with rows_json as (select to_json(t) as j from `<dataset>.<table>` as t)
+select k, countif(to_json_string(j[k]) not in ('null', '""')) as populated
+from rows_json, unnest(json_keys(j, 1)) as k
+group by k
+```

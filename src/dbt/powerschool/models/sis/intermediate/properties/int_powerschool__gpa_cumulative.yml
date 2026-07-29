@@ -6,7 +6,7 @@ models:
       variants, plus projected variants that blend stored grades with
       in-progress current-year final grades — alongside earned/potential credit
       totals and the needed-GPA / attainability pair for finishing with a 3.00
-      cumulative.
+      unweighted cumulative.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -18,13 +18,13 @@ models:
         data_type: boolean
         description: >-
           True when `gpa_needed_for_cumulative_3_0` is less than or equal to the
-          credit-weighted maximum weighted GPA achievable across the student's
+          credit-weighted maximum unweighted GPA achievable across the student's
           current-year courses (each in-progress course capped at the max grade
-          points of its weighted grade scale; already-stored current-year grades
-          locked at their actual points). NULL when the needed value is NULL, or
-          when any in-progress course's grade scale cannot be resolved — the max
-          is then unknowable, so the flag reads unknown rather than a misstated
-          false.
+          points of its unweighted grade scale; already-stored current-year
+          grades locked at their actual unweighted points). NULL when the needed
+          value is NULL, or when any in-progress course's unweighted grade scale
+          cannot be resolved — the max is then unknowable, so the flag reads
+          unknown rather than a misstated false.
         data_tests:
           - not_null:
               config:
@@ -70,27 +70,29 @@ models:
       - name: gpa_needed_for_cumulative_3_0
         data_type: float64
         description: >-
-          Weighted Y1 GPA the student must average across all current-year GPA
-          credits to finish with a projected cumulative Y1 GPA of exactly 3.00.
-          Computed as (3.0 x (prior credits + current credits) - prior weighted
-          points) / current credits. Assumes the current credit denominator
-          stays fixed — course adds/drops move the target. Negative values mean
-          3.00 is already guaranteed; values above the student's scale maximum
-          are not attainable this year. NULL when the student has no
-          current-year GPA credits.
+          Unweighted Y1 GPA the student must average across all current-year GPA
+          credits to finish with a projected cumulative Y1 GPA (unweighted) of
+          exactly 3.00. Computed as (3.0 x (prior credits + current credits) -
+          prior unweighted points) / current credits. Assumes the current credit
+          denominator stays fixed — course adds/drops move the target. Negative
+          values mean 3.00 is already guaranteed; values above the student's
+          unweighted scale maximum are not attainable this year. NULL when the
+          student has no current-year GPA credits.
 
 unit_tests:
   - name: unit_gpa_cumulative_needed_gpa
     description: >-
-      Needed-GPA algebra and attainability flag. Student 1 (junior, prior 2.6
-      over 70 credits, 35 current credits) needs 3.8. Student 2 (freshman, no
-      prior years) needs exactly 3.0. Student 3 (prior 4.2 over 105 credits)
-      needs -0.6 — already guaranteed, still attainable. Student 4 (prior 2.0
-      over 105 credits) needs 6.0 — above the 4.5 scale max, not attainable.
-      Student 5 has no current-year enrollment — needed and flag are NULL.
-      Student 6 has one course on an unresolvable grade scale (orphaned
+      Needed-GPA algebra and attainability flag on an unweighted basis. Student
+      1 (junior, prior two A-years and one F-year over 105 credits, 35 current
+      credits) needs a 4.0 this year — exactly the unweighted scale max, so
+      attainable. Student 2 (freshman, no prior years) needs exactly 3.0.
+      Student 3 (prior four A-years over 140 credits) needs -1.0 — already
+      guaranteed, still attainable. Student 4 (prior one F-year over 35 credits)
+      needs 6.0 — above the 4.0 unweighted scale max, not attainable. Student 5
+      has no current-year enrollment — needed and flag are NULL. Student 6 has
+      one current course on an unresolvable unweighted grade scale (orphaned
       gradescaleid) — needed is still computed but the flag is NULL because the
-      max attainable GPA is unknowable.
+      max attainable unweighted GPA is unknowable.
     model: int_powerschool__gpa_cumulative
     overrides:
       vars:
@@ -102,14 +104,28 @@ unit_tests:
               studentid: 1,
               schoolid: 101,
               course_number: C1,
+              academic_year: 2022,
+              storecode: Y1,
+              excludefromgpa: 0,
+              excludefromgraduation: 0,
+              potentialcrhrs: 35.0,
+              earnedcrhrs: 35.0,
+              gpa_points: 4.5,
+              percent: 95,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+          - {
+              studentid: 1,
+              schoolid: 101,
+              course_number: C1,
               academic_year: 2023,
               storecode: Y1,
               excludefromgpa: 0,
               excludefromgraduation: 0,
               potentialcrhrs: 35.0,
               earnedcrhrs: 35.0,
-              gpa_points: 2.6,
-              percent: 80,
+              gpa_points: 4.5,
+              percent: 95,
               gradescale_name_unweighted: UT Unweighted,
             }
           - {
@@ -121,9 +137,23 @@ unit_tests:
               excludefromgpa: 0,
               excludefromgraduation: 0,
               potentialcrhrs: 35.0,
+              earnedcrhrs: 0.0,
+              gpa_points: 0.0,
+              percent: 50,
+              gradescale_name_unweighted: UT Unweighted,
+            }
+          - {
+              studentid: 3,
+              schoolid: 101,
+              course_number: C1,
+              academic_year: 2021,
+              storecode: Y1,
+              excludefromgpa: 0,
+              excludefromgraduation: 0,
+              potentialcrhrs: 35.0,
               earnedcrhrs: 35.0,
-              gpa_points: 2.6,
-              percent: 80,
+              gpa_points: 4.5,
+              percent: 95,
               gradescale_name_unweighted: UT Unweighted,
             }
           - {
@@ -136,7 +166,7 @@ unit_tests:
               excludefromgraduation: 0,
               potentialcrhrs: 35.0,
               earnedcrhrs: 35.0,
-              gpa_points: 4.2,
+              gpa_points: 4.5,
               percent: 95,
               gradescale_name_unweighted: UT Unweighted,
             }
@@ -150,7 +180,7 @@ unit_tests:
               excludefromgraduation: 0,
               potentialcrhrs: 35.0,
               earnedcrhrs: 35.0,
-              gpa_points: 4.2,
+              gpa_points: 4.5,
               percent: 95,
               gradescale_name_unweighted: UT Unweighted,
             }
@@ -164,36 +194,8 @@ unit_tests:
               excludefromgraduation: 0,
               potentialcrhrs: 35.0,
               earnedcrhrs: 35.0,
-              gpa_points: 4.2,
+              gpa_points: 4.5,
               percent: 95,
-              gradescale_name_unweighted: UT Unweighted,
-            }
-          - {
-              studentid: 4,
-              schoolid: 101,
-              course_number: C1,
-              academic_year: 2022,
-              storecode: Y1,
-              excludefromgpa: 0,
-              excludefromgraduation: 0,
-              potentialcrhrs: 35.0,
-              earnedcrhrs: 35.0,
-              gpa_points: 2.0,
-              percent: 80,
-              gradescale_name_unweighted: UT Unweighted,
-            }
-          - {
-              studentid: 4,
-              schoolid: 101,
-              course_number: C1,
-              academic_year: 2023,
-              storecode: Y1,
-              excludefromgpa: 0,
-              excludefromgraduation: 0,
-              potentialcrhrs: 35.0,
-              earnedcrhrs: 35.0,
-              gpa_points: 2.0,
-              percent: 80,
               gradescale_name_unweighted: UT Unweighted,
             }
           - {
@@ -205,9 +207,9 @@ unit_tests:
               excludefromgpa: 0,
               excludefromgraduation: 0,
               potentialcrhrs: 35.0,
-              earnedcrhrs: 35.0,
-              gpa_points: 2.0,
-              percent: 80,
+              earnedcrhrs: 0.0,
+              gpa_points: 0.0,
+              percent: 50,
               gradescale_name_unweighted: UT Unweighted,
             }
           - {
@@ -289,6 +291,7 @@ unit_tests:
               y1_grade_points: 3.0,
               y1_grade_points_unweighted: 3.0,
               courses_gradescaleid: 10,
+              courses_gradescaleid_unweighted: 20,
             }
           - {
               studentid: 2,
@@ -303,6 +306,7 @@ unit_tests:
               y1_grade_points: 3.0,
               y1_grade_points_unweighted: 3.0,
               courses_gradescaleid: 10,
+              courses_gradescaleid_unweighted: 20,
             }
           - {
               studentid: 3,
@@ -317,6 +321,7 @@ unit_tests:
               y1_grade_points: 3.0,
               y1_grade_points_unweighted: 3.0,
               courses_gradescaleid: 10,
+              courses_gradescaleid_unweighted: 20,
             }
           - {
               studentid: 4,
@@ -331,6 +336,7 @@ unit_tests:
               y1_grade_points: 3.0,
               y1_grade_points_unweighted: 3.0,
               courses_gradescaleid: 10,
+              courses_gradescaleid_unweighted: 20,
             }
           - {
               studentid: 6,
@@ -345,6 +351,7 @@ unit_tests:
               y1_grade_points: 3.0,
               y1_grade_points_unweighted: 3.0,
               courses_gradescaleid: 10,
+              courses_gradescaleid_unweighted: 20,
             }
           - {
               studentid: 6,
@@ -358,7 +365,8 @@ unit_tests:
               y1_letter_grade: B,
               y1_grade_points: 3.0,
               y1_grade_points_unweighted: 3.0,
-              courses_gradescaleid: 99,
+              courses_gradescaleid: 10,
+              courses_gradescaleid_unweighted: 99,
             }
       - input: ref('base_powerschool__student_enrollments')
         rows:
@@ -402,7 +410,7 @@ unit_tests:
         - {
             studentid: 1,
             potential_gpa_credits_current_year: 35.0,
-            gpa_needed_for_cumulative_3_0: 3.8,
+            gpa_needed_for_cumulative_3_0: 4.0,
             is_cumulative_3_0_attainable: true,
           }
         - {
@@ -414,7 +422,7 @@ unit_tests:
         - {
             studentid: 3,
             potential_gpa_credits_current_year: 35.0,
-            gpa_needed_for_cumulative_3_0: -0.6,
+            gpa_needed_for_cumulative_3_0: -1.0,
             is_cumulative_3_0_attainable: true,
           }
         - {
