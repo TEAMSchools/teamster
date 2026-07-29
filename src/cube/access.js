@@ -268,7 +268,13 @@ function emulationInputsFromToken(payload) {
 function emulationInputsFromCubeCloud(securityContext) {
   return {
     callerEmail: securityContext?.cubeCloud?.username ?? null,
-    requestedTarget: securityContext?.email ?? null,
+    // Cube Cloud merges a pasted Security Context into the top level AND mirrors
+    // it under cubeCloud.userAttributes, so check both — observed on 1.7.14,
+    // where a paste appears in both places and neither is present without one.
+    requestedTarget:
+      securityContext?.email ??
+      securityContext?.cubeCloud?.userAttributes?.email ??
+      null,
   };
 }
 

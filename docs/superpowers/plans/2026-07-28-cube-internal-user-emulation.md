@@ -1692,8 +1692,12 @@ these into this plan:
 - `staff_directory.count_employees` missing a date filter, and the fact that
   `staff_directory` is an open tier (no `row_level`) so every resolved viewer
   sees all business units network-wide. Real findings, separate issue.
-- One region-scope viewer (`acarbonell@kippmiami.org`) has a NULL `region_key`
-  and fail-safes to 0 rows. Not a leak; an upstream data-quality follow-up.
+- At least one region-scope viewer in `dim_staff_cube_access` has a NULL
+  `region_key` and fail-safes to 0 rows. Not a leak; an upstream data-quality
+  follow-up. Identify the rows with
+  `where student_location_scope = 'region' and region_key is null` rather than
+  recording an email here — viewer identities are PII and do not belong in a
+  committed file.
 
 ---
 

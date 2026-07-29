@@ -410,6 +410,35 @@ test("emulationInputsFromCubeCloud: caller is cubeCloud.username, target is emai
   );
 });
 
+test("emulationInputsFromCubeCloud: falls back to userAttributes.email for the target", () => {
+  // Cube Cloud mirrors a pasted Security Context under cubeCloud.userAttributes
+  // as well as merging it into the top level, and 1.7.14 has been observed
+  // presenting only the mirror on follow-up requests within a session.
+  assert.deepEqual(
+    a.emulationInputsFromCubeCloud({
+      cubeCloud: {
+        username: "admin@x.org",
+        userAttributes: { email: "target@x.org" },
+      },
+      iss: "cubecloud",
+    }),
+    { callerEmail: "admin@x.org", requestedTarget: "target@x.org" },
+  );
+});
+
+test("emulationInputsFromCubeCloud: a top-level email wins over the mirror", () => {
+  assert.deepEqual(
+    a.emulationInputsFromCubeCloud({
+      email: "toplevel@x.org",
+      cubeCloud: {
+        username: "admin@x.org",
+        userAttributes: { email: "mirror@x.org" },
+      },
+    }),
+    { callerEmail: "admin@x.org", requestedTarget: "toplevel@x.org" },
+  );
+});
+
 test("emulationInputsFromCubeCloud: with no pasted context the console user is the target", () => {
   // Cube Cloud with nothing typed into Security Context: the caller resolves as
   // themselves, which is what fixes plain (non-emulated) Explore.

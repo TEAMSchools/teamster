@@ -211,17 +211,17 @@ When a business user needs to validate changes before merge:
 ## Testing row-level security locally
 
 Row-level security is enforced by per-view `access_policy`, driven by the
-`securityContext` that `resolveAccess` builds **inside the auth hooks**
-(`checkAuth` for REST, `checkSqlAuth` for the SQL API). Both hooks run in
-developer mode (verified on Cube 1.6.59), so **both local surfaces can emulate
-any viewer by email** — which makes them the sanctioned way to sign off a user's
-scope before granting them access:
+`securityContext` that `resolveAccess` builds. Both local auth hooks run in
+developer mode (verified on Cube 1.6.59), and Cube Cloud is covered by the
+`contextToGroups` enrichment — so **every surface can emulate a viewer by
+email**, which is how a user's scope gets signed off before they are granted
+access:
 
-| Surface                         | Emulate a viewer by                                                             | Use it for                                                                                  |
-| ------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Local SQL API                   | connecting as the viewer's email in the SQL `user`                              | **ground truth** — the prod BI/Superset path, and one loop covers a whole matrix of viewers |
-| Local REST Playground           | pasting `{"email": "viewer@apps.teamschools.org"}` into Edit Security Context   | spot checks and response metadata (e.g. `usedPreAggregations`)                              |
-| Cube Cloud Playground / Explore | not possible yet ([#4526](https://github.com/TEAMSchools/teamster/issues/4526)) | nothing — it bypasses `checkAuth` and default-denies                                        |
+| Surface                         | Emulate a viewer by                                                                    | Use it for                                                                                      |
+| ------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Local SQL API                   | connecting as the viewer's email in the SQL `user`                                     | **ground truth** — the prod BI/Superset path, and one loop covers a whole matrix of viewers     |
+| Local REST Playground           | pasting `{"email": "viewer@apps.teamschools.org"}` into Edit Security Context          | spot checks and response metadata (e.g. `usedPreAggregations`)                                  |
+| Cube Cloud Playground / Explore | pasting `{"email": "viewer@apps.teamschools.org"}`, if you are in `CUBE_IMPERSONATORS` | the surface a pilot user actually uses — and the only one that shows how a denial behaves there |
 
 **First, credentials.** `resolveAccess` issues its own BigQuery reads, separate
 from the driver's. With the BigQuery credentials variable unset — the normal
@@ -314,12 +314,6 @@ policies denying — check the dev-server log for `resolveAccess failed for`.
 
 Treat the output as PII. Summarize it ("5 viewers checked, all scopes as
 intended") rather than pasting it into a PR, issue, or Slack message.
-
-Expect the region-scoped viewer to return only their own region, the network
-viewer all four regions, and the `none`-scope viewer no rows (default-deny) —
-which confirms `resolveAccess` and the `student-<scope>` policies agree. Because
-identity is the connecting `user`, one loop covers the whole viewer matrix with
-no restart.
 
 **Alternative: the REST Playground.** `checkAuth` runs in developer mode, so no
 `NODE_ENV` flip is needed: click **Edit Security Context**, paste

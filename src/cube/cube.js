@@ -276,13 +276,11 @@ module.exports = {
     // per-email cache in resolveAccess makes re-entry cheap.
     const consoleUser = securityContext?.cubeCloud?.username ?? null;
     if (consoleUser) {
-      const requestedTarget =
-        securityContext.email ??
-        securityContext.cubeCloud?.userAttributes?.email ??
-        null;
       const { caller, target, emulating } = access.resolveEmulationTarget({
-        callerEmail: consoleUser,
-        requestedTarget,
+        // Same shape as the REST branch above, via the surface adapter — the
+        // caller/target extraction lives in access.js so both paths and their
+        // unit tests exercise one implementation.
+        ...access.emulationInputsFromCubeCloud(securityContext),
         impersonators: access.parseImpersonators(
           process.env.CUBE_IMPERSONATORS,
         ),
