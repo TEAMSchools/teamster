@@ -78,7 +78,6 @@ select
     ur.created_fsa_id_parent,
     ur.created_fsa_id_student,
     ur.fafsa_opt_out,
-    ur.fafsa_status,
     ur.intended_major,
     ur.personal_statement_status,
     ur.personal_statatement_essay_completion_status,

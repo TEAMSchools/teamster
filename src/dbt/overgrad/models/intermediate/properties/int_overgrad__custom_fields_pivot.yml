@@ -57,7 +57,7 @@ models:
         data_type: string
       - name: fafsa_opt_out
         data_type: string
-      - name: fafsa_status
+      - name: fafsa_status_custom
         data_type: string
       - name: intended_major
         data_type: string
