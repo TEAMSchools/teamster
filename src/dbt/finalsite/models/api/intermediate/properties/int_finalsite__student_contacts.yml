@@ -3,20 +3,19 @@ models:
     description:
       SIS-agnostic long-format contact list for Finalsite student records — one
       row per (student, contact slot), grain `(finalsite_enrollment_id,
-      contact_slot)`. `contact_slot` is `contact_1` (the student's first
-      reportable parent contact — the relationship flagged `primary` in
-      Finalsite, or the one flagged `financial` when no primary is set, resolved
-      to that person's own Finalsite contact record; absent when the student has
-      neither a primary nor a financial relationship), `contact_2` (the
-      student's second reportable parent — an additional relationship flagged
-      `financial` but not `primary`, emitted only when the student's own
-      `is_parent2` custom field is true and the related contact is a member of
-      the student's first household; absent otherwise), or `emergency_1` through
-      `emergency_4` (the `custom_attributes` `emrg_N` sets mapped positionally —
-      `emergency_N` is `emrg_N` as-is, with no priority re-sort and no
-      gap-filling). Sparse — a slot row is emitted only when that slot has data,
-      so emergency slots may have gaps. Feeds the downstream PowerSchool/Focus
-      contact receivers built on top of this model.
+      contact_slot)`. `contact_slot` is `contact_1` (the student's Parent 1 —
+      the relationship flagged `primary` in Finalsite, resolved to that person's
+      own Finalsite contact record; absent when the student has no primary
+      relationship, which Ops treats as a Finalsite data-entry gap to fix at the
+      source), `contact_2` (the student's Parent 2 — any other relationship
+      flagged `primary` or `financial` whose contact shares a household with
+      Parent 1, that shared household being the student's primary household;
+      absent otherwise), or `emergency_1` through `emergency_4` (the
+      `custom_attributes` `emrg_N` sets mapped positionally — `emergency_N` is
+      `emrg_N` as-is, with no priority re-sort and no gap-filling). Sparse — a
+      slot row is emitted only when that slot has data, so emergency slots may
+      have gaps. Feeds the downstream PowerSchool/Focus contact receivers built
+      on top of this model.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -168,7 +167,7 @@ models:
         description:
           Whether the contact lives with the student. Always null for
           `contact_1` and `contact_2` (note the `contact_2` pick already
-          requires household-1 co-membership by construction);
+          requires co-membership of Parent 1's household by construction);
           `emrg_N_lives_with_yn` for an emergency slot.
       - name: is_emergency
         data_type: boolean
@@ -197,7 +196,6 @@ unit_tests:
             'parent' as rel_type,
             true as is_primary,
             true as is_financial,
-            cast(null as string) as household_1_id,
             cast(null as boolean) as is_parent2
       - input: ref('stg_finalsite__contacts')
         format: sql
@@ -218,7 +216,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            cast(null as string) as household_1_id,
             array<string>[] as household_ids
       - input: ref('int_finalsite__contact_custom_attributes')
         rows: []
@@ -247,12 +244,14 @@ unit_tests:
 
   - name: test_student_contacts_parent_2
     description:
-      Two gated students. stu1 has a primary relationship (Parent 1), a second
-      financial relationship to a household-1 co-member, and a third financial
-      relationship outside household 1 — yields contact_1 + contact_2 with the
-      outsider excluded. stu2 has no primary and two financial household-1
-      relationships — contact_1 falls back to the first financial and contact_2
-      takes the next, never duplicating the same person.
+      Two students. stu1 has a primary relationship (Parent 1), a second
+      financial relationship to a contact sharing Parent 1's household, and a
+      third financial relationship in a different household — yields contact_1
+      plus contact_2 with the outsider excluded. Every fixture row carries
+      `is_parent2` false, so a contact_2 on stu1 also proves that flag no longer
+      gates the pick. stu2 has no primary relationship and two financial ones —
+      yields no rows at all, since Parent 1 is the primary contact and there is
+      no financial fallback.
     model: int_finalsite__student_contacts
     given:
       - input: ref('stg_finalsite__contact_relationships')
@@ -266,8 +265,7 @@ unit_tests:
             'parent' as rel_type,
             true as is_primary,
             true as is_financial,
-            'hh1' as household_1_id,
-            true as is_parent2
+            false as is_parent2
           union all
           select
             'stu1' as finalsite_enrollment_id,
@@ -277,8 +275,7 @@ unit_tests:
             'stepparent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial,
-            'hh1' as household_1_id,
-            true as is_parent2
+            false as is_parent2
           union all
           select
             'stu1' as finalsite_enrollment_id,
@@ -288,8 +285,7 @@ unit_tests:
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial,
-            'hh1' as household_1_id,
-            true as is_parent2
+            false as is_parent2
           union all
           select
             'stu2' as finalsite_enrollment_id,
@@ -299,8 +295,7 @@ unit_tests:
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial,
-            'hh3' as household_1_id,
-            true as is_parent2
+            false as is_parent2
           union all
           select
             'stu2' as finalsite_enrollment_id,
@@ -310,8 +305,7 @@ unit_tests:
             'parent' as rel_type,
             cast(null as boolean) as is_primary,
             true as is_financial,
-            'hh3' as household_1_id,
-            true as is_parent2
+            false as is_parent2
       - input: ref('stg_finalsite__contacts')
         format: sql
         rows: |
@@ -331,7 +325,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh1' as household_1_id,
             ['hh1'] as household_ids
           union all
           select
@@ -350,7 +343,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh1' as household_1_id,
             ['hh1', 'hh2'] as household_ids
           union all
           select
@@ -369,7 +361,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh2' as household_1_id,
             ['hh2'] as household_ids
           union all
           select
@@ -388,7 +379,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh3' as household_1_id,
             ['hh3'] as household_ids
           union all
           select
@@ -407,7 +397,6 @@ unit_tests:
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zip,
-            'hh3' as household_1_id,
             ['hh3'] as household_ids
       - input: ref('int_finalsite__contact_custom_attributes')
         rows: []
@@ -443,46 +432,6 @@ unit_tests:
           'Doe' as contact_last_name,
           'stepparent' as relationship,
           'john@example.com' as email,
-          cast(null as string) as phone_daytime,
-          cast(null as string) as home_address,
-          cast(null as boolean) as is_pickup,
-          cast(null as boolean) as is_custodial,
-          cast(null as boolean) as is_household_member,
-          false as is_emergency,
-          cast(null as string) as phone_mobile,
-          cast(null as string) as phone_home,
-          cast(null as string) as phone_work,
-          cast(null as string) as phone_primary
-        union all
-        select
-          'stu2' as finalsite_enrollment_id,
-          'contact_1' as contact_slot,
-          'con4' as finalsite_contact_id,
-          'Fay Ray' as contact_name,
-          'Fay' as contact_first_name,
-          'Ray' as contact_last_name,
-          'parent' as relationship,
-          'fay@example.com' as email,
-          cast(null as string) as phone_daytime,
-          cast(null as string) as home_address,
-          cast(null as boolean) as is_pickup,
-          cast(null as boolean) as is_custodial,
-          cast(null as boolean) as is_household_member,
-          false as is_emergency,
-          cast(null as string) as phone_mobile,
-          cast(null as string) as phone_home,
-          cast(null as string) as phone_work,
-          cast(null as string) as phone_primary
-        union all
-        select
-          'stu2' as finalsite_enrollment_id,
-          'contact_2' as contact_slot,
-          'con5' as finalsite_contact_id,
-          'Gus Ray' as contact_name,
-          'Gus' as contact_first_name,
-          'Ray' as contact_last_name,
-          'parent' as relationship,
-          'gus@example.com' as email,
           cast(null as string) as phone_daytime,
           cast(null as string) as home_address,
           cast(null as boolean) as is_pickup,
