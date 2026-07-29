@@ -162,11 +162,17 @@ models:
           Student offender transfer — Focus custom field. Stored as an encoded
           select option code (decode deferred).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: resident_status_state_county
         description: >-
           Resident Status, State/County — Focus custom field. Stored as an
           encoded select option code (decode deferred).
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: disaster_affected_student
         description: >-
           Disaster Affected Student — Focus custom field. Stored as an encoded
