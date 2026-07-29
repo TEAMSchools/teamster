@@ -67,3 +67,222 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: primary_language_spoken_in_home_label
+        description:
+          Decoded label for the primary_language_spoken_in_home select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: free_reduced_meals_program_label
+        description: >-
+          Decoded label for the free_reduced_meals_program select field — the
+          student's free or reduced-price meal eligibility basis.
+        config:
+          meta:
+            contains_pii: true
+      - name: native_language_student_label
+        description: Decoded label for the native_language_student select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: homeless_student_pk_12_label
+        description: Decoded label for the homeless_student_pk_12 select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: idea_educational_environment_label
+        description: >-
+          Decoded label for the idea_educational_environment select field — the
+          IDEA educational environment reported for the student.
+        config:
+          meta:
+            contains_pii: true
+      - name: english_language_learner_pk_12_label
+        description:
+          Decoded label for the english_language_learner_pk_12 select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: pe_waiver_label
+        description: Decoded label for the pe_waiver select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: graduation_option_label
+        description: Decoded label for the graduation_option select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: doe_test_accommodations_access_for_ells_label
+        description: >-
+          Decoded label for the doe_test_accommodations_access_for_ells select
+          field — the ACCESS for ELLs testing accommodation.
+        config:
+          meta:
+            contains_pii: true
+      - name: ese_fefp_code_label
+        description: >-
+          Decoded label for the ese_fefp_code select field — the exceptional
+          student education FEFP funding category.
+        config:
+          meta:
+            contains_pii: true
+      - name: prekindergarten_program_participation_label
+        description: >-
+          Decoded label for the prekindergarten_program_participation select
+          field.
+        config:
+          meta:
+            contains_pii: true
+      - name: country_of_birth_label
+        description: Decoded label for the country_of_birth select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: year_entered_ninth_grade_label
+        description: >-
+          Decoded label for the year_entered_ninth_grade select field. Currently
+          null for every row — the only stored value points at a select option
+          that is soft-deleted in Focus, and its label was the placeholder
+          00000000. Labels will resolve once Focus stores a live option.
+        config:
+          meta:
+            contains_pii: true
+      - name: florida_first_start_program_participant_label
+        description: >-
+          Decoded label for the florida_first_start_program_participant select
+          field.
+        config:
+          meta:
+            contains_pii: true
+      - name: even_start_family_literacy_program_participant_label
+        description: >-
+          Decoded label for the even_start_family_literacy_program_participant
+          select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: multi_birth_for_faster_label
+        description: >-
+          Decoded label for the multi_birth_for_faster select field — the
+          multiple-birth indicator reported through FASTER.
+        config:
+          meta:
+            contains_pii: true
+      - name: resident_status_label
+        description: Decoded label for the resident_status select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: screening_for_hearing_grade_kg_label
+        description: >-
+          Decoded label for the screening_for_hearing_grade_kg select field —
+          the kindergarten hearing screening result reported through FASTER.
+        config:
+          meta:
+            contains_pii: true
+      - name: screening_for_vision_problems_label
+        description:
+          Decoded label for the screening_for_vision_problems select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: birth_date_verification_label
+        description: >-
+          Decoded label for the birth_date_verification select field — the
+          document used to verify date of birth.
+        config:
+          meta:
+            contains_pii: true
+      - name: aice_diploma_label
+        description: Decoded label for the aice_diploma select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: diploma_florida_seal_of_fine_arts_designation_label
+        description: >-
+          Decoded label for the diploma_florida_seal_of_fine_arts_designation
+          select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: residency_for_tuition_purposes_label
+        description:
+          Decoded label for the residency_for_tuition_purposes select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: bright_futures_volunteer_service_requirement_met_label
+        description: >-
+          Decoded label for the bright_futures_volunteer_service_requirement_met
+          select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: national_merit_scholar_label
+        description: Decoded label for the national_merit_scholar select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: national_achievement_scholar_label
+        description:
+          Decoded label for the national_achievement_scholar select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: national_hispanic_scholar_label
+        description:
+          Decoded label for the national_hispanic_scholar select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: aice_program_participant_label
+        description:
+          Decoded label for the aice_program_participant select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: ib_diploma_label
+        description: Decoded label for the ib_diploma select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: college_ready_diploma_label
+        description: Decoded label for the college_ready_diploma select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: differentiated_diploma_label
+        description: Decoded label for the differentiated_diploma select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: additional_school_year_label
+        description: Decoded label for the additional_school_year select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: migrant_status_term_label
+        description: Decoded label for the migrant_status_term select field.
+        config:
+          meta:
+            contains_pii: true
+      - name: basis_of_entry_label
+        description: >-
+          Decoded label for the basis_of_entry select field — the basis on which
+          the student entered the district.
+        config:
+          meta:
+            contains_pii: true
+      - name: first_basis_of_exit_label
+        description: >-
+          Decoded label for the first_basis_of_exit select field — the basis on
+          which the student first exited.
+        config:
+          meta:
+            contains_pii: true
+      - name: single_ethnicity_label
+        description: Decoded label for the single_ethnicity select field.
+        config:
+          meta:
+            contains_pii: true

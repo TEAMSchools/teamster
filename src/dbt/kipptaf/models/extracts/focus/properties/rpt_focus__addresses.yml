@@ -85,7 +85,7 @@ unit_tests:
               city: Miami,
               state: FL,
               zip: "33101",
-              phone_1_number: 305-555-0100,
+              phone_1_number: "+13055550100",
               status: enrolled,
             }
           - {
@@ -95,7 +95,7 @@ unit_tests:
               city: Miami,
               state: FL,
               zip: "33102",
-              phone_1_number: 305-555-0200,
+              phone_1_number: "+13055550200",
               status: applied,
             }
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -119,7 +119,7 @@ unit_tests:
             city: Miami,
             state: FL,
             zipcode: "33101",
-            phone: 305-555-0100,
+            phone: "+13055550100",
             mailing: null,
             mail_address: null,
             mail_address2: null,

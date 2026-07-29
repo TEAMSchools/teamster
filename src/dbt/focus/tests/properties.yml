@@ -10,3 +10,16 @@ data_tests:
           ref:
             name: int_focus__custom_field_options
             package: focus
+  - name: test_focus__school_level_labels_known
+    description: >-
+      Guards the school_level decode in int_focus__student_enrollment, which
+      maps SISSchool level labels to the ES/MS/HS abbreviation. A Focus label
+      rename, or a new level Focus starts assigning, would null school_level
+      silently. C - Combined is known and intentionally unmapped. Any returned
+      row is a failure.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_focus__schools__pivot
+            package: focus

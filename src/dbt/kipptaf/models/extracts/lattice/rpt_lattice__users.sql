@@ -44,6 +44,13 @@ with
                     and home_department_name
                     in ('Technology', 'Marketing, Comms, and Enrollment')
                 )
+                -- network-wide leader roles, included regardless of entity
+                or contains_substr(job_title, 'Head of School')
+                or home_department_name = 'Teaching and Learning'
+                or (
+                    home_department_name = 'School Support'
+                    and contains_substr(job_title, 'Managing Director')
+                )
             )
             and (
                 assignment_status in ('Active', 'Leave')
