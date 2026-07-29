@@ -38,6 +38,8 @@ select
     r.contact_current_college_cumulative_gpa as current_college_cumulative_gpa,
     r.contact_kipp_ms_graduate as is_kipp_ms_graduate,
     r.contact_kipp_hs_graduate as is_kipp_hs_graduate,
+    r.contact_advising_provider as advising_provider,
+    r.contact_graduation_year as graduation_year,
 
     e.ba_pursuing_degree_type,
     e.ba_status,
@@ -78,6 +80,14 @@ select
     e.ugrad_account_type,
     e.ugrad_account_name,
     e.ugrad_adjusted_6_year_minority_graduation_rate,
+    e.postsec_completed_pursuing_degree_type,
+    e.postsec_completed_status,
+    e.postsec_completed_start_date,
+    e.postsec_completed_actual_end_date,
+    e.postsec_completed_anticipated_graduation,
+    e.postsec_completed_account_type,
+    e.postsec_completed_account_name,
+    e.postsec_completed_adjusted_6_year_minority_graduation_rate,
 
     r.contact_most_recent_iep_date is not null as is_iep,
 from {{ ref("stg_kippadb__kipp_aid") }} as a

@@ -1,5 +1,6 @@
 select
     log._dbt_source_relation,
+    log._dbt_source_project,
     log.studentid,
     log.dcid,
     log.logtypeid,
@@ -13,4 +14,4 @@ inner join
     {{ ref("stg_powerschool__gen") }} as gen
     on log.logtypeid = gen.id
     and gen.cat = 'logtype'
-    and {{ union_dataset_join_clause(left_alias="log", right_alias="gen") }}
+    and log._dbt_source_project = gen._dbt_source_project

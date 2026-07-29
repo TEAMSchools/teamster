@@ -17,25 +17,6 @@ with
         select
             null as employee_number,
 
-            teachernumber as powerschool_teacher_number,
-            last_name as family_name_1,
-            first_name as given_name,
-            email_addr as user_principal_name,
-            email_addr as sam_account_name,
-
-            if(ptaccess = 1 or psaccess = 1, 0, 2) as uac_account_disable,
-
-            'KIPP Paterson' as home_business_unit_name,
-
-            title as job_title,
-        from {{ ref("stg_powerschool__users") }}
-        where _dbt_source_relation like '%kipppaterson%'
-
-        union all
-
-        select
-            null as employee_number,
-
             employee_id as powerschool_teacher_number,
             sn as family_name_1,
             given_name,

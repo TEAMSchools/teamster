@@ -28,8 +28,13 @@ vars:
   local_timezone: America/New_York
   cloud_storage_uri_base: gs://teamster-kipptaf/dagster/kipptaf
   bigquery_external_connection_name: projects/teamster-332318/locations/us/connections/biglake-teamster-gcs
-  current_academic_year: 2025
-  current_fiscal_year: 2026
+  current_academic_year: 2026
+  current_fiscal_year: 2027
+  # Distinct from current_academic_year -- SRE's recruitment cycle rolls over
+  # on its own fluid timeline, not the July 1 academic-year cadence. See the
+  # fresh-dashboard skill's "Update the Finalsite recruitment year" procedure
+  # before bumping this.
+  finalsite_recruitment_year: 2026
 
 models:
   kipptaf:
@@ -117,6 +122,8 @@ models:
       +schema: finance
     fldoe:
       +schema: fldoe
+    focus:
+      +schema: focus
     google:
       appsheet:
         +schema: google_appsheet

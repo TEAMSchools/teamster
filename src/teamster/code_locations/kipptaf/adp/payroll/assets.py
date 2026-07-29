@@ -15,7 +15,7 @@ asset_key = AssetKey([CODE_LOCATION, "adp", "payroll", "general_ledger_file"])
 
 GENERAL_LEDGER_FILE_PARTITIONS_DEF = MultiPartitionsDefinition(
     {
-        "group_code": StaticPartitionsDefinition(["2Z3", "3LE", "47S", "9AM"]),
+        "group_code": StaticPartitionsDefinition(["2Z3", "3LE", "47S", "9AM", "LCH"]),
         "date": DynamicPartitionsDefinition(
             name=f"{asset_key.to_python_identifier()}__date"
         ),

@@ -1,6 +1,10 @@
 models:
   - name: int_powerschool__student_contacts_pivot
+    # Legacy wide-pivot PS contacts model. Its only consumer,
+    # base_powerschool__student_enrollments, dropped the join in #4346; no live
+    # consumers remain. Disabled network-wide (#4346).
     config:
+      enabled: false
       materialized: table
     columns:
       - name: studentdcid

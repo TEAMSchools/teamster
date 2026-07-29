@@ -188,6 +188,39 @@ You won't use these every time, but they're available when you need them:
 | "Let's review the code"    | Request a code review from Claude                            |
 | "Let's finish this branch" | Wrap up a dev branch — verify, PR or merge, clean up         |
 
+## Choosing a Model and Effort Level
+
+Two knobs control cost and quality, and they buy different things:
+
+- **Model tier** (Haiku → Sonnet → Opus → Fable) buys judgment per token —
+  better questions, sharper pushback, deeper design insight.
+- **Effort** (`low` → `xhigh`) buys investigation — more thinking, more
+  verification, more files read before answering.
+
+Set them with `/model` before starting a session. Rules of thumb: spend on tier
+when the work is judgment-bound (design, brainstorming); spend on effort when it
+is investigation-bound (review, debugging). Structure substitutes for effort — a
+Superpowers workflow or a human in the loop supplies the breadth and
+depth-checking the model would otherwise need effort budget for.
+
+| Session type                                       | Model / effort       |
+| -------------------------------------------------- | -------------------- |
+| Brainstorming, high-stakes or ambiguous, freeform  | Fable, medium-high   |
+| Brainstorming, high-stakes, via "Let's brainstorm" | Fable, low           |
+| Brainstorming, routine stakes                      | Opus, high           |
+| Plan execution / subagent-driven development       | Opus, high           |
+| Quick questions, small fixes                       | Opus, high (default) |
+
+Two settings to avoid: running the execution-phase session below `high` (the
+orchestrator is the only quality gate over subagent work — under-effort there
+compounds silently), and running it at `xhigh` (Opus at max deliberation tends
+to redo the subagents' work instead of reviewing it).
+
+Subagent dispatches are Claude's job, not yours — the root `CLAUDE.md` binds the
+tiers (mechanical tasks → `haiku`, integration and reviews → `sonnet`, design
+and final review → `opus`), and skills like subagent-driven-development carry
+their own model-selection guidance.
+
 ## Common Mistakes
 
 **1. Skipping brainstorm because "it's simple."** Simple things are where

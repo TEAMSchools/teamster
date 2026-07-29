@@ -11,7 +11,7 @@ region can enable one integration method without the other:
 
 ```text
 models/
-  api/             # Finalsite Contacts API (Miami-only today)
+  api/             # Finalsite Contacts API (all four regions)
     staging/       # materialized: table, contract enforced
     intermediate/  # materialized: table — SIS-agnostic enrollment models
   sftp/            # Finalsite Status Report SFTP feed (network-wide)
@@ -48,6 +48,29 @@ each has a pivot int model above. Scan all three when sourcing a field, and
 verify by VALUES, not field name (e.g. `current_residence_ss` is McKinney-Vento
 housing status, not a county).
 
+## Contact relationships and custom-attribute gotchas
+
+Vendor API ground truth lives in-repo: `docs/superpowers/specs/references/`
+(`finalsite-api-spec.yml`, plus `focus-api-spec.md` / `focus-db-erd.md`).
+Consult it before web-searching vendor docs — the hosted Finalsite API reference
+is login-gated.
+
+- `relationships` is bidirectional (a parent record carries the reverse
+  `rel_type='child'` link). `relationships.primary` is a per-record singleton
+  and **NULL, not false, when unset**; only child/student records carry a
+  primary link, and that set includes non-PS-enrolled students
+  (prospects/applicants). Filtering `where is_primary` yields ALL Finalsite
+  student records — scope to enrolled students downstream via
+  `powerschool_student_number`, not in this SIS-agnostic package.
+- `custom_attributes`/`id_attributes` are **per-contact**, and the parent-slot
+  fields (`is_parent2/3/4`, `p1_*`–`p4_*`, `emrg_*`) live ONLY on student
+  records — `is_parent2` means "this student has a Parent 2" and is never set on
+  the parent's own record (0 in tenant data), so never gate on it via `rel_id`.
+  Parent identity comes from `relationships`: `primary` = Parent 1 (a verified
+  per-student singleton), an additional `financial`-without-`primary`
+  relationship = Parent 2. `households` carry only id + address — membership has
+  no roles.
+
 ## Cross-Project Usage
 
 Referenced as a dbt package by all four district projects (`kippnewark`,
@@ -56,8 +79,8 @@ tables via `source()` (network-wide union models live in
 `kipptaf/models/finalsite/`).
 
 **The `api/` layer is enabled only where Finalsite Contacts ingestion is
-wired.** Today that is `kippmiami` only; `kippnewark`, `kippcamden`, and
-`kipppaterson` set `finalsite: api: +enabled: false` in their `dbt_project.yml`.
-The `sftp/` layer (`status_report`) stays enabled everywhere — kipptaf unions it
-across all four regions. Re-enable a region's `api` when its Finalsite contacts
-ingestion lands.
+wired.** Today that is all four regions (`kippmiami`, `kippnewark`,
+`kippcamden`, `kipppaterson`). The `sftp/` layer (`status_report`) stays enabled
+everywhere — kipptaf unions it across all four regions. Set
+`finalsite: api: +enabled: false` in a region's `dbt_project.yml` if its
+Finalsite contacts ingestion is ever removed.

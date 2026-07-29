@@ -85,9 +85,11 @@ Cube YAML files, the existing manifest stays valid.
 
 ### 3. Test locally
 
-Run the **Cube: Dev Server** VS Code task to start Cube at `localhost:4000`. Use
-`CUBE_GROUP_MAP` in your `.env` to simulate different users' group membership —
-see [Local Dev](#local-dev) for setup.
+Run the **Cube: Dev Server** VS Code task to start Cube at `localhost:4000` —
+see [Local Dev](#local-dev). To exercise **row-level security** (not just that
+models compile), see
+[Testing row-level security locally](#testing-row-level-security-locally) —
+developer mode disables auth, so RLS needs a specific setup.
 
 ### 4. Test in Cube Cloud
 
@@ -122,8 +124,10 @@ The reviewing analyst:
    - Do all cubes and views load without errors?
    - Do queries return expected results against live BigQuery data?
    - Do existing cubes and views still work?
-3. To test security behavior with specific group combinations, run locally with
-   `CUBE_GROUP_MAP` set to the groups you want to simulate
+3. To test row-level security behavior, follow
+   [Testing row-level security locally](#testing-row-level-security-locally)
+   (auth must be on — developer mode bypasses it), or test in Cube Cloud dev
+   mode where your real access row applies
 4. Leaves review comments on the PR, or approves
 
 Author and reviewer can work together in the same Cube Cloud Playground session
@@ -155,15 +159,199 @@ When a business user needs to validate changes before merge:
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
 4. Playground opens at `http://localhost:4000`
 5. Click **Edit Security Context** and set
-   `{"email": "you@apps.teamschools.org"}` — Cube resolves your real access row
-   from `kipptaf_marts.dim_staff_cube_access`. Change the email to test as
-   another user.
+   `{"email": "you@apps.teamschools.org"}`. **Caveat:** in developer mode this
+   only reaches `contextToGroups` as an `email` claim — it does NOT run identity
+   resolution, so gated views return zero rows. See
+   [Testing row-level security locally](#testing-row-level-security-locally).
+
+## Testing row-level security locally
+
+Row-level security is enforced by per-view `access_policy`, driven by the
+`securityContext` that `resolveAccess` builds **inside the auth hooks**
+(`checkAuth` for REST, `checkSqlAuth` for the SQL API). That placement has a
+sharp consequence for local testing:
+
+Developer mode skips `checkAuth` (REST) — so the Playground and REST `/load`
+default-deny every gated view (empty `securityContext`, `contextToGroups`
+returns `[]`) unless you turn auth on. But `checkSqlAuth` (the SQL API's hook)
+runs **even in developer mode**, which makes the SQL API the easier and
+truer-to-prod way to validate.
+
+**Prefer the SQL API for validation.** It resolves your real identity with no
+`NODE_ENV` change, and it is the surface Superset/BI actually use — so you
+validate the production path. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`, default
+`true`) is the planner on the SQL API, and joining views is a supported feature
+there
+([multi-fact views](https://docs.cube.dev/docs/data-modeling/multi-fact-views)).
+Enable the SQL API in `src/cube/.env`:
+
+```bash
+CUBEJS_PG_SQL_PORT=15432
+CUBEJS_SQL_USER=cube_dev
+CUBEJS_SQL_PASSWORD=local-dev-sql
+# Optional: pin EVERY connection to one viewer (dev-only override of the
+# connecting user). Leave it commented to resolve as the connecting SQL user
+# instead, which lets you switch viewers per connection with no restart.
+# CUBE_SQL_DEV_EMAIL=someone@apps.teamschools.org
+```
+
+Restart the **Cube: Dev Server** task. Identity resolves from the **SQL `user`
+you connect as** (unless `CUBE_SQL_DEV_EMAIL` is set, which overrides it) — so
+put the viewer's email in `user`, and switch viewers by opening a new connection
+rather than restarting. `MEASURE()` wraps measures:
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+# identity = the `user` you connect as; swap it to test a different viewer
+conn = psycopg2.connect(host="127.0.0.1", port=15432,
+                        user="you@apps.teamschools.org",
+                        password="local-dev-sql", dbname="cube")
+cur = conn.cursor()
+cur.execute("SELECT MEASURE(count_employees) FROM staff_directory")
+print(cur.fetchall())
+PY
+```
+
+`resolveAccess` reads that email's row from `dim_staff_cube_access`, builds the
+real `securityContext`, and the policies enforce. Compare a scoped viewer's
+counts against a network viewer's breakdown to confirm scoping.
+
+A quick region-isolation check on student data — loop the SAME query over a few
+viewer emails (a region-scoped viewer, a network viewer, a `none`-scope viewer):
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+for email in ["a-region-scoped-viewer@apps.teamschools.org",
+              "a-network-viewer@apps.teamschools.org",
+              "a-none-scope-viewer@apps.teamschools.org"]:
+    conn = psycopg2.connect(host="127.0.0.1", port=15432, user=email,
+                            password="local-dev-sql", dbname="cube")
+    cur = conn.cursor()
+    cur.execute("SELECT regions_region_name, MEASURE(count_students) "
+                "FROM student_enrollments_view GROUP BY 1 ORDER BY 1")
+    print(email, cur.fetchall())
+    conn.close()
+PY
+```
+
+Expect the region-scoped viewer to return only their own region, the network
+viewer all four regions, and the `none`-scope viewer no rows (default-deny) —
+which confirms `resolveAccess` and the `student-<scope>` policies agree. Because
+identity is the connecting `user`, one loop covers the whole viewer matrix with
+no restart.
+
+**Alternative: REST `/load` with a JWT.** The REST hook is disabled in developer
+mode, so this path needs auth **on** — run with `NODE_ENV=production` and drop
+`CUBEJS_DEV_MODE` (it overrides `NODE_ENV`):
+
+```bash
+NODE_ENV=production npm run dev
+```
+
+Then sign an HS256 JWT whose `email` claim is the viewer (with
+`CUBEJS_API_SECRET`) and POST it:
+
+```bash
+tok=$(node -e "const j=require('jsonwebtoken');console.log(j.sign({email:'you@apps.teamschools.org'},process.env.CUBEJS_API_SECRET,{algorithm:'HS256'}))")
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{"measures":["staff_pii.count_employees"]}}' \
+  http://localhost:4000/cubejs-api/v1/load
+```
+
+**The `CUBE_GROUP_MAP` trap.** `.env.example` ships a `CUBE_GROUP_MAP` line
+whose placeholder value uses **stale group names** (`cube-network-detail`,
+`cube-access-student-data`) that predate the current taxonomy (`student-<scope>`
+/ `staff-directory` / `staff-pii-<scope>`). If you `cp .env.example .env`
+verbatim, that map's dev-bypass **overrides real resolution with dead groups no
+policy matches → every view denies**. Comment out (or delete) `CUBE_GROUP_MAP`
+so `resolveAccess` reads real HR data. (The bypass fires whenever
+`NODE_ENV !== production`, so it is inert on the REST auth-on path but active on
+the SQL-API/dev-mode path — keep it commented out either way.)
+
+**Testing branch models not yet in production.** The cubes and `resolveAccess`
+read `kipptaf_marts` (production). If your branch reworks a mart the cubes read
+(`dim_staff_cube_access`, `dim_staff_reporting_chain`, etc.), production still
+has the old schema and resolution fails closed. To test against your branch:
+
+1. Build the changed models to your dev schema:
+   `uv run dbt build --project-dir src/dbt/kipptaf --target dev --defer --select <models>`
+   (lands in `zz_<user>_kipptaf_marts`).
+2. If a changed source is a Google Sheet, **re-stage its external first** — the
+   external table caches the sheet's columns, so a stale external makes the
+   staging model fail its contract:
+   `uv run dbt run-operation stage_external_sources --project-dir src/dbt/kipptaf --target dev --args "select: <source>.<table>" --vars '{ext_full_refresh: true}'`.
+3. Surgically redirect **only** the changed identity tables in `cube.js` / the
+   cube YAML to `zz_<user>_kipptaf_marts`; leave unchanged facts/dims on
+   `kipptaf_marts`. Do **not** redirect a table whose surrogate keys must join
+   against prod siblings — e.g. redirecting `dim_work_assignment_jobs` breaks
+   its join to prod `dim_staff_work_assignments`. This redirect is an
+   **uncommitted** scaffold; `git checkout` to revert before committing (and
+   `grep -r zz_ src/cube` to confirm none leaked).
+
+**`count_students` is seasonal.** On `student_enrollments` it anchors to
+`is_current_record` (current-as-of-now), so it returns 0 during summer/breaks.
+For a location-scoping check that returns real numbers year-round, use
+`student_attendance`'s `count_students` (additive over a date range).
+
+### SQL-level RLS invariants to check
+
+The default-deny behavior rests entirely on Cube compiling an empty allow-list
+array to `IN ()` — no explicit "deny" branch exists at the SQL level. These two
+cases exercise that boundary directly and are worth running whenever
+`access_policy` or a pre-aggregation's dimension list changes.
+
+**1. Empty-allow-list case.** A viewer whose role resolves
+`staff_pii_scope='all_in_scope'` but `staff_department_scope='none'` should get
+zero rows on `staff_pii`, not an error and not every row. Over the SQL API
+(viewer identity = the connecting `user`):
+
+```bash
+uv run --with psycopg2-binary python - <<'PY'
+import psycopg2
+
+conn = psycopg2.connect(host="127.0.0.1", port=15432,
+                        user="a-department-scope-none-viewer@apps.teamschools.org",
+                        password="local-dev-sql", dbname="cube")
+cur = conn.cursor()
+cur.execute("SELECT MEASURE(count_employees) FROM staff_pii")
+print(cur.fetchall())  # expect zero rows / zero count, not an error
+PY
+```
+
+**2. Pre-agg-served scoped case.** Once a cube carries a pre-aggregation (e.g.
+`proficiency_rollup` on `student_assessment_scores`), a region-scoped viewer
+querying a rolled-up measure by subject on the corresponding view should get
+region-scoped rows AND the response should show the query was served by the
+pre-aggregation (rollup hit), not a fact-table fallback. Over the REST API,
+check `usedPreAggregations` in the response metadata:
+
+```bash
+curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
+  -X POST --data '{"query":{
+    "measures":["student_assessment_scores_view.pct_proficient"],
+    "dimensions":["student_assessment_scores_view.academic_subject"]
+  }}' \
+  http://localhost:4000/cubejs-api/v1/load | jq '.usedPreAggregations'
+```
+
+An empty `{}` means the query fell back to the fact — check that every
+`row_level` scoping member the view filters on (e.g. `region_key`,
+`abbreviation`) is also declared in the pre-aggregation's `dimensions:` list. A
+schema test can catch this statically; this case confirms it end-to-end against
+a live server.
 
 ## Warnings
 
 Do **not** set `CUBE_GROUP_MAP` in Cube Cloud. This variable is a dev bypass
 that short-circuits BigQuery identity reads; it must never be configured in
-production.
+production. It only supplies `groups` (not the `row_level` interpolation
+values), so it cannot validate row-level scoping — and `.env.example`'s
+placeholder value uses stale group names that deny everything. See
+[Testing row-level security locally](#testing-row-level-security-locally).
 
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,
@@ -310,23 +498,34 @@ Results are cached until next midnight ET. A staff member not in
 `dim_staff_cube_access` (e.g. a non-staff admin user) resolves to an empty group
 list and sees no data (default deny).
 
-### Access tiers
+### Access groups
 
-`buildGroups(row)` emits the following tier strings based on the access row's
-scope columns:
+`access.buildGroups(row)` emits scope-specific group strings from the access
+row's scope columns. A viewer holds at most one group per axis, and each gated
+view's `access_policy` matches exactly one of them — no group on an axis means
+default-deny for the views gated by it:
 
-| Tier                 | Emitted when                         |
-| -------------------- | ------------------------------------ |
-| `student`            | `student_location_scope != 'none'`   |
-| `staff-directory`    | always (every resolved viewer)       |
-| `staff-pii`          | `staff_pii_scope != 'none'`          |
-| `staff-compensation` | `staff_compensation_scope != 'none'` |
-| `staff-observations` | `staff_observations_scope != 'none'` |
-| `staff-benefits`     | `staff_benefits_scope != 'none'`     |
+| Group                                                          | Emitted when                                 |
+| -------------------------------------------------------------- | -------------------------------------------- |
+| `student-region` / `student-school` / `student-network`        | matching non-`none` `student_location_scope` |
+| `staff-directory`                                              | always (every resolved viewer)               |
+| `staff-pii-<scope>`                                            | one group per non-`none` `staff_pii_scope`   |
+| `staff-compensation` / `staff-observations` / `staff-benefits` | matching non-`none` `*_scope`                |
 
-The single `student` tier grants every student view (summary + detail) and all
-fields, including PII. Row-level location scoping (network / region / school) is
-applied in `queryRewrite`.
+The `staff_pii_scope` values are `all_in_scope`, `teaching_staff`,
+`reporting_chain`, and `reporting_chain_or_below_rank`. The compensation /
+observations / benefits groups are emitted but no view consumes them yet
+(forward-compat).
+
+Row-level filtering is enforced **declaratively in each view's `access_policy`**
+— `row_level` filters that interpolate the `securityContext` values
+`resolveAccess` builds — **not** in `queryRewrite`, which now carries only the
+snapshot-anchor guard. Student domains are single collapsed views (no
+summary/detail split); any `student-<scope>` group sees every field, including
+PII, with location scoping applied by the matching policy. Staff is split into
+`staff_directory` (open roster, no PII) and `staff_pii` (the sensitive fields,
+gated per `staff_pii_scope` by a location-and-department remit precomputed into
+`securityContext`).
 
 ### Cube Cloud One-Time Setup
 

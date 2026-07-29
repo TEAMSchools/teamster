@@ -388,6 +388,8 @@ models:
             source_column: enrollment_grade_int
       - name: school
         data_type: string
+      - name: _dbt_source_project
+        data_type: string
       - name: multi_district_organization_name
         data_type: string
         description: Multi-district organization name.

@@ -29,6 +29,12 @@ models:
         data_type: int64
       - name: skills_successful
         data_type: int64
+      - name: items_completed
+        data_type: int64
+      - name: items_correct
+        data_type: int64
+      - name: percent_items_correct
+        data_type: numeric
       - name: completion_date
         data_type: date
       - name: student_grade

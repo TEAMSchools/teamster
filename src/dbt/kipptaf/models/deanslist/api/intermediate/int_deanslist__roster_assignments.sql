@@ -12,10 +12,13 @@ with
                     source(
                         "kippmiami_deanslist", "int_deanslist__roster_assignments"
                     ),
+                    source(
+                        "kipppaterson_deanslist", "int_deanslist__roster_assignments"
+                    ),
                 ]
             )
         }}
     )
 
-select ur.*, {{ extract_code_location("ur") }} as _dbt_source_project,
+select ur.*, {{ extract_source_project("ur") }} as _dbt_source_project,
 from union_relations as ur

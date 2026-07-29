@@ -1,19 +1,8 @@
 # CLAUDE.md — `dbt/overgrad/`
 
 Source-system staging project for **Overgrad** (college counseling and
-application tracking platform). Produces staging and intermediate models.
+application tracking platform). Consumers:
+`grep -l 'local: ../overgrad' src/dbt/*/packages.yml`.
 
-## Model Structure
-
-```text
-models/
-  staging/
-  intermediate/
-  sources-external.yml
-```
-
-## Cross-Project Usage
-
-Referenced by `kippnewark`, `kippcamden`, and `kipptaf`. District projects
-disable `stg_overgrad__followings` and `stg_overgrad__schools` (not available
-for all schools).
+District projects disable `stg_overgrad__followings` and `stg_overgrad__schools`
+(not available for all schools).

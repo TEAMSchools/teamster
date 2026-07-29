@@ -40,22 +40,25 @@ consumed by reporting tools and applications.
 
 ## SQL conventions
 
-- **Use `union_dataset_join_clause()`** for any query that joins two CTEs built
-  from unioned regional datasets. Pass the CTE aliases to prevent cross-region
-  row matching:
+- **Join on `_dbt_source_project`** in any query that joins two CTEs built from
+  unioned regional datasets, to prevent cross-region row matching:
 
   ```sql
-  {{ union_dataset_join_clause(left_alias="left_cte", right_alias="right_cte") }}
-
-  -- expands to:
-  regexp_extract(left_cte._dbt_source_relation, r'(kipp\w+)_')
-      = regexp_extract(right_cte._dbt_source_relation, r'(kipp\w+)_')
+  left_cte._dbt_source_project = right_cte._dbt_source_project
   ```
 
-  To extract a human-readable region label from `_dbt_source_relation`:
+  Each union view materializes the column once — inline `regexp_extract` on a
+  bare `select *` view, or the `extract_source_project()` macro otherwise; see
+  `src/dbt/kipptaf/CLAUDE.md` for which form applies. Downstream models select
+  it through rather than re-deriving it. The old `union_dataset_join_clause()`
+  macro, which re-ran `regexp_extract` on `_dbt_source_relation` at every call
+  site, was removed in
+  [#3142](https://github.com/TEAMSchools/teamster/issues/3142).
+
+  To extract a human-readable region label, use the `extract_region()` macro:
 
   ```sql
-  initcap(regexp_extract(s._dbt_source_relation, r'kipp(\w+)_')) as region
+  {{ extract_region("s") }} as region
   ```
 
 - **No `GROUP BY` without aggregation** — use `DISTINCT` instead.
@@ -115,41 +118,38 @@ declared in a `sources:` YAML file:
 
 Shared UDFs in the `functions` dataset:
 
-| Function                                     | Returns                                             |
-| -------------------------------------------- | --------------------------------------------------- |
-| `functions.current_academic_year()`          | Current academic year integer                       |
-| `functions.date_to_sy(date_col)`             | Academic year of a given date                       |
-| `functions.region_join(left_col, right_col)` | Boolean equivalent of `union_dataset_join_clause()` |
+| Function                                     | Returns                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------- |
+| `functions.current_academic_year()`          | Current academic year integer                                    |
+| `functions.date_to_sy(date_col)`             | Academic year of a given date                                    |
+| `functions.region_join(left_col, right_col)` | Deprecated — no call sites remain; join on `_dbt_source_project` |
 
 ```sql
 select
     functions.current_academic_year() as academic_year,
     functions.date_to_sy(att_date) as att_academic_year,
 from my_table
-where
-    functions.region_join(co._dbt_source_relation, gpa._dbt_source_relation)
 ```
+
+`functions.region_join` is the SQL-UDF twin of the retired
+`union_dataset_join_clause` macro — it compares two `_dbt_source_relation`
+values, the predicate this page now tells you not to write. It still exists in
+the `functions` dataset but has no call sites in this repo.
 
 ## Model properties file
 
-Every model must have a corresponding `[model_name].yml` properties file. Use
-the `scripts/dbt-yaml.py` wrapper to generate and update model YAML — it handles
-column ordering and data type inference automatically:
+Every model must have a corresponding `[model_name].yml` properties file. Write
+it by hand — there is no scaffold generator in this repo. Column names and types
+come from `INFORMATION_SCHEMA.COLUMNS` on the built relation:
 
-```bash
-uv run scripts/dbt-yaml.py --select stg_my_model kipptaf
-# add --dev to target your personal dev dataset instead of prod
+```sql
+select column_name, data_type
+from `teamster-332318`.<schema>.INFORMATION_SCHEMA.COLUMNS
+where table_name = '<model_name>'
+order by ordinal_position
 ```
 
-Or generate the raw scaffold manually and save the console output as the `.yml`
-file:
-
-```bash
-uv run dbt run-operation generate_model_yaml \
-  --args '{"model_names": ["model_name"]}'
-```
-
-Fill in the scaffold:
+The shape:
 
 ```yaml
 models:

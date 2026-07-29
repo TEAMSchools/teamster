@@ -18,7 +18,7 @@ scripts: `bash scripts/<name>.sh`.
 | `bq-cleanup.sh`                                     | Drop orphaned BigQuery datasets / tables / views (dry-run by default; `--execute` to drop)                                                                                                                                                                                       |
 | `dbt-manifest.py`                                   | Extract dbt manifest model list to CSV                                                                                                                                                                                                                                           |
 | VS Code task: **dbt: Stage External Sources**       | (see below)                                                                                                                                                                                                                                                                      |
-| `dbt-yaml.py`                                       | Parse and transform dbt YAML files                                                                                                                                                                                                                                               |
+| `dbt-yaml.py`                                       | **Non-functional** — shells out to `generate_model_yaml`, a `dbt-codegen` macro; that package is not in any `packages.yml`, so the run errors with "could not find a macro". Write properties YAML by hand.                                                                      |
 | `enrich_staging_descriptions.py`                    | Write descriptions + PII flags to staging YAMLs                                                                                                                                                                                                                                  |
 | `extract_ceds_schema.py`                            | Extract CEDS attribute names from GitHub XLSX                                                                                                                                                                                                                                    |
 | `extract_edfi_schema.py`                            | Extract Ed-Fi attribute names from OpenAPI spec                                                                                                                                                                                                                                  |
@@ -59,7 +59,11 @@ uv run dbt run-operation stage_external_sources \
 
 - `dbt-manifest.py` — requires `dbt parse` to have run first (reads
   `target/manifest.json`)
-- `gen-automations-doc.py` — requires dbt manifests to be parsed
+- `gen-automations-doc.py` — requires dbt manifests to be parsed. **Do NOT run
+  in the codespace**: it imports every code location incl. `kipptaf`, which
+  fails at module load (eager `EnvVar`), and the script `continue`s past the
+  failed import → writes a catalog with `kipptaf` silently DROPPED. Run only in
+  a bootstrapped terminal where all locations import.
 - `generate_marts_reference.py` — no prerequisites; run after adding/removing a
   fact table or changing FK constraints:
   `uv run scripts/generate_marts_reference.py`. Like `automations.md`, commit

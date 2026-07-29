@@ -1,207 +1,158 @@
 models:
   - name: rpt_tableau__gradebook_es_comments
+    description: >
+      Tableau extract flagging ES (elementary school) sections in Camden,
+      Newark, and Paterson where the end-of-quarter comment is missing for a
+      homeroom/math/ELA course. ES schools do not enter PS gradebook
+      assignments, so this is the only audit signal for ES — it is not part of
+      the `rpt_tableau__gradebook_audit` pipeline. One row per student x section
+      x quarter. Quarters that have not started yet are excluded, and school
+      level uses the Sumner G5 override — those students appear in the MS audit,
+      not here.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - studentid
+              - sectionid
+              - quarter
     columns:
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Source PowerSchool instance (kippnewark, kippcamden, kipppaterson).
       - name: academic_year
         data_type: int64
+        description:
+          Starting year of the academic year (e.g., 2025 for AY 2025-2026).
       - name: academic_year_display
         data_type: string
+        description: Human-readable academic year (e.g., '2025-2026').
       - name: region
         data_type: string
+        description: Region name (Newark, Camden, Paterson).
       - name: school_level
         data_type: string
-      - name: region_school_level
-        data_type: string
+        description: School level. Always ES for this extract.
       - name: schoolid
         data_type: int64
+        description: PowerSchool school number.
       - name: school
         data_type: string
-      - name: quarter
-        data_type: string
-      - name: semester
-        data_type: string
-      - name: audit_qt_week_number
+        description: School name.
+      - name: students_dcid
         data_type: int64
-      - name: quarter_start_date
-        data_type: date
-      - name: quarter_end_date
-        data_type: date
-      - name: is_current_quarter
-        data_type: boolean
-      - name: is_quarter_end_date_range
-        data_type: boolean
-      - name: audit_start_date
-        data_type: date
-      - name: audit_end_date
-        data_type: date
-      - name: audit_due_date
-        data_type: date
-      - name: assignment_category_name
-        data_type: string
-      - name: assignment_category_code
-        data_type: string
-      - name: assignment_category_term
-        data_type: string
-      - name: expectation
-        data_type: float64
-      - name: notes
-        data_type: string
-      - name: section_or_period
-        data_type: string
-      - name: sectionid
-        data_type: int64
-      - name: sections_dcid
-        data_type: int64
-      - name: section_number
-        data_type: string
-      - name: external_expression
-        data_type: string
-      - name: credit_type
-        data_type: string
-      - name: course_number
-        data_type: string
-      - name: course_name
-        data_type: string
-      - name: exclude_from_gpa
-        data_type: int64
-      - name: is_ap_course
-        data_type: boolean
-      - name: teacher_number
-        data_type: string
-      - name: teacher_name
-        data_type: string
-      - name: teacher_assign_id
-        data_type: int64
-      - name: teacher_assign_name
-        data_type: string
-      - name: teacher_assign_due_date
-        data_type: date
-      - name: teacher_assign_score_type
-        data_type: string
-      - name: teacher_assign_max_score
-        data_type: float64
-      - name: n_students
-        data_type: int64
-      - name: n_late
-        data_type: int64
-      - name: n_exempt
-        data_type: int64
-      - name: n_missing
-        data_type: int64
-      - name: n_null
-        data_type: int64
-      - name: n_is_null_missing
-        data_type: int64
-      - name: n_is_null_not_missing
-        data_type: int64
-      - name: n_expected
-        data_type: int64
-      - name: n_expected_scored
-        data_type: int64
-      - name: total_expected_scored_section_quarter_week_category
-        data_type: float64
-      - name: total_expected_section_quarter_week_category
-        data_type: float64
-      - name: percent_graded_for_quarter_week_class
-        data_type: float64
-      - name: sum_totalpointvalue_section_quarter_category
-        data_type: float64
-      - name: teacher_running_total_assign_by_cat
-        data_type: float64
-      - name: teacher_avg_score_for_assign_per_class_section_and_assign_id
-        data_type: float64
-      - name: audit_category
-        data_type: string
-      - name: cte_grouping
-        data_type: string
-      - name: code_type
-        data_type: string
-      - name: audit_flag_name
-        data_type: string
-      - name: audit_flag_value
-        data_type: int64
+        description: Internal PowerSchool DCID for the student.
       - name: studentid
         data_type: int64
+        description: Internal PowerSchool ID for the student.
       - name: student_number
         data_type: int64
+        description: Student number assigned by the school.
+        config:
+          meta:
+            contains_pii: true
       - name: student_name
         data_type: string
+        description: Student last, first, middle name.
+        config:
+          meta:
+            contains_pii: true
       - name: grade_level
         data_type: int64
-      - name: salesforce_id
-        data_type: string
-      - name: ktc_cohort
-        data_type: int64
+        description: The grade the student is in.
       - name: enroll_status
         data_type: int64
+        description:
+          PowerSchool enrollment status. Filtered to 0 (active) upstream.
       - name: cohort
         data_type: int64
+        description: Student's graduating cohort year.
       - name: gender
         data_type: string
+        description: Student gender.
       - name: ethnicity
         data_type: string
+        description: Student ethnicity.
       - name: advisory
         data_type: string
-      - name: year_in_school
-        data_type: int64
-      - name: year_in_network
-        data_type: int64
-      - name: rn_undergrad
-        data_type: int64
-      - name: is_out_of_district
-        data_type: boolean
-      - name: is_retained_year
-        data_type: boolean
-      - name: is_retained_ever
-        data_type: boolean
-      - name: lunch_status
+        description: Student's advisory group name.
+      - name: hos
         data_type: string
-      - name: gifted_and_talented
-        data_type: string
+        description: Head of school name for the student's school.
       - name: iep_status
         data_type: string
+        description: Student IEP (special education) status.
       - name: lep_status
         data_type: boolean
+        description: Student Limited English Proficiency status.
       - name: is_504
         data_type: boolean
+        description: True if the student has a 504 plan.
       - name: is_counseling_services
         data_type: int64
+        description: Non-zero if the student receives counseling services.
       - name: is_student_athlete
         data_type: int64
+        description: Non-zero if the student is a student-athlete.
       - name: ada
         data_type: float64
+        description: Student's average daily attendance.
       - name: ada_above_or_at_80
         data_type: boolean
-      - name: date_enrolled
+        description: True when the student's ADA is at or above 80%.
+      - name: sectionid
+        data_type: int64
+        description: Internal ID of the course section.
+      - name: course_number
+        data_type: string
+        description: Course number from the PS Courses table.
+      - name: sections_dcid
+        data_type: int64
+        description: DCID of the associated Sections record.
+      - name: section_number
+        data_type: string
+        description: Section number.
+      - name: external_expression
+        data_type: string
+        description: Period/day expression for the section.
+      - name: credit_type
+        data_type: string
+        description: >
+          Credit type of the course. Filtered upstream to HR (homeroom), MATH,
+          and ENG — the ES credit types with a required EOQ comment.
+      - name: course_name
+        data_type: string
+        description: Course name.
+      - name: exclude_from_gpa
+        data_type: int64
+        description:
+          1 if this course is excluded from GPA calculations, 0 otherwise.
+      - name: teacher_number
+        data_type: string
+        description: PowerSchool teacher number for the section.
+      - name: teacher_name
+        data_type: string
+        description: Teacher last name, first name.
+      - name: quarter
+        data_type: string
+        description: Term storecode (Q1, Q2, Q3, Q4).
+      - name: quarter_start_date
         data_type: date
-      - name: category_quarter_average_all_courses
-        data_type: float64
-      - name: quarter_course_percent_grade
-        data_type: float64
-      - name: quarter_course_grade_points
-        data_type: float64
-      - name: quarter_comment_value
+        description: First day of the quarter term.
+      - name: quarter_end_date
+        data_type: date
+        description: Last day of the quarter term.
+      - name: is_current_quarter
+        data_type: boolean
+        description: True if today falls within this quarter's date range.
+      - name: comment_value
         data_type: string
-      - name: raw_score
-        data_type: float64
-      - name: score_entered
-        data_type: float64
-      - name: assign_final_score_percent
-        data_type: float64
-      - name: is_exempt
-        data_type: int64
-      - name: effort_grade
-        data_type: float64
-      - name: flag_value
-        data_type: int64
-      - name: is_expected_late
-        data_type: int64
-      - name: is_expected_missing
-        data_type: int64
-      - name: quarter_conduct
-        data_type: string
-      - name: school_leader
-        data_type: string
-      - name: school_leader_tableau_username
-        data_type: string
-      - name: teacher_tableau_username
-        data_type: string
+        description: >
+          The end-of-quarter comment entered in PowerSchool for this
+          student/section/quarter, from `base_powerschool__final_grades`. Null
+          when no comment has been entered.
+      - name: qt_es_comment_missing
+        data_type: boolean
+        description: True when `comment_value` is null for this quarter.

@@ -118,6 +118,88 @@ select
         `state`
     ),
 
+    sc.contact_1_name,
+    sc.contact_1_relationship,
+    sc.contact_1_email_current,
+    sc.contact_1_phone_mobile,
+    sc.contact_1_phone_home,
+    sc.contact_1_phone_daytime,
+    sc.contact_1_phone_work,
+    sc.contact_1_phone_primary,
+    sc.contact_1_address_home,
+    sc.contact_2_name,
+    sc.contact_2_relationship,
+    sc.contact_2_email_current,
+    sc.contact_2_phone_mobile,
+    sc.contact_2_phone_home,
+    sc.contact_2_phone_daytime,
+    sc.contact_2_phone_work,
+    sc.contact_2_phone_primary,
+    sc.contact_2_address_home,
+    sc.emergency_1_name,
+    sc.emergency_1_relationship,
+    sc.emergency_1_email_current,
+    sc.emergency_1_phone_mobile,
+    sc.emergency_1_phone_home,
+    sc.emergency_1_phone_daytime,
+    sc.emergency_1_phone_work,
+    sc.emergency_1_phone_primary,
+    sc.emergency_1_address_home,
+    sc.emergency_2_name,
+    sc.emergency_2_relationship,
+    sc.emergency_2_email_current,
+    sc.emergency_2_phone_mobile,
+    sc.emergency_2_phone_home,
+    sc.emergency_2_phone_daytime,
+    sc.emergency_2_phone_work,
+    sc.emergency_2_phone_primary,
+    sc.emergency_2_address_home,
+    sc.emergency_3_name,
+    sc.emergency_3_relationship,
+    sc.emergency_3_email_current,
+    sc.emergency_3_phone_mobile,
+    sc.emergency_3_phone_home,
+    sc.emergency_3_phone_daytime,
+    sc.emergency_3_phone_work,
+    sc.emergency_3_phone_primary,
+    sc.emergency_3_address_home,
+    sc.emergency_4_name,
+    sc.emergency_4_relationship,
+    sc.emergency_4_email_current,
+    sc.emergency_4_phone_mobile,
+    sc.emergency_4_phone_home,
+    sc.emergency_4_phone_daytime,
+    sc.emergency_4_phone_work,
+    sc.emergency_4_phone_primary,
+    sc.emergency_4_address_home,
+    sc.pickup_1_name,
+    sc.pickup_1_relationship,
+    sc.pickup_1_email_current,
+    sc.pickup_1_phone_mobile,
+    sc.pickup_1_phone_home,
+    sc.pickup_1_phone_daytime,
+    sc.pickup_1_phone_work,
+    sc.pickup_1_phone_primary,
+    sc.pickup_1_address_home,
+    sc.pickup_2_name,
+    sc.pickup_2_relationship,
+    sc.pickup_2_email_current,
+    sc.pickup_2_phone_mobile,
+    sc.pickup_2_phone_home,
+    sc.pickup_2_phone_daytime,
+    sc.pickup_2_phone_work,
+    sc.pickup_2_phone_primary,
+    sc.pickup_2_address_home,
+    sc.pickup_3_name,
+    sc.pickup_3_relationship,
+    sc.pickup_3_email_current,
+    sc.pickup_3_phone_mobile,
+    sc.pickup_3_phone_home,
+    sc.pickup_3_phone_daytime,
+    sc.pickup_3_phone_work,
+    sc.pickup_3_phone_primary,
+    sc.pickup_3_address_home,
+
     e.lastfirst as student_name,
     e.last_name as student_last_name,
     e.first_name as student_first_name,
@@ -181,7 +263,7 @@ select
 
     concat(e.region, e.school_level) as region_school_level,
 
-    coalesce(e.contact_1_email_current, e.contact_2_email_current) as guardian_email,
+    coalesce(sc.contact_1_email_current, sc.contact_2_email_current) as guardian_email,
 
     cast(e.academic_year as string)
     || '-'
@@ -297,11 +379,12 @@ select
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
 
+    -- TODO: figure out a better way to track these
     case
         when
             e.academic_year >= 2025
             and e.school_abbreviation = 'Sumner'
-            and e.grade_level = 5
+            and e.grade_level >= 5
         then 'MS'
         else e.school_level
     end as school_level_alt,
@@ -441,3 +524,7 @@ left join
     and sip.rn_course_number_year = 1
     and not sip.is_dropped_section
 left join es_grad as eg on e.student_number = eg.student_number and eg.rn = 1
+left join
+    {{ ref("int_students__contacts_pivot") }} as sc
+    on e.student_number = sc.student_number
+    and e._dbt_source_project = sc._dbt_source_project

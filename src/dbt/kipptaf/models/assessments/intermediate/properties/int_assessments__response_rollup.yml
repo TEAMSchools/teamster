@@ -9,6 +9,18 @@ models:
       selection. `assessment_id` here is the canonical id, not the per-row
       member id; `assessment_ids` (array) preserves the underlying member ids
       for drilldown.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # cron instead of eager (was 125+/day). Ticks lead the DDI Suite
+          # workbook's Dagster refresh crons (01:00 + 18:00 daily, 11:00 +
+          # 14:40 Wed, 16:00 Fri ET — exposures/tableau.yml) by >=1h so the
+          # downstream eager rpt tables rebuild in between; other consumers
+          # are nightly extracts or the assessment-scores star (midnight
+          # tick batches into the same run, dbt orders this first). Refs #4559
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

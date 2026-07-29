@@ -1,213 +1,225 @@
 models:
   - name: rpt_tableau__gradebook_audit
+    description: >
+      Teacher/section-facing gradebook compliance report. Zero student PII — see
+      rpt_gsheets__gradebook_audit_student_flags for the companion student-level
+      flags. Floor of one row per section x quarter x assignment category
+      (row_type = 'category_summary', four rows: W/H/F/S) plus one additional
+      row per assignment that fails the no-flags bar for its category (row_type
+      = 'assignment_detail'). A teacher with zero flags anywhere has exactly
+      (number of sections) x 4 rows for the quarter — no separate anchor-row
+      concept. Three boolean flags carried on every row: not_enough_assignments
+      (category_summary rows only), has_grade_above_100 and
+      has_grade_below_70_no_comment (broadcast from an aggregate over
+      rpt_gsheets__gradebook_audit_student_flags — section x quarter facts,
+      identical across all rows for a given section). Two health booleans,
+      computed across all of a teacher's sections for the quarter and broadcast
+      onto every row: is_healthy_gradebook_all_flags (false if any of the three
+      flags fired anywhere) and is_healthy_gradebook_excl_comments (same, but
+      has_grade_below_70_no_comment doesn't count toward this one — it's an
+      end-of-quarter item, still visible as data). A Tableau parameter picks
+      which health column to read.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - academic_year
+              - sectionid
+              - quarter
+              - assignment_category_code
+              - assignmentid
     columns:
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Source PowerSchool instance (kippnewark, kippcamden, kipppaterson).
       - name: academic_year
         data_type: int64
+        description:
+          Starting year of the academic year (e.g., 2025 for AY 2025-2026).
       - name: academic_year_display
         data_type: string
-      - name: region
-        data_type: string
-      - name: school_level
-        data_type: string
+        description: Human-readable academic year (e.g., '2025-2026').
       - name: region_school_level
         data_type: string
+        description: Concatenated region and school level (e.g., 'NewarkMS').
+      - name: region
+        data_type: string
+        description: Region name (Newark, Camden, Paterson).
+      - name: school_level
+        data_type: string
+        description: School level after Sumner G5 override (MS or HS).
       - name: schoolid
         data_type: int64
+        description: PowerSchool school ID.
       - name: school
         data_type: string
-      - name: quarter
-        data_type: string
-      - name: semester
-        data_type: string
-      - name: audit_qt_week_number
-        data_type: int64
-      - name: quarter_start_date
-        data_type: date
-      - name: quarter_end_date
-        data_type: date
-      - name: is_current_quarter
-        data_type: boolean
-      - name: is_quarter_end_date_range
-        data_type: boolean
-      - name: audit_start_date
-        data_type: date
-      - name: audit_end_date
-        data_type: date
-      - name: audit_due_date
-        data_type: date
-      - name: is_current_week
-        data_type: boolean
-      - name: assignment_category_name
-        data_type: string
-      - name: assignment_category_code
-        data_type: string
-      - name: assignment_category_term
-        data_type: string
-      - name: expectation
-        data_type: float64
-      - name: notes
-        data_type: string
-      - name: section_or_period
-        data_type: string
-      - name: sectionid
-        data_type: int64
-      - name: sections_dcid
-        data_type: int64
-      - name: section_number
-        data_type: string
-      - name: external_expression
-        data_type: string
-      - name: credit_type
-        data_type: string
+        description: School abbreviation.
       - name: course_number
         data_type: string
+        description: PowerSchool course number.
       - name: course_name
         data_type: string
+        description: Course name.
+      - name: credit_type
+        data_type: string
+        description: Course credit type (e.g., MATH, ENG).
       - name: exclude_from_gpa
         data_type: int64
-      - name: is_ap_course
-        data_type: boolean
+        description:
+          1 if the course is excluded from GPA calculation, 0 otherwise.
+      - name: sections_dcid
+        data_type: int64
+        description: PowerSchool sections DCID.
+      - name: sectionid
+        data_type: int64
+        description: PowerSchool section ID.
+      - name: section_number
+        data_type: string
+        description: Section number.
+      - name: external_expression
+        data_type: string
+        description: HS period expression from PowerSchool.
+      - name: section_or_period
+        data_type: string
+        description: >
+          Display identifier for the section. Uses external_expression for HS;
+          section_number otherwise.
       - name: teacher_number
         data_type: string
+        description: PowerSchool teacher number.
       - name: teacher_name
         data_type: string
-      - name: teacher_tableau_username
-        data_type: string
+        description: Teacher full name.
+      - name: teacher_employee_number
+        data_type: int64
+        description: Employee number of the teacher.
       - name: school_leader
         data_type: string
+        description: Principal name.
+      - name: manager_employee_number
+        data_type: int64
+        description: ADP employee number of the teacher's direct manager.
+      - name: manager_name
+        data_type: string
+        description: Teacher's direct manager name (Last, First).
+      - name: hos
+        data_type: string
+        description: Head of School name.
+      - name: teacher_tableau_username
+        data_type: string
+        description:
+          Teacher's SAM account name (used as Tableau username for row-level
+          security).
+      - name: manager_tableau_username
+        data_type: string
+        description: Manager's SAM account name (used as Tableau username).
       - name: school_leader_tableau_username
         data_type: string
-      - name: teacher_assign_id
-        data_type: int64
-      - name: teacher_assign_name
+        description:
+          School leader's SAM account name (used as Tableau username).
+      - name: quarter
         data_type: string
-      - name: teacher_assign_due_date
+        quote: true
+        description: Academic quarter (Q1–Q4).
+      - name: semester
+        data_type: string
+        description: Academic semester (S1 or S2).
+      - name: quarter_start_date
         data_type: date
-      - name: teacher_assign_score_type
-        data_type: string
-      - name: teacher_assign_max_score
-        data_type: float64
-      - name: n_students
-        data_type: int64
-      - name: n_late
-        data_type: int64
-      - name: n_exempt
-        data_type: int64
-      - name: n_missing
-        data_type: int64
-      - name: n_null
-        data_type: int64
-      - name: n_academic_dishonesty
-        data_type: int64
-      - name: n_is_null_missing
-        data_type: int64
-      - name: n_is_null_not_missing
-        data_type: int64
-      - name: n_expected
-        data_type: int64
-      - name: n_expected_scored
-        data_type: int64
-      - name: total_expected_scored_section_quarter_week_category
-        data_type: float64
-      - name: total_expected_section_quarter_week_category
-        data_type: float64
-      - name: percent_graded_for_quarter_week_class
-        data_type: float64
-      - name: sum_totalpointvalue_section_quarter_category
-        data_type: float64
-      - name: teacher_running_total_assign_by_cat
-        data_type: float64
-      - name: teacher_avg_score_for_assign_per_class_section_and_assign_id
-        data_type: float64
-      - name: audit_category
-        data_type: string
-      - name: cte_grouping
-        data_type: string
-      - name: code_type
-        data_type: string
-      - name: audit_flag_name
-        data_type: string
-      - name: audit_flag_value
-        data_type: int64
-      - name: studentid
-        data_type: int64
-      - name: student_number
-        data_type: int64
-      - name: student_name
-        data_type: string
-      - name: grade_level
-        data_type: int64
-      - name: salesforce_id
-        data_type: string
-      - name: ktc_cohort
-        data_type: int64
-      - name: enroll_status
-        data_type: int64
-      - name: cohort
-        data_type: int64
-      - name: gender
-        data_type: string
-      - name: ethnicity
-        data_type: string
-      - name: advisory
-        data_type: string
-      - name: year_in_school
-        data_type: int64
-      - name: year_in_network
-        data_type: int64
-      - name: rn_undergrad
-        data_type: int64
-      - name: is_out_of_district
-        data_type: boolean
-      - name: is_retained_year
-        data_type: boolean
-      - name: is_retained_ever
-        data_type: boolean
-      - name: lunch_status
-        data_type: string
-      - name: gifted_and_talented
-        data_type: string
-      - name: iep_status
-        data_type: string
-      - name: lep_status
-        data_type: boolean
-      - name: is_504
-        data_type: boolean
-      - name: is_counseling_services
-        data_type: int64
-      - name: is_student_athlete
-        data_type: int64
-      - name: ada
-        data_type: float64
-      - name: ada_above_or_at_80
-        data_type: boolean
-      - name: date_enrolled
+        description: First day of the quarter.
+      - name: quarter_end_date
         data_type: date
-      - name: category_quarter_percent_grade
-        data_type: float64
-      - name: category_quarter_average_all_courses
-        data_type: float64
-      - name: quarter_course_percent_grade
-        data_type: float64
-      - name: quarter_course_grade_points
-        data_type: float64
-      - name: quarter_conduct
+        description: Last day of the quarter.
+      - name: is_current_quarter
+        data_type: boolean
+        description: True if this row belongs to the current academic quarter.
+      - name: row_type
         data_type: string
-      - name: quarter_comment_value
+        description: >
+          'category_summary' (one of the four W/H/F/S floor rows for this
+          section x quarter) or 'assignment_detail' (one row per assignment that
+          fails the no-flags bar for its category).
+      - name: assignment_category_code
         data_type: string
-      - name: raw_score
+        description: Assignment category code (W, H, F, S).
+      - name: assignment_category_name
+        data_type: string
+        description: Assignment category name.
+      - name: assignment_category_term
+        data_type: string
+        description: Assignment category term.
+      - name: expectation
+        data_type: int64
+        description: >
+          Expected QTD assignment count for this category from
+          int_powerschool__u_expectations_qtd_unpivot. Populated on row_type =
+          'category_summary' rows only.
+      - name: assignments_entered_count
+        data_type: int64
+        description: >
+          Actual count of assignments entered for this category, regardless of
+          flag status. Populated on row_type = 'category_summary' rows only.
+      - name: not_enough_assignments
+        data_type: boolean
+        description: >
+          True when the count of non-flagged assignments entered for this
+          category is below expectation. Populated on row_type =
+          'category_summary' rows only.
+      - name: assignmentid
+        data_type: int64
+        description: >
+          PowerSchool assignment ID. Populated on row_type = 'assignment_detail'
+          rows only.
+      - name: assignment_name
+        data_type: string
+        description: >
+          Assignment name. Populated on row_type = 'assignment_detail' rows
+          only.
+      - name: duedate
+        data_type: date
+        description: >
+          Assignment due date. Populated on row_type = 'assignment_detail' rows
+          only.
+      - name: scoretype
+        data_type: string
+        description: >
+          Assignment score type. Populated on row_type = 'assignment_detail'
+          rows only.
+      - name: totalpointvalue
         data_type: float64
-      - name: score_entered
-        data_type: float64
-      - name: assign_final_score_percent
-        data_type: float64
-      - name: is_exempt
-        data_type: int64
-      - name: is_expected_late
-        data_type: int64
-      - name: is_expected_missing
-        data_type: int64
-      - name: is_expected_academic_dishonesty
-        data_type: int64
-      - name: flag_value
-        data_type: int64
+        description: >
+          Assignment total point value. Populated on row_type =
+          'assignment_detail' rows only.
+      - name: has_grade_above_100
+        data_type: boolean
+        description: >
+          True if any student in this section x quarter has a quarter course
+          percent grade above 100 (see
+          rpt_gsheets__gradebook_audit_student_flags for student-level detail).
+          Broadcast identically across every row for the section — a
+          section-level fact, not a category-level one.
+      - name: has_grade_below_70_no_comment
+        data_type: boolean
+        description: >
+          True if any student in this section x quarter has a quarter course
+          percent grade below 70 with no end-of-quarter comment entered (see
+          rpt_gsheets__gradebook_audit_student_flags for student-level detail).
+          Broadcast identically across every row for the section — a
+          section-level fact, not a category-level one. This is the "EOQ item"
+          excluded from is_healthy_gradebook_excl_comments.
+      - name: is_healthy_gradebook_all_flags
+        data_type: boolean
+        description: >
+          True if none of not_enough_assignments, has_grade_above_100, or
+          has_grade_below_70_no_comment fired anywhere across all of this
+          teacher's sections for the quarter. Broadcast onto every row for the
+          teacher x quarter.
+      - name: is_healthy_gradebook_excl_comments
+        data_type: boolean
+        description: >
+          Same as is_healthy_gradebook_all_flags, but
+          has_grade_below_70_no_comment does not count toward this definition
+          (it's an end-of-quarter item, still visible as data on its own
+          column). Use a Tableau parameter to pick which health column to read.

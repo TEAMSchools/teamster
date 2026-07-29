@@ -24,7 +24,11 @@ data-team Codespaces via `npx mcp-remote`.
 ## When to edit
 
 - Tool descriptions or the FastMCP `instructions=` string: edit `server.py`.
-  Redeploy is required for changes to reach `claude.ai` users.
+  Redeploy is required for changes to reach `claude.ai` users. **Put
+  load-bearing model guidance in the per-tool docstrings, not `instructions=`**
+  — the `instructions=` block is dropped by the claude.ai connector and
+  truncated in Claude Code, whereas tool descriptions reach the model on every
+  surface (#4473). `instructions=` is now a slim orientation only.
 - Tool surface changes (add/remove tools): edit `server.py` and add tests in
   `tests/cube/test_mcp_server.py`.
 - Validate that an `instructions=`/tool change actually helps the model with the
@@ -75,6 +79,12 @@ Cloud Run service via `--set-secrets`).
 - **Cloud Run request timeout defaults to 300s** (no `--timeout` set). Claude
   Code's 60s per-tool ceiling is tighter for tool wall-clock; Cloud Run's
   governs the underlying connection.
+- **After a deploy that changes tool signatures or descriptions, refresh the
+  connector's tool list on the client.** claude.ai Custom Connector sessions
+  cache the tool list and keep serving the old schema indefinitely — a new
+  parameter or an edited description is invisible to the model until the user
+  reconnects / refreshes the connector (settings → the cube connector). The
+  server has the change immediately; the client does not (#4473).
 
 ## MCP SDK gotchas
 
@@ -125,7 +135,8 @@ Cloud Run service via `--set-secrets`).
 
 ## PII reminder
 
-Tools return Cube query results. `*_detail` views carry row-level student
-identifiers (see the FastMCP `instructions=` block in `server.py`). Never emit
-detail-view values to PR comments, issues, or scheduled-agent outputs — only to
-the local conversation. See project CLAUDE.md PII reference.
+Tools return Cube query results. Student views carry row-level student
+identifiers alongside aggregate-safe dimensions (see the PII note in the `load`
+tool docstring in `server.py`). Never emit identifying values to PR comments,
+issues, or scheduled-agent outputs — only to the local conversation. See project
+CLAUDE.md PII reference.

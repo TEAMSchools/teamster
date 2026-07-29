@@ -9,6 +9,7 @@ from teamster.code_locations.kipptaf.extracts.assets import (
     egencia_extract,
     idauto_extract,
     illuminate_extract_assets,
+    lattice_extract,
     littlesis_extract,
 )
 
@@ -30,6 +31,11 @@ egencia_extract_asset_job = define_asset_job(
 idauto_extract_asset_job = define_asset_job(
     name=f"{idauto_extract.key.to_python_identifier()}__asset_job",
     selection=[idauto_extract],
+)
+
+lattice_extract_asset_job = define_asset_job(
+    name=f"{lattice_extract.key.to_python_identifier()}__asset_job",
+    selection=[lattice_extract],
 )
 
 littlesis_extract_asset_job = define_asset_job(

@@ -10,7 +10,7 @@ from {{ ref("stg_powerschool__cc") }} as cc
 inner join
     {{ ref("stg_powerschool__students") }} as s
     on cc.studentid = s.id
-    and {{ union_dataset_join_clause(left_alias="cc", right_alias="s") }}
+    and cc._dbt_source_project = s._dbt_source_project
     and s.enroll_status in (0, -1)
 where
     cc.dateleft >= current_date('{{ var("local_timezone") }}')

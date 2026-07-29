@@ -46,11 +46,13 @@ with
         -- TODO: #3887 — 14 FLEIDs map to multiple student_numbers in PS;
         -- dedupe is a workaround until source is cleaned.
         select s.student_number, suf.fleid,
-        from {{ ref("stg_powerschool__students") }} as s
+        from {{ source("kippmiami_powerschool", "stg_powerschool__students") }} as s
         inner join
-            {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-            on s.dcid = suf.studentsdcid
-            and suf.fleid is not null
+            {{
+                source(
+                    "kippmiami_powerschool", "stg_powerschool__u_studentsuserfields"
+                )
+            }} as suf on s.dcid = suf.studentsdcid and suf.fleid is not null
     ),
 
     fleid_lookup as (

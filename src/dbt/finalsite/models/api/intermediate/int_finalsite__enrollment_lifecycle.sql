@@ -13,7 +13,6 @@ with
         select
             finalsite_enrollment_id,
             status as finalsite_status,
-            enrollment_type,
             school_year_start,
             grade_canonical_name,
         from {{ ref("stg_finalsite__contacts") }}
@@ -23,7 +22,6 @@ with
         select
             c.finalsite_enrollment_id,
             c.finalsite_status,
-            c.enrollment_type,
             c.school_year_start,
             c.grade_canonical_name,
 
@@ -32,26 +30,17 @@ with
 
             trk.promotion_status_ss as promotion_status,
 
-            (
-                select min(d),
-                from
-                    unnest(
-                        [
-                            sr.mid_year_withdrawal_date,
-                            sr.summer_withdraw_date,
-                            sr.not_enrolling_date
-                        ]
-                    ) as d
+            -- withdrawal_last_attended_date (a Finalsite custom attribute) is the
+            -- official signal that a student withdrew. Count it only when it is
+            -- populated AND on/after the current enrollment start — a date before
+            -- enrolled_date belongs to a prior enrollment on this reused contact,
+            -- so a forward (re)enrollment never inherits a stale withdrawal.
+            if(
+                safe_cast(cca.withdrawal_last_attended_date as date)
+                >= sr.enrolled_date,
+                safe_cast(cca.withdrawal_last_attended_date as date),
+                cast(null as date)
             ) as enrollment_end_date,
-
-            case
-                when sr.mid_year_withdrawal_date is not null
-                then 'mid_year_withdrawal'
-                when sr.summer_withdraw_date is not null
-                then 'summer_withdraw'
-                when sr.not_enrolling_date is not null
-                then 'not_enrolling'
-            end as withdrawal_reason,
         from contacts as c
         left join
             status_report_latest as sr
@@ -59,50 +48,25 @@ with
         left join
             {{ ref("int_finalsite__contact_track_attributes") }} as trk
             on c.finalsite_enrollment_id = trk.finalsite_enrollment_id
-    ),
-
-    joined as (
-        select
-            finalsite_enrollment_id,
-            finalsite_status,
-            enrollment_type,
-            school_year_start,
-            grade_canonical_name,
-            promotion_status,
-            assigned_school,
-            enrollment_start_date,
-            enrollment_end_date,
-            withdrawal_reason,
-
-            (
-                enrollment_start_date is not null and enrollment_end_date is not null
-            ) as is_transfer_out,
-        from dated
+        left join
+            {{ ref("int_finalsite__contact_custom_attributes") }} as cca
+            on c.finalsite_enrollment_id = cca.finalsite_enrollment_id
     )
 
 select
     finalsite_enrollment_id,
-    finalsite_status,
-    enrollment_type,
     school_year_start,
     grade_canonical_name,
     promotion_status,
     assigned_school,
     enrollment_start_date,
+    enrollment_end_date,
 
-    if(is_transfer_out, enrollment_end_date, cast(null as date)) as enrollment_end_date,
-
-    if(is_transfer_out, withdrawal_reason, cast(null as string)) as withdrawal_reason,
-
-    case
-        when is_transfer_out
-        then 'transfer_out'
-        when enrollment_type = 'returning'
-        then 're_enroll'
-        else 'create'
-    end as lifecycle_action,
-from joined
+    (
+        enrollment_start_date is not null and enrollment_end_date is not null
+    ) as is_transfer_out,
+from dated
 where
     finalsite_status
     in ('accepted', 'enrollment_in_progress', 'assigned_school', 'enrolled', 'retained')
-    or is_transfer_out
+    or (enrollment_start_date is not null and enrollment_end_date is not null)

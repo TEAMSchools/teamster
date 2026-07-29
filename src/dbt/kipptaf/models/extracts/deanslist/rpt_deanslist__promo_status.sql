@@ -126,7 +126,7 @@ left join
     on co.studentid = gpa.studentid
     and co.yearid = gpa.yearid
     and term = gpa.term_name
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+    and co._dbt_source_project = gpa._dbt_source_project
 left join
     {{ ref("int_reporting__promotional_status") }} as p
     on co.student_number = p.student_number
@@ -142,6 +142,6 @@ left join
     on co.studentid = ss.studentid
     and co.academic_year = ss.academic_year
     and ss.log_type = 'ARFR (Summer School)'
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="ss") }}
+    and co._dbt_source_project = ss._dbt_source_project
 
 where co.academic_year = {{ var("current_academic_year") }} and co.rn_year = 1

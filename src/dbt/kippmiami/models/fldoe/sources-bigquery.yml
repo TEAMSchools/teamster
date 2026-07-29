@@ -10,3 +10,29 @@ sources:
                 - kippmiami
                 - fldoe
                 - fsa
+  - name: kippmiami_powerschool
+    description: >-
+      Frozen pre-Focus PowerSchool archive (final ODBC pull 2026-07-01; SIS
+      moved to Focus). Never rebuilt — the kippmiami_powerschool dataset must
+      not be dropped. Read only for the student_number-fleid lookup until a
+      Focus-based FLEID lookup replaces it.
+    schema: kippmiami_powerschool
+    tables:
+      - name: stg_powerschool__students
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - stg_powerschool__students
+      - name: stg_powerschool__u_studentsuserfields
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kippmiami
+                - powerschool
+                - stg_powerschool__u_studentsuserfields

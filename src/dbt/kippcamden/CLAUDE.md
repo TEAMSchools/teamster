@@ -15,19 +15,10 @@ models/
     powerschool/ # PowerSchool autocomm extracts (teachers, students IEP)
 ```
 
-PowerSchool data source: **ODBC** (`odbc.+enabled: true`,
-`sftp.+enabled: false`)
+PowerSchool data source: **dlt** (`dlt.+enabled: true`; `odbc` and `sftp`
+disabled)
 
-## Active Source Packages
+## Source Packages
 
-All materialized as tables via cross-project `ref()`:
-
-- `powerschool` (ODBC)
-- `deanslist`
-- `edplan`
-- `finalsite`
-- `overgrad`
-- `pearson`
-- `titan`
-
-Note: Camden does not use `iready` or `renlearn`.
+Package list: `packages.yml` is ground truth (see `src/dbt/CLAUDE.md`). Camden
+does not use `iready` or `renlearn`.

@@ -1,3 +1,8 @@
+-- The powerschool package dropped the contact/emergency/pickup columns from
+-- base_powerschool__student_enrollments; the contact surface now lives in
+-- int_students__contacts_pivot, consumed downstream by int_extracts. This
+-- comment also forces state:modified so CI rebuilds the wrapper against the
+-- narrowed district schema.
 {% set invalid_lunch_status = ["", "NoD", "1", "2"] %}
 
 with
@@ -32,7 +37,6 @@ with
             *,
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
@@ -40,6 +44,10 @@ with
 
 select
     ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
+
+    -- same value as _dbt_source_project, named for the Dagster code location;
+    -- projected here rather than re-derived from _dbt_source_relation (#3142)
+    ar._dbt_source_project as code_location,
 
     -- Pearson reports the KIPP student_number as LocalStudentIdentifier for all
     -- NJ regions, including Paterson (#4103); no legacy district-id translation
@@ -105,7 +113,7 @@ select
 
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
 
-    if(ar.region = 'Paterson', se.email, sl.google_email) as student_email_google,
+    sl.google_email as student_email_google,
     if(ar.region = 'Paterson', null, sl.username) as student_web_id,
     if(ar.region = 'Paterson', null, sl.default_password) as student_web_password,
 
@@ -210,9 +218,6 @@ left join
     {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
     and ar._dbt_source_project = njr._dbt_source_project
-left join
-    {{ ref("stg_powerschool__student_email") }} as se
-    on ar.student_number = se.student_number
 left join
     {{ ref("stg_people__student_logins") }} as sl
     on ar.student_number = sl.student_number

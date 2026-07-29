@@ -59,4 +59,34 @@ expect_allow2 "write file whose content mentions .devcontainer/scripts/" Write f
 expect_allow2 "edit file whose new_string mentions .claude/hooks/" Edit file_path "docs/CLAUDE.md" new_string "Read .claude/hooks/check-sensitive.sh"
 expect_allow2 "write file whose content mentions .git/hooks/" Write file_path "docs/guide.md" content "Pre-commit runs via .git/hooks/pre-commit"
 
+# ─── Filesystem MCP write guard (Section 1d) ─────────────────────────────────
+# The filesystem MCP's mutating tools are not Bash, so the Bash-only Rule 2
+# never fires for them. Section 1d re-applies the protected-path block to those
+# tools (write_file/edit_file/move_file/create_directory) so they cannot rewrite
+# the enforcement layer. Read-only filesystem tools are intentionally exempt.
+echo ""
+echo -e "${YELLOW}Filesystem MCP protected-config write guard${NC}"
+
+expect_deny "fs-mcp edit_file settings.json" mcp__filesystem__edit_file path "/workspaces/teamster/.claude/settings.json"
+expect_deny "fs-mcp write_file settings.local.json" mcp__filesystem__write_file path "/workspaces/teamster/.claude/settings.local.json"
+expect_deny "fs-mcp write_file a hook script" mcp__filesystem__write_file path "/workspaces/teamster/.claude/hooks/check-sensitive.sh"
+expect_deny "fs-mcp write_file devcontainer/scripts" mcp__filesystem__write_file path "/workspaces/teamster/.devcontainer/scripts/postCreate.sh"
+expect_deny "fs-mcp write_file .trunk/trunk.yaml" mcp__filesystem__write_file path "/workspaces/teamster/.trunk/trunk.yaml"
+expect_deny "fs-mcp create_directory .trunk/config" mcp__filesystem__create_directory path "/workspaces/teamster/.trunk/config/x"
+expect_deny "fs-mcp write_file shell-snapshots" mcp__filesystem__write_file path "/home/vscode/.claude/shell-snapshots/x.sh"
+expect_deny "fs-mcp move_file destination .git/hooks/" mcp__filesystem__move_file destination "/workspaces/teamster/.git/hooks/pre-commit"
+expect_deny "fs-mcp move_file source out of hooks/" mcp__filesystem__move_file source "/workspaces/teamster/.claude/hooks/check-sensitive.sh"
+
+# Read-only filesystem-MCP tools may still READ these paths (guard is write-only).
+expect_allow "fs-mcp read_text_file settings.json" mcp__filesystem__read_text_file path "/workspaces/teamster/.claude/settings.json"
+expect_allow "fs-mcp read_file a hook script" mcp__filesystem__read_file path "/workspaces/teamster/.claude/hooks/check-sensitive.sh"
+
+# Writes elsewhere in the repo are unaffected.
+expect_allow "fs-mcp write_file repo source" mcp__filesystem__write_file path "/workspaces/teamster/src/dbt/foo.sql"
+expect_allow "fs-mcp write_file .claude/scratch" mcp__filesystem__write_file path "/workspaces/teamster/.claude/scratch/x"
+expect_allow "fs-mcp write_file .claude markdown" mcp__filesystem__write_file path "/workspaces/teamster/.claude/FOO.md"
+
+# A file BODY mentioning a protected path must not false-positive (body excluded).
+expect_allow2 "fs-mcp write_file body mentions .git/hooks/" mcp__filesystem__write_file path "/workspaces/teamster/src/dbt/foo.sql" content "see .git/hooks/pre-commit"
+
 print_summary "Self-Protection"

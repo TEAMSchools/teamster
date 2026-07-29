@@ -2,7 +2,7 @@ sources:
   - name: kippnewark_finalsite
     schema:
       "{%- if target.name == 'dev' -%}zz_{{ env_var('GITHUB_USER', 'dev') }}_{%-
-      endif -%}kippnewark_finalsite"
+      elif target.name == 'staging' -%}zz_stg_{%- endif -%}kippnewark_finalsite"
     tables:
       - name: stg_finalsite__status_report
         config:
@@ -13,3 +13,21 @@ sources:
                 - kippnewark
                 - finalsite
                 - stg_finalsite__status_report
+      - name: int_finalsite__student_contacts
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippnewark
+                - finalsite
+                - int_finalsite__student_contacts
+      - name: int_finalsite__contact_id_attributes
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippnewark
+                - finalsite
+                - int_finalsite__contact_id_attributes

@@ -63,9 +63,9 @@ DEFAULT_OUT = Path(__file__).resolve().parent / "out" / "results_cc.jsonl"
 _LOAD_RESULT = {
     "data": [
         {
-            "student_attendance_summary.count_students": "1248",
-            "student_attendance_summary.count_chronically_absent": "187",
-            "student_attendance_summary.percent_chronically_absent": "0.15",
+            "student_attendance_view.count_students": "1248",
+            "student_attendance_view.count_chronically_absent": "187",
+            "student_attendance_view.percent_chronically_absent": "0.15",
         }
     ]
 }
@@ -87,8 +87,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--arms",
         nargs="+",
-        default=["A_baseline", "B_instructions"],
-        choices=["A_baseline", "B_instructions"],
+        default=["A_baseline", "B_descriptions"],
+        choices=["A_baseline", "B_descriptions"],
     )
     p.add_argument("--reps", type=int, default=DEFAULT_REPS)
     p.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
@@ -198,8 +198,14 @@ def do_dry_run(
     for name in arm_names:
         arm = arm_defs[name]
         allowed = [f"mcp__cube__{n}" for n in _arm_tool_names(name)]
+        load_desc = next(t["description"] for t in arm["tools"] if t["name"] == "load")
+        has_crosswalk = "resolve it yourself" in load_desc
         print(f"=== {name} ===")
         print(f"  system-prompt (replace): {len(arm['instructions'])} chars")
+        print(
+            f"  load description: {len(load_desc)} chars "
+            f"(inline crosswalk: {has_crosswalk})"
+        )
         print(f"  allowed_tools: {allowed}")
     print("\nDry run only — no model calls made.")
 
@@ -212,22 +218,23 @@ async def sweep(
     prompts: list[dict[str, Any]],
     reps: int,
     concurrency: int,
-    tool_desc: dict[str, str],
+    tool_desc_by_arm: dict[str, dict[str, str]],
     out_path: Path,
 ) -> list[dict[str, Any]]:
     # trunk-ignore(pyright/reportMissingImports): claude-agent-sdk is a runtime --with dep
     from claude_agent_sdk import create_sdk_mcp_server
 
-    tools = _make_tools(tool_desc)
-    # One server object per arm (stateless tools, safe to share across runs).
-    arm_servers = {
-        name: create_sdk_mcp_server(
+    # One server per arm, built from THAT arm's tool descriptions. The A-vs-B
+    # variable (the academic-year crosswalk) now lives in the load description,
+    # so the servers must differ per arm — not just the system prompt.
+    arm_servers = {}
+    for name in arm_names:
+        arm_tools = _make_tools(tool_desc_by_arm[name])
+        arm_servers[name] = create_sdk_mcp_server(
             name="cube",
             version="1.0.0",
-            tools=[tools[n] for n in _arm_tool_names(name)],
+            tools=[arm_tools[n] for n in _arm_tool_names(name)],
         )
-        for name in arm_names
-    }
     semaphore = asyncio.Semaphore(concurrency)
 
     jobs = [
@@ -289,14 +296,15 @@ def main() -> None:
     args = parse_args()
     server = arms_mod.load_server()
     arm_defs = arms_mod.build_arms(server)
-    tool_desc = {
-        t["name"]: t["description"] for t in arm_defs["B_instructions"]["tools"]
+    tool_desc_by_arm = {
+        name: {t["name"]: t["description"] for t in arm_defs[name]["tools"]}
+        for name in arm_defs
     }
     prompts = load_prompts()
 
     if args.smoke:
         prompts = prompts[:1]
-        args.arms = ["B_instructions"]
+        args.arms = ["B_descriptions"]
         args.models = args.models[:1]
         args.reps = 1
     if args.limit:
@@ -315,7 +323,7 @@ def main() -> None:
             prompts=prompts,
             reps=args.reps,
             concurrency=args.concurrency,
-            tool_desc=tool_desc,
+            tool_desc_by_arm=tool_desc_by_arm,
             out_path=args.out,
         )
     )

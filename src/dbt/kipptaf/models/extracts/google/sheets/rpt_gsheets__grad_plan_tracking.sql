@@ -77,7 +77,7 @@ from {{ ref("int_extracts__student_enrollments") }} as e
 inner join
     {{ ref("int_powerschool__gpprogress_grades") }} as g
     on e.students_dcid = g.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="g") }}
+    and e._dbt_source_project = g._dbt_source_project
     and g.plan_name in ('NJ State Diploma', 'HS Distinction Diploma')
 where
     e.academic_year = {{ var("current_academic_year") }}

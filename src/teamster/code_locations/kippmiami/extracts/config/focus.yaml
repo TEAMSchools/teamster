@@ -187,19 +187,3 @@ assets:
     destination_config:
       name: focus
       path: incoming
-  - query_config:
-      type: schema
-      value:
-        table:
-          schema: kippmiami_extracts
-          name: rpt_focus__linked_students
-    file_config:
-      stem: linked_students
-      suffix: csv
-      format:
-        header_replacements:
-          primary_student_id: PRIMARY_STUDENT_ID
-          secondary_student_id: SECONDARY_STUDENT_ID
-    destination_config:
-      name: focus
-      path: incoming

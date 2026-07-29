@@ -2,26 +2,32 @@ models:
   - name: int_assessments__resolved_section_enrollments
     description: >-
       Resolves one PowerSchool course-section enrollment per score row for all
-      assessment types — internal (Illuminate-sourced), NJ state (Pearson), and
-      FL state (FLDOE). Joins the course-enrollment inventory from
-      int_assessments__course_enrollments directly; does not carry cc_dcid as an
-      output column. Resolution is tiered: tier 1 matches a subject section
-      whose half-open enrollment window contains the score's anchor date
-      (earliest date_taken across the canonical's members, falling back to the
-      canonical administered_date for internal; test_date for state rows); tier
-      2 falls back to the homeroom section active on the same anchor date.
-      Scores with no matching section in either tier are dropped. The
-      resolution_type column identifies which tier resolved the row.
+      assessment types — internal (Illuminate-sourced), NJ state (Pearson), FL
+      state (FLDOE), and vendor assessments (iReady, STAR, DIBELS). Joins the
+      course-enrollment inventory from int_assessments__course_enrollments
+      directly; does not carry cc_dcid as an output column. Resolution is
+      tiered: tier 1 matches a subject section whose half-open enrollment window
+      contains the score's anchor date (earliest date_taken across the
+      canonical's members, falling back to the canonical administered_date for
+      internal; test_date for state rows; the vendor completion/screening/
+      client date for iReady, STAR, and DIBELS); tier 2 falls back to the
+      homeroom section active on the same anchor date. Scores with no matching
+      section in either tier are dropped. The resolution_type column identifies
+      which tier resolved the row.
+    config:
+      materialized: table
     columns:
       - name: source_type
         data_type: string
         description: >-
           Assessment source branch that produced the score row. One of internal
-          (Illuminate-sourced), state_nj (Pearson NJ), or state_fl (FLDOE FL).
+          (Illuminate-sourced), state_nj (Pearson NJ), state_fl (FLDOE FL),
+          iready (i-Ready diagnostics), star (Renaissance STAR), or dibels
+          (Amplify DIBELS benchmark composites).
         data_tests:
           - accepted_values:
               arguments:
-                values: [internal, state_nj, state_fl]
+                values: [internal, state_nj, state_fl, iready, star, dibels]
       - name: resolution_type
         data_type: string
         description: >-
@@ -153,6 +159,12 @@ unit_tests:
         rows: []
       - input: ref('int_fldoe__all_assessments')
         rows: []
+      - input: ref('int_iready__diagnostic_results')
+        rows: []
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
+        rows: []
     expect:
       rows:
         - {
@@ -198,6 +210,12 @@ unit_tests:
         rows: []
       - input: ref('int_fldoe__all_assessments')
         rows: []
+      - input: ref('int_iready__diagnostic_results')
+        rows: []
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
+        rows: []
     expect:
       rows:
         - {
@@ -231,6 +249,12 @@ unit_tests:
       - input: ref('int_pearson__all_assessments')
         rows: []
       - input: ref('int_fldoe__all_assessments')
+        rows: []
+      - input: ref('int_iready__diagnostic_results')
+        rows: []
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
         rows: []
     expect:
       rows: []
@@ -268,6 +292,12 @@ unit_tests:
             }
       - input: ref('int_fldoe__all_assessments')
         rows: []
+      - input: ref('int_iready__diagnostic_results')
+        rows: []
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
+        rows: []
     expect:
       rows:
         - {
@@ -277,4 +307,72 @@ unit_tests:
             subject_area: Mathematics,
             source_type: state_nj,
             resolution_type: subject_section,
+          }
+
+  - name: test_iready_dibels_source_type_prevents_grain_collision
+    description: >-
+      Regression test for #3625 (fixed in a743b7d6c). An iReady Reading score
+      and a DIBELS Composite score for the same student/project/academic
+      year/administration_period/subject_area (Text Study) agree on every
+      score_grain_key input except source_type. Both must resolve to the subject
+      section and survive as distinct output rows -- if source_type were dropped
+      from score_grain_key the two would hash identically and the resolved-tier
+      dedupe would silently collapse them into one.
+    model: int_assessments__resolved_section_enrollments
+    given:
+      - input: ref('int_assessments__scaffold')
+        rows: []
+      - input: ref('int_assessments__assessments_canonical')
+        rows: []
+      - input: ref('int_assessments__course_enrollments')
+        rows:
+          - {
+              powerschool_student_number: 5,
+              _dbt_source_project: kippnewark,
+              illuminate_subject_area: Text Study,
+              courses_credittype: ELA,
+              cc_dateenrolled: 2024-09-01,
+              cc_dateleft: 2025-06-15,
+              cc_dcid: 555,
+            }
+      - input: ref('int_pearson__all_assessments')
+        rows: []
+      - input: ref('int_fldoe__all_assessments')
+        rows: []
+      - input: ref('int_iready__diagnostic_results')
+        format: sql
+        rows: |
+          select
+              5 as student_id,
+              2024 as academic_year_int,
+              'BOY' as test_round,
+              'Text Study' as illuminate_subject,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-15') as completion_date,
+              650 as overall_scale_score
+      - input: ref('stg_renlearn__star')
+        rows: []
+      - input: ref('int_amplify__all_assessments')
+        format: sql
+        rows: |
+          select
+              5 as student_number,
+              2024 as academic_year,
+              'BOY' as `period`,
+              'Text Study' as illuminate_subject,
+              'kippnewark' as _dbt_source_project,
+              date('2024-09-20') as client_date,
+              'Benchmark' as assessment_type,
+              'Composite' as measure_standard
+    expect:
+      rows:
+        - {
+            powerschool_student_number: 5,
+            source_type: iready,
+            student_section_enrollment_key: 862d5edd93004a2ab12782487a3292a7,
+          }
+        - {
+            powerschool_student_number: 5,
+            source_type: dibels,
+            student_section_enrollment_key: 862d5edd93004a2ab12782487a3292a7,
           }

@@ -7,6 +7,10 @@ on GKE Autopilot.
 
 - GKE Autopilot: `autopilot-cluster-dagster-hybrid-1` in `us-central1`
   (`kubectl config current-context`).
+- **`kubectl` from the Claude Bash tool is classifier-blocked regardless of
+  in-conversation consent** — even read-only `kubectl config current-context`.
+  Hand cluster ops (`kubectl apply` of 1Password items, secret-key verification)
+  to the user, like `git push origin main`; don't retry.
 - `kubectl cordon` is ineffective on Autopilot — Google manages node lifecycle
   and may ignore cordon or replace the node entirely.
 
@@ -80,6 +84,9 @@ k8s Secret keys come from the 1Password field's internal name, not the UI label.
 Known re-mappings on SFTP items: `password` → `newPassword`, `host` → `url`.
 Verify before writing `secretKeyRef.key`:
 `kubectl -n dagster-cloud get secret <op-name> -o jsonpath='{.data}' | jq keys`.
+Custom (user-added) text fields sync under their label verbatim (verified:
+numeric DeansList school-id labels → keys `121`, `966`); the remaps above only
+hit built-in login/SFTP-template fields.
 
 ## Security
 

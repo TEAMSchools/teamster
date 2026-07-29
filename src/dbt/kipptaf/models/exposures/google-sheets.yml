@@ -779,6 +779,20 @@ exposures:
           kinds:
             - googlesheets
 
+  - name: rpt_gsheets__gradebook_audit_student_flags
+    label: Gradebook Audit Student Flags
+    type: analysis
+    owner:
+      name: Data Team - grangel
+    url: https://docs.google.com/spreadsheets/d/1e52D42Zhlhasj-_Tf429ZWxJdtSr05YedsI4Ur0Tva8
+    depends_on:
+      - ref("rpt_gsheets__gradebook_audit_student_flags")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
+
   - name: rpt_gsheets__historical_suspensions
     label: Historical Suspensions
     type: analysis

@@ -1,15 +1,9 @@
 # CLAUDE.md — `teamster/libraries/dlt/focus/`
 
 Loads tables from the **Focus SIS** PostgreSQL database directly to BigQuery
-using dlt's `sql_database` source with PyArrow backend.
-
-## Factory
-
-`build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
-
-- Asset keys: `[code_location, "dlt", "focus", table_name]`
-- Uses `reflection_level="full_with_precision"` + `remove_nullability_adapter`
-- All tables from the `public` schema (Focus default)
+using dlt's `sql_database` source with PyArrow backend. Factory signature and
+asset keys: see `../CLAUDE.md`. All tables come from the `public` schema (Focus
+default).
 
 ## Differences from Illuminate
 
@@ -44,3 +38,9 @@ asset materialization metadata before investigating.
 
 Focus uses an IP allowlist. Codespace cannot reach the database. Connection
 verification requires a branch deployment (GKE has static egress IP).
+
+Branch-deployment dlt runs write to the **prod** BQ dataset
+(`dagster_<district>_dlt_focus`) — dlt has no branch-deployment redirect (unlike
+the GCS IO managers). A newly-configured table can be materialized in the branch
+deployment and then queried directly via BigQuery MCP to verify the load; note
+it is not isolated from prod for that source.

@@ -1,6 +1,5 @@
 from dagster import EnvVar
 from dagster_airbyte import AirbyteCloudWorkspace
-from dagster_shared import check
 
 from teamster.libraries.adp.workforce_now.api.resources import AdpWorkforceNowResource
 from teamster.libraries.coupa.resources import CoupaResource
@@ -138,7 +137,7 @@ SSH_RESOURCE_LATTICE = SSHResource(
 
 SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_host=EnvVar("LITTLESIS_SFTP_HOST"),
-    remote_port=int(check.not_none(value=EnvVar("LITTLESIS_SFTP_PORT").get_value())),
+    remote_port=EnvVar.int("LITTLESIS_SFTP_PORT"),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )

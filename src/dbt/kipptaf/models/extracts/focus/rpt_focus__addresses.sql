@@ -1,6 +1,6 @@
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus ADDRESS contract
 select
-    ida.focus_student_id as student_id,
+    ida.focus_student_id_prefixed as student_id,
 
     c.address_1 as address,
     c.address_2 as address2,
@@ -18,6 +18,8 @@ from {{ ref("stg_finalsite__contacts") }} as c
 inner join
     {{ ref("int_finalsite__enrollment_lifecycle") }} as l
     on c.finalsite_enrollment_id = l.finalsite_enrollment_id
-left join
+inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on c.finalsite_enrollment_id = ida.finalsite_enrollment_id
+    and ida.focus_student_id_prefixed is not null
+where c.status = 'enrolled'

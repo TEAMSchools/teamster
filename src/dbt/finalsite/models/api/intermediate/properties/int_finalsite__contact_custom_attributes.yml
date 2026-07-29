@@ -68,11 +68,131 @@ models:
         description:
           Boolean value of the `emrg_1_phone_1_opt_in` Finalsite custom field;
           null when unset.
+      - name: emrg_1_phone_2_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_1_phone_2_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_1_phone_3_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_1_phone_3_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_1_custody_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 1 has legal custody of the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_1_lives_with_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 1 lives with the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_1_pickup_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 1 is authorized for student pickup, from
+          `custom_attributes`. Null when unset.
       - name: emrg_2_phone_1_opt_in
         data_type: boolean
         description:
           Boolean value of the `emrg_2_phone_1_opt_in` Finalsite custom field;
           null when unset.
+      - name: emrg_2_phone_2_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_2_phone_2_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_2_phone_3_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_2_phone_3_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_2_custody_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 2 has legal custody of the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_2_lives_with_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 2 lives with the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_2_pickup_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 2 is authorized for student pickup, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_3_phone_1_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_3_phone_1_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_3_phone_2_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_3_phone_2_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_3_phone_3_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_3_phone_3_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_3_custody_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 3 has legal custody of the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_3_lives_with_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 3 lives with the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_3_pickup_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 3 is authorized for student pickup, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_3_yn
+        data_type: boolean
+        description:
+          Whether a third emergency contact exists for the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_4_phone_1_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_4_phone_1_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_4_phone_2_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_4_phone_2_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_4_phone_3_opt_in
+        data_type: boolean
+        description:
+          Boolean value of the `emrg_4_phone_3_opt_in` Finalsite custom field;
+          null when unset.
+      - name: emrg_4_custody_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 4 has legal custody of the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_4_lives_with_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 4 lives with the student, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_4_pickup_yn
+        data_type: boolean
+        description:
+          Whether emergency contact 4 is authorized for student pickup, from
+          `custom_attributes`. Null when unset.
+      - name: emrg_4_yn
+        data_type: boolean
+        description:
+          Whether a fourth emergency contact exists for the student, from
+          `custom_attributes`. Null when unset.
       - name: florida_residency_yn
         data_type: boolean
         description:

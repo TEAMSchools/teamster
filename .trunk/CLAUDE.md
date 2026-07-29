@@ -5,13 +5,9 @@ directory). Per-linter config: `.trunk/config/`.
 
 ## Linter Ignores
 
-Use `# trunk-ignore(<linter>/<rule>)` with a reason comment. Do not use
-linter-native disable syntax (`# shellcheck disable=`, `# noqa`, `-- noqa`):
-
-```python
-# trunk-ignore(bandit/B603): subprocess args are hardcoded, not user input
-subprocess.run(["git", "status"])
-```
+Suppression syntax (`# trunk-ignore(<linter>/<rule>): reason` on the line
+immediately before; never linter-native disables): see root CLAUDE.md →
+_Linter_.
 
 `trunk-ignore-all` is a comment directive — it cannot suppress findings in JSON
 (no comment syntax); drop/relocate the file or add a `lint.ignore` path rule in
@@ -43,10 +39,9 @@ subprocess.run(["git", "status"])
 
 ## Hooks
 
-- **Pre-commit**: `trunk-fmt-pre-commit` runs `trunk fmt` (auto-formats staged
-  files)
-- **Pre-push**: `trunk-check-pre-push` runs `trunk check` (blocks on lint
-  failures). Never use `--no-verify` — fix reported issues instead.
+Pre-commit runs `fmt` only; pre-push runs `check` — details (and the worktree
+binary-path gotcha) in root CLAUDE.md → _Trunk linting/formatting_. Never use
+`--no-verify` — fix reported issues instead.
 
 ## Shell Style
 

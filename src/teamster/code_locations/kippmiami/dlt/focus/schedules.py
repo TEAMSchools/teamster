@@ -12,7 +12,7 @@ asset_key_prefix = f"{CODE_LOCATION}/dlt/focus"
 
 focus_dlt_daily_asset_job_schedule = ScheduleDefinition(
     name=f"{CODE_LOCATION}__dlt__focus__daily_asset_job_schedule",
-    cron_schedule="0 0 * * *",
+    cron_schedule="0 4 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
     target=[f"{asset_key_prefix}/{a['table_name']}" for a in config["assets"]],
 )

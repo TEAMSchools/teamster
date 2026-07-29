@@ -46,6 +46,52 @@ using a vendored DLT Zendesk pipeline.
 - Vendored pipeline in `zendesk/pipeline/` handles auth via
   `TZendeskCredentials` and API pagination
 
+### `powerschool/`
+
+Loads PowerSchool SIS Oracle tables to BigQuery over an SSH tunnel
+(`table_rows` + PyArrow), full-replace. Change detection lives in the intraday
+sensor, not the op. Factories:
+`build_powerschool_dlt_assets(code_location, tables, op_tags=None, max_extract_workers=None)`
+and
+`build_powerschool_dlt_intraday_sensor(code_location, tables, nightly_schedule_name, minimum_interval_seconds=900)`
+(`sensors.py`); asset keys `[code_location, "powerschool", "sis", table]`.
+
+- **Op run-config contract** (`PowerSchoolDltConfig`): `probe` present (intraday
+  sensor) → load exactly the run's asset selection with the passed per-table
+  signatures — no re-probe, no gate. `probe` absent (nightly schedule / manual
+  launch) → probe the selection once BEFORE the load (count-only for no-cursor
+  tables), then load it all unconditionally. Signatures always persist WITH the
+  load via `resource_state` (dlt commits state only from extracted resources —
+  post-load writes never round-trip), so a failed load keeps the old baseline
+  and the table re-selects next tick.
+- **Signature shape is normalized**: `probe_signature` always returns
+  `{"count": n, "max_cursor": value-or-None}` — a count-only dict would never
+  compare equal to the run-config round-trip (which defaults `max_cursor` to
+  None) and no-cursor tables would reload every tick.
+- **Sensor tick**: skip if a sensor-launched or nightly-schedule run is in
+  flight (via `dagster/sensor_name` / `dagster/schedule_name` run tags); probe
+  every intraday table over one engine; compare to the dlt-state baseline
+  (`sync_destination()` + `_stored_signatures`); request only changed tables
+  with the probe payload in run config. Idle ticks launch nothing, so unchanged
+  tables are never planned (no `ASSET_FAILED_TO_MATERIALIZE`).
+- **`DPY-4011` at ~512 MiB was a paramiko rekey bug, now fixed (not a volume
+  cap)**: a large pull (`assignmentscore` ~19M) died with `oracledb DPY-4011`
+  (connection closed) at a consistent **~8.6M rows** regardless of throughput
+  (`arraysize=10k`→245s, `50k`→158s, same rows) or `EXTRACT__WORKERS` (5→1 all
+  failed). That ~8.6M rows × ~60 B/row ≈ 512 MiB = paramiko's
+  `Packetizer.REKEY_BYTES`: at 512 MiB received, paramiko renegotiates keys, and
+  `SSHResource.get_connection` had reverted its `ssh-rsa` patch right after the
+  handshake, so the rekey KEXINIT no longer offered `ssh-rsa` and the
+  ssh-rsa-only server (GlobalSCAPE) dropped the transport. Fixed in
+  `libraries/ssh/resources.py` (`_persist_legacy_rsa`): ssh-rsa is now persisted
+  per-transport and auto-rekey disabled. **No windowing/partitioning needed** —
+  naive full-replace works at any table size; `assignmentscore` (19M) completes
+  as one query. Set dlt extract concurrency from the op via
+  `dlt.config["extract.workers"] = N` (a writable in-memory provider that
+  `pipeline.extract()` resolves `workers=ConfigValue` from) — preferred over the
+  `EXTRACT__WORKERS` env var so the op doesn't mutate the process environment.
+  `pipeline.run()` accepts no `workers` arg.
+
 ## Notes
 
 All DLT assets use `DagsterDltResource` (from `dagster-dlt`) and write directly
@@ -64,3 +110,59 @@ not `NUMERIC`. Fix pattern: cast at the dbt staging layer
 If the adapter's scale changes, any existing BQ table with a conflicting column
 type must be dropped manually — `replace` write disposition does not allow type
 changes on existing tables.
+
+### `replace` write-disposition + runtime subsetting (dlt 1.28.1)
+
+- A `replace` resource that yields **zero rows truncates** its destination table
+  — you cannot skip a table by yielding nothing from inside the run. To load a
+  runtime-chosen subset, exclude the others from the run entirely: pass a
+  narrowed source to
+  `DagsterDltResource.run(dlt_source=source.with_resources(*subset))` (its
+  `is_subset` filter intersects with `selected_asset_keys`).
+- `replace` never changes an existing table's column **mode** (not just type):
+  an all-`NULLABLE` load into a table whose column is `REQUIRED` fails with BQ
+  400 "changed mode from REQUIRED to NULLABLE". Drop the table so the pipeline
+  recreates it (same remedy as the type-change note above).
+- `dataset_name` (e.g. `dagster_<loc>_dlt_*`) is **not branch-isolated** —
+  branch-deployment runs write to the SAME dataset as prod, so branch testing
+  pollutes it and schema-mode mismatches recur at prod go-live. Plan a one-time
+  `DROP SCHEMA ... CASCADE` cutover when a new pipeline replaces an old one.
+- A `@dlt.source` yielding two resources with the **same name** raises
+  `InvalidResourceDataTypeMultiplePipes`; build one resource per table with a
+  distinct `name=` (or `.with_name()`, which sets both `name` and `table_name`).
+- **`parallelized=True` is compatible with `resource_state` writes** — that is
+  the documented incremental pattern (write `dlt.current.resource_state()[...]`
+  in the resource body; the value persists per-thread). What breaks is **nesting
+  a `DltResource` inside a `parallelized` resource**
+  (`yield from sql_table(...)`): concurrent worker threads mangle dlt's
+  per-resource injectable context (`ContainerInjectableContextMangled` /
+  "generator already executing"). To parallelize a `sql_table`-style extract
+  while still writing `resource_state`, don't wrap the resource — drive the
+  exported **`table_rows`** generator directly inside your own
+  `@dlt.resource(parallelized=True)`:
+  `from dlt.sources.sql_database.helpers import table_rows`. It's a plain
+  generator (no resource nesting) and takes the same `reflection_level` /
+  `table_adapter_callback` / `type_adapter_callback` args, so
+  decimal/nullability adapters and precision reflection are preserved. Caveat:
+  `table_rows` is a lower-level building block with a broad, semi-internal
+  signature (Pyright flags it as not top-level exported) — pin the dlt version
+  and pass every positional arg explicitly, since arg changes there would
+  surface on upgrade. A duckdb spike yielding plain rows will pass and miss the
+  nesting mangle — it only fires with a nested resource on a real run.
+- **dlt commits state only from a resource actually extracted into the load**
+  (serial main-thread OR a `parallelized` worker). Writes from the `@dlt.source`
+  function body or a `selected=False` resource never round-trip
+  (spike-confirmed, silent) — this is why the per-table signature write lives
+  inside the extracted resource, not the source.
+- `.fetch_row_count()` on the `run()` iterator adds per-table `row_count`
+  metadata; log `pipeline.last_trace.last_normalize_info.row_counts` in an
+  `except` so a load failure is legible without walking the exception chain.
+- **Stream dlt progress into the Dagster event log**: in the op, set
+  `dlt_pipeline.collector = LogCollector(logger=context.log, log_period=30.0)`
+  (`context.log` is a `logging.Logger`). The factory default `logger="stdout"`
+  reaches only step-pod compute logs, so the UI goes dark mid-load. Gotcha:
+  `log_period` throttles only _repeat_ dumps of the **same** counter — each new
+  table force-logs (dlt's `update()` resets `last_log_time=None` on a new
+  counter), so per-table bursts at Extract/Normalize phase starts are
+  unavoidable; `log_period` only quiets the long Load phase. Dropping it
+  defaults to 1.0s -> a chatty Load phase.

@@ -121,6 +121,26 @@ if echo "${no_content}" | grep -qE '/proc/[^[:space:]]*/environ|/proc/[^[:space:
 fi
 
 # ═══════════════════════════════════════════════════════════════════
+# Section 1d: Filesystem MCP — protected-config write guard
+# ═══════════════════════════════════════════════════════════════════
+# The filesystem MCP's mutating tools (write_file/edit_file/move_file/
+# create_directory) are not Bash, so Rule 2 (Bash-only) never fires for them.
+# Without this they could rewrite settings.json, the hook scripts, the
+# .devcontainer/scripts, .git/hooks, or .trunk config — i.e. edit the sole
+# enforcement layer. Scoped to the mutating tools only (read-only filesystem
+# tools may read these paths). Path set = path + source + destination; body
+# fields (content/edits) are excluded so a file body that mentions one of
+# these paths does not false-positive. Pattern mirrors Rule 2.
+if [[ ${tool_name} =~ ^mcp__filesystem__(write_file|edit_file|move_file|create_directory)$ ]]; then
+  fs_target=$(jq -r '[.tool_input | (.path?, .source?, .destination?) | strings] | join(" ")' <<<"${input}")
+  fs_target=$(echo "${fs_target}" | _normalize)
+  fs_target=${fs_target//[\"\'\\]/}
+  if echo "${fs_target}" | grep -qE '\.claude/(settings\.json|settings\.local\.json|hooks/[^[:space:]]*\.sh|shell-snapshots/)|\.devcontainer/scripts/|\.git/hooks/|\.trunk/(trunk\.yaml|config/)'; then
+    deny
+  fi
+fi
+
+# ═══════════════════════════════════════════════════════════════════
 # Section 2: Bash only — command-pattern protection
 # ═══════════════════════════════════════════════════════════════════
 if [[ ${tool_name} == "bash" ]]; then
@@ -247,8 +267,14 @@ if [[ ${tool_name} == mcp__bigquery__* ]]; then
   # LOAD DATA added (#10). Verbs require a trailing space so column names like
   # delete_flag / merge_count do not false-positive.
   _bq_has_write() {
-    # Newlines flattened to spaces via parameter expansion (no tr subshell)
-    echo "${1//$'\n'/ }" | grep -qiE '\bINSERT[[:space:]]|\bUPDATE[[:space:]]+.*[[:space:]]+SET\b|\bDELETE[[:space:]]+FROM\b|\bMERGE[[:space:]]+INTO\b|\bEXPORT[[:space:]]+DATA\b|\bLOAD[[:space:]]+DATA\b|\bTRUNCATE[[:space:]]|\bCREATE[[:space:]]|\bDROP[[:space:]]|\bALTER[[:space:]]|\bGRANT[[:space:]]|\bREVOKE[[:space:]]|\bCALL[[:space:]]'
+    # Newlines flattened to spaces via parameter expansion (no tr subshell).
+    # Match each write verb on a word boundary (\b…\b) instead of requiring a
+    # secondary keyword or a trailing space: GoogleSQL makes DELETE's FROM and
+    # MERGE's INTO optional and lets /* */ comments replace the whitespace, so
+    # `DELETE ds.t`, `MERGE ds.t …` and `DROP/**/TABLE t` must all still match.
+    # \b…\b keeps read-query identifiers like delete_flag / merge_count /
+    # create_ts from false-positiving (no boundary before the trailing _).
+    echo "${1//$'\n'/ }" | grep -qiE '\bINSERT\b|\bUPDATE\b.*\bSET\b|\bDELETE\b|\bMERGE\b|\bEXPORT\b.*\bDATA\b|\bLOAD\b.*\bDATA\b|\bTRUNCATE\b|\bCREATE\b|\bDROP\b|\bALTER\b|\bGRANT\b|\bREVOKE\b|\bCALL\b'
   }
   case ${tool_name} in
   mcp__bigquery__execute_sql)

@@ -23,5 +23,11 @@ models:
       - name: focus_student_id
         data_type: string
         description:
-          Finalsite-minted Focus student id (the Focus `STDT_ID`) from the
-          `id_attributes` array.
+          Finalsite-minted Focus student id from the `id_attributes` array,
+          without the FLDOE district prefix.
+      - name: focus_student_id_prefixed
+        data_type: string
+        description:
+          Focus student id with the FLDOE district number (8400) prepended to
+          `focus_student_id`. Equals Focus `students.student_id` directly and is
+          the value every Focus SFTP extract emits as the student id.

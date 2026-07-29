@@ -7,10 +7,11 @@ models:
       One row per in-scope Finalsite student reshaped into the Focus `ADDRESS`
       SFTP template layout. Joins `stg_finalsite__contacts` to
       `int_finalsite__enrollment_lifecycle` (the in-scope filter; grain =
-      `finalsite_enrollment_id`), then left joins
-      `int_finalsite__contact_id_attributes` for the Focus student ID. Produces
-      12 columns in `ADDRESS_LAYOUT` order. Focus column header casing
-      (`STUDENT_ID`, `ADDRESS`, etc.) is applied at transport time via
+      `finalsite_enrollment_id`), then inner joins
+      `int_finalsite__contact_id_attributes` for the Focus student ID, excluding
+      contacts without a minted Focus id. Produces 12 columns in
+      `ADDRESS_LAYOUT` order. Focus column header casing (`STUDENT_ID`,
+      `ADDRESS`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case. Mailing address columns are always null — Focus does
       not receive a separate mailing address from Finalsite.
@@ -19,11 +20,13 @@ models:
         data_type: string
         description:
           Focus student id (Focus `STDT_ID`) from
-          `int_finalsite__contact_id_attributes.focus_student_id`; null for
-          contacts where Finalsite has not minted the id.
+          `int_finalsite__contact_id_attributes.focus_student_id_prefixed`. Rows
+          for contacts without a minted Focus id are excluded from this extract.
         data_tests:
           - unique
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: address
         data_type: string
         description: Primary street address line 1 from Finalsite (`address_1`).
@@ -68,7 +71,9 @@ unit_tests:
     description:
       Verifies the 12-column ADDRESS layout for a single student — STUDENT_ID is
       sourced from int_finalsite__contact_id_attributes, address columns map
-      from contacts, mailing columns are always null.
+      from contacts, mailing columns are always null. A second student has
+      status 'applied' (not 'enrolled') and a minted Focus id, confirming the
+      enrolled-only filter excludes them from the extract.
     model: rpt_focus__addresses
     given:
       - input: ref('stg_finalsite__contacts')
@@ -81,20 +86,34 @@ unit_tests:
               state: FL,
               zip: "33101",
               phone_1_number: 305-555-0100,
+              status: enrolled,
+            }
+          - {
+              finalsite_enrollment_id: enr-002,
+              address_1: 456 Oak Ave,
+              address_2: null,
+              city: Miami,
+              state: FL,
+              zip: "33102",
+              phone_1_number: 305-555-0200,
+              status: applied,
             }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
+          - { finalsite_enrollment_id: enr-002 }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
           select
             'enr-001' as finalsite_enrollment_id,
-            '4004004' as focus_student_id
+            '84004004004' as focus_student_id_prefixed
+          union all
+          select 'enr-002', '84004004005'
     expect:
       rows:
         - {
-            student_id: "4004004",
+            student_id: "84004004004",
             address: 123 Main St,
             address2: Apt 4B,
             city: Miami,

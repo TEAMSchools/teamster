@@ -1,0 +1,136 @@
+models:
+  - name: int_powerschool__gradebook_assignment_scores_rollup
+    description: >
+      One row per assignment (section x assignment), rolling up per-student
+      score flags from `int_powerschool__gradebook_assignments_scores` into
+      assignment-level counts and the `assignment_has_flags` compliance signal
+      consumed by the gradebook audit pipeline.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - assignmentsectionid
+    columns:
+      - name: _dbt_source_project
+        data_type: string
+        description:
+          Source PowerSchool instance (kippnewark, kippcamden, kipppaterson).
+      - name: sectionsdcid
+        data_type: int64
+        description: Internal number for the associated sections.DCID record.
+      - name: assignmentsectionid
+        data_type: int64
+        description:
+          Primary key. Internal number for the associated assignment section.
+      - name: assignmentid
+        data_type: int64
+        description: Internal number for the associated Assignment.ID record.
+      - name: assignment_name
+        data_type: string
+        description: Assignment name entered by the teacher.
+      - name: duedate
+        data_type: date
+        description: The date the assignment is due.
+      - name: scoretype
+        data_type: string
+        description:
+          Indicates if this score is a letter grade, percent, or points.
+      - name: totalpointvalue
+        data_type: float64
+        description: Total weighted point value the assignment is worth.
+      - name: category_code
+        data_type: string
+        description: >-
+          Assignment category code (H/W/F/S) grouping this assignment for policy
+          checks.
+      - name: n_students
+        data_type: int64
+        description:
+          Count of students with an assignment row for this section assignment.
+      - name: n_expected
+        data_type: int64
+        description:
+          Count of students expected to have a score (not exempt, counted in
+          final grade).
+      - name: n_expected_scored
+        data_type: int64
+        description: Count of expected students who have a score entered.
+      - name: n_expected_late
+        data_type: int64
+        description: Count of expected students whose assignment is marked late.
+      - name: n_exempt
+        data_type: int64
+        description: Count of students marked exempt on this assignment.
+      - name: n_expected_missing
+        data_type: int64
+        description:
+          Count of expected students whose assignment is marked missing.
+      - name: n_expected_null
+        data_type: int64
+        description: Count of expected students with a null score.
+      - name: n_score_above_max
+        data_type: int64
+        description:
+          Count of students whose score_entered exceeds totalpointvalue.
+      - name: n_expected_academic_dishonesty
+        data_type: int64
+        description:
+          Count of expected HS students with score = 0 and not missing.
+      - name: n_assign_mh_hwf_score_less_5
+        data_type: int64
+        description: >-
+          Count of students where assign_mh_hwf_score_less_5 fired (H/W/F
+          category, not missing, score < 5).
+      - name: n_assign_ms_hwf_missing_score_not_5
+        data_type: int64
+        description: >-
+          Count of students where assign_ms_hwf_missing_score_not_5 fired (H/W/F
+          category, MS, missing, score != 5).
+      - name: n_assign_hs_hwfs_missing_score_not_0
+        data_type: int64
+        description: >-
+          Count of students where assign_hs_hwfs_missing_score_not_0 fired
+          (H/W/F/S category, HS, missing, score != 0).
+      - name: n_assign_ms_s_score_less_50p
+        data_type: int64
+        description: >-
+          Count of students where assign_ms_s_score_less_50p fired (S category,
+          MS, score < half_total_point_value).
+      - name: n_assign_hs_s_score_less_50p
+        data_type: int64
+        description: >-
+          Count of students where assign_hs_s_score_less_50p fired (S category,
+          HS, not missing, score < half_total_point_value).
+      - name: avg_score_for_assign
+        data_type: float64
+        description:
+          Average assign_final_score_percent across expected scored students.
+      - name: assign_max_score_not_10
+        data_type: boolean
+        description:
+          True when the assignment is H/W/F category and totalpointvalue != 10.
+      - name: overly_exempt_assignment
+        data_type: boolean
+        description:
+          True when exempt students are at least 50% of total students.
+      - name: assign_percent_graded
+        data_type: float64
+        description: Fraction of expected students who have a score entered.
+      - name: flags_sum
+        data_type: int64
+        description: >-
+          Sum of all per-student flag counts (n_expected_null,
+          n_score_above_max, and the five consolidated assignment score flags).
+          Greater than 0 means at least one student-level flag fired on this
+          assignment.
+      - name: percent_graded_min_not_met
+        data_type: boolean
+        description:
+          True when fewer than 90% of expected students have a score entered.
+      - name: assignment_has_flags
+        data_type: boolean
+        description: >-
+          True when any of assign_max_score_not_10, overly_exempt_assignment,
+          percent_graded_min_not_met, or any per-student score flag fired
+          (flags_sum > 0).

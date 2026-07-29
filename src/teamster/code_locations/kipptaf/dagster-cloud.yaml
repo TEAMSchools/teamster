@@ -295,11 +295,6 @@ locations:
                   secretKeyRef:
                     name: op-coupa-sftp
                     key: host
-              - name: DEANSLIST_SUBDOMAIN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-deanslist-api
-                    key: subdomain
               - name: DEANSLIST_SFTP_HOST
                 valueFrom:
                   secretKeyRef:
@@ -683,11 +678,6 @@ locations:
                   secretKeyRef:
                     name: op-coupa-api
                     key: hostname
-              - name: DEANSLIST_SUBDOMAIN
-                valueFrom:
-                  secretKeyRef:
-                    name: op-deanslist-api
-                    key: subdomain
               - name: DEANSLIST_SFTP_HOST
                 valueFrom:
                   secretKeyRef:

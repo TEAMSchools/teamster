@@ -1,0 +1,151 @@
+views:
+  - name: staff_pii
+    description: >-
+      Sensitive staff PII — personal contact info, date of birth, and
+      demographics — split out of the open staff directory (see
+      staff_directory). One row per employee x employment period; always apply a
+      date filter or each period fans out to one row per calendar day in its
+      effective range. Filter is_primary_position = true and status_name =
+      'Active' to see each current employee once.
+
+      Row-level access is remit-scoped: a viewer only sees rows for staff within
+      their location/department remit (added in Task 5's row_level policy).
+      job_function_level, job_function_code, and department_group are exposed
+      here because the remit filter matches on them; abbreviation and region_key
+      are exposed because the remit filter also scopes by location. Those three
+      role attributes are the viewed staff member's CURRENT role (from
+      dim_staff_cube_access), not the value per historical period — so the remit
+      gate is person-level, not period-accurate.
+
+    cubes:
+      - join_path: staff_work_history
+        includes:
+          - count_employees
+          - is_primary_position
+          - status_name
+
+      - join_path: staff_work_history.dates
+        prefix: true
+        includes:
+          - date_day
+          - academic_year
+
+      - join_path: staff_work_history.staff
+        prefix: false
+        includes:
+          - staff_key
+          - full_name
+          - personal_email
+          - personal_cell_phone
+          - birth_date
+          - gender_identity
+          - race
+          - is_hispanic
+
+      # Role attributes via the staff_work_history -> staff_cube_access join.
+      # prefix: false keeps the member names bare (job_function_level /
+      # job_function_code / department_group) so the row_level remit filters
+      # below still resolve them.
+      - join_path: staff_work_history.staff_cube_access
+        prefix: false
+        includes:
+          - job_function_level
+          - job_function_code
+          - department_group
+
+      - join_path: staff_work_history.locations
+        prefix: true
+        includes:
+          - abbreviation
+          - region_key
+
+    meta:
+      folders:
+        - name: Employment
+          members:
+            - is_primary_position
+            - status_name
+        - name: Date
+          members:
+            - dates_date_day
+            - dates_academic_year
+        - name: Staff
+          members:
+            - staff_key
+            - full_name
+            - personal_email
+            - personal_cell_phone
+            - birth_date
+            - gender_identity
+            - race
+            - is_hispanic
+            - job_function_level
+            - job_function_code
+            - department_group
+        - name: Location
+          members:
+            - locations_abbreviation
+            - locations_region_key
+
+    access_policy:
+      # Row-level staff-PII remit (was queryRewrite.staffSensitiveFilters). One
+      # policy per staff_pii_scope; buildGroups emits exactly one staff-pii-<scope>
+      # group per viewer. The remit (location ∩ department) is precomputed into
+      # securityContext.allowed_abbreviations / allowed_department_groups
+      # (resolveAccess), so an empty allow-list => IN () => zero rows (fail-closed).
+      - group: staff-pii-all_in_scope
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations_abbreviation
+              operator: equals
+              values: "{ securityContext.allowed_abbreviations }"
+            - member: department_group
+              operator: equals
+              values: "{ securityContext.allowed_department_groups }"
+      - group: staff-pii-teaching_staff
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: locations_abbreviation
+              operator: equals
+              values: "{ securityContext.allowed_abbreviations }"
+            - member: department_group
+              operator: equals
+              values: "{ securityContext.allowed_department_groups }"
+            - member: job_function_code
+              operator: equals
+              values: [TEACH, TIR]
+      - group: staff-pii-reporting_chain
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: staff_key
+              operator: equals
+              values: "{ securityContext.reportee_staff_keys }"
+      - group: staff-pii-reporting_chain_or_below_rank
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - or:
+                - and:
+                    - member: locations_abbreviation
+                      operator: equals
+                      values: "{ securityContext.allowed_abbreviations }"
+                    - member: department_group
+                      operator: equals
+                      values: "{ securityContext.allowed_department_groups }"
+                    # job_function_level is non-NULL whenever this scope is
+                    # granted: the role crosswalk that assigns the scope also
+                    # populates the level (an unresolved role → 'none' scope, no
+                    # level). The OR'd staff_key branch is the fallback regardless.
+                    - member: job_function_level
+                      operator: gt
+                      values: ["{ securityContext.job_function_level }"]
+                - member: staff_key
+                  operator: equals
+                  values: "{ securityContext.reportee_staff_keys }"

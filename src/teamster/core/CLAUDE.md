@@ -34,7 +34,6 @@ in full deployments — always check `== "1"`, never truthy.
 - `BIGQUERY_RESOURCE`, `GCS_RESOURCE`, `DLT_RESOURCE`
 - `DEANSLIST_RESOURCE`, `OVERGRAD_RESOURCE`, `ZENDESK_RESOURCE`
 - `GOOGLE_DRIVE_RESOURCE`, `GOOGLE_FORMS_RESOURCE`
-- `DB_POWERSCHOOL` — Oracle ODBC resource (shared env vars)
 - `SSH_COUCHDROP`, `SSH_EDPLAN`, `SSH_IREADY`, `SSH_RENLEARN`, `SSH_TITAN`,
   `SSH_RESOURCE_AMPLIFY` — SFTP resources
 
@@ -94,7 +93,7 @@ All asset factories that yield Avro output call both of these.
 
 ### `automation_conditions.py`
 
-Three dbt-specific `AutomationCondition` builders, all sharing a common skeleton
+Four dbt-specific `AutomationCondition` builders, all sharing a common skeleton
 via `_build_dbt_condition()`:
 
 - `dbt_view_automation_condition()` — for VIEW models: re-runs on
@@ -104,6 +103,13 @@ via `_build_dbt_condition()`:
   `union_relations` macro: adds recursive ancestor `code_version_changed`
   detection (but NOT `any_deps_updated`) to the view condition. Triggers only on
   code deploys that change upstream model definitions, not on data refreshes.
+- `dbt_cron_automation_condition(cron_schedule, cron_timezone)` — for expensive
+  TABLE models whose consumers refresh on a schedule: replaces the
+  ancestor-updated trigger with `cron_tick_passed`. NOT stock `on_cron()` (its
+  all-deps-updated gate starves on mixed-cadence upstreams). Opted into per
+  model via `meta.dagster.automation_condition.cron_schedule` (tables only; the
+  translator ignores it on views). Timezone defaults to the code location's
+  `LOCAL_TIMEZONE` via the translator.
 - `dbt_table_automation_condition()` — for TABLE models: also triggers on
   upstream data changes, including through intermediate views via
   `_build_any_ancestor_updated()` (recursive `any_deps_match` up to
@@ -119,6 +125,16 @@ built-in Dagster API to suppress this per-asset.
 deploy rollover, the materialization may be stamped with the new deployment's
 code version. `code_version_changed()` returns false permanently — manual
 materialization is the only fix. See dagster-io/dagster#33708.
+
+**`union_relations` wrapper can freeze on a deploy race** (#4290): its condition
+fires on ancestor `code_version_changed`, not `any_deps_updated`. If the wrapper
+materializes at deploy BEFORE its (often cross-code-location) upstream table
+rebuilds with a new schema, `.since(newly_updated)` consumes the trigger and the
+wrapper stays compiled against the OLD column set — downstream reads then fail
+`... failed to parse view` at query time and it does NOT self-heal.
+Rematerialize the wrapper + its consumers via `launch_run`. Diagnose by
+comparing the wrapper's stored `input_data_version/<upstream>` materialization
+tag to the upstream's current `data_version`.
 
 **No dep-code-version gate**: `_build_dbt_condition()` does NOT block
 materialization when a direct dep has

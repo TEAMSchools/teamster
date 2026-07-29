@@ -17,9 +17,13 @@ docs/
     io-managers.md
     fiscal-year-partitioning.md
     dbt-conventions.md
+    finalsite-focus-import.md
+    marts-data-models.md
     automation-conditions.md
     automations.md         # GENERATED — do not edit manually
     claude-code-security-hooks.md  # Not in nav
+  models/                  # Per-dashboard/pipeline data-model reference docs
+    gradebook-audit-data-model.md
   guides/                  # Task-focused walkthroughs
     index.md               # Account setup + guide routing table (section landing)
     adp-location-renames.md
@@ -66,6 +70,12 @@ not appear in site navigation.
 `uv run scripts/gen-automations-doc.py`. Never edit it directly. Regenerate when
 adding, removing, or renaming schedules or sensors.
 
+The script imports every code location's `definitions` and silently SKIPS any
+that fail to import — so running it in the codespace (locations fail to import
+without their dbt manifests, and `kipptaf` additionally on unset
+Illuminate/Zendesk dlt credentials) drops those locations from the catalog.
+Regenerate only in a full environment where all locations load.
+
 ## `superpowers/` Directory
 
 Design specs (`specs/`) and implementation plans (`plans/`) for major features
@@ -84,6 +94,8 @@ Update docs for engineering-level changes:
 - New or changed schedule/sensor → regenerate `reference/automations.md`
 - New core pattern (IO manager, automation condition, partitioning) → update the
   relevant `reference/` page
+- New or reworked dashboard/pipeline data model → add or update its page under
+  `models/`, and add a `mkdocs.yml` nav entry under `Models`
 
 Do **not** update docs for analyst-level dbt model changes — dbt YAML is the
 documentation mechanism for that work.
@@ -95,8 +107,6 @@ documentation mechanism for that work.
   subsection heading repeated across sections is fine). `mkdocs build` does NOT
   run markdownlint, so `trunk check` the generated/edited `.md` before pushing —
   MD036 / MD001 fire only at pre-push / CI, not in the mkdocs build.
-- Always specify a language on fenced code blocks (` ```python `, ` ```sql `,
-  ` ```yaml `, ` ```bash `, ` ```text ` for plain output)
 - SQL examples must follow `.trunk/config/.sqlfluff` rules (BigQuery dialect,
   trailing commas, single quotes, max line length 88)
 - Use admonitions for warnings and notes:

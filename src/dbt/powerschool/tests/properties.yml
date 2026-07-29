@@ -32,3 +32,23 @@ data_tests:
           ref:
             name: int_powerschool__student_enrollment_union
             package: powerschool
+
+  - name: test_int_powerschool__gpa_cumulative_year__reconciles_stored
+    description: >-
+      Drift guard for the year-grain recompute — for each student-school, the
+      latest completed-year row of int_powerschool__gpa_cumulative_year must
+      match int_powerschool__gpa_cumulative within one rounding step on both
+      weighted and unweighted cumulative GPA, for students with no stored
+      current-year Y1 grades (once current-year grades store, the original model
+      includes them and the comparison is no longer like-for-like). Identical
+      filters and rounding make this exact in practice; the comparison threshold
+      is 0.015 so the one-cent rounding-boundary flip from float summation-order
+      noise passes while real drift (0.02 or more) still warns. Runs at the
+      project default warn severity so a transient discrepancy surfaces without
+      blocking district prod builds — investigate any warning immediately.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__gpa_cumulative_year
+            package: powerschool

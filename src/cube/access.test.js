@@ -22,22 +22,17 @@ const SL = {
   staff_benefits_scope: "none",
 };
 
-test("isStudentMember / isStaffMember key off the view prefix", () => {
-  assert.ok(a.isStudentMember("student_attendance_detail.x"));
-  assert.ok(!a.isStudentMember("staff_detail.x"));
-  assert.ok(a.isStaffMember("staff_summary.race"));
-  assert.ok(!a.isStaffMember("student_enrollments_detail.x"));
-});
-
 test("buildGroups: SL gets the single student tier and staff directory+pii", () => {
-  const g = a.buildGroups(SL);
-  assert.ok(g.includes("student"));
+  // SL is school-scoped with an all-department remit → a non-empty resolved
+  // remit, so the all_in_scope PII group is emitted.
+  const g = a.buildGroups(SL, ["ABC"], ["Ops"]);
+  assert.ok(g.includes("student-school"));
   // No summary/detail/pii split — one student tier.
   assert.ok(!g.includes("student-detail"));
   assert.ok(!g.includes("student-summary"));
   assert.ok(!g.includes("student-pii"));
   assert.ok(g.includes("staff-directory"));
-  assert.ok(g.includes("staff-pii"));
+  assert.ok(g.includes("staff-pii-all_in_scope"));
   // No detail/summary split on the open staff surface.
   assert.ok(!g.includes("staff-detail"));
   assert.ok(!g.includes("staff-summary"));
@@ -73,12 +68,12 @@ test("buildGroups: directory is open to every staff viewer, even full-deny", () 
 test("buildGroups: staff_pii_scope none → directory but no pii tier", () => {
   const g = a.buildGroups({ ...SL, staff_pii_scope: "none" });
   assert.ok(g.includes("staff-directory"));
-  assert.ok(!g.includes("staff-pii"));
+  assert.ok(!g.some((x) => x.startsWith("staff-pii")));
 });
 
 test("buildGroups: student_location_scope none → no student tier", () => {
   const g = a.buildGroups({ ...SL, student_location_scope: "none" });
-  assert.ok(!g.includes("student"));
+  assert.ok(!g.some((x) => x.startsWith("student")));
   assert.ok(g.includes("staff-directory"));
 });
 
@@ -86,260 +81,201 @@ test("buildGroups: null row → no groups", () => {
   assert.deepEqual(a.buildGroups(null), []);
 });
 
-test("studentRowFilters: school → abbreviation filter", () => {
-  assert.deepEqual(a.studentRowFilters(SL), [
-    { member: "locations.abbreviation", operator: "equals", values: ["ABC"] },
-  ]);
+test("buildGroups: an object with no staff_key gets no groups (not even staff-directory)", () => {
+  // Defense-in-depth: a lookup miss shaped as {} must not be treated as a
+  // resolved viewer. The wired caller passes null, but gate on a real identity.
+  assert.deepEqual(a.buildGroups({}), []);
+  assert.deepEqual(a.buildGroups({ staff_pii_scope: "all_in_scope" }), []);
 });
 
-test("studentRowFilters: region → region_key filter", () => {
-  assert.deepEqual(
-    a.studentRowFilters({ ...SL, student_location_scope: "region" }),
-    [{ member: "locations.region_key", operator: "equals", values: ["R1"] }],
-  );
-});
-
-test("studentRowFilters: network → no filter", () => {
-  assert.deepEqual(
-    a.studentRowFilters({ ...SL, student_location_scope: "network" }),
-    [],
-  );
-});
-
-test("studentRowFilters: none → deny", () => {
-  assert.deepEqual(
-    a.studentRowFilters({ ...SL, student_location_scope: "none" }),
-    [a.DENY_FILTER],
-  );
-});
-
-test("studentRowFilters: null row → deny", () => {
-  assert.deepEqual(a.studentRowFilters(null), [a.DENY_FILTER]);
-});
-
-// ---- staffSensitiveFilters: the open directory + per-field gating ----
-
-test("staffSensitiveFilters: directory-only staff query → no filter", () => {
-  assert.deepEqual(
-    a.staffSensitiveFilters({ dimensions: ["staff_detail.full_name"] }, SL, []),
-    [],
-  );
-});
-
-test("staffSensitiveFilters: staff_summary demographic is an open aggregate (no gate)", () => {
-  // race is a STAFF_PII_MEMBER leaf, but on the summary view it is an open
-  // aggregate breakdown — only staff_detail occurrences are gated.
-  assert.deepEqual(
-    a.staffSensitiveFilters({ dimensions: ["staff_summary.race"] }, SL, []),
-    [],
-  );
-});
-
-test("staffSensitiveFilters: all_in_scope + school/all → school filter", () => {
-  assert.deepEqual(
-    a.staffSensitiveFilters(
-      { dimensions: ["staff_detail.personal_email"] },
-      SL,
-      [],
-    ),
-    [{ member: "locations.abbreviation", operator: "equals", values: ["ABC"] }],
-  );
-});
-
-test("staffSensitiveFilters: all_in_scope + network/all → no filter", () => {
-  const exec = {
-    ...SL,
-    staff_location_scope: "network",
-    staff_department_scope: "all",
-  };
-  assert.deepEqual(
-    a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, exec, []),
-    [],
-  );
-});
-
-test("staffSensitiveFilters: all_in_scope + region/own_group → region ∩ dept", () => {
-  const r = {
-    ...SL,
-    staff_location_scope: "region",
-    staff_department_scope: "own_group",
-  };
-  assert.deepEqual(
-    a.staffSensitiveFilters({ dimensions: ["staff_detail.birth_date"] }, r, []),
-    [
-      { member: "locations.region_key", operator: "equals", values: ["R1"] },
-      { member: "staff.department_group", operator: "equals", values: ["Ops"] },
-    ],
-  );
-});
-
-test("staffSensitiveFilters: reporting_chain → chain IN only", () => {
-  const r = { ...SL, staff_pii_scope: "reporting_chain" };
-  assert.deepEqual(
-    a.staffSensitiveFilters(
-      { dimensions: ["staff_detail.personal_email"] },
-      r,
-      ["k1", "k2"],
-    ),
-    [{ member: "staff.staff_key", operator: "equals", values: ["k1", "k2"] }],
-  );
-});
-
-test("staffSensitiveFilters: reporting_chain + empty chain → deny", () => {
-  const r = { ...SL, staff_pii_scope: "reporting_chain" };
-  assert.deepEqual(
-    a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, r, []),
-    [a.DENY_FILTER],
-  );
-});
-
-test("staffSensitiveFilters: reporting_chain_or_below_rank → OR(scope∧rank, chain)", () => {
-  const r = { ...SL, staff_pii_scope: "reporting_chain_or_below_rank" };
-  const f = a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, r, [
-    "k1",
-  ]);
-  assert.equal(f.length, 1);
-  assert.ok(f[0].or, "top-level OR");
-  const [scope, chain] = f[0].or;
-  assert.ok(scope.and.some((c) => c.member === "locations.abbreviation"));
-  assert.ok(
-    scope.and.some(
-      (c) =>
-        c.member === "staff.job_function_level" &&
-        c.operator === "gt" &&
-        c.values[0] === "4",
-    ),
-  );
-  assert.deepEqual(chain, {
-    member: "staff.staff_key",
-    operator: "equals",
-    values: ["k1"],
-  });
-});
-
-test("staffSensitiveFilters: reporting_chain_or_below_rank, network scope, no chain → rank only", () => {
-  const r = {
-    ...SL,
+test("buildSecurityContext flattens the access row + chain", () => {
+  const row = {
+    staff_key: "s1",
+    student_location_scope: "region",
     staff_pii_scope: "reporting_chain_or_below_rank",
-    staff_location_scope: "network",
-    staff_department_scope: "all",
+    region_key: "R1",
+    location_abbreviation: "ABC",
+    department_group: "Operations",
+    job_function_level: 5,
   };
+  const ctx = a.buildSecurityContext(row, ["k1", "k2"]);
+  assert.strictEqual(ctx.region_key, "R1");
+  assert.strictEqual(ctx.job_function_level, 5);
+  assert.deepEqual(ctx.reportee_staff_keys, ["k1", "k2"]);
+  assert.ok(ctx.groups.includes("staff-directory"));
+  // Scope-specific student group (canonical group-based RLS), not "student".
+  assert.ok(ctx.groups.includes("student-region"));
+  assert.ok(ctx.groups.includes("staff-pii-reporting_chain_or_below_rank"));
+});
+
+test("buildSecurityContext is null-safe for an unresolved viewer", () => {
+  const ctx = a.buildSecurityContext(null, []);
+  assert.deepEqual(ctx.groups, []);
+  assert.deepEqual(ctx.reportee_staff_keys, []);
+});
+
+test("buildSecurityContext defaults allowed_abbreviations/allowed_department_groups to [] when omitted", () => {
+  const ctx = a.buildSecurityContext(null, []);
+  assert.deepEqual(ctx.allowed_abbreviations, []);
+  assert.deepEqual(ctx.allowed_department_groups, []);
+});
+
+test("buildSecurityContext passes through the precomputed allow-lists", () => {
+  const ctx = a.buildSecurityContext(
+    { staff_pii_scope: "all_in_scope" },
+    ["k1"],
+    ["A", "B"],
+    ["talent"],
+  );
+  assert.deepEqual(ctx.allowed_abbreviations, ["A", "B"]);
+  assert.deepEqual(ctx.allowed_department_groups, ["talent"]);
+});
+
+// Empty-remit hardening: Cube (Tesseract) throws "Values required for filter" on
+// an `equals []` row_level filter (verified #4269) rather than compiling it to
+// zero rows, so a staff-pii scope whose remit/chain resolved empty must not emit
+// its group — the viewer takes the clean no-group default-deny path instead.
+test("buildGroups: all_in_scope with a full remit emits the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "all_in_scope" },
+    ["A"],
+    ["Ops"],
+    [],
+  );
+  assert.ok(g.includes("staff-pii-all_in_scope"));
+});
+
+test("buildGroups: all_in_scope with an empty location remit does NOT emit the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "all_in_scope" },
+    [],
+    ["Ops"],
+    [],
+  );
+  assert.ok(!g.includes("staff-pii-all_in_scope"));
+  assert.ok(g.includes("staff-directory")); // directory tier stays open
+});
+
+test("buildGroups: all_in_scope with an empty department remit does NOT emit the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "all_in_scope" },
+    ["A"],
+    [],
+    [],
+  );
+  assert.ok(!g.includes("staff-pii-all_in_scope"));
+});
+
+test("buildGroups: reporting_chain with no reportees does NOT emit the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "reporting_chain" },
+    [],
+    [],
+    [],
+  );
+  assert.ok(!g.includes("staff-pii-reporting_chain"));
+});
+
+test("buildGroups: reporting_chain with reportees emits the group", () => {
+  const g = a.buildGroups(
+    { staff_key: "s1", staff_pii_scope: "reporting_chain" },
+    [],
+    [],
+    ["k1"],
+  );
+  assert.ok(g.includes("staff-pii-reporting_chain"));
+});
+
+const LOCATION_UNIVERSE = [
+  { abbreviation: "A", region_key: "R1" },
+  { abbreviation: "B", region_key: "R1" },
+  { abbreviation: "C", region_key: "R2" },
+];
+
+test("computeAllowedAbbreviations: network scope returns every abbreviation", () => {
   assert.deepEqual(
-    a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, r, []),
-    [{ member: "staff.job_function_level", operator: "gt", values: ["4"] }],
+    a.computeAllowedAbbreviations("network", "R1", "A", LOCATION_UNIVERSE),
+    ["A", "B", "C"],
   );
 });
 
-test("staffSensitiveFilters: teaching_staff → remit ∩ TEACH/TIR", () => {
-  const r = { ...SL, staff_pii_scope: "teaching_staff" };
+test("computeAllowedAbbreviations: region scope returns only same-region abbreviations", () => {
   assert.deepEqual(
-    a.staffSensitiveFilters(
-      { dimensions: ["staff_detail.personal_cell_phone"] },
-      r,
-      [],
-    ),
-    [
-      { member: "locations.abbreviation", operator: "equals", values: ["ABC"] },
-      {
-        member: "staff.job_function_code",
-        operator: "equals",
-        values: ["TEACH", "TIR"],
-      },
-    ],
+    a.computeAllowedAbbreviations("region", "R1", null, LOCATION_UNIVERSE),
+    ["A", "B"],
+  );
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("region", "R2", null, LOCATION_UNIVERSE),
+    ["C"],
   );
 });
 
-test("staffSensitiveFilters: scope none → deny", () => {
+test("computeAllowedAbbreviations: school scope returns only the viewer's school", () => {
   assert.deepEqual(
-    a.staffSensitiveFilters(
-      { dimensions: ["staff_detail.race"] },
-      { ...SL, staff_pii_scope: "none" },
-      [],
-    ),
-    [a.DENY_FILTER],
+    a.computeAllowedAbbreviations("school", "R1", "B", LOCATION_UNIVERSE),
+    ["B"],
   );
 });
 
-test("staffSensitiveFilters: null row + sensitive request → deny", () => {
+test("computeAllowedAbbreviations: school scope with no location_abbreviation denies", () => {
   assert.deepEqual(
-    a.staffSensitiveFilters({ dimensions: ["staff_detail.race"] }, null, []),
-    [a.DENY_FILTER],
-  );
-});
-
-test("staffSensitiveFilters: two PII fields share one scope → not doubled", () => {
-  assert.deepEqual(
-    a.staffSensitiveFilters(
-      { dimensions: ["staff_detail.personal_email", "staff_detail.race"] },
-      SL,
-      [],
-    ),
-    [{ member: "locations.abbreviation", operator: "equals", values: ["ABC"] }],
-  );
-});
-
-test("staffSensitiveFilters: null row + non-sensitive field → no filter", () => {
-  // full_name is not in STAFF_SENSITIVE_SCOPE_BY_MEMBER — directory-only field.
-  // A null row must not deny when no sensitive field is requested.
-  assert.deepEqual(
-    a.staffSensitiveFilters(
-      { dimensions: ["staff_detail.full_name"] },
-      null,
-      [],
-    ),
+    a.computeAllowedAbbreviations("school", "R1", null, LOCATION_UNIVERSE),
     [],
   );
 });
 
-test("staffSensitiveFilters: PII + compensation simultaneously → both scope filters ANDed", () => {
-  // birth_date → staff_pii_scope; salary → staff_compensation_scope.
-  // A viewer with all_in_scope PII (school/all remit) but no compensation
-  // access should get a location filter for PII AND a deny for compensation.
-  // The two are independent scope columns — staffSensitiveFilters must emit
-  // filters for both, not collapse them into one.
-  const piiOnlyViewer = { ...SL, staff_compensation_scope: "none" };
-  const filters = a.staffSensitiveFilters(
-    { dimensions: ["staff_detail.birth_date", "staff_detail.salary"] },
-    piiOnlyViewer,
+test("computeAllowedAbbreviations: none/undefined scope denies", () => {
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("none", "R1", "A", LOCATION_UNIVERSE),
     [],
   );
-  // compensation deny fires → whole filter set includes DENY_FILTER
-  assert.ok(
-    filters.some(
-      (f) => f.member === "locations.abbreviation" && f.values.length === 0,
-    ),
-    "DENY_FILTER present for compensation scope=none",
+  assert.deepEqual(
+    a.computeAllowedAbbreviations(undefined, "R1", "A", LOCATION_UNIVERSE),
+    [],
   );
 });
 
-test("staffSensitiveFilters: PII + compensation both granted → both scope filters emitted without deny", () => {
-  // A viewer with both PII and compensation access (school/all remit for both)
-  // should get a location filter for PII and no deny for compensation.
-  const bothGranted = {
-    ...SL,
-    staff_pii_scope: "all_in_scope",
-    staff_compensation_scope: "all_in_scope",
-  };
-  const filters = a.staffSensitiveFilters(
-    { dimensions: ["staff_detail.birth_date", "staff_detail.salary"] },
-    bothGranted,
+test("computeAllowedAbbreviations: empty/undefined universe returns []", () => {
+  assert.deepEqual(a.computeAllowedAbbreviations("network", "R1", "A", []), []);
+  assert.deepEqual(
+    a.computeAllowedAbbreviations("network", "R1", "A", undefined),
     [],
   );
-  assert.ok(
-    !filters.some(
-      (f) => f.member === "locations.abbreviation" && f.values.length === 0,
-    ),
-    "no DENY_FILTER when both scopes are granted",
-  );
-  // Both scope columns resolve to the same school remit → one location filter
-  // (the Set dedup collapses two calls to the same scope column result).
-  assert.deepEqual(filters, [
-    { member: "locations.abbreviation", operator: "equals", values: ["ABC"] },
-  ]);
 });
 
-test("STAFF_PII_MEMBERS lists all gated sensitive columns", () => {
-  assert.deepEqual(a.STAFF_PII_MEMBERS.sort(), [
+const DEPARTMENT_UNIVERSE = ["talent", "finance", "academics"];
+
+test("computeAllowedDepartmentGroups: all scope returns the full universe", () => {
+  assert.deepEqual(
+    a.computeAllowedDepartmentGroups("all", "talent", DEPARTMENT_UNIVERSE),
+    DEPARTMENT_UNIVERSE,
+  );
+});
+
+test("computeAllowedDepartmentGroups: own_group scope returns just the viewer's group", () => {
+  assert.deepEqual(
+    a.computeAllowedDepartmentGroups(
+      "own_group",
+      "talent",
+      DEPARTMENT_UNIVERSE,
+    ),
+    ["talent"],
+  );
+});
+
+test("computeAllowedDepartmentGroups: none/undefined scope denies", () => {
+  assert.deepEqual(
+    a.computeAllowedDepartmentGroups("none", "talent", DEPARTMENT_UNIVERSE),
+    [],
+  );
+  assert.deepEqual(
+    a.computeAllowedDepartmentGroups(undefined, "talent", DEPARTMENT_UNIVERSE),
+    [],
+  );
+});
+
+test("STAFF_SENSITIVE_MEMBERS lists all gated sensitive columns", () => {
+  assert.deepEqual(a.STAFF_SENSITIVE_MEMBERS.sort(), [
     "birth_date",
     "gender_identity",
     "is_hispanic",

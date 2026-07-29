@@ -3,6 +3,7 @@ with
     enr as (
         select
             enr._dbt_source_relation,
+            enr._dbt_source_project,
             enr.cc_studentid,
             enr.cc_yearid,
             enr.cc_academic_year,
@@ -48,6 +49,7 @@ with
     enr_fg as (
         select
             enr._dbt_source_relation,
+            enr._dbt_source_project,
             enr.students_student_number,
             enr.cc_studentid,
             enr.cc_yearid,
@@ -119,7 +121,7 @@ with
             and enr.cc_yearid = fg.yearid
             and enr.cc_course_number = fg.course_number
             and enr.term_name = fg.storecode
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="fg") }}
+            and enr._dbt_source_project = fg._dbt_source_project
     )
 
 select
@@ -244,14 +246,14 @@ left join
     and enr.cc_schoolid = cat.schoolid
     and enr.term_code = cat.reporting_term
     and enr.cc_course_number = cat.course_number
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="cat") }}
+    and enr._dbt_source_project = cat._dbt_source_project
 left join
     {{ ref("int_powerschool__category_grades_pivot") }} as kctz
     on enr.cc_studentid = kctz.studentid
     and enr.cc_yearid = kctz.yearid
     and enr.cc_schoolid = cat.schoolid
     and enr.term_name = kctz.reporting_term
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="kctz") }}
+    and enr._dbt_source_project = kctz._dbt_source_project
     and kctz.course_number = 'HR'
     and left(enr.sections_section_number, 1) = '0'
 left join
@@ -259,12 +261,12 @@ left join
     on enr.cc_studentid = comm.studentid
     and enr.cc_sectionid = comm.sectionid
     and enr.term_name = comm.finalgradename
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="comm") }}
+    and enr._dbt_source_project = comm._dbt_source_project
 left join
     {{ ref("stg_powerschool__storedgrades") }} as sgy1
     on enr.cc_studentid = sgy1.studentid
     and enr.cc_academic_year = sgy1.academic_year
     and enr.cc_course_number = sgy1.course_number
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="sgy1") }}
+    and enr._dbt_source_project = sgy1._dbt_source_project
     and enr.term_name = 'Q4'
     and sgy1.storecode = 'Y1'

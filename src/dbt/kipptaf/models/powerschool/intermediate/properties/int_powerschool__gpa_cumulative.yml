@@ -45,6 +45,33 @@ models:
         data_type: float64
       - name: core_cumulative_y1_gpa
         data_type: float64
+      - name: potential_gpa_credits_cum_projected
+        data_type: float64
+        description: >-
+          Sum of potential GPA credit hours across all years, including
+          in-progress current-year courses — the denominator behind
+          `cumulative_y1_gpa_projected`.
+      - name: potential_gpa_credits_current_year
+        data_type: float64
+        description: >-
+          Potential GPA credit hours the student is enrolled in for the current
+          academic year. NULL when the student has no current-year GPA credits.
+      - name: gpa_needed_for_cumulative_3_0
+        data_type: float64
+        description: >-
+          Weighted Y1 GPA the student must average across all current-year GPA
+          credits to finish with a projected cumulative Y1 GPA of exactly 3.00.
+          Negative values mean 3.00 is already guaranteed; values above the
+          student's scale maximum are not attainable this year. NULL when the
+          student has no current-year GPA credits.
+      - name: is_cumulative_3_0_attainable
+        data_type: boolean
+        description: >-
+          True when `gpa_needed_for_cumulative_3_0` is at or below the
+          credit-weighted maximum weighted GPA achievable across the student's
+          current-year courses. NULL when the needed value is NULL, or when any
+          in-progress course's grade scale cannot be resolved — the max is then
+          unknowable, so the flag reads unknown rather than a misstated false.
       - name: _dbt_source_project
         data_type: string
         description: District code location derived from `_dbt_source_relation`.

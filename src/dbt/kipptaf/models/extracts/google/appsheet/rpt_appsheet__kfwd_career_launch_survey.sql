@@ -74,7 +74,7 @@ select
 
     coalesce(ss.survey_response_count, 0) as survey_response_count,
 
-    if(r.advising_provider = 'KIPP NYC', r.postsec_advisor, r.contact_owner) as advisor,
+    if(r.advising_provider = 'KIPP NYC', 'Collab', r.contact_owner) as advisor,
 from roster as r
 left join current_enrollment as ce on r.contact_id = ce.student
 left join survey_stats as ss on r.contact_id = ss.contact_id

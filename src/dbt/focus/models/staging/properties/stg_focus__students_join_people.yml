@@ -1,0 +1,57 @@
+models:
+  - name: stg_focus__students_join_people
+    description: >-
+      Focus student-to-person (contact / guardian) links (live rows only) — one
+      row per join id, relating a student to a person with custody / emergency /
+      pickup / relationship attributes. Soft-deleted rows are excluded. Used to
+      tell whether a student already has a contact in Focus.
+    columns:
+      - name: id
+        description: Primary key — Focus students_join_people id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Focus student id the person is linked to.
+        data_type: int
+      - name: person_id
+        description: Focus person id linked to the student.
+        data_type: int
+      - name: address_id
+        description: Focus address id associated with the link, when set.
+        data_type: int
+      - name: custody
+        description: Y/N — whether the person has custody of the student.
+        data_type: string
+      - name: emergency
+        description: Y/N — whether the person is an emergency contact.
+        data_type: string
+      - name: student_relation
+        description: Relationship of the person to the student (e.g. parent).
+        data_type: string
+      - name: imported
+        description: Y/N — whether the link originated from an import.
+        data_type: string
+      - name: sort_order
+        description: Ordering of the person among the student's contacts.
+        data_type: numeric
+      - name: pick_up
+        description: Y/N — whether the person is authorized for pickup.
+        data_type: string
+      - name: uuid
+        description: Focus global unique identifier for the row.
+        data_type: string
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: reunification
+        description: Y/N — whether the person is a reunification contact.
+        data_type: string

@@ -308,6 +308,8 @@ class InstructionByLesson(IReadyBaseModel):
     completion_date: str | None = None
     foundational_skills_completed: str | None = None
     foundational_skills_successful: str | None = None
+    items_completed: str | None = None
+    items_correct: str | None = None
     language_comprehension_items_completed: str | None = None
     language_comprehension_items_correct: str | None = None
     lesson_language: str | None = None
@@ -320,6 +322,7 @@ class InstructionByLesson(IReadyBaseModel):
     lesson: str | None = None
     level: str | None = None
     percent_foundational_skills_successful: str | None = None
+    percent_items_correct: str | None = None
     percent_language_comprehension_items_correct: str | None = None
     percent_skills_successful: str | None = None
     skills_completed: str | None = None
@@ -427,6 +430,18 @@ class PersonalizedInstructionSummary(BaseModel):
     ) = None
     i_ready_pro_geometric_measurement_and_figures_skills_completed: str | None = None
     i_ready_pro_geometric_measurement_and_figures_skills_successful: str | None = None
+    i_ready_pro_number_relationships_and_operation_concepts_k_2_skills_completed: (
+        str | None
+    ) = None
+    i_ready_pro_number_relationships_and_operation_concepts_k_2_skills_successful: (
+        str | None
+    ) = None
+    i_ready_pro_number_relationships_and_operation_concepts_percent_k_2_skills_successful: (
+        str | None
+    ) = None
+    i_ready_pro_number_sense_k_2_skills_completed: str | None = None
+    i_ready_pro_number_sense_k_2_skills_successful: str | None = None
+    i_ready_pro_number_sense_percent_k_2_skills_successful: str | None = None
     i_ready_pro_rational_numbers_and_operations_percent_skills_successful: (
         str | None
     ) = None

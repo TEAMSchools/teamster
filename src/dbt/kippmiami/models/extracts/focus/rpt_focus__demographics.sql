@@ -1,3 +1,18 @@
+with
+    -- import once: send a student's demographics only if the student is not yet
+    -- in Focus. Existing Focus demographics are never overwritten.
+    focus_students as (
+        select distinct cast(student_id as string) as student_id,
+        from {{ ref("stg_focus__students") }}
+    ),
+
+    diffed as (
+        select d.*,
+        from {{ source("kipptaf_extracts", "rpt_focus__demographics") }} as d
+        left join focus_students as f on d.stdt_id = f.student_id
+        where f.student_id is null
+    )
+
 select
     stdt_id,
     last_name,
@@ -41,4 +56,4 @@ select
     dt_home_lang_survey,
     casas_track,
     lcp_cont_stdt,
-from {{ source("kipptaf_extracts", "rpt_focus__demographics") }}
+from diffed

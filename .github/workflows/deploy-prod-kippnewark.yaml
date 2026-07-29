@@ -33,13 +33,13 @@ on:
       - src/teamster/libraries/extracts/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**
@@ -59,12 +59,12 @@ on:
       - src/teamster/libraries/finalsite/**
       - src/teamster/libraries/dbt/**
       - src/teamster/libraries/deanslist/**
+      - src/teamster/libraries/dlt/**
       - src/teamster/libraries/edplan/**
       - src/teamster/libraries/google/drive/resources.py
       - src/teamster/libraries/iready/**
       - src/teamster/libraries/overgrad/**
       - src/teamster/libraries/pearson/**
-      - src/teamster/libraries/powerschool/sis/odbc/**
       - src/teamster/libraries/renlearn/**
       - src/teamster/libraries/sftp/**
       - src/teamster/libraries/ssh/**

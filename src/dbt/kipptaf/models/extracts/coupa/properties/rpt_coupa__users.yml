@@ -1,11 +1,39 @@
 models:
   - name: rpt_coupa__users
+    description: >-
+      Desired-state Coupa user feed built from the staff roster joined to
+      current Coupa accounts, exported nightly to Coupa via SFTP.
     columns:
       - name: "`Login`"
         data_type: string
-      - name: "`Sso Identifier`"
-        data_type: string
+        description: >-
+          Coupa login, from the staff member Active Directory sam_account_name.
+          Unique per user; also matches existing Coupa accounts.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          # TODO(#4409): restore severity error once Ops removes the duplicate
+          # active Coupa addresses and the duplicate school_name_lookup key that
+          # fan out rows
+          - unique:
+              config:
+                severity: warn
       - name: "`Email`"
+        data_type: string
+        description: >-
+          Staff email address (ADP mail) used as the Coupa email; required by
+          Coupa.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          # TODO(#4409): restore severity error once the row fan-out data dupes
+          # are removed
+          - unique:
+              config:
+                severity: warn
+      - name: "`Sso Identifier`"
         data_type: string
       - name: "`First Name`"
         data_type: string

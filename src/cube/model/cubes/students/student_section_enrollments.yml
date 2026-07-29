@@ -18,6 +18,15 @@ cubes:
         sql: "{terms.term_key} = {CUBE}.term_key"
         relationship: many_to_one
 
+      # Lead teacher name/attributes. many_to_one — one lead per enrollment
+      # after dbt resolution — so no fan-out. Joins the staff_lead_teacher
+      # role-play cube (extends staff) so the lead-teacher members can't collide
+      # with the homeroom-teacher staff join reached transitively via
+      # student_school_enrollments.
+      - name: staff_lead_teacher
+        sql: "{staff_lead_teacher.staff_key} = {CUBE}.lead_teacher_staff_key"
+        relationship: many_to_one
+
     dimensions:
       - name: student_section_enrollment_key
         description: >-
@@ -83,4 +92,36 @@ cubes:
           TRUE if all enrollments for this student x course x year were dropped.
         sql: is_dropped_course
         type: boolean
+        public: true
+
+      # Degenerate FK to staff — teacher name comes via the staff join.
+      - name: lead_teacher_staff_key
+        description: FK to staff — the section's Lead Teacher.
+        sql: lead_teacher_staff_key
+        type: string
+
+      - name: is_homeroom
+        description:
+          TRUE when this is a homeroom section (HR course-number prefix).
+        sql: is_homeroom
+        type: boolean
+        public: true
+
+      - name: is_current_section_enrollment
+        description: >-
+          TRUE for the most-recent section enrollment among a student's
+          sequential enrollments in the same course within an academic year.
+          Filter with is_homeroom to select the current homeroom section.
+        sql: is_current_section_enrollment
+        type: boolean
+        public: true
+
+    measures:
+      - name: count_students
+        description: >-
+          Distinct students with a section enrollment in the filtered slice.
+          Answers "how many students does this teacher teach?" when grouped by
+          the lead teacher. count_distinct on the student, so it is fan-safe.
+        sql: "{students.student_key}"
+        type: count_distinct
         public: true

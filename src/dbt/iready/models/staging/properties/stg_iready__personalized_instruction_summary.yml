@@ -187,6 +187,18 @@ models:
         data_type: int64
       - name: geometric_measurement_and_figures_skills_successful
         data_type: int64
+      - name: number_relationships_and_operation_concepts_percent_k_2_skills_successful
+        data_type: int64
+      - name: number_relationships_and_operation_concepts_k_2_skills_completed
+        data_type: int64
+      - name: number_relationships_and_operation_concepts_k_2_skills_successful
+        data_type: int64
+      - name: number_sense_percent_k_2_skills_successful
+        data_type: int64
+      - name: number_sense_k_2_skills_completed
+        data_type: int64
+      - name: number_sense_k_2_skills_successful
+        data_type: int64
       - name: rational_numbers_and_operations_percent_skills_successful
         data_type: int64
       - name: rational_numbers_and_operations_skills_completed

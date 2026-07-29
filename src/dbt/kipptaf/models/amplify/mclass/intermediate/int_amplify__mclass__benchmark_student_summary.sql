@@ -20,6 +20,7 @@ with
 
             x.location_abbreviation as school,
             x.location_powerschool_school_id as schoolid,
+            x.location_dagster_code_location as _dbt_source_project,
 
             initcap(
                 regexp_extract(x.location_dagster_code_location, r'kipp(\w+)')

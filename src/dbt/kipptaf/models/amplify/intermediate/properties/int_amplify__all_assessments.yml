@@ -123,6 +123,19 @@ models:
         data_type: string
       - name: eoy_composite
         data_type: string
+      - name: illuminate_subject
+        data_type: string
+        description: >-
+          Course-subject mapping used by the section-enrollment resolver. All
+          DIBELS measures are reading-family, so this is constant Text Study.
+      - name: _dbt_source_project
+        data_type: string
+        description: >-
+          Dagster code location. Passed through from the mclass union models
+          (int_amplify__mclass__benchmark_student_summary and
+          int_amplify__mclass__pm_student_summary), where it is the crosswalk
+          location_dagster_code_location; the frozen 7/8 SY24 branch derives it
+          from region. Materialized so consumers join and hash a column.
       - name: benchmark_goal_season
         data_type: string
       - name: aggregated_measure_standard_level

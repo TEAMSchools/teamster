@@ -3,6 +3,46 @@
     from {{ source("people", "src_people__student_logins") }}
 {% elif is_incremental() %}
     with
+        miami_candidates as (
+            select
+                c.first_name,
+                c.last_name,
+                c.birth_date,
+
+                cast(ida.focus_student_id_prefixed as int64) as student_number,
+                cast(ida.focus_student_id as int64) as student_number_bare,
+            from {{ ref("stg_finalsite__contacts") }} as c
+            inner join
+                {{ ref("int_finalsite__contact_id_attributes") }} as ida
+                on c.finalsite_enrollment_id = ida.finalsite_enrollment_id
+                and ida.focus_student_id_prefixed is not null
+            where c.status = 'enrolled'
+        ),
+
+        union_source as (
+            select student_number, dob, first_name, last_name,
+            from {{ ref("stg_powerschool__students") }}
+            where
+                student_number not in (select t.student_number, from {{ this }} as t)
+                and _dbt_source_project != 'kippmiami'
+                and dob is not null
+                and first_name is not null
+                and last_name is not null
+                and enroll_status = 0
+
+            union all
+
+            select student_number, birth_date as dob, first_name, last_name,
+            from miami_candidates
+            where
+                student_number not in (select t.student_number, from {{ this }} as t)
+                and student_number_bare
+                not in (select t.student_number, from {{ this }} as t)
+                and birth_date is not null
+                and first_name is not null
+                and last_name is not null
+        ),
+
         components as (
             select
                 student_number,
@@ -22,14 +62,7 @@
                     r'[\pM\W]',
                     ''
                 ) as last_name_clean,
-            from {{ ref("stg_powerschool__students") }}
-            where
-                student_number not in (select t.student_number, from {{ this }} as t)
-                and dob is not null
-                and first_name is not null
-                and last_name is not null
-                and enroll_status = 0
-                and _dbt_source_relation not like '%kipppaterson%'
+            from union_source
         ),
 
         username_options as (
@@ -169,6 +202,8 @@
 {% endif %}
 
     -- depends_on: {{ ref("stg_powerschool__students") }}
+    -- depends_on: {{ ref("stg_finalsite__contacts") }}
+    -- depends_on: {{ ref("int_finalsite__contact_id_attributes") }}
     -- trunk-ignore(sqlfluff/LT05)
     -- depends_on: {{ source("google_sheets", "stg_google_sheets__people__student_logins_archive") }}
     -- depends_on: {{ source("people", "src_people__student_logins") }}

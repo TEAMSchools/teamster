@@ -15,10 +15,10 @@ with
         inner join
             {{ ref("stg_powerschool__students") }} as s
             on sg.studentid = s.id
-            and {{ union_dataset_join_clause(left_alias="sg", right_alias="s") }}
+            and sg._dbt_source_project = s._dbt_source_project
         left outer join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as suw
-            on {{ union_dataset_join_clause(left_alias="sg", right_alias="suw") }}
+            on sg._dbt_source_project = suw._dbt_source_project
             and sg.percent between suw.min_cutoffpercentage and suw.max_cutoffpercentage
             and sg.gradescale_name_unweighted = suw.gradescale_name
         where sg.storecode = 'Y1' and sg.excludefromgpa = 0

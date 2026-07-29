@@ -1,6 +1,7 @@
 # trunk-ignore-all(yamllint/quoted-strings)
 packages:
   - local: ../amplify
+  - local: ../deanslist
   - local: ../finalsite
   - local: ../pearson
   - local: ../powerschool

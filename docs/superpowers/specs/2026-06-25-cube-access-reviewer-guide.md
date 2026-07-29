@@ -23,6 +23,13 @@ see nothing. Default deny.
 Results are cached until midnight ET each night, so access changes take effect
 the next day.
 
+Mechanically, access is enforced entirely by each Cube view's own
+`access_policy:` block — there is no separate server-side row-filtering step.
+Identity resolution (the `dim_staff_cube_access` + `dim_staff_reporting_chain`
+reads) happens once per request in the auth hooks and is shaped into a set of
+groups; each view's `access_policy` grants column/row access to whichever group
+the viewer holds.
+
 ## The two axes of access
 
 ### Column visibility (tiers)
@@ -39,6 +46,14 @@ a tier.
 | `staff-observations` | Observation scores and feedback (no cube/view built yet — reserved).                                                                           |
 | `staff-benefits`     | Benefits enrollment data (no cube/view built yet — reserved).                                                                                  |
 | `student`            | All student data — every student view (summary + detail), all fields incl. names, contact info, and other direct identifiers. Location-scoped. |
+
+Internally, `staff-pii` and `student` each fan out to one scope-specific group
+per enum value below (e.g. `staff-pii-teaching_staff`, `student-region`), with
+the matching `access_policy` block living on `staff_pii.yml` (split out of the
+old `staff_detail.yml`) or the relevant student view. The table above describes
+the resulting access, which is unchanged; group names are an implementation
+detail — see [`src/cube/CLAUDE.md`](../../../src/cube/CLAUDE.md) if you need
+them.
 
 ### Row-level scope (who they can see within a view)
 
@@ -97,8 +112,9 @@ all their filters — the intersection is what the viewer sees.
 | `none`                          | No access to this sensitive field.                                                                                                                             |
 
 There is no separate student PII scope. A non-`none` `student_location_scope`
-grants the single `student` tier, which sees all student fields (including PII)
-subject only to the location row filter.
+grants one scope-specific `student-*` group (`student-region` / `student-school`
+/ `student-network`), which sees all student fields (including PII) subject only
+to that group's location row filter.
 
 ## Department groups (reference)
 

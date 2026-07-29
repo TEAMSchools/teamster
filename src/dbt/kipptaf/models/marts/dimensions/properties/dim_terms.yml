@@ -16,6 +16,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique:
               config:
@@ -35,6 +36,7 @@ models:
             to: ref('dim_locations')
             to_columns: [location_key]
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - relationships:
               arguments:

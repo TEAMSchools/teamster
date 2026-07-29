@@ -18,6 +18,7 @@ assets:
   - table_name: districts
   - table_name: scheduling_teams
   - table_name: attendance_calendars
+  - table_name: attendance_calendar
   - table_name: grad_subject_programs
   # Attendance Day
   - table_name: attendance_day

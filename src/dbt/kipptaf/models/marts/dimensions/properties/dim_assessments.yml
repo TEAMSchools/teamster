@@ -18,6 +18,14 @@ models:
         land in the same bucket (e.g., SAT EBRW and ACT Reading combine to
         EBRW/Reading). Use this for apples-to-oranges comparisons across
         test families.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # nightly instead of eager: Cube-only consumer, daily refresh_key —
+          # see fct_assessment_scores_enrollment_scoped. Refs #4559
+          automation_condition:
+            cron_schedule: 0 0 * * *
     columns:
       - name: assessment_key
         data_type: string
@@ -31,6 +39,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null

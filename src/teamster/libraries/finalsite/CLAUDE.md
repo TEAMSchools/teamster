@@ -10,6 +10,16 @@ Two ingestion paths for **Finalsite** (school website/communications platform):
 **`assets.py`** (`build_finalsite_asset()`): Non-partitioned GCS Avro asset.
 Calls `finalsite.list(path=asset_name)` to fetch all records.
 
+**Concurrency (do NOT parallelize).** All districts' `contacts` schedules fire
+at `0 4 * * *` ET simultaneously. The Finalsite gateway throttles by shared
+egress IP and returns a bare nginx `403` (not `429`) under concurrent pulls,
+despite separate subdomains/credentials — so `build_finalsite_asset` puts every
+district's op in one shared `finalsite_api` pool (limit **1**, set in Dagster+
+Deployment then Concurrency; the `pool=` kwarg alone does nothing until the
+limit is configured). `_request` also retries `403` and transient network
+faults. Pagination is sequential cursor-only (~1 req/s, 25/page); kippnewark
+(~24k contacts) is ~20 min.
+
 **`resources.py`** (`FinalsiteResource`): REST client with pagination support.
 
 **`schema.py`**: Avro schemas for Finalsite API responses.

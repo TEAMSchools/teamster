@@ -63,21 +63,29 @@ dependencies are resolved against.
 
 ### PowerSchool integration
 
-PowerSchool has three separate integration paths:
+PowerSchool has two live integration paths, plus a retired one:
 
-| Integration    | Protocol               | Schools               | Notes                                              |
-| -------------- | ---------------------- | --------------------- | -------------------------------------------------- |
-| SIS via ODBC   | Oracle over SSH tunnel | Newark, Camden, Miami | Primary pattern; live queries                      |
-| SIS via SFTP   | File ingestion         | Paterson only         | Schema-only use case                               |
-| Enrollment API | REST                   | All                   | Separate from SIS; handles form submission records |
+| Integration    | Protocol               | Schools        | Notes                                              |
+| -------------- | ---------------------- | -------------- | -------------------------------------------------- |
+| SIS via dlt    | Oracle over SSH tunnel | Newark, Camden | Current pattern; replaces the ODBC path below      |
+| SIS via SFTP   | File ingestion         | Paterson only  | Schema-only use case                               |
+| Enrollment API | REST                   | All            | Separate from SIS; handles form submission records |
+
+**Miami** no longer runs a live PowerSchool SIS integration — its pre-Focus
+PowerSchool data is archived in the frozen BigQuery dataset
+`kippmiami_powerschool` (do not drop). SIS via ODBC (Oracle over a live SSH
+tunnel) is archived — the code and dbt models remain in place but no district
+builds them.
 
 ### PowerSchool regional extracts
 
 `rpt_powerschool__autocomm_*` models in `kipptaf/models/extracts/powerschool/`
-define a shared export file format consumed by all regional PowerSchool
-instances. These models are **not** extracted in `kipptaf` — the regional
-projects (`kippnewark`, `kippcamden`, `kippmiami`) each source from them, filter
-to their own data, and push to their respective PowerSchool instance.
+define a shared export file format consumed by regional PowerSchool instances.
+These models are **not** extracted in `kipptaf` — the regional projects
+(`kippnewark`, `kippcamden`) each source from them, filter to their own data,
+and push to their respective PowerSchool instance. Miami retired its PowerSchool
+instance (frozen archive in BigQuery dataset `kippmiami_powerschool`) and no
+longer sources these extracts.
 
 As a result, dbt exposures for PowerSchool extracts live in the **regional
 projects**, not in `kipptaf`.

@@ -34,7 +34,7 @@ def _dispatch(
         captured["load_queries"].append(tool_input.get("query"))
         # Minimal well-formed aggregate result so the model stops and answers.
         return {
-            "data": [{"student_attendance_summary.count_students": "0"}],
+            "data": [{"student_attendance_view.count_students": "0"}],
             "annotation": {},
         }
     if name == "sql":

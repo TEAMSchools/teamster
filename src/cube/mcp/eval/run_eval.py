@@ -48,8 +48,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--arms",
         nargs="+",
-        default=["A_baseline", "B_instructions"],
-        choices=["A_baseline", "B_instructions"],
+        default=["A_baseline", "B_descriptions"],
+        choices=["A_baseline", "B_descriptions"],
     )
     p.add_argument("--reps", type=int, default=DEFAULT_REPS)
     p.add_argument("--concurrency", type=int, default=DEFAULT_CONCURRENCY)
@@ -77,11 +77,13 @@ def do_dry_run(arms: dict[str, dict[str, Any]], prompts: list[dict[str, Any]]) -
     )
     for name, arm in arms.items():
         tool_names = [t["name"] for t in arm["tools"]]
-        has_crosswalk = "resolve it yourself" in arm["instructions"]
+        load_desc = next(t["description"] for t in arm["tools"] if t["name"] == "load")
+        has_crosswalk = "resolve it yourself" in load_desc
         print(f"=== {name} ===")
         print(f"  tools: {tool_names}")
         print(
-            f"  instructions: {len(arm['instructions'])} chars "
+            f"  instructions: {len(arm['instructions'])} chars; "
+            f"load description: {len(load_desc)} chars "
             f"(inline crosswalk: {has_crosswalk})"
         )
     print("\nDry run only — no API calls made.")
@@ -144,7 +146,7 @@ def main() -> None:
 
     if args.smoke:
         prompts = prompts[:1]
-        args.arms = ["B_instructions"]
+        args.arms = ["B_descriptions"]
         args.models = args.models[:1]
         args.reps = 1
 

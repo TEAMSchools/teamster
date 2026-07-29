@@ -130,21 +130,44 @@ models:
       - name: birth_date
         data_type: date
         description: Contact's date of birth, cast from the source string.
+      - name: household_1_id
+        data_type: string
+        description:
+          Finalsite id of the contact's first household ("household 1") — the
+          household whose address populates the address columns. Finalsite
+          households carry only an id and an address; membership roles do not
+          exist, so parent/guardian semantics come from `relationships` and
+          custom fields, not from the household.
+      - name: household_ids
+        data_type: array<string>
+        description:
+          Finalsite ids of every household the contact belongs to. Used to test
+          household co-membership between a student and a related contact.
       - name: address_1
         data_type: string
-        description: Line 1 of the primary household address.
+        description:
+          Line 1 of the primary household address; blank values normalized to
+          null.
       - name: address_2
         data_type: string
-        description: Line 2 of the primary household address.
+        description:
+          Line 2 of the primary household address; blank values normalized to
+          null.
       - name: city
         data_type: string
-        description: City of the primary household address.
+        description:
+          City of the primary household address; blank values normalized to
+          null.
       - name: state
         data_type: string
-        description: State of the primary household address.
+        description:
+          State of the primary household address, uppercased; blank values
+          normalized to null.
       - name: zip
         data_type: string
-        description: ZIP code of the primary household address.
+        description:
+          ZIP code of the primary household address; blank values normalized to
+          null.
       - name: country
         data_type: string
         description: Country of the primary household address.

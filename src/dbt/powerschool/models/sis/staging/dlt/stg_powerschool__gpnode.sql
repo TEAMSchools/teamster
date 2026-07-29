@@ -1,0 +1,23 @@
+select
+    `name`,
+    minimumgrade,
+    gpamethod,
+
+    cast(id as int) as id,
+    cast(parentid as int) as parentid,
+    cast(gpversionid as int) as gpversionid,
+    cast(nodetype as int) as nodetype,
+    cast(altcompletioncount as int) as altcompletioncount,
+    cast(completioncount as int) as completioncount,
+    cast(allowanyof as int) as allowanyof,
+    cast(allowwaiver as int) as allowwaiver,
+    cast(ishidden as int) as ishidden,
+    cast(issinglesitting as int) as issinglesitting,
+    cast(issummation as int) as issummation,
+    cast(sortorder as int) as sortorder,
+    cast(requirementcount as int) as requirementcount,
+    cast(verifyminimumgradefirst as int) as verifyminimumgradefirst,
+    cast(creditcapacity as float64) as creditcapacity,
+    cast(minimumgpa as float64) as minimumgpa,
+    cast(minimumgradepercentage as float64) as minimumgradepercentage,
+from {{ source("powerschool_dlt", "gpnode") }}
