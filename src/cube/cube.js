@@ -245,13 +245,50 @@ module.exports = {
       JSON.stringify({
         top: shape(securityContext),
         cubeCloud: shape(securityContext?.cubeCloud),
+        // Hunting for where a pasted Security Context target arrives, since
+        // 1.7.14 has no top-level `email`. userCredentials is deliberately NOT
+        // introspected — we do not need it and its name says why.
+        userAttributes: shape(securityContext?.cubeCloud?.userAttributes),
+        meta: shape(securityContext?.cubeCloud?.meta),
         // `iss` is an allowlisted VALUE: a JWT issuer identifier, not PII and
         // not a credential. Needed because a guard keyed on it cannot be
         // designed from its type alone. Nothing else here emits a value.
         iss: securityContext?.iss ?? null,
-        hasGroups: Array.isArray(securityContext?.groups),
       }),
     );
+
+    // Cube Cloud bypasses checkAuth and injects its own context, which carries
+    // no top-level `groups` — so every gated view default-denied for console
+    // users, showing only source tables (#4526). Enrich it here from the
+    // identity Cube Cloud authenticated.
+    //
+    // This resolves the console user as THEMSELVES: no impersonation, no admin
+    // gate, no way to obtain scope you were not granted in HR data. Emulating a
+    // different viewer in Explore is deliberately not handled yet — the channel
+    // a pasted target arrives on is still unknown on 1.7.14 (see the probe
+    // above), and the REST `act_as` path plus the SQL matrix already cover
+    // validation.
+    //
+    // TRUST NOTE for code-owner review: `cubeCloud.username` is asserted by
+    // Cube Cloud, not verified by our own `jwt.verify`. Before this change,
+    // console identity was not load-bearing for data access (console users saw
+    // nothing); after it, Cube Cloud's console authentication establishes who
+    // you are for RLS purposes. That is a deliberate extension of trust to Cube
+    // Cloud's auth, on par with what the SQL API already extends to the
+    // connecting user.
+    //
+    // The `!groups` guard keeps this idempotent — checkAuth always sets `groups`
+    // (possibly to an empty array, which is truthy), so the REST path is
+    // untouched and re-entry is a no-op. Idempotence matters: Cube caches the
+    // selected policies under a hash of the context computed BEFORE this hook
+    // runs (`CompilerApi.hashRequestContext`), so enrichment must be
+    // deterministic for a given input context.
+    if (securityContext && !securityContext.groups) {
+      const consoleUser = securityContext.cubeCloud?.username ?? null;
+      if (consoleUser) {
+        Object.assign(securityContext, await resolveAccess(consoleUser));
+      }
+    }
     return securityContext?.groups ?? [];
   },
 

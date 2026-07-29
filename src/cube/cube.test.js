@@ -500,3 +500,103 @@ test("checkAuth: the target email reaches resolveAccess with its case intact", a
   // The mixed-case key resolved, not the lowercased one.
   assert.deepEqual(req.securityContext.groups, ["student-network"]);
 });
+
+// --- Cube Cloud injected-context enrichment (#4526) --------------------------
+// Cube Cloud bypasses checkAuth and injects a context with no top-level
+// `groups`, so contextToGroups enriches it from the console identity. Shapes
+// below match what 1.7.14 actually injects: no top-level email, and the console
+// user under cubeCloud.username.
+
+test("contextToGroups: a Cube Cloud context resolves the console user's own scope", async () => {
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "console1@apps.teamschools.org": ["student-network", "staff-directory"],
+  });
+  const securityContext = {
+    cubeCloud: {
+      username: "console1@apps.teamschools.org",
+      roles: ["Developer"],
+    },
+    iss: "cubecloud",
+    exp: 1790000000,
+  };
+
+  const groups = await cube.contextToGroups({ securityContext });
+
+  assert.deepEqual(groups, ["student-network", "staff-directory"]);
+  // The access policies read the context object, not this return value, so the
+  // enrichment has to land ON it.
+  assert.deepEqual(securityContext.groups, [
+    "student-network",
+    "staff-directory",
+  ]);
+  assert.ok("allowed_abbreviations" in securityContext);
+  // Cube Cloud's own keys survive enrichment.
+  assert.equal(
+    securityContext.cubeCloud.username,
+    "console1@apps.teamschools.org",
+  );
+});
+
+test("contextToGroups: enrichment is idempotent (re-entry is a no-op)", async () => {
+  // Cube caches selected policies under a hash taken BEFORE this hook, so the
+  // same input context must always yield the same groups.
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "console2@apps.teamschools.org": ["staff-directory"],
+  });
+  const securityContext = {
+    cubeCloud: { username: "console2@apps.teamschools.org" },
+    iss: "cubecloud",
+  };
+
+  const first = await cube.contextToGroups({ securityContext });
+  const second = await cube.contextToGroups({ securityContext });
+
+  assert.deepEqual(first, second);
+  assert.deepEqual(securityContext.groups, ["staff-directory"]);
+});
+
+test("contextToGroups: a Cube Cloud context with no username stays default-deny", async () => {
+  const securityContext = {
+    cubeCloud: { roles: ["Developer"] },
+    iss: "cubecloud",
+  };
+  assert.deepEqual(await cube.contextToGroups({ securityContext }), []);
+  assert.ok(!("groups" in securityContext));
+});
+
+test("contextToGroups: an unresolvable console user stays default-deny", async () => {
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "someone-else@apps.teamschools.org": ["student-network"],
+  });
+  const securityContext = {
+    cubeCloud: { username: "nobody3@apps.teamschools.org" },
+    iss: "cubecloud",
+  };
+  assert.deepEqual(await cube.contextToGroups({ securityContext }), []);
+});
+
+test("contextToGroups: an already-enriched REST context is passed through untouched", async () => {
+  // checkAuth sets groups, so the REST path must never be re-resolved here -
+  // including when groups is legitimately empty (default-deny).
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "console4@apps.teamschools.org": ["student-network"],
+  });
+  const rest = { groups: ["staff-directory"], region_key: "R1" };
+  assert.deepEqual(await cube.contextToGroups({ securityContext: rest }), [
+    "staff-directory",
+  ]);
+  assert.equal(rest.region_key, "R1");
+
+  const denied = {
+    groups: [],
+    cubeCloud: { username: "console4@apps.teamschools.org" },
+  };
+  assert.deepEqual(await cube.contextToGroups({ securityContext: denied }), []);
+});
+
+test("contextToGroups: no security context at all is default-deny", async () => {
+  assert.deepEqual(
+    await cube.contextToGroups({ securityContext: undefined }),
+    [],
+  );
+});
