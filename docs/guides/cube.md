@@ -229,8 +229,8 @@ token is the usual cause — see
 
 Row-level security is enforced by per-view `access_policy`, driven by the
 `securityContext` that `resolveAccess` builds. Both local auth hooks run in
-developer mode (verified on Cube 1.6.59), and Cube Cloud is covered by the
-`contextToGroups` enrichment — so **every surface can emulate a viewer by
+developer mode (verified on Cube 1.6.59 and 1.7.14), and Cube Cloud is covered
+by the `contextToGroups` enrichment — so **every surface can emulate a viewer by
 email**, which is how a user's scope gets signed off before they are granted
 access:
 

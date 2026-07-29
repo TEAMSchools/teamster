@@ -238,10 +238,10 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   sets `req.securityContext = await resolveAccess(email)`. No/invalid token →
   `jwt.verify` throws → Cube rejects the request; no `Authorization` header
   resolves to the empty default-deny context. **It runs in developer mode too**
-  (verified on Cube 1.6.59) — so the local REST Playground resolves a pasted
-  `{"email": ...}`; do not assume `NODE_ENV=production` is needed. `jwt.verify`
-  also enforces `maxAge: "12h"` derived from `iat`, which rejects a stale cached
-  Playground token and any token with no `iat` at all. Cube Cloud's
+  (verified on Cube 1.6.59 and 1.7.14) — so the local REST Playground resolves a
+  pasted `{"email": ...}`; do not assume `NODE_ENV=production` is needed.
+  `jwt.verify` also enforces `maxAge: "12h"` derived from `iat`, which rejects a
+  stale cached Playground token and any token with no `iat` at all. Cube Cloud's
   `iss: "cubecloud"` context never reaches `jwt.verify` — it bypasses
   `checkAuth` entirely and is handled in `contextToGroups` (#4526). **Every 403
   names the failed check** via `jwtRejectionReason` (too-old-from-`iat` with the
