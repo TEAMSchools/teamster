@@ -409,6 +409,42 @@ numbers and the dashboard:
   dashboard number that doesn't match a materialized dbt table's numbers may
   simply mean the sheet was edited after that table's last build — not a bug.
 
+### How Finalsite's `latest_status` becomes an expected enrollment status
+
+`int_tableau__finalsite_student_scaffold` carries two enrollment-status columns
+that are easy to mix up, because the naming runs opposite to intuition:
+
+| column             | where it comes from                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `enroll_status`    | the **SIS** — PowerSchool via `int_extracts__student_enrollments`, or Focus via `int_focus__student_enrollments` for Miami |
+| `ps_enroll_status` | **Finalsite**, derived from `latest_status` — despite the `ps_` prefix, nothing about it is read from PowerSchool          |
+
+`ps_enroll_status` is the status the SIS _ought_ to show if Finalsite is right,
+mapped from the student's `latest_status`:
+
+| `latest_status`                                            | `ps_enroll_status` | meaning                       |
+| ---------------------------------------------------------- | ------------------ | ----------------------------- |
+| `Enrolled`                                                 | `0`                | should be active in the SIS   |
+| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw` | `1`                | should be inactive in the SIS |
+| anything else                                              | `NULL`             | no expectation                |
+
+The `NULL` case is deliberate and covers most of the funnel — an applicant who
+is Waitlisted or Enrollment In Progress has no business having an SIS enrollment
+record yet, so there is nothing to compare and no mismatch can fire.
+
+`is_active_inactive_mismatch` then fires when the expectation and the SIS
+disagree in either direction:
+
+- Finalsite says enrolled (`ps_enroll_status = 0`) but the SIS says withdrawn or
+  graduated (`enroll_status in (2, 3)`)
+- Finalsite says withdrawn (`ps_enroll_status = 1`) but the SIS says currently
+  enrolled (`enroll_status = 0`)
+
+Note the asymmetry: the enrolled-side check accepts SIS `2` (withdrawn) and `3`
+(graduated) as contradicting, while the withdrawn-side check only treats SIS `0`
+as contradicting. `enroll_status = 1` (inactive) and `-1` (pre-registered) never
+trigger a mismatch on either side.
+
 ## Rolling the dashboard over to a new cycle
 
 There is no fixed date for this. SRE's recruitment cycle advances on its own
@@ -532,63 +568,40 @@ expected, resolves on its own once PowerSchool catches up, and needs no action.
   under, and it's genuinely mixed at any moment (verified: as of this writing
   27,511 rows sit on `2026-2027`, 1,492 are still on the prior `2025-2026`, and
   a handful are already on `2027-2028`/`2028-2029`). Comparing this per-record
-  value against `finalsite_recruitment_year` (see "The current academic year"
-  section above) could give `int_tableau__fresh_enrollment_scaffold`'s blend a
+  value against `finalsite_recruitment_year` could give the scaffold a
   per-student or per-school rollover signal, instead of relying solely on the
   single network-wide current-year anchor. Not yet designed or implemented -- an
   idea to explore, not a decision.
 - **Historical / multi-year scaffold reporting is not solved by this model.**
-  `stg_powerschool__schools` is current-state only, and the scaffold sheet has
-  never carried prior-year rows in practice. Needs a dedicated design discussion
-  if this becomes a real requirement.
-- **Whether the Miami/Focus carve-out can be removed** depends entirely on
-  Focus's readiness as a data source — not yet determined as of this writing
-  (2026-07-20).
-- **Pinned: the Miami scaffold sheet is missing two real, currently-operating
-  schools** -- Liberty Academy (PowerSchool `school_number` 30200802) and
-  Sunrise Academy (30200801) -- confirmed against
-  `int_people__location_crosswalk`, which has valid `location_focus_school_id`
-  values for both. PowerSchool can't backstop this gap either: those two rows
-  exist in `stg_powerschool__schools` but with `state_excludefromreporting = 1`
-  (excluded), and three OTHER Miami schools (Legacy ES, Legacy MS, MTH) are
-  missing from `stg_powerschool__schools` entirely -- confirming PowerSchool's
-  Miami data is a stale, incomplete post-Focus-cutover snapshot, not just for
-  the scaffold but for any PowerSchool-sourced Miami model (e.g.
-  `int_extracts__student_enrollments`). Fixing the sheet gap is intentionally
-  deferred until there's clarity on where Miami data should come from now that
-  the region is moving to Focus (pending follow-up with Walters and Charlie) --
-  in the meantime, blend mode's existing rule (a sheet row always survives
-  unless a PowerSchool row already covers that `schoolid`/`grade_level`)
-  requires no code change to preserve whatever the sheet currently has.
-- **If/when a Focus-based Miami builder is built, it needs an id translation
-  step -- Focus school ids are not PowerSchool school numbers.** The scaffold's
-  `schoolid` column is `int64`, matching PowerSchool's `school_number` format
-  (e.g. `30200803`). Focus's own school ids are alphanumeric strings (e.g.
-  `"2332B"`, `"2008A"`) --
-  `int_people__location_crosswalk.location_focus_school_id` is `STRING`. Focus's
-  native id cannot be cast directly into `schoolid`. The crosswalk already has a
-  clean mapping for all 7 real Miami schools between `location_focus_school_id`
-  and `location_powerschool_school_id` (the same integer id every other region's
-  scaffold already uses), so a Focus builder should translate through that
-  crosswalk rather than changing the scaffold's schema -- whatever Focus feed
-  eventually lands needs to carry either the Focus school id itself or a
-  matching school name to join back to it. Worth raising with whoever scopes the
-  Focus extract so this isn't a surprise later.
-- **Full field list for "what do we need from Focus to make Miami work on FRESH"
-  -- two separate gaps, not one:**
-  1. **The scaffold** (`int_tableau__fresh_enrollment_scaffold`'s PowerSchool
-     builder) needs a schools-equivalent (id, name/abbreviation, an
-     exclude-from-reporting flag if Focus mixes in non-reporting entities) and a
-     students-equivalent (schoolid, grade_level, a currently-enrolled status
-     flag).
-  2. **The point-in-time enrollment flags**
-     (`int_tableau__finalsite_student_scaffold`'s `left join` to
-     `int_extracts__student_enrollments`, see Known data model caveats above)
-     needs `enroll_status` plus `is_enrolled_fdos`/`is_enrolled_oct01`/
-     `is_enrolled_oct15`/`is_enrolled_mar15`, joinable back to Finalsite via
-     `infosnap_id`.
+  Both SIS sources are scoped to the current cycle -- PowerSchool's
+  `stg_powerschool__students` is current-state only, and the Focus branch
+  filters to `current_academic_year` -- so the scaffold carries one cycle at a
+  time. Needs a dedicated design discussion if this becomes a real requirement.
+- **`detailed_status_branched_ranking` (column E of `status_crosswalk`) has no
+  consumer.** It is declared in the staging and unpivot properties and passes
+  through, but nothing reads it. Either something was intended to and never
+  landed, or it should come out of the sheet and both ymls.
 
-  Both gaps need the Focus→PowerSchool school-id translation above. Confirm with
-  whoever scopes the Focus extract that both are covered -- fixing only the
-  scaffold (gap 1) would leave gap 2 (the enrollment flags) silently NULL for
-  Miami exactly as it is today.
+### Resolved (kept for reference, no longer open)
+
+Four questions in earlier versions of this doc are now answered by the
+SIS-derived scaffold:
+
+- **Whether the Miami/Focus carve-out can be removed** -- done. Miami is sourced
+  from `int_focus__schools` and `int_focus__student_enrollments`; no part of the
+  scaffold reads the sheet for Miami.
+- **The Miami scaffold sheet missing Liberty (30200802) and Sunrise (30200801)**
+  -- moot. The sheet is retired, and both schools are closed (`max_syear = 2025`
+  in Focus), so they are excluded deliberately rather than missing accidentally.
+- **Focus school ids need translating to PowerSchool school numbers** -- built.
+  `school_directory` joins `int_focus__schools` to
+  `stg_google_sheets__people__locations` on `focus_school_id` and takes
+  `powerschool_school_id`, so Focus's alphanumeric codes (`2332A`) never reach
+  the `schoolid` column.
+- **What Focus needs to supply for Miami to work on FRESH** -- both gaps are
+  closed. The scaffold's schools/grade-membership gap is covered by the two
+  `int_focus__*` models above, and the point-in-time enrollment flags
+  (`enroll_status`, `is_enrolled_*`) are covered by
+  `int_tableau__finalsite_student_scaffold` reading
+  `int_focus__student_enrollments` alongside
+  `int_extracts__student_enrollments`.

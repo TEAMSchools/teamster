@@ -1,6 +1,72 @@
 models:
   - name: rpt_tableau__fresh_dashboard_qc
-    config:
-      enabled: false
-      contract:
-        enforced: false
+    description: >
+      Data-quality worklist for SRE, one row per student per data problem. Takes
+      the current-timeframe roster from int_tableau__finalsite_student_scaffold,
+      reduces it to one row per student, then unpivots the four mismatch flags
+      that model computes and keeps only the rows where a flag is true -- so a
+      student appears once for each thing needing a fix, up to four times, and
+      not at all when clean. Each row pairs the Finalsite values with the
+      PowerSchool values they were compared against so the fix is actionable
+      without a second lookup. Column semantics are documented on
+      int_tableau__finalsite_student_scaffold. See
+      docs/models/fresh-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - enrollment_academic_year
+              - finalsite_id
+              - flag_name
+          config:
+            severity: error
+    columns:
+      - name: flag_name
+        data_type: string
+        description: >
+          Which mismatch fired -- is_same_day_status_duplicate,
+          is_active_inactive_mismatch, is_grade_level_mismatch, or
+          is_school_mismatch.
+      - name: flag_value
+        data_type: bool
+        description: >
+          Always true. The unpivot keeps only fired flags, so this column exists
+          to make that filter explicit rather than to carry information.
+      - name: enrollment_academic_year
+        data_type: int64
+      - name: enrollment_academic_year_display
+        data_type: string
+      - name: org
+        data_type: string
+      - name: region
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: finalsite_id
+        data_type: string
+      - name: powerschool_student_number
+        data_type: int64
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: self_contained
+        data_type: string
+      - name: enrollment_type
+        data_type: string
+      - name: latest_status
+        data_type: string
+      - name: enroll_status
+        data_type: int64
+      - name: ps_grade_level
+        data_type: int64
+      - name: ps_schoolid
+        data_type: int64
+      - name: ps_school
+        data_type: string
+      - name: ps_enroll_status
+        data_type: int64
