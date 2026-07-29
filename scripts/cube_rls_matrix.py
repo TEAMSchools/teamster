@@ -137,6 +137,10 @@ def main() -> int:
 
     failures = 0
     empty = 0
+    # One fingerprint per viewer that returned rows, so identical result sets are
+    # detectable. Rows are stringified before sorting because a NULL dimension
+    # value cannot be compared against a string (None < 'Camden' raises).
+    fingerprints: list[str] = []
     for viewer in viewers:
         rows, error = run_for_viewer(viewer, args)
         if error:
@@ -147,6 +151,7 @@ def main() -> int:
             empty += 1
             print(f"{viewer}: 0 rows (default-deny, or no scope on this view)")
             continue
+        fingerprints.append(repr(sorted(repr(row) for row in rows)))
         print(f"{viewer}: {len(rows)} group(s)")
         for row in rows:
             print(f"    {row}")
@@ -158,6 +163,14 @@ def main() -> int:
             " usually means the identity read itself failed rather than the"
             " policies denying - check the dev-server log for 'resolveAccess"
             " failed for', and confirm CUBE_GROUP_MAP is not set."
+        )
+    elif len(fingerprints) > 1 and len(set(fingerprints)) == 1:
+        print(
+            "EVERY viewer returned IDENTICAL rows. That is correct only if they"
+            " genuinely share a scope (e.g. two network-scoped viewers)."
+            " Otherwise CUBE_SQL_DEV_EMAIL is set, which overrides the connecting"
+            " user and pins every connection to one identity - unset it and"
+            " restart the dev server."
         )
     return 1 if failures else 0
 
