@@ -71,7 +71,7 @@ with
             pd.staff_key,
 
             s.google_email,
-            s.employee_number,
+            s.staff_unique_id as employee_number,
 
             j.job_function_code,
 
@@ -234,7 +234,8 @@ with
             {{ ref("dim_regions") }} as reg
             on iel.additional_location_name = reg.legal_entity
         left join
-            {{ ref("dim_locations") }} as loc on iel.additional_location_name = loc.name
+            {{ ref("dim_locations") }} as loc
+            on iel.additional_location_name = loc.`name`
         where iel.additional_location_type is not null
         group by iel.employee_number
     ),
