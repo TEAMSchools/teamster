@@ -257,37 +257,57 @@ module.exports = {
       }),
     );
 
-    // Cube Cloud bypasses checkAuth and injects its own context, which carries
-    // no top-level `groups` — so every gated view default-denied for console
-    // users, showing only source tables (#4526). Enrich it here from the
-    // identity Cube Cloud authenticated.
+    // Cube Cloud bypasses checkAuth and injects its own context, so
+    // resolveAccess never runs on this path and every gated view default-denied
+    // for console users (#4526). Enrich it here.
     //
-    // This resolves the console user as THEMSELVES: no impersonation, no admin
-    // gate, no way to obtain scope you were not granted in HR data. Emulating a
-    // different viewer in Explore is deliberately not handled yet — the channel
-    // a pasted target arrives on is still unknown on 1.7.14 (see the probe
-    // above), and the REST `act_as` path plus the SQL matrix already cover
-    // validation.
+    // CRITICAL: Cube Cloud MERGES a pasted Security Context into the TOP LEVEL
+    // of this object. Every top-level value is therefore caller-supplied and
+    // untrusted — including `groups` itself and the `region_key` /
+    // `allowed_abbreviations` / `allowed_department_groups` values the
+    // access_policy row_level filters interpolate. A console user pasting
+    // `{"groups": ["staff-pii-all_in_scope"], "allowed_abbreviations": [...]}`
+    // was previously honored verbatim, because the old one-line
+    // `securityContext?.groups ?? []` read straight from that merged object.
     //
-    // TRUST NOTE for code-owner review: `cubeCloud.username` is asserted by
-    // Cube Cloud, not verified by our own `jwt.verify`. Before this change,
-    // console identity was not load-bearing for data access (console users saw
-    // nothing); after it, Cube Cloud's console authentication establishes who
-    // you are for RLS purposes. That is a deliberate extension of trust to Cube
-    // Cloud's auth, on par with what the SQL API already extends to the
-    // connecting user.
+    // So this ALWAYS re-derives and OVERWRITES, never conditionally on whether
+    // `groups` is already present. resolveAccess's output covers every key any
+    // policy interpolates, so assigning it over the top neutralizes anything
+    // pasted. Do not reintroduce a `!securityContext.groups` guard here — that
+    // is exactly the bypass.
     //
-    // The `!groups` guard keeps this idempotent — checkAuth always sets `groups`
-    // (possibly to an empty array, which is truthy), so the REST path is
-    // untouched and re-entry is a no-op. Idempotence matters: Cube caches the
-    // selected policies under a hash of the context computed BEFORE this hook
-    // runs (`CompilerApi.hashRequestContext`), so enrichment must be
-    // deterministic for a given input context.
-    if (securityContext && !securityContext.groups) {
-      const consoleUser = securityContext.cubeCloud?.username ?? null;
-      if (consoleUser) {
-        Object.assign(securityContext, await resolveAccess(consoleUser));
-      }
+    // Emulation: `cubeCloud.username` is the authenticated console user; a
+    // pasted target arrives as top-level `email` (also mirrored at
+    // `cubeCloud.userAttributes.email`). The same admin gate as the REST
+    // `act_as` path applies, so a non-impersonator's pasted email is ignored and
+    // they resolve as themselves.
+    //
+    // TRUST NOTE for code-owner review: `cubeCloud.username` is asserted by Cube
+    // Cloud, not verified by our own `jwt.verify`. Before this change console
+    // identity was not load-bearing for data access; now Cube Cloud's console
+    // authentication establishes identity for RLS. Deliberate, and on par with
+    // the trust the SQL API places in the connecting user.
+    //
+    // Determinism matters: Cube caches the selected policies under a hash of
+    // this context computed BEFORE the hook runs
+    // (`CompilerApi.hashRequestContext`), so the same input must always produce
+    // the same output. Re-deriving unconditionally is deterministic — the
+    // per-email cache in resolveAccess makes re-entry cheap.
+    const consoleUser = securityContext?.cubeCloud?.username ?? null;
+    if (consoleUser) {
+      const requestedTarget =
+        securityContext.email ??
+        securityContext.cubeCloud?.userAttributes?.email ??
+        null;
+      const { caller, target, emulating } = access.resolveEmulationTarget({
+        callerEmail: consoleUser,
+        requestedTarget,
+        impersonators: access.parseImpersonators(
+          process.env.CUBE_IMPERSONATORS,
+        ),
+      });
+      if (emulating) logEmulation("cubecloud", caller, target);
+      Object.assign(securityContext, await resolveAccess(target));
     }
     return securityContext?.groups ?? [];
   },

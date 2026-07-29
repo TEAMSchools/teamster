@@ -575,23 +575,115 @@ test("contextToGroups: an unresolvable console user stays default-deny", async (
   assert.deepEqual(await cube.contextToGroups({ securityContext }), []);
 });
 
-test("contextToGroups: an already-enriched REST context is passed through untouched", async () => {
-  // checkAuth sets groups, so the REST path must never be re-resolved here -
-  // including when groups is legitimately empty (default-deny).
-  process.env.CUBE_GROUP_MAP = JSON.stringify({
-    "console4@apps.teamschools.org": ["student-network"],
-  });
+test("contextToGroups: a REST context (no cubeCloud) is passed through untouched", async () => {
+  // checkAuth already resolved it, and there is no console identity to re-derive
+  // from, so this path must be inert - including when groups is legitimately
+  // empty (default-deny).
   const rest = { groups: ["staff-directory"], region_key: "R1" };
   assert.deepEqual(await cube.contextToGroups({ securityContext: rest }), [
     "staff-directory",
   ]);
   assert.equal(rest.region_key, "R1");
 
-  const denied = {
-    groups: [],
-    cubeCloud: { username: "console4@apps.teamschools.org" },
-  };
+  const denied = { groups: [] };
   assert.deepEqual(await cube.contextToGroups({ securityContext: denied }), []);
+});
+
+test("contextToGroups: PASTED groups and scope values are overwritten, not honored", async () => {
+  // Cube Cloud merges a pasted Security Context into the top level, so these are
+  // attacker-controlled. Before this fix they were returned verbatim, which let
+  // any console user grant themselves staff PII access with a forged remit.
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "console5@apps.teamschools.org": ["staff-directory"],
+  });
+  const pasted = {
+    cubeCloud: { username: "console5@apps.teamschools.org" },
+    iss: "cubecloud",
+    groups: ["staff-pii-all_in_scope", "student-network"],
+    region_key: "FORGED",
+    allowed_abbreviations: ["FORGED"],
+    allowed_department_groups: ["FORGED"],
+  };
+
+  const groups = await cube.contextToGroups({ securityContext: pasted });
+
+  // Only the console user's real HR-derived scope survives.
+  assert.deepEqual(groups, ["staff-directory"]);
+  assert.ok(!groups.includes("staff-pii-all_in_scope"));
+  assert.notEqual(pasted.region_key, "FORGED");
+  assert.notDeepEqual(pasted.allowed_abbreviations, ["FORGED"]);
+  assert.notDeepEqual(pasted.allowed_department_groups, ["FORGED"]);
+});
+
+test("contextToGroups: an impersonator's pasted email resolves the TARGET", async () => {
+  process.env.CUBE_IMPERSONATORS = "cloudadmin6@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "cloudadmin6@apps.teamschools.org": ["student-network"],
+    "cloudtarget6@apps.teamschools.org": ["student-region"],
+  });
+  const securityContext = {
+    cubeCloud: { username: "cloudadmin6@apps.teamschools.org" },
+    iss: "cubecloud",
+    email: "cloudtarget6@apps.teamschools.org",
+  };
+
+  const lines = await capturedEmulationLog(async () => {
+    assert.deepEqual(await cube.contextToGroups({ securityContext }), [
+      "student-region",
+    ]);
+  });
+
+  assert.equal(lines.length, 1);
+  const entry = JSON.parse(lines[0]);
+  assert.equal(entry.surface, "cubecloud");
+  assert.equal(entry.caller, "cloudadmin6@apps.teamschools.org");
+  assert.equal(entry.target, "cloudtarget6@apps.teamschools.org");
+});
+
+test("contextToGroups: a NON-impersonator's pasted email is ignored - own scope only", async () => {
+  // The critical negative on the Explore surface: anyone with console access can
+  // type another email into the Security Context editor.
+  process.env.CUBE_IMPERSONATORS = "cloudadmin7@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "cloudviewer7@apps.teamschools.org": ["staff-directory"],
+    "cloudtarget7@apps.teamschools.org": [
+      "student-network",
+      "staff-pii-all_in_scope",
+    ],
+  });
+  const securityContext = {
+    cubeCloud: { username: "cloudviewer7@apps.teamschools.org" },
+    iss: "cubecloud",
+    email: "cloudtarget7@apps.teamschools.org",
+  };
+
+  const lines = await capturedEmulationLog(async () => {
+    assert.deepEqual(await cube.contextToGroups({ securityContext }), [
+      "staff-directory",
+    ]);
+  });
+
+  assert.deepEqual(lines, []);
+});
+
+test("contextToGroups: a target mirrored only at userAttributes.email is honored", async () => {
+  // Cube Cloud mirrors the pasted context there as well as at the top level.
+  process.env.CUBE_IMPERSONATORS = "cloudadmin8@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "cloudadmin8@apps.teamschools.org": ["student-network"],
+    "cloudtarget8@apps.teamschools.org": ["student-region"],
+  });
+  const securityContext = {
+    cubeCloud: {
+      username: "cloudadmin8@apps.teamschools.org",
+      userAttributes: { email: "cloudtarget8@apps.teamschools.org" },
+    },
+    iss: "cubecloud",
+  };
+
+  assert.deepEqual(await cube.contextToGroups({ securityContext }), [
+    "student-region",
+  ]);
 });
 
 test("contextToGroups: no security context at all is default-deny", async () => {
