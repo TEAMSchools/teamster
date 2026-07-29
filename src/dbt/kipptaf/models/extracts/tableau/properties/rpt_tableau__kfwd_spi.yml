@@ -81,6 +81,10 @@ models:
         data_type: numeric
       - name: best_guess_pathway
         data_type: string
+      - name: out_of_pocket
+        data_type: float64
+      - name: unmet_need
+        data_type: float64
       - name: is_graduated
         data_type: boolean
       - name: is_ecc_enrollment
