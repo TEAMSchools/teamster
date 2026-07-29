@@ -98,21 +98,39 @@ Push your branch, then switch to it in the Cube Cloud UI's development mode
 branch switcher. Cube Cloud activates a staging environment for the branch
 automatically.
 
-Test in the Cube Cloud Playground — but **row-level security cannot be validated
-there yet** ([#4526](https://github.com/TEAMSchools/teamster/issues/4526)). Cube
-Cloud does not run our `checkAuth`; it injects its own security context
-(top-level `email`, `cubeCloud.username`, `iss: "cubecloud"`) directly, so
-`resolveAccess` never runs, `contextToGroups` finds no `groups`, and every gated
-view default-denies — the views are hidden (you see only source tables) and
-queries compile to `WHERE (1 = 0)`. Server-side enrichment of that injected
-context is the pending fix. Until it lands, validate RLS locally: see
-[Testing row-level security locally](#testing-row-level-security-locally).
+Test in the Cube Cloud Playground or Explore. Cube Cloud does **not** run our
+`checkAuth` — it injects its own security context (`cubeCloud.username`,
+`iss: "cubecloud"`) directly, so `resolveAccess` never runs there. Instead
+`contextToGroups` enriches that injected context: it resolves
+`cubeCloud.username` against `dim_staff_cube_access` and populates the groups
+and `row_level` values the access policies read, so **you see your own real
+scope** ([#4526](https://github.com/TEAMSchools/teamster/issues/4526)).
+
+If every view is hidden and you see only source tables, that enrichment did not
+run — check the deployment log for `resolveAccess failed for`, and confirm the
+BigQuery connection variables are set on _that_ environment (branch environments
+do not inherit them from production).
 
 Check:
 
 - Cubes and views load without errors
 - Queries return expected results against live BigQuery data
+- Your own scope is what you expect (a region-scoped viewer sees one region)
 - Existing cubes and views still work (no regressions)
+
+!!! warning "Never paste `groups` or scope values into the Security Context
+editor."
+
+    Cube Cloud merges whatever you paste into the top level of the security
+    context. `contextToGroups` therefore treats every top-level value as
+    untrusted and **overwrites** it by re-resolving `cubeCloud.username` — so a
+    pasted `groups`, `region_key`, or `allowed_abbreviations` is discarded, not
+    honored. Pasting them used to grant them (fixed in #4526); do not write code
+    that trusts them again.
+
+    The one paste that _is_ honored is `{"email": "<a viewer>"}`, and only for a
+    caller listed in `CUBE_IMPERSONATORS` — see
+    [Emulating another viewer](#emulating-another-viewer-with-act_as).
 
 ### 5. Open a PR
 
@@ -130,10 +148,10 @@ The reviewing analyst:
    - Do all cubes and views load without errors?
    - Do queries return expected results against live BigQuery data?
    - Do existing cubes and views still work?
-3. To test row-level security behavior, follow
-   [Testing row-level security locally](#testing-row-level-security-locally) —
-   locally, not in Cube Cloud, which cannot resolve a viewer's access row yet
-   ([#4526](https://github.com/TEAMSchools/teamster/issues/4526))
+3. To test row-level security behavior, either use
+   [the local matrix tool](#testing-row-level-security-locally) — ground truth,
+   one connection per viewer — or emulate a viewer in Cube Cloud if your email
+   is in `CUBE_IMPERSONATORS` on that environment
 4. Leaves review comments on the PR, or approves
 
 Author and reviewer can work together in the same Cube Cloud Playground session
@@ -341,9 +359,15 @@ feature — mint a token as a narrowly-scoped viewer with `act_as` set to a
 broader one and confirm you get the narrow scope back. With `CUBE_IMPERSONATORS`
 unset entirely, emulation is inert, which is the correct production default.
 
-`act_as` is REST/MCP only. The SQL API resolves identity from the connecting
-user, so switch viewers there by reconnecting (see the matrix tool above); Cube
-Cloud's Explore surface is tracked separately in #4526.
+Emulation works on two surfaces, with the same gate on each:
+
+| Surface                           | Pass the target as                                     | Caller identity                                      |
+| --------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| REST / MCP                        | an `act_as` claim in the signed token                  | the signed `email` claim                             |
+| Cube Cloud Playground and Explore | `{"email": "<viewer>"}` in the Security Context editor | `cubeCloud.username`, as authenticated by Cube Cloud |
+
+The SQL API needs neither: identity is the connecting user, so switch viewers by
+reconnecting (that is what the matrix tool does).
 
 **Alternative: REST `/load` with your own JWT.** Sign an HS256 JWT whose `email`
 claim is the viewer (with `CUBEJS_API_SECRET`) and POST it — again no `NODE_ENV`

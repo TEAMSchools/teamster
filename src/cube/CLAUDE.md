@@ -241,17 +241,38 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   (verified on Cube 1.6.59) — so the local REST Playground resolves a pasted
   `{"email": ...}`; do not assume `NODE_ENV=production` is needed. `jwt.verify`
   also enforces `maxAge: "12h"` derived from `iat`, which rejects a stale cached
-  Playground token and any token with no `iat` at all — including Cube Cloud's
-  `iss: "cubecloud"` context, which bypasses `checkAuth` entirely (#4526).
+  Playground token and any token with no `iat` at all. Cube Cloud's
+  `iss: "cubecloud"` context never reaches `jwt.verify` — it bypasses
+  `checkAuth` entirely and is handled in `contextToGroups` (#4526). **Every 403
+  names the failed check** via `jwtRejectionReason` (too-old-from-`iat` with the
+  re-mint step / expired past `exp` / bad signature pointing at this
+  deployment's `CUBEJS_API_SECRET` / missing `iat`); a bare "Invalid token" for
+  all of them is what made the `maxAge` cap read as an access bug. Keep them
+  distinguishable.
 - **`checkSqlAuth` (SQL API)** returns
   `{ password: process.env.CUBEJS_SQL_PASSWORD, securityContext }` — Cube
   validates the presented password against the RETURNED one, so returning `null`
   rejects every connection. Identity is resolved from the connecting `user` (or
   `CUBE_SQL_DEV_EMAIL` outside prod); the presented `password` is not compared
   and is absent entirely on `SET USER` re-auth flows.
-- **`contextToGroups`** is now a one-line read: `securityContext?.groups ?? []`
-  — the BigQuery reads and all group-building logic moved to `resolveAccess` /
-  `access.buildGroups`.
+- **`contextToGroups` owns the Cube Cloud path** (#4526). Cube Cloud bypasses
+  `checkAuth`, so this hook re-derives the context from `cubeCloud.username` and
+  **overwrites** it. **Cube Cloud MERGES a pasted Security Context into the TOP
+  LEVEL**, so every top-level value there is caller-supplied: pasting
+  `{"groups": ["staff-pii-all_in_scope"], "allowed_abbreviations": [...]}` was
+  honored verbatim before the overwrite landed. Never reintroduce a
+  `!securityContext.groups` guard here — that guard IS the bypass. A REST
+  context (no `cubeCloud` key) is passed through untouched, since `checkAuth`
+  already resolved it.
+- **Emulation gate, both surfaces**: caller is the signed `email` claim on
+  REST/MCP and `cubeCloud.username` on Cube Cloud; target is `act_as` on REST
+  and a pasted top-level `email` (mirrored at `cubeCloud.userAttributes.email`)
+  on Cube Cloud. `access.resolveEmulationTarget` decides, from the caller's
+  identity only, so a non-impersonator's target is ignored and they keep their
+  own scope. Impersonators come from `CUBE_IMPERSONATORS`; unset means emulation
+  is inert. Each real emulation logs one `cube_emulation` line (identities
+  only). Case is preserved on the resolved email — `resolveAccess` matches
+  `google_email` exactly and keys its cache on the raw string.
 - **Group taxonomy (`access.buildGroups`)**: `student-<student_location_scope>`
   (`student-region` / `student-school` / `student-network`); `staff-directory`
   (always, for any resolved row); `staff-pii-<staff_pii_scope>`
@@ -462,23 +483,28 @@ exercise it; a plain dev server silently default-denies every gated view.
   token; (2) `resolveAccess` fail-closes to deny-all locally unless
   `CUBEJS_DB_BQ_CREDENTIALS` is set or the ADC fallback is present (a bare
   `JSON.parse("")` throws on the unset var). See #4526.
-- **Cube Cloud emulation is not fixed yet (#4526).** Cube Cloud injects its own
-  security context (top-level `email`, `cubeCloud.username`, `iss: "cubecloud"`,
-  no `iat`) and **bypasses `checkAuth`**, so `resolveAccess` never runs and
-  `contextToGroups` default-denies (`WHERE (1=0)`, views hidden = only source
-  tables). Server-side enrichment of that context is the pending fix; until then
-  emulate via the local SQL API / REST Playground.
+- **Cube Cloud works via `contextToGroups` enrichment, not `checkAuth`
+  (#4526).** Cube Cloud injects
+  `{ cubeCloud: { username, groups, roles, userAttributes, meta, userCredentials }, iss: "cubecloud", exp }`
+  with **no top-level `email`** until a Security Context is pasted — at which
+  point the paste is merged into the top level and mirrored at
+  `cubeCloud.userAttributes.email`. Observed on 1.7.14; do not trust the shape
+  across versions. Symptom of enrichment not running: views hidden, only source
+  tables, `WHERE (1 = 0)` — check the deployment log for
+  `resolveAccess failed for` and that the BigQuery variables are set on **that**
+  environment (branch environments do not inherit them).
 - **The committed matrix tool is the RLS validation path** —
   `uv run scripts/cube_rls_matrix.py --viewers-file <local file>` opens one SQL
   connection per viewer email and runs the same query, so a scope difference is
   attributable to policy alone. Viewer emails are PII: pass them in, never
   hardcode, and summarize the output rather than pasting it anywhere external.
-- **`act_as` emulation is REST/MCP only** — paste
-  `{"email": "you@…", "act_as": "viewer@…"}` as the Playground security context
-  (or sign the same payload) and `checkAuth` resolves the TARGET's context.
-  Needs your email in `CUBE_IMPERSONATORS`; unset = inert. A caller not on the
-  list keeps their own scope silently. Each real emulation logs one
-  `cube_emulation` line (identities only).
+- **Emulation works on REST/MCP and on Cube Cloud** — locally, paste
+  `{"email": "you@…", "act_as": "viewer@…"}` into the Playground security
+  context (or sign the same payload); in Cube Cloud, paste
+  `{"email": "viewer@…"}` and the caller is `cubeCloud.username`. Either way you
+  need to be in `CUBE_IMPERSONATORS` on that deployment; unset = inert, and a
+  caller not on the list keeps their own scope silently. Verified live on both
+  surfaces: emulating a region-scoped viewer returns that region only.
 - **The dev server always serves the MAIN checkout** — the `Cube: Dev Server`
   task runs `npm --prefix src/cube` from the workspace root, so branch changes
   to `cube.js` in a worktree are never exercised, and a worktree has no dotenv

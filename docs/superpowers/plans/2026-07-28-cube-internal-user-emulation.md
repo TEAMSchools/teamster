@@ -1164,6 +1164,39 @@ current code.
 
 ## Task 6: Cube Cloud enrichment
 
+> **OUTCOME (2026-07-29): shipped, and neither variant as written.** Kept below
+> as the record of what was planned versus what 1.7.14 actually required.
+>
+> The spike answered Variant B in the negative: Cloud Auth Integration was
+> enabled and Explore stayed dark, so it does not route through our hooks.
+> Variant A was therefore the path, and Cube's own source confirmed it works
+> before any code was written — `CompilerApi.getApplicablePolicies` passes the
+> same `context` object to `contextToGroups` and then to `evaluateNestedFilter`,
+> so mutation reaches `row_level` interpolation.
+>
+> Three things the plan did not anticipate:
+>
+> 1. **1.7.14 injects no top-level `email`** until a Security Context is pasted.
+>    The context is
+>    `{ cubeCloud: { username, groups, roles, userAttributes, meta, userCredentials }, iss, exp }`.
+>    A pasted target is merged into the top level and mirrored at
+>    `cubeCloud.userAttributes.email`, so the enrichment reads both.
+> 2. **That merge was a live privilege-escalation vector, predating this
+>    issue.** Because the old `contextToGroups` read
+>    `securityContext?.groups ?? []` straight off the merged object, any console
+>    user could paste `groups` and scope values and have them honored. Fixed by
+>    always re-deriving and overwriting; a `!securityContext.groups` guard here
+>    IS the bypass. Production was affected.
+> 3. **Self-resolution matters more than emulation.** Enriching from
+>    `cubeCloud.username` is what makes Explore work for real pilot users, needs
+>    no admin gate, and carries no escalation surface. Emulation layered on top
+>    after the target channel was known.
+>
+> Landed in `4d0f96ed4` (enrichment), `c2212537a` (paste fix plus emulation),
+> with the observation probes in `c8a47b7df` / `87e96fbd6` and a first probe
+> reverted in `e4d044719` after a security review correctly flagged it for
+> privilege injection and PII in logs.
+
 Implement **only the variant Task 5 selected.** Both variants reuse Task 1's
 resolver, so the security rule is identical across surfaces.
 
@@ -1503,6 +1536,19 @@ Refs #4526"
 ---
 
 ## Task 8: The `maxAge` decision (code-owner gated, non-blocking)
+
+> **OUTCOME (2026-07-29): resolved a third way — `c6796e7c8`.** `maxAge` stays
+> at 12h, so #4269's property is intact. What changed is that the rejection is
+> now legible: `jwtRejectionReason` distinguishes too-old-from-`iat` (with the
+> re-mint step), expired-past-`exp`, a bad signature pointing at the
+> deployment's `CUBEJS_API_SECRET`, and a missing `iat`. Same 403 status.
+>
+> The reframing came from hitting it for real: a branch environment with no
+> `CUBEJS_API_SECRET` returned `403 "Invalid token"` for every token, identical
+> to a stale one and to a wrong secret, and it cost an hour to diagnose. The
+> trap was never the rejection — it was that one message covered every cause.
+> Fixing the diagnostics removes the trap without touching the control, which
+> beats both "raise it" and "keep it and document a workaround."
 
 **Recommendation: change nothing.** `maxAge: "12h"` only breaks the _local_ REST
 Playground with a stale cached token, which Phase 0 already documented as a
