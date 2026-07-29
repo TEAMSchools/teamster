@@ -1,12 +1,16 @@
 with
     encoded as (
-        select staff_id, cast(active as string) as custom_319000004,
+        select
+            staff_id,
+            cast(active as string) as custom_319000004,
+            cast(gender as string) as gender,
         from {{ ref("stg_focus__users") }}
     ),
 
     unpivoted as (
         select staff_id, column_name, stored_value,
-        from encoded unpivot (stored_value for column_name in (custom_319000004))
+        from
+            encoded unpivot (stored_value for column_name in (custom_319000004, gender))
     ),
 
     decoded as (
@@ -23,7 +27,8 @@ with
         select *,
         from
             decoded pivot (
-                any_value(label) for column_name in ('custom_319000004' as active_label)
+                any_value(label) for column_name
+                in ('custom_319000004' as active_label, 'gender' as gender_label)
             )
     ),
 
@@ -45,7 +50,11 @@ with
         group by users.staff_id
     )
 
-select users.staff_id, select_pivot.active_label, education.education_label,
+select
+    users.staff_id,
+    select_pivot.active_label,
+    select_pivot.gender_label,
+    education.education_label,
 from {{ ref("stg_focus__users") }} as users
 left join select_pivot on users.staff_id = select_pivot.staff_id
 left join education on users.staff_id = education.staff_id
