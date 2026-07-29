@@ -341,14 +341,18 @@ measures are equal, or label the panel as in-session-only.
 
 ## Dependencies
 
-- **#4598 must merge** to supply `rpt_tableau__gpa_goals`. Its dbt Cloud run is
-  currently failing on head `6485d90` and needs diagnosis first. This is the
-  only blocker.
+- **#4598 must merge** to supply `rpt_tableau__gpa_goals`. As of 2026-07-29 it
+  is unmerged but ready: all checks green on head `f0e06820`, including dbt
+  Cloud, and `mergeable_state` is `clean`. Until it merges, none of its models
+  exist in production — they are present only in the dbt Cloud CI schemas and a
+  personal dev schema, and the `kipptaf_gpa` dataset does not exist at all,
+  since that merge creates it. This is the only blocker.
 - Ops populates the three goal-sheet rows in _Goal integration_.
 
 ## Rollout and sequencing
 
-1. Diagnose and fix the failing dbt Cloud run on #4598; merge it.
+1. Merge #4598, and confirm the production run creates `kipptaf_gpa` and
+   `rpt_tableau__gpa_goals`.
 1. Ops adds the three goal rows to the GPA goals sheet.
 1. Extend `rpt_tableau__gpa_cumulative_year`, add the exposure, correct the
    docstring, add tests.
