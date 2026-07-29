@@ -453,6 +453,14 @@ descendant graph and surfacing unrelated pre-existing warn-tests as noise. Put
 documentation notes in the properties `description` (doesn't mark modified), not
 an inline SQL comment, on hub models.
 
+**Validating a NEW union wrapper locally**: the column list resolves at compile
+from the source relation's `INFORMATION_SCHEMA`, so a dev-target compile expands
+to nothing — the `zz_<user>_*` dataset holds no copy.
+`dbt compile --select <wrapper> --target staging` resolves against the same
+`zz_stg_*` relations dbt Cloud CI reads, and is not a warehouse write so it
+needs no authorization. Read the compiled SQL to confirm columns were listed; an
+empty expansion still compiles clean.
+
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 
 Changing a source's schema (e.g. adding a `target=staging` branch) marks the
