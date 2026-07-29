@@ -247,6 +247,14 @@ Current actual is a **separate monitoring series and is never compared to a
 goal**. Mixing the two bases is what would produce a headline that disagrees
 with the topline dashboard for the same cohort on the same day.
 
+Goal tiles read the not-yet-measurable state from `n_students_measured` rather
+than inferring it from a null rate. A null `metric_rate` with a non-zero
+`n_students_in_grain` and a zero `n_students_measured` means no grades have
+posted for that grain; a null rate with a non-zero `n_students_measured` would
+mean something else and should surface as a data problem. Label the first case
+explicitly on the viz — a bare blank tile invites the reader to assume a loading
+failure.
+
 ## Dashboard composition
 
 Single-table data source. No relationship.
@@ -341,18 +349,26 @@ measures are equal, or label the panel as in-session-only.
 
 ## Dependencies
 
-- **#4598 must merge** to supply `rpt_tableau__gpa_goals`. As of 2026-07-29 it
-  is unmerged but ready: all checks green on head `f0e06820`, including dbt
-  Cloud, and `mergeable_state` is `clean`. Until it merges, none of its models
-  exist in production — they are present only in the dbt Cloud CI schemas and a
-  personal dev schema, and the `kipptaf_gpa` dataset does not exist at all,
-  since that merge creates it. This is the only blocker.
+- **#4598 is merged** (2026-07-29) and its models are in production: `src_`,
+  `stg_`, and `int_google_sheets__gpa_goals` in `kipptaf_google_sheets`,
+  `int_gpa__goal_student_metrics` and `int_gpa__goal_aggregations` in the newly
+  created `kipptaf_gpa`, and `rpt_tableau__gpa_goals` in `kipptaf_tableau`. The
+  student spine carries 4,677 rows; the goals sheet currently holds one row.
+- **#4621 should merge before the dashboard reads any goal rate.** The scaffold
+  divided threshold-metric rates by every student in the grain, so a student
+  with no measurable value counted as a non-achiever. With no posted Y1 grades
+  for academic year 2026, the one loaded goal reported a rate of 0 against a 58
+  percent target rather than blank. That PR moves the denominator to measured
+  students and adds `n_students_in_grain`, `n_students_measured`, and
+  `n_students_met`. Without it, this dashboard's goal tiles read 0 percent for
+  any not-yet-graded year — the same class of error this design avoids
+  elsewhere. Tracked as #4620.
 - Ops populates the three goal-sheet rows in _Goal integration_.
 
 ## Rollout and sequencing
 
-1. Merge #4598, and confirm the production run creates `kipptaf_gpa` and
-   `rpt_tableau__gpa_goals`.
+1. Merge #4621 so goal rates exclude unmeasured students. #4598 is already
+   merged and in production.
 1. Ops adds the three goal rows to the GPA goals sheet.
 1. Extend `rpt_tableau__gpa_cumulative_year`, add the exposure, correct the
    docstring, add tests.
