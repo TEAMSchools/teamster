@@ -455,6 +455,44 @@ has the old schema and resolution fails closed. To test against your branch:
 For a location-scoping check that returns real numbers year-round, use
 `student_attendance`'s `count_students` (additive over a date range).
 
+### Signing off a new user's scope
+
+Before granting someone access, confirm what they will actually see. The point
+is to catch a wrong scope while it is still a spreadsheet row, not after they
+open a dashboard.
+
+1. **Check ground truth over the SQL API.** Put their email in a local,
+   gitignored viewer file and run
+   `uv run scripts/cube_rls_matrix.py --viewers-file <file>`. Include a
+   network-scoped viewer in the same run as a control — if everyone returns
+   zero, the identity read failed rather than the policies denying, and the tool
+   says so.
+1. **Compare against their intended scope.** A region lead should see one
+   region; a school leader a subset of it; someone with no student scope, no
+   rows. A mismatch is an HR-data problem in `dim_staff_cube_access`, so fix it
+   upstream rather than adding a policy to compensate.
+1. **Check the surface they will actually use.** For a BI tool over the SQL API,
+   step 1 already exercised the real path. For Cube Cloud, emulate them in
+   Explore — that catches surface-specific behavior the SQL API does not,
+   notably that an out-of-tier member **hard-errors** on Cube Cloud where it
+   returns zero rows locally (see the version note below).
+1. **Record the sign-off without the emails.** "5 viewers checked, all scopes as
+   intended" is the durable artifact; the identities are PII and stay local.
+
+!!! warning "Local validation is not a faithful production simulation."
+
+    Local dev is pinned to Cube 1.6.59 by `package-lock.json`; Cube Cloud
+    production runs 1.7.14. At least one enforcement behavior differs: a viewer
+    requesting a member their tier excludes gets a hard
+    `You requested hidden member` error on 1.7.14, but silently returns zero rows
+    locally. So "no rows" locally can mean "query fails" in production — a
+    materially different experience for a dashboard user.
+
+    Until the versions converge
+    ([#4605](https://github.com/TEAMSchools/teamster/issues/4605)), treat the
+    local matrix as authoritative for **which rows** a viewer can reach, and Cube
+    Cloud as authoritative for **how a denial behaves**.
+
 ### SQL-level RLS invariants to check
 
 The default-deny behavior rests entirely on Cube compiling an empty allow-list
