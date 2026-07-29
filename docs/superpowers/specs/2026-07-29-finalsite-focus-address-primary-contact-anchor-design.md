@@ -60,8 +60,9 @@ address and a current one, and `Household` exposes no `created_at` or
 real fix and is out of scope here.
 
 The honest case for this change is semantic, not accuracy. Where Parent 1 sits
-in both competing households, the new value is a different arbitrary pick, not a
-verified better one.
+in both competing households, the new value is a different pick, not a verified
+better one. Whether that pick is arbitrary or systematic is itself unresolved —
+see the consequence on offset-0 ordering below.
 
 ## Design
 
