@@ -34,3 +34,38 @@ models:
         description: Decoded label for the eoc_exam_term select field.
       - name: basic_skills_exam_label
         description: Decoded label for the basic_skills_exam select field.
+      - name: dual_enrollment_indicator_label
+        description:
+          Decoded label for the dual_enrollment_indicator select field.
+      - name: team_teacher_training_label
+        description: Decoded label for the team_teacher_training select field.
+      - name: age_inst_setting_label
+        description: >-
+          Decoded label for the age_inst_setting select field — the Adult
+          General Education institutional setting.
+      - name: age_online_course_label
+        description: >-
+          Decoded label for the age_online_course select field — the Adult
+          General Education online delivery indicator.
+      - name: cte_de_location_label
+        description: >-
+          Decoded label for the cte_de_location select field — where a CTE dual
+          enrollment course is taught.
+      - name: de_inst_type_label
+        description: >-
+          Decoded label for the de_inst_type select field — the type of
+          institution granting dual enrollment credit.
+      - name: de_student_type_label
+        description: >-
+          Decoded label for the de_student_type select field — the dual
+          enrollment student category.
+      - name: function_level_label
+        description: Decoded label for the function_level select field.
+      - name: online_course_label
+        description: Decoded label for the online_course select field.
+      - name: math_intervention_label
+        description: Decoded label for the math_intervention select field.
+      - name: alt_date_certain_label
+        description: >-
+          Decoded label for the alt_date_certain select field — the alternate
+          date-certain day of week the section is scheduled.

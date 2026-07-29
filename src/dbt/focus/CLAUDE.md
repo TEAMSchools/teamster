@@ -55,6 +55,31 @@ entity's populated custom fields, scan the FULL table and join the whole catalog
 on `lower(column_name)`, since filtering to `custom_*`-prefixed columns silently
 misses the semantic-named ones.
 
+**The `__pivot` models now decode every populated field that has select
+options** (all 92, per #4597 — previously 32, all `custom_*`-prefixed).
+Semantic-named fields are covered too. Two exclusions are deliberate:
+`users.custom_l790` and `users.custom_l1472` are option_query-backed, so the
+catalog holds zero `custom_field_select_options` rows and there is nothing to
+decode. When adding a field to a pivot, check that it has options first — a
+field with none yields an all-null label column that still builds and lints
+clean.
+
+**An all-null label column has two innocent causes besides a wrong match key.**
+The field has no `custom_field_select_options` rows at all (option_query-backed,
+above), or every stored value points at a **soft-deleted** option —
+`stg_focus__custom_field_select_options` filters `where deleted is null`, so a
+deleted option contributes no label (`students.custom_1429` is the live
+example). Check both before assuming the `option_id`/`code` match is broken.
+
+**A decode can be an identity mapping.** `master_courses.course_level`'s options
+are `1`→`1`, `2`→`2`, `3`→`3`, so `course_level_label` repeats the stored code.
+Before treating a decode as valuable, check `label` against `code`.
+
+**Population is not informativeness.** Most Focus Florida-reporting fields are
+non-null on every row but hold a single default value, so a
+`countif(... is not null)` scan overstates the value of decoding them. Add
+`count(distinct <stored value>)` when profiling.
+
 `source_class`→entity-table map (use the catalog's own spelling, NOT the
 entity's): `SISStudent`→students, `FocusUser`→users, `SISSchool`→schools,
 `StudentEnrollment`→student_enrollment, `CoursePeriod`→course_periods,

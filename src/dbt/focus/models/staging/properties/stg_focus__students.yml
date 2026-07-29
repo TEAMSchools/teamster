@@ -192,3 +192,221 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: primary_language_spoken_in_home
+        description: Primary Language Spoken in Home
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: free_reduced_meals_program
+        description: Free/Reduced Meals Program
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: native_language_student
+        description: Native Language, Student
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: homeless_student_pk_12
+        description: Homeless Student PK-12
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: idea_educational_environment
+        description: IDEA Educational Environment
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: english_language_learner_pk_12
+        description: English Language Learner, PK-12
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: pe_waiver
+        description: PE Waiver
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: graduation_option
+        description: Graduation Option
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: doe_test_accommodations_access_for_ells
+        description: DOE Test Accommodations, ACCESS for ELLs
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: ese_fefp_code
+        description: ESE FEFP Code
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: prekindergarten_program_participation
+        description: Prekindergarten Program Participation
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: country_of_birth
+        description: Country of Birth
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: year_entered_ninth_grade
+        description: Year Entered Ninth Grade
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: florida_first_start_program_participant
+        description: Florida First Start Program Participant
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: even_start_family_literacy_program_participant
+        description: Even Start Family Literacy Program Participant
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: multi_birth_for_faster
+        description: Multi Birth for Faster
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: resident_status
+        description: Resident Status
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: screening_for_hearing_grade_kg
+        description: Screening for Hearing (Grade KG - FASTER)
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: screening_for_vision_problems
+        description: Screening for Vision Problems
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: birth_date_verification
+        description: Birth Date Verification
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: aice_diploma
+        description: AICE Diploma
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: diploma_florida_seal_of_fine_arts_designation
+        description: Diploma Florida Seal of Fine Arts Designation
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: residency_for_tuition_purposes
+        description: Residency for Tuition Purposes
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: bright_futures_volunteer_service_requirement_met
+        description: >-
+          Bright Future Eligible Students — District Community/Volunteer Service
+          Requirement Met
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: national_merit_scholar
+        description: National Merit Scholar
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: national_achievement_scholar
+        description: National Achievement Scholar
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: national_hispanic_scholar
+        description: National Hispanic Scholar
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: aice_program_participant
+        description: AICE Program Participant
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: ib_diploma
+        description: IB Diploma
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: college_ready_diploma
+        description: College Ready Diploma
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: differentiated_diploma
+        description: Differentiated Diploma
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: additional_school_year
+        description: Additional School Year
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: migrant_status_term
+        description: Migrant Status Term
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: basis_of_entry
+        description: Basis of Entry
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: first_basis_of_exit
+        description: First Basis of Exit
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
+      - name: single_ethnicity
+        description: Single Ethnicity
+        data_type: int
+        config:
+          meta:
+            contains_pii: true

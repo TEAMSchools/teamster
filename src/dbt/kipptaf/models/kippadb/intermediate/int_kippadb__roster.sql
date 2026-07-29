@@ -96,6 +96,44 @@ with
         where test_type in ('ASVAB', 'Military Physical Training')
     ),
 
+    overgrad_admissions as (
+        select
+            student__external_student_id,
+            award_letter__out_of_pocket,
+            award_letter__unmet_need,
+            updated_at,
+
+            safe_cast(university__ipeds_id as string) as university_ipeds_id_str,
+        from {{ ref("int_overgrad__admissions") }}
+    ),
+
+    # trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    matriculated_award_letter_all as (
+        select
+            app.applicant as contact_id,
+
+            adm.award_letter__out_of_pocket,
+            adm.award_letter__unmet_need,
+            adm.updated_at,
+        from {{ ref("base_kippadb__application") }} as app
+        inner join {{ ref("stg_kippadb__account") }} as acc on app.school = acc.id
+        inner join
+            overgrad_admissions as adm
+            on app.applicant = adm.student__external_student_id
+            and acc.nces_id = adm.university_ipeds_id_str
+        where app.is_matriculated
+    ),
+
+    matriculated_award_letter as (
+        {{
+            dbt_utils.deduplicate(
+                relation="matriculated_award_letter_all",
+                partition_by="contact_id",
+                order_by="updated_at desc",
+            )
+        }}
+    ),
+
     roster as (
         select
             se._dbt_source_relation as exit_db_name,
@@ -277,6 +315,9 @@ with
 
             mpt.physical_training_requirement_passed,
 
+            mal.award_letter__out_of_pocket as out_of_pocket_matriculated,
+            mal.award_letter__unmet_need as unmet_need_matriculated,
+
             concat(
                 os.assigned_counselor__last_name,
                 ', ',
@@ -366,6 +407,7 @@ with
             on c.contact_id = mpt.contact
             and mpt.test_type = 'Military Physical Training'
             and mpt.rn_military_testing = 1
+        left join matriculated_award_letter as mal on c.contact_id = mal.contact_id
         where se.rn_undergrad = 1 and se.grade_level between 8 and 12
     )
 

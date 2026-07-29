@@ -132,6 +132,20 @@ it in its own `properties.yml` (e.g. `stg_powerschool__users`,
 `stg_powerschool__log`). Check the model's `properties.yml` before assuming a
 `select *` union view is or isn't contracted.
 
+### Exposing a package/district model as a kipptaf source
+
+Every source added to a `sources-kipp*.yml` needs a matching kipptaf
+`union_relations` passthrough model. Consumers read the wrapper, not the source.
+
+Surface DECODED views, never the lookup tables behind them. Exposing a decode
+crosswalk (e.g. focus `int_focus__custom_field_options`) relocates hand-rolled
+translation into kipptaf instead of removing it; a field a package `__pivot`
+misses gets added to that pivot, in the package.
+
+`config.meta.contains_pii` does NOT travel through `source()` — a wrapper over a
+PII-tagged package model must re-declare it. Model level suffices for a
+`select *` passthrough, whose column docs live on the source model.
+
 ### Finalsite contact unions
 
 `int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` are

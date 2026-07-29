@@ -56,4 +56,4 @@ jobs:
           # or https://code.claude.com/docs/en/cli-reference for available options
           # claude_args: '--allowed-tools Bash(gh pr:*)'
           track_progress: true
-          claude_args: --model sonnet
+          claude_args: --model sonnet --effort xhigh
