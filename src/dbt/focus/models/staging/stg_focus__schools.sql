@@ -20,6 +20,8 @@ select
     custom_50000002 as technical_center,
     custom_319000052,
     custom_200000200 as exclude_from_state_reporting,
+    paec_gpa_for_transcript,
+    paec_rank_for_transcript,
     uuid,
     created_at,
     updated_at,
