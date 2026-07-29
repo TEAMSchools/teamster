@@ -171,6 +171,26 @@ When a business user needs to validate changes before merge:
    Playground token is the usual cause — see
    [Testing row-level security locally](#testing-row-level-security-locally).
 
+!!! warning "The dev server always serves the main checkout — never a worktree."
+
+    The **Cube: Dev Server** task runs `npm --prefix src/cube run dev` from the
+    VS Code workspace root, so it serves `/workspaces/teamster/src/cube/` no
+    matter which worktree you are editing in. Branch changes to `cube.js` or
+    model YAML are **not exercised** — you are testing whichever branch the main
+    checkout happens to be sitting on, which may be an unrelated one.
+
+    Repointing `--prefix` at the worktree does not fix it on its own: `.env` is
+    gitignored, so a fresh worktree has only `.env.example`. The server would
+    start with no BigQuery connection variables and no SQL API port at all.
+
+    **For local Cube work, check the branch out in the main checkout.** If you
+    must use a worktree, copy `src/cube/.env` into it first, then run
+    `npm --prefix {worktree}/src/cube run dev`.
+
+    Symptom: every viewer returns 0 rows in the RLS matrix while ADC is healthy
+    and the identity table is readable. You are running a different checkout's
+    `resolveAccess`.
+
 ## Testing row-level security locally
 
 Row-level security is enforced by per-view `access_policy`, driven by the
@@ -193,7 +213,9 @@ local setup — it falls back to Application Default Credentials while keeping t
 **GCloud: Application Default Login** task if your token is stale. A uniform
 zero across _every_ viewer, including a network-scoped one, means the identity
 read itself failed rather than the policies denying; check the dev-server log
-for `resolveAccess failed for <email>`.
+for `resolveAccess failed for <email>`. Two causes, in order of likelihood: a
+stale ADC token, or the dev server is serving a checkout whose `resolveAccess`
+predates the ADC fallback — see the warning under [Local Dev](#local-dev).
 
 **The SQL API is ground truth.** It is the surface Superset/BI actually use, and
 identity resolves per connection, so one script covers every viewer. Tesseract
