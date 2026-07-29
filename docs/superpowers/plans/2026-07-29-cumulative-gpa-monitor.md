@@ -243,10 +243,24 @@ from `teamster-332318.zz_anthonygwalters_kipptaf_tableau.rpt_tableau__gpa_cumula
 group by is_projected
 ```
 
-Expected: the `is_projected = false` row has `n_as_of_today = 0` and
-`n_needed = 0` across many years. The `is_projected = true` row has
-`n_years = 1` and non-zero counts. A non-zero count on the false row means the
-gate is not working and the task is not done.
+Expected on the `is_projected = false` row: `n_as_of_today = 0` and
+`n_needed = 0` across many years. **This is the assertion that matters** — a
+non-zero count here means the gate leaked and the task is not done.
+
+Expected on the `is_projected = true` row: `n_years = 1`, and `n_as_of_today`
+non-zero.
+
+`n_needed` is expected to be **0 even on the true row** at the time of writing,
+and that is correct, not a failure. `gpa_needed_for_cumulative_3_0`,
+`is_cumulative_3_0_attainable`, and `potential_gpa_credits_current_year` all
+divide by or derive from `potentialcrhrs_current`, which upstream sums credit
+hours only where `academic_year = var('current_academic_year')`. That var is
+2026 — SY26-27 — which has no course credit hours yet, so `safe_divide` nulls
+the family. Verified: 0 non-null across all 27,044 rows of
+`int_powerschool__gpa_cumulative`, while the projected family is populated
+(25,674). These three columns come alive once the year's courses land, which is
+also when the cusp roster becomes meaningful. Do not add a `not_null` test on
+them, and do not treat their emptiness as a blocker.
 
 - [ ] **Step 7: Lint and commit**
 
