@@ -51,11 +51,12 @@ Issue: [#4619](https://github.com/TEAMSchools/teamster/issues/4619)
 Neither blocks Tasks 1 through 4 — the extract work is independent. Both must
 land before the dashboard's goal tiles are trustworthy.
 
-- **[#4621](https://github.com/TEAMSchools/teamster/pull/4621) must merge.** It
-  moves the goal-rate denominator to measured students. Until then
-  `rpt_tableau__gpa_goals` reports a 0 rate for any grain with no posted grades
-  rather than blank, so every goal tile would read 0 percent for a
-  not-yet-graded year.
+- **[#4621](https://github.com/TEAMSchools/teamster/pull/4621) is merged**
+  (2026-07-29) and live in production. It moved the goal-rate denominator to
+  measured students and added `n_students_in_grain`, `n_students_measured`, and
+  `n_students_met` to `rpt_tableau__gpa_goals`. Goal tiles can therefore treat a
+  null rate as not-yet-measurable rather than as 0 percent attainment, and read
+  `n_students_measured` to tell the two apart.
 - **Ops populates three goal rows** in the GPA goals sheet, per the spec's _Goal
   integration_ table: Foundation 9th-grade at region grain for Newark and
   Camden, and the college-match goal at org grain for grade 11. The sheet
