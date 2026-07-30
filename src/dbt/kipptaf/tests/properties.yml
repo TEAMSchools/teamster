@@ -290,14 +290,20 @@ data_tests:
       is invisible downstream. This test catches the likely shape of that
       omission — Ops enters goals per school, so a fat-fingered or skipped row
       leaves one grain short while its siblings are complete, and only that
-      grain's grade silently disappears. Fails on any grade covered by some
-      grain for a metric but missing from another grain that has goals for the
-      same metric and year. Grains with no goals at all for a metric are not
-      checked, so a metric intentionally scoped to fewer org levels does not
-      fire. A grade omitted uniformly at every grain is indistinguishable from a
-      deliberate choice and is NOT caught here — grade 12 has no Y1 GPA goal by
-      design, and detecting that case would need the intent recorded in the
-      sheet.
+      grain's grade silently disappears. Fails on any grade covered by one grain
+      but missing from another grain of the SAME org level with goals for the
+      same metric and year. Comparison is pooled within org level, never across
+      it, so a school serving a narrower grade band than the network does not
+      read as an omission. A school newer than its peers and still adding a
+      grade a year does still flag against them — the same limit as grade 12
+      below, in that intent is not recorded anywhere the test can read. Grains
+      with no goals at all for a metric are not checked, so a metric
+      intentionally scoped to fewer org levels does not fire, and coverage is
+      scoped to years the student spine covers so an in-progress rollout of a
+      future year's goals does not fire either. A grade omitted uniformly across
+      an entire org level is indistinguishable from a deliberate choice and is
+      NOT caught here — grade 12 has no Y1 GPA goal by design, and detecting
+      that case would need the intent recorded in the sheet.
     config:
       severity: error
       meta:
@@ -315,9 +321,12 @@ data_tests:
       appears nowhere in rpt_tableau__gpa_goals. Fails on any goal row with no
       matching aggregation. Scoped to academic years the student spine covers so
       a goal entered ahead of its year does not fail before enrollment data
-      exists. Not expressible as a relationships test — aggregation_hash alone
-      is not unique across years and metrics, so the check needs the full
-      three-column key.
+      exists, but deliberately not scoped by region — Paterson is absent from
+      the spine and runs ES and MS only, so a Paterson-scoped GPA goal targets
+      no students and genuinely reaches no dashboard, which is worth flagging
+      rather than suppressing. Not expressible as a relationships test —
+      aggregation_hash alone is not unique across years and metrics, so the
+      check needs the full three-column key.
     config:
       severity: error
       meta:
