@@ -421,8 +421,9 @@ git -C /workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grad
 **Interfaces:**
 
 - Consumes: `SUBMISSION_SQL`, `run_checks` from Task 1.
-- Produces: three new columns on the query — `stored_letter` (`STRING`),
-  `stored_earned_credit` (`FLOAT64`), `n_stored_letters` (`INT64`).
+- Produces: four new columns on the query — `stored_letter` (`STRING`),
+  `stored_earned_credit` (`FLOAT64`), `n_stored_letters` (`INT64`),
+  `n_stored_credits` (`INT64`).
 
 - [ ] **Step 1: Write the failing checks**
 
@@ -461,16 +462,29 @@ def check_stored_coverage(client):
 
 
 def check_no_stored_conflicts(client):
-    """No student-section carries two different stored Y1 letters."""
-    sql = f"""
-    select count(*) as n
-    from ({SUBMISSION_SQL})
-    where n_stored_letters > 1
+    """No student-section carries conflicting stored Y1 letters or credits.
+
+    Both dimensions matter: stored_letter and stored_earned_credit are
+    independent aggregates, so a conflict in either means the pair may not
+    come from the same source row.
     """
-    n = _rows(client, sql)[0].n
-    if n:
-        return [f"{n} row(s) have conflicting stored Y1 letter grades"]
-    return []
+    sql = f"""
+    select
+        countif(n_stored_letters > 1) as letter_conflicts,
+        countif(n_stored_credits > 1) as credit_conflicts
+    from ({SUBMISSION_SQL})
+    """
+    r = _rows(client, sql)[0]
+    failures = []
+    if r.letter_conflicts:
+        failures.append(
+            f"{r.letter_conflicts} row(s) have conflicting stored Y1 letters"
+        )
+    if r.credit_conflicts:
+        failures.append(
+            f"{r.credit_conflicts} row(s) have conflicting stored Y1 credits"
+        )
+    return failures
 ```
 
 Then extend the list:
@@ -522,6 +536,7 @@ In `submission_query.py`, insert after the `sced` CTE:
             max(`grade`) as stored_letter,
             max(earnedcrhrs) as stored_earned_credit,
             count(distinct `grade`) as n_stored_letters,
+            count(distinct earnedcrhrs) as n_stored_credits,
         from stored_raw
         group by _dbt_source_project, studentid_str, sectionid_str
     ),
@@ -551,6 +566,7 @@ predicate someone has to remember.
             sg.stored_letter,
             sg.stored_earned_credit,
             sg.n_stored_letters,
+            sg.n_stored_credits,
 
             'newark' as region,
         from `teamster-332318.cokafor.stg_student_extract_newark` as e
@@ -574,6 +590,7 @@ predicate someone has to remember.
             sg.stored_letter,
             sg.stored_earned_credit,
             sg.n_stored_letters,
+            sg.n_stored_credits,
 
             'camden' as region,
         from `teamster-332318.cokafor.stg_student_extract_camden` as e
@@ -590,8 +607,8 @@ predicate someone has to remember.
     ),
 ```
 
-Add `stored_letter`, `stored_earned_credit`, and `n_stored_letters` to the final
-`SELECT` list, after `grade_band`.
+Add `stored_letter`, `stored_earned_credit`, `n_stored_letters`, and
+`n_stored_credits` to the final `SELECT` list, after `grade_band`.
 
 - [ ] **Step 4: Run it to confirm it passes**
 
@@ -768,6 +785,11 @@ Insert a CTE after `scoped` that resolves the candidate and records its origin:
 
             if(n_stored_letters > 1, null, stored_letter) as safe_stored,
             if(n_live_letters > 1, null, live_letter) as safe_live,
+            if(
+                n_stored_letters > 1 or n_stored_credits > 1,
+                null,
+                stored_earned_credit
+            ) as safe_stored_credit,
         from scoped
     ),
 
@@ -960,8 +982,8 @@ Insert after `sourced`:
             case
                 when grade_band != 'HS'
                 then cast(null as string)
-                when stored_earned_credit is not null
-                then format('%.3f', stored_earned_credit)
+                when safe_stored_credit is not null
+                then format('%.3f', safe_stored_credit)
                 when emitted_alpha_grade is null
                 then cast(null as string)
                 when emitted_alpha_grade like 'F%'
@@ -994,6 +1016,14 @@ rule applies only to rows whose grade came from the live fallback, where no
 earned-credit value exists — roughly 52 rows. Sourcing the fallback value from
 the row's own `AvailableCredit` makes the must-not-exceed constraint
 unviolatable.
+
+The credit path reads `safe_stored_credit`, not `stored_earned_credit`. That
+column is null whenever a student-section has conflicting stored letters **or**
+conflicting stored credit values, because `stored_letter` and
+`stored_earned_credit` are independent aggregates with no guaranteed row
+correspondence — on a conflicted student-section, the pair may come from
+different source rows. Guarding both dimensions keeps a conflicted row from
+emitting a credit alongside a blank grade.
 
 - [ ] **Step 4: Run it to confirm it passes**
 
