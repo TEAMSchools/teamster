@@ -210,12 +210,14 @@ until it is complete**:
   is skipped and flows once the name is filled in.
 
 > **A student can be enrolled in Focus with no address yet.** That is expected
-> when Finalsite has no complete address for them, or when it has several and
-> none is marked as the one to use. Fix it in Finalsite — fill in the missing
-> address, or retire the household the family no longer lives at — and it flows
-> on the next run. (Demographics is not held back this way; a student's
-> demographics import as soon as the student is enrolled in Finalsite and new to
-> Focus.)
+> when Finalsite has no complete address for them, when it has several and none
+> is marked as the one to use, or when the student has no Parent 1 designated —
+> with no primary contact to fall back on, the student doesn't reach this part
+> of the pipeline at all. Fix it in Finalsite — fill in the missing address,
+> retire the household the family no longer lives at, or designate a primary
+> contact (Parent 1) — and it flows on the next run. (Demographics is not held
+> back this way; a student's demographics import as soon as the student is
+> enrolled in Finalsite and new to Focus.)
 
 ## Where to make corrections
 
@@ -279,6 +281,11 @@ pipeline will not reconcile them for you.
   current one — cannot be resolved automatically, because Finalsite does not
   mark which of the two is the one to use. Retiring the stale household fixes it
   for that family.
+- **A student needs a primary contact (Parent 1) designated in Finalsite before
+  an address can flow.** With no Parent 1, there's no fallback household to
+  check when the student's own linkage isn't decisive — the student is missing
+  from address resolution entirely, not just missing an address. Designate a
+  primary contact in Finalsite and it flows next run.
 - **Set the last-attended date** in Finalsite when a student withdraws — it is
   what triggers the end date and drop code being sent.
 - **Corrections after the first import are manual.** A wrong entry code, drop

@@ -9,7 +9,7 @@ models:
       the Miami consumer and the NJ regions carry no Focus student id, so the
       `rpt_focus__*` filter on `focus_student_id_prefixed` keeps their rows out
       of the Focus feeds. Column documentation lives on the package model.
-      Carries `_dbt_source_relation`.
+      Carries `_dbt_source_relation` and the derived `_dbt_source_project`.
     config:
       meta:
         contains_pii: true

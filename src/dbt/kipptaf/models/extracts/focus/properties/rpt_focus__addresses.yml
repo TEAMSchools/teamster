@@ -27,7 +27,9 @@ models:
           `int_finalsite__contact_id_attributes.focus_student_id_prefixed`. Rows
           for contacts without a minted Focus id are excluded from this extract.
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
           - not_null:
               config:
                 severity: error
@@ -86,7 +88,10 @@ unit_tests:
       resolved address but has status applied, confirming the enrolled-only
       filter excludes them. A third is enrolled with an unresolved (ambiguous)
       address, confirming unresolved rows are withheld rather than exported
-      blank.
+      blank. A fourth is enrolled with a resolved address but has no minted
+      Focus student id (`focus_student_id_prefixed` is null), confirming that
+      predicate keeps region rows with no Focus id (e.g. NJ, once the wrapper is
+      four-region) out of the extract.
     model: rpt_focus__addresses
     given:
       - input: ref('int_finalsite__student_address_of_record')
@@ -106,16 +111,21 @@ unit_tests:
             '+13055550200', 'primary_contact_household'
           union all
           select 'enr-003', null, null, null, null, null, '+13055550300', null
+          union all
+          select 'enr-004', '789 Elm St', null, 'Miami', 'FL', '33103',
+            '+13055550400', 'student_household'
       - input: ref('stg_finalsite__contacts')
         rows:
           - { finalsite_enrollment_id: enr-001, status: enrolled }
           - { finalsite_enrollment_id: enr-002, status: applied }
           - { finalsite_enrollment_id: enr-003, status: enrolled }
+          - { finalsite_enrollment_id: enr-004, status: enrolled }
       - input: ref('int_finalsite__enrollment_lifecycle')
         rows:
           - { finalsite_enrollment_id: enr-001 }
           - { finalsite_enrollment_id: enr-002 }
           - { finalsite_enrollment_id: enr-003 }
+          - { finalsite_enrollment_id: enr-004 }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
         rows: |
@@ -126,6 +136,8 @@ unit_tests:
           select 'enr-002', '84004004005'
           union all
           select 'enr-003', '84004004006'
+          union all
+          select 'enr-004', cast(null as string)
     expect:
       rows:
         - {

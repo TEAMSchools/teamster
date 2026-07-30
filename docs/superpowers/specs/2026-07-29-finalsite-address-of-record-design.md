@@ -16,6 +16,13 @@ Refs [#4613](https://github.com/TEAMSchools/teamster/issues/4613).
 > plumb. See the "Amended during execution" section of
 > `docs/superpowers/plans/2026-07-29-finalsite-address-of-record.md`.
 
+> **Phase 2 re-measurement (2026-07-30).** Measured against prod: 1,240
+> `student_household` + 17 `primary_contact_household` = 1,257 exported; 170
+> `ambiguous`, of which 22 hold no complete address anywhere; 70 absent for want
+> of a `primary` relationship. The Measured effect table and breakdown below
+> (1,275 + 16 = 1,291 exported, 147 ambiguous, 23 with no address) are left as
+> the point-in-time design record, not restated to match.
+
 ## Problem
 
 `stg_finalsite__contacts` flattens seven address columns off
@@ -206,17 +213,18 @@ import-once with no overwrite path, so a wrong address of record is permanent
 and carries no marker distinguishing it from a verified one.
 
 Breakdown of the 1,498 under this design: 1,275 resolved from the student's own
-household linkage, 16 from the primary contact's, 147 flagged ambiguous, 37 with
-no `primary` relationship, and 23 whose records hold no complete address
-anywhere.
+household linkage, 16 from the primary contact's, 147 flagged ambiguous, 70 with
+no `primary` relationship (enrolled Miami feed-population students absent from
+`int_finalsite__student_address_of_record` entirely, for want of a primary
+contact to anchor on), and 23 whose records hold no complete address anywhere.
 
 ## Scope boundary
 
-The 35 students with no `primary` relationship are absent from
-`int_finalsite__student_address_of_record` entirely, not flagged as ambiguous.
-Representing them would require a student-versus-adult discriminator the package
-layer does not have — a contact with no primary link may simply be an adult.
-Those students are tracked in
+The 70 enrolled Miami feed-population students with no `primary` relationship
+are absent from `int_finalsite__student_address_of_record` entirely, not flagged
+as ambiguous. Representing them would require a student-versus-adult
+discriminator the package layer does not have — a contact with no primary link
+may simply be an adult. Those students are tracked in
 [#4617](https://github.com/TEAMSchools/teamster/issues/4617) as a Finalsite
 data-entry gap.
 
