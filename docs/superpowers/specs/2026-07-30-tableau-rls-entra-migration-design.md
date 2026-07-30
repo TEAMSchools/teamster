@@ -211,6 +211,31 @@ Middle, 8 in Room 12). A further 3 staff sit in Room 12 under the
 `TEAM Academy Charter School` entity and gate through that branch instead. The
 KTAF branch stays unconditional, preserving current behavior.
 
+#### Historical entity values are abbreviations
+
+`int_people__staff_roster_history` carries pre-2021 abbreviations rather than
+full entity names: `TEAM` (9,551 rows, 2002-2020), `KCNA` (2,328), `KNJ`
+(1,486), and `MIA` (658). Any view that surfaces rows from 2020 or earlier will
+fail the entity gate above, because none of those values match a full name.
+
+The old calcs handled this by hand — several tested
+`[entity] = 'TEAM' OR [entity] = 'TEAM Academy Charter Schools' OR [entity] = 'TEAM Academy Charter School'`.
+That is why those triple comparisons exist; they are not redundancy.
+
+So each entity branch needs both forms, for example:
+
+```text
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools')
+   AND [home_business_unit_name] IN ('TEAM Academy Charter School', 'TEAM') THEN TRUE
+```
+
+`KNJ` has no modern equivalent — it predates the region split — so it maps to no
+branch and those rows stay invisible unless someone decides otherwise.
+
+Only workbooks showing pre-2021 data are affected. SchoolMint Grow observation
+details reaches back that far; most others do not. Confirm per workbook rather
+than adding the second form everywhere by reflex.
+
 #### The entity gate reads group membership, not the viewer's own entity
 
 `ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [entity] = 'KIPP Paterson'`

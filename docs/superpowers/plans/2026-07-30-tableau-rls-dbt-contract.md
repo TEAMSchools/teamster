@@ -231,6 +231,15 @@ indentation:
             - KIPP Miami
             - KIPP Paterson
             - KIPP TEAM and Family Schools Inc.
+            # Pre-2021 historical abbreviations, present in
+            # int_people__staff_roster_history: TEAM (9,551 rows, 2002-2020),
+            # KCNA (2,328, 2014-2020), KNJ (1,486, 2014-2020), MIA (658,
+            # 2018-2020). Listed so the test flags genuinely new values rather
+            # than warning forever on history.
+            - TEAM
+            - KCNA
+            - KNJ
+            - MIA
 - name: campus_name
   data_type: string
 - name: home_department_name
