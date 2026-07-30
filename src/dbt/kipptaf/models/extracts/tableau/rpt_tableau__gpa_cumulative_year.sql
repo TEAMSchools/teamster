@@ -118,7 +118,8 @@ where
        is_enrolled_recent) and invalid (1) rows */
     and e.enroll_status in (0, 2, 3)
     and e.is_enrolled_recent
-    /* Miami hard-excluded: region unsupported in the rebuilt dashboard
-       (#4340) */
-    -- TODO(#4340): add Paterson once PS gradebook data is populated
+    /* Newark and Camden are the only regions with HS students on record —
+       Paterson runs ES and MS only, and Miami has no HS rows in any year. This
+       is not a coverage gap for an HS-grain dashboard; the region dimension
+       stays so a future Paterson HS appears automatically. */
     and e.region in ('Newark', 'Camden')

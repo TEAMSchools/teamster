@@ -782,3 +782,18 @@ exposures:
             metadata:
               id: 0decd81d-f1c0-464a-bf2f-3546af11d47c
               cron_schedule: 0 5 * * *
+  - name: cumulative_gpa_monitor
+    label: Cumulative GPA Monitor
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__gpa_cumulative_year")
+      - ref("rpt_tableau__gpa_goals")
+    # TODO(#4619): update to the published Cumulative GPA Monitor workbook URL
+    url: http://SAC-RPT-01/#/site/KIPPNJ/workbooks/TBD
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau

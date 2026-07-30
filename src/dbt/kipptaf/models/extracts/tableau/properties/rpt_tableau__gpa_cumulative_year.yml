@@ -9,8 +9,12 @@ models:
       projected cumulative columns exactly. Students filtered to
       is_enrolled_recent — the year was completed or the enrollment is currently
       active, so mid-year withdrawals drop but completed prior years of students
-      who later left are kept. Related to rpt_tableau__student_course_grades in
-      Tableau on student_number. Miami hard-excluded.
+      who later left are kept. Read this table on its own for the Cumulative GPA
+      Monitor — one row per student-year, so student-grain measures need no
+      relationship. Do NOT relate it to rpt_tableau__student_course_grades on
+      student_number alone: that match carries no academic year and fans a
+      student across every year they attended. Current seniors carry up to ten
+      rows here.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
