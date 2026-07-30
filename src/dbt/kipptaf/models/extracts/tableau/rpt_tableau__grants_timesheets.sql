@@ -9,11 +9,7 @@ with
             sr.question_id,
 
             ri.respondent_employee_number,
-            ri.respondent_user_principal_name,
-            ri.respondent_business_unit,
             ri.respondent_preferred_name_lastfirst,
-            ri.respondent_work_location,
-            ri.respondent_job_title,
 
             lc.location_clean_name,
             lc.campus_name,
@@ -69,11 +65,7 @@ select
     response_id as survey_response_id,
     edit_link,
     respondent_employee_number as respondent_df_employee_number,
-    respondent_user_principal_name as respondent_userprincipalname,
-    respondent_business_unit as respondent_legal_entity_name,
     respondent_preferred_name_lastfirst as respondent_preferred_name,
-    respondent_work_location as respondent_primary_site,
-    respondent_job_title as respondent_primary_job,
 
     location_clean_name,
     campus_name,
