@@ -79,5 +79,5 @@
     "kippmiami": "src/dbt/kippmiami/target/prod",
     "kipppaterson": "src/dbt/kipppaterson/target/prod"
   },
-  "python.analysis.exclude": [".worktrees"]
+  "python.analysis.include": ["src/teamster", "src/cube", "tests", "scripts"]
 }
