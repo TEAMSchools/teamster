@@ -73,6 +73,19 @@ select
     lc.location_clean_name,
     lc.campus_name,
 
+    case
+        rh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else rh.home_business_unit_name
+    end as home_business_unit_name,
+
     rh.home_department_name,
     rh.job_function,
     rh.job_title,
@@ -113,19 +126,6 @@ select
 
     if(op.observation_id is not null, 1, 0) as is_observed,
 
-    case
-        rh.home_business_unit_name
-        when 'TEAM'
-        then 'TEAM Academy Charter School'
-        when 'KCNA'
-        then 'KIPP Cooper Norcross Academy'
-        when 'MIA'
-        then 'KIPP Miami'
-        when 'KNJ'
-        then 'KIPP TEAM and Family Schools Inc.'
-        else rh.home_business_unit_name
-    end as home_business_unit_name,
-
 from roster_history as rh
 left join
     {{ ref("int_people__location_crosswalk") }} as lc
@@ -161,6 +161,19 @@ select
 
     lc.location_clean_name,
     lc.campus_name,
+
+    case
+        rh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else rh.home_business_unit_name
+    end as home_business_unit_name,
 
     rh.home_department_name,
     rh.job_function,
@@ -205,19 +218,6 @@ select
     gl.grade_level as grade_taught,
 
     if(op.observation_id is not null, 1, 0) as is_observed,
-
-    case
-        rh.home_business_unit_name
-        when 'TEAM'
-        then 'TEAM Academy Charter School'
-        when 'KCNA'
-        then 'KIPP Cooper Norcross Academy'
-        when 'MIA'
-        then 'KIPP Miami'
-        when 'KNJ'
-        then 'KIPP TEAM and Family Schools Inc.'
-        else rh.home_business_unit_name
-    end as home_business_unit_name,
 
 from observation_pivot as op
 left join
