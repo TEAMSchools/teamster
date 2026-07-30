@@ -90,6 +90,7 @@ with
             max(`grade`) as stored_letter,
             max(earnedcrhrs) as stored_earned_credit,
             count(distinct `grade`) as n_stored_letters,
+            count(distinct earnedcrhrs) as n_stored_credits,
         from stored_raw
         group by _dbt_source_project, studentid_str, sectionid_str
     ),
@@ -112,6 +113,7 @@ with
             sg.stored_letter,
             sg.stored_earned_credit,
             sg.n_stored_letters,
+            sg.n_stored_credits,
 
             'newark' as region,
         from `teamster-332318.cokafor.stg_student_extract_newark` as e
@@ -135,6 +137,7 @@ with
             sg.stored_letter,
             sg.stored_earned_credit,
             sg.n_stored_letters,
+            sg.n_stored_credits,
 
             'camden' as region,
         from `teamster-332318.cokafor.stg_student_extract_camden` as e
@@ -229,5 +232,6 @@ select
     stored_letter,
     stored_earned_credit,
     n_stored_letters,
+    n_stored_credits,
 from scoped
 """

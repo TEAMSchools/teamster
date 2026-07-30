@@ -95,17 +95,25 @@ def check_stored_coverage(client):
 
 
 def check_no_stored_conflicts(client):
-    """No student-section carries two different stored Y1 letters."""
+    """No student-section carries two different stored Y1 letters or credits."""
+    failures = []
     # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
     sql = f"""
-    select count(*) as n
+    select
+        countif(n_stored_letters > 1) as letter_conflicts,
+        countif(n_stored_credits > 1) as credit_conflicts
     from ({SUBMISSION_SQL})
-    where n_stored_letters > 1
     """
-    n = _rows(client, sql)[0].n
-    if n:
-        return [f"{n} row(s) have conflicting stored Y1 letter grades"]
-    return []
+    row = _rows(client, sql)[0]
+    if row.letter_conflicts:
+        failures.append(
+            f"{row.letter_conflicts} row(s) have conflicting stored Y1 letter grades"
+        )
+    if row.credit_conflicts:
+        failures.append(
+            f"{row.credit_conflicts} row(s) have conflicting stored Y1 earned credits"
+        )
+    return failures
 
 
 CHECKS = [
