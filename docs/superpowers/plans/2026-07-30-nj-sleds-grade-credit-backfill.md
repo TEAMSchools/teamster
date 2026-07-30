@@ -29,8 +29,12 @@ Every task's requirements implicitly include this section.
 
 - **Only two fields may be written:** `AlphaGradeEarned` and `CreditsEarned`.
   Every other column passes through unchanged from the extract.
-- **No row may be added, removed, filtered, reordered, or deduplicated.**
-  Row-count parity per region is a hard gate: Newark 33,150, Camden 10,343.
+- **No row may be added, removed, filtered, or deduplicated.** Row-count parity
+  per region is a hard gate: Newark 33,150, Camden 10,343. Row **order** is
+  explicitly not preserved: BigQuery's output order across a `union all` with
+  left joins is nondeterministic, and no ordinal column was captured at load, so
+  the native extract's order is not recoverable. Harmless for a keyed roster
+  upload, which matches rows on student and section identifiers, not position.
 - **Every value in the view and the CSV is a `STRING`.** No numeric coercion
   anywhere in the export path. CDS codes must keep leading zeros (`07`, not
   `7`).
@@ -1023,10 +1027,11 @@ in position 22. Change `from sourced` to `from emitted_credit`. Keep the other
 
 Note the credit precedence: the stored earned-credit value wins whenever it
 exists, because it is PowerSchool's own record of credit awarded. The derived
-rule applies only to rows whose grade came from the live fallback, where no
-earned-credit value exists — roughly 52 rows. Sourcing the fallback value from
-the row's own `AvailableCredit` makes the must-not-exceed constraint
-unviolatable.
+rule applies only to rows whose grade came from the live fallback and which have
+no earned-credit value — measured at exactly 2 rows. (52 is the count of
+secondary/HS gap rows overall; most of those have no grade in any source at all
+and never reach this rule.) Sourcing the fallback value from the row's own
+`AvailableCredit` makes the must-not-exceed constraint unviolatable.
 
 The credit path reads `safe_stored_credit`, not `stored_earned_credit`. That
 column is null whenever a student-section has conflicting stored letters **or**
@@ -1116,10 +1121,14 @@ def self_test(client):
     """Prove the real checks fire on injected defects. Mutates SQL in memory.
 
     Each block calls the ACTUAL check function against the mutated SQL, so
-    deleting a check from CHECKS, widening its domain, or weakening its
-    predicate makes this self-test fail. A self-test that re-implements the
-    check's own predicate would keep passing with the check removed, which is
-    worse than no self-test at all - it manufactures false confidence.
+    widening a check's domain or weakening its predicate makes this
+    self-test fail. A self-test that re-implements the check's own predicate
+    would keep passing with the check's logic gutted, which is worse than no
+    self-test at all - it manufactures false confidence.
+
+    This does not prove every check still runs as part of the gate: it calls
+    two check functions directly by name, so it covers 2 of the 11 check
+    groups in CHECKS.
     """
     failures = []
 
@@ -1151,7 +1160,7 @@ empty list on clean data, so a plain truthiness test suffices.
 so a truthiness test would pass even with the format clause broken — the
 self-test must look for the **specific** failure string.
 
-````
+````python
 
 Wire it into `main` behind a flag:
 

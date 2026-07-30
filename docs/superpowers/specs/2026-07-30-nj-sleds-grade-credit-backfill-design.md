@@ -195,8 +195,8 @@ always wins; the fallback never overrides one.
   the row itself makes the "must not exceed `AvailableCredit`" constraint
   impossible to violate by construction.
 
-This is the only invented rule in the design, and it is bounded to roughly 52
-secondary rows — small enough to review individually before upload.
+This is the only invented rule in the design, and it applies to exactly 2 rows —
+small enough to review individually before upload.
 
 Rows still blank after both sources stay blank and are listed in the exception
 report. Nothing is guessed.
@@ -206,7 +206,10 @@ report. Nothing is guessed.
 ### The view
 
 `cokafor.rpt_student_course_submission` — all 25 submission columns in
-submission order, plus a `region` column, at one row per extract row.
+submission order, plus ten audit columns (`region`, `grade_band`,
+`stored_letter`, `stored_earned_credit`, `n_stored_letters`, `n_stored_credits`,
+`live_letter`, `n_live_letters`, `candidate_letter`, `grade_source`), at one row
+per extract row.
 
 The view is re-runnable with no edits. Each cycle the intern reloads the base
 tables with the existing reload script and the view reflects the new data
@@ -292,8 +295,10 @@ satisfied by the source data.
 | Camden MS (`0606`/`0707`/`0808`) | 3,638      | 3,633                          | 5       |
 | **In-scope subtotal**            | **28,727** | **28,606 (99.6%)**             | **121** |
 
-Roughly 52 of the 121 gap rows are secondary, so only those need the derived
-credit rule.
+52 of the 121 gap rows are secondary (Newark HS 20 + Camden HS 32). Only the
+ones actually filled by the live fallback need the derived credit rule, not the
+whole 52 — measured at exactly 2 rows. See _What the fallback actually
+recovered_ below.
 
 ### What the fallback actually recovered
 
@@ -302,7 +307,7 @@ spec originally assumed. Of the 121 gap rows:
 
 | Outcome                                       | Rows           |
 | --------------------------------------------- | -------------- |
-| Filled from a live final grade                | 15             |
+| Filled from a live final grade                | 13             |
 | Live grades disagree, so correctly left blank | included below |
 | No usable grade in **either** source          | 106            |
 
@@ -419,8 +424,9 @@ file submittable on its own.**
 
 - ~~Re-measure `Y1` coverage with the final band rule.~~ **Resolved during
   implementation.** Coverage under the strict band rule is 28,606 of 28,727
-  (99.6%), a 121-row gap, of which 15 fill from the live fallback and 106 have
-  no grade in any source. See _What the fallback actually recovered_.
+  (99.6%), a 121-row gap, of which 13 fill from the live fallback, 106 have no
+  grade in any source, and 2 are rejected as `F*`. See _What the fallback
+  actually recovered_.
 - ~~Confirm `pgfinalgrades` exposes a year-final reporting term.~~ **Resolved
   during implementation.** It does not: `pgfinalgrades` has no `academic_year`
   column, holds history back to 2004, and its `Y1` term stopped being used
@@ -452,7 +458,11 @@ file submittable on its own.**
 - No changes to the staff file.
 - No correction of any field other than the two named, including CDS.
 - No promotion or retention logic (see _Contingencies_).
-- No row filtering, deduplication, or reordering.
+- No row filtering or deduplication. Row-count parity is preserved, but row
+  **order** is not: BigQuery's output order across a `union all` with left joins
+  is nondeterministic, and no ordinal column was captured at load, so the native
+  extract's row order is not recoverable. This is harmless for a keyed roster
+  upload, which matches rows on student and section identifiers, not position.
 - No row-level identifiable data on any external surface. The exported CSV is
   PII-bearing and goes to the state-access uploader only; the view stays in
   `cokafor`, in-tenant.
