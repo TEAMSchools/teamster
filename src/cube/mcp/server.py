@@ -31,6 +31,8 @@ import hashlib
 import json
 import os
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -200,6 +202,29 @@ class JWKSTokenVerifier:
         )
 
 
+# mcp SDK 2.0 fixed the bug where stateless_http=True re-entered a `lifespan=`
+# context manager on every HTTP request (streamable_http_manager now enters it
+# once for the manager's lifetime and reuses that state across requests), so
+# it's now safe to manage the httpx client's shutdown here instead of leaving
+# it as a bare module-level global with no `aclose()`.
+client: httpx.AsyncClient | None = None
+
+
+@asynccontextmanager
+async def _lifespan(_server: "MCPServer[None]") -> AsyncIterator[None]:
+    global client
+    client = httpx.AsyncClient(
+        base_url=CUBE_REST_URL,
+        headers={"Content-Type": "application/json"},
+        timeout=TIMEOUT_SECONDS,
+    )
+    try:
+        yield
+    finally:
+        await client.aclose()
+        client = None
+
+
 _mcpserver_kwargs: dict[str, Any] = {}
 if AUTHKIT_DOMAIN and PUBLIC_URL:
     _mcpserver_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
@@ -221,19 +246,8 @@ mcp = MCPServer(
         "on every surface (unlike this instructions block, which some clients "
         "drop or truncate)."
     ),
-    # Do NOT pass a `lifespan=` kwarg: with stateless_http=True (set on run(),
-    # below) the SDK's _handle_stateless_request invokes `app.run(...)` per
-    # HTTP request, which in turn runs the user lifespan per request. A
-    # teardown like `await client.aclose()` would close the shared httpx
-    # client after the first request and break every subsequent one.
+    lifespan=_lifespan,
     **_mcpserver_kwargs,
-)
-
-
-client = httpx.AsyncClient(
-    base_url=CUBE_REST_URL,
-    headers={"Content-Type": "application/json"},
-    timeout=TIMEOUT_SECONDS,
 )
 
 
@@ -245,6 +259,8 @@ async def _request(
     poll: bool = False,
     **kwargs: Any,
 ) -> dict[str, Any]:
+    if client is None:
+        raise RuntimeError("_request called before the server lifespan started")
     headers = {"Authorization": _mint_token(email)}
     deadline = time.monotonic() + TIMEOUT_SECONDS
     while True:

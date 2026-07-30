@@ -106,14 +106,16 @@ Cloud Run service via `--set-secrets`).
   Don't use the `CapabilityNotSupported` try/except from build-mcp-server's
   `references/elicitation.md` — that's jlowin's `fastmcp`, not the official
   SDK's bundled `MCPServer`.
-- **Do NOT use `lifespan=` with `stateless_http=True`.** In stateless mode the
-  SDK invokes `app.run(...)` per HTTP request, which runs the user lifespan per
-  request — a `client.aclose()` teardown closes the shared httpx client after
-  the first request and breaks every subsequent one
-  (`Cannot send a request, as the client has been closed`). Let the module-level
-  client live until process exit; SIGTERM cleans up. `lifespan=` itself is still
-  a constructor kwarg (unlike host/port/stateless_http, it did not move to
-  `run()`), so this still applies to the `MCPServer(...)` call, not `run()`.
+- **`lifespan=` + `stateless_http=True` is safe again as of SDK 2.0** — verified
+  against `mcp/server/streamable_http_manager.py`: lifespan is now entered once
+  for the manager's lifetime and that state is reused across every stateless
+  request, not re-entered per request. (SDK 1.x re-entered it per request, which
+  is why `server.py` used to keep the httpx client as a bare module-level global
+  with no `aclose()` — `client.aclose()` in a `lifespan=` teardown would close
+  the shared client after the first request and break every subsequent one.)
+  `server.py` now creates/tears down the client in `_lifespan()`, passed via the
+  `lifespan=` kwarg — still a constructor kwarg (unlike
+  host/port/stateless_http, it did not move to `run()`).
 - **`PyJWKClient` defaults are uncached** (`cache_keys=False`, `lifespan=300`).
   For hot-path verifiers pass `cache_keys=True, lifespan=3600`.
 - **Total tool wall-clock must stay under 60s** (Claude Code default per-tool
