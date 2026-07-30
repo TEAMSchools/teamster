@@ -66,15 +66,23 @@ with
 select
     rh.employee_number,
     rh.formatted_name as teammate,
-    rh.home_business_unit_name as entity,
-    rh.home_work_location_name as `location`,
     rh.home_work_location_grade_band as grade_band,
-    rh.home_department_name as department,
-    rh.job_title,
     rh.reports_to_formatted_name as manager,
-    rh.sam_account_name,
-    rh.reports_to_sam_account_name,
     rh.race_ethnicity_reporting,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    rh.home_department_name,
+    rh.job_function,
+    rh.job_title,
+
+    rh.mail,
+    rh.user_principal_name,
+    rh.sam_account_name,
+
+    rh.reports_to_mail,
+    rh.reports_to_sam_account_name,
 
     rt.type,
     rt.code,
@@ -105,7 +113,23 @@ select
 
     if(op.observation_id is not null, 1, 0) as is_observed,
 
+    case
+        rh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else rh.home_business_unit_name
+    end as home_business_unit_name,
+
 from roster_history as rh
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on rh.home_work_location_name = lc.location_name
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on rh.home_business_unit_name = rt.region
@@ -131,15 +155,23 @@ union all
 select
     rh.employee_number,
     rh.formatted_name as teammate,
-    rh.home_business_unit_name as entity,
-    rh.home_work_location_name as `location`,
     rh.home_work_location_grade_band as grade_band,
-    rh.home_department_name as department,
-    rh.job_title,
     rh.reports_to_formatted_name as manager,
-    rh.sam_account_name,
-    rh.reports_to_sam_account_name,
     rh.race_ethnicity_reporting,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    rh.home_department_name,
+    rh.job_function,
+    rh.job_title,
+
+    rh.mail,
+    rh.user_principal_name,
+    rh.sam_account_name,
+
+    rh.reports_to_mail,
+    rh.reports_to_sam_account_name,
 
     op.observation_type_abbreviation,
 
@@ -174,11 +206,27 @@ select
 
     if(op.observation_id is not null, 1, 0) as is_observed,
 
+    case
+        rh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else rh.home_business_unit_name
+    end as home_business_unit_name,
+
 from observation_pivot as op
 left join
     roster_history as rh
     on op.employee_number = rh.employee_number
     and op.observed_at between rh.effective_date_start and rh.effective_date_end
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on rh.home_work_location_name = lc.location_name
 left join observation_details as od on op.observation_id = od.observation_id
 left join roster_current as rc on op.observer_employee_number = rc.employee_number
 left join
