@@ -333,3 +333,48 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__gpa_goals
+
+  - name: int_people__staff_roster__locations_resolve_to_crosswalk
+    description: >-
+      Every active staff member's home_work_location_name must resolve to a
+      canonical location_clean_name in int_people__location_crosswalk. That
+      clean name is what the Tableau permissions block concatenates into a
+      KNJ-SG-Tableau All Staff group name, so an unresolved location does not
+      fail visibly -- it gates the row to nobody. A school added to ADP but not
+      to the locations sheet is the way this breaks, which makes it a launch
+      risk every time the network opens a campus.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_people__staff_roster
+
+  - name: int_people__staff_roster__tableau_location_set_expected
+    description: >-
+      The set of gated locations is a known 30, and each one needs a matching
+      Tableau group to gate against. Unlike the coverage test above, this fires
+      when a location resolves correctly but is simply new -- the crosswalk is
+      satisfied while Tableau still has no group of that name. Failing here is
+      the prompt to create the group before the extract starts emitting rows
+      nobody can see. Update the expected count in the same change that adds the
+      group.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_people__staff_roster
+
+  - name: int_people__staff_roster__mail_populated_with_sam
+    description: >-
+      Anyone holding a sam_account_name must also hold a mail value. The Tableau
+      permissions block compares USERNAME() against both, and after the Entra
+      identity cutover USERNAME() returns email rather than the AD username --
+      so a person with a sam_account_name and no mail keeps group-based access
+      but loses the self-access and manager-access tiers that match on identity.
+      Warn rather than error: the population is normally zero but a single
+      in-flight provisioning record should not block the run.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_people__staff_roster
