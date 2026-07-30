@@ -7,12 +7,25 @@ only - never row-level values, which are PII.
 import sys
 
 from google.cloud import bigquery
-from submission_query import ALPHA_GRADE_DOMAIN, SUBMISSION_SQL
+from submission_query import ALPHA_GRADE_DOMAIN, SUBMISSION_COLUMNS, SUBMISSION_SQL
 
 PROJECT = "teamster-332318"
 
-EXPECTED_EXTRACT_ROWS = {"newark": 33150, "camden": 10343}
-EXPECTED_BAND_ROWS = {
+BASE_TABLES = {
+    "newark": "teamster-332318.cokafor.stg_student_extract_newark",
+    "camden": "teamster-332318.cokafor.stg_student_extract_camden",
+}
+
+PASS_THROUGH_COLUMNS = [
+    c for c in SUBMISSION_COLUMNS if c not in ("AlphaGradeEarned", "CreditsEarned")
+]
+
+# Per-cycle baseline, not a derivable truth: band composition legitimately
+# shifts between extract pulls (enrollment, course, and span changes), and
+# the band logic is exactly what this baseline cross-checks, so deriving it
+# would be circular. Re-measure by hand whenever a new extract is loaded (see
+# the README's re-baseline step). Measured from the 2026-07-29 extract.
+BASELINE_BAND_ROWS = {
     ("newark", "HS"): 10695,
     ("newark", "MS"): 10746,
     ("newark", "OUT"): 11709,
@@ -26,8 +39,27 @@ def _rows(client, sql):
     return list(client.query(sql).result())
 
 
+def base_table_row_count(client, region):
+    """Fresh row count of the region's extract base table.
+
+    Shared by check_row_parity (the fan-out gate) and build_submission's
+    export_region (the post-gate re-verification of what was actually
+    written), so both compare against the same live number instead of two
+    copies of similar SQL drifting apart.
+    """
+    table = BASE_TABLES[region]
+    # trunk-ignore(bandit/B608): table is drawn from the local BASE_TABLES constant, not user input
+    sql_text = f"select count(*) as n from `{table}`"
+    return _rows(client, sql_text)[0].n
+
+
 def check_row_parity(client, sql=SUBMISSION_SQL):
-    """Every extract row appears exactly once. No fan-out, no loss."""
+    """Every extract row appears exactly once, matching its base table.
+
+    Compares against each base table's own count, queried fresh, rather than
+    a frozen literal - so this stays a true fan-out guard across extract
+    reloads instead of asserting a snapshot that goes stale next cycle.
+    """
     failures = []
     # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
     sql_text = f"""
@@ -36,10 +68,14 @@ def check_row_parity(client, sql=SUBMISSION_SQL):
     group by region
     """
     actual = {r.region: r.n for r in _rows(client, sql_text)}
-    for region, expected in EXPECTED_EXTRACT_ROWS.items():
+    for region in BASE_TABLES:
+        expected = base_table_row_count(client, region)
         got = actual.get(region, 0)
         if got != expected:
-            failures.append(f"row parity {region}: expected {expected}, got {got}")
+            failures.append(
+                f"row parity {region}: view {got}, base table {expected} "
+                "(join fanned out)"
+            )
     return failures
 
 
@@ -53,7 +89,7 @@ def check_band_counts(client, sql=SUBMISSION_SQL):
     group by region, grade_band
     """
     actual = {(r.region, r.grade_band): r.n for r in _rows(client, sql_text)}
-    for key, expected in EXPECTED_BAND_ROWS.items():
+    for key, expected in BASELINE_BAND_ROWS.items():
         got = actual.get(key, 0)
         if got != expected:
             failures.append(
@@ -62,7 +98,9 @@ def check_band_counts(client, sql=SUBMISSION_SQL):
     return failures
 
 
-EXPECTED_STORED_COVERAGE = {
+# Per-cycle baseline, same caveat as BASELINE_BAND_ROWS above - re-measure by
+# hand whenever a new extract is loaded. Measured from the 2026-07-29 extract.
+BASELINE_STORED_COVERAGE = {
     ("newark", "HS"): 10675,
     ("newark", "MS"): 10682,
     ("camden", "HS"): 3616,
@@ -84,7 +122,7 @@ def check_stored_coverage(client, sql=SUBMISSION_SQL):
     group by region, grade_band
     """
     actual = {(r.region, r.grade_band): r.matched for r in _rows(client, sql_text)}
-    for key, floor in EXPECTED_STORED_COVERAGE.items():
+    for key, floor in BASELINE_STORED_COVERAGE.items():
         got = actual.get(key, 0)
         if got < floor:
             failures.append(
@@ -188,18 +226,33 @@ def check_in_scope_rows_have_grades(client, sql=SUBMISSION_SQL):
 
 
 def check_out_of_scope_rows_blank(client, sql=SUBMISSION_SQL):
-    """Out-of-scope rows carry no grade and no credit. Scope-boundary guard."""
+    """Scope-boundary guard.
+
+    OUT-band rows carry no grade and no credit. MS-band rows are in scope for
+    AlphaGradeEarned only (see the spec's scope table) and must carry no
+    CreditsEarned.
+    """
     # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
     sql_text = f"""
-    select count(*) as n
+    select
+        countif(
+            grade_band = 'OUT'
+            and (AlphaGradeEarned is not null or CreditsEarned is not null)
+        ) as out_of_scope_graded,
+        countif(grade_band = 'MS' and CreditsEarned is not null) as ms_has_credit
     from ({sql})
-    where grade_band = 'OUT'
-      and (AlphaGradeEarned is not null or CreditsEarned is not null)
     """
-    n = _rows(client, sql_text)[0].n
-    if n:
-        return [f"{n} out-of-scope row(s) were given a grade or credit"]
-    return []
+    r = _rows(client, sql_text)[0]
+    failures = []
+    if r.out_of_scope_graded:
+        failures.append(
+            f"{r.out_of_scope_graded} out-of-scope row(s) were given a grade or credit"
+        )
+    if r.ms_has_credit:
+        failures.append(
+            f"{r.ms_has_credit} MS-band row(s) were given a CreditsEarned value"
+        )
+    return failures
 
 
 def check_credits_earned(client, sql=SUBMISSION_SQL):
@@ -238,6 +291,53 @@ def check_credits_earned(client, sql=SUBMISSION_SQL):
     return failures
 
 
+def check_pass_through_columns_unchanged(client, sql=SUBMISSION_SQL):
+    """The 23 non-written columns are byte-identical to the base tables.
+
+    This is the load-bearing narrowing constraint of the whole exception to
+    source-fix-only: only AlphaGradeEarned and CreditsEarned may ever differ
+    from the native extract. EXCEPT DISTINCT in both directions catches drift
+    either way - a view row with a pass-through value not found in any base
+    row, or a base row whose pass-through values are missing from the view.
+    """
+    cols = ", ".join(f"`{c}`" for c in PASS_THROUGH_COLUMNS)
+    tables = BASE_TABLES.values()
+    # trunk-ignore(bandit/B608): cols/tables draw from local module constants, not user input
+    base_union = " union all ".join(f"select {cols} from `{t}`" for t in tables)
+    # trunk-ignore(bandit/B608): cols/table draw from local module constants, not user input
+    view_extra_sql = f"""
+    select count(*) as n
+    from (
+        select {cols} from ({sql})
+        except distinct
+        ({base_union})
+    )
+    """
+    # trunk-ignore(bandit/B608): cols/table draw from local module constants, not user input
+    base_extra_sql = f"""
+    select count(*) as n
+    from (
+        ({base_union})
+        except distinct
+        select {cols} from ({sql})
+    )
+    """
+    failures = []
+    view_extra = _rows(client, view_extra_sql)[0].n
+    if view_extra:
+        failures.append(
+            f"{view_extra} view row(s) have a pass-through column combination "
+            "not found in either base table"
+        )
+    base_extra = _rows(client, base_extra_sql)[0].n
+    if base_extra:
+        failures.append(
+            f"{base_extra} base-table row(s) have a pass-through column "
+            "combination missing from the view"
+        )
+    return failures
+
+
 CHECKS = [
     check_row_parity,
     check_band_counts,
@@ -249,6 +349,7 @@ CHECKS = [
     check_in_scope_rows_have_grades,
     check_out_of_scope_rows_blank,
     check_credits_earned,
+    check_pass_through_columns_unchanged,
 ]
 
 
@@ -263,10 +364,14 @@ def self_test(client):
     """Prove the real checks fire on injected defects. Mutates SQL in memory.
 
     Each block calls the ACTUAL check function against the mutated SQL, so
-    deleting a check from CHECKS, widening its domain, or weakening its
-    predicate makes this self-test fail. A self-test that re-implements the
-    check's own predicate would keep passing with the check removed, which is
-    worse than no self-test at all - it manufactures false confidence.
+    widening a check's domain or weakening its predicate makes this
+    self-test fail. A self-test that re-implements the check's own predicate
+    would keep passing with the check's logic gutted, which is worse than no
+    self-test at all - it manufactures false confidence.
+
+    This does not prove every check still runs as part of the gate: it calls
+    two check functions directly by name, so it covers 2 of the 11 check
+    groups in CHECKS.
     """
     failures = []
 
