@@ -369,3 +369,102 @@ select
     grade_source,
 from emitted_credit
 """
+
+# The worklist identifies rows by local IDs only (LocalIdentificationNumber,
+# LocalSectionCode) - never FirstName, LastName, DateOfBirth, or
+# StateIdentificationNumber, per the project's worklist PII convention.
+# LocalIdentificationNumber is enough to find the student in PowerSchool.
+UNGRADED_WORKLIST_COLUMNS = [
+    "region",
+    "grade_band",
+    "LocalIdentificationNumber",
+    "LocalSectionCode",
+    "LocalCourseCode",
+    "LocalCourseTitle",
+    "SubjectArea",
+    "CourseIdentifier",
+    "CourseLevel",
+    "GradeSpan",
+    "AvailableCredit",
+    "SectionEntryDate",
+    "SectionExitDate",
+    "CourseType",
+    "ungraded_rows",
+    "section_rows",
+    "reason",
+    "section_shape",
+]
+
+# trunk-ignore(bandit/B608): SUBMISSION_SQL is a module constant, not user input
+UNGRADED_WORKLIST_SQL = f"""
+with
+    v as ({SUBMISSION_SQL}),
+
+    in_scope as (
+        select * from v where grade_band in ('HS', 'MS')
+    ),
+
+    section_totals as (
+        select
+            region,
+            LocalSectionCode,
+
+            count(*) as section_rows,
+        from in_scope
+        group by region, LocalSectionCode
+    ),
+
+    ungraded as (
+        select * from in_scope where AlphaGradeEarned is null
+    ),
+
+    ungraded_by_section as (
+        select
+            region,
+            LocalSectionCode,
+
+            count(*) as ungraded_rows,
+        from ungraded
+        group by region, LocalSectionCode
+    )
+
+select
+    u.region,
+    u.grade_band,
+    u.LocalIdentificationNumber,
+    u.LocalSectionCode,
+    u.LocalCourseCode,
+    u.LocalCourseTitle,
+    u.SubjectArea,
+    u.CourseIdentifier,
+    u.CourseLevel,
+    u.GradeSpan,
+    u.AvailableCredit,
+    u.SectionEntryDate,
+    u.SectionExitDate,
+    u.CourseType,
+
+    ubs.ungraded_rows,
+
+    st.section_rows,
+
+    case
+        when u.candidate_letter is not null
+        then 'grade exists but outside the handbook domain'
+        when u.n_stored_letters > 1 or u.n_live_letters > 1
+        then 'conflicting grades across sources or terms'
+        else 'no grade in either source'
+    end as reason,
+    case
+        when ubs.ungraded_rows = st.section_rows
+        then 'whole section ungraded'
+        else 'partial - classmates were graded'
+    end as section_shape,
+from ungraded as u
+inner join ungraded_by_section as ubs
+    on u.region = ubs.region
+    and u.LocalSectionCode = ubs.LocalSectionCode
+inner join section_totals as st
+    on u.region = st.region
+    and u.LocalSectionCode = st.LocalSectionCode
+"""

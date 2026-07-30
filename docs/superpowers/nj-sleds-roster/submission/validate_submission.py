@@ -7,7 +7,12 @@ only - never row-level values, which are PII.
 import sys
 
 from google.cloud import bigquery
-from submission_query import ALPHA_GRADE_DOMAIN, SUBMISSION_COLUMNS, SUBMISSION_SQL
+from submission_query import (
+    ALPHA_GRADE_DOMAIN,
+    SUBMISSION_COLUMNS,
+    SUBMISSION_SQL,
+    UNGRADED_WORKLIST_SQL,
+)
 
 PROJECT = "teamster-332318"
 
@@ -338,6 +343,33 @@ def check_pass_through_columns_unchanged(client, sql=SUBMISSION_SQL):
     return failures
 
 
+def check_worklist_matches_gate(client, sql=SUBMISSION_SQL):
+    """Worklist row count equals the gate's own ungraded in-scope count.
+
+    UNGRADED_WORKLIST_SQL and check_in_scope_rows_have_grades both derive
+    from SUBMISSION_SQL, so the two cannot drift apart today. This is a
+    regression guard against a future edit to one and not the other.
+    """
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    gate_sql = f"""
+    select count(*) as n
+    from ({sql})
+    where grade_band in ('HS', 'MS') and AlphaGradeEarned is null
+    """
+    gate_n = _rows(client, gate_sql)[0].n
+
+    # trunk-ignore(bandit/B608): UNGRADED_WORKLIST_SQL is a local module constant, not user input
+    worklist_sql = f"select count(*) as n from ({UNGRADED_WORKLIST_SQL})"
+    worklist_n = _rows(client, worklist_sql)[0].n
+
+    if gate_n != worklist_n:
+        return [
+            f"worklist row count {worklist_n} != gate's ungraded in-scope "
+            f"row count {gate_n}"
+        ]
+    return []
+
+
 CHECKS = [
     check_row_parity,
     check_band_counts,
@@ -350,6 +382,7 @@ CHECKS = [
     check_out_of_scope_rows_blank,
     check_credits_earned,
     check_pass_through_columns_unchanged,
+    check_worklist_matches_gate,
 ]
 
 
@@ -370,7 +403,7 @@ def self_test(client):
     self-test at all - it manufactures false confidence.
 
     This does not prove every check still runs as part of the gate: it calls
-    two check functions directly by name, so it covers 2 of the 11 check
+    two check functions directly by name, so it covers 2 of the 12 check
     groups in CHECKS.
     """
     failures = []
