@@ -1,0 +1,136 @@
+models:
+  - name: rpt_tableau__manager_survey_details
+    description: >-
+      Extract so the Manager Survey Reports and Manager Survey Rollup Tableau
+      workbooks depend on an rpt_ model rather than reading
+      int_surveys__manager_survey_details directly. The contract columns
+      (location_clean_name, campus_name, home_business_unit_name,
+      home_department_name, job_function, job_title, mail, user_principal_name,
+      sam_account_name, reports_to_mail, reports_to_sam_account_name) describe
+      the survey subject — the person being rated — not the respondent.
+    columns:
+      - name: effective_survey_response_id
+        data_type: string
+        description: >-
+          Submission identifier. For live Google Forms rows, equals
+          `survey_response_id`. For historic Alchemer archive rows (which have
+          no upstream `survey_response_id`), synthesized as
+          `concat(respondent_df_employee_number, '_',
+          subject_df_employee_number, '_', campaign_reporting_term)` — the
+          natural key that uniquely identifies an archive submission.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - unique
+      - name: location_clean_name
+        data_type: string
+        description: >-
+          Canonical location from int_people__location_crosswalk. Drives the
+          Tableau location gate; retired name aliases collapse onto their
+          canonical clean name here.
+        data_tests:
+          - not_null
+      - name: home_business_unit_name
+        data_type: string
+        description: >-
+          Legal entity. Drives the Tableau entity gate. Never location_region,
+          which is a property of the location rather than the person.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
+                  - KIPP TEAM and Family Schools Inc.
+      - name: survey_id
+        data_type: string
+      - name: survey_title
+        data_type: string
+      - name: survey_response_id
+        data_type: string
+      - name: date_started
+        data_type: timestamp
+      - name: date_submitted
+        data_type: timestamp
+      - name: campaign_academic_year
+        data_type: int64
+      - name: campaign_name
+        data_type: string
+      - name: campaign_reporting_term
+        data_type: string
+      - name: respondent_df_employee_number
+        data_type: int64
+      - name: subject_df_employee_number
+        data_type: int64
+      - name: respondent_email
+        data_type: string
+      - name: survey_question_id
+        data_type: string
+      - name: question_shortname
+        data_type: string
+      - name: question_title
+        data_type: string
+      - name: answer
+        data_type: string
+      - name: answer_value
+        data_type: numeric
+      - name: is_open_ended
+        data_type: int64
+      - name: respondent_preferred_name
+        data_type: string
+      - name: respondent_race_ethnicity_reporting
+        data_type: string
+      - name: respondent_gender
+        data_type: string
+      - name: subject_preferred_name
+        data_type: string
+      - name: is_manager
+        data_type: boolean
+      - name: subject_department_name
+        data_type: string
+      - name: subject_legal_entity_name
+        data_type: string
+      - name: subject_manager_name
+        data_type: string
+      - name: subject_primary_job
+        data_type: string
+      - name: subject_primary_site
+        data_type: string
+      - name: subject_race_ethnicity_reporting
+        data_type: string
+      - name: subject_gender
+        data_type: string
+      - name: subject_samaccountname
+        data_type: string
+      - name: subject_manager_samaccountname
+        data_type: string
+      - name: subject_userprincipalname
+        data_type: string
+      - name: subject_manager_userprincipalname
+        data_type: string
+      - name: campus_name
+        data_type: string
+      - name: home_department_name
+        data_type: string
+      - name: job_function
+        data_type: string
+        description: >-
+          Drives the Tableau role predicate. Null where the roster records no
+          job function for the person.
+      - name: job_title
+        data_type: string
+      - name: mail
+        data_type: string
+        description: Post-cutover Tableau identity.
+      - name: user_principal_name
+        data_type: string
+      - name: sam_account_name
+        data_type: string
+      - name: reports_to_mail
+        data_type: string
+      - name: reports_to_sam_account_name
+        data_type: string
