@@ -18,7 +18,7 @@ exposures:
       Archive only. The Leadership Development workflow moved to Lattice on
       2026-07-30 and the upstream dbt models are disabled. If an Apps Script on
       this sheet still mails reminders, it has to be stopped in the sheet
-      itself. Refs #4627.
+      itself.
     type: application
     owner:
       name: Data Team
@@ -26,6 +26,11 @@ exposures:
     depends_on:
       - source("google_appsheet_archive",
         "stg_google_appsheet__leadership_development__output_archive")
+      - source("google_appsheet_archive",
+        "stg_google_appsheet__leadership_development__active_users_archive")
+      - source("google_sheets",
+        "stg_google_sheets__performance_management__leadership_development_metrics_archive")
+    # Refs #4627
     config:
       meta:
         dagster:

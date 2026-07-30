@@ -112,7 +112,8 @@ sources:
       are disabled, so nothing refreshes them. Separate source name from
       google_appsheet on purpose: the schema differs, and the
       bigquery_table_modified_sensor asset selection is built from source_name
-      == google_appsheet. Refs #4627.
+      == google_appsheet.
+    # Refs #4627
     tables:
       - name: stg_google_appsheet__leadership_development__output_archive
         identifier: stg_google_appsheet__leadership_development__output

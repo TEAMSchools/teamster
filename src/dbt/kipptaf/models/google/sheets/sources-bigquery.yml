@@ -27,7 +27,8 @@ sources:
         description: >
           Frozen Leadership Development metric definitions, retained read-only
           after the workflow moved to Lattice on 2026-07-30. Holds only metrics
-          enabled at freeze time. Refs #4627.
+          enabled at freeze time.
+        # Refs #4627
         config:
           meta:
             dagster:

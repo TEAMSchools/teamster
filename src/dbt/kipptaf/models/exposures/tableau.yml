@@ -542,13 +542,18 @@ exposures:
       2026-07-30 and the upstream dbt models are disabled. This workbook has
       never had a Dagster cron_schedule, so Dagster never refreshed it; any
       remaining extract refresh is a Tableau-side schedule and has to be removed
-      in Tableau. Refs #4627.
+      in Tableau.
     type: dashboard
     owner:
       name: Data Team
     depends_on:
       - source("google_appsheet_archive",
         "stg_google_appsheet__leadership_development__output_archive")
+      - source("google_appsheet_archive",
+        "stg_google_appsheet__leadership_development__active_users_archive")
+      - source("google_sheets",
+        "stg_google_sheets__performance_management__leadership_development_metrics_archive")
+    # Refs #4627
     config:
       meta:
         dagster:

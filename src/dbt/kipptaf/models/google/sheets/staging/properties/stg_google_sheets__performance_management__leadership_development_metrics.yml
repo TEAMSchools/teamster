@@ -6,7 +6,7 @@ models:
       because this model filtered `where not disabled`; the full metric list
       stays in the source Google Sheet. Registered as
       google_sheets.stg_google_sheets__performance_management__leadership_development_metrics_archive.
-      Refs #4627.
+    # Refs #4627
     config:
       enabled: false
     columns:

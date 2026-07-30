@@ -3,7 +3,7 @@ models:
     description: >
       Archive only, disabled 2026-07-30. Leadership Development moved to
       Lattice. This drove the leader performance-management reminder emails.
-      Refs #4627.
+    # Refs #4627
     config:
       enabled: false
     columns:

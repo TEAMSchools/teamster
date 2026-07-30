@@ -4,7 +4,8 @@ models:
       Archive only, disabled 2026-07-30. Leadership Development moved to
       Lattice. This fed the AppSheet app; it joined live
       int_people__staff_roster, so it was never frozen data and is not
-      registered as an archive source. Refs #4627.
+      registered as an archive source.
+    # Refs #4627
     config:
       enabled: false
     columns:

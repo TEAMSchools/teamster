@@ -2,7 +2,8 @@ models:
   - name: rpt_appsheet__leadership_development_assignments
     description: >
       Archive only, disabled 2026-07-30. Leadership Development moved to
-      Lattice. This fed the AppSheet app. Refs #4627.
+      Lattice. This fed the AppSheet app.
+    # Refs #4627
     config:
       enabled: false
     columns:

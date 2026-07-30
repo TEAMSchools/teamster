@@ -4,7 +4,7 @@ models:
       Archive only, frozen 2026-07-30. Leadership Development moved to Lattice.
       The frozen table is registered as
       google_appsheet_archive.stg_google_appsheet__leadership_development__output_archive.
-      Refs #4627.
+    # Refs #4627
     config:
       enabled: false
     columns:
