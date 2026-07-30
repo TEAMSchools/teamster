@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
-#   "mcp>=1.2",
+#   "mcp>=2.0",
 #   "httpx>=0.27",
 #   "pyjwt>=2.8",
 # ]
@@ -39,7 +39,7 @@ import jwt
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.auth.provider import AccessToken
 from mcp.server.auth.settings import AuthSettings
-from mcp.server.fastmcp import Context, FastMCP
+from mcp.server.mcpserver import Context, MCPServer
 from mcp.types import ClientCapabilities, ElicitationCapability
 from pydantic import BaseModel, Field
 
@@ -200,29 +200,15 @@ class JWKSTokenVerifier:
         )
 
 
-_fastmcp_kwargs: dict[str, Any] = {
-    "host": "0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
-    "port": 8080,
-    # stateless_http lets Cloud Run scale horizontally — no per-instance session
-    # state, every request stands alone. We don't use MCP features that require
-    # persistent sessions (subscriptions, server-initiated messages); elicit is
-    # only invoked in stdio dev mode.
-    #
-    # Do NOT pass a `lifespan=` kwarg: with stateless_http=True the SDK's
-    # _handle_stateless_request invokes `app.run(...)` per HTTP request, which
-    # in turn runs the user lifespan per request. A teardown like
-    # `await client.aclose()` would close the shared httpx client after the
-    # first request and break every subsequent one.
-    "stateless_http": True,
-}
+_mcpserver_kwargs: dict[str, Any] = {}
 if AUTHKIT_DOMAIN and PUBLIC_URL:
-    _fastmcp_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
-    _fastmcp_kwargs["auth"] = AuthSettings(
+    _mcpserver_kwargs["token_verifier"] = JWKSTokenVerifier(AUTHKIT_DOMAIN)
+    _mcpserver_kwargs["auth"] = AuthSettings(
         issuer_url=f"https://{AUTHKIT_DOMAIN}",  # type: ignore[arg-type]
         resource_server_url=PUBLIC_URL,  # type: ignore[arg-type]
     )
 
-mcp = FastMCP(
+mcp = MCPServer(
     "cube",
     instructions=(
         "Query the Cube semantic layer (KIPP TEAM & Family metrics, dimensions, "
@@ -235,7 +221,12 @@ mcp = FastMCP(
         "on every surface (unlike this instructions block, which some clients "
         "drop or truncate)."
     ),
-    **_fastmcp_kwargs,
+    # Do NOT pass a `lifespan=` kwarg: with stateless_http=True (set on run(),
+    # below) the SDK's _handle_stateless_request invokes `app.run(...)` per
+    # HTTP request, which in turn runs the user lifespan per request. A
+    # teardown like `await client.aclose()` would close the shared httpx
+    # client after the first request and break every subsequent one.
+    **_mcpserver_kwargs,
 )
 
 
@@ -543,7 +534,17 @@ def main() -> None:
                 "Run service URL is required for OAuth resource-server "
                 "metadata in HTTP mode."
             )
-        mcp.run(transport="streamable-http")
+        mcp.run(
+            transport="streamable-http",
+            host="0.0.0.0",  # trunk-ignore(bandit/B104): intentional for Cloud Run
+            port=8080,
+            # stateless_http lets Cloud Run scale horizontally — no per-instance
+            # session state, every request stands alone. We don't use MCP
+            # features that require persistent sessions (subscriptions,
+            # server-initiated messages); elicit is only invoked in stdio dev
+            # mode.
+            stateless_http=True,
+        )
     else:
         mcp.run()
 
