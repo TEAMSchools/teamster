@@ -14,10 +14,12 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     define_asset_job,
     sensor,
 )
 from dagster_shared import check
+from paramiko.ssh_exception import SSHException
 
 from teamster.libraries.ssh.resources import SSHResource
 
@@ -59,11 +61,17 @@ def build_renlearn_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        with (
-            ssh_renlearn.get_connection() as connection,
-            connection.open_sftp() as sftp_client,
-        ):
-            files = ssh_renlearn.listdir_attr_r(sftp_client=sftp_client)
+        try:
+            with (
+                ssh_renlearn.get_connection() as connection,
+                connection.open_sftp() as sftp_client,
+            ):
+                files = ssh_renlearn.listdir_attr_r(sftp_client=sftp_client)
+        except SSHException as e:
+            # `get_connection` already retried the transient cases; an
+            # unreachable host is not a code error, so skip the tick instead of
+            # failing it and let the next one pick the files up (#4636).
+            return SkipReason(str(e))
 
         for asset in asset_selection:
             asset_metadata = asset.metadata_by_key[asset.key]
