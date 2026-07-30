@@ -239,8 +239,31 @@ ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools')
    AND [home_business_unit_name] IN ('TEAM Academy Charter School', 'TEAM') THEN TRUE
 ```
 
-`KNJ` has no modern equivalent — it predates the region split — so it maps to no
-branch and those rows stay invisible unless someone decides otherwise.
+`KNJ` is different: it was the **network** entity, KIPP New Jersey, which is
+today's KTAF rather than any region. Evidence, not inference: of the 327 staff
+who ever carried `KNJ`, 262 (80%) next appear under
+`KIPP TEAM and Family Schools Inc.`, and 1,204 of the 1,486 `KNJ` rows (81%) sit
+at Room 9, the network office. The two figures agree.
+
+**Decision: `KNJ` maps flatly to KTAF.** In practice that means adding it to no
+region branch at all — the unconditional
+`ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF') THEN TRUE` branch already
+covers those rows for network viewers, and region viewers correctly do not see
+historical network staff.
+
+Two things this deliberately accepts:
+
+- The 64 staff who later moved to a region have their `KNJ`-era rows attributed
+  to the network, so their own region cannot see them. 64 historical rows is a
+  cheaper error than the alternative.
+- The alternative — deriving entity from the location crosswalk — was rejected
+  precisely because it fails the wrong way. Room 9's `location_region` is
+  `TEAM Academy Charter School`, so a location-derived entity would put 1,204
+  network-staff rows into TEAM and expose them to every TEAM region viewer. The
+  flat map fails closed; the location map fails open.
+
+No dbt change is needed for this. `KNJ` passes through as a real source value
+and the gate simply never matches it to a region.
 
 Only workbooks showing pre-2021 data are affected. SchoolMint Grow observation
 details reaches back that far; most others do not. Confirm per workbook rather
