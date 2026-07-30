@@ -254,41 +254,315 @@ Add an entry only where one does not already exist under that exact name.
 
 ---
 
-### Tasks 2-7: Models with an existing roster join
+### Task 2: `rpt_tableau__leadership_development`
 
-**Read Task 1 in full first.** Each of these executes Task 1's four steps
-verbatim, substituting the file, the roster alias, and the columns to delete.
-One commit per model — do not batch.
+**Files:**
 
-The contract column block for each is Task 1 Step 2's block with `srh` replaced
-by that model's roster alias. The YAML block is Task 1 Step 3 unchanged.
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__leadership_development.sql`
+  (162 lines)
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__leadership_development.yml`
 
-| Task | Model                                              | Roster alias | Delete these                                                                          |
-| ---- | -------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------- |
-| 2    | `rpt_tableau__leadership_development`              | `r`          | `entity` (L121), `` `location` `` (L122), plus its `job_title` and department columns |
-| 3    | `rpt_tableau__schoolmint_grow_goals`               | `srh`        | `entity` (L4), `` `location` `` (L5)                                                  |
-| 4    | `rpt_tableau__schoolmint_grow_observation_details` | `srh`        | `entity` + `` `location` `` at **both** L29-30 and L185-186                           |
-| 5    | `rpt_tableau__teacher_observations`                | `rh`         | `entity` + `` `location` `` at **both** L69-70 and L134-135                           |
-| 6    | `rpt_tableau__survey_responses`                    | `eh`         | `legal_entity` (L21), `` `location` `` (L24)                                          |
-| 7    | `rpt_tableau__operations_ekg`                      | see below    | `respondent_location` (L7), `region`                                                  |
+**Interfaces:** consumes `int_people__location_crosswalk`; produces the eleven
+contract columns. Read by the Leadership Development workbook.
 
-Tasks 4 and 5 have two select blocks. Both need the contract columns and both
-need the crosswalk join in scope. After building, confirm neither block was
-missed:
+- [ ] **Step 1: Add the crosswalk join.** Roster alias is `r`.
+
+```sql
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on r.home_work_location_name = lc.location_name
+```
+
+- [ ] **Step 2: Delete `r.home_business_unit_name as entity,` (L121) and
+      ``r.home_work_location_name as `location`,`` (L122), plus any pre-existing
+      output column whose name matches one of the eleven. Then add:**
+
+```sql
+    lc.location_clean_name,
+    lc.campus_name,
+
+    r.home_business_unit_name,
+    r.home_department_name,
+    r.job_function,
+    r.job_title,
+
+    r.mail,
+    r.user_principal_name,
+    r.sam_account_name,
+
+    r.reports_to_mail,
+    r.reports_to_sam_account_name,
+```
+
+- [ ] **Step 3: Add the YAML entries** from Task 1 Step 3, only for names not
+      already present.
+- [ ] **Step 4: Run the Standard Checks.** `MODEL` is
+      `rpt_tableau__leadership_development`.
+
+---
+
+### Task 3: `rpt_tableau__schoolmint_grow_goals`
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__schoolmint_grow_goals.sql`
+  (72 lines)
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__schoolmint_grow_goals.yml`
+
+**Interfaces:** consumes `int_people__location_crosswalk`; produces the eleven
+contract columns. Read by the SchoolMint Grow Dashboard.
+
+- [ ] **Step 1: Add the crosswalk join.** Roster alias is `srh`.
+
+```sql
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on srh.home_work_location_name = lc.location_name
+```
+
+- [ ] **Step 2: Delete `srh.home_business_unit_name as entity,` (L4) and
+      ``srh.home_work_location_name as `location`,`` (L5), plus any pre-existing
+      output column whose name matches one of the eleven. Then add:**
+
+```sql
+    lc.location_clean_name,
+    lc.campus_name,
+
+    srh.home_business_unit_name,
+    srh.home_department_name,
+    srh.job_function,
+    srh.job_title,
+
+    srh.mail,
+    srh.user_principal_name,
+    srh.sam_account_name,
+
+    srh.reports_to_mail,
+    srh.reports_to_sam_account_name,
+```
+
+- [ ] **Step 3: Add the YAML entries** from Task 1 Step 3, only for names not
+      already present.
+- [ ] **Step 4: Run the Standard Checks.** `MODEL` is
+      `rpt_tableau__schoolmint_grow_goals`.
+
+---
+
+### Task 4: `rpt_tableau__schoolmint_grow_observation_details` — two select blocks
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__schoolmint_grow_observation_details.sql`
+  (283 lines)
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__schoolmint_grow_observation_details.yml`
+
+**Interfaces:** consumes `int_people__location_crosswalk`; produces the eleven
+contract columns. Read by the SchoolMint Grow Dashboard and the Coaching
+Conversation Tool.
+
+This model has **two** select blocks that both emit `entity` and
+`` `location` `` — at L29-30 and L185-186. Both need the contract columns, and
+the crosswalk join must be in scope for both.
+
+- [ ] **Step 1: Add the crosswalk join in both blocks' scope.** Roster alias is
+      `srh`.
+
+```sql
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on srh.home_work_location_name = lc.location_name
+```
+
+- [ ] **Step 2: In both blocks, delete the `entity` and `` `location` `` aliases
+      plus any pre-existing output column matching one of the eleven, and add:**
+
+```sql
+    lc.location_clean_name,
+    lc.campus_name,
+
+    srh.home_business_unit_name,
+    srh.home_department_name,
+    srh.job_function,
+    srh.job_title,
+
+    srh.mail,
+    srh.user_principal_name,
+    srh.sam_account_name,
+
+    srh.reports_to_mail,
+    srh.reports_to_sam_account_name,
+```
+
+- [ ] **Step 3: Add the YAML entries** from Task 1 Step 3, only for names not
+      already present.
+
+- [ ] **Step 4: Confirm neither block was missed**
 
 ```bash
 uv run dbt show --project-dir /workspaces/teamster/src/dbt/kipptaf \
-  --inline "select count(*) as rows_missing_location from {{ ref('MODEL') }} where location_clean_name is null" \
+  --inline "select count(*) as rows_missing_location from {{ ref('rpt_tableau__schoolmint_grow_observation_details') }} where location_clean_name is null" \
   --target dev
 ```
 
-Expected: `0`.
+A count materially higher than the row count of one block means a block was
+missed. Report the number either way — some nulls are expected where the roster
+join misses staff on Leave.
 
-Task 7 (`operations_ekg`) already joins the crosswalk. Reuse the existing alias
-rather than adding a second join, and check whether its `respondent_location`
-describes the gated person — if it does, it is replaced by
-`location_clean_name`; if it describes someone else, keep it and add the
-contract columns alongside.
+- [ ] **Step 5: Run the Standard Checks.**
+
+---
+
+### Task 5: `rpt_tableau__teacher_observations` — two select blocks
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__teacher_observations.sql`
+  (191 lines)
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__teacher_observations.yml`
+
+**Interfaces:** consumes `int_people__location_crosswalk`; produces the eleven
+contract columns. Read by the SchoolMint Grow Dashboard.
+
+Two select blocks emit `entity` and `` `location` `` — at L69-70 and L134-135.
+
+- [ ] **Step 1: Add the crosswalk join in both blocks' scope.** Roster alias is
+      `rh`.
+
+```sql
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on rh.home_work_location_name = lc.location_name
+```
+
+- [ ] **Step 2: In both blocks, delete the `entity` and `` `location` `` aliases
+      plus any pre-existing output column matching one of the eleven, and add:**
+
+```sql
+    lc.location_clean_name,
+    lc.campus_name,
+
+    rh.home_business_unit_name,
+    rh.home_department_name,
+    rh.job_function,
+    rh.job_title,
+
+    rh.mail,
+    rh.user_principal_name,
+    rh.sam_account_name,
+
+    rh.reports_to_mail,
+    rh.reports_to_sam_account_name,
+```
+
+- [ ] **Step 3: Add the YAML entries** from Task 1 Step 3, only for names not
+      already present.
+- [ ] **Step 4: Confirm neither block was missed** using Task 4 Step 4's query
+      with this model name.
+- [ ] **Step 5: Run the Standard Checks.**
+
+---
+
+### Task 6: `rpt_tableau__survey_responses`
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__survey_responses.sql`
+  (55 lines)
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__survey_responses.yml`
+
+**Interfaces:** consumes `int_people__location_crosswalk`; produces the eleven
+contract columns. Read by the Survey Dashboard. `rpt_tableau__survey_completion`
+(Task 9) selects `employee_number`, `academic_year`, `survey_code`,
+`survey_response_id`, and `date_submitted` from this model — none of which this
+task touches, so the downstream model is unaffected.
+
+Note this model's entity alias is `legal_entity`, not `entity`.
+
+- [ ] **Step 1: Add the crosswalk join.** Roster alias is `eh`.
+
+```sql
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on eh.home_work_location_name = lc.location_name
+```
+
+- [ ] **Step 2: Delete `eh.home_business_unit_name as legal_entity,` (L21) and
+      ``eh.home_work_location_name as `location`,`` (L24), plus any pre-existing
+      output column matching one of the eleven. Then add:**
+
+```sql
+    lc.location_clean_name,
+    lc.campus_name,
+
+    eh.home_business_unit_name,
+    eh.home_department_name,
+    eh.job_function,
+    eh.job_title,
+
+    eh.mail,
+    eh.user_principal_name,
+    eh.sam_account_name,
+
+    eh.reports_to_mail,
+    eh.reports_to_sam_account_name,
+```
+
+This model already emits `mail` — if it does so from the same roster alias,
+delete the old line rather than adding a duplicate.
+
+- [ ] **Step 3: Add the YAML entries** from Task 1 Step 3, only for names not
+      already present.
+- [ ] **Step 4: Run the Standard Checks.** `MODEL` is
+      `rpt_tableau__survey_responses`.
+
+---
+
+### Task 7: `rpt_tableau__operations_ekg`
+
+**Files:**
+
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__operations_ekg.sql` (73
+  lines)
+- Modify:
+  `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__operations_ekg.yml`
+
+**Interfaces:** consumes `int_people__location_crosswalk` (already referenced);
+produces the eleven contract columns. Read by the Operations Systems workbook.
+
+This model already references the crosswalk and emits
+`home_work_location_name as respondent_location` (L7) and a `region` column.
+
+- [ ] **Step 1: Read the whole model first.** Identify the roster alias, the
+      existing crosswalk alias, and whether `respondent_location` describes the
+      person whose access is being decided.
+
+  - If it describes the gated person, replace it with `location_clean_name`.
+  - If it describes someone else, keep it under its prefix and add the contract
+    columns alongside.
+
+  State which you concluded, and why, in your report.
+
+- [ ] **Step 2: Reuse the existing crosswalk join** — do not add a second one.
+
+- [ ] **Step 3: Delete `region`** (it derives from `location_region`, which is
+      the location's region rather than the person's entity) **and add the
+      eleven contract columns** using the model's actual roster alias.
+
+- [ ] **Step 4: Add the YAML entries** from Task 1 Step 3, only for names not
+      already present.
+- [ ] **Step 5: Run the Standard Checks.** `MODEL` is
+      `rpt_tableau__operations_ekg`.
 
 ---
 
