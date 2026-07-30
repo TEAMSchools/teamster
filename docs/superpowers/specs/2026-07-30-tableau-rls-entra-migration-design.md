@@ -211,6 +211,25 @@ Middle, 8 in Room 12). A further 3 staff sit in Room 12 under the
 `TEAM Academy Charter School` entity and gate through that branch instead. The
 KTAF branch stays unconditional, preserving current behavior.
 
+#### The entity gate reads group membership, not the viewer's own entity
+
+`ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [entity] = 'KIPP Paterson'`
+asks whether the viewer is **in the Paterson staff group** — never whether the
+viewer is a Paterson employee. Membership of an entity group is deliberately not
+the same population as employment by that entity.
+
+This is load-bearing, not incidental. It is how cross-entity supervision is
+expressed: a TEAM employee who oversees Paterson schools gets Paterson
+visibility by being added to the Paterson group, with **no calc change**. Dual
+membership resolves correctly because the gate is an `IF`/`ELSEIF` chain of
+`group AND matching-entity` pairs — a Paterson row falls through the TEAM branch
+(entity does not match), then lands on the Paterson branch.
+
+The tempting "cleanup" is to derive entity from the viewer's own roster row
+instead of from group membership. **Do not.** It would silently revoke access
+from every cross-entity supervisor, and silent revocation is the failure mode
+this whole rebuild exists to eliminate.
+
 Location gate — one line if `ISMEMBEROF()` accepts a non-literal argument on
 this Server version, otherwise 26 explicit branches:
 
@@ -314,11 +333,22 @@ the author or IT.
    Survey Rollup, Personalized Survey Links — to shake out the contract on
    low-risk surfaces.
 1. The remaining complex ones, SchoolMint Grow (6 calcs) last.
-1. Federal Grants Timesheet Approval separately: it uses
-   `USERATTRIBUTE('username')` driven by the embedding application's token, so
-   it is a token problem, not a calc problem.
 1. Tag `entra-ready` per item. Completion is auditable read-only via the Tableau
    MCP with `tags:eq:entra-ready`.
+
+### Federal Grants Timesheet Approval carries a defect, not a variant
+
+Its `userattribute` field calls `USERATTRIBUTE('username')`. That is a mistake
+in the workbook, not a deliberate embedding pattern — it should be `USERNAME()`
+like every other item. Replace the call and apply the standard block; no
+separate fix path is needed.
+
+Worth verifying while in there: `USERATTRIBUTE()` returns NULL unless a
+Connected App or JWT supplies that attribute, and a NULL comparison excludes the
+row. If nothing has been supplying `username`, this field has been inert and
+whatever it gates has been failing closed for ordinary viewers. Confirm with
+Preview as User what the dashboard shows **before** the edit, so the change in
+behavior is understood rather than discovered later.
 
 ### Rollback
 
