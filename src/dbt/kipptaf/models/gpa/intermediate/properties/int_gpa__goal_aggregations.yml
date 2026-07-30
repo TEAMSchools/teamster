@@ -49,13 +49,32 @@ models:
       - name: goal_proportion
         data_type: numeric
         description: Target rate from the matched goal, as a proportion.
+      - name: n_students_in_grain
+        data_type: int64
+        description:
+          Count of students covered by the matched goal's grain and grade band,
+          whether or not their measure is populated.
+      - name: n_students_measured
+        data_type: int64
+        description:
+          Count of students carrying a measurable value for `metric` — a
+          non-null measure for threshold metrics, or membership of the on-pace
+          denominator for `on_pace`. This is the denominator of `metric_rate`.
+      - name: n_students_met
+        data_type: int64
+        description:
+          Count of measured students satisfying `metric`'s threshold per
+          `direction`, or on pace for `on_pace`. This is the numerator of
+          `metric_rate`.
       - name: metric_rate
         data_type: float64
         description:
-          Share of students in this grain meeting `metric`'s threshold per
-          `direction` (or, for `on_pace`, the share of the on-pace denominator
-          that is on pace), rounded to 3 decimal places. Null when the `on_pace`
-          denominator is empty.
+          Share of measured students meeting `metric`'s threshold per
+          `direction`, or for `on_pace` the share of the on-pace denominator
+          that is on pace, rounded to 3 decimal places. Students whose measure
+          is null are excluded from the denominator rather than counted as
+          non-achievers, so an entirely unmeasured grain yields null rather than
+          0 — the state before a year's grades post.
       - name: is_goal_met
         data_type: boolean
         description:
@@ -80,7 +99,11 @@ unit_tests:
       2.8` goal proves cross-grade aggregation into a single row. A region-level
       `cumulative_gpa_unweighted <= 2.5` goal (higher_is_better false) proves
       the derived direction flips `is_goal_met` relative to a naive `>=`
-      comparison.
+      comparison. Two Camden students carrying no measures at all, plus matching
+      Camden school-level and region-level goals, prove that an entirely
+      unmeasured grain yields a null rate rather than 0 at both of those grains,
+      and that unmeasured students raise `n_students_in_grain` on the org row
+      without dragging its rate down.
     model: int_gpa__goal_aggregations
     given:
       - input: ref('int_gpa__goal_student_metrics')
@@ -131,6 +154,31 @@ unit_tests:
               cast(2.0 as float64),
               cast(2.0 as float64),
               cast(3.0 as float64),
+              cast(null as boolean),
+              cast(null as boolean)
+          union all
+          /* Camden, no measures at all — the pre-grades-posted state */
+          select
+              2026,
+              'Camden',
+              201,
+              9,
+              90005,
+              cast(null as float64),
+              cast(null as float64),
+              cast(null as float64),
+              cast(null as boolean),
+              cast(null as boolean)
+          union all
+          select
+              2026,
+              'Camden',
+              201,
+              10,
+              90006,
+              cast(null as float64),
+              cast(null as float64),
+              cast(null as float64),
               cast(null as boolean),
               cast(null as boolean)
       - input: ref('int_google_sheets__gpa_goals')
@@ -186,6 +234,40 @@ unit_tests:
               'org_9-12',
               cast(0.5 as float64),
               true
+          union all
+          /* school-level, Camden: no student carries a measure */
+          select
+              2026,
+              'school',
+              'Camden',
+              201,
+              9,
+              12,
+              'y1_gpa_weighted',
+              cast(3.0 as numeric),
+              '>=',
+              cast(58 as numeric),
+              '9-12',
+              '201_9-12',
+              cast(0.58 as float64),
+              true
+          union all
+          /* region-level, Camden: same unmeasured cohort at the region grain */
+          select
+              2026,
+              'region',
+              'Camden',
+              cast(null as int64),
+              9,
+              12,
+              'y1_gpa_weighted',
+              cast(3.0 as numeric),
+              '>=',
+              cast(58 as numeric),
+              '9-12',
+              'Camden_9-12',
+              cast(0.58 as float64),
+              true
     expect:
       rows:
         - {
@@ -197,9 +279,44 @@ unit_tests:
             schoolid: 101,
             grade_band: 9-12,
             goal_proportion: 0.58,
+            n_students_in_grain: 4,
+            n_students_measured: 4,
+            n_students_met: 2,
             metric_rate: 0.5,
             is_goal_met: false,
             progress_to_goal: 0.862,
+          }
+        - {
+            academic_year: 2026,
+            metric: y1_gpa_weighted,
+            aggregation_hash: 201_9-12,
+            org_level: school,
+            region: Camden,
+            schoolid: 201,
+            grade_band: 9-12,
+            goal_proportion: 0.58,
+            n_students_in_grain: 2,
+            n_students_measured: 0,
+            n_students_met: 0,
+            metric_rate: null,
+            is_goal_met: null,
+            progress_to_goal: null,
+          }
+        - {
+            academic_year: 2026,
+            metric: y1_gpa_weighted,
+            aggregation_hash: Camden_9-12,
+            org_level: region,
+            region: Camden,
+            schoolid: null,
+            grade_band: 9-12,
+            goal_proportion: 0.58,
+            n_students_in_grain: 2,
+            n_students_measured: 0,
+            n_students_met: 0,
+            metric_rate: null,
+            is_goal_met: null,
+            progress_to_goal: null,
           }
         - {
             academic_year: 2026,
@@ -210,6 +327,9 @@ unit_tests:
             schoolid: null,
             grade_band: 9-12,
             goal_proportion: 0.6,
+            n_students_in_grain: 4,
+            n_students_measured: 4,
+            n_students_met: 2,
             metric_rate: 0.5,
             is_goal_met: true,
             progress_to_goal: 1.0,
@@ -223,6 +343,9 @@ unit_tests:
             schoolid: null,
             grade_band: 9-12,
             goal_proportion: 0.5,
+            n_students_in_grain: 6,
+            n_students_measured: 4,
+            n_students_met: 2,
             metric_rate: 0.5,
             is_goal_met: true,
             progress_to_goal: 1.0,
