@@ -1,16 +1,26 @@
 select
     srh.employee_number,
     srh.formatted_name as teammate,
-    srh.home_business_unit_name as entity,
-    srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
-    srh.home_department_name as department,
-    srh.job_title,
     srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
-    srh.sam_account_name,
     srh.reports_to_sam_account_name as report_to_sam_account_name,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    srh.home_business_unit_name,
+    srh.home_department_name,
+    srh.job_function,
+    srh.job_title,
+
+    srh.mail,
+    srh.user_principal_name,
+    srh.sam_account_name,
+
+    srh.reports_to_mail,
+    srh.reports_to_sam_account_name,
 
     rt.type as tracking_type,
     rt.code as tracking_code,
@@ -34,6 +44,9 @@ select
 
     if(a.assignment_id is not null, 1, 0) as is_assigned,
 from {{ ref("int_people__staff_roster_history") }} as srh
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on srh.home_work_location_name = lc.location_name
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on srh.home_business_unit_name = rt.region
