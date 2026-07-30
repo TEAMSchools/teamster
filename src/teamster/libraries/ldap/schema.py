@@ -193,6 +193,7 @@ class Group(BaseModel):
     dLMemSubmitPermsBL: str | None = None
     dn: str | None = None
     dSCorePropagationData: float | None = None
+    extensionAttribute2: str | None = None
     extensionAttribute11: str | None = None
     extensionAttribute12: str | None = None
     extensionAttribute13: str | None = None
