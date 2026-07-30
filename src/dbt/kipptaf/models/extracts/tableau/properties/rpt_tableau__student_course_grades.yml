@@ -287,9 +287,9 @@ models:
       - name: gpa_needed_for_cumulative_3_0
         data_type: float64
         description: >-
-          Weighted Y1 GPA needed across current-year GPA credits to finish with
-          a 3.00 projected cumulative (current-year rows only; negative means
-          already guaranteed).
+          Unweighted Y1 GPA needed across current-year GPA credits to finish
+          with a 3.00 projected unweighted cumulative (current-year rows only;
+          negative means already guaranteed).
       - name: is_cumulative_3_0_attainable
         data_type: boolean
         description: >-
