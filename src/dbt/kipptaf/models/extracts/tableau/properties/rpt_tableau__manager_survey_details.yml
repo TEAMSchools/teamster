@@ -8,6 +8,12 @@ models:
       home_department_name, job_function, job_title, mail, user_principal_name,
       sam_account_name, reports_to_mail, reports_to_sam_account_name) describe
       the survey subject — the person being rated — not the respondent.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - effective_survey_response_id
+              - survey_question_id
     columns:
       - name: effective_survey_response_id
         data_type: string
@@ -22,7 +28,6 @@ models:
           - not_null:
               config:
                 severity: warn
-          - unique
       - name: location_clean_name
         data_type: string
         description: >-
