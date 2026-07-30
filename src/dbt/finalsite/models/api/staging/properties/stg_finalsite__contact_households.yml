@@ -18,6 +18,17 @@ models:
               - household_id
           config:
             severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              is_complete_address = (
+                  address_1 is not null
+                  and city is not null
+                  and state is not null
+                  and zip is not null
+              )
+          config:
+            severity: error
     columns:
       - name: finalsite_enrollment_id
         data_type: string
