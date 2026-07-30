@@ -232,3 +232,16 @@ models:
         description:
           GPA credit hours in progress this year, used as the
           credits-in-progress figure on the cusp roster. Current-year rows only.
+      - name: is_on_cusp_3_0
+        data_type: boolean
+        description:
+          True when the year's cumulative unweighted GPA sits at or above 2.75
+          and below 3.00 — near enough to the 3.0 line to be worth targeting.
+      - name: is_latest_graded_year
+        data_type: boolean
+        description:
+          True on rows of the most recent academic year that has posted Y1
+          grades. The dashboard defaults its year filter to this rather than to
+          the maximum academic year, because the current year carries loaded
+          schedules with no grades for the first months and would open on an
+          empty view.

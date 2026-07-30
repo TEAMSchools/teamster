@@ -1,3 +1,13 @@
+with
+    latest_graded_year as (
+        /* the most recent year with posted Y1 grades. Cumulative earned credits
+           cannot serve as this signal — they include prior years, so a
+           not-yet-started year's upperclassmen already carry credits. */
+        select max(yearid) + 1990 as latest_graded_academic_year,
+        from {{ ref("int_powerschool__gpa_term") }}
+        where gpa_y1 is not null
+    )
+
 select
     gcy._dbt_source_relation,
     gcy._dbt_source_project,
@@ -50,6 +60,11 @@ select
     gcc.is_cumulative_3_0_attainable,
     gcc.potential_gpa_credits_current_year,
 
+    gcy.academic_year = lgy.latest_graded_academic_year as is_latest_graded_year,
+
+    gcy.cumulative_y1_gpa_unweighted >= 2.75
+    and gcy.cumulative_y1_gpa_unweighted < 3.00 as is_on_cusp_3_0,
+
     case
         when gcy.cumulative_y1_gpa_unweighted >= 3.50
         then '3.5+'
@@ -95,6 +110,7 @@ left join
        Gating on is_projected attaches it to the current-year row only; without
        the gate today's values get stamped onto every prior year. */
     and gcy.is_projected
+cross join latest_graded_year as lgy
 where
     e.rn_year = 1
     and not e.is_out_of_district
