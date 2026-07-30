@@ -1092,6 +1092,49 @@ not done, and a PR implies the workbooks are ready.
 
 ---
 
+### Task 17: Remove retained legacy aliases
+
+Tasks 1-3 diverged on legacy aliases: Tasks 1 and 2 **kept**
+`report_to_sam_account_name` (singular) alongside the new plural, while Task 3
+**deleted** `home_department_name as department`. Both cannot be right — a model
+emitting two names for the same value defeats the uniformity this plan exists to
+create.
+
+**Ruling: delete every legacy alias of a contract column.** The user's directive
+is explicit — real source column names, uniform across models, and they will fix
+the broken calcs. A retained alias is a second name for the same value and a
+future source of drift.
+
+**Files:** every model touched by Tasks 1-12, plus their properties YAML.
+
+- [ ] **Step 1: Find every retained legacy alias**
+
+```bash
+cd /workspaces/teamster && rg -n \
+  'as (entity|`location`|legal_entity|region|department|report_to_sam_account_name|report_to_email|email|location_name)\b' \
+  src/dbt/kipptaf/models/extracts/tableau/
+```
+
+- [ ] **Step 2: Delete each one** from both the `.sql` select list and the
+      properties YAML. Do not delete a column that is not a legacy name for one
+      of the eleven contract columns — `entity_short`, `observer_location`, and
+      `respondent_*` columns stay.
+
+- [ ] **Step 3: Build every affected model and confirm each passes contract
+      enforcement**
+
+```bash
+uv run dbt build --project-dir /workspaces/teamster/src/dbt/kipptaf --target dev \
+  --select rpt_tableau__content_team rpt_tableau__leadership_development \
+    rpt_tableau__schoolmint_grow_goals
+```
+
+- [ ] **Step 4: Lint and commit.** One commit; note in the message which aliases
+      were removed from which models, so the Tableau side can be updated from
+      the log.
+
+---
+
 ## Appendix: Tableau workbooks broken by these renames
 
 Dropping the aliases changes column names, which breaks every Tableau reference
