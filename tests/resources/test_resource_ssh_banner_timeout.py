@@ -30,18 +30,22 @@ import logging
 import socket
 import threading
 from collections.abc import Callable
+from zoneinfo import ZoneInfo
 
 import pytest
+from dagster import SkipReason, asset, build_sensor_context
 from paramiko import RSAKey, SSHClient, Transport
 from paramiko.ssh_exception import (
     AuthenticationException,
     BadAuthenticationType,
     BadHostKeyException,
     IncompatiblePeer,
+    NoValidConnectionsError,
     SSHException,
 )
 from tenacity import stop_after_attempt, wait_none
 
+from teamster.libraries.edplan.sensors import build_edplan_sftp_sensor
 from teamster.libraries.ssh.resources import SSHResource
 
 
@@ -149,16 +153,7 @@ def test_default_timeout_outlasts_paramiko_negotiation():
     The paramiko defaults are read live rather than hardcoded so an upgrade that
     raises them fails this test instead of silently reintroducing the inversion.
     """
-    sock_a, sock_b = socket.socketpair()
-    try:
-        transport = Transport(sock=sock_a)
-        try:
-            negotiation_budget = transport.banner_timeout + transport.handshake_timeout
-        finally:
-            transport.close()
-    finally:
-        sock_a.close()
-        sock_b.close()
+    negotiation_budget = _paramiko_negotiation_budget()
 
     timeout = SSHResource(remote_host="127.0.0.1", username="svc").timeout
 
@@ -190,16 +185,7 @@ def test_no_configured_ssh_resource_undercuts_the_negotiation_budget(module_name
     """
     module = importlib.import_module(module_name)
 
-    sock_a, sock_b = socket.socketpair()
-    try:
-        transport = Transport(sock=sock_a)
-        try:
-            negotiation_budget = transport.banner_timeout + transport.handshake_timeout
-        finally:
-            transport.close()
-    finally:
-        sock_a.close()
-        sock_b.close()
+    negotiation_budget = _paramiko_negotiation_budget()
 
     ssh_resources = {
         name: value
@@ -307,6 +293,25 @@ def _count_attempts(monkeypatch, exception: BaseException) -> int:
     return attempts
 
 
+def _paramiko_negotiation_budget() -> float:
+    """Everything `Transport.start_client()`'s wait has to outlast.
+
+    Read from a live `Transport` rather than hardcoded, so a paramiko upgrade
+    that raises either default fails the callers instead of silently
+    reintroducing the inversion.
+    """
+    sock_a, sock_b = socket.socketpair()
+    try:
+        transport = Transport(sock=sock_a)
+        try:
+            return transport.banner_timeout + transport.handshake_timeout
+        finally:
+            transport.close()
+    finally:
+        sock_a.close()
+        sock_b.close()
+
+
 def _bad_host_key() -> BadHostKeyException:
     # `BadHostKeyException.__init__` calls `get_base64()` on both keys, so they
     # have to be real. 1024 bits keeps generation cheap — this key only ever
@@ -378,6 +383,62 @@ def test_deterministic_failures_are_not_retried(
     assert attempts == 1, (
         f"deterministic {type(exception).__name__} must not be retried, got"
         f" {attempts} attempts"
+    )
+
+
+@pytest.mark.parametrize(
+    "build_exception",
+    [
+        lambda: SSHException("Error reading SSH protocol banner"),
+        lambda: NoValidConnectionsError({("10.0.0.1", 22): ConnectionRefusedError()}),
+        lambda: TimeoutError("timed out"),
+        lambda: ConnectionResetError("reset by peer"),
+        lambda: socket.gaierror("name resolution failed"),
+    ],
+    ids=["banner-read", "host-down", "timeout", "connection-reset", "dns"],
+)
+def test_sftp_sensor_skips_rather_than_fails_on_any_transient_failure(
+    monkeypatch, build_exception: Callable[[], BaseException]
+):
+    """A sensor must skip the tick for everything `get_connection` retries.
+
+    `reraise=True` means an exhausted retry budget re-raises the ORIGINAL
+    exception, and four of the five transient types are NOT `SSHException`
+    subclasses. A sensor catching only `SSHException` therefore still failed the
+    tick when a host was simply down (`NoValidConnectionsError`) or reset the
+    connection (`ConnectionResetError`) — the exact case `c4541aa1b` added to
+    the retry set because it had been seen in production.
+
+    Driving the real sensor is what makes this meaningful: asserting the tuple's
+    contents would just restate the constant.
+    """
+    exception = build_exception()
+
+    def _always_fail(_self) -> SSHClient:
+        raise exception
+
+    # Patch the decorated method itself, so the retry budget is bypassed and the
+    # test exercises the sensor's except clause rather than tenacity.
+    monkeypatch.setattr(SSHResource, "get_connection", _always_fail)
+
+    @asset(name="edplan_probe", metadata={"remote_file_regex": r"(?P<date>.+)\.csv"})
+    def _edplan_probe() -> None: ...
+
+    sensor_def = build_edplan_sftp_sensor(
+        asset=_edplan_probe,
+        code_location="test",
+        execution_timezone=ZoneInfo("America/New_York"),
+    )
+
+    context = build_sensor_context(
+        resources={"ssh_edplan": SSHResource(remote_host="127.0.0.1", username="svc")}
+    )
+
+    result = sensor_def(context)
+
+    assert isinstance(result, SkipReason), (
+        f"{type(exception).__name__} escaped the sensor and failed the tick;"
+        " it should have produced a SkipReason"
     )
 
 

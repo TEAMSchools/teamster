@@ -58,9 +58,12 @@ _REKEY_DISABLED_BYTES = 1 << 48
 # defaults live and fails if an upgrade ever pushes them past this.
 _NEGOTIATION_TIMEOUT_SECONDS = 45
 
-# Ceiling on the whole retry sequence. Five attempts at a 45s negotiation
-# timeout plus backoff could otherwise park a sensor tick for ~4 minutes against
-# a black-holed host; the shortest SFTP sensor interval is 600s.
+# Soft ceiling on the retry sequence: `stop_after_delay` is evaluated BETWEEN
+# attempts, so an attempt starting just under the threshold still runs its full
+# `_NEGOTIATION_TIMEOUT_SECONDS`, putting the true worst case nearer 165s. That
+# is still well inside the 600s shortest SFTP sensor interval, whereas the
+# unbounded five attempts plus backoff it replaces could reach ~4 minutes
+# against a black-holed host.
 _RETRY_DEADLINE_SECONDS = 120
 
 # Deterministic `SSHException` subclasses: a config/compatibility mismatch that
@@ -76,9 +79,17 @@ _NON_RETRYABLE_SSH_EXCEPTIONS = (
 
 # paramiko reports its transient negotiation failures as a BARE `SSHException`
 # ("Error reading SSH protocol banner", "No existing session", "Negotiation
-# failed.") — there is no dedicated subclass to match on. `NoValidConnectionsError`
-# is an `OSError`, not an `SSHException`, so it has to be named separately.
-_RETRYABLE_EXCEPTIONS = (
+# failed.") — there is no dedicated subclass to match on. The rest are NOT
+# `SSHException` subclasses (`NoValidConnectionsError` is an `OSError`), so they
+# have to be named separately.
+#
+# Public because SFTP sensors catch this same tuple to decide whether to skip a
+# tick. `reraise=True` on `get_connection` re-raises the ORIGINAL exception once
+# the retry budget is spent, so a sensor catching only `SSHException` would let
+# a downed host (`NoValidConnectionsError`) or a reset peer
+# (`ConnectionResetError`) fail the tick instead of skipping it. Keeping one
+# tuple keeps the retry boundary and the skip boundary from drifting apart.
+TRANSIENT_CONNECT_EXCEPTIONS = (
     SSHException,
     NoValidConnectionsError,
     TimeoutError,
@@ -100,7 +111,7 @@ def _is_transient_connect_failure(exception: BaseException) -> bool:
     if isinstance(exception, _NON_RETRYABLE_SSH_EXCEPTIONS):
         return False
 
-    return isinstance(exception, _RETRYABLE_EXCEPTIONS)
+    return isinstance(exception, TRANSIENT_CONNECT_EXCEPTIONS)
 
 
 class _DemoteTransportThreadErrors(logging.Filter):
@@ -133,14 +144,16 @@ def _demote_paramiko_transport_errors() -> None:
     A logger-level filter only runs for records logged directly to that logger,
     which is exactly the target: `Transport._log` writes to `paramiko.transport`
     itself. Child loggers (`paramiko.transport.sftp`) are untouched.
+
+    Called from `get_connection` rather than at import so that importing this
+    module does not mutate global logging state in processes that never open an
+    SSH connection. Installing here is still early enough: the transport thread
+    that logs the traceback is not started until `connect()` runs below.
     """
     logger = logging.getLogger("paramiko.transport")
 
     if not any(isinstance(f, _DemoteTransportThreadErrors) for f in logger.filters):
         logger.addFilter(_DemoteTransportThreadErrors())
-
-
-_demote_paramiko_transport_errors()
 
 
 # `RSAKey` subclass that accepts `ssh-rsa` (SHA-1) signatures. paramiko 5.0
@@ -208,6 +221,8 @@ class SSHResource(DagsterSSHResource):
         reraise=True,
     )
     def get_connection(self) -> SSHClient:
+        _demote_paramiko_transport_errors()
+
         if not self.enable_legacy_rsa:
             return super().get_connection()
 

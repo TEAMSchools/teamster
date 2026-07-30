@@ -19,9 +19,11 @@ from dagster import (
     sensor,
 )
 from dagster_shared import check
-from paramiko.ssh_exception import SSHException
 
-from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.ssh.resources import (
+    TRANSIENT_CONNECT_EXCEPTIONS,
+    SSHResource,
+)
 
 
 def build_renlearn_sftp_sensor(
@@ -67,7 +69,7 @@ def build_renlearn_sftp_sensor(
                 connection.open_sftp() as sftp_client,
             ):
                 files = ssh_renlearn.listdir_attr_r(sftp_client=sftp_client)
-        except SSHException as e:
+        except TRANSIENT_CONNECT_EXCEPTIONS as e:
             # `get_connection` already retried the transient cases; an
             # unreachable host is not a code error, so skip the tick instead of
             # failing it and let the next one pick the files up (#4636).

@@ -18,9 +18,11 @@ from dagster import (
     sensor,
 )
 from dagster_shared import check
-from paramiko.ssh_exception import SSHException
 
-from teamster.libraries.ssh.resources import SSHResource
+from teamster.libraries.ssh.resources import (
+    TRANSIENT_CONNECT_EXCEPTIONS,
+    SSHResource,
+)
 
 
 def build_amplify_mclass_sftp_sensor(
@@ -68,7 +70,7 @@ def build_amplify_mclass_sftp_sensor(
                     sftp_client=sftp_client,
                     remote_dir=remote_dir_regex,
                 )
-        except SSHException as e:
+        except TRANSIENT_CONNECT_EXCEPTIONS as e:
             # `get_connection` already retried the transient cases; an
             # unreachable host is not a code error, so skip the tick instead of
             # failing it and let the next one pick the files up (#4636).
