@@ -62,8 +62,6 @@ models:
         data_type: string
       - name: manager_name
         data_type: string
-      - name: manager_email
-        data_type: string
       - name: manager_user_principal_name
         data_type: string
       - name: alumni_status

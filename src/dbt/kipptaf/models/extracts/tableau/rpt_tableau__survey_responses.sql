@@ -22,7 +22,6 @@ select
     eh.race_ethnicity_reporting as race_ethnicity,
     eh.gender_identity as gender,
     eh.reports_to_formatted_name as manager_name,
-    eh.reports_to_mail as manager_email,
     eh.reports_to_user_principal_name as manager_user_principal_name,
     eh.alumni_status,
     eh.community_grew_up,
