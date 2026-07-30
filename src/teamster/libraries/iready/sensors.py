@@ -19,10 +19,7 @@ from dagster import (
 )
 from dagster_shared import check
 
-from teamster.libraries.ssh.resources import (
-    TRANSIENT_CONNECT_EXCEPTIONS,
-    SSHResource,
-)
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_iready_sftp_sensor(
@@ -62,19 +59,10 @@ def build_iready_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            with (
-                ssh_iready.get_connection() as connection,
-                connection.open_sftp() as sftp_client,
-            ):
-                files = ssh_iready.listdir_attr_r(
-                    sftp_client=sftp_client, remote_dir=remote_dir_regex
-                )
-        except TRANSIENT_CONNECT_EXCEPTIONS as e:
-            # `get_connection` already retried the transient cases; an
-            # unreachable host is not a code error, so skip the tick instead of
-            # failing it and let the next one pick the files up (#4636).
-            return SkipReason(str(e))
+        files = ssh_iready.listdir_attr_r_or_skip(remote_dir=remote_dir_regex)
+
+        if isinstance(files, SkipReason):
+            return files
 
         for asset in asset_selection:
             asset_identifier = asset.key.to_python_identifier()

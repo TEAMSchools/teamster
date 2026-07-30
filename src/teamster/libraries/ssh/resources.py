@@ -9,6 +9,7 @@ from pathlib import Path
 from stat import S_ISDIR, S_ISREG
 
 from cryptography.hazmat.primitives import hashes
+from dagster import SkipReason
 from dagster_shared import check
 from dagster_ssh import SSHResource as DagsterSSHResource
 from paramiko import RSAKey, SFTPAttributes, SFTPClient, SSHClient, Transport
@@ -83,12 +84,13 @@ _NON_RETRYABLE_SSH_EXCEPTIONS = (
 # `SSHException` subclasses (`NoValidConnectionsError` is an `OSError`), so they
 # have to be named separately.
 #
-# Public because SFTP sensors catch this same tuple to decide whether to skip a
-# tick. `reraise=True` on `get_connection` re-raises the ORIGINAL exception once
-# the retry budget is spent, so a sensor catching only `SSHException` would let
-# a downed host (`NoValidConnectionsError`) or a reset peer
-# (`ConnectionResetError`) fail the tick instead of skipping it. Keeping one
-# tuple keeps the retry boundary and the skip boundary from drifting apart.
+# This is the OUTER net — everything a connect can plausibly fail with that is
+# not a programming error. `_is_transient_connect_failure` then subtracts the
+# deterministic subclasses from it. `listdir_attr_r_or_skip` uses both: catch
+# widely, then re-raise the deterministic ones. Catching only `SSHException`
+# here would miss a downed host (`NoValidConnectionsError`) or a reset peer
+# (`ConnectionResetError`), since `reraise=True` on `get_connection` re-raises
+# the ORIGINAL exception once the retry budget is spent.
 TRANSIENT_CONNECT_EXCEPTIONS = (
     SSHException,
     NoValidConnectionsError,
@@ -315,6 +317,40 @@ class SSHResource(DagsterSSHResource):
                     files.append((file, path))
 
         return files
+
+    def listdir_attr_r_or_skip(
+        self, **kwargs
+    ) -> list[tuple[SFTPAttributes, str]] | SkipReason:
+        """Connect, list recursively, and turn a TRANSIENT failure into a skip.
+
+        The SFTP sensors all share the same shape — open a connection, open an
+        SFTP channel, recurse — and the same need to tell two kinds of failure
+        apart:
+
+        - **Transient** (host slow, down, DNS blip, reset peer): already retried
+          by `get_connection`. Nothing is wrong with the code, so skip the tick
+          and let the next one pick the files up.
+        - **Deterministic** (`AuthenticationException`, `BadHostKeyException`,
+          `IncompatiblePeer`, `ProxyCommandFailure`): a rotated credential or a
+          server that changed its host key. These are re-raised so the tick
+          FAILS and alerts. Skipping them looks identical to "no new files" in
+          the UI, which would let ingestion stop silently and indefinitely.
+
+        Centralized rather than repeated per sensor because that distinction is
+        subtle, and 4 of 5 sensors previously got the simpler version of this
+        wrong (#4636). `**kwargs` are forwarded to `listdir_attr_r`.
+        """
+        try:
+            with (
+                self.get_connection() as connection,
+                connection.open_sftp() as sftp_client,
+            ):
+                return self.listdir_attr_r(sftp_client=sftp_client, **kwargs)
+        except TRANSIENT_CONNECT_EXCEPTIONS as e:
+            if not _is_transient_connect_failure(e):
+                raise
+
+            return SkipReason(str(e))
 
     @contextmanager
     def open_ssh_tunnel(

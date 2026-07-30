@@ -413,13 +413,52 @@ def test_sftp_sensor_skips_rather_than_fails_on_any_transient_failure(
     Driving the real sensor is what makes this meaningful: asserting the tuple's
     contents would just restate the constant.
     """
+    result = _evaluate_edplan_sensor(monkeypatch, build_exception())
+
+    assert isinstance(result, SkipReason), (
+        "a transient failure escaped the sensor and failed the tick; it should"
+        " have produced a SkipReason"
+    )
+
+
+@pytest.mark.parametrize(
+    "build_exception",
+    [
+        lambda: AuthenticationException("auth failed"),
+        lambda: BadAuthenticationType("bad type", ["publickey"]),
+        _bad_host_key,
+        lambda: IncompatiblePeer("no acceptable host key"),
+    ],
+    ids=["auth-failed", "bad-auth-type", "bad-host-key", "incompatible-peer"],
+)
+def test_sftp_sensor_fails_the_tick_on_deterministic_failures(
+    monkeypatch, build_exception: Callable[[], BaseException]
+):
+    """A deterministic failure must FAIL the tick, not skip it.
+
+    A rotated credential or a changed host key fails identically forever.
+    Skipping renders that indistinguishable from "no new files" in the Dagster
+    UI, so ingestion would stop silently and indefinitely — a worse outcome than
+    a noisy tick failure, because nothing surfaces at all.
+
+    These are all `SSHException` subclasses, so a blanket
+    `except SSHException` / `except TRANSIENT_CONNECT_EXCEPTIONS` swallows every
+    one of them.
+    """
     exception = build_exception()
+
+    with pytest.raises(type(exception)):
+        _evaluate_edplan_sensor(monkeypatch, exception)
+
+
+def _evaluate_edplan_sensor(monkeypatch, exception: BaseException):
+    """Run a real edplan sensor whose every connect attempt raises `exception`."""
 
     def _always_fail(_self) -> SSHClient:
         raise exception
 
     # Patch the decorated method itself, so the retry budget is bypassed and the
-    # test exercises the sensor's except clause rather than tenacity.
+    # test exercises the sensor's skip boundary rather than tenacity.
     monkeypatch.setattr(SSHResource, "get_connection", _always_fail)
 
     @asset(name="edplan_probe", metadata={"remote_file_regex": r"(?P<date>.+)\.csv"})
@@ -435,12 +474,7 @@ def test_sftp_sensor_skips_rather_than_fails_on_any_transient_failure(
         resources={"ssh_edplan": SSHResource(remote_host="127.0.0.1", username="svc")}
     )
 
-    result = sensor_def(context)
-
-    assert isinstance(result, SkipReason), (
-        f"{type(exception).__name__} escaped the sensor and failed the tick;"
-        " it should have produced a SkipReason"
-    )
+    return sensor_def(context)
 
 
 def test_transport_thread_errors_do_not_reach_error_severity(caplog):

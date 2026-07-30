@@ -13,10 +13,7 @@ from dagster import (
 )
 from dagster_shared import check
 
-from teamster.libraries.ssh.resources import (
-    TRANSIENT_CONNECT_EXCEPTIONS,
-    SSHResource,
-)
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_titan_sftp_sensor(
@@ -40,16 +37,10 @@ def build_titan_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            with (
-                ssh_titan.get_connection() as connection,
-                connection.open_sftp() as sftp_client,
-            ):
-                files = ssh_titan.listdir_attr_r(
-                    sftp_client=sftp_client, exclude_dirs=exclude_dirs
-                )
-        except TRANSIENT_CONNECT_EXCEPTIONS as e:
-            return SkipReason(str(e))
+        files = ssh_titan.listdir_attr_r_or_skip(exclude_dirs=exclude_dirs)
+
+        if isinstance(files, SkipReason):
+            return files
 
         for a in asset_selection:
             asset_identifier = a.key.to_python_identifier()

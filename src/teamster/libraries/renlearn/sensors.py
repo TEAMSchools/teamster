@@ -20,10 +20,7 @@ from dagster import (
 )
 from dagster_shared import check
 
-from teamster.libraries.ssh.resources import (
-    TRANSIENT_CONNECT_EXCEPTIONS,
-    SSHResource,
-)
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_renlearn_sftp_sensor(
@@ -63,17 +60,10 @@ def build_renlearn_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            with (
-                ssh_renlearn.get_connection() as connection,
-                connection.open_sftp() as sftp_client,
-            ):
-                files = ssh_renlearn.listdir_attr_r(sftp_client=sftp_client)
-        except TRANSIENT_CONNECT_EXCEPTIONS as e:
-            # `get_connection` already retried the transient cases; an
-            # unreachable host is not a code error, so skip the tick instead of
-            # failing it and let the next one pick the files up (#4636).
-            return SkipReason(str(e))
+        files = ssh_renlearn.listdir_attr_r_or_skip()
+
+        if isinstance(files, SkipReason):
+            return files
 
         for asset in asset_selection:
             asset_metadata = asset.metadata_by_key[asset.key]

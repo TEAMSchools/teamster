@@ -14,10 +14,7 @@ from dagster import (
 )
 from dagster_shared import check
 
-from teamster.libraries.ssh.resources import (
-    TRANSIENT_CONNECT_EXCEPTIONS,
-    SSHResource,
-)
+from teamster.libraries.ssh.resources import SSHResource
 
 
 def build_edplan_sftp_sensor(
@@ -41,19 +38,10 @@ def build_edplan_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        try:
-            with (
-                ssh_edplan.get_connection() as connection,
-                connection.open_sftp() as sftp_client,
-            ):
-                files = ssh_edplan.listdir_attr_r(
-                    sftp_client=sftp_client, remote_dir="Reports"
-                )
-        except TRANSIENT_CONNECT_EXCEPTIONS as e:
-            # `get_connection` already retried the transient cases; an
-            # unreachable host is not a code error, so skip the tick instead of
-            # failing it and let the next one pick the files up (#4636).
-            return SkipReason(str(e))
+        files = ssh_edplan.listdir_attr_r_or_skip(remote_dir="Reports")
+
+        if isinstance(files, SkipReason):
+            return files
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)
