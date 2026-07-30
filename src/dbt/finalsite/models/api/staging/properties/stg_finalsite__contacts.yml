@@ -137,6 +137,17 @@ models:
           Repeated per-school-year ("track") custom fields; same key-value shape
           as `custom_attributes` plus the `school_year` the value applies to.
           Passed through whole.
+      - name: households
+        data_type:
+          array<struct<id string, address_1 string, address_2 string, city
+          string, state string, zip string, country string>>
+        description:
+          Repeated raw household struct, passed through unnormalized (Finalsite
+          emits empty strings rather than null, and mixed-case states). This
+          model's scalar `address_*` columns are this array's first element
+          only; `int_finalsite__contacts__households` flattens every element per
+          contact, with the same blank-to-null and state-uppercasing
+          normalization applied downstream.
       - name: birth_date
         data_type: date
         description: Contact's date of birth, cast from the source string.
@@ -294,6 +305,17 @@ unit_tests:
             as id_attributes,
           array<struct<field_name string, value struct<string_value string>>>[]
             as track_attributes,
+          [
+            struct(
+              'hh1' as id,
+              '123 Main St' as address_1,
+              '' as address_2,
+              ' Miami ' as city,
+              ' fl ' as state,
+              '33101' as zip,
+              'US' as country
+            )
+          ] as households,
           cast('2015-04-05' as date) as birth_date,
           'hh1' as household_1_id,
           '123 Main St' as address_1,

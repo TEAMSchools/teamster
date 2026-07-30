@@ -154,7 +154,7 @@ unit_tests:
         rows:
           - { finalsite_enrollment_id: stu-1, rel_id: par-1, is_primary: true }
           - { finalsite_enrollment_id: par-1, rel_id: stu-1, is_primary: null }
-      - input: ref('stg_finalsite__contact_households')
+      - input: ref('int_finalsite__contacts__households')
         format: sql
         rows: |
           select
@@ -209,7 +209,7 @@ unit_tests:
       - input: ref('stg_finalsite__contact_relationships')
         rows:
           - { finalsite_enrollment_id: stu-2, rel_id: par-2, is_primary: true }
-      - input: ref('stg_finalsite__contact_households')
+      - input: ref('int_finalsite__contacts__households')
         format: sql
         rows: |
           select
@@ -260,7 +260,7 @@ unit_tests:
       - input: ref('stg_finalsite__contact_relationships')
         rows:
           - { finalsite_enrollment_id: stu-3, rel_id: par-3, is_primary: true }
-      - input: ref('stg_finalsite__contact_households')
+      - input: ref('int_finalsite__contacts__households')
         format: sql
         rows: |
           select
@@ -317,7 +317,7 @@ unit_tests:
         rows:
           - { finalsite_enrollment_id: stu-4, rel_id: par-4, is_primary: true }
           - { finalsite_enrollment_id: stu-5, rel_id: par-5, is_primary: true }
-      - input: ref('stg_finalsite__contact_households')
+      - input: ref('int_finalsite__contacts__households')
         format: sql
         rows: |
           select

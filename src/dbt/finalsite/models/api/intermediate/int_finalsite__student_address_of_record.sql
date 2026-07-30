@@ -12,25 +12,35 @@ with
         where is_primary
     ),
 
-    address_candidates as (
-        -- One row per (contact, distinct complete address). Address identity is
-        -- the five mailing fields including address_2 — an apartment difference
-        -- is a different mailing address. country is not part of the identity
-        -- (Finalsite stores it unnormalized and no consumer reads it), so a
-        -- single min() carries it through rather than letting it split one
-        -- address into two candidates.
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    complete_households as (
         select
             finalsite_enrollment_id,
+            household_id,
             address_1,
             address_2,
             city,
             state,
             zip,
-
-            min(country) as country,
-        from {{ ref("stg_finalsite__contact_households") }}
+            country,
+        from {{ ref("int_finalsite__contacts__households") }}
         where is_complete_address
-        group by finalsite_enrollment_id, address_1, address_2, city, state, zip
+    ),
+
+    address_candidates as (
+        -- One row per (contact, distinct complete address). Address identity is
+        -- the five mailing fields including address_2 — an apartment difference
+        -- is a different mailing address. country is NOT part of the identity,
+        -- so it comes from the canonical lowest-household_id row rather than
+        -- being aggregated across rows, which would blend values from
+        -- different households.
+        {{
+            dbt_utils.deduplicate(
+                relation="complete_households",
+                partition_by="finalsite_enrollment_id, address_1, address_2, city, state, zip",
+                order_by="household_id asc",
+            )
+        }}
     ),
 
     candidate_counts as (

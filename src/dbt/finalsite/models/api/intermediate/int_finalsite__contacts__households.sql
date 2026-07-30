@@ -4,7 +4,7 @@ with
         -- address columns: Finalsite emits empty strings (not null) and
         -- mixed-case states. Blank -> null; uppercase the state code.
         select
-            c.id as finalsite_enrollment_id,
+            c.finalsite_enrollment_id,
 
             h.id as household_id,
             h.country,
@@ -14,7 +14,7 @@ with
             nullif(trim(h.city), '') as city,
             nullif(upper(trim(h.state)), '') as state,
             nullif(trim(h.zip), '') as zip,
-        from {{ source("finalsite", "contacts") }} as c
+        from {{ ref("stg_finalsite__contacts") }} as c
         cross join unnest(c.households) as h
     )
 

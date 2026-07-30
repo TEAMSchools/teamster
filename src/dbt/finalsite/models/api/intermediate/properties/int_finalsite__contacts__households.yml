@@ -1,15 +1,16 @@
 models:
-  - name: stg_finalsite__contact_households
+  - name: int_finalsite__contacts__households
     description:
       One row per (contact, household) — the households attached to each
-      Finalsite contact, unnested from the `households` array. Every contact
-      record carries households, students and adults alike, and a household
-      carries only an id plus an address; membership has no roles. This is the
-      only place per-household addresses are exposed — the `household_ids` array
-      on `stg_finalsite__contacts` carries ids without addresses, and that
-      model's scalar `address_*` columns are the first array element only.
-      Address values carry the same blank-to-null and state-uppercasing
-      normalization `stg_finalsite__contacts` applies.
+      Finalsite contact, flattened off `stg_finalsite__contacts`'s raw
+      `households` array. Every contact record carries households, students and
+      adults alike, and a household carries only an id plus an address;
+      membership has no roles. This is the only place per-household addresses
+      are exposed — the `household_ids` array on `stg_finalsite__contacts`
+      carries ids without addresses, and that model's scalar `address_*` columns
+      are the first array element only. Address values carry the same
+      blank-to-null and state-uppercasing normalization
+      `stg_finalsite__contacts` applies.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

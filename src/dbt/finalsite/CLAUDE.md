@@ -20,8 +20,8 @@ models/
 ```
 
 `api/staging`: `stg_finalsite__contacts`,
-`stg_finalsite__contact_relationships`, `stg_finalsite__contact_households`.
-`sftp/staging`: `stg_finalsite__status_report`.
+`stg_finalsite__contact_relationships`. `sftp/staging`:
+`stg_finalsite__status_report`.
 
 `api/intermediate` models:
 
@@ -29,6 +29,12 @@ models/
   school years) with the intended SIS action (`create` / `re_enroll` /
   `transfer_out`); SIS-agnostic (feeds both the Focus and PowerSchool
   receivers).
+- `int_finalsite__contacts__households` — one row per (contact, household), the
+  per-contact-household flattening off `stg_finalsite__contacts`'s raw
+  `households` array. Moved out of the staging layer since it reads a
+  contract-widened column on `stg_finalsite__contacts` rather than the raw
+  source directly; not contract-enforced (the `api/intermediate` directory
+  default), though every column still carries a `data_type` per convention.
 - `int_finalsite__student_address_of_record` — one row per student record (a
   contact carrying a `primary` relationship) with the resolved address of
   record: the student's own household linkage when it yields exactly one
