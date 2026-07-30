@@ -663,8 +663,20 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
-              address_1 is null
-              or (city is not null and state is not null and zip is not null)
+              (
+                  address_source is not null
+                  and address_1 is not null
+                  and city is not null
+                  and state is not null
+                  and zip is not null
+              )
+              or (
+                  address_source is null
+                  and address_1 is null
+                  and city is null
+                  and state is null
+                  and zip is null
+              )
           config:
             severity: error
     columns:
