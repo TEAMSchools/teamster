@@ -2,9 +2,10 @@
 
 Refs #4649
 
-Status: **in progress** — sections 1 and 2 are approved. Sections 3 (stakeholder
-questions) and 4 (project plan) are pending and will be appended before this
-spec goes to implementation.
+Status: **approved** — design, stakeholder questions, and project plan are
+settled. The GPA model and several field-level decisions are explicitly gated on
+stakeholder answers (see _Stakeholder questions_); those gates are recorded in
+the plan rather than resolved here.
 
 ## Problem
 
@@ -237,6 +238,136 @@ do not justify a sheet round-trip, and inline keeps the mapping reviewable in
 the PR. If Overgrad expands the list, moving it to a sheet column is a small
 follow-up.
 
+## Stakeholder questions
+
+Grouped by who can answer, because they unblock different work.
+
+### GPA — blocks `rpt_overgrad__gpas` (Kyla, Diane)
+
+- **Q1.** Which GPA goes to Overgrad: the Salesforce college match GPA
+  (`college_match_display_gpa__c`), PowerSchool cumulative Y1 weighted, or
+  unweighted? Placeholder in this spec is the Salesforce field.
+- **Q2.** Is that value already on a 4.0 scale? Overgrad requires 4.0 and does
+  not rescale.
+- **Q3.** Label it `Unweighted`, `Weighted`, or send both rows? Overgrad's match
+  algorithm only runs off an unweighted GPA — sending only weighted means match
+  silently produces nothing for every student.
+- **Q4.** What cadence? A nightly diff-and-send means off-schedule requests stop
+  being requests: any change in Salesforce propagates within a day. Is that the
+  goal, or does GPA need to hold steady between the Foundation's scheduled
+  college-match updates so students do not see it move mid-cycle?
+- **Q5.** Should GPA flow for all HS grades, or seniors only?
+
+Q4 is the substantive one. It reframes recurring ad-hoc GPA requests as a
+cadence decision rather than a ticket queue.
+
+### Roster and scope (Kyla, Diane)
+
+- **Q6.** Send demographics — birth date, gender, race/ethnicity? Overgrad
+  accepts them and its `students` object already holds values, but adding them
+  to a recurring outbound feed is a privacy decision. Default in this spec is to
+  omit them.
+- **Q7.** Which grade levels get rostered? This spec assumes all HS; Overgrad is
+  often used for grades 11 and 12 only.
+- **Q8.** Should the roster file also push updates for existing students (email
+  changes, corrected graduation year), or only create new ones? See Q12 — the
+  answer may be forced by Overgrad's importer.
+- **Q9.** Who owns triggering welcome emails? SFTP-created accounts get none, so
+  students will not know they have an account until someone tells them. This is
+  the most likely way a technically successful launch still fails.
+- **Q10.** Add ACT alongside SAT? Already present in
+  `int_assessments__college_assessment`, and Overgrad accepts the full battery —
+  near-zero marginal cost.
+- **Q11.** AP Physics: Overgrad has one `AP Physics` against College Board's
+  four exams. This spec keeps the highest score and drops the rest. Acceptable,
+  or should Physics be excluded entirely so nothing is silently lost?
+
+### Vendor — blocks setup (`integrations@overgrad.com`)
+
+- **Q12.** Does the SIS Sync `StudentSisFile` mapping support upsert, or is it
+  fixed to create-only? The manual importer forces a choice between "Creating"
+  and "Editing" at mapping time, which suggests one SFTP mapping cannot do both.
+  Determines whether we need one roster file or two.
+- **Q13.** One SFTP account per Overgrad district, or one shared credential for
+  both Newark and Camden?
+- **Q14.** AP scores have no exam date in the College Board file. Is a
+  synthesized May 15 acceptable, or is there a preferred convention?
+- **Q15.** Digital SAT: use `New SAT Reading and Writing` or
+  `New SAT Evidence-Based Reading and Writing`? Both are in the accepted list.
+  Which feeds the match algorithm?
+- **Q16.** Is there any delivery feedback — a processed or error file written
+  back to SFTP, or an API endpoint? Today the only error surface is the History
+  page in the UI, which nothing can monitor.
+- **Q17.** What are the file size and row count limits, and what happens to a
+  partially-invalid file?
+- **Q18.** Confirm the exact subdirectory names for GPA and test-score files.
+  The doc gives only `uploads/StudentSisFile/` explicitly.
+
+Q16 is the one to push hardest on. Everything else has a workaround;
+unmonitorable failure is an operational burden we would own indefinitely.
+
+## Project plan
+
+Target: pipeline established and tested by mid-September 2026. Plan date is
+2026-07-30.
+
+### Sequencing constraint
+
+The manual header-mapping upload **cannot be front-loaded**. Overgrad requires
+SFTP files to use the same headers as the manual upload that established the
+mapping, so the sample CSV must be generated from the finished dbt models.
+Mapping headers before the models are final means renaming them afterward, which
+breaks the sync silently.
+
+Dependency order: models → sample CSV → manual mapping → SFTP enabled.
+
+The credential request is the one item that can be front-loaded, and it sits on
+the critical path from day one with a turnaround we do not control. It goes
+first.
+
+### Milestones
+
+| Week         | Work                                                                                                                                                                                | Gates                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Aug 3–7      | Email `integrations@overgrad.com` for SFTP credentials on both accounts, with Q12–Q18 attached. Hold the GPA and roster-scope meeting. Record decisions in this spec.               | none                                   |
+| Aug 10–21    | Build 4 network models and 8 district passthroughs. One PR per file type. `rpt_overgrad__gpas` waits on Q1–Q5; the other three do not.                                              | GPA model gated on stakeholder answers |
+| Aug 24–28    | Generate sample CSVs from the built models. Manual upload of each file type in both accounts to establish header and value mappings — 8 uploads.                                    | models merged; credentials received    |
+| Aug 31–Sep 4 | Dagster wiring: SSH resources per code location, `config/overgrad.yaml`, assets, jobs, schedules at `0 4 * * *`. Dry-run extracts to `couchdrop` instead of Overgrad, inspect CSVs. | dry run needs no vendor involvement    |
+| Sep 7–11     | Flip destination to Overgrad. Live send on a small subset, verify against the Overgrad History page, then full send. Confirm row counts and spot-check students in the UI.          | mappings established                   |
+| Sep 14–15    | Monitor a full week of nightly runs. Hand off welcome-email ownership. Update docs. File follow-up issues.                                                                          | target met                             |
+
+The dry-run-to-`couchdrop` step is worth the extra day. It shows exactly what
+Overgrad would receive — headers, date formats, the AP Physics dedupe, row
+counts — with no vendor-visible action and no bad load to unwind.
+
+### Asana structure
+
+Parent task `#4649 | feat: build Overgrad SFTP extracts` in the TEAMster
+project, Type = `Issue`, with subtasks per milestone. PR-level subtasks are
+added as PRs open, Type = `Pull Request`.
+
+15 subtasks: 2 for week one, 4 model tasks, 1 mapping-upload task per account
+(2), 2 Dagster tasks, 3 test and validation tasks, 2 handoff tasks. Due dates
+set to the week boundaries above.
+
+### Schedule risks
+
+- **Vendor turnaround is the top risk.** Credentials plus answers to seven
+  questions from a vendor whose support hours are 7am–9pm CST. A two-week
+  turnaround makes mid-September tight, which is why the request goes out in
+  week one rather than after the models are built.
+- **No machine-readable error surface** (Q16). Until answered, "tested" must
+  include a human checking the Overgrad History page, and steady-state operation
+  carries a monitoring gap.
+- **The GPA decision gates one model but could reshape it.** If the answer to Q4
+  is a cadence other than "nightly whenever Salesforce changes",
+  `rpt_overgrad__gpas` needs different logic, not just a different column.
+
+Schools open in late August, so new-student Salesforce contact ids will still be
+settling during the September test window. This is realistic timing rather than
+a defect, but it does mean the first full send will not cover every enrolled
+student — stakeholders should hear that as expected behavior, not a bug.
+
 ## Follow-ups
 
 - Test-score idempotency: replace full resend with a ledger of sent rows if
@@ -245,9 +376,3 @@ follow-up.
   them; this is a process gap, not a code gap.
 - ACT scores are already in `int_assessments__college_assessment` and Overgrad
   accepts the full ACT battery. Adding them would be low marginal cost.
-
-## Sections pending
-
-- Section 3: stakeholder questions for Kyla, Diane, and Overgrad integrations.
-- Section 4: Asana project plan culminating in a tested pipeline by
-  mid-September 2026.
