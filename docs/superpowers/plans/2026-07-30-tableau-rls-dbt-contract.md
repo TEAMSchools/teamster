@@ -48,6 +48,15 @@ dependency on an intermediate model.
 - Renaming a column breaks every Tableau reference to it. That is expected and
   accepted; the affected workbooks are listed in the appendix. Do not add
   backwards-compatible aliases to avoid it.
+- **Delete every legacy alias of a contract column.** User ruling, 2026-07-30: a
+  model must emit exactly one name per value. If the model aliases a contract
+  source column to anything else — `entity`, `` `location` ``, `legal_entity`,
+  `region`, `department`, `report_to_sam_account_name` (singular),
+  `respondent_location`, `teacher_location` — delete that alias and its YAML
+  entry. Keep only columns that are genuinely a _different_ value for a
+  _different_ person, which retain a descriptive prefix: `entity_short`,
+  `observer_location`, and the `respondent_*` fields on
+  `rpt_tableau__grants_timesheets`.
 
 ### The contract column list
 
