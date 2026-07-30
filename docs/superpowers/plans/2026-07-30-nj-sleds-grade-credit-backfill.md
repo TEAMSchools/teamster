@@ -52,10 +52,12 @@ Every task's requirements implicitly include this section.
   repeat across regions (33 shared student local IDs), so an unqualified join
   manufactures false matches.
 - **Grade bands.** `HS` = `sced_level = 'secondary'` and `AvailableCredit`
-  greater than `0`. `MS` = prior-to-secondary whose `GradeSpan` **upper** two
-  characters are in `('06','07','08','09','10','11','12')`. Everything else is
-  `OUT` and receives no grade. Test membership explicitly — `KG` sorts above
-  `06` in a string comparison and would wrongly pull in 1,675 kindergarten rows.
+  greater than `0`. `MS` = prior-to-secondary whose `GradeSpan` **first** two
+  characters — the span's lower bound — are in
+  `('06','07','08','09','10','11','12')`. Everything else is `OUT` and receives
+  no grade. Test membership explicitly rather than with a range comparison: `KG`
+  sorts above `06` as a string, so `>= '06'` would wrongly pull in every
+  kindergarten row.
 - **Never guess.** A conflict or a missing grade produces a blank plus a report
   row, never an inferred value.
 - **Python:** always `uv run`. Never bare `python` / `python3`.
@@ -136,8 +138,8 @@ EXPECTED_BAND_ROWS = {
     ("newark", "MS"): 10746,
     ("newark", "OUT"): 11709,
     ("camden", "HS"): 3648,
-    ("camden", "MS"): 3857,
-    ("camden", "OUT"): 2838,
+    ("camden", "MS"): 3638,
+    ("camden", "OUT"): 3057,
 }
 
 
@@ -331,7 +333,7 @@ with
         select
             *,
 
-            substr(grade_span_padded, 3, 2) as grade_span_upper,
+            substr(grade_span_padded, 1, 2) as grade_span_start,
         from typed
     ),
 
@@ -343,7 +345,7 @@ with
                 when sced_level = 'secondary' and available_credit_num > 0
                 then 'HS'
                 when
-                    grade_span_upper
+                    grade_span_start
                     in ('06', '07', '08', '09', '10', '11', '12')
                 then 'MS'
                 else 'OUT'
@@ -390,10 +392,11 @@ cd /workspaces/teamster/.worktrees/anthonygwalters/feat/claude-nj-sleds-grade-ba
 uv run --with google-cloud-bigquery python validate_submission.py
 ```
 
-Expected: `PASSED (2 check group(s))`. If a band count is off by exactly 219,
-the `MS` upper-bound membership test is wrong — `0508` and `KG08` belong in
-`MS`. If `OUT` is short by 1,675, `KG` is being ranked above `06` by a range
-comparison instead of the explicit membership list.
+Expected: `PASSED (2 check group(s))`. If Camden `MS` is over by 219 and Camden
+`OUT` short by the same, the membership test is reading the span's **upper**
+bound (characters 3-4) instead of its lower bound (characters 1-2) — `0508` and
+`KG08` must land in `OUT`. If `OUT` is short by 1,675, `KG` is being ranked
+above `06` by a range comparison instead of the explicit membership list.
 
 - [ ] **Step 5: Lint and commit**
 
@@ -666,15 +669,23 @@ Add to `validate_submission.py`:
 
 ```python
 def check_no_live_conflicts(client):
-    """No student-section resolves to two different live letters."""
+    """A conflicted live grade is never emitted as the resolved value.
+
+    Live reporting terms legitimately disagree on tens of thousands of rows -
+    several term types close on the same date. That is not an error, because
+    on any row with a stored grade the live value is never consulted. The
+    invariant that matters is narrower: when live terms disagree, the guard
+    must null the value rather than pick one, so grade_source can never be
+    'live' on a conflicted row.
+    """
     sql = f"""
     select count(*) as n
     from ({SUBMISSION_SQL})
-    where n_live_letters > 1
+    where n_live_letters > 1 and grade_source = 'live'
     """
     n = _rows(client, sql)[0].n
     if n:
-        return [f"{n} row(s) have conflicting live final grades"]
+        return [f"{n} row(s) emitted a conflicted live grade"]
     return []
 
 
@@ -951,7 +962,7 @@ uv run --with google-cloud-bigquery python validate_submission.py
 Expected: FAIL — `check_credits_earned` reports 14,343 HS rows malformed,
 because `CreditsEarned` is still the extract's `0.000`... which is in fact
 correctly formatted, so the concrete failure is
-`check_in_scope_rows_have_grades` reporting 28,946 rows with no grade.
+`check_in_scope_rows_have_grades` reporting 28,727 rows with no grade.
 
 - [ ] **Step 3: Add the emission CTEs**
 
@@ -1034,11 +1045,20 @@ uv run --with google-cloud-bigquery python validate_submission.py
 
 Expected: `PASSED (10 check group(s))`.
 
-If `check_in_scope_rows_have_grades` still reports a small residue (on the order
-of 121 rows), that is the known coverage gap and it must be resolved, not
-waived: re-check whether those rows have a live grade outside the `enddate`
-window, and report the remainder to the user for a manual decision before
-upload. Do not relax the check.
+`check_in_scope_rows_have_grades` **will** report a residue, and that is
+expected, not a defect. Measured against the strict band rule: 121 in-scope rows
+have no stored grade; roughly a dozen of those resolve from the live fallback,
+and the rest have no grade in either source — meaning PowerSchool holds none, so
+the native extract could not produce one either.
+
+Do not relax or waive the check, and do not invent values for those rows. They
+are a PowerSchool worklist: someone must post the missing grades or exclude
+those sections before upload. Report the residue as an aggregate count broken
+down by region and band, and hand it to the user with the final task report.
+
+This is the one check that is expected to fail on the current data, so
+`build_submission.py` in Task 6 will refuse to export until the source data is
+fixed. That is the gate working as designed.
 
 - [ ] **Step 5: Lint and commit**
 
