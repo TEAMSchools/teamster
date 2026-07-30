@@ -250,6 +250,14 @@ the affected submodule alone (e.g.
 `import teamster.code_locations.kipptaf.finalsite` or
 `teamster.code_locations.kippmiami.extracts`), not the `definitions` module.
 
+`tests/test_dagster_definitions.py` fails all 6 in a FRESH worktree — run
+`prepare-and-package` for all 5 locations first or each dies on a missing
+`target/manifest.json`. The pytest failure is a bare
+`subprocess.CalledProcessError` that hides the cause; re-run
+`dagster definitions validate -m <module>` directly to see it. With manifests,
+conftest's 1Password bootstrap resolves kipptaf's dlt credentials too, so only
+`kippmiami` (`FOCUS_DB`) and `test_definitions_all` still fail.
+
 Importing a kipptaf **asset submodule** (e.g.
 `teamster.code_locations.kipptaf.google.directory.assets`) transitively imports
 `kipptaf.dbt` and needs the dbt manifest — absent in a fresh worktree, so a unit
