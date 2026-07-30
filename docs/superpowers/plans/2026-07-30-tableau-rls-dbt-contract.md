@@ -46,6 +46,14 @@ dependency on an intermediate model.
   evidence. User ruling 2026-07-30: a `case` in each view, not a shared
   crosswalk model. The cost is that a future entity rename means editing every
   view.
+- **The entity `case` goes in the select list only — never in a join or filter
+  predicate.** Several models compare the raw entity to something else, e.g.
+  `on srh.home_business_unit_name = rt.region` (`schoolmint_grow_goals.sql:52`,
+  `schoolmint_grow_observation_details.sql:139`) and
+  `or srh.home_business_unit_name = 'KIPP Miami'`
+  (`schoolmint_grow_observation_details.sql:117`). Those stay raw. Normalizing a
+  predicate changes which rows match and shifts row counts silently instead of
+  failing.
 - Contract columns describe the person whose access is being decided. Everyone
   else on the row keeps a descriptive prefix (`respondent_*`, `observer_*`).
 - SQL follows `.trunk/config/.sqlfluff`: BigQuery dialect, trailing commas,
