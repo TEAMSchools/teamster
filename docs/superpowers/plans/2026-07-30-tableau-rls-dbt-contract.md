@@ -22,10 +22,14 @@ a workbook's direct dependency on an intermediate model.
 - Design doc:
   `docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md`.
   Read it before Task 1.
-- Worktree:
-  `/workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration`.
-  Use `git -C <worktree>` for every git call and
-  `uv run dbt --project-dir <worktree>/src/dbt/kipptaf` for every dbt call.
+- Checkout: `/workspaces/teamster`, already on branch
+  `cristinabaldor/feat/claude-tableau-rls-entra-migration`. There is no worktree
+  — do not create one, and do not switch branches.
+- Setup, once per session before any dbt command:
+  `uv run dbt deps --project-dir /workspaces/teamster/src/dbt/kipptaf`. Without
+  it, every dbt command fails with "dbt found 2 package(s) specified in
+  packages.yml, but only 0 package(s) installed". Verified 2026-07-30.
+- Always `uv run dbt`, never a bare `dbt`.
 - Location values come from
   `int_people__location_crosswalk.location_clean_name`, **never** the raw
   `home_work_location_name`. Values pass through unchanged — no renaming, no
@@ -91,7 +95,7 @@ Run:
 
 ```bash
 uv run dbt compile \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select rpt_tableau__content_team
 ```
 
@@ -100,8 +104,8 @@ Expected: PASS (the macro is not yet called, so this only proves nothing broke).
 - [ ] **Step 3: Commit**
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration add src/dbt/kipptaf/macros/tableau_access_columns.sql
-git -C /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration commit -m "feat(dbt): add tableau_access_columns macro
+git -C /workspaces/teamster add src/dbt/kipptaf/macros/tableau_access_columns.sql
+git -C /workspaces/teamster commit -m "feat(dbt): add tableau_access_columns macro
 
 Refs #4638"
 ```
@@ -159,7 +163,7 @@ Run:
 
 ```bash
 uv run dbt build \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select rpt_tableau__content_team --target dev
 ```
 
@@ -171,7 +175,7 @@ Run:
 
 ```bash
 uv run dbt show \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --inline "select distinct location_name, entity from {{ ref('rpt_tableau__content_team') }} order by 2, 1" \
   --limit 50 --target dev
 ```
@@ -229,7 +233,7 @@ Run:
 
 ```bash
 uv run dbt build \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select rpt_tableau__content_team --target dev
 ```
 
@@ -240,7 +244,7 @@ Expected: PASS, including the `not_null` and `accepted_values` tests.
 Run:
 
 ```bash
-cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration && \
+cd /workspaces/teamster && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__content_team.sql \
   src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__content_team.yml </dev/null
@@ -251,8 +255,8 @@ Expected: no sqlfluff or yamllint issues.
 - [ ] **Step 8: Commit**
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration add src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__content_team.sql src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__content_team.yml
-git -C /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration commit -m "feat(dbt): apply tableau access contract to content_team
+git -C /workspaces/teamster add src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__content_team.sql src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__content_team.yml
+git -C /workspaces/teamster commit -m "feat(dbt): apply tableau access contract to content_team
 
 Refs #4638"
 ```
@@ -284,7 +288,7 @@ For Tasks 5 and 6, verify **both** blocks emit the contract columns:
 
 ```bash
 uv run dbt show \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --inline "select count(*) as rows_missing_location from {{ ref('rpt_tableau__schoolmint_grow_observation_details') }} where location_name is null" \
   --target dev
 ```
@@ -340,7 +344,7 @@ Run:
 
 ```bash
 uv run dbt build \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select rpt_tableau__survey_completion --target dev
 ```
 
@@ -352,7 +356,7 @@ The added joins must not fan out. Run:
 
 ```bash
 uv run dbt show \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --inline "select count(*) as ct, count(distinct format('%T|%T|%T', employee_number, academic_year, survey_round)) as distinct_key from {{ ref('rpt_tableau__survey_completion') }}" \
   --target dev
 ```
@@ -479,7 +483,7 @@ dropped silently — this step is why the model needs its own verification.
 
 ```bash
 uv run dbt show \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --inline "select location_name, entity, email from {{ ref('rpt_tableau__grants_timesheets') }} limit 5" \
   --target dev
 ```
@@ -536,7 +540,7 @@ not a contract column and renaming it would break existing views.
 
 ```bash
 uv run dbt show \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --inline "select observer_location, location_name from {{ ref('rpt_tableau__pm_outlier_detection') }} limit 5" \
   --target dev
 ```
@@ -600,7 +604,7 @@ name rather than adding a rename.
 
 ```bash
 uv run dbt build \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select rpt_tableau__manager_survey_details --target dev
 ```
 
@@ -608,7 +612,7 @@ Then compare row counts against the intermediate model:
 
 ```bash
 uv run dbt show \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --inline "select (select count(*) from {{ ref('int_surveys__manager_survey_details') }}) as int_ct, (select count(*) from {{ ref('rpt_tableau__manager_survey_details') }}) as rpt_ct" \
   --target dev
 ```
@@ -682,7 +686,7 @@ group by 1
 
 ```bash
 uv run dbt test \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select assert_roster_locations_resolve_to_crosswalk --target dev
 ```
 
@@ -712,7 +716,7 @@ having count(*) != 30
 
 ```bash
 uv run dbt test \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select assert_tableau_location_name_set_expected --target dev
 ```
 
@@ -744,7 +748,7 @@ where
 
 ```bash
 uv run dbt test \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select assert_staff_email_populated_with_sam --target dev
 ```
 
@@ -808,7 +812,7 @@ Follow Task 14 Step 4's structure, then Task 2 Step 8.
 
 ```bash
 uv run dbt build \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --select rpt_tableau__content_team rpt_tableau__leadership_development \
     rpt_tableau__schoolmint_grow_goals rpt_tableau__schoolmint_grow_observation_details \
     rpt_tableau__teacher_observations rpt_tableau__survey_responses \
@@ -826,7 +830,7 @@ For each of the 13, run:
 
 ```bash
 uv run dbt show \
-  --project-dir /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration/src/dbt/kipptaf \
+  --project-dir /workspaces/teamster/src/dbt/kipptaf \
   --inline "select location_name, entity, email, job_function from {{ ref('<model>') }} limit 1" \
   --target dev
 ```
@@ -837,7 +841,7 @@ contract actually holds, and it is the precondition for any Tableau edit.
 - [ ] **Step 3: Lint every changed file**
 
 ```bash
-cd /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration && \
+cd /workspaces/teamster && \
 /workspaces/teamster/.trunk/tools/trunk check --force --no-fix \
   $(git -C . diff --name-only origin/main...HEAD | grep -E '\.(sql|yml)$' | xargs -I{} test -f {} && git -C . diff --name-only origin/main...HEAD | grep -E '\.(sql|yml)$') </dev/null
 ```
@@ -848,7 +852,7 @@ path hard-errors.
 - [ ] **Step 4: Push and report**
 
 ```bash
-git -C /workspaces/teamster/.worktrees/cristinabaldor/feat/claude-tableau-rls-entra-migration push -u origin cristinabaldor/feat/claude-tableau-rls-entra-migration
+git -C /workspaces/teamster push -u origin cristinabaldor/feat/claude-tableau-rls-entra-migration
 ```
 
 Then report the branch name and stop. Do **not** open the PR — the Tableau half
