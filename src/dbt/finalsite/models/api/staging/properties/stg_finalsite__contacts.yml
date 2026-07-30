@@ -158,16 +158,25 @@ models:
         description:
           Line 1 of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: address_2
         data_type: string
         description:
           Line 2 of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: city
         data_type: string
         description:
           City of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: state
         data_type: string
         description:
@@ -178,6 +187,9 @@ models:
         description:
           ZIP code of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: country
         data_type: string
         description: Country of the primary household address.
