@@ -4,12 +4,13 @@ transient retry (#4636).
 Two independent defects turned a slow SSH banner into a failed sensor tick plus
 a pair of false-positive GCP Error Reporting groups:
 
-1. **Timeout inversion.** `SSHResource.timeout` defaulted to 10s (dagster-ssh)
-   while paramiko's `Transport.banner_timeout` is 15s and `auth_timeout` is 30s.
-   `Transport.start_client()` breaks out of its wait loop WITHOUT raising when
-   its own deadline passes (`transport.py`, "if event.is_set() or ... >=
-   max_time: break"), so `SSHClient.connect` fell through to
-   `get_remote_server_key()`, which raises the misleading
+1. **Timeout inversion.** `SSHResource.timeout` defaulted to 10s (dagster-ssh),
+   but it is passed to `Transport.start_client()`, whose wait spans BOTH the
+   banner read (`banner_timeout`, 15s) and the key exchange that follows
+   (`handshake_timeout`, 15s) — a 30s budget. `start_client()` breaks out of its
+   wait loop WITHOUT raising when its own deadline passes (`transport.py`, "if
+   event.is_set() or ... >= max_time: break"), so `SSHClient.connect` fell
+   through to `get_remote_server_key()`, which raises the misleading
    `SSHException("No existing session")` — while the real banner read continued
    on an orphaned transport thread that logged an ERROR traceback seconds after
    the caller had already given up.
