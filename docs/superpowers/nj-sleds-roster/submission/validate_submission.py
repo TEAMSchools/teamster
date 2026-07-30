@@ -26,16 +26,16 @@ def _rows(client, sql):
     return list(client.query(sql).result())
 
 
-def check_row_parity(client):
+def check_row_parity(client, sql=SUBMISSION_SQL):
     """Every extract row appears exactly once. No fan-out, no loss."""
     failures = []
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select region, count(*) as n
-    from ({SUBMISSION_SQL})
+    from ({sql})
     group by region
     """
-    actual = {r.region: r.n for r in _rows(client, sql)}
+    actual = {r.region: r.n for r in _rows(client, sql_text)}
     for region, expected in EXPECTED_EXTRACT_ROWS.items():
         got = actual.get(region, 0)
         if got != expected:
@@ -43,16 +43,16 @@ def check_row_parity(client):
     return failures
 
 
-def check_band_counts(client):
+def check_band_counts(client, sql=SUBMISSION_SQL):
     """Band classification matches the spec exactly."""
     failures = []
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select region, grade_band, count(*) as n
-    from ({SUBMISSION_SQL})
+    from ({sql})
     group by region, grade_band
     """
-    actual = {(r.region, r.grade_band): r.n for r in _rows(client, sql)}
+    actual = {(r.region, r.grade_band): r.n for r in _rows(client, sql_text)}
     for key, expected in EXPECTED_BAND_ROWS.items():
         got = actual.get(key, 0)
         if got != expected:
@@ -70,20 +70,20 @@ EXPECTED_STORED_COVERAGE = {
 }
 
 
-def check_stored_coverage(client):
+def check_stored_coverage(client, sql=SUBMISSION_SQL):
     """Stored Y1 grades cover the in-scope bands at the measured rate.
 
     Counts are a floor, not an equality: a re-pulled extract may match more
     rows. A drop signals a broken join.
     """
     failures = []
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select region, grade_band, countif(stored_letter is not null) as matched
-    from ({SUBMISSION_SQL})
+    from ({sql})
     group by region, grade_band
     """
-    actual = {(r.region, r.grade_band): r.matched for r in _rows(client, sql)}
+    actual = {(r.region, r.grade_band): r.matched for r in _rows(client, sql_text)}
     for key, floor in EXPECTED_STORED_COVERAGE.items():
         got = actual.get(key, 0)
         if got < floor:
@@ -94,17 +94,17 @@ def check_stored_coverage(client):
     return failures
 
 
-def check_no_stored_conflicts(client):
+def check_no_stored_conflicts(client, sql=SUBMISSION_SQL):
     """No student-section carries two different stored Y1 letters or credits."""
     failures = []
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select
         countif(n_stored_letters > 1) as letter_conflicts,
         countif(n_stored_credits > 1) as credit_conflicts
-    from ({SUBMISSION_SQL})
+    from ({sql})
     """
-    row = _rows(client, sql)[0]
+    row = _rows(client, sql_text)[0]
     if row.letter_conflicts:
         failures.append(
             f"{row.letter_conflicts} row(s) have conflicting stored Y1 letter grades"
@@ -116,7 +116,7 @@ def check_no_stored_conflicts(client):
     return failures
 
 
-def check_no_live_conflicts(client):
+def check_no_live_conflicts(client, sql=SUBMISSION_SQL):
     """A conflicted live grade is never emitted as the resolved value.
 
     Live reporting terms legitimately disagree on tens of thousands of rows -
@@ -126,86 +126,86 @@ def check_no_live_conflicts(client):
     must null the value rather than pick one, so grade_source can never be
     'live' on a conflicted row.
     """
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select count(*) as n
-    from ({SUBMISSION_SQL})
+    from ({sql})
     where n_live_letters > 1 and grade_source = 'live'
     """
-    n = _rows(client, sql)[0].n
+    n = _rows(client, sql_text)[0].n
     if n:
         return [f"{n} row(s) emitted a conflicted live grade"]
     return []
 
 
-def check_live_fills_only_gaps(client):
+def check_live_fills_only_gaps(client, sql=SUBMISSION_SQL):
     """Live grades never override a stored grade."""
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select count(*) as n
-    from ({SUBMISSION_SQL})
+    from ({sql})
     where
         stored_letter is not null
         and live_letter is not null
         and stored_letter != live_letter
         and grade_source = 'live'
     """
-    n = _rows(client, sql)[0].n
+    n = _rows(client, sql_text)[0].n
     if n:
         return [f"{n} row(s) took a live grade over a stored grade"]
     return []
 
 
-def check_alpha_grade_domain(client):
+def check_alpha_grade_domain(client, sql=SUBMISSION_SQL):
     """Every emitted letter grade is one of the 18 legal handbook values."""
     domain = ", ".join(f"'{g}'" for g in sorted(ALPHA_GRADE_DOMAIN))
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select count(*) as n
-    from ({SUBMISSION_SQL})
+    from ({sql})
     where AlphaGradeEarned is not null
       and AlphaGradeEarned not in ({domain})
     """
-    n = _rows(client, sql)[0].n
+    n = _rows(client, sql_text)[0].n
     if n:
         return [f"{n} row(s) carry an out-of-domain AlphaGradeEarned"]
     return []
 
 
-def check_in_scope_rows_have_grades(client):
+def check_in_scope_rows_have_grades(client, sql=SUBMISSION_SQL):
     """No in-scope row is left without a letter grade."""
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select region, grade_band, count(*) as n
-    from ({SUBMISSION_SQL})
+    from ({sql})
     where grade_band in ('HS', 'MS') and AlphaGradeEarned is null
     group by region, grade_band
     """
     return [
         f"{r.n} in-scope row(s) in {r.region}/{r.grade_band} have no grade"
-        for r in _rows(client, sql)
+        for r in _rows(client, sql_text)
     ]
 
 
-def check_out_of_scope_rows_blank(client):
+def check_out_of_scope_rows_blank(client, sql=SUBMISSION_SQL):
     """Out-of-scope rows carry no grade and no credit. Scope-boundary guard."""
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select count(*) as n
-    from ({SUBMISSION_SQL})
+    from ({sql})
     where grade_band = 'OUT'
       and (AlphaGradeEarned is not null or CreditsEarned is not null)
     """
-    n = _rows(client, sql)[0].n
+    n = _rows(client, sql_text)[0].n
     if n:
         return [f"{n} out-of-scope row(s) were given a grade or credit"]
     return []
 
 
-def check_credits_earned(client):
+def check_credits_earned(client, sql=SUBMISSION_SQL):
     """CreditsEarned is present, 3-decimal, in range, and within available."""
-    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
-    sql = f"""
+    # trunk-ignore(bandit/B608): sql defaults to the local module constant, not user input
+    sql_text = f"""
     select
         countif(grade_band = 'HS' and CreditsEarned is null) as missing,
         countif(
@@ -221,9 +221,9 @@ def check_credits_earned(client):
             and safe_cast(CreditsEarned as float64)
                 > safe_cast(nullif(AvailableCredit, '') as float64)
         ) as over_available
-    from ({SUBMISSION_SQL})
+    from ({sql})
     """
-    r = _rows(client, sql)[0]
+    r = _rows(client, sql_text)[0]
     failures = []
     if r.missing:
         failures.append(f"{r.missing} HS row(s) missing CreditsEarned")
@@ -260,41 +260,34 @@ def run_checks(client):
 
 
 def self_test(client):
-    """Prove each check group fires. Mutates SQL in memory only."""
+    """Prove the real checks fire on injected defects. Mutates SQL in memory.
+
+    Each block calls the ACTUAL check function against the mutated SQL, so
+    deleting a check from CHECKS, widening its domain, or weakening its
+    predicate makes this self-test fail. A self-test that re-implements the
+    check's own predicate would keep passing with the check removed, which is
+    worse than no self-test at all - it manufactures false confidence.
+    """
     failures = []
 
-    # An out-of-domain grade must be caught by the domain check.
+    # An out-of-domain grade must be caught by check_alpha_grade_domain.
     bad_domain = SUBMISSION_SQL.replace(
         "candidate_letter,\n                cast(null as string)",
         "'F*',\n                cast(null as string)",
     )
     if bad_domain == SUBMISSION_SQL:
         failures.append("self-test could not inject a bad grade domain")
-    else:
-        # trunk-ignore(bandit/B608): bad_domain is a local in-memory mutation, not user input
-        sql = f"""
-        select count(*) as n
-        from ({bad_domain})
-        where AlphaGradeEarned is not null
-          and AlphaGradeEarned not in ('A', 'B', 'C', 'D', 'F')
-        """
-        if _rows(client, sql)[0].n == 0:
-            failures.append("domain check would not have caught 'F*'")
+    elif not check_alpha_grade_domain(client, sql=bad_domain):
+        failures.append("check_alpha_grade_domain missed an 'F*' grade")
 
-    # A 1-decimal credit must be caught by the format check.
+    # A 1-decimal credit must be caught by check_credits_earned.
     bad_format = SUBMISSION_SQL.replace("format('%.3f'", "format('%.1f'")
     if bad_format == SUBMISSION_SQL:
         failures.append("self-test could not inject a bad credit format")
-    else:
-        # trunk-ignore(bandit/B608): bad_format is a local in-memory mutation, not user input
-        sql = f"""
-        select count(*) as n
-        from ({bad_format})
-        where CreditsEarned is not null
-          and not regexp_contains(CreditsEarned, r'^[0-9]+\\.[0-9]{{3}}$')
-        """
-        if _rows(client, sql)[0].n == 0:
-            failures.append("format check would not have caught 1 decimal")
+    elif not any(
+        "3-decimal" in f for f in check_credits_earned(client, sql=bad_format)
+    ):
+        failures.append("check_credits_earned missed a 1-decimal credit")
 
     return failures
 
