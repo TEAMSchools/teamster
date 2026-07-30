@@ -268,3 +268,14 @@ data_tests:
         dagster:
           ref:
             name: dim_student_section_enrollments
+
+  - name: rpt_tableau__gpa_cumulative_year__one_latest_graded_year
+    description: >-
+      Exactly one academic year may carry `is_latest_graded_year`. More than one
+      means the latest-graded-year CTE fanned out; zero means no year has posted
+      Y1 grades, which would leave the dashboard with no default year.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__gpa_cumulative_year

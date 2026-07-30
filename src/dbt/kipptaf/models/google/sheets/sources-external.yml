@@ -343,6 +343,43 @@ sources:
                 - sheets
                 - topline
                 - enrollment_targets
+      - name: src_google_sheets__gpa_goals
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/1jEZHhe6ZGM0k2fFqDKlh3I45FRjTRa-uYT1rY0JmtlA
+            sheet_range: src_google_sheets__gpa_goals
+            skip_leading_rows: 1
+        columns:
+          - name: academic_year
+            data_type: int64
+          - name: org_level
+            data_type: string
+          - name: region
+            data_type: string
+          - name: schoolid
+            data_type: int64
+          - name: grade_low
+            data_type: int64
+          - name: grade_high
+            data_type: int64
+          - name: metric
+            data_type: string
+          - name: threshold
+            data_type: numeric
+          - name: direction
+            data_type: string
+          - name: goal
+            data_type: numeric
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - gpa_goals
       - name: src_google_sheets__kippfwd__goals
         external:
           options:
