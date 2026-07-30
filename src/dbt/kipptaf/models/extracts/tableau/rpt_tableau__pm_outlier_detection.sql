@@ -69,13 +69,6 @@ with
             srh.home_work_location_name,
             srh.formatted_name,
             srh.reports_to_formatted_name,
-            srh.home_business_unit_name,
-            srh.job_function,
-            srh.mail,
-            srh.user_principal_name,
-            srh.sam_account_name,
-            srh.reports_to_mail,
-            srh.reports_to_sam_account_name,
 
             avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
@@ -96,14 +89,7 @@ with
             srh.job_title,
             srh.home_work_location_name,
             srh.formatted_name,
-            srh.reports_to_formatted_name,
-            srh.home_business_unit_name,
-            srh.job_function,
-            srh.mail,
-            srh.user_principal_name,
-            srh.sam_account_name,
-            srh.reports_to_mail,
-            srh.reports_to_sam_account_name
+            srh.reports_to_formatted_name
     )
 
 -- trunk-ignore(sqlfluff/ST06): contract column order is mandated
@@ -161,7 +147,7 @@ select
     lc.campus_name,
 
     case
-        sa.home_business_unit_name
+        trh.home_business_unit_name
         when 'TEAM'
         then 'TEAM Academy Charter School'
         when 'KCNA'
@@ -170,18 +156,18 @@ select
         then 'KIPP Miami'
         when 'KNJ'
         then 'KIPP TEAM and Family Schools Inc.'
-        else sa.home_business_unit_name
+        else trh.home_business_unit_name
     end as home_business_unit_name,
-    sa.home_department_name,
-    sa.job_function,
-    sa.job_title,
+    trh.home_department_name,
+    trh.job_function,
+    trh.job_title,
 
-    sa.mail,
-    sa.user_principal_name,
-    sa.sam_account_name,
+    trh.mail,
+    trh.user_principal_name,
+    trh.sam_account_name,
 
-    sa.reports_to_mail,
-    sa.reports_to_sam_account_name,
+    trh.reports_to_mail,
+    trh.reports_to_sam_account_name,
 
     sa.reports_to_formatted_name as teacher_manager,
     sa.overall_score as teacher_overall_score,
@@ -205,5 +191,11 @@ inner join
     and sd.academic_year = sa.academic_year
     and sd.reporting_term = sa.term_code
 left join
+    {{ ref("int_people__staff_roster_history") }} as trh
+    on sa.employee_number = trh.employee_number
+    and sd.end_date_timestamp
+    between trh.effective_date_start_timestamp and trh.effective_date_end_timestamp
+    and trh.primary_indicator
+left join
     {{ ref("int_people__location_crosswalk") }} as lc
-    on sa.home_work_location_name = lc.location_name
+    on trh.home_work_location_name = lc.location_name
