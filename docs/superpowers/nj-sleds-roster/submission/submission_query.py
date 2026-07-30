@@ -269,6 +269,41 @@ with
                 else 'none'
             end as grade_source,
         from conflict_guarded
+    ),
+
+    emitted_grade as (
+        select
+            *,
+
+            if(
+                grade_band in ('HS', 'MS')
+                and candidate_letter in (
+                    'A', 'A+', 'A-', 'B', 'B+', 'B-',
+                    'C', 'C+', 'C-', 'D', 'D+', 'D-',
+                    'E', 'E+', 'E-', 'F', 'F+', 'F-'
+                ),
+                candidate_letter,
+                cast(null as string)
+            ) as emitted_alpha_grade,
+        from sourced
+    ),
+
+    emitted_credit as (
+        select
+            *,
+
+            case
+                when grade_band != 'HS'
+                then cast(null as string)
+                when safe_stored_credit is not null
+                then format('%.3f', safe_stored_credit)
+                when emitted_alpha_grade is null
+                then cast(null as string)
+                when emitted_alpha_grade like 'F%'
+                then '0.000'
+                else format('%.3f', available_credit_num)
+            end as emitted_credits_earned,
+        from emitted_grade
     )
 
 select
@@ -291,9 +326,9 @@ select
     LocalCourseTitle,
     LocalCourseCode,
     LocalSectionCode,
-    CreditsEarned,
+    emitted_credits_earned as CreditsEarned,
     NumericGradeEarned,
-    AlphaGradeEarned,
+    emitted_alpha_grade as AlphaGradeEarned,
     CompletionStatus,
     CourseType,
     DualInstitution,
@@ -307,5 +342,5 @@ select
     n_live_letters,
     candidate_letter,
     grade_source,
-from sourced
+from emitted_credit
 """

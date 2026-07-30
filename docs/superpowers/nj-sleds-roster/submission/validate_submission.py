@@ -7,7 +7,7 @@ only - never row-level values, which are PII.
 import sys
 
 from google.cloud import bigquery
-from submission_query import SUBMISSION_SQL
+from submission_query import ALPHA_GRADE_DOMAIN, SUBMISSION_SQL
 
 PROJECT = "teamster-332318"
 
@@ -156,6 +156,88 @@ def check_live_fills_only_gaps(client):
     return []
 
 
+def check_alpha_grade_domain(client):
+    """Every emitted letter grade is one of the 18 legal handbook values."""
+    domain = ", ".join(f"'{g}'" for g in sorted(ALPHA_GRADE_DOMAIN))
+    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
+    sql = f"""
+    select count(*) as n
+    from ({SUBMISSION_SQL})
+    where AlphaGradeEarned is not null
+      and AlphaGradeEarned not in ({domain})
+    """
+    n = _rows(client, sql)[0].n
+    if n:
+        return [f"{n} row(s) carry an out-of-domain AlphaGradeEarned"]
+    return []
+
+
+def check_in_scope_rows_have_grades(client):
+    """No in-scope row is left without a letter grade."""
+    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
+    sql = f"""
+    select region, grade_band, count(*) as n
+    from ({SUBMISSION_SQL})
+    where grade_band in ('HS', 'MS') and AlphaGradeEarned is null
+    group by region, grade_band
+    """
+    return [
+        f"{r.n} in-scope row(s) in {r.region}/{r.grade_band} have no grade"
+        for r in _rows(client, sql)
+    ]
+
+
+def check_out_of_scope_rows_blank(client):
+    """Out-of-scope rows carry no grade and no credit. Scope-boundary guard."""
+    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
+    sql = f"""
+    select count(*) as n
+    from ({SUBMISSION_SQL})
+    where grade_band = 'OUT'
+      and (AlphaGradeEarned is not null or CreditsEarned is not null)
+    """
+    n = _rows(client, sql)[0].n
+    if n:
+        return [f"{n} out-of-scope row(s) were given a grade or credit"]
+    return []
+
+
+def check_credits_earned(client):
+    """CreditsEarned is present, 3-decimal, in range, and within available."""
+    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
+    sql = f"""
+    select
+        countif(grade_band = 'HS' and CreditsEarned is null) as missing,
+        countif(
+            CreditsEarned is not null
+            and not regexp_contains(CreditsEarned, r'^[0-9]+\\.[0-9]{{3}}$')
+        ) as malformed,
+        countif(
+            CreditsEarned is not null
+            and safe_cast(CreditsEarned as float64) not between 0.0 and 35.0
+        ) as out_of_range,
+        countif(
+            CreditsEarned is not null
+            and safe_cast(CreditsEarned as float64)
+                > safe_cast(nullif(AvailableCredit, '') as float64)
+        ) as over_available
+    from ({SUBMISSION_SQL})
+    """
+    r = _rows(client, sql)[0]
+    failures = []
+    if r.missing:
+        failures.append(f"{r.missing} HS row(s) missing CreditsEarned")
+    if r.malformed:
+        failures.append(f"{r.malformed} row(s) CreditsEarned not 3-decimal formatted")
+    if r.out_of_range:
+        failures.append(f"{r.out_of_range} row(s) CreditsEarned outside 0.000-35.000")
+    if r.over_available:
+        failures.append(
+            f"{r.over_available} row(s) CreditsEarned exceeds AvailableCredit"
+        )
+    return failures
+
+
 CHECKS = [
     check_row_parity,
     check_band_counts,
@@ -163,6 +245,10 @@ CHECKS = [
     check_no_stored_conflicts,
     check_no_live_conflicts,
     check_live_fills_only_gaps,
+    check_alpha_grade_domain,
+    check_in_scope_rows_have_grades,
+    check_out_of_scope_rows_blank,
+    check_credits_earned,
 ]
 
 
