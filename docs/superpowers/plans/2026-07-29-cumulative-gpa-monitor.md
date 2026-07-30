@@ -62,7 +62,7 @@ land before the dashboard's goal tiles are trustworthy.
   currently holds one unrelated row, so the goal tiles have nothing to render
   until this happens.
 
-## Four deviations from the spec, and why
+## Five deviations from the spec, and why
 
 **1. Band labels derive from `gcy`, not `gcc` — this is a correction.** The spec
 says both band labels come from `gcc.cumulative_y1_gpa_projected_unweighted` /
@@ -102,6 +102,15 @@ The spec asks for `expression_is_true` asserting `is_latest_graded_year` is true
 for exactly one year. That macro compiles to `where not (<expression>)` and
 evaluates per row, so it cannot express a cross-row cardinality claim. Task 3
 implements it as a singular test instead.
+
+**5. `is_on_cusp_3_0` derives from `gcy`, not the spec's projected column.** The
+spec defines the cusp on `cumulative_y1_gpa_projected_unweighted`, which is
+`gcc`-sourced and therefore current-year-only. Task 3 sources it from
+`gcy.cumulative_y1_gpa_unweighted` instead, for the same reason as deviation 1 —
+so the cusp population exists across history and can be trended rather than
+being visible for a single year. The shipped predicate is also half-open,
+`>= 2.75 and < 3.00`, which closes the gap the spec's `between 2.75 and 2.999`
+leaves open at values such as 2.9995.
 
 ## No unit test for this model, deliberately
 
@@ -814,6 +823,18 @@ human, after the dbt PR merges and the extract refreshes in prod.
    `potential_gpa_credits_current_year`, and `gpa_needed_for_cumulative_3_0`.
    Access is governed by the existing Tableau region and role gates; record in
    the PR which groups the workbook is published to.
+
+   Expect this roster to render mostly empty until SY26-27 grades post. The
+   default year filter uses `is_latest_graded_year`, which currently resolves to
+   2025, while the current-state columns attach to the `is_projected` year, 2026
+   — different years today. On the default slice
+   `cumulative_y1_gpa_unweighted_as_of_today`, `gpa_needed_for_cumulative_3_0`,
+   `potential_gpa_credits_current_year`, `gpa_band_as_of_today_label`, and
+   `is_cumulative_3_0_attainable` are all null, so the roster shows students
+   with three of five columns blank and the spec's students-to-move tile reads
+   zero. The two flags coincide from roughly November onward and everything
+   populates. This is the expected pre-season state, not a broken join.
+
 1. Update the `cumulative_gpa_monitor` exposure URL and drop the `TODO(#4619)`.
 
 ## Deferred to a separate spec

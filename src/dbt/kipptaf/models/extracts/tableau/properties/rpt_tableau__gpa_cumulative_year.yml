@@ -41,7 +41,7 @@ models:
                   - below 2.0
           - not_null:
               config:
-                where: >-
+                where: |
                   school_level = 'HS' and cumulative_y1_gpa_unweighted is not
                   null
       - name: gpa_band_as_of_today_label
@@ -62,7 +62,7 @@ models:
                   - below 2.0
           - not_null:
               config:
-                where: >-
+                where: |
                   is_projected and school_level = 'HS' and
                   cumulative_y1_gpa_unweighted_as_of_today is not null
       - name: _dbt_source_relation
