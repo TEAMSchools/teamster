@@ -103,7 +103,8 @@ models:
         description: >-
           Date after which the tracking term's data is locked for reporting. It
           also anchors PM2 and PM3 eligibility and the recent-leave lookback
-          window. Null on prior-year rows.
+          window. Null on prior-year rows. For unscored/unlocked BOY rounds,
+          this is the start date for coaching conversations.
       - name: final_score
         data_type: float64
         description: >-
