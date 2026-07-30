@@ -69,6 +69,13 @@ with
             srh.home_work_location_name,
             srh.formatted_name,
             srh.reports_to_formatted_name,
+            srh.home_business_unit_name,
+            srh.job_function,
+            srh.mail,
+            srh.user_principal_name,
+            srh.sam_account_name,
+            srh.reports_to_mail,
+            srh.reports_to_sam_account_name,
 
             avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
@@ -89,9 +96,17 @@ with
             srh.job_title,
             srh.home_work_location_name,
             srh.formatted_name,
-            srh.reports_to_formatted_name
+            srh.reports_to_formatted_name,
+            srh.home_business_unit_name,
+            srh.job_function,
+            srh.mail,
+            srh.user_principal_name,
+            srh.sam_account_name,
+            srh.reports_to_mail,
+            srh.reports_to_sam_account_name
     )
 
+-- trunk-ignore(sqlfluff/ST06): contract column order is mandated
 select
     sd.observer_employee_number,
     sd.academic_year,
@@ -141,9 +156,33 @@ select
 
     sa.employee_number as teacher_employee_number,
     sa.formatted_name as teacher_name,
-    sa.home_department_name as teacher_department,
-    sa.job_title as teacher_job_title,
-    sa.home_work_location_name as teacher_location,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    case
+        sa.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else sa.home_business_unit_name
+    end as home_business_unit_name,
+    sa.home_department_name,
+    sa.job_function,
+    sa.job_title,
+
+    sa.mail,
+    sa.user_principal_name,
+    sa.sam_account_name,
+
+    sa.reports_to_mail,
+    sa.reports_to_sam_account_name,
+
     sa.reports_to_formatted_name as teacher_manager,
     sa.overall_score as teacher_overall_score,
 
@@ -165,3 +204,6 @@ inner join
     on sd.observer_employee_number = sa.observer_employee_number
     and sd.academic_year = sa.academic_year
     and sd.reporting_term = sa.term_code
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on sa.home_work_location_name = lc.location_name
