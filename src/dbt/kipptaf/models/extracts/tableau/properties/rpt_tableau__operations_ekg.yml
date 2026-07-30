@@ -1,13 +1,52 @@
 models:
   - name: rpt_tableau__operations_ekg
     columns:
+      - name: location_clean_name
+        data_type: string
+        description: >-
+          Canonical location from int_people__location_crosswalk. Drives the
+          Tableau location gate; retired name aliases collapse onto their
+          canonical clean name here.
+        data_tests:
+          - not_null
+      - name: home_business_unit_name
+        data_type: string
+        description: >-
+          Legal entity. Drives the Tableau entity gate. Never location_region,
+          which is a property of the location rather than the person.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
+                  - KIPP TEAM and Family Schools Inc.
       - name: respondent
         data_type: string
       - name: google_email
         data_type: string
-      - name: respondent_job_title
+      - name: campus_name
         data_type: string
-      - name: respondent_location
+      - name: home_department_name
+        data_type: string
+      - name: job_function
+        data_type: string
+        description: Drives the AP role predicate; NULL for 63 active staff.
+      - name: job_title
+        data_type: string
+      - name: mail
+        data_type: string
+        description: Post-cutover Tableau identity.
+      - name: user_principal_name
+        data_type: string
+      - name: sam_account_name
+        data_type: string
+      - name: reports_to_mail
+        data_type: string
+      - name: reports_to_sam_account_name
         data_type: string
       - name: form_id
         data_type: string
@@ -36,8 +75,6 @@ models:
       - name: walkthrough_round
         data_type: string
       - name: school
-        data_type: string
-      - name: region
         data_type: string
       - name: grade_band
         data_type: string
