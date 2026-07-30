@@ -99,6 +99,9 @@ select
 
     coalesce(s.address_source, 'ambiguous') as resolution_status,
 from sourced as s
+-- address_contact_id is only ever set to a contact whose candidate_count is
+-- exactly 1, so this join cannot fan out; when it is null (an unresolved
+-- address) nothing matches and the address fields stay null.
 left join address_candidates as a on s.address_contact_id = a.finalsite_enrollment_id
 left join
     {{ ref("stg_finalsite__contacts") }} as pc
