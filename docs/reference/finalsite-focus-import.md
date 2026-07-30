@@ -197,17 +197,25 @@ empty address in Focus even after a real one is entered, because import-once
 never sends them again. To prevent that, the pipeline **holds a record back
 until it is complete**:
 
-- **Addresses** — a student's address is sent only once street, city, state, and
-  ZIP are all present. A student with a blank or partial address is skipped that
-  run and flows the first run the full address exists in Finalsite.
+- **Addresses** — a student's address is sent only once Finalsite points to
+  exactly one complete address for them. Two things can hold it back. The
+  address may be **incomplete** — street, city, state, and ZIP must all be
+  present. Or Finalsite may hold **more than one** address for the student: the
+  pipeline reads the households the student is linked to, falls back to the
+  households their primary contact is linked to when the student's own linkage
+  is not decisive, and sends nothing when neither narrows to one. Either way the
+  student is skipped that run and flows the first run Finalsite resolves to a
+  single complete address.
 - **Contacts** — a contact is sent only once it has a name. A nameless contact
   is skipped and flows once the name is filled in.
 
 > **A student can be enrolled in Focus with no address yet.** That is expected
-> when Finalsite has no complete address for them — enter the address in
-> Finalsite and it flows on the next run. (Demographics is not held back for
-> completeness this way; a student's demographics import as soon as the student
-> is enrolled in Finalsite and new to Focus.)
+> when Finalsite has no complete address for them, or when it has several and
+> none is marked as the one to use. Fix it in Finalsite — fill in the missing
+> address, or retire the household the family no longer lives at — and it flows
+> on the next run. (Demographics is not held back this way; a student's
+> demographics import as soon as the student is enrolled in Finalsite and new to
+> Focus.)
 
 ## Where to make corrections
 
@@ -260,10 +268,17 @@ pipeline will not reconcile them for you.
   feeds now require Finalsite to mark the student **enrolled** — a student who
   is only accepted, in progress, or assigned a school does not appear in any of
   them yet.
-- **A complete address is required before it imports.** A student with a blank
-  or partial address in Finalsite gets no address in Focus — by design, since an
-  empty one would lock in. Enter the full street/city/state/ZIP in Finalsite and
-  it flows next run; likewise a contact needs a name before it is sent.
+- **One complete address is required before it imports.** A student whose
+  Finalsite address is blank or partial gets no address in Focus — by design,
+  since an empty one would lock in. So does a student Finalsite links to more
+  than one address, where there is no way to tell which one to send. Enter the
+  full street/city/state/ZIP, or retire the household the family has moved out
+  of, and it flows next run; likewise a contact needs a name before it is sent.
+- **Duplicate households are the common cause of a missing address.** A family
+  with two live household records in Finalsite — usually an old address and a
+  current one — cannot be resolved automatically, because Finalsite does not
+  record which of the two came first. Retiring the stale household fixes it for
+  that family.
 - **Set the last-attended date** in Finalsite when a student withdraws — it is
   what triggers the end date and drop code being sent.
 - **Corrections after the first import are manual.** A wrong entry code, drop
