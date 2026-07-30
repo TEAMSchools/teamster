@@ -153,7 +153,17 @@ left join
 where
     srh.primary_indicator
     and srh.assignment_status = 'Active'
-    and (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
+    /*
+        job_function (ADP codes TEACH / TIR) is not set on newly created work
+        assignments, so fall back to the job title until it fills in
+    */
+    and (
+        srh.job_function in ('Teacher', 'Teacher in Residence')
+        or (
+            srh.job_function is null
+            and (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
+        )
+    )
 
 union all
 
