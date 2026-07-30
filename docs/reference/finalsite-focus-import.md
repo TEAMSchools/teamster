@@ -277,8 +277,8 @@ pipeline will not reconcile them for you.
 - **Duplicate households are the common cause of a missing address.** A family
   with two live household records in Finalsite — usually an old address and a
   current one — cannot be resolved automatically, because Finalsite does not
-  record which of the two came first. Retiring the stale household fixes it for
-  that family.
+  mark which of the two is the one to use. Retiring the stale household fixes it
+  for that family.
 - **Set the last-attended date** in Finalsite when a student withdraws — it is
   what triggers the end date and drop code being sent.
 - **Corrections after the first import are manual.** A wrong entry code, drop
