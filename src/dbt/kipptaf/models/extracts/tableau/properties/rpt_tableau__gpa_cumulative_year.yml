@@ -14,7 +14,7 @@ models:
       relationship. Do NOT relate it to rpt_tableau__student_course_grades on
       student_number alone: that match carries no academic year and fans a
       student across every year they attended. Current seniors carry up to ten
-      rows here.
+      rows here. Scoped to the Newark and Camden regions.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
