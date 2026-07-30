@@ -285,21 +285,3 @@ data_tests:
         dagster:
           ref:
             name: stg_google_sheets__people__cube_access_individual_exceptions
-
-  - name: test_cube_access_individual_exceptions_location_resolves
-    description: >-
-      Every live row in
-      stg_google_sheets__people__cube_access_individual_exceptions with
-      additional_location_type = region or school must have an
-      additional_location_name that resolves to a real dim_regions.legal_entity
-      or dim_locations.name -- a typo doesn't fail the staging not_null check
-      (the column IS populated), it silently joins to nothing in
-      dim_staff_cube_access, so the row's location grant resolves to an empty
-      abbreviation set and grants the person nothing, with no visible error
-      anywhere else in the pipeline.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: dim_staff_cube_access

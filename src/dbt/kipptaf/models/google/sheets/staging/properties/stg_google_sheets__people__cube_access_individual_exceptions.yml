@@ -14,6 +14,14 @@ models:
       describe the person, not a location, so they don't multiply across a
       person's location-grant rows.
     data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - additional_location_type
+              - additional_location_name
+          config:
+            severity: error
       - dbt_utils.expression_is_true:
           arguments:
             expression: >-
@@ -67,12 +75,29 @@ models:
           whenever additional_location_type is region or school; null when
           additional_location_type is network or this row carries no location
           grant.
-      - name: include_student_data
-        data_type: boolean
-        description: >-
-          Whether this row's location grant (if any) also widens student-data
-          visibility to that location, not just staff visibility. Per-row -- one
-          employee's multiple location grants may differ. Null treated as false.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_regions')
+                field: legal_entity
+              config:
+                where: >-
+                  additional_location_type = 'region' and status = 'active' and
+                  (expiry_date is null or expiry_date >= current_date('{{
+                  var("local_timezone") }}')) and (grant_date is null or
+                  grant_date <= current_date('{{ var("local_timezone") }}'))
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: "`name`"
+              config:
+                where: >-
+                  additional_location_type = 'school' and status = 'active' and
+                  (expiry_date is null or expiry_date >= current_date('{{
+                  var("local_timezone") }}')) and (grant_date is null or
+                  grant_date <= current_date('{{ var("local_timezone") }}'))
+                severity: error
       - name: staff_department_scope
         data_type: string
         description: >-
@@ -144,11 +169,36 @@ models:
                   - teaching_staff
               config:
                 severity: error
+      - name: status
+        data_type: string
+        description: >-
+          active/expired/revoked. Only active rows (also gated by grant_date and
+          expiry_date) are read by dim_staff_cube_access. Set to revoked to end
+          a grant early while keeping the row for audit history, rather than
+          deleting it.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - accepted_values:
+              arguments:
+                values: [active, expired, revoked]
+              config:
+                severity: error
+      - name: include_student_data
+        data_type: boolean
+        description: >-
+          Whether this row's location grant (if any) also widens student-data
+          visibility to that location, not just staff visibility. Per-row -- one
+          employee's multiple location grants may differ. Null treated as false.
       - name: business_justification
         data_type: string
         description: >-
           Free-text business reason for this row's grant, for sheet-level
           auditing only. Not read by dim_staff_cube_access.
+        config:
+          meta:
+            contains_pii: true
       - name: requested_by
         data_type: string
         description: >-
@@ -177,24 +227,11 @@ models:
           The date this row's grant stops applying. Null means it never expires.
           A past expiry_date excludes the row from dim_staff_cube_access,
           regardless of status.
-      - name: status
-        data_type: string
-        description: >-
-          active/expired/revoked. Only active rows (also gated by grant_date and
-          expiry_date) are read by dim_staff_cube_access. Set to revoked to end
-          a grant early while keeping the row for audit history, rather than
-          deleting it.
-        data_tests:
-          - not_null:
-              config:
-                severity: error
-          - accepted_values:
-              arguments:
-                values: [active, expired, revoked]
-              config:
-                severity: error
       - name: notes
         data_type: string
         description: >-
           Free-text reason for the exception, for sheet-level auditing only. Not
           read by dim_staff_cube_access.
+        config:
+          meta:
+            contains_pii: true

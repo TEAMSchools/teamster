@@ -13,6 +13,34 @@ models:
       exposed as a Cube. The staff directory and aggregate summary are open —
       these scopes only constrain sensitive fields. Unresolved roles emit 'none'
       (deny), never NULL.
+    data_tests:
+      # A remit-scoped PII scope (all_in_scope / teaching_staff) with a none
+      # location AND no additional-location grant, or a none department, is a
+      # resolution bug: the remit resolves empty, and Cube (Tesseract) throws
+      # "Values required for filter" on the empty `equals []` row_level filter
+      # rather than returning zero rows (verified #4269). access.buildGroups now
+      # suppresses the group in that state so the viewer default-denies
+      # cleanly, but the state is still a misconfiguration — error (not warn) so
+      # it can't ship. The location axis is satisfied by EITHER
+      # staff_location_scope (role/department-derived) OR a non-empty
+      # additional_location_grants (individual-exception-derived) --
+      # additional_location_grants is never NULL (coalesced to [] in
+      # dim_staff_cube_access.sql), so array_length is always well-defined.
+      # reporting_chain scopes key on the staff_key chain, not this remit, so
+      # they are not covered here.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              staff_pii_scope not in ('all_in_scope', 'teaching_staff')
+              or (
+                (
+                  staff_location_scope != 'none'
+                  or array_length(additional_location_grants) > 0
+                )
+                and staff_department_scope != 'none'
+              )
+          config:
+            severity: error
     columns:
       - name: staff_key
         data_type: string

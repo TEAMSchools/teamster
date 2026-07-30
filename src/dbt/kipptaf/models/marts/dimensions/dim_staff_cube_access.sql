@@ -176,7 +176,6 @@ with
         select
             additional_location_type,
             additional_location_name,
-            include_student_data,
             staff_department_scope,
             staff_pii_scope,
             staff_compensation_scope,
@@ -187,11 +186,16 @@ with
             -- mangling leading zeros); dim_staff's is INT64 (staff_unique_id) --
             -- cast once here so every downstream join is a plain column match.
             safe_cast(employee_number as int64) as employee_number,
+
+            -- additional_location_type is already constrained to
+            -- network/region/school by the staging accepted_values test, and a
+            -- null (remit-only row) is filtered out downstream (where
+            -- additional_location_type is not null) before this could ever
+            -- resolve to 'none' -- a plain coalesce, not a case, is enough.
+            coalesce(additional_location_type, 'none') as location_scope,
+            coalesce(include_student_data, false) as includes_student_data,
         from {{ ref("stg_google_sheets__people__cube_access_individual_exceptions") }}
-        where
-            status = 'active'
-            and (expiry_date is null or expiry_date >= current_date('America/New_York'))
-            and (grant_date is null or grant_date <= current_date('America/New_York'))
+        where {{ is_live_row("status", "grant_date", "expiry_date") }}
     ),
 
     -- At most one live row per employee sets these (enforced by
@@ -218,19 +222,10 @@ with
             iel.employee_number,
             array_agg(
                 struct(
-                    case
-                        iel.additional_location_type
-                        when 'network'
-                        then 'network'
-                        when 'region'
-                        then 'region'
-                        when 'school'
-                        then 'school'
-                        else 'none'
-                    end as location_scope,
+                    iel.location_scope,
                     reg.region_key,
                     loc.abbreviation as location_abbreviation,
-                    coalesce(iel.include_student_data, false) as includes_student_data
+                    iel.includes_student_data
                 )
             ) as additional_location_grants,
         from individual_exceptions_live as iel
