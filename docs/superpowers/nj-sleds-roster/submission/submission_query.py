@@ -56,7 +56,36 @@ ALPHA_GRADE_DOMAIN = frozenset(
     }
 )
 
-SUBMISSION_SQL = """
+# The passing subset of ALPHA_GRADE_DOMAIN ("D-" or better, per the design
+# spec). Named explicitly rather than derived by excluding the failing
+# grades, so both lists stay independently reviewable. Must remain a subset
+# of ALPHA_GRADE_DOMAIN.
+PASSING_ALPHA_GRADES = frozenset(
+    {
+        "A",
+        "A+",
+        "A-",
+        "B",
+        "B+",
+        "B-",
+        "C",
+        "C+",
+        "C-",
+        "D",
+        "D+",
+        "D-",
+    }
+)
+
+# Sorted, comma-joined SQL literal lists built from the constants above, so
+# the Python domain and the SQL `in (...)` domain can never drift apart.
+# sorted() on these codes happens to match the conventional A, A+, A- order,
+# since '+' sorts before '-' and a bare letter is a prefix of both.
+_ALPHA_GRADE_DOMAIN_SQL = ", ".join(f"'{g}'" for g in sorted(ALPHA_GRADE_DOMAIN))
+_PASSING_ALPHA_GRADES_SQL = ", ".join(f"'{g}'" for g in sorted(PASSING_ALPHA_GRADES))
+
+# trunk-ignore(bandit/B608): grade domain values are module constants, not user input
+SUBMISSION_SQL = f"""
 with
     sced as (
         select
@@ -277,11 +306,7 @@ with
 
             if(
                 grade_band in ('HS', 'MS')
-                and candidate_letter in (
-                    'A', 'A+', 'A-', 'B', 'B+', 'B-',
-                    'C', 'C+', 'C-', 'D', 'D+', 'D-',
-                    'E', 'E+', 'E-', 'F', 'F+', 'F-'
-                ),
+                and candidate_letter in ({_ALPHA_GRADE_DOMAIN_SQL}),
                 candidate_letter,
                 cast(null as string)
             ) as emitted_alpha_grade,
@@ -299,9 +324,9 @@ with
                 then format('%.3f', safe_stored_credit)
                 when emitted_alpha_grade is null
                 then cast(null as string)
-                when emitted_alpha_grade like 'F%'
-                then '0.000'
-                else format('%.3f', available_credit_num)
+                when emitted_alpha_grade in ({_PASSING_ALPHA_GRADES_SQL})
+                then format('%.3f', available_credit_num)
+                else '0.000'
             end as emitted_credits_earned,
         from emitted_grade
     )
