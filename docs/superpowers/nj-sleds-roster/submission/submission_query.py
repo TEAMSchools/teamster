@@ -66,17 +66,65 @@ with
         from `teamster-332318.cokafor.ref_sced_codes`
     ),
 
+    stored_raw as (
+        select
+            _dbt_source_project,
+            `grade`,
+            earnedcrhrs,
+
+            cast(studentid as string) as studentid_str,
+            cast(sectionid as string) as sectionid_str,
+        from `teamster-332318.kipptaf_powerschool.stg_powerschool__storedgrades`
+        where
+            academic_year = 2025
+            and storecode = 'Y1'
+            and _dbt_source_project in ('kippnewark', 'kippcamden')
+    ),
+
+    stored as (
+        select
+            _dbt_source_project,
+            studentid_str,
+            sectionid_str,
+
+            max(`grade`) as stored_letter,
+            max(earnedcrhrs) as stored_earned_credit,
+            count(distinct `grade`) as n_stored_letters,
+        from stored_raw
+        group by _dbt_source_project, studentid_str, sectionid_str
+    ),
+
+    students as (
+        select
+            _dbt_source_project,
+
+            cast(student_number as string) as student_number_str,
+            cast(id as string) as studentid_str,
+        from `teamster-332318.kipptaf_powerschool.stg_powerschool__students`
+        where _dbt_source_project in ('kippnewark', 'kippcamden')
+    ),
+
     newark_joined as (
         select
             e.*,
 
             sc.sced_level,
+            sg.stored_letter,
+            sg.stored_earned_credit,
+            sg.n_stored_letters,
 
             'newark' as region,
         from `teamster-332318.cokafor.stg_student_extract_newark` as e
         left join sced as sc
             on e.SubjectArea = sc.subject_area
             and e.CourseIdentifier = sc.course_identifier
+        left join students as st
+            on e.LocalIdentificationNumber = st.student_number_str
+            and st._dbt_source_project = 'kippnewark'
+        left join stored as sg
+            on st.studentid_str = sg.studentid_str
+            and e.LocalSectionCode = sg.sectionid_str
+            and sg._dbt_source_project = 'kippnewark'
     ),
 
     camden_joined as (
@@ -84,12 +132,22 @@ with
             e.*,
 
             sc.sced_level,
+            sg.stored_letter,
+            sg.stored_earned_credit,
+            sg.n_stored_letters,
 
             'camden' as region,
         from `teamster-332318.cokafor.stg_student_extract_camden` as e
         left join sced as sc
             on e.SubjectArea = sc.subject_area
             and e.CourseIdentifier = sc.course_identifier
+        left join students as st
+            on e.LocalIdentificationNumber = st.student_number_str
+            and st._dbt_source_project = 'kippcamden'
+        left join stored as sg
+            on st.studentid_str = sg.studentid_str
+            and e.LocalSectionCode = sg.sectionid_str
+            and sg._dbt_source_project = 'kippcamden'
     ),
 
     joined as (
@@ -168,5 +226,8 @@ select
     DualInstitution,
     region,
     grade_band,
+    stored_letter,
+    stored_earned_credit,
+    n_stored_letters,
 from scoped
 """

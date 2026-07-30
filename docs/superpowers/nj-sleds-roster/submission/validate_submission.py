@@ -62,7 +62,58 @@ def check_band_counts(client):
     return failures
 
 
-CHECKS = [check_row_parity, check_band_counts]
+EXPECTED_STORED_COVERAGE = {
+    ("newark", "HS"): 10675,
+    ("newark", "MS"): 10682,
+    ("camden", "HS"): 3616,
+    ("camden", "MS"): 3633,
+}
+
+
+def check_stored_coverage(client):
+    """Stored Y1 grades cover the in-scope bands at the measured rate.
+
+    Counts are a floor, not an equality: a re-pulled extract may match more
+    rows. A drop signals a broken join.
+    """
+    failures = []
+    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
+    sql = f"""
+    select region, grade_band, countif(stored_letter is not null) as matched
+    from ({SUBMISSION_SQL})
+    group by region, grade_band
+    """
+    actual = {(r.region, r.grade_band): r.matched for r in _rows(client, sql)}
+    for key, floor in EXPECTED_STORED_COVERAGE.items():
+        got = actual.get(key, 0)
+        if got < floor:
+            failures.append(
+                f"stored coverage {key[0]}/{key[1]}: expected at least "
+                f"{floor}, got {got}"
+            )
+    return failures
+
+
+def check_no_stored_conflicts(client):
+    """No student-section carries two different stored Y1 letters."""
+    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
+    sql = f"""
+    select count(*) as n
+    from ({SUBMISSION_SQL})
+    where n_stored_letters > 1
+    """
+    n = _rows(client, sql)[0].n
+    if n:
+        return [f"{n} row(s) have conflicting stored Y1 letter grades"]
+    return []
+
+
+CHECKS = [
+    check_row_parity,
+    check_band_counts,
+    check_stored_coverage,
+    check_no_stored_conflicts,
+]
 
 
 def run_checks(client):
