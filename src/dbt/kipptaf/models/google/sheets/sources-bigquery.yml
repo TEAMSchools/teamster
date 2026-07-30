@@ -22,3 +22,18 @@ sources:
                 - sheets
                 - people
                 - student_logins_archive
+      - name: stg_google_sheets__performance_management__leadership_development_metrics_archive
+        identifier: stg_google_sheets__performance_management__leadership_development_metrics
+        description: >
+          Frozen Leadership Development metric definitions, retained read-only
+          after the workflow moved to Lattice on 2026-07-30. Holds only metrics
+          enabled at freeze time. Refs #4627.
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - performance_management
+                - leadership_development_metrics_archive

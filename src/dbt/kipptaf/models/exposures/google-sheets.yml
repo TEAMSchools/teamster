@@ -13,13 +13,19 @@ exposures:
           kinds:
             - googlesheets
   - name: leadership_pm_reminders
-    label: Leadership PM Reminders
+    label: Leadership PM Reminders (archived)
+    description: >
+      Archive only. The Leadership Development workflow moved to Lattice on
+      2026-07-30 and the upstream dbt models are disabled. If an Apps Script on
+      this sheet still mails reminders, it has to be stopped in the sheet
+      itself. Refs #4627.
     type: application
     owner:
       name: Data Team
     url: https://docs.google.com/spreadsheets/d/1_WXqu_-FUhZB_Ww73zWeYQWfdzMVG1YaMBgjGL3WSOk
     depends_on:
-      - ref("rpt_gsheets__leadership_pm_reminders")
+      - source("google_appsheet_archive",
+        "stg_google_appsheet__leadership_development__output_archive")
     config:
       meta:
         dagster:
