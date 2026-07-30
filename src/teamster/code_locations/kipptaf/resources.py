@@ -89,7 +89,9 @@ SSH_RESOURCE_CLEVER = SSHResource(
     remote_port=22,
     username=EnvVar("CLEVER_SFTP_USERNAME"),
     password=EnvVar("CLEVER_SFTP_PASSWORD"),
-    timeout=30,
+    # No `timeout` override: 30s sits exactly ON paramiko's banner + handshake
+    # ceiling, which reintroduces the inversion in #4636. The `SSHResource`
+    # default (45s) already exceeds the 30s this was raised to.
 )
 
 SSH_RESOURCE_COUPA = SSHResource(
@@ -118,7 +120,9 @@ SSH_RESOURCE_ILLUMINATE = SSHResource(
     remote_port=22,
     username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
     password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
-    timeout=30,
+    # No `timeout` override: 30s sits exactly ON paramiko's banner + handshake
+    # ceiling, which reintroduces the inversion in #4636. The `SSHResource`
+    # default (45s) already exceeds the 30s this was raised to.
 )
 
 SSH_RESOURCE_IDAUTO = SSHResource(

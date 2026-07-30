@@ -1,0 +1,372 @@
+models:
+  - name: int_finalsite__student_address_of_record
+    description:
+      One row per Finalsite student record — the student's resolved address of
+      record, or a flag when it cannot be resolved. Grain is
+      `finalsite_enrollment_id` for contacts that carry a `primary`
+      relationship, which is how a student record is identified without reaching
+      for a SIS-specific field; contacts with no primary link are absent
+      entirely. Resolution takes the student's own household linkage when it
+      yields exactly one distinct complete address, falls back to their primary
+      contact's household linkage when it does, and otherwise emits no address.
+      Address identity is `address_1`, `address_2`, `city`, `state`, and `zip` —
+      an apartment difference counts as a different address. Every emitted
+      address is complete by construction, so consumers need no completeness
+      filter of their own. SIS-agnostic — no enrollment, status, or
+      academic-year scoping; receivers filter downstream.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              (
+                  address_source is not null
+                  and address_1 is not null
+                  and city is not null
+                  and state is not null
+                  and zip is not null
+              )
+              or (
+                  address_source is null
+                  and address_1 is null
+                  and city is null
+                  and state is null
+                  and zip is null
+              )
+          config:
+            severity: error
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID of the student; the grain.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: resolution_status
+        data_type: string
+        description:
+          How the address was resolved — `student_household`,
+          `primary_contact_household`, or `ambiguous`. `ambiguous` covers both a
+          student whose records offer several competing complete addresses and
+          one whose records hold no complete address at all; the candidate
+          counts distinguish the two.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - student_household
+                  - primary_contact_household
+                  - ambiguous
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: address_source
+        data_type: string
+        description:
+          Which record supplied the address — `student_household` or
+          `primary_contact_household`. Null when no address was resolved; a
+          non-null value guarantees the address fields are populated and
+          complete.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - student_household
+                  - primary_contact_household
+              config:
+                severity: error
+      - name: student_candidate_count
+        data_type: int64
+        description:
+          Number of distinct complete addresses on the student's own household
+          linkage. One means the student's own records decide the address; more
+          than one means the pick falls through to the primary contact; zero
+          means the student is linked to no household with a mailable address.
+      - name: primary_contact_candidate_count
+        data_type: int64
+        description:
+          Number of distinct complete addresses on the primary contact's
+          household linkage. Used only when the student's own count is not one.
+      - name: address_1
+        data_type: string
+        description:
+          Street address line 1 of the resolved address; null when unresolved.
+        config:
+          meta:
+            contains_pii: true
+      - name: address_2
+        data_type: string
+        description:
+          Street address line 2 (apartment or unit) of the resolved address.
+          Legitimately null when the household has no unit line, and null
+          whenever the address is unresolved.
+        config:
+          meta:
+            contains_pii: true
+      - name: city
+        data_type: string
+        description: City of the resolved address; null when unresolved.
+        config:
+          meta:
+            contains_pii: true
+      - name: state
+        data_type: string
+        description:
+          State code of the resolved address, uppercased; null when unresolved.
+      - name: zip
+        data_type: string
+        description: ZIP code of the resolved address; null when unresolved.
+        config:
+          meta:
+            contains_pii: true
+      - name: country
+        data_type: string
+        description:
+          Country of the resolved address as Finalsite stores it. Not part of
+          the address identity, so it is carried through rather than compared.
+      - name: primary_contact_phone
+        data_type: string
+        description:
+          The primary contact's first phone number in E.164 form. A phone is a
+          contact attribute rather than a household one, so it is independent of
+          which household supplied the address, and it is populated even for an
+          unresolved address. Sourced from the parent because student records
+          almost never carry a phone.
+        config:
+          meta:
+            contains_pii: true
+
+unit_tests:
+  - name: test_address_of_record_student_linkage_decisive
+    description:
+      A student whose own household linkage yields exactly one distinct complete
+      address resolves from it, even though their primary contact carries two.
+      Duplicate household rows carrying the same address collapse to one
+      candidate, and an incomplete household is not a candidate at all.
+    model: int_finalsite__student_address_of_record
+    given:
+      - input: ref('stg_finalsite__contact_relationships')
+        rows:
+          - { finalsite_enrollment_id: stu-1, rel_id: par-1, is_primary: true }
+          - { finalsite_enrollment_id: par-1, rel_id: stu-1, is_primary: null }
+      - input: ref('int_finalsite__contacts__households')
+        format: sql
+        rows: |
+          select
+            'stu-1' as finalsite_enrollment_id,
+            'hh-1' as household_id,
+            '123 Main St' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33101' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'stu-1', 'hh-2', '123 Main St', null, 'Miami', 'FL', '33101',
+            'US', true
+          union all
+          select 'stu-1', 'hh-3', '9 Nowhere Ln', null, 'Miami', 'FL', null,
+            'US', false
+          union all
+          select 'par-1', 'hh-1', '123 Main St', null, 'Miami', 'FL', '33101',
+            'US', true
+          union all
+          select 'par-1', 'hh-4', '400 Elsewhere Ave', null, 'Miami', 'FL',
+            '33199', 'US', true
+      - input: ref('stg_finalsite__contacts')
+        rows:
+          - { finalsite_enrollment_id: stu-1, phone_1_number: null }
+          - { finalsite_enrollment_id: par-1, phone_1_number: "+13055550101" }
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: stu-1,
+            student_candidate_count: 1,
+            primary_contact_candidate_count: 2,
+            address_source: student_household,
+            address_1: 123 Main St,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: "33101",
+            country: US,
+            primary_contact_phone: "+13055550101",
+            resolution_status: student_household,
+          }
+
+  - name: test_address_of_record_primary_contact_fallback
+    description:
+      A student whose own linkage offers two competing complete addresses falls
+      through to their primary contact, whose linkage yields exactly one.
+    model: int_finalsite__student_address_of_record
+    given:
+      - input: ref('stg_finalsite__contact_relationships')
+        rows:
+          - { finalsite_enrollment_id: stu-2, rel_id: par-2, is_primary: true }
+      - input: ref('int_finalsite__contacts__households')
+        format: sql
+        rows: |
+          select
+            'stu-2' as finalsite_enrollment_id,
+            'hh-5' as household_id,
+            '456 Oak Ave' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33102' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'stu-2', 'hh-6', '789 Pine Rd', null, 'Miami', 'FL', '33105',
+            'US', true
+          union all
+          select 'par-2', 'hh-7', '111 Palm Way', null, 'Miami', 'FL', '33103',
+            'US', true
+      - input: ref('stg_finalsite__contacts')
+        rows:
+          - { finalsite_enrollment_id: stu-2, phone_1_number: null }
+          - { finalsite_enrollment_id: par-2, phone_1_number: "+13055550102" }
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: stu-2,
+            student_candidate_count: 2,
+            primary_contact_candidate_count: 1,
+            address_source: primary_contact_household,
+            address_1: 111 Palm Way,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: "33103",
+            country: US,
+            primary_contact_phone: "+13055550102",
+            resolution_status: primary_contact_household,
+          }
+
+  - name: test_address_of_record_both_sides_ambiguous
+    description:
+      When neither the student nor their primary contact resolves to exactly one
+      complete address, no address is emitted and the row is flagged ambiguous.
+      The student's two candidates differ only by apartment line, confirming
+      `address_2` participates in the address identity.
+    model: int_finalsite__student_address_of_record
+    given:
+      - input: ref('stg_finalsite__contact_relationships')
+        rows:
+          - { finalsite_enrollment_id: stu-3, rel_id: par-3, is_primary: true }
+      - input: ref('int_finalsite__contacts__households')
+        format: sql
+        rows: |
+          select
+            'stu-3' as finalsite_enrollment_id,
+            'hh-8' as household_id,
+            '222 Bay St' as address_1,
+            'Apt 1' as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33106' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'stu-3', 'hh-9', '222 Bay St', 'Apt 2', 'Miami', 'FL', '33106',
+            'US', true
+          union all
+          select 'par-3', 'hh-8', '222 Bay St', 'Apt 1', 'Miami', 'FL', '33106',
+            'US', true
+          union all
+          select 'par-3', 'hh-9', '222 Bay St', 'Apt 2', 'Miami', 'FL', '33106',
+            'US', true
+          union all
+          select 'par-3', 'hh-10', '333 Gull Ct', null, 'Miami', 'FL', '33107',
+            'US', true
+      - input: ref('stg_finalsite__contacts')
+        rows:
+          - { finalsite_enrollment_id: stu-3, phone_1_number: null }
+          - { finalsite_enrollment_id: par-3, phone_1_number: "+13055550103" }
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: stu-3,
+            student_candidate_count: 2,
+            primary_contact_candidate_count: 3,
+            address_source: null,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            primary_contact_phone: "+13055550103",
+            resolution_status: ambiguous,
+          }
+
+  - name: test_address_of_record_no_student_households
+    description:
+      A student linked to no household at all falls through to their primary
+      contact, and a student whose only household is incomplete is flagged
+      ambiguous with both candidate counts at zero.
+    model: int_finalsite__student_address_of_record
+    given:
+      - input: ref('stg_finalsite__contact_relationships')
+        rows:
+          - { finalsite_enrollment_id: stu-4, rel_id: par-4, is_primary: true }
+          - { finalsite_enrollment_id: stu-5, rel_id: par-5, is_primary: true }
+      - input: ref('int_finalsite__contacts__households')
+        format: sql
+        rows: |
+          select
+            'par-4' as finalsite_enrollment_id,
+            'hh-11' as household_id,
+            '555 Coral Dr' as address_1,
+            'Unit 7' as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33104' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'stu-5', 'hh-12', '666 Reef Ln', null, 'Miami', 'FL', null,
+            'US', false
+          union all
+          select 'par-5', 'hh-13', null, null, 'Miami', 'FL', '33108', 'US',
+            false
+      - input: ref('stg_finalsite__contacts')
+        rows:
+          - { finalsite_enrollment_id: par-4, phone_1_number: "+13055550104" }
+          - { finalsite_enrollment_id: par-5, phone_1_number: "+13055550105" }
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: stu-4,
+            student_candidate_count: 0,
+            primary_contact_candidate_count: 1,
+            address_source: primary_contact_household,
+            address_1: 555 Coral Dr,
+            address_2: Unit 7,
+            city: Miami,
+            state: FL,
+            zip: "33104",
+            country: US,
+            primary_contact_phone: "+13055550104",
+            resolution_status: primary_contact_household,
+          }
+        - {
+            finalsite_enrollment_id: stu-5,
+            student_candidate_count: 0,
+            primary_contact_candidate_count: 0,
+            address_source: null,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            primary_contact_phone: "+13055550105",
+            resolution_status: ambiguous,
+          }

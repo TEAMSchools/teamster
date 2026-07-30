@@ -8,6 +8,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     define_asset_job,
     sensor,
 )
@@ -37,13 +38,10 @@ def build_edplan_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        with (
-            ssh_edplan.get_connection() as connection,
-            connection.open_sftp() as sftp_client,
-        ):
-            files = ssh_edplan.listdir_attr_r(
-                sftp_client=sftp_client, remote_dir="Reports"
-            )
+        files = ssh_edplan.listdir_attr_r_or_skip(remote_dir="Reports")
+
+        if isinstance(files, SkipReason):
+            return files
 
         asset_identifier = asset.key.to_python_identifier()
         context.log.info(asset_identifier)
