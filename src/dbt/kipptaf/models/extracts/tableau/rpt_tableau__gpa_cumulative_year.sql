@@ -50,6 +50,32 @@ select
     gcc.is_cumulative_3_0_attainable,
     gcc.potential_gpa_credits_current_year,
 
+    case
+        when gcy.cumulative_y1_gpa_unweighted >= 3.50
+        then '3.5+'
+        when gcy.cumulative_y1_gpa_unweighted >= 3.00
+        then '3.0-3.49'
+        when gcy.cumulative_y1_gpa_unweighted >= 2.50
+        then '2.5-2.99'
+        when gcy.cumulative_y1_gpa_unweighted >= 2.00
+        then '2.0-2.49'
+        when gcy.cumulative_y1_gpa_unweighted < 2.00
+        then 'below 2.0'
+    end as gpa_band_label,
+
+    case
+        when gcc.cumulative_y1_gpa_unweighted >= 3.50
+        then '3.5+'
+        when gcc.cumulative_y1_gpa_unweighted >= 3.00
+        then '3.0-3.49'
+        when gcc.cumulative_y1_gpa_unweighted >= 2.50
+        then '2.5-2.99'
+        when gcc.cumulative_y1_gpa_unweighted >= 2.00
+        then '2.0-2.49'
+        when gcc.cumulative_y1_gpa_unweighted < 2.00
+        then 'below 2.0'
+    end as gpa_band_as_of_today_label,
+
 from {{ ref("int_powerschool__gpa_cumulative_year") }} as gcy
 /* the inner join on the year's rn_year = 1 enrollment (including schoolid)
    dedupes the union model's student x school x year grain to one row per

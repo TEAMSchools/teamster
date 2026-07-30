@@ -18,6 +18,49 @@ models:
               - student_number
               - academic_year
     columns:
+      - name: gpa_band_label
+        data_type: string
+        description:
+          Cumulative unweighted GPA band for that academic year, from
+          `cumulative_y1_gpa_unweighted` — the year-end value on prior years and
+          the projected value on the current year. Populated for every year, so
+          this is the band the trend, splay, and equity surfaces use. NULL when
+          the student has no cumulative GPA.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 3.5+
+                  - 3.0-3.49
+                  - 2.5-2.99
+                  - 2.0-2.49
+                  - below 2.0
+          - not_null:
+              config:
+                where: >-
+                  school_level = 'HS' and cumulative_y1_gpa_unweighted is not
+                  null
+      - name: gpa_band_as_of_today_label
+        data_type: string
+        description:
+          Cumulative unweighted GPA band as of the last gradebook sync, from
+          `cumulative_y1_gpa_unweighted_as_of_today`. Current-year rows only, so
+          NULL on every prior year by design — pair it with `gpa_band_label`
+          only within the current academic year.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - 3.5+
+                  - 3.0-3.49
+                  - 2.5-2.99
+                  - 2.0-2.49
+                  - below 2.0
+          - not_null:
+              config:
+                where: >-
+                  is_projected and school_level = 'HS' and
+                  cumulative_y1_gpa_unweighted_as_of_today is not null
       - name: _dbt_source_relation
         data_type: string
         description: Source relation identifier from dbt_utils.union_relations.
