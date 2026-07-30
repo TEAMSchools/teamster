@@ -37,6 +37,15 @@ dependency on an intermediate model.
   `home_work_location_name`.
 - Entity comes from `home_business_unit_name`, **never** `location_region`,
   which is a property of the location rather than the person.
+- **Entity values are normalized by a `case` in every view**, aliased back to
+  the same name so the output column stays `home_business_unit_name`. Pre-2021
+  ADP rows carry abbreviations with a null `home_business_unit_code`, so they
+  cannot be resolved by joining `dim_regions`: `TEAM` (9,551 rows), `KCNA`
+  (2,328), `KNJ` (1,486), `MIA` (658), all 2002-2020. `KNJ` was the network
+  entity (KIPP New Jersey) and maps to KTAF — see the design doc for the
+  evidence. User ruling 2026-07-30: a `case` in each view, not a shared
+  crosswalk model. The cost is that a future entity rename means editing every
+  view.
 - Contract columns describe the person whose access is being decided. Everyone
   else on the row keeps a descriptive prefix (`respondent_*`, `observer_*`).
 - SQL follows `.trunk/config/.sqlfluff`: BigQuery dialect, trailing commas,
@@ -67,7 +76,17 @@ roster alias; `lc` is the location crosswalk alias.
     lc.location_clean_name,
     lc.campus_name,
 
-    ROSTER.home_business_unit_name,
+    case ROSTER.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else ROSTER.home_business_unit_name
+    end as home_business_unit_name,
     ROSTER.home_department_name,
     ROSTER.job_function,
     ROSTER.job_title,
@@ -189,7 +208,17 @@ Delete `srh.home_business_unit_name as entity,` (line 24) and
     lc.location_clean_name,
     lc.campus_name,
 
-    srh.home_business_unit_name,
+    case srh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else srh.home_business_unit_name
+    end as home_business_unit_name,
     srh.home_department_name,
     srh.job_function,
     srh.job_title,
@@ -231,15 +260,6 @@ indentation:
             - KIPP Miami
             - KIPP Paterson
             - KIPP TEAM and Family Schools Inc.
-            # Pre-2021 historical abbreviations, present in
-            # int_people__staff_roster_history: TEAM (9,551 rows, 2002-2020),
-            # KCNA (2,328, 2014-2020), KNJ (1,486, 2014-2020), MIA (658,
-            # 2018-2020). Listed so the test flags genuinely new values rather
-            # than warning forever on history.
-            - TEAM
-            - KCNA
-            - KNJ
-            - MIA
 - name: campus_name
   data_type: string
 - name: home_department_name
@@ -301,7 +321,17 @@ left join
     lc.location_clean_name,
     lc.campus_name,
 
-    r.home_business_unit_name,
+    case r.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else r.home_business_unit_name
+    end as home_business_unit_name,
     r.home_department_name,
     r.job_function,
     r.job_title,
@@ -350,7 +380,17 @@ left join
     lc.location_clean_name,
     lc.campus_name,
 
-    srh.home_business_unit_name,
+    case srh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else srh.home_business_unit_name
+    end as home_business_unit_name,
     srh.home_department_name,
     srh.job_function,
     srh.job_title,
@@ -404,7 +444,17 @@ left join
     lc.location_clean_name,
     lc.campus_name,
 
-    srh.home_business_unit_name,
+    case srh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else srh.home_business_unit_name
+    end as home_business_unit_name,
     srh.home_department_name,
     srh.job_function,
     srh.job_title,
@@ -467,7 +517,17 @@ left join
     lc.location_clean_name,
     lc.campus_name,
 
-    rh.home_business_unit_name,
+    case rh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else rh.home_business_unit_name
+    end as home_business_unit_name,
     rh.home_department_name,
     rh.job_function,
     rh.job_title,
@@ -522,7 +582,17 @@ left join
     lc.location_clean_name,
     lc.campus_name,
 
-    eh.home_business_unit_name,
+    case eh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else eh.home_business_unit_name
+    end as home_business_unit_name,
     eh.home_department_name,
     eh.job_function,
     eh.job_title,
@@ -871,7 +941,17 @@ select
     lc.location_clean_name,
     lc.campus_name,
 
-    sr.home_business_unit_name,
+    case sr.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else sr.home_business_unit_name
+    end as home_business_unit_name,
     sr.home_department_name,
     sr.job_function,
     sr.job_title,
@@ -1110,7 +1190,71 @@ not done, and a PR implies the workbooks are ready.
 
 ---
 
-### Task 17: Remove retained legacy aliases
+### Task 17: Sweep the four already-converted models
+
+Tasks 1-4 landed before two later rulings, so they need bringing into line. The
+models are `rpt_tableau__content_team`, `rpt_tableau__leadership_development`,
+`rpt_tableau__schoolmint_grow_goals`, and
+`rpt_tableau__schoolmint_grow_observation_details`.
+
+Two gaps, both from decisions made after those tasks ran:
+
+1. **Legacy aliases.** Tasks 1-3 kept the singular `report_to_sam_account_name`;
+   Task 4 deleted it. Delete it everywhere, along with any other legacy alias of
+   a contract column, plus its YAML entry.
+2. **Entity normalization.** All four select `home_business_unit_name` raw. Wrap
+   each in the normalizing `case` from the contract column list, aliased back to
+   `home_business_unit_name`.
+
+- [ ] **Step 1: Find every retained legacy alias**
+
+```bash
+cd /workspaces/teamster && rg -n \
+  'as (entity|`location`|legal_entity|region|department|report_to_sam_account_name|report_to_email|email|location_name)\b' \
+  src/dbt/kipptaf/models/extracts/tableau/
+```
+
+- [ ] **Step 2: Find every un-normalized entity selection**
+
+```bash
+cd /workspaces/teamster && rg -n --multiline \
+  '^\s+\w+\.home_business_unit_name,$' src/dbt/kipptaf/models/extracts/tableau/
+```
+
+Every hit needs the `case`. A model already carrying the `case` will not match.
+
+- [ ] **Step 3: Apply both fixes to all four models**, deleting legacy aliases
+      from the `.sql` and `.yml`, and wrapping entity in the `case`. Do not
+      delete columns that are a different value for a different person —
+      `entity_short`, `observer_location`, `respondent_*` stay.
+
+- [ ] **Step 4: Build all four and confirm no abbreviations survive**
+
+```bash
+uv run dbt build --project-dir /workspaces/teamster/src/dbt/kipptaf --target dev \
+  --select rpt_tableau__content_team rpt_tableau__leadership_development \
+    rpt_tableau__schoolmint_grow_goals \
+    rpt_tableau__schoolmint_grow_observation_details
+```
+
+Then for each:
+
+```bash
+uv run dbt show --project-dir /workspaces/teamster/src/dbt/kipptaf \
+  --inline "select distinct home_business_unit_name from {{ ref('MODEL') }} order by 1" \
+  --target dev
+```
+
+Expected: only the five canonical full names. Any `TEAM`, `KCNA`, `KNJ`, or
+`MIA` means the `case` was missed in one select block — `observation_details`
+has two.
+
+- [ ] **Step 5: Lint and commit.** One commit; name which aliases were removed
+      from which models so the Tableau side can be updated from the log.
+
+---
+
+### Task 18: Remove retained legacy aliases
 
 Tasks 1-3 diverged on legacy aliases: Tasks 1 and 2 **kept**
 `report_to_sam_account_name` (singular) alongside the new plural, while Task 3
