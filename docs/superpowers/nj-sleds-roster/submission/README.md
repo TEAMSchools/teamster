@@ -57,6 +57,61 @@ reload. If the residue drops to zero, `build_submission.py` will export; until
 then, seeing `FAILED` here is the tool working as designed, not a defect to
 chase.
 
+## Ungraded worklist
+
+The validation gate reports counts, not rows — useful for knowing the submission
+is blocked, useless for actually clearing the block. `export_worklist.py` fills
+that gap: it exports one row per in-scope, ungraded student/section so someone
+with PowerSchool access can resolve them directly.
+
+Run it any time, regardless of the gate's state:
+
+```bash
+uv run --with google-cloud-bigquery python export_worklist.py OUTDIR
+```
+
+This creates `cokafor.rpt_student_course_ungraded` and writes
+`NJ_Student_Course_Ungraded_{region}.csv`. Unlike `build_submission.py`, it is
+**not gated** — see its module docstring for why gating the fix-it tool on the
+thing it exists to fix would be circular.
+
+Each row carries `reason` (why the row has no grade) and `section_shape`
+(whether the whole section is affected or just this student). As of the
+2026-07-29 extract the 108 rows break down like this:
+
+| Reason                                       | Section shape                    | Rows |
+| -------------------------------------------- | -------------------------------- | ---: |
+| no grade in either source                    | whole section ungraded           |   41 |
+| no grade in either source                    | partial — classmates were graded |   34 |
+| conflicting grades                           | partial                          |   31 |
+| grade exists but outside the handbook domain | partial                          |    2 |
+
+What each combination implies:
+
+- **Whole section ungraded (41 rows):** the section appears never to have been
+  graded. If it genuinely should not be reported, the fix is PowerSchool's
+  "Exclude from Course Roster Reports" checkbox on the section's Course
+  Submission Information panel (see the audit runbook). Then re-pull and re-load
+  the extract.
+- **Partial, classmates were graded (34 rows):** the section was graded and
+  these individual students were missed. Excluding the section would wrongly
+  drop the students who do have grades — post the missing grades instead.
+- **Conflicting grades (31 rows):** a grade exists, but sources or reporting
+  terms disagree, so the query refuses to pick one. Reconcile in PowerSchool.
+  These are the cheapest to clear.
+- **Grade exists but outside the handbook domain (2 rows):** the only available
+  grade was `F*`, a warehouse-internal marker that is not a legal
+  `AlphaGradeEarned` value. Determine the real grade and correct it in
+  PowerSchool.
+
+The worklist CSV is PII-bearing (local student and section IDs) — same handling
+as the submission CSV: write it to `.claude/scratch/` (gitignored), never commit
+it, never paste row-level values anywhere external.
+
+After fixing a source record, the extract must be re-pulled and re-loaded before
+the gate reflects the fix — re-running the gate against the old extract will
+still show the same failures.
+
 ## Re-baselining per cycle
 
 Two constants in `validate_submission.py` are per-cycle baselines, not derivable
@@ -84,12 +139,15 @@ coverage), replace the literal dict values with the new counts, and update the
 | `submission_query.py`    | The SQL, the 25-column order, the legal grade domain |
 | `validate_submission.py` | The pre-upload gate; `--self-test` proves it fires   |
 | `build_submission.py`    | Creates the view, gates, exports per-region CSV      |
+| `export_worklist.py`     | Ungraded worklist, not gated — see above             |
 
 ## PII
 
-The exported CSVs carry names, dates of birth, and state IDs. Write them to
-`.claude/scratch/` (gitignored), hand them only to the state-access uploader,
-and never commit them or paste row-level values anywhere external.
+The exported submission CSVs carry names, dates of birth, and state IDs. The
+worklist CSVs carry local student and section IDs only, still PII. Write both
+kinds to `.claude/scratch/` (gitignored), hand the submission CSVs only to the
+state-access uploader, and never commit either or paste row-level values
+anywhere external.
 
 ## Unverified: CSV encoding, quoting, and line endings
 
