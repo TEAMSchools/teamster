@@ -115,12 +115,28 @@ means the raw `home_work_location_name` is still being selected.
 
 ### Duplicate-column trap
 
-The contract selects bare `job_title`, `job_function`,
-`home_business_unit_name`, `home_department_name`, and `campus_name`. If the
-model's select list already produces any same-named column, BigQuery fails the
-build with a duplicate-column error. Read the model's full select list and
-delete every column the contract now supplies, including ones this plan does not
-name explicitly.
+The contract selects all eleven columns bare. If the model's select list already
+produces any same-named column, BigQuery fails the build with a
+duplicate-output-column error at `CREATE VIEW`.
+
+**Check by name equality against the model's actual select list — do not rely on
+this plan's delete-list being exhaustive.** Task 1 hit exactly this: the model
+already had an unaliased `srh.sam_account_name,` that the plan did not name.
+Read the whole select list, compare every output name against the eleven, and
+delete the pre-existing duplicates.
+
+### Contract enforcement makes YAML mandatory
+
+`extracts/` inherits `contract: enforced: true` (see
+`src/dbt/kipptaf/CLAUDE.md`). Every output column must have a properties YAML
+entry or the build fails. So:
+
+- Each of the eleven needs a YAML entry unless an identically-named entry
+  already exists. A differently-named legacy entry does not count —
+  `report_to_sam_account_name` (singular) does not satisfy
+  `reports_to_sam_account_name` (plural).
+- Per `src/dbt/CLAUDE.md`, columns carrying data tests sort to the top of the
+  `columns:` list.
 
 ---
 
@@ -220,7 +236,17 @@ indentation:
   data_type: string
 - name: reports_to_mail
   data_type: string
+- name: reports_to_sam_account_name
+  data_type: string
+- name: job_title
+  data_type: string
+- name: sam_account_name
+  data_type: string
 ```
+
+Add an entry only where one does not already exist under that exact name.
+`job_title` and `sam_account_name` are often already documented; a legacy
+`report_to_sam_account_name` (singular) does not satisfy the plural.
 
 - [ ] **Step 4: Run the Standard Checks**
 
