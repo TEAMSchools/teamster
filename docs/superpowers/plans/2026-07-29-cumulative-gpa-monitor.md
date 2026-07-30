@@ -797,46 +797,31 @@ manual deliverable.
 
 ---
 
-## Tableau workbook — manual, not agent-executable
+## Tableau workbook — manual, and maintained outside this repository
 
-The workbook is a GUI artifact; no task above builds it. These steps are for a
-human, after the dbt PR merges and the extract refreshes in prod.
+The workbook is a GUI artifact; no task above builds it, and the step-by-step
+build instructions are deliberately not kept here. They carry school-level and
+subgroup attainment figures that are not for publication, and this repository is
+public. Ask the data team for the current copy.
 
-1. New data source against `kipptaf_tableau.rpt_tableau__gpa_cumulative_year` as
-   a **single table**. Add no second table and no relationship — that is what
-   makes the cross-year fan-out structurally impossible rather than merely
-   filtered away.
-1. Second data source against `kipptaf_tableau.rpt_tableau__gpa_goals` for the
-   goal tiles.
-1. Set the year filter's default to `is_latest_graded_year = true`.
-1. Build the tiles per the spec's dashboard-composition table. Every rate is
-   `countd` over the student grain — never an average of a row-level flag.
-1. Distribution panel: `gpa_band_as_of_today_label` against `gpa_band_label`,
-   shown only when the year filter is the current academic year. Outside that
-   window the two are identical or the as-of-today side is empty, so label the
-   panel in-session-only or collapse it to one bar.
-1. Goal tiles: read the not-yet-measurable state from
-   `rpt_tableau__gpa_goals.n_students_measured`. A null rate with a non-zero
-   `n_students_in_grain` and a zero `n_students_measured` means no grades have
-   posted — label it, do not render a bare blank tile.
-1. Cusp roster: filter `is_on_cusp_3_0`, show `student_name`, `school`,
-   `cumulative_y1_gpa_unweighted_as_of_today`, gap to 3.0,
-   `potential_gpa_credits_current_year`, and `gpa_needed_for_cumulative_3_0`.
-   Access is governed by the existing Tableau region and role gates; record in
-   the PR which groups the workbook is published to.
+So you can tell whether you need it, the guide covers: the prerequisite checks,
+every calculated field in full, the GPA band colour palette, parameter-driven
+filtering across the two data sources, per-sheet build steps with verification
+numbers, dashboard assembly, the access-and-privacy step, and a troubleshooting
+table.
 
-   Expect this roster to render mostly empty until SY26-27 grades post. The
-   default year filter uses `is_latest_graded_year`, which currently resolves to
-   2025, while the current-state columns attach to the `is_projected` year, 2026
-   — different years today. On the default slice
-   `cumulative_y1_gpa_unweighted_as_of_today`, `gpa_needed_for_cumulative_3_0`,
-   `potential_gpa_credits_current_year`, `gpa_band_as_of_today_label`, and
-   `is_cumulative_3_0_attainable` are all null, so the roster shows students
-   with three of five columns blank and the spec's students-to-move tile reads
-   zero. The two flags coincide from roughly November onward and everything
-   populates. This is the expected pre-season state, not a broken join.
+Two things worth knowing even without the guide, because both are easy to get
+wrong and neither is obvious from the model:
 
-1. Update the `cumulative_gpa_monitor` exposure URL and drop the `TODO(#4619)`.
+- The dashboard reads two data sources — `rpt_tableau__gpa_cumulative_year` and
+  `rpt_tableau__gpa_goals` — that are **not** joined, related, or blended. The
+  goals model is self-contained, carrying its own computed rate alongside the
+  target. An ordinary Tableau filter reaches only one data source, so region and
+  grade controls must be parameters rather than filters or the goal sheet will
+  not follow the viewer's selection.
+- `gpa_band_label` sorts alphabetically by default, which places the below-2.0
+  band after the 3.5-plus band. A sort field is required or every distribution
+  chart is scrambled.
 
 ## Deferred to a separate spec
 
