@@ -2,10 +2,14 @@ with
     latest_graded_year as (
         /* the most recent year with posted Y1 grades. Cumulative earned credits
            cannot serve as this signal — they include prior years, so a
-           not-yet-started year's upperclassmen already carry credits. */
+           not-yet-started year's upperclassmen already carry credits. Scoped to
+           the districts this extract serves: `int_powerschool__gpa_term` also
+           unions kippmiami, and an unscoped max would let another region's
+           calendar advance the default year to one with no Newark or Camden
+           rows. */
         select max(yearid) + 1990 as latest_graded_academic_year,
         from {{ ref("int_powerschool__gpa_term") }}
-        where gpa_y1 is not null
+        where gpa_y1 is not null and _dbt_source_project in ('kippnewark', 'kippcamden')
     )
 
 select
