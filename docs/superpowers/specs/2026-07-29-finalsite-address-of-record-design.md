@@ -212,7 +212,9 @@ feed run picks the student up. A guess is not recoverable — the feed is
 import-once with no overwrite path, so a wrong address of record is permanent
 and carries no marker distinguishing it from a verified one.
 
-Breakdown of the 1,498 under this design: 1,275 resolved from the student's own
+Breakdown under this design (as originally measured, except the
+no-`primary`-relationship figure, updated to 70 per the 2026-07-30 note above —
+so these figures no longer sum to 1,498): 1,275 resolved from the student's own
 household linkage, 16 from the primary contact's, 147 flagged ambiguous, 70 with
 no `primary` relationship (enrolled Miami feed-population students absent from
 `int_finalsite__student_address_of_record` entirely, for want of a primary
