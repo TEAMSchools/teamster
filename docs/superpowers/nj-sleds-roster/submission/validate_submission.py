@@ -259,8 +259,57 @@ def run_checks(client):
     return failures
 
 
+def self_test(client):
+    """Prove each check group fires. Mutates SQL in memory only."""
+    failures = []
+
+    # An out-of-domain grade must be caught by the domain check.
+    bad_domain = SUBMISSION_SQL.replace(
+        "candidate_letter,\n                cast(null as string)",
+        "'F*',\n                cast(null as string)",
+    )
+    if bad_domain == SUBMISSION_SQL:
+        failures.append("self-test could not inject a bad grade domain")
+    else:
+        # trunk-ignore(bandit/B608): bad_domain is a local in-memory mutation, not user input
+        sql = f"""
+        select count(*) as n
+        from ({bad_domain})
+        where AlphaGradeEarned is not null
+          and AlphaGradeEarned not in ('A', 'B', 'C', 'D', 'F')
+        """
+        if _rows(client, sql)[0].n == 0:
+            failures.append("domain check would not have caught 'F*'")
+
+    # A 1-decimal credit must be caught by the format check.
+    bad_format = SUBMISSION_SQL.replace("format('%.3f'", "format('%.1f'")
+    if bad_format == SUBMISSION_SQL:
+        failures.append("self-test could not inject a bad credit format")
+    else:
+        # trunk-ignore(bandit/B608): bad_format is a local in-memory mutation, not user input
+        sql = f"""
+        select count(*) as n
+        from ({bad_format})
+        where CreditsEarned is not null
+          and not regexp_contains(CreditsEarned, r'^[0-9]+\\.[0-9]{{3}}$')
+        """
+        if _rows(client, sql)[0].n == 0:
+            failures.append("format check would not have caught 1 decimal")
+
+    return failures
+
+
 def main():
     client = bigquery.Client(project=PROJECT)
+    if "--self-test" in sys.argv:
+        failures = self_test(client)
+        if failures:
+            print(f"SELF-TEST FAILED ({len(failures)}):")
+            for f in failures:
+                print(f"  - {f}")
+            return 1
+        print("SELF-TEST PASSED")
+        return 0
     failures = run_checks(client)
     if failures:
         print(f"FAILED ({len(failures)} issue(s)):")
