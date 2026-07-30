@@ -7,7 +7,11 @@ models:
       the resulting rate meets the goal. Goal-driven — a grain surfaces here
       only when it has a matching goal row; students in a grain with no goal
       simply don't aggregate into a row. One row per academic year, metric, and
-      goal aggregation key.
+      goal aggregation key. A consequence worth stating plainly — a grade
+      missing from the goals sheet is indistinguishable in this model's output
+      from a grade that has no students, since both yield no row rather than a
+      null. Two singular tests on stg_google_sheets__gpa_goals assert coverage
+      from each direction so an accidental omission is not silent.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
