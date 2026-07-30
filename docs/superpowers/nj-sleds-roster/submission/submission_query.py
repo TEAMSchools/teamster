@@ -95,6 +95,37 @@ with
         group by _dbt_source_project, studentid_str, sectionid_str
     ),
 
+    live_raw as (
+        select
+            _dbt_source_project,
+            `grade`,
+            enddate,
+
+            cast(studentid as string) as studentid_str,
+            cast(sectionid as string) as sectionid_str,
+            max(enddate) over (
+                partition by _dbt_source_project, studentid, sectionid
+            ) as max_enddate,
+        from `teamster-332318.kipptaf_powerschool.stg_powerschool__pgfinalgrades`
+        where
+            enddate between date '2025-07-01' and date '2026-06-30'
+            and `grade` is not null
+            and _dbt_source_project in ('kippnewark', 'kippcamden')
+    ),
+
+    live as (
+        select
+            _dbt_source_project,
+            studentid_str,
+            sectionid_str,
+
+            max(`grade`) as live_letter,
+            count(distinct `grade`) as n_live_letters,
+        from live_raw
+        where enddate = max_enddate
+        group by _dbt_source_project, studentid_str, sectionid_str
+    ),
+
     students as (
         select
             _dbt_source_project,
@@ -114,6 +145,8 @@ with
             sg.stored_earned_credit,
             sg.n_stored_letters,
             sg.n_stored_credits,
+            lg.live_letter,
+            lg.n_live_letters,
 
             'newark' as region,
         from `teamster-332318.cokafor.stg_student_extract_newark` as e
@@ -127,6 +160,10 @@ with
             on st.studentid_str = sg.studentid_str
             and e.LocalSectionCode = sg.sectionid_str
             and sg._dbt_source_project = 'kippnewark'
+        left join live as lg
+            on st.studentid_str = lg.studentid_str
+            and e.LocalSectionCode = lg.sectionid_str
+            and lg._dbt_source_project = 'kippnewark'
     ),
 
     camden_joined as (
@@ -138,6 +175,8 @@ with
             sg.stored_earned_credit,
             sg.n_stored_letters,
             sg.n_stored_credits,
+            lg.live_letter,
+            lg.n_live_letters,
 
             'camden' as region,
         from `teamster-332318.cokafor.stg_student_extract_camden` as e
@@ -151,6 +190,10 @@ with
             on st.studentid_str = sg.studentid_str
             and e.LocalSectionCode = sg.sectionid_str
             and sg._dbt_source_project = 'kippcamden'
+        left join live as lg
+            on st.studentid_str = lg.studentid_str
+            and e.LocalSectionCode = lg.sectionid_str
+            and lg._dbt_source_project = 'kippcamden'
     ),
 
     joined as (
@@ -181,7 +224,7 @@ with
         select
             *,
 
-            substr(grade_span_padded, 3, 2) as grade_span_upper,
+            substr(grade_span_padded, 1, 2) as grade_span_start,
         from typed
     ),
 
@@ -193,12 +236,39 @@ with
                 when sced_level = 'secondary' and available_credit_num > 0
                 then 'HS'
                 when
-                    grade_span_upper
+                    grade_span_start
                     in ('06', '07', '08', '09', '10', '11', '12')
                 then 'MS'
                 else 'OUT'
             end as grade_band,
         from banded
+    ),
+
+    conflict_guarded as (
+        select
+            *,
+
+            if(n_stored_letters > 1, null, stored_letter) as safe_stored,
+            if(n_live_letters > 1, null, live_letter) as safe_live,
+            if(
+                n_stored_letters > 1 or n_stored_credits > 1,
+                null,
+                stored_earned_credit
+            ) as safe_stored_credit,
+        from scoped
+    ),
+
+    sourced as (
+        select
+            *,
+
+            coalesce(safe_stored, safe_live) as candidate_letter,
+            case
+                when safe_stored is not null then 'stored'
+                when safe_live is not null then 'live'
+                else 'none'
+            end as grade_source,
+        from conflict_guarded
     )
 
 select
@@ -233,5 +303,9 @@ select
     stored_earned_credit,
     n_stored_letters,
     n_stored_credits,
-from scoped
+    live_letter,
+    n_live_letters,
+    candidate_letter,
+    grade_source,
+from sourced
 """

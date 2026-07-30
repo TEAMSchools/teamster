@@ -17,8 +17,8 @@ EXPECTED_BAND_ROWS = {
     ("newark", "MS"): 10746,
     ("newark", "OUT"): 11709,
     ("camden", "HS"): 3648,
-    ("camden", "MS"): 3857,
-    ("camden", "OUT"): 2838,
+    ("camden", "MS"): 3638,
+    ("camden", "OUT"): 3057,
 }
 
 
@@ -116,11 +116,53 @@ def check_no_stored_conflicts(client):
     return failures
 
 
+def check_no_live_conflicts(client):
+    """A conflicted live grade is never emitted as the resolved value.
+
+    Live reporting terms legitimately disagree on tens of thousands of rows -
+    several term types close on the same date. That is not an error, because
+    on any row with a stored grade the live value is never consulted. The
+    invariant that matters is narrower: when live terms disagree, the guard
+    must null the value rather than pick one, so grade_source can never be
+    'live' on a conflicted row.
+    """
+    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
+    sql = f"""
+    select count(*) as n
+    from ({SUBMISSION_SQL})
+    where n_live_letters > 1 and grade_source = 'live'
+    """
+    n = _rows(client, sql)[0].n
+    if n:
+        return [f"{n} row(s) emitted a conflicted live grade"]
+    return []
+
+
+def check_live_fills_only_gaps(client):
+    """Live grades never override a stored grade."""
+    # trunk-ignore(bandit/B608): SUBMISSION_SQL is a local module constant, not user input
+    sql = f"""
+    select count(*) as n
+    from ({SUBMISSION_SQL})
+    where
+        stored_letter is not null
+        and live_letter is not null
+        and stored_letter != live_letter
+        and grade_source = 'live'
+    """
+    n = _rows(client, sql)[0].n
+    if n:
+        return [f"{n} row(s) took a live grade over a stored grade"]
+    return []
+
+
 CHECKS = [
     check_row_parity,
     check_band_counts,
     check_stored_coverage,
     check_no_stored_conflicts,
+    check_no_live_conflicts,
+    check_live_fills_only_gaps,
 ]
 
 
