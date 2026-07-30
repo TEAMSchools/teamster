@@ -20,8 +20,8 @@ models/
 ```
 
 `api/staging`: `stg_finalsite__contacts`,
-`stg_finalsite__contact_relationships`. `sftp/staging`:
-`stg_finalsite__status_report`.
+`stg_finalsite__contact_relationships`, `stg_finalsite__contact_households`.
+`sftp/staging`: `stg_finalsite__status_report`.
 
 `api/intermediate` models:
 
