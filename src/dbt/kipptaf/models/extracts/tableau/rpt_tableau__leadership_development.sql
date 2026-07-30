@@ -117,7 +117,6 @@ select
 
     r.formatted_name as preferred_name_lastfirst,
     r.reports_to_formatted_name as manager,
-    r.reports_to_sam_account_name as report_to_sam_account_name,
     r.assignment_status,
 
     lc.location_clean_name,

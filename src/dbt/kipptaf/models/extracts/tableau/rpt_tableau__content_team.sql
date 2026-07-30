@@ -26,7 +26,6 @@ select
     srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
-    srh.reports_to_sam_account_name as report_to_sam_account_name,
 
     lc.location_clean_name,
     lc.campus_name,
