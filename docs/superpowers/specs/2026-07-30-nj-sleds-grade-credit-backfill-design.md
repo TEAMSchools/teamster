@@ -83,44 +83,53 @@ handbook does not require all three.
 
 ## Scope
 
-| Field              | Rows in scope | Rule                                                                                                                                              |
-| ------------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `AlphaGradeEarned` | 28,946        | Secondary-code rows with `AvailableCredit` greater than `0.000`, plus prior-to-secondary rows whose `GradeSpan` **upper bound** is `06` or higher |
-| `CreditsEarned`    | 14,343        | Secondary-code rows only                                                                                                                          |
+| Field              | Rows in scope | Rule                                                                                                                                         |
+| ------------------ | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AlphaGradeEarned` | 28,727        | Secondary-code rows with `AvailableCredit` greater than `0.000`, plus prior-to-secondary rows whose `GradeSpan` **starts** at `06` or higher |
+| `CreditsEarned`    | 14,343        | Secondary-code rows only                                                                                                                     |
 
 Row counts by band, from the 2026-07-29 extract:
 
-| Band         | Classification                                  | Newark     | Camden     | Total      |
-| ------------ | ----------------------------------------------- | ---------- | ---------- | ---------- |
-| HS           | `sced_level = 'secondary'`                      | 10,695     | 3,648      | 14,343     |
-| MS           | prior-to-secondary, span upper bound `06`+      | 10,746     | 3,857      | 14,603     |
-| Out of scope | prior-to-secondary, span upper bound below `06` | 11,709     | 2,838      | 14,547     |
-| **Total**    |                                                 | **33,150** | **10,343** | **43,493** |
+| Band         | Classification                             | Newark     | Camden     | Total      |
+| ------------ | ------------------------------------------ | ---------- | ---------- | ---------- |
+| HS           | `sced_level = 'secondary'`                 | 10,695     | 3,648      | 14,343     |
+| MS           | prior-to-secondary, span starts `06`+      | 10,746     | 3,638      | 14,384     |
+| Out of scope | prior-to-secondary, span starts below `06` | 11,709     | 3,057      | 14,766     |
+| **Total**    |                                            | **33,150** | **10,343** | **43,493** |
 
-### The band rule, and why the upper bound
+### The band rule, and which end of the span is tested
 
 The handbook's `060X and higher` phrasing does not say which end of a grade span
-is tested. Testing the **upper** bound resolves the ambiguity in the direction
-that cannot cause a rejection: a span reaching grade 6 or above gets a grade.
-Applied to the observed spans:
+is tested, and the two readings differ by 219 Camden rows. Applied to the
+observed spans:
 
-| Span                                   | Upper bound      | In scope | Rows   |
-| -------------------------------------- | ---------------- | -------- | ------ |
-| `0606`, `0707`, `0808`                 | `06`, `07`, `08` | yes      | 14,384 |
-| `0508`                                 | `08`             | yes      | 20     |
-| `KG08`                                 | `08`             | yes      | 199    |
-| `0505`, `0404`, `0303`, `0202`, `0101` | below `06`       | no       | 12,872 |
-| `KGKG`                                 | `KG`             | no       | 1,675  |
+| Span                                   | Starts | Ends  | In scope | Rows   |
+| -------------------------------------- | ------ | ----- | -------- | ------ |
+| `0606`, `0707`, `0808`                 | `06`+  | `06`+ | yes      | 14,384 |
+| `0508`                                 | `05`   | `08`  | no       | 20     |
+| `KG08`                                 | `KG`   | `08`  | no       | 199    |
+| `0505`, `0404`, `0303`, `0202`, `0101` | below  | below | no       | 12,872 |
+| `KGKG`                                 | `KG`   | `KG`  | no       | 1,675  |
 
-The 219 rows on straddling spans (`0508`, `KG08`, both Camden) are in scope
-under this rule. A strict reading of "spans starting at `06`" would exclude
-them; at 219 rows the cost of being generous is negligible and the cost of being
-wrong is a rejected file.
+**The rule tests the span's start.** This reverses an earlier decision in this
+spec, and the reason is worth recording, because the original reasoning was
+sound but incomplete.
 
-Note that `KG` must be excluded explicitly. A naive string comparison places
-`'KG'` above `'06'` lexicographically, which would pull all 1,675 `KGKG` rows
-into scope. The implementation must test membership in
-`('06','07','08','09','10','11','12')` rather than using a range comparison.
+The generous reading — testing the span's end, which pulls `0508` and `KG08`
+into scope — was chosen on the grounds that a wrongly-omitted graded row is a
+rejection while a wrongly-included blank one is merely a worklist item, and that
+219 rows was a negligible price. Implementation showed the price was not
+negligible: **171 of those 219 rows have no grade in any source**, because
+`KG08` is a kindergarten-through-8 span that carries no grades at all. Including
+them manufactured 171 rows that could never be filled, inflating the ungraded
+worklist from roughly 108 rows to 279. The handbook's own examples — `0606`,
+`0607`, `0608` — all start at `06`, so testing the start is also the more
+literal reading.
+
+Note that `KG` must be excluded by explicit membership test. A naive string
+comparison places `'KG'` above `'06'` lexicographically, so `>= '06'` would pull
+all 1,675 `KGKG` rows into scope. The implementation tests membership in
+`('06','07','08','09','10','11','12')`.
 
 ## Architecture
 
@@ -286,12 +295,36 @@ satisfied by the source data.
 Roughly 52 of the 121 gap rows are secondary, so only those need the derived
 credit rule.
 
-**Measurement caveat.** Coverage was measured before the straddling-span
-decision, so the 219 `0508` and `KG08` rows were counted inside the out-of-scope
-bucket and their `Y1` coverage is **not** included in the table above.
-Implementation must re-measure with the final band rule. For reference, the
-out-of-scope bucket as measured (which included those 219 rows) matched 3,502 of
-11,709 in Newark and 1,224 of 3,057 in Camden.
+### What the fallback actually recovered
+
+Implementation measured the fallback's real yield, and it is far lower than this
+spec originally assumed. Of the 121 gap rows:
+
+| Outcome                                       | Rows           |
+| --------------------------------------------- | -------------- |
+| Filled from a live final grade                | 15             |
+| Live grades disagree, so correctly left blank | included below |
+| No usable grade in **either** source          | 106            |
+
+Plus 2 rows whose only available grade was `F*` — a warehouse-internal marker,
+not a legal `AlphaGradeEarned` value — correctly rejected by the domain guard.
+**Total ungraded: 108** (Newark HS 19 + 1, Newark MS 55, Camden HS 29 + 1,
+Camden MS 3).
+
+The live fallback is therefore a marginal contributor, not the safety net this
+spec implied. The dominant outcome is that PowerSchool holds no grade at all for
+those rows — meaning the native extract could not have produced one either, so
+this is a source-data gap rather than a query limitation. Those 108 rows are a
+PowerSchool worklist: grades must be posted, or the sections excluded, before
+the file can ship. The validation gate reports them and `build_submission.py`
+refuses to export while they stand.
+
+**The domain guard is load-bearing, not defensive decoration.**
+`stg_powerschool__pgfinalgrades` in the SY 2025-26 window carries 21,632 `F*`
+values, 202 `P`, and 2 `I` across the two regions. None are legal
+`AlphaGradeEarned` values (`P` and `I` belong to `CompletionStatus`). Without
+the guard, live-sourced rows would have carried them into a certified
+submission.
 
 ## Named exception to source-fix-only
 
@@ -320,7 +353,7 @@ an undocumented contradiction between the runbook and what actually ships.
 
 ### Elementary pass/fail (contingent, not planned)
 
-The 14,547 out-of-scope rows (prior-to-secondary, span upper bound below `06`,
+The 14,766 out-of-scope rows (prior-to-secondary, span starting below `06`,
 including all `KGKG`) get no grade under this design, because the handbook does
 not require one for them.
 
@@ -384,8 +417,18 @@ file submittable on its own.**
 
 ## Open items to confirm during implementation
 
-- Re-measure `Y1` coverage with the final band rule, including the 219
-  straddling rows.
+- ~~Re-measure `Y1` coverage with the final band rule.~~ **Resolved during
+  implementation.** Coverage under the strict band rule is 28,606 of 28,727
+  (99.6%), a 121-row gap, of which 15 fill from the live fallback and 106 have
+  no grade in any source. See _What the fallback actually recovered_.
+- ~~Confirm `pgfinalgrades` exposes a year-final reporting term.~~ **Resolved
+  during implementation.** It does not: `pgfinalgrades` has no `academic_year`
+  column, holds history back to 2004, and its `Y1` term stopped being used
+  in 2018. The fallback scopes by `enddate` and takes the greatest `enddate` per
+  student-section, which selects the terminal term whatever structure the
+  section uses. Several term types close on the same date and disagree, so the
+  aggregation counts distinct letters and reports a conflict rather than
+  picking.
 - Confirm the exported CSV matches the native extract's quoting, line endings,
   and encoding. The reload scripts read the native files with `utf-8-sig`,
   implying a BOM; the export must not silently change what the state's parser
@@ -396,9 +439,6 @@ file submittable on its own.**
   particularly the v1.2 change making `GradeSpan` blank-able for Secondary and
   `AvailableCredit` blank-able for Prior-to-secondary, which runbook check 9
   encodes.
-- Confirm `pgfinalgrades` exposes a year-final reporting term for the gap rows,
-  and decide the selection rule if several final-grade records exist for one
-  section.
 - Confirm no in-scope row draws a grade from a section whose `CourseType` is `C`
   (dual enrollment) where the grade is held by the college rather than
   PowerSchool.

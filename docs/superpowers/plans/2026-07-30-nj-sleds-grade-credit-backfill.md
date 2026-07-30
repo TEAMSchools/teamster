@@ -1096,44 +1096,62 @@ corrupts the query in memory and asserts that each check group catches it.
 
 Add to `validate_submission.py`:
 
+````python
+First give every check function an optional `sql` keyword argument defaulting to
+`SUBMISSION_SQL`, and have each one interpolate `sql` rather than
+`SUBMISSION_SQL` in its query:
+
+```python
+def check_alpha_grade_domain(client, sql=SUBMISSION_SQL):
+````
+
+`run_checks` still calls `check(client)`, so the real gate is byte-for-byte
+unchanged in behavior. This exists so the self-test can point the **actual**
+check at a mutated query.
+
+Then add the self-test, which calls those real functions:
+
 ```python
 def self_test(client):
-    """Prove each check group fires. Mutates SQL in memory only."""
+    """Prove the real checks fire on injected defects. Mutates SQL in memory.
+
+    Each block calls the ACTUAL check function against the mutated SQL, so
+    deleting a check from CHECKS, widening its domain, or weakening its
+    predicate makes this self-test fail. A self-test that re-implements the
+    check's own predicate would keep passing with the check removed, which is
+    worse than no self-test at all - it manufactures false confidence.
+    """
     failures = []
 
-    # An out-of-domain grade must be caught by the domain check.
+    # An out-of-domain grade must be caught by check_alpha_grade_domain.
     bad_domain = SUBMISSION_SQL.replace(
         "candidate_letter,\n                cast(null as string)",
         "'F*',\n                cast(null as string)",
     )
     if bad_domain == SUBMISSION_SQL:
         failures.append("self-test could not inject a bad grade domain")
-    else:
-        sql = f"""
-        select count(*) as n
-        from ({bad_domain})
-        where AlphaGradeEarned is not null
-          and AlphaGradeEarned not in ('A', 'B', 'C', 'D', 'F')
-        """
-        if _rows(client, sql)[0].n == 0:
-            failures.append("domain check would not have caught 'F*'")
+    elif not check_alpha_grade_domain(client, sql=bad_domain):
+        failures.append("check_alpha_grade_domain missed an 'F*' grade")
 
-    # A 1-decimal credit must be caught by the format check.
+    # A 1-decimal credit must be caught by check_credits_earned.
     bad_format = SUBMISSION_SQL.replace("format('%.3f'", "format('%.1f'")
     if bad_format == SUBMISSION_SQL:
         failures.append("self-test could not inject a bad credit format")
-    else:
-        sql = f"""
-        select count(*) as n
-        from ({bad_format})
-        where CreditsEarned is not null
-          and not regexp_contains(CreditsEarned, r'^[0-9]+\\.[0-9]{{3}}$')
-        """
-        if _rows(client, sql)[0].n == 0:
-            failures.append("format check would not have caught 1 decimal")
+    elif not any(
+        "3-decimal" in f for f in check_credits_earned(client, sql=bad_format)
+    ):
+        failures.append("check_credits_earned missed a 1-decimal credit")
 
     return failures
 ```
+
+Note the asymmetry in the two assertions. `check_alpha_grade_domain` returns an
+empty list on clean data, so a plain truthiness test suffices.
+`check_credits_earned` already returns a `missing = 50` failure on clean data,
+so a truthiness test would pass even with the format clause broken — the
+self-test must look for the **specific** failure string.
+
+````
 
 Wire it into `main` behind a flag:
 
@@ -1151,7 +1169,7 @@ def main():
         return 0
     failures = run_checks(client)
     ...
-```
+````
 
 - [ ] **Step 2: Run the self-test**
 
