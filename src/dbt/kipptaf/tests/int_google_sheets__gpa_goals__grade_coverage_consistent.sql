@@ -21,9 +21,10 @@ with
     ),
 
     /* pooled WITHIN org_level, never across it — a school is compared against
-       what other schools cover, not against network-level coverage. Otherwise a
-       school legitimately serving a narrower grade band than the network (a new
-       high school still adding a grade a year) reads as an omission. */
+       what other schools cover, not against network-level coverage, so a school
+       band narrower than the network's is not itself an omission. This does NOT
+       cover a school newer than its peers and still adding a grade a year; that
+       still flags, because intent is recorded nowhere the test can read. */
     org_level_grades as (
         select distinct academic_year, metric, org_level, grade_level, from goal_grades
     ),
