@@ -1,5 +1,6 @@
 with
     sub as (
+        -- trunk-ignore(sqlfluff/ST06): contract column order is mandated
         select
             sr.survey_id,
             sr.survey_title,
@@ -14,6 +15,32 @@ with
             ri.respondent_work_location,
             ri.respondent_job_title,
 
+            lc.location_clean_name,
+            lc.campus_name,
+
+            case
+                sr2.home_business_unit_name
+                when 'TEAM'
+                then 'TEAM Academy Charter School'
+                when 'KCNA'
+                then 'KIPP Cooper Norcross Academy'
+                when 'MIA'
+                then 'KIPP Miami'
+                when 'KNJ'
+                then 'KIPP TEAM and Family Schools Inc.'
+                else sr2.home_business_unit_name
+            end as home_business_unit_name,
+            sr2.home_department_name,
+            sr2.job_function,
+            sr2.job_title,
+
+            sr2.mail,
+            sr2.user_principal_name,
+            sr2.sam_account_name,
+
+            sr2.reports_to_mail,
+            sr2.reports_to_sam_account_name,
+
             concat(
                 sr.survey_link_default,
                 '?snc=',
@@ -25,6 +52,12 @@ with
             {{ source("surveys", "int_surveys__response_identifiers") }} as ri
             on sr.survey_id = ri.survey_id
             and sr.response_id = ri.response_id
+        left join
+            {{ ref("int_people__staff_roster") }} as sr2
+            on ri.respondent_employee_number = sr2.employee_number
+        left join
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on sr2.home_work_location_name = lc.location_name
         where
             sr.survey_title = 'Federally Funded Staff Semi-Annual Certification'
             and sr.question_id in (20, 94, 72)
@@ -41,6 +74,18 @@ select
     respondent_preferred_name_lastfirst as respondent_preferred_name,
     respondent_work_location as respondent_primary_site,
     respondent_job_title as respondent_primary_job,
+
+    location_clean_name,
+    campus_name,
+    home_business_unit_name,
+    home_department_name,
+    job_function,
+    job_title,
+    mail,
+    user_principal_name,
+    sam_account_name,
+    reports_to_mail,
+    reports_to_sam_account_name,
 
     /* pivot cols */
     approver_email,
