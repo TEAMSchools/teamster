@@ -68,19 +68,29 @@ Every model backing a gated workbook emits these columns under these names.
 Contract columns always describe **the person whose access is being decided**;
 anyone else on the row keeps a descriptive prefix (e.g. `respondent_*`).
 
-| Column                       | Source                           | Purpose                      |
-| ---------------------------- | -------------------------------- | ---------------------------- |
-| `location_name`              | crosswalk `location_clean_name`  | Location gate                |
-| `entity`                     | roster `home_business_unit_name` | Entity gate                  |
-| `campus_name`                | crosswalk                        | Available axis, not gated    |
-| `department_name`            | roster `home_department_name`    | Department axis              |
-| `job_function`               | roster `job_function`            | AP role predicate            |
-| `job_title`                  | roster `job_title`               | NULL-`job_function` fallback |
-| `email`                      | roster `mail`                    | Post-cutover identity        |
-| `user_principal_name`        | roster `user_principal_name`     | UPN hedge                    |
-| `sam_account_name`           | existing                         | Pre-cutover identity         |
-| `report_to_email`            | roster `reports_to_mail`         | Manager, post-cutover        |
-| `report_to_sam_account_name` | existing                         | Manager, pre-cutover         |
+Columns keep their **real source names** — no aliasing. Uniformity comes from
+every model selecting the same source columns, so a rename in one place cannot
+drift from another. Legacy aliases (`entity`, `` `location` ``, `legal_entity`,
+`region`, `department`, `report_to_sam_account_name`) are deleted, not retained
+for compatibility.
+
+| Column                        | Source             | Purpose                      |
+| ----------------------------- | ------------------ | ---------------------------- |
+| `location_clean_name`         | location crosswalk | Location gate                |
+| `campus_name`                 | location crosswalk | Available axis, not gated    |
+| `home_business_unit_name`     | staff roster       | Entity gate                  |
+| `home_department_name`        | staff roster       | Department axis              |
+| `job_function`                | staff roster       | AP role predicate            |
+| `job_title`                   | staff roster       | NULL-`job_function` fallback |
+| `mail`                        | staff roster       | Post-cutover identity        |
+| `user_principal_name`         | staff roster       | UPN hedge                    |
+| `sam_account_name`            | staff roster       | Pre-cutover identity         |
+| `reports_to_mail`             | staff roster       | Manager, post-cutover        |
+| `reports_to_sam_account_name` | staff roster       | Manager, pre-cutover         |
+
+Note the plural `reports_to_*`. The old extracts aliased these to singular
+`report_to_*`; the real column is plural, and every calc referencing the
+singular must be updated.
 
 ### Three rules the contract enforces
 
@@ -149,10 +159,10 @@ coordination with IT: both the old and new identity forms match.
 
 ```text
 LOWER(USERNAME()) = LOWER([sam_account_name])
-OR LOWER(USERNAME()) = LOWER([email])
+OR LOWER(USERNAME()) = LOWER([mail])
 OR LOWER(USERNAME()) = LOWER([user_principal_name])
-OR LOWER(USERNAME()) = LOWER([report_to_sam_account_name])
-OR LOWER(USERNAME()) = LOWER([report_to_email])
+OR LOWER(USERNAME()) = LOWER([reports_to_sam_account_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_mail])
 ```
 
 `user_principal_name` is a hedge, not a widening. `mail` is the expected value
@@ -171,9 +181,9 @@ usernames** — this tier is where all 12 hardcoded grants used to live.
 ### Tier 3 — regional ops
 
 ```text
-OR ([entity] IN ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
+OR ([home_business_unit_name] IN ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
     AND ISMEMBEROF('Group Staff NJ Regional'))
-OR ([entity] = 'KIPP Miami' AND ISMEMBEROF('Group Staff MIA Regional'))
+OR ([home_business_unit_name] = 'KIPP Miami' AND ISMEMBEROF('Group Staff MIA Regional'))
 ```
 
 ### Tier 4 — regional leaders
@@ -198,10 +208,10 @@ Requires all three of location, entity, and role.
 Entity gate:
 
 ```text
-IF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools') AND [entity] = 'TEAM Academy Charter School' THEN TRUE
-ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KCNA')     AND [entity] = 'KIPP Cooper Norcross Academy' THEN TRUE
-ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff MIA')      AND [entity] = 'KIPP Miami' THEN TRUE
-ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [entity] = 'KIPP Paterson' THEN TRUE
+IF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools') AND [home_business_unit_name] = 'TEAM Academy Charter School' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KCNA')     AND [home_business_unit_name] = 'KIPP Cooper Norcross Academy' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff MIA')      AND [home_business_unit_name] = 'KIPP Miami' THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson' THEN TRUE
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF') THEN TRUE
 ELSE FALSE END
 ```
@@ -219,7 +229,7 @@ full entity names: `TEAM` (9,551 rows, 2002-2020), `KCNA` (2,328), `KNJ`
 fail the entity gate above, because none of those values match a full name.
 
 The old calcs handled this by hand — several tested
-`[entity] = 'TEAM' OR [entity] = 'TEAM Academy Charter Schools' OR [entity] = 'TEAM Academy Charter School'`.
+`[home_business_unit_name] = 'TEAM' OR [home_business_unit_name] = 'TEAM Academy Charter Schools' OR [home_business_unit_name] = 'TEAM Academy Charter School'`.
 That is why those triple comparisons exist; they are not redundancy.
 
 So each entity branch needs both forms, for example:
@@ -238,7 +248,7 @@ than adding the second form everywhere by reflex.
 
 #### The entity gate reads group membership, not the viewer's own entity
 
-`ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [entity] = 'KIPP Paterson'`
+`ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson'`
 asks whether the viewer is **in the Paterson staff group** — never whether the
 viewer is a Paterson employee. Membership of an entity group is deliberately not
 the same population as employment by that entity.
@@ -259,7 +269,7 @@ Location gate — one line if `ISMEMBEROF()` accepts a non-literal argument on
 this Server version, otherwise 26 explicit branches:
 
 ```text
-ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_name])
+ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])
 ```
 
 Rooms are absent by design. Central office reaches data through Tiers 2 and 4,
@@ -352,7 +362,7 @@ the author or IT.
 
 ### Rollout order
 
-1. dbt merged and built first. A calc referencing `[email]` before the column
+1. dbt merged and built first. A calc referencing `[mail]` before the column
    exists breaks the workbook.
 1. The four simple workbooks — Teacher Goals, Manager Survey Reports, Manager
    Survey Rollup, Personalized Survey Links — to shake out the contract on
