@@ -2,6 +2,20 @@
 
 Refs [#4613](https://github.com/TEAMSchools/teamster/issues/4613).
 
+> **Amended during implementation.** Three parts of the design below were
+> changed during review on
+> [#4637](https://github.com/TEAMSchools/teamster/pull/4637): the households
+> model became an intermediate reading `stg_finalsite__contacts` rather than a
+> staging model reading the source (and was renamed
+> `int_finalsite__contacts__households`), so the stated parallel to
+> `stg_finalsite__contact_relationships` no longer holds; `min(country)` became
+> a `dbt_utils.deduplicate` canonical-row pick; and the completeness test became
+> a biconditional against `address_source`, the version described here having
+> been trivially satisfiable. `int_finalsite__student_address_of_record` also
+> carries the primary contact's phone, which this design argued for but did not
+> plumb. See the "Amended during execution" section of
+> `docs/superpowers/plans/2026-07-29-finalsite-address-of-record.md`.
+
 ## Problem
 
 `stg_finalsite__contacts` flattens seven address columns off

@@ -74,6 +74,57 @@ Phase 2 draft PR, currently docs-only).
 
 ---
 
+## Amended during execution
+
+Four changes were made to this plan's Phase 1 design after it was written, three
+of them from review on
+[#4637](https://github.com/TEAMSchools/teamster/pull/4637). Tasks 1 and 2 below
+are left as originally written — they are the historical record of what was
+planned, and git is the record of what shipped. **Where they disagree with this
+section, this section is correct.** Phase 2 (Tasks 3-6) is unaffected: the
+households model is package-internal, and those tasks reference only
+`int_finalsite__student_address_of_record` and `rpt_focus__addresses`.
+
+1. **The households model moved to the intermediate layer and was renamed** —
+   `stg_finalsite__contact_households` became
+   `int_finalsite__contacts__households` under `api/intermediate/`, and now
+   reads `ref("stg_finalsite__contacts")` rather than
+   `source("finalsite", "contacts")`. To make that possible,
+   `stg_finalsite__contacts` gained the raw `households` array in its enforced
+   contract, with `data_type`
+   `ARRAY<STRUCT<id STRING, address_1 STRING, address_2 STRING, city STRING, state STRING, zip STRING, country STRING>>`.
+   Consequences: the model is no longer contract-enforced (`api/intermediate`
+   sets only `+materialized: table`), though every column keeps its `data_type`
+   and all three data tests; and the design's stated parallel to
+   `stg_finalsite__contact_relationships` is abandoned, since that model still
+   flattens its array straight from the source. The package is now internally
+   inconsistent in that respect, knowingly.
+
+1. **`min(country)` was replaced by a canonical-row pick.** `src/dbt/CLAUDE.md`
+   requires `dbt_utils.deduplicate()` or `first_value(... order by <pk>)` rather
+   than per-column aggregation, which blends values across rows.
+   `address_candidates` is now a `complete_households` filter CTE feeding
+   `dbt_utils.deduplicate(partition_by="finalsite_enrollment_id, address_1, address_2, city, state, zip", order_by="household_id asc")`.
+   This is behavior-preserving on current data only because no address group has
+   competing `country` values; where one did, the two forms would diverge, and
+   the canonical pick is the intended behavior.
+
+1. **The completeness test became a biconditional against `address_source`.** As
+   originally specified it asserted only that the address fields agreed with
+   each other, which holds trivially because the upstream CTE already filters to
+   complete addresses — a broken join could have produced a resolved row with no
+   address and the test would have passed. The Task 2 YAML below carries the
+   corrected form.
+
+1. **`stg_finalsite__contacts` address columns were tagged `contains_pii`.** The
+   plan had listed retrofitting that model as out of scope; it was pulled in at
+   the repo owner's direction. `address_1`, `address_2`, `city`, and `zip` are
+   tagged; `state` and `country` are not. Still untagged on that model, and
+   still out of scope: `first_name`, `last_name`, `email`, `birth_date`, and the
+   three phone columns.
+
+---
+
 ## Preconditions verified against `main`
 
 These were confirmed at plan-writing time. Re-confirm cheaply before Task 1; if
