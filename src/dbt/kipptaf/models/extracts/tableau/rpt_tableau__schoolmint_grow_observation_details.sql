@@ -36,7 +36,18 @@ select
     lc.location_clean_name,
     lc.campus_name,
 
-    srh.home_business_unit_name,
+    case
+        srh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else srh.home_business_unit_name
+    end as home_business_unit_name,
     srh.home_department_name,
     srh.job_function,
     srh.job_title,
@@ -204,7 +215,18 @@ select
     lc.location_clean_name,
     lc.campus_name,
 
-    srh.home_business_unit_name,
+    case
+        srh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else srh.home_business_unit_name
+    end as home_business_unit_name,
     srh.home_department_name,
     srh.job_function,
     srh.job_title,

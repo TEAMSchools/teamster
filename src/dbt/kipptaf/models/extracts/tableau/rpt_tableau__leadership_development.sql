@@ -123,7 +123,18 @@ select
     lc.location_clean_name,
     lc.campus_name,
 
-    r.home_business_unit_name,
+    case
+        r.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else r.home_business_unit_name
+    end as home_business_unit_name,
     r.home_department_name,
     r.job_function,
     r.job_title,
