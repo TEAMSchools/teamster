@@ -7,7 +7,11 @@ models:
       unweighted cumulative GPA. A `LEFT JOIN` to the GPA source preserves
       enrolled students who have no GPA on record yet (measures null) so the
       goal aggregation can count them as not-yet-meeting rather than dropping
-      them from the denominator.
+      them from the denominator. Population is scoped by `is_enrolled_recent`,
+      which is derived from enrollment dates — the enrollment ran to the end of
+      its school year, or covers today. Deliberately not `enroll_status`, which
+      is student-level and current-only and therefore excludes graduated seniors
+      from every completed year.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -64,7 +68,10 @@ unit_tests:
       current-term GPA row, and a third enrolled student with no matching GPA
       row surviving the `LEFT JOIN` with null measures. A non-current GPA term
       row for the first student proves the `is_current` selection excludes it in
-      favor of the current-term row.
+      favor of the current-term row. Two further students pin the population
+      predicate in both directions — a graduated senior whose year ran to
+      completion is retained, and a mid-year withdrawal is dropped even though
+      its status is still active.
     model: int_gpa__goal_student_metrics
     given:
       - input: ref('int_extracts__student_enrollments')
@@ -81,6 +88,7 @@ unit_tests:
               'HS' as school_level,
               1 as rn_year,
               0 as enroll_status,
+              true as is_enrolled_recent,
               'kippnewark' as _dbt_source_project,
               cast(3.10 as float64) as cumulative_y1_gpa_projected_unweighted
           union all
@@ -95,6 +103,7 @@ unit_tests:
               'HS',
               1,
               0,
+              true,
               'kippnewark',
               cast(2.75 as float64)
           union all
@@ -109,8 +118,44 @@ unit_tests:
               'HS',
               1,
               0,
+              true,
               'kippnewark',
               cast(3.40 as float64)
+          union all
+          /* graduated senior: enroll_status 3, but the year ran to completion.
+             MUST be included — this is the case the old enroll_status filter
+             silently dropped from every prior year. */
+          select
+              2025,
+              'Newark',
+              101,
+              12,
+              90004,
+              1004,
+              35,
+              'HS',
+              1,
+              3,
+              true,
+              'kippnewark',
+              cast(2.90 as float64)
+          union all
+          /* mid-year withdrawal: still status 0, but the enrollment neither ran
+             to the end of the year nor covers today. MUST be excluded. */
+          select
+              2025,
+              'Newark',
+              101,
+              10,
+              90005,
+              1005,
+              35,
+              'HS',
+              1,
+              0,
+              false,
+              'kippnewark',
+              cast(3.80 as float64)
       - input: ref('int_powerschool__gpa_term')
         format: sql
         rows: |
@@ -176,6 +221,18 @@ unit_tests:
             grade_level: 9,
             student_number: 90003,
             cumulative_gpa_unweighted: 3.40,
+            y1_gpa_weighted: null,
+            y1_gpa_unweighted: null,
+            is_on_pace: null,
+            is_on_pace_denominator: null,
+          }
+        - {
+            academic_year: 2025,
+            region: Newark,
+            schoolid: 101,
+            grade_level: 12,
+            student_number: 90004,
+            cumulative_gpa_unweighted: 2.90,
             y1_gpa_weighted: null,
             y1_gpa_unweighted: null,
             is_on_pace: null,
