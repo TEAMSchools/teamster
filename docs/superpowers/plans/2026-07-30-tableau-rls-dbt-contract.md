@@ -866,7 +866,21 @@ A "column not found" error means Step 3 was skipped or the pivot dropped them.
 
 ---
 
-### Task 12: `rpt_tableau__pm_outlier_detection` — two location axes
+### Task 12: `rpt_tableau__pm_outlier_detection` — DEFERRED, NOT SHIPPED
+
+> **Reverted 2026-07-31 by user decision.** This task was implemented and then
+> backed out to the merge base. Implementing the contract here surfaced two
+> grain defects, one pre-existing and structural — `score_dates` joins
+> `stg_google_sheets__reporting__terms` without a region predicate while that
+> sheet holds one row per region per term, doubling 1,281 keys in AY2024 PM2 and
+> AY2025 PM2 and attaching the wrong region's term end date to half of them.
+> Fixing it needs `score_dates` restructured to derive region from the observer,
+> because `stg_performance_management__outlier_detection` carries no region
+> column. The SchoolMint Grow Dashboard is not being rebuilt soon, so the model
+> was dropped rather than hold up the other twelve. Do not re-run this task from
+> this plan; the remaining work is tracked in its own issue.
+
+### Task 12 (original text, retained for the follow-up): two location axes
 
 **Files:**
 
@@ -1156,13 +1170,18 @@ Report the model name rather than improvising.
 
 ```bash
 uv run dbt build --project-dir /workspaces/teamster/src/dbt/kipptaf --target dev \
+  --favor-state --defer --state /workspaces/teamster/src/dbt/kipptaf/target/prod \
   --select rpt_tableau__content_team rpt_tableau__leadership_development \
     rpt_tableau__schoolmint_grow_goals rpt_tableau__schoolmint_grow_observation_details \
     rpt_tableau__teacher_observations rpt_tableau__survey_responses \
     rpt_tableau__survey_completion rpt_tableau__operations_ekg rpt_tableau__operations_pm \
     rpt_tableau__stipend_and_bonus_app rpt_tableau__grants_timesheets \
-    rpt_tableau__pm_outlier_detection rpt_tableau__manager_survey_details
+    rpt_tableau__manager_survey_details
 ```
+
+`--favor-state` is required: without it dbt prefers stale copies of upstream
+models in your personal dev schema over production.
+`rpt_tableau__pm_outlier_detection` is deliberately absent — see Task 12.
 
 Expected: all models and tests PASS.
 

@@ -64,6 +64,12 @@ with
             obs.academic_year,
             obs.term_code,
 
+            srh.home_department_name,
+            srh.job_title,
+            srh.home_work_location_name,
+            srh.formatted_name,
+            srh.reports_to_formatted_name,
+
             avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
@@ -78,10 +84,14 @@ with
             obs.employee_number,
             obs.observer_employee_number,
             obs.academic_year,
-            obs.term_code
+            obs.term_code,
+            srh.home_department_name,
+            srh.job_title,
+            srh.home_work_location_name,
+            srh.formatted_name,
+            srh.reports_to_formatted_name
     )
 
--- trunk-ignore(sqlfluff/ST06): contract column order is mandated
 select
     sd.observer_employee_number,
     sd.academic_year,
@@ -130,35 +140,11 @@ select
     srh.reports_to_formatted_name as observer_manager,
 
     sa.employee_number as teacher_employee_number,
-    trh.formatted_name as teacher_name,
-
-    lc.location_clean_name,
-    lc.campus_name,
-
-    case
-        trh.home_business_unit_name
-        when 'TEAM'
-        then 'TEAM Academy Charter School'
-        when 'KCNA'
-        then 'KIPP Cooper Norcross Academy'
-        when 'MIA'
-        then 'KIPP Miami'
-        when 'KNJ'
-        then 'KIPP TEAM and Family Schools Inc.'
-        else trh.home_business_unit_name
-    end as home_business_unit_name,
-    trh.home_department_name,
-    trh.job_function,
-    trh.job_title,
-
-    trh.mail,
-    trh.user_principal_name,
-    trh.sam_account_name,
-
-    trh.reports_to_mail,
-    trh.reports_to_sam_account_name,
-
-    trh.reports_to_formatted_name as teacher_manager,
+    sa.formatted_name as teacher_name,
+    sa.home_department_name as teacher_department,
+    sa.job_title as teacher_job_title,
+    sa.home_work_location_name as teacher_location,
+    sa.reports_to_formatted_name as teacher_manager,
     sa.overall_score as teacher_overall_score,
 
     if(sd.is_iqr_outlier_current, 'outlier', 'not outlier') as iqr_current,
@@ -179,12 +165,3 @@ inner join
     on sd.observer_employee_number = sa.observer_employee_number
     and sd.academic_year = sa.academic_year
     and sd.reporting_term = sa.term_code
-left join
-    {{ ref("int_people__staff_roster_history") }} as trh
-    on sa.employee_number = trh.employee_number
-    and sd.end_date_timestamp
-    between trh.effective_date_start_timestamp and trh.effective_date_end_timestamp
-    and trh.primary_indicator
-left join
-    {{ ref("int_people__location_crosswalk") }} as lc
-    on trh.home_work_location_name = lc.location_name

@@ -117,7 +117,7 @@ rpt_tableau__leadership_development
 rpt_tableau__schoolmint_grow_observation_details
 rpt_tableau__schoolmint_grow_goals
 rpt_tableau__teacher_observations
-rpt_tableau__pm_outlier_detection
+rpt_tableau__pm_outlier_detection   (DEFERRED - see below)
 rpt_tableau__content_team
 rpt_tableau__survey_responses
 rpt_tableau__survey_completion
@@ -132,6 +132,21 @@ Not every model is confirmed to carry location or entity today —
 `__survey_completion`, `__grants_timesheets`, `__pm_outlier_detection` and
 `__operations_ekg` are unaudited. Where a column is missing, add it by joining
 `int_people__staff_roster`. That audit is task one of the implementation plan.
+
+#### `rpt_tableau__pm_outlier_detection` is deferred, 2026-07-31
+
+Dropped from scope by user decision after the contract work surfaced two
+independent grain defects in it, one of them pre-existing and structural:
+`score_dates` joins `stg_google_sheets__reporting__terms` with no region
+predicate, while that sheet holds one row per region per term. The SchoolMint
+Grow Dashboard will not be rebuilt for a while, so the model does not justify
+holding up the other twelve. All of its changes were reverted to the merge base
+and its remaining problems are tracked separately.
+
+Twelve models carry the contract. The Permissions block still targets 13
+workbooks — the SchoolMint Grow Dashboard reads three other contract-carrying
+models alongside this one, so it is gated regardless; it simply cannot gate on
+this model's rows until the deferred work lands.
 
 ### New extract and exposure work
 
