@@ -1,31 +1,39 @@
 models:
   - name: int_tableau__fresh_enrollment_scaffold
     description: >
-      School x grade spine for the FRESH dashboard, replacing the fully
-      hand-maintained stg_google_sheets__finalsite__school_scaffold. Three
-      sources blend into one spine: PowerSchool supplies grade membership for
-      Newark/Camden/Paterson, Focus supplies it for Miami (Miami's live SIS),
-      and the sheet supplies everything neither SIS can -- every school's
-      grade_level = -9 whole-school row (no SIS branch ever produces this row)
-      and any genuinely new school/grade not yet live in a SIS. Both SIS
-      builders derive grade membership from actual current enrollment
-      (PowerSchool's stg_powerschool__students where enroll_status = 0; Focus's
-      int_focus__student_enrollments where enroll_status = 0 and academic_year =
-      current_academic_year), not a static low_grade/high_grade-style school
-      span -- that field encodes a school's eventual, fully-built-out grade
-      span, not what it currently serves. Tradeoff shared by both SIS builders:
-      a school's very first student in a newly-opening grade may not be entered
-      in the SIS yet even though Finalsite is already recruiting for it, so that
-      grade won't appear until the SIS has at least one enrolled student in it.
-      Either SIS source wins on any overlapping (region, schoolid, grade_level)
-      key; the sheet fills everything else -- the same single rule naturally
-      covers -9 rows and genuinely-new grades/schools network-wide, with no
-      special-casing per region.
+      School x grade spine for the FRESH dashboard, fully SIS-derived. Replaces
+      the hand-maintained stg_google_sheets__finalsite__school_scaffold, which
+      is now retired -- every row type it supplied is computed here. PowerSchool
+      supplies schools and grade membership for Newark/Camden/Paterson; Focus
+      supplies both for Miami (Miami's live SIS), joined through
+      stg_google_sheets__people__locations to reach the PowerSchool-space
+      schoolid and the school abbreviation. Grade membership comes from actual
+      current enrollment (stg_powerschool__students where enroll_status = 0;
+      int_focus__student_enrollments where enroll_status = 0, academic_year =
+      current_academic_year and rn_year = 1), not a static
+      low_grade/high_grade-style span -- high_grade does track each school's max
+      enrolled grade, but low_grade is stale-low on rebanded schools, so
+      expanding the declared span injects rows for grades those schools don't
+      serve. Tradeoff: a school's very first student in a newly-opening grade
+      may not be entered in the SIS yet even though Finalsite is already
+      recruiting for it, so that grade won't appear until the SIS has at least
+      one enrolled student in it. The three row types no SIS produces directly
+      are derived -- grade_level = -9 whole-school totals, schoolid = 0 region
+      rollups, and net-new schools/grades anti-joined off
+      int_finalsite__status_report_unpivot. That last branch is gated by a
+      predicate comparing the two year vars, which renders as a constant
+      (finalsite_recruitment_year != current_academic_year -- e.g. "2026 !=
+      2026"). It looks odd in the compiled SQL but is deliberate: both sides are
+      compile-time literals, so BigQuery folds it and the CTE contributes zero
+      rows until SRE's recruitment year runs ahead of PowerSchool's academic
+      year. Once it does, the branch activates on its own. See
+      docs/models/fresh-dashboard-data-model.md for the full build and for why
+      school_level here can disagree with the goals sheet.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - academic_year
+              - enrollment_academic_year
               - region
               - schoolid
               - grade_level
@@ -34,24 +42,24 @@ models:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
-              - academic_year
+              - enrollment_academic_year
               - schoolid
               - grade_level
           config:
             severity: warn
             where: schoolid != 0
           description: >
-            Drift guard for the SIS/sheet blend's anti-join key (region,
-            schoolid, grade_level). That key is correct but strictly narrower
-            than (schoolid, grade_level) alone -- if the sheet's typed region
-            ever disagrees with extract_region()'s output for the same school,
-            the sheet row stops being suppressed and this uniqueness check
-            (which drops region) catches the resulting duplicate school/grade
-            pair under two region labels. Region-level placeholder rows
-            (schoolid = 0) legitimately repeat across regions and are excluded
-            from this test.
+            Drift guard on the net-new anti-join key. finalsite_new suppresses a
+            Finalsite school/grade already in the SIS spine by matching
+            (schoolid, grade_level); the model's primary key also carries
+            region. If int_finalsite__status_report_unpivot's region ever
+            disagrees with extract_region()'s output for the same school, the
+            primary key still passes while this check (which drops region)
+            catches the resulting duplicate school/grade pair under two region
+            labels. Region-level rollup rows (schoolid = 0) legitimately repeat
+            across regions and are excluded.
     columns:
-      - name: academic_year
+      - name: enrollment_academic_year
         data_type: int64
         description: >
           The current Finalsite recruitment cycle, sourced from the
@@ -65,33 +73,44 @@ models:
       - name: schoolid
         data_type: int64
         description: >
-          PowerSchool school_number, or (for Miami focus-sourced rows) the
-          equivalent PowerSchool-aligned id resolved from Focus's schoolid via
-          the locations crosswalk.
+          PowerSchool school_number. For Miami, the PowerSchool-space id
+          resolved from Focus's school_number via
+          stg_google_sheets__people__locations (focus_school_id ->
+          powerschool_school_id) -- Focus's own school_number is a Focus code,
+          not a PowerSchool id. 0 on region rollup rows.
       - name: school
         data_type: string
-        description: Short school abbreviation (e.g. "KURA", "Legacy ES").
+        description: >
+          Short school abbreviation (e.g. "KURA", "Legacy ES"), or the region
+          name on a schoolid = 0 rollup row.
       - name: grade_level
         data_type: int64
         description: >
-          -9 = whole-school total row (never SIS-sourced -- always gsheet, see
-          scaffold_source), else 0-12.
+          -9 = whole-school total row, derived one per school in the spine, else
+          0-12. -9 rather than -1, because -1 means Pre-K in
+          stg_finalsite__status_report.grade_level and the two conventions must
+          not collide. -1 never appears here.
       - name: org
         data_type: string
         description: Always "KTAF" (verified constant, network-wide).
       - name: school_level
         data_type: string
         description: >
-          ES / MS / HS. On powerschool- and focus-sourced rows, derived per
-          enrolled grade_level (>=9 HS, >=5 MS, >=0 ES) -- NOT read from either
-          SIS's own per-school school_level field, which is a single per-school
-          value and would incorrectly apply one classification to a school
-          spanning two bands. On gsheet-sourced rows, whatever the analyst
-          entered.
+          ES / MS / HS, banded from the enrolled grade_level (>=9 HS, >=5 MS,
+          else ES) -- NOT read from either SIS's own per-school field, which is
+          a single value per school and cannot reproduce a level that varies by
+          grade within one school. NULL on grade_level = -9 rows, which span
+          bands. These are NJ bands, so Miami grade 5 reports MS even though
+          Miami's real ES/MS boundary is 5/6 -- an accepted divergence from
+          stg_google_sheets__finalsite__goals, which uses Miami's real boundary.
+          See docs/models/fresh-dashboard-data-model.md.
       - name: scaffold_source
         data_type: string
         description: >
-          Per-row lineage tag identifying whichever builder actually produced
-          the row -- 'powerschool' (Newark/Camden/Paterson grade membership),
-          'focus' (Miami grade membership), or 'gsheet' (whole-school -9 rows,
-          plus anything not yet live in either SIS).
+          Per-row lineage tag -- 'sis' (grade membership from PowerSchool or
+          Focus), 'finalsite' (net-new schools/grades not yet live in either
+          SIS, present only while finalsite_recruitment_year !=
+          current_academic_year), or NULL on schoolid = 0 region rollups, which
+          aggregate across sources. On a grade_level = -9 total row the tag is a
+          priority pick across that school's real rows ('sis' if any, else
+          'finalsite'), not a single row's provenance.

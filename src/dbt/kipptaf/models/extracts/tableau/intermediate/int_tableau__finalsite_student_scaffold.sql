@@ -19,6 +19,7 @@ with
             detailed_status,
             status_start_date,
             latest_status_date,
+
         from {{ ref("int_finalsite__status_report_unpivot") }}
         where enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),
@@ -26,8 +27,10 @@ with
     same_day_duplicate_flags as (
         select
             finalsite_enrollment_id,
+
             countif(status_start_date = latest_status_date)
             > 1 as is_same_day_status_duplicate,
+
         from same_day_status_dates
         group by finalsite_enrollment_id
     ),
