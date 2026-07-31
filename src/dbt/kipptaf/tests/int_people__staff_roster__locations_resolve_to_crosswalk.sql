@@ -7,7 +7,7 @@ left join
     {{ ref("int_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.location_name
 where
-    sr.assignment_status != 'Terminated'
+    sr.assignment_status is distinct from 'Terminated'
     and sr.home_work_location_name is not null
     and lc.location_clean_name is null
 group by 1

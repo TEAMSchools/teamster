@@ -4,6 +4,6 @@
 select sr.employee_number,
 from {{ ref("int_people__staff_roster") }} as sr
 where
-    sr.assignment_status != 'Terminated'
+    sr.assignment_status is distinct from 'Terminated'
     and sr.sam_account_name is not null
     and sr.mail is null
