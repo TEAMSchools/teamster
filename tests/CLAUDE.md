@@ -63,7 +63,11 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `<Resource>._request.retry.wait = wait_none()` (tenacity) to kill backoff,
   inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`
   with a `_FakeResponse` stub, and assert call counts for retry/no-retry paths.
-  Reference harness: `tests/resources/test_resource_adp_workforce_now.py`.
+  Reference harness: `tests/resources/test_resource_adp_workforce_now.py`. For a
+  retry-decorated METHOD (e.g. `SSHResource.get_connection`), use
+  `Cls.method.retry_with(wait=wait_none())(instance)` — it returns a copy, so no
+  class mutation to undo, and `stop=stop_after_attempt(1)` collapses it per
+  test.
 - **SSH `test`**: vestigial config. It formerly switched the sshpass tunnel's
   password source (secret file vs. the `password` field); that tunnel was
   removed in #4442, so no method on `SSHResource` reads it now.
@@ -76,6 +80,10 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   leave the changes stashed and the `stash pop` unrun. To confirm a failure is
   pre-existing, check the test is in an untouched dir and doesn't reference your
   changed symbols, rather than stash-comparing.
+- **`test_resource_ssh_dir_mtime_propagation.py` fails ~10 of 15 on `main`** —
+  it asserts LIVE SFTP servers propagate directory mtime, so failures track
+  vendor behavior, not your change, and `littlesis` flaps between runs. Baseline
+  against `main` before attributing a failure here to an SSH edit.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.

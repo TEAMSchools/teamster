@@ -14,6 +14,7 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorResult,
+    SkipReason,
     define_asset_job,
     sensor,
 )
@@ -59,11 +60,10 @@ def build_renlearn_sftp_sensor(
         run_requests = []
         cursor: dict = json.loads(context.cursor or "{}")
 
-        with (
-            ssh_renlearn.get_connection() as connection,
-            connection.open_sftp() as sftp_client,
-        ):
-            files = ssh_renlearn.listdir_attr_r(sftp_client=sftp_client)
+        files = ssh_renlearn.listdir_attr_r_or_skip()
+
+        if isinstance(files, SkipReason):
+            return files
 
         for asset in asset_selection:
             asset_metadata = asset.metadata_by_key[asset.key]
