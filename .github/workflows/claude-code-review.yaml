@@ -67,11 +67,12 @@ jobs:
             For SQL and dbt changes, read src/dbt/CLAUDE.md (and the nearest
             per-project CLAUDE.md) and verify the code follows its SQL
             conventions, SQL column ordering (ST06), and SQL formatting
-            sections. Examples: max one level of function nesting, no QUALIFY,
-            no ORDER BY in models, no SELECT DISTINCT or row_number() = 1 to
-            mask upstream duplicates, no subqueries against tables or CTEs, cast
-            early and once, correct ON vs WHERE placement, and no pass-through
-            import CTEs. Cite the specific convention for each violation.
+            sections. Examples (not exhaustive): max one level of function
+            nesting, no QUALIFY, no ORDER BY in models, no SELECT DISTINCT or
+            row_number() = 1 to mask upstream duplicates, no subqueries against
+            tables or CTEs, cast early and once, correct ON vs WHERE placement,
+            and no pass-through import CTEs. Cite the specific convention for
+            each violation.
 
             Environment: you run in GitHub Actions with NO warehouse or data
             access. No BigQuery connection, and none of the cube, dbt, dagster,
@@ -87,8 +88,10 @@ jobs:
             grain inferred from schema, test coverage, and PII exposure. Before
             reporting a repo-convention violation, confirm the convention
             against existing models with git grep; do not invent naming or style
-            rules the codebase does not already follow. Report every issue with
-            a severity label; do not withhold lower-severity findings.
+            rules the codebase does not already follow. Report every issue you
+            find, including ones you are uncertain about; do not withhold
+            lower-severity findings. Include a confidence level and a severity
+            label for each finding so a human can rank them.
           allowed_bots: dbt-cloud
           include_fix_links: false
           use_sticky_comment: true

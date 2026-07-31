@@ -35,6 +35,9 @@ uv sync
 echo -e "\n\033[1;34m▶ trunk upgrade\033[0m"
 trunk upgrade -y
 
+echo -e "\n\033[1;34m▶ npm update (src/cube)\033[0m"
+npm --prefix src/cube update --save
+
 DBT_PROJECTS=(
   amplify
   deanslist

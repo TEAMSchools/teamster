@@ -139,7 +139,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   implementers -> `sonnet` at `high`; review and re-review dispatches ->
   `sonnet` at `xhigh`; design work -> `opus` at `high`; final whole-branch
   review -> `opus` at `xhigh`. When none of these clearly apply, omit both
-  overrides.
+  overrides. The `Agent` tool accepts only `model` — effort is settable on
+  Workflow `agent()`, not `Agent`, so via `Agent` pass the model and drop the
+  effort tier.
 
 - **Subagent multi-step bail risk**: subagents can abandon multi-step tasks
   partway through. Scope dispatches to one file / one commit; inspect the file
@@ -277,7 +279,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   findings, minutes AFTER the check-run reports `success` — so a findings-poll
   must gate on the comment's `updated_at` / body growing, not the check-run
   conclusion or a naive length threshold (the ~500-char checklist stub trips
-  it).
+  it). Trunk's check-runs are RE-CREATED on each push, so a `gh pr checks` poll
+  gating on "nothing pending" can sample the gap between them and report done
+  prematurely — re-check after a delay before calling CI complete. To get
+  `claude-review` onto code pushed after its pass, toggle draft state
+  (`gh api -X PATCH .../pulls/<n> -f draft=true`, then `false`) — that re-fires
+  `ready_for_review`.
 
 - **A merged PR's CI status is not evidence the change was validated** — a PR
   merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
