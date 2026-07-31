@@ -32,7 +32,7 @@ with
 
     section_owner as (
         -- ParentSquare requires a staff_id on every section and exactly one
-        -- primary per section. Which of the six Operations leaders owns a section
+        -- primary per section. Which of the Operations leaders owns a section
         -- is a formality — their access to every school comes from their
         -- rpt_parentsquare__staff rows, not from section membership — so this
         -- picks one deterministically. Reading it from the staff feed rather than

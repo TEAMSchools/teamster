@@ -2,15 +2,19 @@ models:
   - name: rpt_parentsquare__staff
     description:
       ParentSquare `staff.csv` for KIPP Newark — one row per (Operations leader,
-      school). Scoped to the six named regional Operations leaders the
-      Integration Planner designates as the phase-1 user population; no school
-      staff and no teachers, per that same decision. Each leader is emitted once
-      per operating school because ParentSquare's staff file is per-school and a
-      staff member may appear at more than one, which is what grants them
-      school-level access everywhere and what makes every
-      `rpt_parentsquare__sections.staff_id` resolve at its own school. No
-      district-office row is emitted — the schools feed carries only the twelve
-      operating schools, so a `school_id` of 0 would have nothing to match.
+      school). Membership is the hand-curated `TS-DL-Regional Ops Leaders`
+      distribution list, scoped to active Newark regional-office Operations
+      staff, which is the user population the Integration Planner designates —
+      no school staff and no teachers. Sourcing from the group rather than a
+      hardcoded list of individuals means Ops owns the roster and it tracks role
+      changes without a code change; no job-title or job-function rule
+      reproduces the same set. Each leader is emitted once per operating school
+      because ParentSquare's staff file is per-school and a staff member may
+      appear at more than one, which is what grants them school-level access
+      everywhere and what makes every `rpt_parentsquare__sections.staff_id`
+      resolve at its own school. No district-office row is emitted — the schools
+      feed carries only the twelve operating schools, so a `school_id` of 0
+      would have nothing to match.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

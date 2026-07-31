@@ -55,7 +55,7 @@ workstream).
   grade level only, so `sections.csv` / `rosters.csv` are satisfied with
   synthetic per-grade sections rather than real course sections. No teacher is
   imported. See _File set_.
-- **Any staff beyond the six regional Operations leaders** — no school staff, no
+- **Any staff beyond the regional Operations leadership** — no school staff, no
   teachers.
 - **Parent / student logins** — none needed.
 - **Camden, Paterson, Miami** — out of scope for this phase.
@@ -72,7 +72,7 @@ Staff / Sections ❌ not needed. ParentSquare's own SFTP spec (page 4) disagrees
 | `schools.csv`            | required — built                                       |
 | `students.csv`           | required — built                                       |
 | `parents.csv`            | required — built                                       |
-| `staff.csv`              | required — built (six Operations leaders only)         |
+| `staff.csv`              | required — built (regional Operations leaders only)    |
 | `terms.csv`              | required _only if terms is enabled_ — omitted          |
 | `sections.csv`           | required — built (synthetic per-grade sections)        |
 | `rosters.csv`            | required — built (student → per-grade section)         |
@@ -82,11 +82,13 @@ Sending all required files is the decision. The two files the Planner excluded
 are therefore built, but shaped so they do not contradict the Planner's other
 decisions:
 
-- **`staff.csv` carries only the six named regional Operations leaders**
-  (question 4: "Regional Operation leaders ... No school staff, no teachers"),
-  each emitted once per operating school. ParentSquare's staff file is
-  per-school and its spec states a staff member may be at more than one, so the
-  fan-out is what grants them school-level access everywhere.
+- **`staff.csv` carries only the regional Operations leadership** (question 4:
+  "Regional Operation leaders ... No school staff, no teachers"), each emitted
+  once per operating school. ParentSquare's staff file is per-school and its
+  spec states a staff member may be at more than one, so the fan-out is what
+  grants them school-level access everywhere. Membership is the hand-curated
+  `TS-DL-Regional Ops Leaders` distribution list scoped to active Newark
+  regional-office Operations staff — see _Identifying the Operations leaders_.
 - **`sections.csv` holds one synthetic section per (school, grade)**, owned by
   an Operations leader — not real course sections. This is the pattern
   `rpt_clever__sections` already uses for its auto-generated `ENR` sections. It
@@ -99,6 +101,44 @@ decisions:
 
 Sections are derived from the (school, grade) pairs students are actually
 enrolled in, so no empty section is emitted and every roster row resolves.
+
+### Identifying the Operations leaders
+
+`staff.csv` sources membership from the **`TS-DL-Regional Ops Leaders`** LDAP
+distribution list, scoped to active Newark regional-office (`school_id = 0`)
+Operations staff. That yields **8** people.
+
+The group is hand-curated — no `idautoGroupIncludeFilter`, no sync interval, so
+its membership is set by a human rather than a rule — and it was last modified
+2026-06-25, so it is actively maintained. Ops therefore owns this list and role
+changes flow through without a code change.
+
+Two alternatives were rejected:
+
+- **A hardcoded list of individuals** matched on KIPP mail. Exactly reproduces
+  the six people the Planner names, but rots silently — a new Operations leader
+  is absent until someone edits SQL.
+- **A `job_function` rule** (`'Chief Level'`, `'KTAF or Regional Director'`,
+  `'EDs, HOSs, MDOs'`). Returns exactly the Planner's six today, but only
+  because `job_function` is **null** for one Managing Director of School
+  Operations who holds the same `job_title` as two included peers.
+  `job_function` is null for ~3% of active Newark staff, so that is a data gap
+  rather than a signal, and a routine backfill would silently add that person.
+  Rejected: the failure mode is silent over-provisioning.
+
+The group yields two people the Planner's list of six does not name — a Deputy
+Chief and the Managing Director of School Operations mentioned above. Both are
+in the curated leaders list AND in the automated
+`TS-SG-Okta Parentsquare All Ops` group, so both are plausibly intended; the
+MDSO especially, given the shared title. Confirm with Ops (see _Open
+questions_).
+
+For contrast, `TS-SG-Okta Parentsquare All Ops` — despite its name — is not
+usable here. It is idauto rule-generated (4-hour sync) and resolves to all 12
+regional Operations staff at the same scoping, including Facilities Managers;
+without the `school_id = 0` filter it reaches 124 Newark staff, 88 of them
+school-based, which squarely contradicts "no school staff". It governs app SSO,
+not the roster feed.
 
 ## Approach
 
@@ -156,7 +196,7 @@ columns.
 | `students`           | `int_extracts__student_enrollments` (Newark, current academic year, active enrollment) | `student_id = student_number`                                         |
 | `parents`            | `int_students__contacts` where `contact_slot in ('contact_1', 'contact_2')`            | linked by `student_id`; no `parent_id`                                |
 | `emergency_contacts` | `int_students__contacts` where `contact_slot like 'emergency_%'`                       | `contact_id = generate_surrogate_key([student_number, contact_slot])` |
-| `staff`              | `int_people__staff_roster` matched on the six leaders' mail, crossed with schools      | `staff_id = employee_number`; one row per (leader, school)            |
+| `staff`              | `TS-DL-Regional Ops Leaders` LDAP group joined to the roster, crossed with schools     | `staff_id = employee_number`; one row per (leader, school)            |
 | `sections`           | distinct (school, grade) from `int_extracts__student_enrollments`                      | `section_id = school_number + zero-padded grade`                      |
 | `rosters`            | `int_extracts__student_enrollments` (same filter as `students`)                        | `(section_id, student_id)`                                            |
 
@@ -347,16 +387,24 @@ schools Newark students actually attend.
    `int_finalsite__student_contacts` produces at most two parent slots by
    construction. Lifting the cap would be an upstream change to the
    household-membership logic, not to `rpt_parentsquare__parents`.
-1. ~~**Staff phase 2**~~ — RESOLVED: `staff.csv` is built now, scoped to the six
-   leaders. They are emitted per operating school rather than at
-   `school_id = 0`, because the schools feed carries no district-office row.
+1. ~~**Staff phase 2**~~ — RESOLVED: `staff.csv` is built now, scoped to the
+   `TS-DL-Regional Ops Leaders` group. Members are emitted per operating school
+   rather than at `school_id = 0`, because the schools feed carries no
+   district-office row.
+1. **Two leaders beyond the Planner's list** — scoping the group to Newark
+   regional Operations yields 8, where the Planner's question 4 names 6. The
+   extras are a Deputy Chief and a Managing Director of School Operations.
+   Confirm with Ops that both should have ParentSquare access; if not, they
+   should be removed from `TS-DL-Regional Ops Leaders` (or a dedicated
+   ParentSquare group created) rather than filtered in SQL, so the list stays
+   Ops-owned.
 1. **Teacher accounts** — the synthetic per-grade sections deliberately avoid
    importing teachers, since a staff row with an email becomes a ParentSquare
    staff user. Confirm with Ops before un-pausing that grade-level sections
    owned by an Operations leader give them the audiences they expect, and that
    no school staff are expected to post.
 1. **Section ownership churn** — the section owner is picked as the lowest
-   `staff_id` among the six leaders. If that person leaves, `sections.staff_id`
+   `staff_id` among the leaders. If that person leaves, `sections.staff_id`
    changes and ParentSquare may re-create the sections. Acceptable for phase 1;
    revisit if it causes churn.
 

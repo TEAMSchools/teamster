@@ -37,10 +37,10 @@ models:
       - name: staff_id
         data_type: string
         description:
-          The Operations leader who owns the section. Which of the six owns it
-          is a formality — their access comes from their staff rows, not from
-          section membership — so one is picked deterministically from the staff
-          feed, which also guarantees the value resolves in `staff.csv`.
+          The Operations leader who owns the section. Which one owns it is a
+          formality — their access comes from their staff rows, not from section
+          membership — so one is picked deterministically from the staff feed,
+          which also guarantees the value resolves in `staff.csv`.
         data_tests:
           - not_null
           - relationships:
