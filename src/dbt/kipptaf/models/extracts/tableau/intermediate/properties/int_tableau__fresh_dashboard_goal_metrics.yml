@@ -1,0 +1,61 @@
+models:
+  - name: int_tableau__fresh_dashboard_goal_metrics
+    config:
+      materialized: table
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - schoolid
+              - grade_level
+              - goal_granularity
+              - goal_type
+              - goal_name
+              - enrollment_type
+              - grouped_status_timeframe
+          config:
+            store_failures: true
+    columns:
+      - name: academic_year
+        data_type: int64
+      - name: org
+        data_type: string
+      - name: region
+        data_type: string
+      - name: school_level
+        data_type: string
+      - name: schoolid
+        data_type: int64
+      - name: school
+        data_type: string
+      - name: grade_level
+        data_type: int64
+      - name: goal_granularity
+        data_type: string
+      - name: goal_type
+        data_type: string
+      - name: goal_name
+        data_type: string
+      - name: enrollment_type
+        data_type: string
+      - name: grouped_status_timeframe
+        data_type: string
+      - name: academic_year_display
+        data_type: string
+      - name: goal_value
+        data_type: numeric
+      - name: goal_value_counts
+        data_type: numeric
+      - name: goal_value_pct
+        data_type: numeric
+      - name: display_goal
+        data_type: string
+      - name: goal_name_value_counts
+        data_type: int64
+      - name: goal_name_value_pct
+        data_type: float64
+      - name: display_value
+        data_type: string
+      - name: met_goal
+        data_type: string

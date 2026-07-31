@@ -1,0 +1,49 @@
+snapshots:
+  - name: snapshot_tableau__fresh_dashboard_goal_metrics
+    relation: ref("int_tableau__fresh_dashboard_goal_metrics")
+    config:
+      schema: tableau
+      strategy: check
+      unique_key:
+        - academic_year
+        - schoolid
+        - grade_level
+        - goal_granularity
+        - goal_type
+        - goal_name
+        - enrollment_type
+        - grouped_status_timeframe
+      check_cols:
+        - met_goal
+        - display_value
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          group: tableau
+          asset_key:
+            - kipptaf
+            - tableau
+            - snapshot_tableau__fresh_dashboard_goal_metrics
+
+  - name: snapshot_tableau__fresh_dashboard_enrollment_metrics
+    relation: ref("int_tableau__fresh_dashboard_enrollment_metrics")
+    config:
+      schema: tableau
+      strategy: check
+      unique_key:
+        - academic_year
+        - schoolid
+      check_cols:
+        - all_student_enrollment_s
+        - new_student_enrollment_s
+        - re_enroll_enrollment_s
+        - seat_target_distance_s
+        - fdos_target_distance_s
+      dbt_valid_to_current: "'9999-12-31'"
+      meta:
+        dagster:
+          group: tableau
+          asset_key:
+            - kipptaf
+            - tableau
+            - snapshot_tableau__fresh_dashboard_enrollment_metrics
