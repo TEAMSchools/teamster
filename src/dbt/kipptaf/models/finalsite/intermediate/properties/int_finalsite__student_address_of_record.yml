@@ -1,0 +1,22 @@
+models:
+  - name: int_finalsite__student_address_of_record
+    description:
+      Network-wide union of the per-region Finalsite
+      `int_finalsite__student_address_of_record` models — one row per Finalsite
+      student record with its resolved address of record, or an `ambiguous` flag
+      when neither the student's nor their primary contact's household linkage
+      yields exactly one complete address. Includes all four regions; Focus is
+      the Miami consumer and the NJ regions carry no Focus student id, so the
+      `rpt_focus__*` filter on `focus_student_id_prefixed` keeps their rows out
+      of the Focus feeds. Column documentation lives on the package model.
+      Carries `_dbt_source_relation` and the derived `_dbt_source_project`.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID of the student; the grain.
+        data_tests:
+          - unique
+          - not_null

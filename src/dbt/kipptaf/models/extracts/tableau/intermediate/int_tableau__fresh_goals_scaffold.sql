@@ -1,5 +1,5 @@
 select
-    b.academic_year,
+    b.enrollment_academic_year,
     b.org,
     b.region,
     b.schoolid,
@@ -29,7 +29,7 @@ select
 from {{ ref("int_tableau__fresh_enrollment_scaffold") }} as b
 inner join
     {{ ref("stg_google_sheets__finalsite__goals") }} as g
-    on b.academic_year = g.enrollment_academic_year
+    on b.enrollment_academic_year = g.enrollment_academic_year
     and b.region = g.region
     and b.schoolid = g.schoolid
     and b.grade_level = g.grade_level

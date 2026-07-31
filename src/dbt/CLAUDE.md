@@ -291,8 +291,11 @@ against the `kipptaf` project alone. A PR confined to a district project
 (`kipp{newark,camden,miami,paterson}`) or a source-system package selects zero
 models under `state:modified+` unless it changes a kipptaf-consumed `source()`
 schema (column set) — so the dbt Cloud check goes green **trivially, not as
-validation** (a ~30s no-op run). Those models are first exercised by Dagster's
-dbt step (branch deployment / prod automation), not dbt Cloud CI.
+validation** (a ~30s no-op run). A dbt-only PR also gets NO branch deployment
+(the `pull_request` paths in `.github/workflows/deploy-prod-*.yaml` exclude
+`src/dbt/**`), so **nothing in CI builds those models** — a local `dbt build` is
+the only pre-merge validation, and they are first exercised in prod after merge.
+Never call such a PR CI-validated.
 
 ## dbt Cloud CI state comparison
 
@@ -471,6 +474,14 @@ A doc-only inline SQL comment on a heavily-consumed intermediate still marks it
 descendant graph and surfacing unrelated pre-existing warn-tests as noise. Put
 documentation notes in the properties `description` (doesn't mark modified), not
 an inline SQL comment, on hub models.
+
+**Validating a NEW union wrapper locally**: the column list resolves at compile
+from the source relation's `INFORMATION_SCHEMA`, so a dev-target compile expands
+to nothing — the `zz_<user>_*` dataset holds no copy.
+`dbt compile --select <wrapper> --target staging` resolves against the same
+`zz_stg_*` relations dbt Cloud CI reads, and is not a warehouse write so it
+needs no authorization. Read the compiled SQL to confirm columns were listed; an
+empty expansion still compiles clean.
 
 ## Editing a `sources-kipp*.yml` schema fans out `state:modified+`
 
@@ -733,6 +744,10 @@ legitimately-superseded inactive rows that repeat the key.
   `error`. To restore `error`, set `config: severity: error` explicitly.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
+- **`accepted_values` passes NULLs** — it compiles to
+  `where value not in (...)`, which NULL never satisfies. Pair it with
+  `not_null` on any enum column that must be non-null, including one a
+  `coalesce` makes non-null by construction.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 
@@ -818,6 +833,11 @@ Every `expect` row must list the **same columns** — dbt builds them as
 `UNION ALL` and does NOT null-fill omitted keys, so uneven rows fail with
 `Queries in UNION ALL have mismatched column count`. Put every asserted column
 in every row, `null` for empties.
+
+**A column ADD breaks that model's OWN unit test** — an `expect` block
+enumerates every output column, so the new column must be added there too. If
+the column is a raw passthrough, `expect` carries the UNnormalized value, not
+the normalized value its sibling scalar columns assert.
 
 ### Date-range joins
 
@@ -963,6 +983,12 @@ validation/profiling goes through BigQuery MCP, not `dbt show`.
   element ordering.
 - **No `QUALIFY`.** Compute the window function as a named column in a CTE and
   filter it with `WHERE` in the next CTE.
+- **No lateral column aliases.** BigQuery rejects a `SELECT`-list alias
+  referenced by another item in the same list —
+  `select 1 as a, case when a = 1 then 'x' end as b` fails
+  `Unrecognized name: a`. It works in Snowflake/DuckDB, so a reviewer may
+  propose it to de-duplicate two `CASE`s that share predicates; hoist to a CTE
+  or keep the duplication.
 - **No `GROUP BY ALL`** — list grouping columns explicitly. `GROUP BY ALL`
   breaks silently when upstream columns change.
 - **`DISTINCT` — grain projection only, never dup-masking.** Use `DISTINCT` for
@@ -1129,6 +1155,11 @@ alias.
 - YAML `description:` is for what/why a column or model computes. Don't put
   TODOs, history, migration plumbing, or tracking-issue refs (`#3142`, etc.) in
   descriptions — those go in inline SQL comments at the derivation site.
+
+### Flattened child-array model naming
+
+`<layer>_<source>__<parent>__<child>` — `stg_coupa__users__roles`,
+`int_deanslist__incidents__actions`, `int_focus__users__pivot`.
 
 ### Legacy `base_` prefix
 

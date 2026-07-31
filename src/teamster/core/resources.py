@@ -119,10 +119,11 @@ SSH_EDPLAN = SSHResource(
     remote_port=22,
     username=EnvVar("EDPLAN_SFTP_USERNAME"),
     password=EnvVar("EDPLAN_SFTP_PASSWORD"),
-    # Upstream default is 10s. secureftp.easyiep.com TCP handshakes from GKE
-    # occasionally exceed that during peak periods, causing transient TimeoutError
-    # on connect. 30s tolerates those without masking a truly unreachable host.
-    timeout=30,
+    # No `timeout` override: secureftp.easyiep.com TCP handshakes from GKE
+    # occasionally exceed the old 10s upstream default during peak periods, which
+    # is why this used to set 30s. `SSHResource` now defaults to 45s, which
+    # covers those AND clears paramiko's 30s negotiation ceiling — 30s would sit
+    # exactly ON that ceiling and reintroduce the inversion in #4636.
     # secureftp.easyiep.com (GlobalSCAPE EFT 8.1) advertises only `ssh-rsa`
     # (SHA-1 RSA) host keys. paramiko 5.0 dropped ssh-rsa from defaults; opt
     # back in for this host only.

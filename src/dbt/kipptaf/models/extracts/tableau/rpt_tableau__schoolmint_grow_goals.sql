@@ -1,16 +1,37 @@
+-- trunk-ignore(sqlfluff/ST06): contract column order is mandated
 select
     srh.employee_number,
     srh.formatted_name as teammate,
-    srh.home_business_unit_name as entity,
-    srh.home_work_location_name as `location`,
     srh.home_work_location_grade_band as grade_band,
-    srh.home_department_name as department,
-    srh.job_title,
     srh.reports_to_formatted_name as manager,
     srh.worker_original_hire_date,
     srh.assignment_status,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    case
+        srh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else srh.home_business_unit_name
+    end as home_business_unit_name,
+    srh.home_department_name,
+    srh.job_function,
+    srh.job_title,
+
+    srh.mail,
+    srh.user_principal_name,
     srh.sam_account_name,
-    srh.reports_to_sam_account_name as report_to_sam_account_name,
+
+    srh.reports_to_mail,
+    srh.reports_to_sam_account_name,
 
     rt.type as tracking_type,
     rt.code as tracking_code,
@@ -34,6 +55,9 @@ select
 
     if(a.assignment_id is not null, 1, 0) as is_assigned,
 from {{ ref("int_people__staff_roster_history") }} as srh
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on srh.home_work_location_name = lc.location_name
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on srh.home_business_unit_name = rt.region
@@ -61,12 +85,27 @@ left join
     and rt.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 where
-    srh.assignment_status = 'Active'
-    and srh.job_title in (
-        'Teacher',
-        'Teacher in Residence',
-        'ESE Teacher',
-        'Learning Specialist',
-        'Teacher ESL',
-        'Teacher in Residence ESL'
+    srh.primary_indicator
+    and srh.assignment_status = 'Active'
+    /*
+     job_function is the durable key, but ADP only began supplying it in 2026 --
+     it is 0% populated on roster_history for 2019-2025 and 35% for 2026 -- so a
+     job_title allow list carries the historical rows until the backfill in
+     #4665 lets the fallback be deleted. This list is kept identical to the one
+     in rpt_tableau__teacher_observations; they had silently diverged.
+     */
+    and (
+        srh.job_function in ('Teacher', 'Teacher in Residence')
+        or (
+            srh.job_function is null
+            and srh.job_title in (
+                'Teacher',
+                'Teacher in Residence',
+                'ESE Teacher',
+                'Learning Specialist',
+                'Learning Specialist Coordinator',
+                'Teacher ESL',
+                'Teacher in Residence ESL'
+            )
+        )
     )

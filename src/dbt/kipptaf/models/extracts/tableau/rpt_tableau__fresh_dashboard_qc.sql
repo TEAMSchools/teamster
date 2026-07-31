@@ -1,52 +1,74 @@
 with
-    fs_vs_ps_record_match as (
-        select
-            f.enrollment_academic_year,
-            f.finalsite_enrollment_id,
+    -- grain projection: every column here is functionally determined by
+    -- (enrollment_academic_year, finalsite_id); the source carries one row per
+    -- (goal_type, goal_name) grouping, neither of which is projected, so those
+    -- collapse to one byte-identical tuple. Not a mask for upstream duplicates.
+    roster as (
+        select distinct
+            enrollment_academic_year,
+            enrollment_academic_year_display,
+            org,
+            region,
+            schoolid,
+            school,
+            finalsite_id,
+            powerschool_student_number,
+            first_name,
+            last_name,
+            grade_level,
+            self_contained,
+            enrollment_type,
+            latest_status,
+            enroll_status,
+            ps_grade_level,
+            ps_schoolid,
+            ps_school,
+            ps_enroll_status,
+            is_same_day_status_duplicate,
+            is_active_inactive_mismatch,
+            is_grade_level_mismatch,
+            is_school_mismatch,
 
-            f.enrollment_type,
+            if(
+                ps_enroll_status = 0 and enroll_status is null, true, false
+            ) as is_missing_sis_record,
 
-            'FS vs PS' as flag_type,
-            'Enrollment Mismatch' as flag_name,
-            'Enrollment record exists on FS but not PS' as flag_description,
-
-            if(e.infosnap_id is null, true, false) as flag_value,
-
-        from {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-        left join
-            {{ ref("int_extracts__student_enrollments") }} as e
-            on f.enrollment_academic_year - 1 = e.academic_year
-            and f.finalsite_enrollment_id = e.infosnap_id
-            and e.rn_year = 1
-        /* hardcoded year because finalsite academic years do not sync with ps
-           academic years during review time */
-        where f.enrollment_academic_year = 2026
-
-        union all
-
-        select
-            e.academic_year,
-            e.infosnap_id,
-
-            f.enrollment_type,
-
-            'PS vs FS' as flag_type,
-            'Enrollment Mismatch' as flag_name,
-            'Enrollment record exists on PS but not FS' as flag_description,
-
-            if(f.finalsite_enrollment_id is null, true, false) as flag_value,
-
-        from {{ ref("int_extracts__student_enrollments") }} as e
-        left join
-            {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-            on e.academic_year + 1 = f.enrollment_academic_year
-            and e.infosnap_id = f.finalsite_enrollment_id
-        /* hardcoded year because finalsite academic years do not sync with ps
-           academic years during review time */
-        where f.enrollment_academic_year = 2026
+        from {{ ref("int_tableau__finalsite_student_scaffold") }}
+        where grouped_status_timeframe = 'Current'
     )
 
-select *,
+select
+    enrollment_academic_year,
+    enrollment_academic_year_display,
+    org,
+    region,
+    schoolid,
+    school,
+    finalsite_id,
+    powerschool_student_number,
+    first_name,
+    last_name,
+    grade_level,
+    self_contained,
+    enrollment_type,
+    latest_status,
+    enroll_status,
+    ps_grade_level,
+    ps_schoolid,
+    ps_school,
+    ps_enroll_status,
 
-from fs_vs_ps_record_match
+    flag_name,
+    flag_value,
+
+from
+    roster unpivot (
+        flag_value for flag_name in (
+            is_same_day_status_duplicate,
+            is_active_inactive_mismatch,
+            is_grade_level_mismatch,
+            is_school_mismatch,
+            is_missing_sis_record
+        )
+    )
 where flag_value

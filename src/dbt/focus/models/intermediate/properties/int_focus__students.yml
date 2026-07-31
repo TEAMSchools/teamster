@@ -1,0 +1,21 @@
+models:
+  - name: int_focus__students
+    description: >-
+      Focus students with their select custom fields decoded to labels — every
+      stg_focus__students column plus the int_focus__students__pivot labels.
+      This is the model to consume; the pivot is a decode companion that drops
+      entities whose custom fields are all null, so it is not a complete spine
+      on its own. Column docs live on the two upstream models.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: student_id
+        description: Primary key — Focus local student id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error

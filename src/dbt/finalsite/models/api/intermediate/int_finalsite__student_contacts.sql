@@ -1,90 +1,83 @@
 with
-    contact_1_candidates as (
-        -- contact_1 is the student's FIRST reportable parent contact. Finalsite
-        -- has no explicit contact rank, so we take the relationship it flags
-        -- `primary` (its parent1 designation) and fall back to the one flagged
-        -- `financial` when no primary is set — the two flags Ops maintains to
-        -- mark the responsible caregiver. A record with neither flag gets no
-        -- contact_1 (a Finalsite data-entry gap for Ops to resolve).
-        -- `primary`/`financial` are NULL (not false) when unset, so normalize
-        -- to false here to keep the downstream rank ordering deterministic. No
-        -- SIS scoping — downstream receivers filter to enrolled students by
-        -- joining on the student id.
-        select
-            finalsite_enrollment_id,
-            relationship_id,
-            rel_id,
-            rel_name,
-            rel_type,
-            household_1_id,
-            is_parent2,
-
-            coalesce(is_primary, false) as is_primary,
-            coalesce(is_financial, false) as is_financial,
-        from {{ ref("stg_finalsite__contact_relationships") }}
-        where is_primary or is_financial
-    ),
-
-    contact_1_ranked as (
-        -- Rank primary above financial; within a tier break on relationship_id.
-        -- Ties occur only among multiple `financial` relationships (a student
-        -- never has two `primary`); relationship_id is an arbitrary but stable
-        -- tiebreak — every candidate in a tier is a valid contact, and
-        -- Finalsite exposes no field that reproduces a caregiver ordering.
-        select
-            finalsite_enrollment_id,
-            rel_id,
-            rel_name,
-            rel_type,
-            household_1_id,
-            is_parent2,
-            is_primary,
-
-            row_number() over (
-                partition by finalsite_enrollment_id
-                order by is_primary desc, is_financial desc, relationship_id asc
-            ) as rn,
-        from contact_1_candidates
-    ),
-
     contact_1_picked as (
+        -- contact_1 is the student's Parent 1: the relationship Finalsite flags
+        -- `primary`. That flag is a per-student singleton and is never `false`
+        -- — it is true or NULL — so a bare `where is_primary` selects exactly
+        -- the Parent 1 row. A student with no primary relationship gets no
+        -- contact_1, and therefore no contact_2: per Ops, a missing primary
+        -- flag is a Finalsite data-entry gap to fix at the source rather than
+        -- something to infer from `financial`. A second primary on one student
+        -- would surface as a duplicate contact_1 and fail this model's
+        -- uniqueness test, which is the intended loud failure. No SIS scoping —
+        -- downstream receivers filter to enrolled students by joining on the
+        -- student id.
         select finalsite_enrollment_id, rel_id, rel_name, rel_type,
-        from contact_1_ranked
-        where rn = 1
+        from {{ ref("stg_finalsite__contact_relationships") }}
+        where is_primary
+    ),
+
+    primary_household_ids as (
+        -- The student's primary household is the household their Parent 1
+        -- belongs to. Finalsite's own household-1 designation is per-student and
+        -- set in the UI, but it is absent from every field the API exposes (the
+        -- Household object is id plus address only), and array position does not
+        -- reproduce it — `households[safe_offset(0)]` is the UI's Household 2
+        -- for confirmed students. Parent 1's membership is therefore what
+        -- defines the household both parent slots must share. Exploded to one
+        -- row per household so the contact_2 match below is a plain join.
+        select p.finalsite_enrollment_id, p.rel_id as contact_1_rel_id, household_id,
+        from contact_1_picked as p
+        inner join
+            {{ ref("stg_finalsite__contacts") }} as cp
+            on p.rel_id = cp.finalsite_enrollment_id
+        cross join unnest(cp.household_ids) as household_id
+    ),
+
+    contact_household_ids as (
+        -- One row per (contact, household) so household co-membership is a join
+        -- rather than an array containment check.
+        select finalsite_enrollment_id, household_id,
+        from {{ ref("stg_finalsite__contacts") }}
+        cross join unnest(household_ids) as household_id
     ),
 
     contact_2_candidates as (
-        -- contact_2 is the student's SECOND reportable parent (DeansList
-        -- "Parent 2"). Finalsite encodes it as an additional relationship
-        -- flagged `financial` without `primary` (`primary` is a per-student
-        -- singleton — Parent 1; candidates are financial-only rows, so
-        -- `not is_primary` alone expresses that and also guards a hypothetical
-        -- two-primary record). Scoped conservatively per Ops: only when the
-        -- student's own `is_parent2` custom field is true AND the related
-        -- contact is a member of the student's first household ("household
-        -- 1") — second parents in other households are intentionally
-        -- excluded. rn > 1 skips the ROW picked as contact_1 (the financial
-        -- fallback when no primary is set); the rel_id inequality against the
-        -- pick additionally skips any other relationship row to the same
-        -- PERSON, so contact_2 can never duplicate contact_1. The student-side
-        -- gate fields (is_parent2, household_1_id) ride on the relationships
-        -- staging grain, so only the related contact's record is joined here.
-        select r.finalsite_enrollment_id, r.rel_id, r.rel_name, r.rel_type, r.rn,
-        from contact_1_ranked as r
+        -- contact_2 is any OTHER contact flagged `primary` or `financial` that
+        -- belongs to the primary household. `primary` is a singleton already
+        -- taken by contact_1, so in practice these are financial-only rows; the
+        -- disjunction states the rule as Ops expressed it and guards a
+        -- hypothetical second primary. The rel_id inequality skips every
+        -- relationship row pointing at the PERSON already chosen as contact_1,
+        -- so contact_2 can never duplicate contact_1. The student's own
+        -- `is_parent2` custom field is deliberately NOT part of this gate — it
+        -- is false for students who do have a co-resident second parent and true
+        -- for students who have none, so it removed real rows without excluding
+        -- any wrong ones.
+        -- grain projection: every selected column is functionally determined
+        -- by the partition key; not a mask for upstream duplicates. A candidate
+        -- sharing several households with Parent 1 would otherwise repeat.
+        select distinct
+            r.finalsite_enrollment_id,
+            r.relationship_id,
+            r.rel_id,
+            r.rel_name,
+            r.rel_type,
+        from {{ ref("stg_finalsite__contact_relationships") }} as r
         inner join
-            contact_1_picked as p
-            on r.finalsite_enrollment_id = p.finalsite_enrollment_id
-            and r.rel_id != p.rel_id
+            primary_household_ids as h
+            on r.finalsite_enrollment_id = h.finalsite_enrollment_id
+            and r.rel_id != h.contact_1_rel_id
         inner join
-            {{ ref("stg_finalsite__contacts") }} as cp
-            on r.rel_id = cp.finalsite_enrollment_id
-            and r.household_1_id in unnest(cp.household_ids)
-        where r.rn > 1 and not r.is_primary and r.is_parent2
+            contact_household_ids as ch
+            on r.rel_id = ch.finalsite_enrollment_id
+            and h.household_id = ch.household_id
+        where r.is_primary or r.is_financial
     ),
 
     contact_2_ranked as (
-        -- Multiple qualifying second-parent relationships tie-break by the
-        -- contact_1 ordering (rn carries the relationship_id tiebreak).
+        -- Multiple qualifying second parents tie-break on relationship_id — an
+        -- arbitrary but stable pick, as Finalsite exposes no caregiver ordering
+        -- among them. Only the first fills the single contact_2 slot.
         select
             finalsite_enrollment_id,
             rel_id,
@@ -92,7 +85,7 @@ with
             rel_type,
 
             row_number() over (
-                partition by finalsite_enrollment_id order by rn asc
+                partition by finalsite_enrollment_id order by relationship_id asc
             ) as rn_contact_2,
         from contact_2_candidates
     ),
@@ -416,15 +409,14 @@ select
     contact_last_name,
     relationship,
     email,
+    phone_mobile,
+    phone_home,
+    phone_work,
     phone_daytime,
+    phone_primary,
     home_address,
     is_pickup,
     is_custodial,
     is_household_member,
     is_emergency,
-
-    {{ clean_phone("phone_mobile") }} as phone_mobile,
-    {{ clean_phone("phone_home") }} as phone_home,
-    {{ clean_phone("phone_work") }} as phone_work,
-    {{ clean_phone("phone_primary") }} as phone_primary,
 from all_contacts

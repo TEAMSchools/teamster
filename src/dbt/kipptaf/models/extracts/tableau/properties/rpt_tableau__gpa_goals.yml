@@ -1,0 +1,87 @@
+models:
+  - name: rpt_tableau__gpa_goals
+    description:
+      Thin reporting view over int_gpa__goal_aggregations for the GPA Goals
+      Tableau dashboard — one row per academic year, metric, and goal
+      aggregation key, at the school, region, or network (org) grain.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - metric
+              - aggregation_hash
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: The academic year of the underlying student measures.
+      - name: metric
+        data_type: string
+        description:
+          GPA metric the goal targets — `y1_gpa_weighted`, `y1_gpa_unweighted`,
+          `cumulative_gpa_unweighted`, or `on_pace`.
+      - name: aggregation_hash
+        data_type: string
+        description:
+          Join key matching this aggregate to its goal — see
+          `int_google_sheets__gpa_goals`.
+      - name: org_level
+        data_type: string
+        description:
+          Scope of the aggregate — `org` (network-wide), `region`, or `school`.
+      - name: region
+        data_type: string
+        description:
+          Region label when `org_level` is `region` or `school`. Null for
+          `org`-level rows.
+      - name: schoolid
+        data_type: int64
+        description:
+          PowerSchool school ID when `org_level` is `school`. Null for `org`- or
+          `region`-level rows.
+      - name: grade_band
+        data_type: string
+        description: Human-readable grade band from the matched goal.
+      - name: goal_proportion
+        data_type: numeric
+        description: Target rate from the matched goal, as a proportion.
+      - name: n_students_in_grain
+        data_type: int64
+        description:
+          Count of students covered by the matched goal's grain and grade band,
+          whether or not their measure is populated.
+      - name: n_students_measured
+        data_type: int64
+        description:
+          Count of students carrying a measurable value for `metric` — a
+          non-null measure for threshold metrics, or membership of the on-pace
+          denominator for `on_pace`. This is the denominator of `metric_rate`.
+      - name: n_students_met
+        data_type: int64
+        description:
+          Count of measured students satisfying `metric`'s threshold per
+          `direction`, or on pace for `on_pace`. This is the numerator of
+          `metric_rate`.
+      - name: metric_rate
+        data_type: float64
+        description:
+          Share of measured students meeting `metric`'s threshold per
+          `direction`, or for `on_pace` the share of the on-pace denominator
+          that is on pace, rounded to 3 decimal places. Students whose measure
+          is null are excluded from the denominator rather than counted as
+          non-achievers, so an entirely unmeasured grain yields null rather than
+          0 — the state before a year's grades post. A null rate paired with a
+          non-zero `n_students_in_grain` and a zero `n_students_measured` means
+          not yet measurable, not zero attainment.
+      - name: is_goal_met
+        data_type: boolean
+        description:
+          Whether `metric_rate` meets the goal — `metric_rate >=
+          goal_proportion` when the goal's direction favors higher values, else
+          `metric_rate <= goal_proportion`. Null when `metric_rate` is null.
+      - name: progress_to_goal
+        data_type: float64
+        description:
+          Share that `metric_rate` represents of `goal_proportion` (or its
+          inverse when lower is better), capped at 1.0 and rounded to 3 decimal
+          places. Null when `metric_rate` is null.

@@ -139,7 +139,9 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   implementers -> `sonnet` at `high`; review and re-review dispatches ->
   `sonnet` at `xhigh`; design work -> `opus` at `high`; final whole-branch
   review -> `opus` at `xhigh`. When none of these clearly apply, omit both
-  overrides.
+  overrides. The `Agent` tool accepts only `model` — effort is settable on
+  Workflow `agent()`, not `Agent`, so via `Agent` pass the model and drop the
+  effort tier.
 
 - **Subagent multi-step bail risk**: subagents can abandon multi-step tasks
   partway through. Scope dispatches to one file / one commit; inspect the file
@@ -273,11 +275,20 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   comments — an initial "Reviewing…" status stub and a separate final findings
   comment — and the stub can stay stuck mid-render even after the check-run
   reports `success`. Fetch ALL issue comments and read the newest / longest, not
-  the first. It may instead EDIT its checklist stub comment in place with the
-  findings, minutes AFTER the check-run reports `success` — so a findings-poll
-  must gate on the comment's `updated_at` / body growing, not the check-run
-  conclusion or a naive length threshold (the ~500-char checklist stub trips
-  it).
+  the first. A re-fired run creates a NEW comment rather than updating the
+  previous one, even with `use_sticky_comment: true` — poll by enumerating
+  comments, never by a cached comment id. It may instead EDIT its checklist stub
+  comment in place with the findings, minutes AFTER the check-run reports
+  `success` — so a findings-poll must gate on the comment's `updated_at` / body
+  growing, not the check-run conclusion or a naive length threshold (the
+  ~500-char checklist stub trips it). Trunk's check-runs are RE-CREATED on each
+  push, so a `gh pr checks` poll gating on "nothing pending" can sample the gap
+  between them and report done prematurely — re-check after a delay before
+  calling CI complete. To get `claude-review` onto code pushed after its pass,
+  toggle draft state — that re-fires `ready_for_review`. REST
+  `gh api -X PATCH .../pulls/<n> -f draft=true` silently no-ops (returns
+  `draft: false`, no error); use GraphQL `convertPullRequestToDraft` then
+  `markPullRequestReadyForReview`.
 
 - **A merged PR's CI status is not evidence the change was validated** — a PR
   merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
@@ -626,6 +637,10 @@ the allowlist.
   `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
   replies. Use
   `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
+- `gh api repos/<owner>/<repo>/contents/<path>?ref=<sha> -H 'Accept: application/vnd.github.raw'`
+  — read a third-party file at a pinned SHA (for the verify-behavior-from-source
+  rule above). The `--jq .content | base64 -d` form is hook-blocked as an
+  encoding bypass.
 - `gh api -X POST repos/<owner>/<repo>/labels -f name=... -f color=... -f description=...`
   — no `mcp__github__*` label-create tool.
 - `gh api -X POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=<name>'` —

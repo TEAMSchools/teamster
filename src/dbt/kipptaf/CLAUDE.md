@@ -132,18 +132,34 @@ it in its own `properties.yml` (e.g. `stg_powerschool__users`,
 `stg_powerschool__log`). Check the model's `properties.yml` before assuming a
 `select *` union view is or isn't contracted.
 
+### Exposing a package/district model as a kipptaf source
+
+Every source added to a `sources-kipp*.yml` needs a matching kipptaf
+`union_relations` passthrough model. Consumers read the wrapper, not the source.
+
+Surface DECODED views, never the lookup tables behind them. Exposing a decode
+crosswalk (e.g. focus `int_focus__custom_field_options`) relocates hand-rolled
+translation into kipptaf instead of removing it; a field a package `__pivot`
+misses gets added to that pivot, in the package.
+
+`config.meta.contains_pii` does NOT travel through `source()` — a wrapper over a
+PII-tagged package model must re-declare it. Model level suffices for a
+`select *` passthrough, whose column docs live on the source model.
+
 ### Finalsite contact unions
 
-`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` are
-kipptaf `union_relations` views over per-region finalsite sources.
+`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` /
+`int_finalsite__student_address_of_record` are kipptaf `union_relations` views
+over per-region finalsite sources.
 
 - **Union CUTOVER regions, not merely api-enabled ones.** Miami has the
   finalsite api enabled with contacts data AND `powerschool_student_number`s, so
   unioning it into `int_finalsite__student_contacts` double-counts against the
   PowerSchool branch of `int_students__contacts` (the grain test catches it).
-  `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
-  and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
-  Newark rows (null prefix) never reach the Focus feeds.
+  `int_finalsite__contact_id_attributes` and
+  `int_finalsite__student_address_of_record` DO include Miami — Focus consumes
+  them, and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`,
+  so Newark rows (null prefix) never reach the Focus feeds.
 - **Source schema staging branch**: all four regions' finalsite sources
   (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
   `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
