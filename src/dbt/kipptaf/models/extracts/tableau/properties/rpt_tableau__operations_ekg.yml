@@ -1,5 +1,17 @@
 models:
   - name: rpt_tableau__operations_ekg
+    description: >-
+      Extract of Operations EKG walkthrough form responses, one row per
+      (response_id, question_id). The roster join resolves respondent identity
+      via sam_account_name OR google_email, so the combination stays unique only
+      so long as no roster row matches through one branch while a different row
+      matches through the other.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - response_id
+              - question_id
     columns:
       - name: location_clean_name
         data_type: string
