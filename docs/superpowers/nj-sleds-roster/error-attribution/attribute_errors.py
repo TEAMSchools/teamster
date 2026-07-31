@@ -16,6 +16,12 @@ The submission type is inferred from the header. Pass --submission to override.
 Only handbook rules can explain a state error count, because only those are what
 the state validates. Local KTAF expectations are reported separately and never
 counted toward the target.
+
+When a residual remains - the target exceeds what checkable rules explain -
+`residual_sweep` tests a small, fixed set of this tool's own assumed
+parameters (the school-year window, the grade-span band reading, and the
+name-pattern character classes) against that residual. See
+`residual_sweep.py`'s module docstring for what that does and does not mean.
 """
 
 from __future__ import annotations
@@ -28,6 +34,7 @@ from collections.abc import Sequence
 from itertools import combinations
 from pathlib import Path
 
+import residual_sweep
 from rules import Row, Rule
 
 # Columns safe to print when drilling into a rule's violating rows. Names, dates
@@ -247,7 +254,9 @@ def report(
         print()
 
     if target is not None:
-        attribute(target, instances, bad_rows, handbook, by_id, uncheckable)
+        attribute(
+            target, instances, bad_rows, handbook, by_id, uncheckable, rows, submission
+        )
 
     if uncheckable:
         print("=== rules this tool cannot check ===")
@@ -266,6 +275,8 @@ def attribute(
     handbook: dict[str, int],
     by_id: dict[str, Rule],
     uncheckable: Sequence[Rule],
+    rows: Sequence[Row],
+    submission: str,
 ) -> None:
     print(f"=== attributing the state's reported {target} errors ===")
     print()
@@ -316,6 +327,7 @@ def attribute(
         )
         print("  most likely lives there, or in a rule the handbook omits.")
         print()
+        residual_sweep.report(rows, submission, target - instances)
     elif target < instances:
         print(
             f"  This tool finds {instances} violations but the state reported {target}."
