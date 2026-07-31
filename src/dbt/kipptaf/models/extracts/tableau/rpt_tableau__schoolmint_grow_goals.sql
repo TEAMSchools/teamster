@@ -87,11 +87,25 @@ left join
 where
     srh.primary_indicator
     and srh.assignment_status = 'Active'
-    and srh.job_title in (
-        'Teacher',
-        'Teacher in Residence',
-        'ESE Teacher',
-        'Learning Specialist',
-        'Teacher ESL',
-        'Teacher in Residence ESL'
+    /*
+     job_function is the durable key, but ADP only began supplying it in 2026 --
+     it is 0% populated on roster_history for 2019-2025 and 35% for 2026 -- so a
+     job_title allow list carries the historical rows until the backfill in
+     #4665 lets the fallback be deleted. This list is kept identical to the one
+     in rpt_tableau__teacher_observations; they had silently diverged.
+     */
+    and (
+        srh.job_function in ('Teacher', 'Teacher in Residence')
+        or (
+            srh.job_function is null
+            and srh.job_title in (
+                'Teacher',
+                'Teacher in Residence',
+                'ESE Teacher',
+                'Learning Specialist',
+                'Learning Specialist Coordinator',
+                'Teacher ESL',
+                'Teacher in Residence ESL'
+            )
+        )
     )
