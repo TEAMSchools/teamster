@@ -15,7 +15,7 @@ restores Q1 and Q2 coverage (previously removed as a Tableau volume workaround),
 and enables EOQ flags to fire year-round without a date-window gate.
 
 Full pipeline reference:
-[`docs/reference/gradebook-audit-data-model.md`](../reference/gradebook-audit-data-model.md)
+[`docs/models/gradebook-audit-data-model.md`](../../models/gradebook-audit-data-model.md)
 
 ## Current coverage (AY 2025-2026)
 
@@ -178,7 +178,7 @@ in the GPA view.
 (`stg_google_sheets__gradebook_flags`) and its source were disabled during
 implementation; the three active flags are hardcoded in
 `rpt_tableau__gradebook_audit` and no sheet rollover exists anymore (see the
-[Start-of-year procedure](../reference/gradebook-audit-data-model.md) in the
+[Start-of-year procedure](../../models/gradebook-audit-data-model.md) in the
 reference doc).
 
 ### Remove FYI flags

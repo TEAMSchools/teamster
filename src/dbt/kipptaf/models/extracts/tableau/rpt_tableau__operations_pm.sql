@@ -59,6 +59,7 @@ with
     ),
 
     final as (
+        -- trunk-ignore(sqlfluff/ST06): contract column order is mandated
         select
             terms.academic_year,
             terms.type,
@@ -67,8 +68,6 @@ with
 
             ops_pm_roster.employee_number,
             ops_pm_roster.formatted_name,
-            ops_pm_roster.job_title,
-            ops_pm_roster.home_work_location_name,
             ops_pm_roster.home_work_location_abbreviation,
             ops_pm_roster.reports_to_formatted_name,
 
@@ -88,8 +87,33 @@ with
             responses_pivoted.round_survey,
 
             schools.location_abbreviation as abbreviation,
-            schools.location_region as region,
             schools.location_grade_band as grade_band,
+
+            schools.location_clean_name,
+            schools.campus_name,
+
+            case
+                teammate_roster.home_business_unit_name
+                when 'TEAM'
+                then 'TEAM Academy Charter School'
+                when 'KCNA'
+                then 'KIPP Cooper Norcross Academy'
+                when 'MIA'
+                then 'KIPP Miami'
+                when 'KNJ'
+                then 'KIPP TEAM and Family Schools Inc.'
+                else teammate_roster.home_business_unit_name
+            end as home_business_unit_name,
+            teammate_roster.home_department_name,
+            teammate_roster.job_function,
+            teammate_roster.job_title,
+
+            teammate_roster.mail,
+            teammate_roster.user_principal_name,
+            teammate_roster.sam_account_name,
+
+            teammate_roster.reports_to_mail,
+            teammate_roster.reports_to_sam_account_name,
 
             full_roster.formatted_name as respondent_name,
             full_roster.job_title as respondent_job_title,
@@ -111,6 +135,9 @@ with
                 = full_roster.sam_account_name
                 or responses_pivoted.respondent_email = full_roster.google_email
             )
+        left join
+            {{ ref("int_people__staff_roster") }} as teammate_roster
+            on ops_pm_roster.employee_number = teammate_roster.employee_number
     )
 
 select *,

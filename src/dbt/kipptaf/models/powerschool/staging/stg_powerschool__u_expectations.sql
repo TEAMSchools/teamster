@@ -30,7 +30,7 @@ with
             whomodified,
             whenmodified,
 
-            {{ extract_code_location("union_relations") }} as _dbt_source_project,
+            {{ extract_source_project("union_relations") }} as _dbt_source_project,
 
         from union_relations
     ),
@@ -40,7 +40,7 @@ with
     -- instance cannot run the KIPP NJ Gradebook Audit plugin, so
     -- U_EXPECTATIONS is never populated there. Spoof MS expectations from
     -- Newark's real plugin data until a native solution exists -- see
-    -- docs/reference/gradebook-audit-data-model.md "Paterson GradeBook
+    -- docs/models/gradebook-audit-data-model.md "Paterson GradeBook
     -- plugin".
     paterson_spoof as (
         select

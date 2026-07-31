@@ -13,6 +13,6 @@ with
     )
 
 -- trunk-ignore(sqlfluff/AM04): union_relations produces an unknown column count
-select *,
+select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
 from union_relations
 where dcid >= 1

@@ -131,6 +131,54 @@ def test_request_exhausts_on_persistent_403(monkeypatch: pytest.MonkeyPatch):
     assert calls["n"] == 5
 
 
+def test_request_retries_on_gateway_5xx(monkeypatch: pytest.MonkeyPatch):
+    """A transient gateway 5xx mid-pagination is retried and recovers.
+
+    The Finalsite gateway returns a 502 Bad Gateway (also 503/504) when its
+    upstream briefly has no healthy backend. Like the shared-egress 403 and
+    network faults, this is transient, so a bounded backoff must retry rather
+    than fail the whole pull. Regression for prod run 7e56efa7.
+    """
+    monkeypatch.setattr(FinalsiteResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return _FakeResponse(502, text="502 Bad Gateway")
+        return _FakeResponse(200, {"ok": True})
+
+    finalsite = _build_offline_resource(request_fn)
+
+    response = finalsite._request(method="GET", path="contacts", id=None)
+
+    assert response.status_code == 200
+    assert calls["n"] == 3
+
+
+def test_request_exhausts_on_persistent_5xx(monkeypatch: pytest.MonkeyPatch):
+    """A persistent 5xx is retried up to the cap, then re-raises the HTTPError.
+
+    A gateway fault that never clears must still surface as the original
+    ``HTTPError`` and fail the run rather than retry unbounded.
+    """
+    monkeypatch.setattr(FinalsiteResource._request.retry, "wait", wait_none())  # pyright: ignore[reportFunctionMemberAccess]
+
+    calls = {"n": 0}
+
+    def request_fn(method: str, url: str, **kwargs) -> _FakeResponse:
+        calls["n"] += 1
+        return _FakeResponse(503, text="503 Service Unavailable")
+
+    finalsite = _build_offline_resource(request_fn)
+
+    with pytest.raises(HTTPError):
+        finalsite._request(method="GET", path="contacts", id=None)
+
+    assert calls["n"] == 5
+
+
 def test_request_retries_on_network_faults(monkeypatch: pytest.MonkeyPatch):
     """A connect/read timeout or connection error is retried.
 

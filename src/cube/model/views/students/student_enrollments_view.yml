@@ -66,6 +66,13 @@ views:
           - graduation_year
           - is_retained_year
 
+      - join_path: student_enrollments.student_school_enrollments.student_homeroom_section.staff_homeroom_teacher
+        prefix: true
+        includes:
+          - full_name
+          - first_name
+          - last_name
+
       - join_path: student_enrollments.student_school_enrollments.student_enrollment_status
         prefix: false
         includes:
@@ -132,12 +139,19 @@ views:
             - is_month_end_record
             - is_week_end_record
             - is_latest_record
+        - name: Teacher
+          members:
+            - staff_homeroom_teacher_full_name
+            - staff_homeroom_teacher_first_name
+            - staff_homeroom_teacher_last_name
 
     access_policy:
       # Row-level location scoping (was queryRewrite.studentRowFilters). A viewer
       # holds exactly one student-<scope> group (buildGroups); none => no group =>
       # default-deny. row_level uses this view's flat location member names (see
       # the includes/folders below), not cube-qualified paths.
+      # Teacher fields (staff_homeroom_teacher_* names) ride the wildcard
+      # include — staff-directory-tier info, not student PII.
       - group: student-region
         member_level:
           includes: "*"

@@ -221,6 +221,8 @@ models:
       - name: reports_to_mail
         data_type: string
       - name: powerschool_teacher_number
+        data_tests:
+          - unique
         data_type: string
       - name: reports_to_employee_number
         data_type: int64

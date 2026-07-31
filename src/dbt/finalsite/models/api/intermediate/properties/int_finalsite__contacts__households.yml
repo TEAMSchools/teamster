@@ -1,0 +1,89 @@
+models:
+  - name: int_finalsite__contacts__households
+    description:
+      One row per (contact, household) — the households attached to each
+      Finalsite contact, flattened off `stg_finalsite__contacts`'s raw
+      `households` array. Every contact record carries households, students and
+      adults alike, and a household carries only an id plus an address;
+      membership has no roles. This is the only place per-household addresses
+      are exposed — the `household_ids` array on `stg_finalsite__contacts`
+      carries ids without addresses, and that model's scalar `address_*` columns
+      are the first array element only. Address values carry the same
+      blank-to-null and state-uppercasing normalization
+      `stg_finalsite__contacts` applies.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - finalsite_enrollment_id
+              - household_id
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              is_complete_address = (
+                  address_1 is not null
+                  and city is not null
+                  and state is not null
+                  and zip is not null
+              )
+          config:
+            severity: error
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description:
+          Finalsite contact UUID of the contact this household belongs to.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: household_id
+        data_type: string
+        description:
+          Finalsite household UUID; unique within a contact. Shared across the
+          contacts that belong to the same household.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: address_1
+        data_type: string
+        description: Street address line 1; blank normalized to null.
+        config:
+          meta:
+            contains_pii: true
+      - name: address_2
+        data_type: string
+        description:
+          Street address line 2 (apartment or unit); blank normalized to null.
+          Legitimately null when the household has no unit line.
+        config:
+          meta:
+            contains_pii: true
+      - name: city
+        data_type: string
+        description: City; blank normalized to null.
+        config:
+          meta:
+            contains_pii: true
+      - name: state
+        data_type: string
+        description: State code, uppercased; blank normalized to null.
+      - name: zip
+        data_type: string
+        description: ZIP code; blank normalized to null.
+        config:
+          meta:
+            contains_pii: true
+      - name: country
+        data_type: string
+        description:
+          Country as Finalsite stores it, passed through unnormalized. Not part
+          of the address identity used to compare households.
+      - name: is_complete_address
+        data_type: boolean
+        description:
+          Whether this household carries a mailable address — `address_1`,
+          `city`, `state`, and `zip` all non-null. `address_2` is not required.

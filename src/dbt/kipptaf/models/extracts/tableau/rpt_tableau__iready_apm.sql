@@ -117,7 +117,7 @@ left join
     and co.yearid = cr.cc_yearid
     and co.schoolid = cr.cc_schoolid
     and co.powerschool_credittype = cr.courses_credittype
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="cr") }}
+    and co._dbt_source_project = cr._dbt_source_project
     and not cr.is_dropped_section
     and cr.rn_credittype_year = 1
 left join

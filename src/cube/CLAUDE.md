@@ -78,6 +78,12 @@ school_calendars) go in `cubes/conformed/`.
   resolutions: a compound join on the canonical path (see
   `student_attendance.yml` → `school_calendars`), or a degenerate FK with no
   declared join. Comment the choice.
+- **Second join to an already-role-played mart → fresh `sql_table` cube, not
+  `extends`.** To add a SECOND, differently-filtered join to a mart another cube
+  already reaches (e.g. a stint cube reaching "the current homeroom section" of
+  `dim_student_section_enrollments`), define a fresh `public: false`
+  `sql_table:` cube — NOT `extends` the existing one. `extends` inherits the
+  base's joins, forming a cycle with the new reverse join.
 - **Time dimensions** must cast to `TIMESTAMP` in the dim's `sql:` — but never
   reference a time dimension in a join `sql:`. Cube substitutes the
   query-timezone conversion (`convertTz`) into join predicates, so

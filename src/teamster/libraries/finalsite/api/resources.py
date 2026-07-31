@@ -16,20 +16,34 @@ from tenacity import (
 )
 
 
+def _is_transient_status(status_code: int) -> bool:
+    """Return True for HTTP status codes treated as transient (worth retrying).
+
+    A bare gateway ``403`` (the shared-egress throttle signature) and any ``5xx``
+    gateway/upstream fault. Centralized so the retry decision (``_is_retryable``)
+    and the log-severity decision (``_request``'s error handler) cannot drift.
+    """
+    return status_code == 403 or status_code >= 500
+
+
 def _is_retryable(exception: BaseException) -> bool:
     """Return True for transient faults worth a bounded retry.
 
-    Two cases are retried:
+    Retried cases:
 
+    - A connection error or connect/read timeout against the gateway.
     - A bare gateway ``403``. All four districts' contacts pulls fire
       simultaneously from one shared egress IP, so the Finalsite gateway returns
       a ``403`` (not a ``429``) once the concurrent load trips its per-source
       ceiling. The ``finalsite_api`` concurrency pool is the root-cause fix; this
       is defense-in-depth for a transient ``403``.
-    - A connection error or connect/read timeout against the gateway.
+    - Any ``5xx``. Gateway/upstream faults (``502 Bad Gateway``,
+      ``503 Service Unavailable``, ``504 Gateway Timeout``) are transient and
+      clear on retry, so a single mid-pagination blip must not fail the whole
+      ~20-minute pull and force a full re-run.
 
     A ``429`` never reaches here — it is handled in-band (sleep on ``Retry-After``
-    then retry). Other ``4xx``/``5xx`` are deterministic and fail fast.
+    then retry). Other ``4xx`` are deterministic client errors and fail fast.
     """
     if isinstance(exception, (RequestsConnectionError, Timeout)):
         return True
@@ -37,7 +51,7 @@ def _is_retryable(exception: BaseException) -> bool:
     return (
         isinstance(exception, HTTPError)
         and exception.response is not None
-        and exception.response.status_code == 403
+        and _is_transient_status(exception.response.status_code)
     )
 
 
@@ -102,9 +116,14 @@ class FinalsiteResource(ConfigurableResource):
 
                 return self._request(method=method, path=path, id=id, **kwargs)
 
-            if response.status_code == 403:
+            # A shared-gateway 403 and any 5xx are transient (see _is_retryable):
+            # log at WARNING, not ERROR, so the retry layer's recovered attempts
+            # don't file false-positive GCP Error Reporting groups, then re-raise
+            # for tenacity to retry with backoff.
+            if _is_transient_status(response.status_code):
                 self._log.warning(
-                    f"Forbidden (403) on {method} {path}: {response.text.strip()[:200]}"
+                    f"Transient {response.status_code} on {method} {path}: "
+                    f"{response.text.strip()[:200]}"
                 )
                 raise
 

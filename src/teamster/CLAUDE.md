@@ -142,8 +142,8 @@ In Python, get this slash form with `key.to_user_string()` —
 
 See `core/CLAUDE.md` for automation condition builders
 (`dbt_view_automation_condition`, `dbt_union_relations_automation_condition`,
-`dbt_table_automation_condition`). Non-dbt assets use
-`AutomationCondition.eager()` or sensor/schedule triggers.
+`dbt_table_automation_condition`, `dbt_cron_automation_condition`). Non-dbt
+assets use `AutomationCondition.eager()` or sensor/schedule triggers.
 
 ## IO Managers
 
@@ -154,8 +154,11 @@ All use Hive-style partitioned GCS paths.
 
 **Avro schema validation**: All asset factories yielding Avro output call
 `build_check_spec_avro_schema_valid()` + `check_avro_schema_valid()` from
-`core/asset_checks.py` (warns on extra fields, doesn't fail). Clear a drift
-warning by adding the field to the **Pydantic model** in
+`core/asset_checks.py` (warns on extra fields, doesn't fail). The check compares
+TOP-LEVEL record keys only — extra fields inside a nested struct (e.g. a new
+`households` subfield) are silently dropped by the Avro writer and never
+flagged; a clean check is not evidence of nested coverage. Clear a drift warning
+by adding the field to the **Pydantic model** in
 `libraries/<integration>/.../schema.py` (the code-location `schema.py` only
 regenerates the Avro via `py_avro_schema.generate()`) — there is no allowlist,
 the fix is always to declare the field. Shared models (e.g. amplify mclass
@@ -191,10 +194,14 @@ Match on a specific exception class (define one if the upstream code raises bare
 the init path (`fetch_token` / `connect` in `setup_for_execution`) too, not just
 the request method. For network-call retries, the predicate must include
 `(RequestsConnectionError, Timeout, HTTPError)` — `HTTPError` alone misses
-`ConnectTimeout`. For runtime-parameterized retry loops (e.g.
-`with_powerschool_retry`), use `tenacity.Retrying` — a manual
-`for attempt in range(...)` has no backoff. Avoid broad base classes whose
-subclasses include deterministic config errors (e.g.
+`ConnectTimeout`. The `tableau` sign-in path is the exception:
+`tableauserverclient` raises its own errors, not `requests.HTTPError`, so its
+predicate is `(RequestsConnectionError, Timeout, InternalServerError)`
+(`InternalServerError` wraps a 5xx) and it fails fast on `FailedSignInError`
+(401) / `ServerResponseError` (other 4xx) — do not "restore" `HTTPError` there.
+For runtime-parameterized retry loops (e.g. `with_powerschool_retry`), use
+`tenacity.Retrying` — a manual `for attempt in range(...)` has no backoff. Avoid
+broad base classes whose subclasses include deterministic config errors (e.g.
 `paramiko.ssh_exception.SSHException` covers `IncompatiblePeer`,
 `BadHostKeyException`, `BadAuthenticationType`). List transient subclasses
 explicitly.
@@ -242,3 +249,18 @@ the codespace). For a change to either, `py_compile` the edited files and import
 the affected submodule alone (e.g.
 `import teamster.code_locations.kipptaf.finalsite` or
 `teamster.code_locations.kippmiami.extracts`), not the `definitions` module.
+
+`tests/test_dagster_definitions.py` fails all 6 in a FRESH worktree — run
+`prepare-and-package` for all 5 locations first or each dies on a missing
+`target/manifest.json`. The pytest failure is a bare
+`subprocess.CalledProcessError` that hides the cause; re-run
+`dagster definitions validate -m <module>` directly to see it. With manifests,
+conftest's 1Password bootstrap resolves kipptaf's dlt credentials too, so only
+`kippmiami` (`FOCUS_DB`) and `test_definitions_all` still fail.
+
+Importing a kipptaf **asset submodule** (e.g.
+`teamster.code_locations.kipptaf.google.directory.assets`) transitively imports
+`kipptaf.dbt` and needs the dbt manifest — absent in a fresh worktree, so a unit
+test importing it errors at collection (`FileNotFoundError: .../manifest.json`).
+Put unit-testable pure helpers in `libraries/` (imports cleanly), not a
+code-location asset module.

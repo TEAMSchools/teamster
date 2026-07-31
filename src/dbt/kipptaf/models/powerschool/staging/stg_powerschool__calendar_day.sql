@@ -17,7 +17,7 @@ with
 select
     ur.* except (date_value),
 
-    {{ extract_code_location("ur") }} as _dbt_source_project,
+    {{ extract_source_project("ur") }} as _dbt_source_project,
 
     if(ur.date_value < date '2000-01-01', null, ur.date_value) as date_value,
 

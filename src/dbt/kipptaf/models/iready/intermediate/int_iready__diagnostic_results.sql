@@ -127,7 +127,7 @@ select
 
     right(rt.code, 1) as round_number,
 
-    {{ extract_code_location("wc") }} as _dbt_source_project,
+    {{ extract_source_project("wc") }} as _dbt_source_project,
 
     case
         when wc.overall_relative_placement_int <= 2

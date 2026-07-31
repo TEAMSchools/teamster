@@ -12,6 +12,6 @@ with
         }}
     )
 
--- trunk-ignore(sqlfluff/AM04)
-select *, regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as dagster_code_location,
+-- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+select *, {{ extract_source_project() }} as _dbt_source_project,
 from union_relations

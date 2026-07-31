@@ -29,7 +29,8 @@ with
             relationship,
             contact_type,
             contact_phone_type,
-            contact_phone,
+
+            regexp_replace(contact_phone, r'[^0-9]', '') as phone_digits,
         from
             contacts_base unpivot (
                 contact_phone for contact_phone_type
@@ -72,7 +73,9 @@ select
 
     format_date('%m/%d/%Y', sr.dob) as dob,
 
-    left(regexp_replace(c.contact_phone, r'\W', ''), 10) as contact_phone,
+    -- int_students__contacts carries E.164 (+1..., optional xNNN) for
+    -- Finalsite-sourced contacts; drop a leading US `1` and take 10 digits.
+    left(regexp_replace(c.phone_digits, r'^1', ''), 10) as contact_phone,
 
     if(sr.lep_status, 'Y', 'N') as ell_status,
     if(sr.spedlep in ('SPED', 'SPED SPEECH'), 'Y', 'N') as iep_status,

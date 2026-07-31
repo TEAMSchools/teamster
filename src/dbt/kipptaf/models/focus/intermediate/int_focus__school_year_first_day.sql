@@ -1,17 +1,13 @@
 with
-    default_calendars as (
-        select calendar_id, syear,
-        from {{ source("kippmiami_dlt_focus", "attendance_calendars") }}
-        where default_calendar = 'Y'
-    ),
-
-    calendar_days as (
-        select calendar_id, school_date,
-        from {{ source("kippmiami_dlt_focus", "attendance_calendar") }}
-        where minutes > 0
+    union_relations as (
+        {{
+            dbt_utils.union_relations(
+                relations=[
+                    source("kippmiami_focus", "int_focus__school_year_first_day"),
+                ]
+            )
+        }}
     )
 
-select dc.syear, min(cd.school_date) as first_day_of_school,
-from default_calendars as dc
-inner join calendar_days as cd on dc.calendar_id = cd.calendar_id
-group by dc.syear
+select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
+from union_relations

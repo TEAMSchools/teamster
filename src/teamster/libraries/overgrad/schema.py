@@ -98,6 +98,12 @@ class Student(StudentIDs):
     interests: str | None = None
     target_grad_rate: float | None = None
     ideal_grad_rate: float | None = None
+    last_activity: str | None = None
+    grade_level: str | None = None
+    css_profile_status: str | None = None
+    state_aid_application_status: str | None = None
+    fafsa_status: str | None = None
+    completed_account_setup: bool | None = None
 
     school: School | None = None
     assigned_counselor: AssignedCounselor | None = None

@@ -234,11 +234,11 @@ select
 
     ifl.sage_intacct_fund as `Sage Intacct Fund`,
 
-    'US' as `Default Address Country Code`,
     'SAML' as `Authentication Method`,
     'No' as `Generate Password And Notify User`,
     'CoupaPay' as `Employee Payment Channel`,
 
+    if(sub.location_code is not null, 'US', null) as `Default Address Country Code`,
     if(sub.coupa_status = 'inactive', 'No', 'Yes') as `Expense User`,
 
     case

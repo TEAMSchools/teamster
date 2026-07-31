@@ -11,6 +11,7 @@ with
             gpn.plan_credit_capacity,
             gpn.discipline_credit_capacity,
             gpn.subject_credit_capacity,
+            gpn._dbt_source_project,
 
             sub.studentsdcid,
 
@@ -37,15 +38,15 @@ with
             {{ ref("stg_powerschool__gpprogresssubject") }} as sub
             on gpn.subject_id = sub.gpnodeid
             and gpn.nodetype = sub.nodetype
-            and {{ union_dataset_join_clause(left_alias="gpn", right_alias="sub") }}
+            and gpn._dbt_source_project = sub._dbt_source_project
         inner join
             {{ ref("stg_powerschool__gpprogresssubjectearned") }} as se
             on sub.id = se.gpprogresssubjectid
-            and {{ union_dataset_join_clause(left_alias="sub", right_alias="se") }}
+            and sub._dbt_source_project = se._dbt_source_project
         inner join
             {{ ref("stg_powerschool__storedgrades") }} as sg
             on se.storedgradesdcid = sg.dcid
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="sg") }}
+            and se._dbt_source_project = sg._dbt_source_project
             and sg.storecode = 'Y1'
 
         union all
@@ -61,6 +62,7 @@ with
             gpn.plan_credit_capacity,
             gpn.discipline_credit_capacity,
             gpn.subject_credit_capacity,
+            gpn._dbt_source_project,
 
             sub.studentsdcid,
 
@@ -90,15 +92,15 @@ with
             {{ ref("stg_powerschool__gpprogresssubject") }} as sub
             on gpn.subject_id = sub.gpnodeid
             and gpn.nodetype = sub.nodetype
-            and {{ union_dataset_join_clause(left_alias="gpn", right_alias="sub") }}
+            and gpn._dbt_source_project = sub._dbt_source_project
         inner join
             {{ ref("stg_powerschool__gpprogresssubjectenrolled") }} as se
             on sub.id = se.gpprogresssubjectid
-            and {{ union_dataset_join_clause(left_alias="sub", right_alias="se") }}
+            and sub._dbt_source_project = se._dbt_source_project
         inner join
             {{ ref("base_powerschool__final_grades") }} as fg
             on se.ccdcid = fg.cc_dcid
-            and {{ union_dataset_join_clause(left_alias="se", right_alias="fg") }}
+            and se._dbt_source_project = fg._dbt_source_project
             and fg.academic_year = {{ var("current_academic_year") }}
             and fg.termbin_is_current
     )
@@ -130,6 +132,7 @@ select
     g.is_transfer_grade,
     g.credit_status,
     g.earned_credits,
+    g._dbt_source_project,
 
     sp.enrolledcredits as plan_enrolled_credits,
     sp.requestedcredits as plan_requested_credits,
@@ -157,14 +160,14 @@ left join
     {{ ref("stg_powerschool__gpprogresssubject") }} as sp
     on g.plan_id = sp.gpnodeid
     and g.studentsdcid = sp.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="g", right_alias="sp") }}
+    and g._dbt_source_project = sp._dbt_source_project
 left join
     {{ ref("stg_powerschool__gpprogresssubject") }} as sd
     on g.discipline_id = sd.gpnodeid
     and g.studentsdcid = sd.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="g", right_alias="sd") }}
+    and g._dbt_source_project = sd._dbt_source_project
 left join
     {{ ref("stg_powerschool__gpprogresssubject") }} as ss
     on g.subject_id = ss.gpnodeid
     and g.studentsdcid = ss.studentsdcid
-    and {{ union_dataset_join_clause(left_alias="g", right_alias="ss") }}
+    and g._dbt_source_project = ss._dbt_source_project

@@ -4,10 +4,11 @@ models:
       One row per Finalsite Enrollment contact (the student/applicant record)
       from the REST API `/contacts` endpoint. Flattens the populated base
       fields, the grade / school-year / prospect-entry structs, the primary
-      household address, and up to three phones; the custom / id / track
-      attribute arrays are passed through whole (key-value style) for downstream
-      models to pivot. Fields the API exposes but that are unpopulated for this
-      tenant are intentionally omitted (billing / financial-aid / scholarship /
+      household address, and up to three phones (normalized to E.164 here, the
+      earliest point each is a scalar column); the custom / id / track attribute
+      arrays are passed through whole (key-value style) for downstream models to
+      pivot. Fields the API exposes but that are unpopulated for this tenant are
+      intentionally omitted (billing / financial-aid / scholarship /
       account-balance fields, `previous_school_1`, `review_decision`,
       `is_alumni`). Medical custom fields are not surfaced pending the
       medical-destination decision.
@@ -87,19 +88,28 @@ models:
         description: Type label of the first phone.
       - name: phone_1_number
         data_type: string
-        description: Number of the first phone.
+        description:
+          Number of the first phone, normalized to E.164 — `+1XXXXXXXXXX` for a
+          valid US number, `+<cc><national>` for an explicit international one,
+          with an `xNNNN` suffix when the raw value carried an extension. A
+          value that cannot be confidently parsed passes through as entered
+          (control characters stripped) rather than becoming null.
       - name: phone_2_type
         data_type: string
         description: Type label of the second phone.
       - name: phone_2_number
         data_type: string
-        description: Number of the second phone.
+        description:
+          Number of the second phone, normalized to E.164 on the same rules as
+          `phone_1_number`.
       - name: phone_3_type
         data_type: string
         description: Type label of the third phone.
       - name: phone_3_number
         data_type: string
-        description: Number of the third phone.
+        description:
+          Number of the third phone, normalized to E.164 on the same rules as
+          `phone_1_number`.
       - name: custom_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
@@ -127,24 +137,57 @@ models:
           Repeated per-school-year ("track") custom fields; same key-value shape
           as `custom_attributes` plus the `school_year` the value applies to.
           Passed through whole.
+      - name: households
+        data_type:
+          array<struct<id string, address_1 string, address_2 string, city
+          string, state string, zip string, country string>>
+        description:
+          Repeated raw household struct, passed through unnormalized (Finalsite
+          emits empty strings rather than null, and mixed-case states). This
+          model's scalar `address_*` columns are this array's first element
+          only; `int_finalsite__contacts__households` flattens every element per
+          contact, with the same blank-to-null and state-uppercasing
+          normalization applied downstream.
       - name: birth_date
         data_type: date
         description: Contact's date of birth, cast from the source string.
+      - name: household_1_id
+        data_type: string
+        description:
+          Finalsite id of the contact's first household ("household 1") — the
+          household whose address populates the address columns. Finalsite
+          households carry only an id and an address; membership roles do not
+          exist, so parent/guardian semantics come from `relationships` and
+          custom fields, not from the household.
+      - name: household_ids
+        data_type: array<string>
+        description:
+          Finalsite ids of every household the contact belongs to. Used to test
+          household co-membership between a student and a related contact.
       - name: address_1
         data_type: string
         description:
           Line 1 of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: address_2
         data_type: string
         description:
           Line 2 of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: city
         data_type: string
         description:
           City of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: state
         data_type: string
         description:
@@ -155,6 +198,133 @@ models:
         description:
           ZIP code of the primary household address; blank values normalized to
           null.
+        config:
+          meta:
+            contains_pii: true
       - name: country
         data_type: string
         description: Country of the primary household address.
+
+unit_tests:
+  - name: test_contacts_phone_normalization
+    description:
+      Each phone normalizes to E.164 as it is flattened out of its source struct
+      — a control-char-garbled number and a parenthesized-and-dashed number both
+      resolve to `+1XXXXXXXXXX`, while a value with no parseable digits passes
+      through as entered rather than becoming null. Also covers the
+      household-address normalization applied in the same select — blank to
+      null, state uppercased.
+    model: stg_finalsite__contacts
+    given:
+      - input: source('finalsite', 'contacts')
+        format: sql
+        rows: |
+          select
+            'con1' as id,
+            'Jane' as first_name,
+            'Q' as middle_name,
+            'Doe' as last_name,
+            'Jane Q Doe' as full_name,
+            'Janie' as preferred_name,
+            'jane@example.com' as email,
+            'F' as gender,
+            'Female' as gender_display,
+            'Female' as gender_full_text,
+            'enrolled' as status,
+            'returning' as enrollment_type,
+            '2025-01-02' as inquiry_submit_date,
+            '2025-01-03' as application_submit_date,
+            '2025-01-04' as contract_submit_date,
+            struct(
+              '5' as canonical_name, 'Grade 5' as name, 'ES' as school_level
+            ) as grade,
+            struct('6' as canonical_name) as prospect_entry_grade,
+            struct(2025 as start_year) as school_year,
+            struct(2026 as start_year) as prospect_entry_year,
+            struct(
+              'Cell' as phone_type,
+              code_points_to_string([8234])
+                || '+1 (862) 300'
+                || code_points_to_string([8209])
+                || '7240'
+                || code_points_to_string([8236]) as number
+            ) as phone_1,
+            struct('Home' as phone_type, '(929) 225-5670' as number) as phone_2,
+            struct(
+              cast(null as string) as phone_type, 'no phone' as number
+            ) as phone_3,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as custom_attributes,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as id_attributes,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as track_attributes,
+            '2015-04-05' as birth_date,
+            [
+              struct(
+                'hh1' as id,
+                '123 Main St' as address_1,
+                '' as address_2,
+                ' Miami ' as city,
+                ' fl ' as state,
+                '33101' as zip,
+                'US' as country
+              )
+            ] as households
+    expect:
+      format: sql
+      rows: |
+        select
+          'con1' as finalsite_enrollment_id,
+          'Jane' as first_name,
+          'Q' as middle_name,
+          'Doe' as last_name,
+          'Jane Q Doe' as full_name,
+          'Janie' as preferred_name,
+          'jane@example.com' as email,
+          'F' as gender,
+          'Female' as gender_display,
+          'Female' as gender_full_text,
+          'enrolled' as status,
+          'returning' as enrollment_type,
+          '2025-01-02' as inquiry_submit_date,
+          '2025-01-03' as application_submit_date,
+          '2025-01-04' as contract_submit_date,
+          '5' as grade_canonical_name,
+          'Grade 5' as grade_name,
+          'ES' as grade_school_level,
+          '6' as prospect_entry_grade_canonical_name,
+          2025 as school_year_start,
+          2026 as prospect_entry_year_start,
+          'Cell' as phone_1_type,
+          'Home' as phone_2_type,
+          cast(null as string) as phone_3_type,
+          array<struct<field_name string, value struct<string_value string>>>[]
+            as custom_attributes,
+          array<struct<field_name string, value struct<string_value string>>>[]
+            as id_attributes,
+          array<struct<field_name string, value struct<string_value string>>>[]
+            as track_attributes,
+          [
+            struct(
+              'hh1' as id,
+              '123 Main St' as address_1,
+              '' as address_2,
+              ' Miami ' as city,
+              ' fl ' as state,
+              '33101' as zip,
+              'US' as country
+            )
+          ] as households,
+          cast('2015-04-05' as date) as birth_date,
+          'hh1' as household_1_id,
+          '123 Main St' as address_1,
+          cast(null as string) as address_2,
+          'Miami' as city,
+          'FL' as state,
+          '33101' as zip,
+          'US' as country,
+          ['hh1'] as household_ids,
+          '+18623007240' as phone_1_number,
+          '+19292255670' as phone_2_number,
+          'no phone' as phone_3_number

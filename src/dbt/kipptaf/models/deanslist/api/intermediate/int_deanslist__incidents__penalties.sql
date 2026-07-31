@@ -31,5 +31,5 @@ with
         from union_relations
     )
 
-select *, {{ extract_code_location("sanitized") }} as _dbt_source_project,
+select *, {{ extract_source_project("sanitized") }} as _dbt_source_project,
 from sanitized

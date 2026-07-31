@@ -2,6 +2,7 @@ with
     students as (
         select
             e._dbt_source_relation,
+            e._dbt_source_project,
             e.students_dcid,
             e.studentid,
             e.student_number,
@@ -120,6 +121,7 @@ with
     lookup_table as (
         select
             s._dbt_source_relation,
+            s._dbt_source_project,
             s.students_dcid,
             s.studentid,
             s.student_number,
@@ -170,6 +172,7 @@ with
 
         select
             s._dbt_source_relation,
+            s._dbt_source_project,
             s.students_dcid,
             s.studentid,
             s.student_number,
@@ -358,6 +361,7 @@ with
     roster as (
         select
             l._dbt_source_relation,
+            l._dbt_source_project,
             l.students_dcid,
             l.studentid,
             l.student_number,

@@ -2,6 +2,7 @@ with
     fast_concat as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             student_id,
             academic_year,
 
@@ -13,6 +14,7 @@ with
     fast_pivot as (
         select
             _dbt_source_relation,
+            _dbt_source_project,
             student_id,
             academic_year,
             ela_pm1,
@@ -73,18 +75,18 @@ left join
     fast_pivot as fp
     on co.state_studentnumber = fp.student_id
     and co.academic_year = fp.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="fp") }}
+    and co._dbt_source_project = fp._dbt_source_project
 left join
     fast_pivot as fp_prev
     on co.state_studentnumber = fp_prev.student_id
     and co.academic_year - 1 = fp_prev.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="fp_prev") }}
+    and co._dbt_source_project = fp_prev._dbt_source_project
 left join
     {{ ref("int_powerschool__gpa_term") }} as gpa
     on co.studentid = gpa.studentid
     and co.yearid = gpa.yearid
     and co.schoolid = gpa.schoolid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gpa") }}
+    and co._dbt_source_project = gpa._dbt_source_project
 where
     co.rn_year = 1
     and co.region = 'Miami'

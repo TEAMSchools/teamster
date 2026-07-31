@@ -1,5 +1,7 @@
 models:
   - name: dim_staff
+    config:
+      materialized: table
     description: >-
       Staff person dimension. One row per person. Driven by
       stg_people__employee_numbers (active records) with LEFT JOIN to roster
@@ -17,6 +19,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
           - not_null

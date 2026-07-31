@@ -53,7 +53,7 @@ left join
     on cw.student_number = ir.student_id
     and cw.academic_year = ir.academic_year_int
     and cw.iready_subject = ir.subject
-    and {{ union_dataset_join_clause(left_alias="cw", right_alias="ir") }}
+    and cw._dbt_source_project = ir._dbt_source_project
     and rt.region = ir.region
     and rt.name = ir.test_round
     and ir.rn_subj_round = 1

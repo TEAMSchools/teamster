@@ -31,3 +31,12 @@ sources:
                 - kippcamden
                 - finalsite
                 - int_finalsite__contact_id_attributes
+      - name: int_finalsite__student_address_of_record
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippcamden
+                - finalsite
+                - int_finalsite__student_address_of_record

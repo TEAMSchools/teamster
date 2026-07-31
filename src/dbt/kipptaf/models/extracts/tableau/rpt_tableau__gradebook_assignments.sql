@@ -42,22 +42,22 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on enr.cc_studentid = co.studentid
     and enr.cc_yearid = co.yearid
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="co") }}
+    and enr._dbt_source_project = co._dbt_source_project
     and co.rn_year = 1
 inner join
     {{ ref("int_powerschool__section_grade_config") }} as gb
     on enr.sections_dcid = gb.sections_dcid
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="gb") }}
+    and enr._dbt_source_project = gb._dbt_source_project
     and gb.grading_formula_weighting_type = 'Total_Points'
 left join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
     on gb.sections_dcid = a.sectionsdcid
     and a.duedate between gb.term_start_date and gb.term_end_date
-    and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
+    and gb._dbt_source_project = a._dbt_source_project
 left join
     {{ ref("stg_powerschool__assignmentscore") }} as s
     on a.assignmentsectionid = s.assignmentsectionid
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+    and a._dbt_source_project = s._dbt_source_project
     and enr.students_dcid = s.studentsdcid
 where enr.cc_academic_year = {{ var("current_academic_year") }}
 
@@ -107,22 +107,22 @@ inner join
     {{ ref("int_extracts__student_enrollments") }} as co
     on enr.cc_studentid = co.studentid
     and enr.cc_yearid = co.yearid
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="co") }}
+    and enr._dbt_source_project = co._dbt_source_project
     and co.rn_year = 1
 inner join
     {{ ref("int_powerschool__section_grade_config") }} as gb
     on enr.sections_dcid = gb.sections_dcid
-    and {{ union_dataset_join_clause(left_alias="enr", right_alias="gb") }}
+    and enr._dbt_source_project = gb._dbt_source_project
     and gb.grading_formula_weighting_type != 'Total_Points'
 left join
     {{ ref("int_powerschool__gradebook_assignments") }} as a
     on gb.sections_dcid = a.sectionsdcid
     and gb.category_id = a.category_id
     and a.duedate between gb.term_start_date and gb.term_end_date
-    and {{ union_dataset_join_clause(left_alias="gb", right_alias="a") }}
+    and gb._dbt_source_project = a._dbt_source_project
 left join
     {{ ref("stg_powerschool__assignmentscore") }} as s
     on a.assignmentsectionid = s.assignmentsectionid
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="s") }}
+    and a._dbt_source_project = s._dbt_source_project
     and enr.students_dcid = s.studentsdcid
 where enr.cc_academic_year = {{ var("current_academic_year") }}

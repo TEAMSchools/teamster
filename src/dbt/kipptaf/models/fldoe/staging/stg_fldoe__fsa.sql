@@ -10,7 +10,7 @@ with
 select
     *,
 
-    {{ extract_code_location("union_relations") }} as _dbt_source_project,
+    {{ extract_source_project("union_relations") }} as _dbt_source_project,
 
     cast(test_grade as int) as grade_level,
 from union_relations

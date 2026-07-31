@@ -188,13 +188,13 @@ the upstream CTE that aliases the source. Compile fails with
 
 When a marts fix touches joins or surrogate-key composition involving
 `_dbt_source_project` (or `_dbt_source_relation`), promote the
-`extract_code_location()` call up to the union model itself rather than applying
-it at each consumer
+`extract_source_project()` call up to the union model itself rather than
+applying it at each consumer
 ([#3142](https://github.com/TEAMSchools/teamster/issues/3142)). Downstream
-consumers should join and hash on the materialized `code_location` column, not
-re-derive it from `_dbt_source_relation` per-call. This counts as an additive
-upstream edit under "Spec authoring context" and does not require a separate
-refactor PR.
+consumers should join and hash on the materialized `_dbt_source_project` column,
+not re-derive it from `_dbt_source_relation` per-call. This counts as an
+additive upstream edit under "Spec authoring context" and does not require a
+separate refactor PR.
 
 ## Removing a mart-level `qualify row_number() = 1`
 
@@ -206,6 +206,13 @@ sufficient evidence.
 Net mart row-count delta is typically `+N` where N is the residual fan-out — not
 `-N`. Adding an upstream `where` filter alongside doesn't drop PKs; it changes
 which rows the surviving PK joins to.
+
+The same applies to a final `dbt_utils.deduplicate` partitioned by the PK: it
+silently collapses ANY mid-chain fan-out (e.g. a coarse-key join to a non-unique
+lookup — the reporting-terms sheet isn't unique on `powerschool_term_id`), so
+removing or replacing it can surface a latent PK-uniqueness break from a source
+other than upstream dupes. Audit every join between the dedupe and the model
+grain before removing it.
 
 ## Verify source precision before R9 drops
 
@@ -279,7 +286,10 @@ foreign_key both render into DDL and warn otherwise.
   no matter what the PR schema builds. Before pushing, pre-seed staging as
   tables: `dbt run --select <closure> --target staging` (shared `zz_stg` — needs
   direct user authorization). BQ table clones preserve PK constraints, so
-  `Clone - Staging` keeps CI healthy afterward.
+  `Clone - Staging` keeps CI healthy afterward. Verify the pre-seed took before
+  re-triggering CI — the `zz_stg` copy must be a `BASE TABLE` with a
+  `PRIMARY KEY` (`INFORMATION_SCHEMA.TABLE_CONSTRAINTS`), not a view (a pre-seed
+  run against `main` code rebuilds it as a view and CI fails again).
 - Code-complete closure ≠ safe prod deploy. The prod automation-condition sensor
   materializes assets one-at-a-time OUT of FK order, and a config-only
   `materialized: table` YAML change does NOT bump the dagster-dbt code version

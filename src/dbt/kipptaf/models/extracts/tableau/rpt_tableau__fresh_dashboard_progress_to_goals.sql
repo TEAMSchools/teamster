@@ -3,7 +3,7 @@ with
         /* dont have a better location where only one schoolid matches a single school
            name */
         select distinct
-            s.academic_year,
+            s.enrollment_academic_year,
             s.org,
             s.region,
             s.schoolid,
@@ -16,19 +16,19 @@ with
 
             'School' as goal_granularity,
 
-        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
+        from {{ ref("int_tableau__fresh_enrollment_scaffold") }} as s
         left join
             {{ ref("int_people__location_crosswalk") }} as x
             on s.schoolid = x.location_powerschool_school_id
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
-        where s.grade_level = -1
+        where s.grade_level = -9
 
         union all
 
         /* dont have a better location where only one schoolid matches a single school
            name */
         select distinct
-            s.academic_year,
+            s.enrollment_academic_year,
             s.org,
             s.region,
             s.schoolid,
@@ -41,9 +41,9 @@ with
 
             'School/Grade Level' as goal_granularity,
 
-        from {{ ref("stg_google_sheets__finalsite__school_scaffold") }} as s
+        from {{ ref("int_tableau__fresh_enrollment_scaffold") }} as s
         cross join unnest(['All', 'New', 'Returning']) as enrollment_type
-        where s.grade_level != -1 and s.schoolid != 0
+        where s.grade_level != -9 and s.schoolid != 0
     ),
 
     data_stack_school as (
@@ -57,7 +57,7 @@ with
             powerschool_student_number,
             first_name,
             last_name,
-            -1 as grade_level,
+            -9 as grade_level,
             latest_status,
             self_contained,
             enroll_status,
@@ -95,7 +95,7 @@ with
             powerschool_student_number,
             first_name,
             last_name,
-            -1 as grade_level,
+            -9 as grade_level,
             latest_status,
             self_contained,
             enroll_status,
@@ -125,16 +125,16 @@ with
 
         -- PART 2: THE GOALS (Targets) - School
         select
-            enrollment_academic_year,
-            region,
-            schoolid,
-            school,
+            gp.enrollment_academic_year,
+            gp.region,
+            gp.schoolid,
+            gp.school,
 
             null as finalsite_id,
             null as powerschool_student_number,
             null as first_name,
             null as last_name,
-            grade_level,
+            gp.grade_level,
 
             'Goal Record' as latest_status,
             'NA' as self_contained,
@@ -148,19 +148,19 @@ with
 
             0 as student_count,
 
-            seat_target,
-            fdos_target,
-            budget_target,
-            new_student_target,
-            re_enroll_projection,
+            gp.seat_target,
+            gp.fdos_target,
+            gp.budget_target,
+            gp.new_student_target,
+            gp.re_enroll_projection,
 
-            enrollment_type,
+            gp.enrollment_type,
 
-        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
+        from {{ ref("int_google_sheets__finalsite__goals_pivot") }} as gp
         where
-            goal_granularity = 'School'
-            and goal_type = 'Enrollment'
-            and enrollment_academic_year = 2026
+            gp.goal_granularity = 'School'
+            and gp.goal_type = 'Enrollment'
+            and gp.enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),
 
     data_stack_school_grade as (
@@ -242,16 +242,16 @@ with
 
         -- PART 2: THE GOALS (Targets) - School
         select
-            enrollment_academic_year,
-            region,
-            schoolid,
-            school,
+            gp.enrollment_academic_year,
+            gp.region,
+            gp.schoolid,
+            gp.school,
 
             null as finalsite_id,
             null as powerschool_student_number,
             null as first_name,
             null as last_name,
-            grade_level,
+            gp.grade_level,
 
             'Goal Record' as latest_status,
             'NA' as self_contained,
@@ -265,23 +265,23 @@ with
 
             0 as student_count,
 
-            seat_target,
-            fdos_target,
-            budget_target,
-            new_student_target,
-            re_enroll_projection,
+            gp.seat_target,
+            gp.fdos_target,
+            gp.budget_target,
+            gp.new_student_target,
+            gp.re_enroll_projection,
 
-            enrollment_type,
+            gp.enrollment_type,
 
-        from {{ ref("int_google_sheets__finalsite__goals_pivot") }}
+        from {{ ref("int_google_sheets__finalsite__goals_pivot") }} as gp
         where
-            goal_granularity = 'School/Grade Level'
-            and goal_type = 'Enrollment'
-            and enrollment_academic_year = 2026
+            gp.goal_granularity = 'School/Grade Level'
+            and gp.goal_type = 'Enrollment'
+            and gp.enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     )
 
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -312,17 +312,17 @@ select
 from scaffold as s
 left join
     data_stack_school as d
-    on s.academic_year = d.enrollment_academic_year
+    on s.enrollment_academic_year = d.enrollment_academic_year
     and s.region = d.region
     and s.schoolid = d.schoolid
     and s.grade_level = d.grade_level
     and s.enrollment_type = d.enrollment_type
-where s.grade_level = -1
+where s.grade_level = -9
 
 union all
 
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -353,9 +353,9 @@ select
 from scaffold as s
 left join
     data_stack_school_grade as d
-    on s.academic_year = d.enrollment_academic_year
+    on s.enrollment_academic_year = d.enrollment_academic_year
     and s.region = d.region
     and s.schoolid = d.schoolid
     and s.grade_level = d.grade_level
     and s.enrollment_type = d.enrollment_type
-where s.grade_level != -1 and s.schoolid != 0
+where s.grade_level != -9 and s.schoolid != 0

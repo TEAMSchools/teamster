@@ -4,6 +4,17 @@ with
         from {{ ref("int_people__staff_roster") }}
         where
             job_title <> 'Intern'
+            -- exclude part-timers plus anyone whose title names temp/part-time
+            -- work. Full Time - Temporary staff are kept (HR confirmed they are
+            -- correctly classified and belong in Lattice); nulls kept as
+            -- legitimate full-time staff
+            and (
+                worker_type_code is null
+                or not contains_substr(worker_type_code, 'Part Time')
+            )
+            and not contains_substr(job_title, 'Temporary')
+            and not contains_substr(job_title, 'Part Time')
+            and not contains_substr(job_title, 'Part-Time')
             and (
                 home_business_unit_name = 'KIPP TEAM and Family Schools Inc.'
                 or home_business_unit_name = 'KIPP Paterson'
@@ -24,7 +35,8 @@ with
                         'Director School Operations',
                         'Director Campus Operations',
                         'Managing Director of School Operations',
-                        'Managing Director of Operations'
+                        'Managing Director of Operations',
+                        'Fellow School Operations Director'
                     )
                 )
                 or (
@@ -32,6 +44,13 @@ with
                     in ('TEAM Academy Charter School', 'KIPP Cooper Norcross Academy')
                     and home_department_name
                     in ('Technology', 'Marketing, Comms, and Enrollment')
+                )
+                -- network-wide leader roles, included regardless of entity
+                or contains_substr(job_title, 'Head of School')
+                or home_department_name = 'Teaching and Learning'
+                or (
+                    home_department_name = 'School Support'
+                    and contains_substr(job_title, 'Managing Director')
                 )
             )
             and (
@@ -52,6 +71,9 @@ select
     s.job_title,
     s.worker_hire_date_recent as `start_date`,
     s.home_department_name as department,
+    s.gender_identity as gender,
+    s.race_ethnicity_reporting as ethnicity,
+    s.birth_date as birthdate,
 
     m.work_email as manager_email,
 

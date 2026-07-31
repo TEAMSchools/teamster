@@ -9,6 +9,23 @@ models:
       select-type custom values stored as encoded option codes — code-to-label
       decoding is a deferred follow-up. Unpopulated custom fields are out of
       scope for this batch.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - start_date
+              - end_date
+          config:
+            severity: warn
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - syear
+          config:
+            where: end_date is null
+            severity: warn
     columns:
       - name: id
         description: Primary key — Focus student enrollment id.
@@ -143,6 +160,22 @@ models:
       - name: student_offender_transfer
         description: >-
           Student offender transfer — Focus custom field. Stored as an encoded
+          select option code (decode deferred).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: resident_status_state_county
+        description: >-
+          Resident Status, State/County — Focus custom field. Stored as an
+          encoded select option code (decode deferred).
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: disaster_affected_student
+        description: >-
+          Disaster Affected Student — Focus custom field. Stored as an encoded
           select option code (decode deferred).
         data_type: string
         config:
