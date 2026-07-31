@@ -112,18 +112,18 @@ the roster files are re-read each sync).
 ## Components
 
 1. **dbt models** — `src/dbt/kipptaf/models/extracts/parentsquare/`, one
-   `rpt_parentsquare__<file>.sql` (schools, students, parents,
-   emergency_contacts) plus a `properties/` YAML with contract + uniqueness
-   tests. Land in `kipptaf_extracts` (view, contract-enforced by directory
-   default).
+   `rpt_parentsquare__<file>.sql` per file (schools, students, parents,
+   emergency_contacts, staff, sections, rosters) plus a `properties/` YAML with
+   contract, uniqueness, and cross-file `relationships` tests. Land in
+   `kipptaf_extracts` (view, contract-enforced by directory default).
 
 1. **Extract config** —
    `src/teamster/code_locations/kipptaf/extracts/config/parentsquare.yaml`, one
    asset block per file, wired in `kipptaf/extracts/assets.py` with
    `destination_config={"name": "parentsquare"}` (the `clever_extract_assets`
    list-comprehension pattern). File stems must be the exact ParentSquare names
-   (`schools`, `students`, `parents`, `emergency_contacts`), suffix `csv`,
-   header row on.
+   (`schools`, `students`, `parents`, `emergency_contacts`, `staff`, `sections`,
+   `rosters`), suffix `csv`, header row on.
 
 1. **Destination resource** — `SSH_RESOURCE_PARENTSQUARE` (`SSHResource`, host
    `sftp3.parentsquare.com`) in `kipptaf/resources.py` (not `core/resources.py`
