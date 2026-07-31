@@ -1,18 +1,44 @@
 models:
   - name: rpt_tableau__schoolmint_grow_goals
     columns:
+      - name: location_clean_name
+        data_type: string
+        description: >-
+          Canonical location from int_people__location_crosswalk. Drives the
+          Tableau location gate; retired name aliases collapse onto their
+          canonical clean name here.
+        data_tests:
+          - not_null
+      - name: home_business_unit_name
+        data_type: string
+        description: >-
+          Legal entity. Drives the Tableau entity gate. Never location_region,
+          which is a property of the location rather than the person.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
+                  - KIPP TEAM and Family Schools Inc.
       - name: employee_number
         data_type: int64
       - name: teammate
         data_type: string
-      - name: entity
-        data_type: string
-      - name: location
-        data_type: string
       - name: grade_band
         data_type: string
-      - name: department
+      - name: campus_name
         data_type: string
+      - name: home_department_name
+        data_type: string
+      - name: job_function
+        data_type: string
+        description: >-
+          Drives the Tableau role predicate. Null where the roster records no
+          job function for the person.
       - name: job_title
         data_type: string
       - name: manager
@@ -21,9 +47,16 @@ models:
         data_type: date
       - name: assignment_status
         data_type: string
+      - name: mail
+        data_type: string
+        description: Post-cutover Tableau identity.
+      - name: user_principal_name
+        data_type: string
       - name: sam_account_name
         data_type: string
-      - name: report_to_sam_account_name
+      - name: reports_to_mail
+        data_type: string
+      - name: reports_to_sam_account_name
         data_type: string
       - name: tracking_type
         data_type: string
