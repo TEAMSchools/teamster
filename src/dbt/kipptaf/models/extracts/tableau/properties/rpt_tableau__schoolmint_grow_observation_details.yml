@@ -1,5 +1,17 @@
 models:
   - name: rpt_tableau__schoolmint_grow_observation_details
+    description: >-
+      Teacher observation detail feed for the SchoolMint Grow performance
+      management Tableau workbook. UNION of two branches. The first is a
+      current-academic-year tracking scaffold that crosses every active teacher
+      against the PM tracking terms and left-joins whatever observation data
+      exists, so teammates who have not been observed still appear with
+      `is_observed = 0` and a populated `pm_round_eligible`. The second carries
+      actual observation responses from prior years, where every `tracking_*`
+      column and `pm_round_eligible` are null. Grain is one row per teammate per
+      tracking term per observation measurement item, so rows fan out below the
+      observation level — deduplicate on `observation_id` before counting
+      observations.
     columns:
       - name: location_clean_name
         data_type: string
@@ -26,14 +38,23 @@ models:
                   - KIPP TEAM and Family Schools Inc.
       - name: employee_number
         data_type: int64
+        description: ADP employee number of the observed teammate.
       - name: teammate
         data_type: string
+        description:
+          Formatted name of the observed teammate, from the current staff
+          roster.
       - name: grade_band
         data_type: string
+        description: Grade band of the teammate's home work location.
       - name: campus_name
         data_type: string
+        description: >-
+          Parent campus that rolls up the teammate's home work location, from
+          int_people__location_crosswalk.
       - name: home_department_name
         data_type: string
+        description: Name of the teammate's home department.
       - name: job_function
         data_type: string
         description: >-
@@ -41,108 +62,253 @@ models:
           job function for the person.
       - name: job_title
         data_type: string
+        description: >-
+          Job title the teammate held on the roster-history row covering the
+          tracking term.
       - name: manager
         data_type: string
+        description: Formatted name of the teammate's manager.
       - name: worker_original_hire_date
         data_type: date
+        description: Date the teammate was originally hired.
       - name: assignment_status
         data_type: string
+        description: >-
+          Work assignment status on the roster-history row covering the tracking
+          term. The model keeps only Active rows, so teammates on leave are
+          excluded outright rather than marked ineligible.
       - name: mail
         data_type: string
         description: Post-cutover Tableau identity.
       - name: user_principal_name
         data_type: string
+        description: User principal name of the teammate.
       - name: sam_account_name
         data_type: string
+        description: Active Directory account name of the teammate.
       - name: reports_to_mail
         data_type: string
+        description: Email address of the teammate's manager.
       - name: reports_to_sam_account_name
         data_type: string
+        description: Active Directory account name of the teammate's manager.
       - name: tracking_type
         data_type: string
+        description: >-
+          Type of the PM tracking term from the reporting-terms sheet — `PMC`
+          for comment forms, `PMS` for score forms, `TR` for teacher
+          reflections. Null on prior-year rows.
       - name: tracking_code
         data_type: string
+        description: >-
+          PM round of the tracking term — `PM1`, `PM2`, or `PM3`. Note that PM1
+          exists only for the `PMC` and `TR` types, not `PMS`. Null on
+          prior-year rows.
       - name: tracking_rubric
         data_type: string
+        description: >-
+          Name of the Grow form expected for the tracking round, such as Manager
+          Reflection, Teacher Reflection, Coach Comments, or Coach Scores.
+          Sourced from the reporting-term name, not from the rubric actually
+          recorded on an observation — compare against `rubric_name` for that.
+          Null on prior-year rows.
       - name: tracking_academic_year
         data_type: int64
+        description:
+          Academic year of the tracking term. Null on prior-year rows.
       - name: is_current
         data_type: boolean
+        description: >-
+          TRUE when the tracking term is the current one per the reporting-terms
+          sheet. Hardcoded FALSE on prior-year rows.
       - name: start_date
         data_type: date
+        description:
+          First date of the tracking term window (inclusive). Null on prior-year
+          rows.
       - name: end_date
         data_type: date
+        description:
+          Last date of the tracking term window (inclusive). Null on prior-year
+          rows.
       - name: lockbox_date
         data_type: date
+        description: >-
+          Date after which the tracking term's data is locked for reporting. It
+          also anchors PM2 and PM3 eligibility and the recent-leave lookback
+          window. Null on prior-year rows. For unscored/unlocked BOY rounds,
+          this is the start date for coaching conversations.
       - name: final_score
         data_type: float64
+        description: >-
+          Teammate's year-level PM score — the average observation score across
+          their `PMS` PM2 and PM3 observations for the academic year.
       - name: final_tier
         data_type: int64
+        description: >-
+          Performance tier banded from `final_score`. At or above 3.495 is tier
+          4, at or above 2.745 is tier 3, at or above 1.745 is tier 2, below
+          1.75 is tier 1.
       - name: observer_employee_number
         data_type: int64
+        description: ADP employee number of the observer.
       - name: observation_id
         data_type: string
+        description: >-
+          SchoolMint Grow observation identifier. Null on tracking rows where no
+          observation matched the term window.
       - name: rubric_name
         data_type: string
+        description:
+          Display name of the rubric actually recorded on the observation.
       - name: observation_score
         data_type: float64
+        description: >-
+          Overall numeric score for the observation as computed by Grow,
+          averaged across its measurement items.
       - name: glows
         data_type: string
+        description:
+          Pipe-delimited positive feedback items recorded during the
+          observation.
       - name: grows
         data_type: string
+        description: >-
+          Pipe-delimited growth-area items (improvements needed) recorded during
+          the observation.
       - name: locked
         data_type: boolean
+        description:
+          TRUE if the observation is locked and can no longer be edited.
       - name: observed_at
         data_type: date
+        description: Local-timezone date the observation was conducted.
       - name: academic_year
         data_type: int64
+        description: Academic year the observation occurred in.
       - name: observation_type
         data_type: string
+        description:
+          Display name of the observation type, such as Walkthrough or PM
+          Semester.
       - name: observation_type_abbreviation
         data_type: string
+        description: >-
+          Short code for the observation type, such as `WT` or `PMS`. Matched
+          against `tracking_type` to attach an observation to its tracking term.
       - name: term_code
         data_type: string
+        description: >-
+          Reporting term code the observation itself was matched to. Equals
+          `tracking_code` on current-year tracking rows that found an
+          observation.
       - name: term_name
         data_type: string
+        description: Reporting term display name matched alongside `term_code`.
       - name: row_score
         data_type: float64
+        description: >-
+          Score recorded for a single measurement item within the observation.
+          This is what drives the measurement-level grain of the model.
       - name: strand_name
         data_type: string
+        description:
+          Measurement group (strand) the measurement item belongs to within the
+          rubric.
       - name: measurement_name
         data_type: string
+        description: Display name of the measurement item scored.
       - name: overall_tier
         data_type: float64
+        description: >-
+          Performance tier for the individual observation, banded from
+          `observation_score` on the same thresholds as `final_tier`.
       - name: observation_notes
         data_type: string
+        description: >-
+          Free-text observer notes, from Grow's magic notes field. Null on
+          archived prior-year rows.
       - name: current_assignment_status
         data_type: string
+        description: >-
+          Teammate's assignment status as of today, from the current staff
+          roster. Distinct from `assignment_status`, which reflects the
+          roster-history row covering the tracking term.
       - name: observer_name
         data_type: string
+        description: Formatted name of the observer.
       - name: grade_taught
         data_type: int64
+        description: >-
+          Primary grade level the teammate teaches, taking the first-ranked
+          grade from their PowerSchool section assignments. 0 is Kindergarten.
       - name: etr_score
         data_type: float64
+        description: >-
+          Archived ETR score component from the pre-Grow performance-management
+          data. Populated only on prior-year rows and always null for the
+          current academic year.
       - name: so_score
         data_type: float64
+        description: >-
+          Archived SO score component from the pre-Grow performance-management
+          data. Populated only on prior-year rows and always null for the
+          current academic year.
       - name: is_observed
         data_type: int64
+        description: >-
+          1 when an observation matched the row, 0 when a tracking row has no
+          observation. Sum it against a count of rows to get observation
+          completion.
       - name: measurement_comments
         data_type: string
+        description: >-
+          Free-text comment recorded on the measurement item, with HTML tags
+          stripped.
       - name: pm_round_eligible
         data_type: boolean
+        description: >-
+          Whether the teammate is expected to receive an observation for this
+          tracking round. Every teammate is eligible for PM1 regardless of start
+          date. PM2 and PM3 require the work assignment to have started at least
+          six weeks before the term's lockbox date. A teammate whose assignment
+          status changed to or from Leave within the six weeks before the
+          lockbox date is ineligible for any round. Null on prior-year rows.
       - name: race_ethnicity_reporting
         data_type: string
+        description: Teammate's race and ethnicity as reported.
       - name: work_assignment_actual_start_date
         data_type: date
+        description: >-
+          Date the teammate's current work assignment began. Drives PM2 and PM3
+          eligibility.
       - name: is_leader_development_program
         data_type: boolean
+        description: >-
+          TRUE if the teammate held a leader development program membership for
+          the academic year.
       - name: is_leader_development_program_observer
         data_type: boolean
+        description: >-
+          TRUE if the observer held a leader development program membership for
+          the academic year.
       - name: is_teacher_development_program
         data_type: boolean
+        description: >-
+          TRUE if the teammate held a teacher development program membership for
+          the academic year.
       - name: is_teacher_development_program_observer
         data_type: boolean
+        description: >-
+          TRUE if the observer held a teacher development program membership for
+          the academic year.
       - name: memberships
         data_type: string
+        description: >-
+          Program membership recorded for the teammate for the academic year,
+          such as AP Cohort or TiR Year 2.
       - name: memberships_observer
         data_type: string
+        description: >-
+          Program membership recorded for the observer for the academic year,
+          such as AP Cohort or TiR Year 2.

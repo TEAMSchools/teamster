@@ -31,6 +31,7 @@ select
     custom_attributes,
     id_attributes,
     track_attributes,
+    households,
 
     safe_cast(birth_date as date) as birth_date,
 

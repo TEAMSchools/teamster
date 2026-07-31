@@ -1,23 +1,18 @@
 with
-    tir_previous as (
-        {# TODO: document distinct #}
-        select distinct srh.employee_number, true as prior_year_tir,
-        from {{ ref("int_people__staff_roster_history") }} as srh
-        where
-            srh.assignment_status = 'Active'
-            and srh.job_title in ('Teacher in Residence', 'Paraprofessional')
-            and srh.effective_date_start
-            >= '{{ var("current_academic_year") - 1 }}-07-01'
-    ),
-
     recent_leave as (
-        {# TODO: document distinct #}
+        -- Joins PMS terms only, and AY2026 has no PMS PM1 term row (AY2024 and
+        -- AY2025 did), so this yields PM2/PM3 rows only. The pm_round_eligible
+        -- leave guard is therefore inert for PM1 until Ops re-adds that row.
+        -- grain projection: every selected column is functionally determined by
+        -- (employee_number, academic_year, code) -- recent_leave is a constant,
+        -- so multiple matching roster-history rows collapse to one
+        -- byte-identical tuple. Not a mask for upstream duplicates.
         select distinct
             srh.employee_number, t.academic_year, t.code, true as recent_leave,
         from {{ ref("int_people__staff_roster_history") }} as srh
         inner join
             {{ ref("stg_google_sheets__reporting__terms") }} as t
-            on assignment_status_effective_date
+            on srh.assignment_status_effective_date
             between date_sub(t.lockbox_date, interval 6 week) and t.lockbox_date
             and t.type = 'PMS'
         where srh.assignment_status = 'Leave' or srh.assignment_status_lag = 'Leave'
@@ -114,23 +109,13 @@ select
 
     /*
         round eligibility for PM
-            1: TiRs, Miami, Prior TiR (New Lead), New to KIPP
+            1: all teachers, regardless of start date
             2 & 3: Active six weeks prior to lockbox date
     */
     case
         when r.recent_leave
         then false
-        when
-            t.code = 'PM1'
-            and (
-                srh.job_title = 'Teacher in Residence'
-                or tir.prior_year_tir
-                or srh.home_business_unit_name = 'KIPP Miami'
-                or srh.worker_hire_date_recent
-                between '{{ var("current_academic_year") }}-04-01' and date_sub(
-                    t.lockbox_date, interval 3 week
-                )
-            )
+        when t.code = 'PM1'
         then true
         when
             t.code in ('PM2', 'PM3')
@@ -173,7 +158,6 @@ left join
 left join
     {{ ref("int_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
-left join tir_previous as tir on srh.employee_number = tir.employee_number
 left join
     {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
@@ -198,7 +182,17 @@ left join
 where
     srh.primary_indicator
     and srh.assignment_status = 'Active'
-    and (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
+    /*
+        job_function (ADP codes TEACH / TIR) is not set on newly created work
+        assignments, so fall back to the job title until it fills in
+    */
+    and (
+        srh.job_function in ('Teacher', 'Teacher in Residence')
+        or (
+            srh.job_function is null
+            and (srh.job_title like '%Teacher%' or srh.job_title like '%Learning%')
+        )
+    )
 
 union all
 
