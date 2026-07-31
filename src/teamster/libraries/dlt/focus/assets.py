@@ -49,8 +49,9 @@ def interval_to_microseconds_adapter(col_type: TypeEngine) -> TypeEngine | None:
 
     ``BigInteger`` rather than ``Time``: dlt converts duration to ``time64`` by
     reinterpreting the underlying buffer, which silently corrupts intervals of
-    24 hours or more and negative intervals. Microseconds are lossless for any
-    interval Postgres can hold.
+    24 hours or more and negative intervals. int64 microseconds spans roughly
+    292,000 years — lossless for any realistic interval, though narrower than
+    Postgres ``interval``'s full +/-178,000,000-year range.
 
     Note the check is ``_AbstractInterval``, the only base shared by
     ``postgresql.INTERVAL`` and ``sqltypes.Interval`` —

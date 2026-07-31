@@ -13,11 +13,14 @@ dlt casts the duration to int64 microseconds instead.
 from datetime import timedelta
 
 import pytest
+from dagster_dlt.constants import META_KEY_SOURCE
+from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.libs.pyarrow import (
     UnsupportedArrowTypeException,
     py_arrow_to_table_schema_columns,
 )
 from dlt.common.schema.typing import TTableSchemaColumns
+from dlt.sources.sql_database import remove_nullability_adapter
 from dlt.sources.sql_database.arrow_helpers import row_tuples_to_arrow
 from dlt.sources.sql_database.schema_types import (
     TTypeAdapter,
@@ -27,7 +30,10 @@ from sqlalchemy import BigInteger, Column, Integer, MetaData, String, Table
 from sqlalchemy.dialects.postgresql import INTERVAL
 from sqlalchemy.sql import sqltypes
 
-from teamster.libraries.dlt.focus.assets import interval_to_microseconds_adapter
+from teamster.libraries.dlt.focus.assets import (
+    build_focus_dlt_assets,
+    interval_to_microseconds_adapter,
+)
 
 
 def _gradebook_assignments_table() -> Table:
@@ -73,6 +79,33 @@ def test_adapter_maps_generic_interval_to_bigint():
 )
 def test_adapter_passes_other_types_through_unchanged(col_type):
     assert interval_to_microseconds_adapter(col_type) is col_type
+
+
+def test_factory_wires_both_adapters_into_the_dlt_source():
+    """Guard the wiring, not just the adapter function.
+
+    Every other test in this module would still pass if `build_focus_dlt_assets`
+    dropped `type_adapter_callback=`, since they call the adapter directly. This
+    asserts the factory-built source actually carries it. `defer_table_reflect`
+    means no connection is opened, so no live Focus database is needed.
+    """
+    assets = build_focus_dlt_assets(
+        sql_database_credentials=ConnectionStringCredentials(
+            "postgresql+psycopg://localhost:5432/focus"
+        ),
+        code_location="kippmiami",
+        table_name="gradebook_assignments",
+    )
+
+    dlt_source = next(iter(assets.specs)).metadata[META_KEY_SOURCE]
+    explicit_args = dlt_source.resources["gradebook_assignments"].explicit_args
+
+    assert explicit_args["type_adapter_callback"] is interval_to_microseconds_adapter
+
+    # the interval adapter must not have displaced the nullability adapter
+    assert explicit_args["table_adapter_callback"] is remove_nullability_adapter
+    assert explicit_args["reflection_level"] == "full_with_precision"
+    assert explicit_args["backend"] == "pyarrow"
 
 
 def test_interval_column_without_adapter_reproduces_prod_failure():
