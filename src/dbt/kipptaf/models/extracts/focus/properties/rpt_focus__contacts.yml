@@ -276,13 +276,20 @@ models:
 unit_tests:
   - name: test_contacts_two_guardians
     description:
-      Verifies the 50-column CONTACTS layout for one student with two guardian
-      relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2.
-      Asserts STUDENT_RELATION, FIRST_NAME, LAST_NAME, and CONTACT1_VALUE.
-      STUDENT_ID is sourced from int_finalsite__contact_id_attributes for the
-      student and is identical across both guardian rows. A second student whose
-      own `stg_finalsite__contacts.status` is not `enrolled` is included to
-      assert their guardian is excluded from the feed.
+      Verifies the 50-column CONTACTS layout for one student with three guardian
+      relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2,
+      and a third guardian whose household linkage does not resolve in
+      `int_finalsite__contact_address_of_record` to 3. Asserts STUDENT_RELATION,
+      FIRST_NAME, LAST_NAME, and CONTACT1_VALUE. STUDENT_ID is sourced from
+      int_finalsite__contact_id_attributes for the student and is identical
+      across all three guardian rows. The third guardian has no matching row in
+      the address mock — this proves the join to
+      `int_finalsite__contact_address_of_record` is a LEFT join, since the row
+      survives with a null address rather than being dropped, which is the
+      entire reason the model uses LEFT over INNER (an INNER join would silently
+      drop this guardian from the import-once feed). A second student whose own
+      `stg_finalsite__contacts.status` is not `enrolled` is included to assert
+      their guardian is excluded from the feed.
     model: rpt_focus__contacts
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -307,6 +314,16 @@ unit_tests:
               rel_id: enr-grd-sec,
               rel_name: Bob Smith,
               rel_type: guardian,
+              is_primary: false,
+              is_financial: false,
+              has_portal_access: false,
+            }
+          - {
+              finalsite_enrollment_id: enr-stu-001,
+              relationship_id: rel-004,
+              rel_id: enr-grd-unresolved,
+              rel_name: Dana Turner,
+              rel_type: grandparent,
               is_primary: false,
               is_financial: false,
               has_portal_access: false,
@@ -343,6 +360,17 @@ unit_tests:
               email: bob@example.com,
               phone_1_type: Work,
               phone_1_number: "+13055550200",
+              phone_2_type: null,
+              phone_2_number: null,
+            }
+          - {
+              finalsite_enrollment_id: enr-grd-unresolved,
+              first_name: Dana,
+              middle_name: null,
+              last_name: Turner,
+              email: dana@example.com,
+              phone_1_type: Home,
+              phone_1_number: "+13055550400",
               phone_2_type: null,
               phone_2_number: null,
             }
@@ -453,6 +481,58 @@ unit_tests:
             email: bob@example.com,
             contact1_type: Work,
             contact1_value: "+13055550200",
+            contact1_blocked: null,
+            contact1_unlisted: null,
+            contact1_callout: null,
+            contact2_type: null,
+            contact2_value: null,
+            contact2_blocked: null,
+            contact2_unlisted: null,
+            contact2_callout: null,
+            contact3_type: null,
+            contact3_value: null,
+            contact3_blocked: null,
+            contact3_unlisted: null,
+            contact3_callout: null,
+            contact4_type: null,
+            contact4_value: null,
+            contact4_blocked: null,
+            contact4_unlisted: null,
+            contact4_callout: null,
+            contact5_type: null,
+            contact5_value: null,
+            contact5_blocked: null,
+            contact5_unlisted: null,
+            contact5_callout: null,
+            contact6_type: null,
+            contact6_value: null,
+            contact6_blocked: null,
+            contact6_unlisted: null,
+            contact6_callout: null,
+            contact7_type: null,
+            contact7_value: null,
+            contact7_blocked: null,
+            contact7_unlisted: null,
+          }
+        - {
+            student_id: "84002002002",
+            student_relation: grandparent,
+            sort_order: 3,
+            first_name: Dana,
+            middle_name: null,
+            last_name: Turner,
+            resides_with_stud: null,
+            custody: null,
+            emergency: null,
+            pickup: null,
+            address: null,
+            address2: null,
+            city: null,
+            state: null,
+            zipcode: null,
+            email: dana@example.com,
+            contact1_type: Home,
+            contact1_value: "+13055550400",
             contact1_blocked: null,
             contact1_unlisted: null,
             contact1_callout: null,
