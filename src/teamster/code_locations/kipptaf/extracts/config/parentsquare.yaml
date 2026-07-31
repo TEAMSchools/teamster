@@ -1,0 +1,37 @@
+assets:
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_parentsquare__schools
+          schema: kipptaf_extracts
+    file_config:
+      stem: schools
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_parentsquare__students
+          schema: kipptaf_extracts
+    file_config:
+      stem: students
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_parentsquare__parents
+          schema: kipptaf_extracts
+    file_config:
+      stem: parents
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_parentsquare__emergency_contacts
+          schema: kipptaf_extracts
+    file_config:
+      stem: emergency_contacts
+      suffix: csv

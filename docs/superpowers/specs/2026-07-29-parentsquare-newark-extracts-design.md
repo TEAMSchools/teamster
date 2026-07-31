@@ -6,7 +6,8 @@
 - **Sources of truth:** KIPP NJ + ParentSquare Integration Planner (Google Doc);
   ParentSquare "SFTP Integration" spec (help-center PDF, updated 2026-03-18,
   attached to the Asana task)
-- **Status:** design
+- **Status:** phase 0 implemented (see _Implementation notes_ for corrections
+  this build made to the design below)
 - **Author:** Data Team
 
 ## Context
@@ -78,11 +79,12 @@ the roster files are re-read each sync).
    (`schools`, `students`, `parents`, `emergency_contacts`), suffix `csv`,
    header row on.
 
-1. **Destination resource** — `SSH_PARENTSQUARE` (`SSHResource`, host
-   `sftp3.parentsquare.com`) in `src/teamster/core/resources.py`, wired as
-   `ssh_parentsquare` into `kipptaf/definitions.py`; username + password (or SSH
-   key) env vars in `dagster-cloud.yaml` server and run-pod blocks. Credentials
-   come from the SFTP blocker below.
+1. **Destination resource** — `SSH_RESOURCE_PARENTSQUARE` (`SSHResource`, host
+   `sftp3.parentsquare.com`) in `kipptaf/resources.py` (not `core/resources.py`
+   — every other kipptaf-only SFTP destination lives there), wired as
+   `ssh_parentsquare` into `kipptaf/definitions.py`. The three environment
+   variables are NOT mapped in `dagster-cloud.yaml` yet; see _Implementation
+   notes_.
 
 1. **Job + schedule** — `kipptaf__extracts__parentsquare__asset_job` in
    `extracts/jobs.py`, plus a daily `ScheduleDefinition` in
@@ -90,7 +92,10 @@ the roster files are re-read each sync).
    evening**, so schedule ~6-7pm ET (not the 3am roster slot). Shipped paused
    until the round-trip is verified.
 
-1. **Exposure** — dbt exposure in `src/dbt/kipptaf/models/exposures/`.
+1. ~~**Exposure** — dbt exposure in `src/dbt/kipptaf/models/exposures/`.~~ Not
+   built: no SFTP extract feed in this repo has one (clever, illuminate, idauto,
+   coupa, egencia all lack them), and the Dagster extract asset already carries
+   the lineage. See _Implementation notes_.
 
 ## Data flow
 
@@ -99,12 +104,12 @@ Each model reads existing network models, filters to Newark
 `_dbt_source_relation like '%kippnewark%'`), and projects the ParentSquare
 columns.
 
-| File                 | Source                                                                                 | Key                                                                         |
-| -------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `schools`            | `stg_powerschool__schools` (Newark; `state_excludefromreporting = 0`)                  | `school_id = school_number`                                                 |
-| `students`           | `int_extracts__student_enrollments` (Newark, current academic year, active enrollment) | `student_id = student_number`                                               |
-| `parents`            | `int_students__contacts` where `contact_slot in ('contact_1', 'contact_2')`            | linked by `student_id`; no `parent_id`                                      |
-| `emergency_contacts` | `int_students__contacts` where `contact_slot like 'emergency_%'`                       | `contact_id = generate_surrogate_key([finalsite_contact_id, contact_slot])` |
+| File                 | Source                                                                                 | Key                                                                   |
+| -------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `schools`            | `stg_powerschool__schools` (Newark; `state_excludefromreporting = 0`)                  | `school_id = school_number`                                           |
+| `students`           | `int_extracts__student_enrollments` (Newark, current academic year, active enrollment) | `student_id = student_number`                                         |
+| `parents`            | `int_students__contacts` where `contact_slot in ('contact_1', 'contact_2')`            | linked by `student_id`; no `parent_id`                                |
+| `emergency_contacts` | `int_students__contacts` where `contact_slot like 'emergency_%'`                       | `contact_id = generate_surrogate_key([student_number, contact_slot])` |
 
 ### Contacts sourcing (Finalsite)
 
@@ -118,13 +123,14 @@ populated. It exposes `contact_name`, `relationship`, `email_current`,
   (Planner: "Finalsite Household 1 AND Parent 1 AND Parent 2"). One row per
   parent; the format supports more than two if a household ever has them.
   ParentSquare requires **email OR mobile** per parent — drop rows with neither.
-- **`emergency_contacts.csv`** = the `emergency_1`..`emergency_4` slots. Because
-  these are scalar custom fields hanging off one Finalsite contact record,
-  `finalsite_contact_id` repeats across a student's emergency slots — so the
-  required `contact_id` is
-  `generate_surrogate_key([finalsite_contact_id, contact_slot])`, unique per
-  (student, emergency ordinal). Requires **email OR phone**; emergency contacts
-  receive only Smart/Urgent Alerts and get no ParentSquare account.
+- **`emergency_contacts.csv`** = the `emergency_1`..`emergency_4` slots. These
+  are scalar custom fields on the student's OWN Finalsite record, not linked
+  contact records, so `int_finalsite__student_contacts` sets
+  `finalsite_contact_id` to explicit NULL for every emergency row — the required
+  `contact_id` is therefore
+  `generate_surrogate_key([student_number, contact_slot])`, unique per (student,
+  emergency ordinal). Requires **email OR phone**; emergency contacts receive
+  only Smart/Urgent Alerts and get no ParentSquare account.
 
 ### ID consistency and formatting
 
@@ -134,9 +140,11 @@ continuous string, no spaces, and `school_id` allows no spaces/underscores/
 periods; all fields ingest as strings; header names must match exactly
 (underscores, no spaces/dashes); phones are 10 digits.
 
-`grade_level` must map to ParentSquare's **-4..12** scale (K = 0, PreK1 = -4,
-PreK2 = -3, Junior K = -2, Transitional K = -1). A mapping from our
-`grade_level` (esp. Newark PreK codes) is required — see open question 4.
+`grade_level` must land on ParentSquare's **-4..12** scale (K = 0, PreK1 = -4,
+PreK2 = -3, Junior K = -2, Transitional K = -1). Newark's current-year
+`grade_level` domain is `0`..`12`, which already satisfies that scale, so the
+feed casts the value through unchanged and needs no mapping table. A PreK grade
+would need one; Newark operates none today.
 
 ## File specs (from the ParentSquare SFTP PDF)
 
@@ -184,6 +192,77 @@ Only the four in-scope files. `Yes*` = one of email/phone required.
 1. **Phase 2 (later).** `staff.csv` (`school_id = 0`) for the regional Ops
    leaders, if not fully handled by in-app Google/Okta provisioning.
 
+## Implementation notes
+
+Corrections and decisions from the phase-0 build. Where these conflict with the
+design above, these win.
+
+### `int_students__contacts` gained first/last name columns
+
+ParentSquare requires `first_name` and `last_name` as discrete fields, and
+`int_students__contacts` exposed only the combined `contact_name`. Rather than
+split that string — wrong for the ~4% of Newark contacts with 3+ name tokens,
+where a compound first name and a multi-word surname are indistinguishable — the
+model now carries `contact_first_name` / `contact_last_name`. Both branches
+supply them natively: Finalsite from `int_finalsite__student_contacts`
+(`contact_first_name` / `contact_last_name`, populated for parents AND emergency
+slots), PowerSchool from `int_powerschool__contacts` (`firstname` / `lastname`).
+Purely additive — `int_students__contacts_pivot`, `rpt_clever__students`,
+`bridge_student_contacts`, and `dim_student_contact_persons` all enumerate
+columns explicitly and are unaffected.
+
+### Principal names come from the staff roster, not the PowerSchool string
+
+`stg_powerschool__schools` holds one combined `principal` field that also
+carries honorifics, so `rpt_parentsquare__schools` resolves the name pair from
+`int_people__staff_roster` on `lower(principalemail) = lower(mail)`. All 12
+reporting Newark schools match, `mail` is unique on the roster so the join
+cannot fan out, and the one honorific-bearing value resolves correctly.
+
+### SFTP environment variables are deferred to the credentials phase
+
+The design called for adding the variable names to `dagster-cloud.yaml` now.
+That is unsafe: those entries are `secretKeyRef`s into a 1Password-synced Secret
+(`op-parentsquare-sftp`) that does not exist yet, and a `secretKeyRef` to a
+missing Secret fails container creation — taking the whole `kipptaf` code server
+down on deploy, not just this feed. `EnvVar` resolves lazily at resource init,
+so an unmapped variable is inert while the schedule stays stopped. The
+credentials phase adds `PARENTSQUARE_SFTP_HOST` / `_USERNAME` / `_PASSWORD` at
+the four insertion points, plus the `OnePasswordItem` entry in
+`.k8s/1password/items.yaml`.
+
+### Phone numbers are validated to exactly 10 digits
+
+ParentSquare requires 10-digit phones. Both contact models strip formatting,
+drop a leading US country code, truncate to 10, and then null anything that is
+not exactly 10 digits rather than send a number ParentSquare would reject along
+with the rest of the row. This drops 6 emergency-contact rows whose only phone
+is a 9-digit typo and which carry no email — an upstream Finalsite data-entry
+fix for Ops, not a modelling problem.
+
+### No exposure
+
+Every SFTP extract feed in the repo omits one and the extract asset already
+depends on the dbt model's asset key, so lineage is intact. Adding a lone
+`sftp.yml` exposure for ParentSquare would be inconsistent with clever,
+illuminate, idauto, coupa, and egencia.
+
+### Verified output (current academic year, prod data)
+
+| File                 | Rows   |
+| -------------------- | ------ |
+| `schools`            | 12     |
+| `students`           | 6,796  |
+| `parents`            | 9,259  |
+| `emergency_contacts` | 15,399 |
+
+Every `school_id` and `student_id` in the parents and emergency files resolves
+to a row in the schools and students files; no row lacks both email and phone;
+no phone is other than 10 digits; every school has a resolved principal name.
+The `state_excludefromreporting = 0` filter yields exactly the 12 schools Newark
+students actually attend, so `students.csv` cannot reference an absent
+`school_id`.
+
 ## Open questions
 
 1. **Newark-only phase 1** — confirmed by the Integration Planner; flagging
@@ -194,9 +273,11 @@ Only the four in-scope files. `Yes*` = one of email/phone required.
    Confirm with ParentSquare that the comms-only 4-file set (no staff/sections/
    rosters/terms) syncs cleanly.
 1. **SFTP credentials + upload path** — pending app access; also confirm whether
-   files land at the SFTP root or a subdirectory.
-1. **`grade_level` mapping** — exact mapping from our `grade_level` to
-   ParentSquare's -4..12, especially Newark PreK codes.
+   files land at the SFTP root or a subdirectory. The config currently sets no
+   `destination_config.path`, so files land at the connection's home directory;
+   add a relative `path` if ParentSquare wants a subdirectory.
+1. ~~**`grade_level` mapping**~~ — RESOLVED: Newark's grade domain is `0`..`12`,
+   which already matches ParentSquare's scale, so no mapping is needed.
 1. **Parents scope** — `contact_1` + `contact_2` (Household 1 parents). Confirm
    two household parents is sufficient vs. all household members.
 1. **Staff phase 2** — whether the ~6 Ops leaders ever need `staff.csv`

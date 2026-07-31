@@ -1,0 +1,61 @@
+models:
+  - name: rpt_parentsquare__students
+    description:
+      ParentSquare `students.csv` for KIPP Newark — one row per student enrolled
+      in the current academic year, including pre-registered students, who
+      ParentSquare represents as incoming. Delivered as a full snapshot each
+      run. Every value is emitted as a string because ParentSquare ingests all
+      fields as text.
+    columns:
+      - name: student_id
+        data_type: string
+        description:
+          PowerSchool `student_number` as a string, the student key ParentSquare
+          matches parents and emergency contacts against.
+        data_tests:
+          - unique
+          - not_null
+      - name: school_id
+        data_type: string
+        description:
+          PowerSchool `school_number` of the student's school, as a string.
+          Matches a `rpt_parentsquare__schools` row.
+        data_tests:
+          - not_null
+      - name: student_email
+        data_type: string
+        description: The student's KIPP email address.
+        config:
+          meta:
+            contains_pii: true
+      - name: first_name
+        data_type: string
+        description: The student's given name.
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        data_type: string
+        description: The student's family name.
+        config:
+          meta:
+            contains_pii: true
+      - name: state_student_id
+        data_type: string
+        description:
+          The student's New Jersey state identifier. Null where the state has
+          not issued one.
+        config:
+          meta:
+            contains_pii: true
+      - name: grade_level
+        data_type: string
+        description:
+          The student's grade level as a string. ParentSquare's scale runs -4 to
+          12 with kindergarten as 0, which the Newark grade domain of 0 through
+          12 already satisfies, so no remapping is applied.
+      - name: status
+        data_type: string
+        description:
+          ParentSquare enrollment status — 1 for an actively enrolled student, 0
+          for a pre-registered student, which ParentSquare treats as incoming.
