@@ -63,13 +63,6 @@ nav:
       - Gradebook Audit Data Model: models/gradebook-audit-data-model.md
   - Automations: reference/automations.md
 
-plugins:
-  - search
-  - redirects:
-      redirect_maps:
-        reference/fresh-dashboard-data-model.md: models/fresh-dashboard-data-model.md
-        reference/gradebook-audit-data-model.md: models/gradebook-audit-data-model.md
-
 markdown_extensions:
   - admonition
   - attr_list
