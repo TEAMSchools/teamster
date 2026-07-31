@@ -18,11 +18,11 @@ select
     cast(null as string) as emergency,
     cast(null as string) as pickup,
 
-    g.address_1 as address,
-    g.address_2 as address2,
-    g.city,
-    g.state,
-    g.zip as zipcode,
+    aor.address_1 as address,
+    aor.address_2 as address2,
+    aor.city,
+    aor.state,
+    aor.zip as zipcode,
     g.email,
     g.phone_1_type as contact1_type,
     g.phone_1_number as contact1_value,
@@ -71,6 +71,13 @@ inner join
     {{ ref("int_finalsite__contact_id_attributes") }} as ida
     on rel.finalsite_enrollment_id = ida.finalsite_enrollment_id
     and ida.focus_student_id_prefixed is not null
+-- the guardian's own household linkage decides their address; array position
+-- does not identify Finalsite's primary household. Unresolved keeps the row and
+-- nulls the address — the feed is import-once, so a wrong address is permanent,
+-- while the name, relationship, email, and phones are still worth sending.
+left join
+    {{ ref("int_finalsite__contact_address_of_record") }} as aor
+    on rel.rel_id = aor.finalsite_enrollment_id
 inner join
     {{ ref("stg_finalsite__contacts") }} as stu
     on rel.finalsite_enrollment_id = stu.finalsite_enrollment_id
