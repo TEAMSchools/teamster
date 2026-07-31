@@ -13,6 +13,29 @@ models:
       observation level — deduplicate on `observation_id` before counting
       observations.
     columns:
+      - name: location_clean_name
+        data_type: string
+        description: >-
+          Canonical location from int_people__location_crosswalk. Drives the
+          Tableau location gate; retired name aliases collapse onto their
+          canonical clean name here.
+        data_tests:
+          - not_null
+      - name: home_business_unit_name
+        data_type: string
+        description: >-
+          Legal entity. Drives the Tableau entity gate. Never location_region,
+          which is a property of the location rather than the person.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
+                  - KIPP TEAM and Family Schools Inc.
       - name: employee_number
         data_type: int64
         description: ADP employee number of the observed teammate.
@@ -21,21 +44,22 @@ models:
         description:
           Formatted name of the observed teammate, from the current staff
           roster.
-      - name: entity
-        data_type: string
-        description: >-
-          Home business unit of the teammate — the KTAF central entity or a
-          regional entity.
-      - name: location
-        data_type: string
-        description:
-          Name of the teammate's home work location (school or office).
       - name: grade_band
         data_type: string
         description: Grade band of the teammate's home work location.
-      - name: department
+      - name: campus_name
+        data_type: string
+        description: >-
+          Parent campus that rolls up the teammate's home work location, from
+          int_people__location_crosswalk.
+      - name: home_department_name
         data_type: string
         description: Name of the teammate's home department.
+      - name: job_function
+        data_type: string
+        description: >-
+          Drives the Tableau role predicate. Null where the roster records no
+          job function for the person.
       - name: job_title
         data_type: string
         description: >-
@@ -53,10 +77,19 @@ models:
           Work assignment status on the roster-history row covering the tracking
           term. The model keeps only Active rows, so teammates on leave are
           excluded outright rather than marked ineligible.
+      - name: mail
+        data_type: string
+        description: Post-cutover Tableau identity.
+      - name: user_principal_name
+        data_type: string
+        description: User principal name of the teammate.
       - name: sam_account_name
         data_type: string
         description: Active Directory account name of the teammate.
-      - name: report_to_sam_account_name
+      - name: reports_to_mail
+        data_type: string
+        description: Email address of the teammate's manager.
+      - name: reports_to_sam_account_name
         data_type: string
         description: Active Directory account name of the teammate's manager.
       - name: tracking_type

@@ -4,12 +4,26 @@ with
         from {{ ref("int_people__staff_roster_history") }}
         where
             primary_indicator
-            and job_title in (
-                'Teacher',
-                'Teacher in Residence',
-                'ESE Teacher',
-                'Learning Specialist',
-                'Learning Specialist Coordinator'
+            /*
+             job_function is the durable key, but ADP only began supplying it in
+             2026 -- it is 0% populated on roster_history for 2019-2025 and 35%
+             for 2026 -- so a job_title allow list carries the historical rows
+             until the backfill in #4665 lets the fallback be deleted.
+             */
+            and (
+                job_function in ('Teacher', 'Teacher in Residence')
+                or (
+                    job_function is null
+                    and job_title in (
+                        'Teacher',
+                        'Teacher in Residence',
+                        'ESE Teacher',
+                        'Learning Specialist',
+                        'Learning Specialist Coordinator',
+                        'Teacher ESL',
+                        'Teacher in Residence ESL'
+                    )
+                )
             )
     ),
 
@@ -66,15 +80,36 @@ with
 select
     rh.employee_number,
     rh.formatted_name as teammate,
-    rh.home_business_unit_name as entity,
-    rh.home_work_location_name as `location`,
     rh.home_work_location_grade_band as grade_band,
-    rh.home_department_name as department,
-    rh.job_title,
     rh.reports_to_formatted_name as manager,
-    rh.sam_account_name,
-    rh.reports_to_sam_account_name,
     rh.race_ethnicity_reporting,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    case
+        rh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else rh.home_business_unit_name
+    end as home_business_unit_name,
+
+    rh.home_department_name,
+    rh.job_function,
+    rh.job_title,
+
+    rh.mail,
+    rh.user_principal_name,
+    rh.sam_account_name,
+
+    rh.reports_to_mail,
+    rh.reports_to_sam_account_name,
 
     rt.type,
     rt.code,
@@ -106,6 +141,9 @@ select
     if(op.observation_id is not null, 1, 0) as is_observed,
 
 from roster_history as rh
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on rh.home_work_location_name = lc.location_name
 inner join
     {{ ref("stg_google_sheets__reporting__terms") }} as rt
     on rh.home_business_unit_name = rt.region
@@ -131,15 +169,36 @@ union all
 select
     rh.employee_number,
     rh.formatted_name as teammate,
-    rh.home_business_unit_name as entity,
-    rh.home_work_location_name as `location`,
     rh.home_work_location_grade_band as grade_band,
-    rh.home_department_name as department,
-    rh.job_title,
     rh.reports_to_formatted_name as manager,
-    rh.sam_account_name,
-    rh.reports_to_sam_account_name,
     rh.race_ethnicity_reporting,
+
+    lc.location_clean_name,
+    lc.campus_name,
+
+    case
+        rh.home_business_unit_name
+        when 'TEAM'
+        then 'TEAM Academy Charter School'
+        when 'KCNA'
+        then 'KIPP Cooper Norcross Academy'
+        when 'MIA'
+        then 'KIPP Miami'
+        when 'KNJ'
+        then 'KIPP TEAM and Family Schools Inc.'
+        else rh.home_business_unit_name
+    end as home_business_unit_name,
+
+    rh.home_department_name,
+    rh.job_function,
+    rh.job_title,
+
+    rh.mail,
+    rh.user_principal_name,
+    rh.sam_account_name,
+
+    rh.reports_to_mail,
+    rh.reports_to_sam_account_name,
 
     op.observation_type_abbreviation,
 
@@ -175,10 +234,20 @@ select
     if(op.observation_id is not null, 1, 0) as is_observed,
 
 from observation_pivot as op
-left join
+/*
+ INNER, not LEFT: an observation logged against someone who was not in a
+ teaching role on the observation date is testing noise, and is excluded rather
+ than carried. A LEFT join here also emitted the row with a null
+ employee_number, since this branch projects identity from rh rather than op --
+ so the model discarded the subject it already had.
+ */
+inner join
     roster_history as rh
     on op.employee_number = rh.employee_number
     and op.observed_at between rh.effective_date_start and rh.effective_date_end
+left join
+    {{ ref("int_people__location_crosswalk") }} as lc
+    on rh.home_work_location_name = lc.location_name
 left join observation_details as od on op.observation_id = od.observation_id
 left join roster_current as rc on op.observer_employee_number = rc.employee_number
 left join
