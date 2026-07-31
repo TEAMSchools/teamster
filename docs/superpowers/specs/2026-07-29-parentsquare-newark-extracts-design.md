@@ -33,8 +33,11 @@ workstream).
 
 ## Goals
 
-- A Newark ParentSquare feed delivering the four files ParentSquare needs for
-  regional comms: `schools`, `students`, `parents`, `emergency_contacts`.
+- A Newark ParentSquare feed delivering **every file ParentSquare's SFTP spec
+  marks required**, plus the optional `emergency_contacts` — seven files:
+  `schools`, `students`, `parents`, `staff`, `sections`, `rosters`,
+  `emergency_contacts`. See _File set_ below for why this is seven and not the
+  four the Integration Planner listed.
 - Contacts sourced from Finalsite (Household 1 parents + emergency contacts),
   with stable, mutually consistent record keys across files.
 - Build everything that does not depend on the SFTP-credentials blocker now, and
@@ -44,15 +47,58 @@ workstream).
 
 - **Attendance** — explicitly excluded by the Integration Planner (this is not
   an attendance-notification deployment).
-- **Staff (`staff.csv`)** — deferred to a later phase. Phase-1 users are ~6
-  named regional Operations leaders, provisioned by the Tech team (Google /
-  Okta), not via a roster file. When added later, staff attach to a district
-  office (`school_id = 0`).
-- **Sections / rosters / terms** — no teacher-classroom rostering. The Planner
-  sets granularity at school + grade level only.
+- **Terms (`terms.csv`)** — ParentSquare's spec makes terms required _only if
+  terms is enabled_, and it will not be. Consequently `sections.term_id` stays
+  empty (the spec makes it required only when sending `terms.csv`), and sections
+  carry current-year data rather than full-year.
+- **Teacher-classroom rostering** — the Planner sets granularity at school +
+  grade level only, so `sections.csv` / `rosters.csv` are satisfied with
+  synthetic per-grade sections rather than real course sections. No teacher is
+  imported. See _File set_.
+- **Any staff beyond the six regional Operations leaders** — no school staff, no
+  teachers.
 - **Parent / student logins** — none needed.
 - **Camden, Paterson, Miami** — out of scope for this phase.
 - A reusable cross-tool contacts abstraction layer — YAGNI.
+
+## File set
+
+The Integration Planner (question 10) lists four files needed and marks Terms /
+Staff / Sections ❌ not needed. ParentSquare's own SFTP spec (page 4) disagrees
+— it names seven **required** files:
+
+| ParentSquare spec        | Status                                                 |
+| ------------------------ | ------------------------------------------------------ |
+| `schools.csv`            | required — built                                       |
+| `students.csv`           | required — built                                       |
+| `parents.csv`            | required — built                                       |
+| `staff.csv`              | required — built (six Operations leaders only)         |
+| `terms.csv`              | required _only if terms is enabled_ — omitted          |
+| `sections.csv`           | required — built (synthetic per-grade sections)        |
+| `rosters.csv`            | required — built (student → per-grade section)         |
+| `emergency_contacts.csv` | **optional** per the spec — built anyway, Ops wants it |
+
+Sending all required files is the decision. The two files the Planner excluded
+are therefore built, but shaped so they do not contradict the Planner's other
+decisions:
+
+- **`staff.csv` carries only the six named regional Operations leaders**
+  (question 4: "Regional Operation leaders ... No school staff, no teachers"),
+  each emitted once per operating school. ParentSquare's staff file is
+  per-school and its spec states a staff member may be at more than one, so the
+  fan-out is what grants them school-level access everywhere.
+- **`sections.csv` holds one synthetic section per (school, grade)**, owned by
+  an Operations leader — not real course sections. This is the pattern
+  `rpt_clever__sections` already uses for its auto-generated `ENR` sections. It
+  satisfies the required file at exactly the granularity question 5 specifies
+  ("School + Grade Level only") **without importing a single teacher**, which
+  matters because a staff row with an email is synced as a ParentSquare staff
+  user — real teacher-led sections would have provisioned accounts for every
+  Newark teacher, the opposite of question 4.
+- **`rosters.csv` places each student in their (school, grade) section.**
+
+Sections are derived from the (school, grade) pairs students are actually
+enrolled in, so no empty section is emitted and every roster row resolves.
 
 ## Approach
 
@@ -110,6 +156,14 @@ columns.
 | `students`           | `int_extracts__student_enrollments` (Newark, current academic year, active enrollment) | `student_id = student_number`                                         |
 | `parents`            | `int_students__contacts` where `contact_slot in ('contact_1', 'contact_2')`            | linked by `student_id`; no `parent_id`                                |
 | `emergency_contacts` | `int_students__contacts` where `contact_slot like 'emergency_%'`                       | `contact_id = generate_surrogate_key([student_number, contact_slot])` |
+| `staff`              | `int_people__staff_roster` matched on the six leaders' mail, crossed with schools      | `staff_id = employee_number`; one row per (leader, school)            |
+| `sections`           | distinct (school, grade) from `int_extracts__student_enrollments`                      | `section_id = school_number + zero-padded grade`                      |
+| `rosters`            | `int_extracts__student_enrollments` (same filter as `students`)                        | `(section_id, student_id)`                                            |
+
+Every cross-file reference is enforced by a `relationships` test rather than
+assumed — `students`/`staff`/`sections`/`rosters` all point at
+`schools.school_id`, `rosters` points at both `sections.section_id` and
+`students.student_id`, and `sections.staff_id` points at `staff.staff_id`.
 
 ### Contacts sourcing (Finalsite)
 
@@ -255,33 +309,56 @@ illuminate, idauto, coupa, and egencia.
 | `students`           | 6,796  |
 | `parents`            | 9,259  |
 | `emergency_contacts` | 15,399 |
+| `staff`              | 72     |
+| `sections`           | 53     |
+| `rosters`            | 6,796  |
 
-Every `school_id` and `student_id` in the parents and emergency files resolves
-to a row in the schools and students files; no row lacks both email and phone;
-no phone is other than 10 digits; every school has a resolved principal name.
-The `state_excludefromreporting = 0` filter yields exactly the 12 schools Newark
-students actually attend, so `students.csv` cannot reference an absent
-`school_id`.
+`staff` is 6 leaders × 12 schools with no missing email. `sections` is 53
+distinct (school, grade) pairs; every `section_id` is unique, at most 11
+characters, and free of spaces and periods. `rosters` is one row per student.
+
+Referential integrity holds in both directions across the whole set — no orphan
+`school_id`, `student_id`, `section_id`, or `staff_id`; no section without
+students; no student without a roster row. No contact row lacks both email and
+phone, no phone is other than 10 digits, every school has a resolved principal
+name, and `state_student_id` / `student_email` are unique as ParentSquare's spec
+requires. The `state_excludefromreporting = 0` filter yields exactly the 12
+schools Newark students actually attend.
 
 ## Open questions
 
 1. **Newark-only phase 1** — confirmed by the Integration Planner; flagging
    because it overrides the task's "(NJ)" title. (Issue #4480 corrected to
    match.)
-1. **Reduced file set** — ParentSquare's generic spec lists
-   `students`/`schools`/`parents`/`staff`/`sections`/`rosters` as "required".
-   Confirm with ParentSquare that the comms-only 4-file set (no staff/sections/
-   rosters/terms) syncs cleanly.
+1. ~~**Reduced file set**~~ — RESOLVED by sending all of them. The spec's page-4
+   list is `schools`/`students`/`parents`/`staff`/`terms`/`sections`/`rosters`,
+   with `terms` conditional on terms being enabled and `emergency_contacts`
+   actually **optional**. All required files are now built; see _File set_.
 1. **SFTP credentials + upload path** — pending app access; also confirm whether
    files land at the SFTP root or a subdirectory. The config currently sets no
    `destination_config.path`, so files land at the connection's home directory;
    add a relative `path` if ParentSquare wants a subdirectory.
 1. ~~**`grade_level` mapping**~~ — RESOLVED: Newark's grade domain is `0`..`12`,
    which already matches ParentSquare's scale, so no mapping is needed.
-1. **Parents scope** — `contact_1` + `contact_2` (Household 1 parents). Confirm
-   two household parents is sufficient vs. all household members.
-1. **Staff phase 2** — whether the ~6 Ops leaders ever need `staff.csv`
-   (`school_id = 0`) or are fully managed in-app.
+1. ~~**Parents scope**~~ — RESOLVED: the Planner's question 6 answers "Parent 1,
+   Parent 2", matching `contact_1` + `contact_2`. Note the Planner also says
+   "Link student ID to as many as parents (can be unlimited)"; that describes
+   ParentSquare's file capability, and is moot today because
+   `int_finalsite__student_contacts` produces at most two parent slots by
+   construction. Lifting the cap would be an upstream change to the
+   household-membership logic, not to `rpt_parentsquare__parents`.
+1. ~~**Staff phase 2**~~ — RESOLVED: `staff.csv` is built now, scoped to the six
+   leaders. They are emitted per operating school rather than at
+   `school_id = 0`, because the schools feed carries no district-office row.
+1. **Teacher accounts** — the synthetic per-grade sections deliberately avoid
+   importing teachers, since a staff row with an email becomes a ParentSquare
+   staff user. Confirm with Ops before un-pausing that grade-level sections
+   owned by an Operations leader give them the audiences they expect, and that
+   no school staff are expected to post.
+1. **Section ownership churn** — the section owner is picked as the lowest
+   `staff_id` among the six leaders. If that person leaves, `sections.staff_id`
+   changes and ParentSquare may re-create the sections. Acceptable for phase 1;
+   revisit if it causes churn.
 
 ## Testing and validation
 
@@ -293,7 +370,7 @@ students actually attend, so `students.csv` cannot reference an absent
 - **Asset graph:** targeted import / `dagster definitions validate` for the
   extended `kipptaf` extracts wiring.
 - **Round-trip:** in a branch deployment, deliver one file to the ParentSquare
-  SFTP first, confirm it lands and parses, then enable all four.
+  SFTP first, confirm it lands and parses, then enable all seven.
 - **Vendor ingest:** with Ops, confirm ParentSquare ingests each file without
   id/match errors before un-pausing.
 

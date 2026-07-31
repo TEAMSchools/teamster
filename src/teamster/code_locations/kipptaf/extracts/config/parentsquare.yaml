@@ -35,3 +35,30 @@ assets:
     file_config:
       stem: emergency_contacts
       suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_parentsquare__staff
+          schema: kipptaf_extracts
+    file_config:
+      stem: staff
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_parentsquare__sections
+          schema: kipptaf_extracts
+    file_config:
+      stem: sections
+      suffix: csv
+  - query_config:
+      type: schema
+      value:
+        table:
+          name: rpt_parentsquare__rosters
+          schema: kipptaf_extracts
+    file_config:
+      stem: rosters
+      suffix: csv
