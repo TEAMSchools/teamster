@@ -114,12 +114,12 @@ file type, giving eight places to keep in sync instead of four.
 Four network models in `kipptaf_extracts`, plus eight thin district passthroughs
 (four each for `kippnewark` and `kippcamden`).
 
-| `kipptaf` model             | Grain                            | Primary source                        | Overgrad comparison                       |
-| --------------------------- | -------------------------------- | ------------------------------------- | ----------------------------------------- |
-| `rpt_overgrad__students`    | one row per student to create    | `int_extracts__student_enrollments`   | anti-join `external_student_id`           |
-| `rpt_overgrad__gpas`        | one row per student per GPA type | `int_extracts__student_enrollments`   | value-compare `academics__unweighted_gpa` |
-| `rpt_overgrad__test_scores` | one row per student, test, date  | `int_assessments__college_assessment` | none, full resend                         |
-| `rpt_overgrad__ap_scores`   | one row per student, exam, year  | `int_collegeboard__ap_unpivot`        | none, full resend                         |
+| `kipptaf` model             | Grain                                                | Primary source                        | Overgrad comparison                                     |
+| --------------------------- | ---------------------------------------------------- | ------------------------------------- | ------------------------------------------------------- |
+| `rpt_overgrad__students`    | one row per student to send (upsert-shaped; see Q12) | `int_extracts__student_enrollments`   | anti-join `external_student_id` + `_dbt_source_project` |
+| `rpt_overgrad__gpas`        | one row per student per GPA type                     | `int_extracts__student_enrollments`   | value-compare `academics__unweighted_gpa`               |
+| `rpt_overgrad__test_scores` | one row per student, test, date                      | `int_assessments__college_assessment` | none, full resend                                       |
+| `rpt_overgrad__ap_scores`   | one row per student, exam, year                      | `int_collegeboard__ap_unpivot`        | none, full resend                                       |
 
 ### Dagster wiring
 
