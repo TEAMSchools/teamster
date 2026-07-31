@@ -2,6 +2,7 @@ with
     dsos as (
         select
             sr.powerschool_teacher_number,
+            sr.home_work_location_dagster_code_location,
 
             coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
@@ -13,12 +14,33 @@ with
             and not ccw.is_pathways
         where
             sr.assignment_status != 'Terminated'
+            -- Miami rosters into Clever directly from Focus; excluded from all
+            -- six feeds
+            and sr.home_work_location_dagster_code_location != 'kippmiami'
             and sr.job_title in (
                 'Director of Campus Operations',
                 'Director Campus Operations',
                 'Director School Operations',
                 'School Leader'
             )
+    ),
+
+    schools as (
+        -- Matches rpt_clever__schools' filters so an auto-generated ENR section
+        -- can never reference a school that schools.csv omits.
+        select
+            abbreviation,
+            low_grade,
+            high_grade,
+            school_number,
+
+            regexp_extract(
+                _dbt_source_relation, r'(kipp\w+)_'
+            ) as dagster_code_location,
+        from {{ ref("stg_powerschool__schools") }}
+        where
+            state_excludefromreporting = 0
+            and _dbt_source_relation not like '%kippmiami%'
     ),
 
     teachers_long as (
@@ -89,7 +111,9 @@ with
             and st._dbt_source_project = t._dbt_source_project
         where
             sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
-            and sec._dbt_source_relation not like '%kipppaterson%'
+            -- Miami rosters into Clever directly from Focus; excluded from all
+            -- six feeds
+            and sec._dbt_source_relation not like '%kippmiami%'
 
         union all
 
@@ -132,8 +156,9 @@ with
             'Homeroom/advisory' as `subject`,
         from dsos
         inner join
-            {{ ref("stg_powerschool__schools") }} as s
+            schools as s
             on dsos.school_id = s.school_number
+            and dsos.home_work_location_dagster_code_location = s.dagster_code_location
         cross join unnest(generate_array(s.low_grade, s.high_grade)) as grade_level
     ),
 

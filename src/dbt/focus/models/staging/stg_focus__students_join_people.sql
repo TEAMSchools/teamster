@@ -5,15 +5,16 @@ select
     student_id,
     person_id,
     address_id,
-    custody,
-    emergency,
     student_relation,
     imported,
     sort_order,
-    pick_up,
     uuid,
     updated_at,
     created_at,
-    reunification,
+
+    custody = 'Y' as is_custodial,
+    emergency = 'Y' as is_emergency,
+    pick_up = 'Y' as is_pickup,
+    reunification = 'Y' as is_reunification,
 from source
 where deleted is null

@@ -326,3 +326,11 @@ models:
       - name: updated_at
         description: Row last-update timestamp in Focus.
         data_type: timestamp
+      - name: home_address
+        description: >-
+          Full address assembled from address, address2, city, state, and
+          zipcode. Null when all parts are absent, rather than an empty string.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true

@@ -152,3 +152,10 @@ landing dataset (`dagster_kippmiami_dlt_focus`) as a BQ-native
 `sources-bigquery.yml` source (hardcoded schema, no target branch) — it reads
 prod in all targets, so kipptaf CI resolves it without seeding `zz_stg`. Only
 the raw dlt tables exist in prod pre-merge; district `stg_focus__*` do not.
+
+This package declares only `dbt_utils` in its own `packages.yml` — models here
+must not reference macros from another source-system package (e.g.
+`finalsite.clean_phone`), since packages are not necessarily installed together
+and a consuming district project may lack it. Phone values are therefore emitted
+raw, as stored in Focus; normalization (E.164) is applied by the downstream
+consumer, not in this package.

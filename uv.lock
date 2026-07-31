@@ -773,7 +773,7 @@ wheels = [
 [[package]]
 name = "dagster-plus-mcp"
 version = "0.1.0"
-source = { git = "https://github.com/TEAMSchools/dagster-plus-mcp.git#e4cf661163a4876e2845feba3712258f978d4d02" }
+source = { git = "https://github.com/TEAMSchools/dagster-plus-mcp.git#efc4cf90037fdd3a8553937f2643a141321a9c2d" }
 dependencies = [
     { name = "httpx" },
     { name = "mcp" },
