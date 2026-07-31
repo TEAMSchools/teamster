@@ -95,6 +95,33 @@ def violating_rows(rule: Rule, rows: Sequence[Row]) -> list[Row]:
     return [row for row in rows if rule.predicate(row)]
 
 
+def find_coextensive_rules(
+    rules: Sequence[Rule], rows: Sequence[Row]
+) -> list[tuple[tuple[str, ...], int]]:
+    """Groups of rules that flag exactly the same rows.
+
+    Some handbook statements describe one underlying condition from two sides.
+    Entry-date-after-exit-date and exit-date-before-entry-date are the same
+    comparison, stated once under each date element, so a single bad row fires
+    both and contributes 2 to the error-instance total.
+
+    Whether NJSLEDS emits one error or two for such a row is not documented, so
+    this makes no attempt to decide - it detects the overlap from the data
+    (identical violating-row sets) and discloses it, so the instance total is
+    read as a range rather than a fact. Detecting it rather than hand-tagging
+    known pairs means a pair nobody anticipated is caught too.
+    """
+    signatures: dict[frozenset[int], list[str]] = {}
+    for rule in rules:
+        if not rule.checkable or rule.predicate is None:
+            continue
+        hits = frozenset(i for i, row in enumerate(rows) if rule.predicate(row))
+        if not hits:
+            continue
+        signatures.setdefault(hits, []).append(rule.id)
+    return [(tuple(ids), len(hits)) for hits, ids in signatures.items() if len(ids) > 1]
+
+
 def rows_with_any_violation(rules: Sequence[Rule], rows: Sequence[Row]) -> int:
     """How many rows break at least one rule.
 
@@ -162,6 +189,47 @@ def report(
     print(f"  total error instances (one per violated field) : {instances}")
     print(f"  total rows with at least one violation         : {bad_rows}")
     print()
+
+    handbook_rules = [r for r in rules if r.source == "handbook"]
+    overlaps = find_coextensive_rules(handbook_rules, rows)
+    if overlaps:
+        by_id = {rule.id: rule for rule in rules}
+        print("=== rules flagging identical row sets ===")
+        print()
+        print("  Each group below flags exactly the same rows. That has two very")
+        print("  different possible causes, so check which before adjusting any")
+        print("  total:")
+        print()
+        print("    - One condition stated twice. The handbook sometimes states")
+        print("      the same test under two elements - entry-date-after-exit and")
+        print("      exit-date-before-entry are one comparison. Then the instance")
+        print("      total counts one defect more than once.")
+        print("    - Distinct conditions that co-occur. A placeholder record with")
+        print("      a bad name AND a missing date of birth breaks several real,")
+        print("      separate rules. Then the total is correct as it stands.")
+        print()
+        for ids, hits in overlaps:
+            shared = len({id(by_id[rid].predicate) for rid in ids}) == 1
+            marker = (
+                "same predicate - one condition"
+                if shared
+                else "distinct predicates - check whether these co-occur"
+            )
+            print(f"  {hits:6}  {', '.join(ids)}")
+            print(f"          {marker}")
+        print()
+        definite = sum(
+            (len(ids) - 1) * hits
+            for ids, hits in overlaps
+            if len({id(by_id[rid].predicate) for rid in ids}) == 1
+        )
+        if definite:
+            print(
+                f"  Groups sharing a predicate account for {definite} redundant "
+                f"instance(s),"
+            )
+            print(f"  so the total reads as {instances - definite} to {instances}.")
+            print()
 
     if ktaf:
         print("=== additional local findings, NOT state errors ===")
