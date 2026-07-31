@@ -64,12 +64,6 @@ with
             obs.academic_year,
             obs.term_code,
 
-            srh.home_department_name,
-            srh.job_title,
-            srh.home_work_location_name,
-            srh.formatted_name,
-            srh.reports_to_formatted_name,
-
             avg(obs.observation_score) as overall_score,
         from {{ ref("int_performance_management__observation_details") }} as obs
         inner join
@@ -84,12 +78,7 @@ with
             obs.employee_number,
             obs.observer_employee_number,
             obs.academic_year,
-            obs.term_code,
-            srh.home_department_name,
-            srh.job_title,
-            srh.home_work_location_name,
-            srh.formatted_name,
-            srh.reports_to_formatted_name
+            obs.term_code
     )
 
 -- trunk-ignore(sqlfluff/ST06): contract column order is mandated
@@ -141,7 +130,7 @@ select
     srh.reports_to_formatted_name as observer_manager,
 
     sa.employee_number as teacher_employee_number,
-    sa.formatted_name as teacher_name,
+    trh.formatted_name as teacher_name,
 
     lc.location_clean_name,
     lc.campus_name,
@@ -169,7 +158,7 @@ select
     trh.reports_to_mail,
     trh.reports_to_sam_account_name,
 
-    sa.reports_to_formatted_name as teacher_manager,
+    trh.reports_to_formatted_name as teacher_manager,
     sa.overall_score as teacher_overall_score,
 
     if(sd.is_iqr_outlier_current, 'outlier', 'not outlier') as iqr_current,
