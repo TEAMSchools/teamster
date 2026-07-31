@@ -15,6 +15,25 @@
   is comment-triggered, not base-gated). A base-retarget after the parent merges
   does NOT re-fire `opened`, so `claude-code-review` does not auto-trigger then.
 - `claude.yaml` — responds to `@claude` mentions on issues/PRs.
+- **`claude-code-action` headless deadlock**: the action breaks its SDK loop on
+  the FIRST result (`base-action/src/run-claude-sdk.ts`), so a run that
+  dispatches background subagents ends with them orphaned and reports `success`
+  having posted nothing (upstream #1462 / #1499, unfixed at v1.0.183; ~8-12% of
+  fan-out runs). `Agent`, `Workflow`, `ScheduleWakeup`, `SendMessage` and
+  `Monitor` are NOT gated by `--allowedTools` — deny them via
+  `--disallowedTools` in `claude_args`. A second `--allowedTools` /
+  `--disallowedTools` ACCUMULATES with the action's own list rather than
+  replacing it (`parse-sdk-options.ts` `ACCUMULATING_FLAGS`), so adding tools
+  cannot strip `update_claude_comment`.
+- **Debugging a silent `claude-review`**: `display_report: true` appends the
+  transcript — final assistant message, denied tool calls — to the run's **job
+  summary**, the only place they appear. Not in the REST API, and not in the
+  step log (`show_full_output`-gated). Read it before theorising.
+- **Which ref a workflow runs from**: `pull_request` runs the PR's OWN copy, so
+  a workflow change tests itself on that PR. `issue_comment` (`claude.yaml`)
+  runs the DEFAULT-branch copy — an `@claude` mention cannot exercise an
+  unmerged `claude.yaml`; probe such a change through a `pull_request` workflow
+  instead.
 - `dagster-cloud-deploy.yaml` — reusable workflow (`workflow_call`) for
   multi-arch Docker builds and Dagster Cloud deploys. Called by per-location
   `deploy-prod-*.yaml` workflows. Uses `cancel-in-progress: true` grouped by
@@ -63,6 +82,10 @@
   event — use `!` negation patterns instead (e.g., `!**/*.md`).
 - YAML values should not be redundantly quoted — Trunk flags it. Only quote when
   required (e.g., `!` negation patterns need quotes).
+- Long quoted CLI args in `claude_args` belong in a folded block scalar (`>-`) —
+  prettier reflows the value, and folding turns each inserted newline back into
+  a single space, so the resolved string survives formatting unchanged. Verify
+  by parsing the YAML AFTER the fmt hook runs, not before.
 - Every external action `uses:` is pinned to a full 40-char commit SHA with a
   trailing `# vX.Y.Z` comment (Dependabot's `github-actions` ecosystem proposes
   bumps). Local reusable-workflow refs (`./.github/workflows/*.yaml`) are not
