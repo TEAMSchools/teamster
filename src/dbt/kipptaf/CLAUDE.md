@@ -191,7 +191,7 @@ pass-throughs — they are the reconciliation layer (import-once / diff against
 current Focus via the `focus` package, which only kippmiami has). kipptaf
 `rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
 actual SFTP feed. Per feed: addresses/contacts/demographics import-once
-(presence anti-join, with a null/completeness gate #4320); enrollment diffs and
+(presence anti-join, with a null/street-line gate #4320); enrollment diffs and
 additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 
