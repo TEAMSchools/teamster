@@ -85,7 +85,8 @@ left join
     and rt.academic_year = tgl.academic_year
     and tgl.grade_level_rank = 1
 where
-    srh.assignment_status = 'Active'
+    srh.primary_indicator
+    and srh.assignment_status = 'Active'
     and srh.job_title in (
         'Teacher',
         'Teacher in Residence',

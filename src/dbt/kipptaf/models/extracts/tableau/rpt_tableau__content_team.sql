@@ -65,6 +65,7 @@ left join
     on o.employee_number = srh.employee_number
     and o.observed_at between srh.effective_date_start and srh.effective_date_end
     and srh.assignment_status = 'Active'
+    and srh.primary_indicator
 left join
     {{ ref("int_people__location_crosswalk") }} as lc
     on srh.home_work_location_name = lc.location_name

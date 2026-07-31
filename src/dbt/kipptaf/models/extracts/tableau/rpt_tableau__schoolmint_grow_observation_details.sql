@@ -326,4 +326,4 @@ left join
     {{ ref("int_adp_workforce_now__employee_memberships_by_year") }} as emo
     on od.academic_year = emo.academic_year
     and sro.worker_id = emo.associate_id
-where srh.assignment_status = 'Active'
+where srh.primary_indicator and srh.assignment_status = 'Active'
