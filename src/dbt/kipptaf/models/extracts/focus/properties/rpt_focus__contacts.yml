@@ -38,7 +38,7 @@ models:
       - name: student_id
         data_type: string
         description:
-          Focus student id of the student this guardian belongs to, from
+          Focus student id of the student this contact belongs to, from
           `int_finalsite__contact_id_attributes.focus_student_id_prefixed`. Rows
           for students without a minted Focus id are excluded from this extract.
         data_tests:
@@ -58,22 +58,36 @@ models:
           - not_null
       - name: first_name
         data_type: string
-        description: Guardian's first name from their Finalsite contact record.
+        description:
+          Guardian's first name from their Finalsite contact record on guardian
+          rows; the emergency contact's first name (`emrg_N_name_first_name`) on
+          emergency rows.
         data_tests:
           - not_null
       - name: last_name
         data_type: string
-        description: Guardian's last name from their Finalsite contact record.
+        description:
+          Guardian's last name from their Finalsite contact record on guardian
+          rows; the emergency contact's last name (`emrg_N_name_last_name`) on
+          emergency rows.
         data_tests:
           - not_null
       - name: student_relation
         data_type: string
         description:
-          Relationship type of the guardian to the student (e.g. parent,
-          guardian) from `stg_finalsite__contact_relationships.rel_type`.
+          Relationship type of the contact to the student. On guardian rows,
+          from `stg_finalsite__contact_relationships.rel_type` (e.g. parent,
+          guardian). On emergency rows, `coalesce(emrg_N_relationship_ss,
+          emrg_N_relationship_txt)` — free-text values such as Aunt or Neighbor,
+          not the relationship-table codes.
       - name: middle_name
         data_type: string
-        description: Guardian's middle name from their Finalsite contact record.
+        description:
+          Guardian's middle name from their Finalsite contact record on guardian
+          rows. On emergency rows, sourced from `emrg_1_name_middle_name` /
+          `emrg_2_name_middle_name` — the `emrg_3` and `emrg_4` slots have no
+          middle-name field in the Finalsite pivot, so this column is always
+          null for those rows.
       - name: resides_with_stud
         data_type: string
         description:
@@ -106,40 +120,59 @@ models:
         data_type: string
         description:
           Line 1 of the guardian's resolved address from
-          `int_finalsite__contact_address_of_record`. Null when the guardian's
-          household linkage does not resolve to exactly one address; the row is
-          still sent.
+          `int_finalsite__contact_address_of_record` on guardian rows. Null on
+          guardian rows when the household linkage does not resolve to exactly
+          one address; the row is still sent. Always null on emergency rows for
+          a different reason — emergency contacts are custom fields on the
+          student's record with no household in Finalsite, so there is no
+          address to resolve.
       - name: address2
         data_type: string
         description:
-          Line 2 (apartment or unit) of the guardian's resolved address.
-          Legitimately null when the household has no unit line, and null
-          whenever the address is unresolved.
+          Line 2 (apartment or unit) of the guardian's resolved address on
+          guardian rows. Legitimately null when the household has no unit line,
+          and null whenever the address is unresolved. Always null on emergency
+          rows — emergency contacts have no household in Finalsite to resolve an
+          address from.
       - name: city
         data_type: string
         description:
-          City of the guardian's resolved address. Null when unresolved, and
-          possibly null on a resolved but incomplete address.
+          City of the guardian's resolved address on guardian rows. Null when
+          unresolved, and possibly null on a resolved but incomplete address.
+          Always null on emergency rows — emergency contacts have no household
+          in Finalsite to resolve an address from.
       - name: state
         data_type: string
         description:
-          State of the guardian's resolved address. Null when unresolved, and
-          possibly null on a resolved but incomplete address.
+          State of the guardian's resolved address on guardian rows. Null when
+          unresolved, and possibly null on a resolved but incomplete address.
+          Always null on emergency rows — emergency contacts have no household
+          in Finalsite to resolve an address from.
       - name: zipcode
         data_type: string
         description:
-          ZIP code of the guardian's resolved address. Null when unresolved, and
-          possibly null on a resolved but incomplete address.
+          ZIP code of the guardian's resolved address on guardian rows. Null
+          when unresolved, and possibly null on a resolved but incomplete
+          address. Always null on emergency rows — emergency contacts have no
+          household in Finalsite to resolve an address from.
       - name: email
         data_type: string
         description:
-          Guardian's email address from their Finalsite contact record.
+          Guardian's email address from their Finalsite contact record on
+          guardian rows; the emergency contact's email (`emrg_N_email`) on
+          emergency rows.
       - name: contact1_type
         data_type: string
-        description: Type label of the guardian's first phone (`phone_1_type`).
+        description:
+          Type label of the guardian's first phone (`phone_1_type`) on guardian
+          rows; the emergency contact's first phone type (`emrg_N_phone_1_type`)
+          on emergency rows.
       - name: contact1_value
         data_type: string
-        description: Number of the guardian's first phone (`phone_1_number`).
+        description:
+          Number of the guardian's first phone (`phone_1_number`) on guardian
+          rows; the emergency contact's first phone number
+          (`emrg_N_phone_1_number`) on emergency rows.
       - name: contact1_blocked
         data_type: string
         description:
@@ -156,10 +189,16 @@ models:
           null.
       - name: contact2_type
         data_type: string
-        description: Type label of the guardian's second phone (`phone_2_type`).
+        description:
+          Type label of the guardian's second phone (`phone_2_type`) on guardian
+          rows; the emergency contact's second phone type
+          (`emrg_N_phone_2_type`) on emergency rows.
       - name: contact2_value
         data_type: string
-        description: Number of the guardian's second phone (`phone_2_number`).
+        description:
+          Number of the guardian's second phone (`phone_2_number`) on guardian
+          rows; the emergency contact's second phone number
+          (`emrg_N_phone_2_number`) on emergency rows.
       - name: contact2_blocked
         data_type: string
         description:
