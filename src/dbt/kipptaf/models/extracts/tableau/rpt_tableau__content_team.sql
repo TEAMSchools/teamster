@@ -64,7 +64,9 @@ left join
     {{ ref("int_people__staff_roster_history") }} as srh
     on o.employee_number = srh.employee_number
     and o.observed_at between srh.effective_date_start and srh.effective_date_end
-    and srh.assignment_status = 'Active'
+    /* staff on leave are still staff -- excluding them left an observation
+       gated to nobody. Matches rpt_gsheets__operations_pm_roster. */
+    and srh.assignment_status in ('Active', 'Leave')
     and srh.primary_indicator
 left join
     {{ ref("int_people__location_crosswalk") }} as lc
