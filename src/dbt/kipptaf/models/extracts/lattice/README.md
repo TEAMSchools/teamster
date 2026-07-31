@@ -53,6 +53,7 @@ Any one of these qualifies:
   - Director Campus Operations
   - Managing Director of School Operations
   - Managing Director of Operations
+  - Fellow School Operations Director
 - **Newark or Camden** — anyone in the **Technology** or **Marketing, Comms, and
   Enrollment** department.
 - **Any entity** — job title contains "Head of School." The ADP title is "Head
