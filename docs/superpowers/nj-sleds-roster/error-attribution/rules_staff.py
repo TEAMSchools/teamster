@@ -10,12 +10,14 @@ impose (never counted toward a state error total).
 
 Judgment calls worth flagging for a future maintainer:
 
-- **LastName special-character format** (`STF-LN-SPECIAL-CHARS`): the
-  Validation Check text only exempts apostrophes and hyphens, but the
-  Additional Notes explicitly instruct submitters to use a space to join
-  multiple last names lacking a hyphen ("Davis Smyth"). The format check
-  below allows a space for LastName (not FirstName) to avoid flagging the
-  handbook's own recommended usage as an error.
+- **Name special-character format** (`STF-FN-SPECIAL-CHARS`,
+  `STF-LN-SPECIAL-CHARS`): both use the shared `NAME_PATTERN` from `rules.py`,
+  which allows spaces, both apostrophe forms, and accented letters. An earlier
+  draft allowed a space for LastName but not FirstName; on the 2026-07-31 files
+  that produced 17 false positives out of 29 flags, all ordinary compound first
+  names. The student catalog words the same rule identically, so the pattern is
+  shared rather than duplicated. See `rules.py` for the three judgement calls
+  behind it.
 - **Date "format" checks** (`STF-DOB-FORMAT`, `STF-SED-FORMAT`,
   `STF-SXD-FORMAT`) use `is_date8`, which validates real calendar dates, not
   just an 8-digit shape - a value like 20250230 fails both a plain digit
@@ -41,7 +43,17 @@ from __future__ import annotations
 
 import datetime
 
-from rules import Row, Rule, blank, in_window, is_date8, malformed, matches, present
+from rules import (
+    NAME_PATTERN,
+    Row,
+    Rule,
+    blank,
+    in_window,
+    is_date8,
+    malformed,
+    matches,
+    present,
+)
 
 # --------------------------------------------------------------------------- #
 # KTAF-local reference data (not from the handbook - see module docstring).
@@ -77,7 +89,7 @@ def _fn_blank(row: Row) -> bool:
 
 
 def _fn_special_chars(row: Row) -> bool:
-    return malformed(row.get("FirstName"), r"[A-Za-z'\-]+")
+    return malformed(row.get("FirstName"), NAME_PATTERN)
 
 
 def _ln_blank(row: Row) -> bool:
@@ -85,8 +97,7 @@ def _ln_blank(row: Row) -> bool:
 
 
 def _ln_special_chars(row: Row) -> bool:
-    # Space allowed - see module docstring (Additional Notes vs Validation Check).
-    return malformed(row.get("LastName"), r"[A-Za-z'\- ]+")
+    return malformed(row.get("LastName"), NAME_PATTERN)
 
 
 def _dob_blank(row: Row) -> bool:
@@ -872,26 +883,24 @@ RULES: list[Rule] = [
         predicate=_ktaf_cds_combo_invalid,
         notes=(
             "Known combinations: Newark (80, 7325, 965) and Camden "
-            "(07, 1799, 111), set by the data team.\n\n"
-            "This rule is EXPECTED to fire heavily, and that is the point. "
-            "Camden's uploads carry school code 179 on every populated-CDS "
-            "row, and Newark's carry 732 on a large block of rows. Those are "
-            "not alternative valid codes - they are the documented CDS "
-            "defect: the Alternate School Number is unset in PowerSchool "
-            "School Setup for those schools, so the extract falls back to a "
-            "prefix of the internal school number. As of the 2026-07-29 "
-            "extract this affected 20,652 of 43,493 student rows, including "
-            "every Camden row.\n\n"
-            "Do not 'fix' this rule by changing the expected codes to match "
-            "what the file contains. An earlier draft of this catalog did "
-            "exactly that - it substituted 179 for 111 on the reasoning that "
-            "a rule firing on 100% of rows must have a bad reference value. "
-            "Here, 100% is the correct answer, and the substitution would "
-            "have reported a wholly non-compliant file as clean. Reference "
-            "values come from the data team or the NJDOE directory, never "
-            "from the file under test.\n\n"
-            "Camden's 111 is still worth confirming against the NJDOE "
-            "directory before anyone keys it into School Setup."
+            "(07, 1799, 111), set by the data team and since confirmed by the "
+            "corrected source data.\n\n"
+            "Passes clean as of the 2026-07-31 extract: all four files carry "
+            "the correct triple on every row. It did not before. The "
+            "2026-07-29 extract carried school code 179 on every "
+            "populated-CDS Camden row and 732 on a large block of Newark "
+            "rows - 20,652 of 43,493 student rows - because the Alternate "
+            "School Number was unset in PowerSchool School Setup, so the "
+            "extract fell back to a prefix of the internal school number. "
+            "The School Setup fix landed between those two extracts.\n\n"
+            "That history is the reason this rule exists in this form. An "
+            "earlier draft substituted 179 for 111, reasoning that a rule "
+            "firing on 100% of rows must have a bad reference value. The "
+            "file was wrong and the reference value was right; the "
+            "substitution would have reported a wholly non-compliant file as "
+            "clean, and would now be silently wrong in the opposite "
+            "direction. Reference values come from the data team or the NJDOE "
+            "directory, never from the file under test."
         ),
         tags=("cds_list",),
     ),

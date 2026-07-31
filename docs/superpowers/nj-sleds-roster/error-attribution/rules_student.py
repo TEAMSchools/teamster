@@ -22,6 +22,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from rules import (
+    NAME_PATTERN,
     Row,
     Rule,
     as_float,
@@ -37,15 +38,11 @@ from rules import (
 # Shared format patterns.
 # --------------------------------------------------------------------------- #
 
-# FirstName/LastName: "any special characters except for apostrophes (') and
-# hyphens (-)". Space is included for both fields, not just LastName: the
-# LastName Additional Notes give a compound-name example with a plain space
-# ("Davis Smyth"), and the real Newark/Camden files carry legitimately
-# space-containing FirstName values too (78 rows across both files) - treating
-# space as a disallowed "special character" for FirstName produced false
-# positives against real data during validation, so it is allowed here for
-# both name fields.
-_NAME_PATTERN = r"[A-Za-z‘’' \-]+"
+# FirstName/LastName. Shared with the staff catalog, which words the same rule
+# identically - see rules.py for the pattern and the judgement calls behind it
+# (space allowed, both apostrophe forms allowed, accented letters treated as
+# letters).
+_NAME_PATTERN = NAME_PATTERN
 
 # GradeSpan: "each grade level from PK through 12... two-digit code... KG for
 # kindergarten... PK for prekindergarten". A GradeSpan is two such codes
@@ -1238,18 +1235,18 @@ RULES: list[Rule] = [
         source="ktaf",
         predicate=_ktaf_cds_combo_invalid,
         notes=(
-            "Expected to fire heavily on the 2026-07-29 extract, and that is "
-            "the signal, not a bug. Newark carries school code 732 on a large "
-            "block of rows and Camden carries 179 on every populated-CDS row; "
-            "both are the documented CDS defect (Alternate School Number unset "
-            "in PowerSchool School Setup, so the extract falls back to a "
-            "prefix of the internal school number), affecting 20,652 of 43,493 "
-            "rows network-wide.\n\n"
-            "Do not retune the expected codes to match what the file "
+            "Passes clean as of the 2026-07-31 extract: both student files "
+            "carry the correct triple on every row. It did not before. The "
+            "2026-07-29 extract carried 732 on a large block of Newark rows "
+            "and 179 on every populated-CDS Camden row - 20,652 of 43,493 "
+            "rows - because the Alternate School Number was unset in "
+            "PowerSchool School Setup, so the extract fell back to a prefix "
+            "of the internal school number. The School Setup fix landed "
+            "between those two extracts, which also confirms 111 as Camden's "
+            "real code.\n\n"
+            "Do not retune the expected codes to match what a file "
             "contains - see rules.py's module docstring for why an earlier "
-            "draft did exactly that and what it cost. Camden's 111 is still "
-            "worth confirming against the NJDOE directory before anyone keys "
-            "it into School Setup."
+            "draft dropped this rule entirely and what that would have cost."
         ),
         tags=("cds_list",),
     ),

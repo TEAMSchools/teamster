@@ -52,6 +52,32 @@ Row = Mapping[str, str]
 SY_START = "20250701"
 SY_END = "20260630"
 
+# Allowed characters in FirstName and LastName. Both handbooks word the rule
+# identically - "any special characters except for apostrophes and hyphens" - so
+# both catalogs must share one pattern. They did not at first, and the staff
+# FirstName variant disallowed spaces while the student one allowed them; on the
+# 2026-07-31 staff files that produced 17 false positives out of 29 flags, all
+# of them ordinary compound first names.
+#
+# Three judgement calls, all erring toward a false negative over a false
+# positive, because a false positive sends someone hunting a problem that is not
+# there:
+#
+# - **Space is allowed.** The handbook's own compound-surname example is
+#   "Davis Smyth", and real data has compound first names too.
+# - **Both apostrophe forms are allowed.** The handbook prints the permitted
+#   apostrophe as the typographic U+2018, so accepting only the ASCII U+0027
+#   would reject the very character it names.
+# - **Accented Latin letters are letters, not special characters.** A state
+#   system could not plausibly reject "é" in a name. This reading is not
+#   certain from the handbook text, so a hit on an accented letter should be
+#   treated as a question rather than a finding.
+#
+# `[^\W\d_]` is any Unicode letter: a word character that is neither a digit nor
+# an underscore. Underscore stays excluded deliberately - it is not a name
+# character, and it does appear in real placeholder records.
+NAME_PATTERN = r"(?:[^\W\d_]|[ '‘’\-])+"
+
 
 @dataclass(frozen=True)
 class Rule:
