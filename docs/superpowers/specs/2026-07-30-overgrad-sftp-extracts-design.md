@@ -20,9 +20,19 @@ limited to the five AP subjects Overgrad accepts.
 ### The Salesforce gate
 
 Overgrad's `Student ID` is the **Salesforce contact id**, not `student_number`.
-This is load-bearing and already established in the codebase:
-`int_extracts__student_enrollments` joins Overgrad on
-`e.salesforce_contact_id = ovg.external_student_id`.
+This is load-bearing and already established in the codebase —
+`int_extracts__student_enrollments.sql:487-489` joins Overgrad on:
+
+```sql
+on e.salesforce_contact_id = ovg.external_student_id
+and e._dbt_source_project = ovg._dbt_source_project
+```
+
+The second predicate is not incidental. With separate per-region Overgrad
+accounts, an anti-join that omits it would treat a Newark-to-Camden transfer as
+already present in Overgrad and never create them in Camden's account. Every
+comparison against `int_overgrad__students` in this spec must carry the
+source-project predicate.
 
 The consequence for stakeholders: a student cannot be sent to Overgrad until the
 KIPP Foundation has rostered them into Salesforce and a contact id exists. This
@@ -40,12 +50,12 @@ The Overgrad API assets we ingest are `students`, `custom_fields`, `admissions`,
 `followings`, and `universities`. There is **no** test-score or GPA endpoint. So
 "what is already in Overgrad" is available at these grains:
 
-| File   | Comparison available                                         | Grain                             |
-| ------ | ------------------------------------------------------------ | --------------------------------- |
-| Roster | `stg_overgrad__students.external_student_id`                 | exact, per student                |
-| GPA    | `academics__unweighted_gpa` / `academics__weighted_gpa`      | current value only                |
-| SAT    | `academics__highest_sat`, `sat_superscore`, `highest_psat_*` | aggregate only, not per test date |
-| AP     | none                                                         | no Overgrad-side AP data          |
+| File   | Comparison available                                                                                                                                | Grain                             |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| Roster | `stg_overgrad__students.external_student_id`                                                                                                        | exact, per student                |
+| GPA    | `academics__unweighted_gpa` / `academics__weighted_gpa`                                                                                             | current value only                |
+| SAT    | `academics__sat_superscore`, `academics__highest_sat`, `academics__highest_psat_nmsqt`, `academics__highest_psat_10`, `academics__highest_psat_8_9` | aggregate only, not per test date |
+| AP     | none                                                                                                                                                | no Overgrad-side AP data          |
 
 Roster and GPA can be diffed precisely. Test scores cannot.
 
@@ -95,8 +105,9 @@ file type, giving eight places to keep in sync instead of four.
 
 `code_location` comes from `_dbt_source_project`, which
 `int_extracts__student_enrollments` already passes through via its
-`e.* except (...)` block. This is cleaner than the `regexp_extract` on
-`_dbt_source_relation` that `rpt_powerschool__autocomm_students` uses.
+`e.* except (...)` block. This matches the house pattern exactly —
+`rpt_powerschool__autocomm_students.sql:30` is
+`se._dbt_source_project as code_location`.
 
 ### Model inventory
 
@@ -117,10 +128,21 @@ location gets a `config/overgrad.yaml` with four asset entries, built by
 `build_bigquery_query_sftp_asset()`, plus entries in `jobs.py` and
 `schedules.py`.
 
-Newark and Camden have separate Overgrad accounts today, evidenced by separate
-API keys (`pool="overgrad_api_limit_kippnewark"`, and a distinct
-`OVERGRAD_RESOURCE` per code location). Each therefore needs its own SSH
-resource and its own initial manual upload to establish mappings.
+Newark and Camden have separate Overgrad accounts today, evidenced by distinct
+1Password secret items per district in `dagster-cloud.yaml`:
+`op-overgrad-api-kippnewark` for `kippnewark` (and `kipptaf`, which reuses the
+Newark key) versus `op-overgrad-api-kippcamden` for `kippcamden`. Both items are
+declared in `.k8s/1password/items.yaml`.
+
+Two things that look like evidence for this but are not: `OVERGRAD_RESOURCE` is
+a single shared object defined once at `src/teamster/core/resources.py:102` and
+imported identically by all three locations, and the
+`overgrad_api_limit_<code_location>` pool name is auto-derived from an f-string
+at `src/teamster/libraries/overgrad/assets.py:22` — it is a Dagster concurrency
+pool and would be per-location even with one shared Overgrad account.
+
+Each account therefore needs its own SSH resource and its own initial manual
+upload to establish mappings.
 
 Schedule at `0 4 * * *` in `LOCAL_TIMEZONE`, which lands inside Overgrad's
 stated 4am to 6am ET processing window. Most extracts in this repo run
@@ -152,12 +174,43 @@ doing real work here.
 | `first_name`      | `student_first_name` |                                              |
 | `last_name`       | `student_last_name`  |                                              |
 | `high_school`     | `school`             | abbreviation; stable across rebrands         |
-| `graduation_year` | `graduation_year`    | `yyyy`                                       |
+| `graduation_year` | `graduation_year`    | `yyyy`; Salesforce-backed — see below        |
 | `fafsa_completed` | `has_fafsa`          | Salesforce-backed, as `autocomm` uses        |
 
 Filters: `academic_year = current`, `rn_year = 1`, `school_level = 'HS'`, active
-enrollment, and an anti-join against
-`int_overgrad__students.external_student_id`.
+enrollment, and an anti-join against `int_overgrad__students` on **both**
+`external_student_id` and `_dbt_source_project` — omitting the source-project
+predicate would silently suppress Newark-to-Camden transfers, as described under
+_The Salesforce gate_.
+
+**This grain is provisional pending Q12.** The model is specified as one row per
+student _to create_, which assumes `StudentSisFile` is create-only. If the
+importer supports upsert, the anti-join is the wrong design — we would send the
+full roster and let Overgrad reconcile — and that changes the model's grain, its
+tests, and part of the rationale for diffing in `kipptaf` at all. Build it
+upsert-shaped so the anti-join is a filter that can be dropped rather than a
+structural assumption that has to be unwound.
+
+**On `graduation_year`.** Three competing definitions exist in this repo, and
+Overgrad's match algorithm keys on this field, so the choice is deliberate:
+
+- `int_extracts__student_enrollments.graduation_year` resolves to
+  `adb.graduation_year` — the Salesforce contact field
+  (`base_powerschool__student_enrollments.sql:100`). **This is what we send.**
+- `salesforce_graduation_year` in that same base model (line 206), derived from
+  actual or expected HS graduation date.
+- `rpt_powerschool__autocomm_students.sql:36` derives its own as
+  `academic_year + (13 - grade_level)`.
+
+The Salesforce-backed field is chosen for consistency with the
+compare-against-Salesforce principle applied to GPA and the roster gate:
+Overgrad is keyed on Salesforce contact ids, so its graduation year should come
+from the same record.
+
+Implementation note: that column's YAML `meta.source_model` claims
+`stg_powerschool__studentcorefields`, which is wrong — the SQL is
+`adb.graduation_year`. Pre-existing repo doc bug, not introduced here, but it
+will mislead anyone tracing the lineage.
 
 Birth date, gender, and race/ethnicity are **excluded from phase 1** even though
 Overgrad accepts them and their `students` object already holds values. These
@@ -200,6 +253,14 @@ From `int_assessments__college_assessment` where `scope = 'SAT'`, joined to
 Excludes the legacy `sat_reading_test_score` and `sat_math_test_score` types,
 the same exclusion `rpt_gsheets__college_assessments_long` applies.
 
+`scope = 'SAT'` is sufficient to keep PSAT rows out, even though
+`int_assessments__college_assessment` also unions
+`int_collegeboard__psat_unpivot` with its `test_type` passed straight through as
+`scope`. That `test_type` is a closed `case` in `stg_collegeboard__psat.sql`
+over the Dagster partition key, yielding only `PSAT NMSQT`, `PSAT 8/9`, or
+`PSAT10` — never `SAT`. The only hardcoded `'SAT' as test_type` in the project
+is `int_collegeboard__sat_unpivot.sql:77`.
+
 SAT comes from Salesforce via `int_kippadb__standardized_test_unpivot`, which is
 what `int_assessments__college_assessment` already unions for
 `scope in ('ACT', 'SAT')`. This keeps the extract consistent with the "compare
@@ -214,13 +275,17 @@ From `int_collegeboard__ap_unpivot`, joined through
 `int_extracts__student_enrollments` on `powerschool_student_number` to reach
 `salesforce_id` and `school`.
 
-Two problems, both requiring a decision that is recorded here rather than
-buried:
+Three problems, all recorded here rather than buried:
 
-**No test date.** `int_collegeboard__ap_unpivot` carries only `admin_year`, a
-two-digit year parsed from the College Board file. Overgrad requires
-`Test Date`. AP exams are administered in May, so the date is synthesized as May
-15 of `admin_year`. Flagged as a vendor question.
+**No test date.** `int_collegeboard__ap_unpivot` carries only `admin_year`.
+Overgrad requires `Test Date`. AP exams are administered in May, so the date is
+synthesized as May 15 of `admin_year`. Flagged as a vendor question (Q14).
+
+`admin_year` on this model is already a **4-digit `INT64`** — the raw College
+Board field is two-digit, but the model applies
+`extract(year from parse_date('%y', admin_year))` during the unpivot and derives
+`academic_year` as that value minus one. So the synthesized date is
+`date(admin_year, 5, 15)` with no further parsing.
 
 **AP Physics collapses.** College Board reports Physics 1, Physics 2, Physics C:
 Mechanics, and Physics C: E&M as distinct exams. Overgrad accepts exactly one
@@ -230,7 +295,38 @@ and date — precisely the case Overgrad rejects.
 
 Resolution: dedupe to the **highest** `exam_grade` per
 `(student_id, overgrad_test, test_date)`. The file stays valid, but a student's
-second Physics exam is silently dropped. Surfaced in the stakeholder questions.
+second Physics exam is silently dropped. Surfaced in the stakeholder questions
+(Q11).
+
+**The College Board ID crosswalk drops students silently.**
+`int_collegeboard__ap_unpivot` reaches `powerschool_student_number` by joining
+`stg_google_sheets__collegeboard__ap_id_crosswalk` on `ap_number_ap_id`.
+Unresolved IDs fall out with no error.
+
+This is known and recurring, not hypothetical. A dedicated data test exists for
+exactly this failure — `int_collegeboard__ap_unpivot__crosswalk_resolves`,
+described at `src/dbt/kipptaf/tests/properties.yml:228-241` — whose description
+states that unresolved students have their AP scores dropped. The repo also
+carries a `collegeboard-ap-data-ingest-protocol` skill because these gaps keep
+recurring.
+
+`rpt_overgrad__ap_scores` inherits that path, and it is **independent of the
+Salesforce gate**. Two consequences for the build:
+
+- The AP extract needs a row-count assertion before send, not just after.
+- `int_collegeboard__ap_unpivot` runs `dbt_utils.deduplicate` partitioned by
+  `powerschool_student_number`, so NULL-keyed rows from a crosswalk miss
+  collapse to a single row rather than failing loudly. Confirm behavior while
+  building.
+
+**Consider `int_assessments__ap_assessments` as the source instead.** It wraps
+`int_collegeboard__ap_unpivot` (for `academic_year >= 2018`) and unions
+Salesforce AP scores for earlier years, and critically it applies
+`where powerschool_student_number is not null` — which drops exactly the
+crosswalk-miss rows described above instead of letting them collapse. It exposes
+`test_subject`, `ap_course_name`, and `title` for the Overgrad mapping. The
+tradeoff: it does not carry `admin_year`, only `academic_year`, so the
+synthesized date becomes May of `academic_year + 1`. Decision pending.
 
 The five accepted values are mapped with an inline `case` expression rather than
 by extending `stg_google_sheets__collegeboard__ap_course_crosswalk`. Five values
@@ -287,7 +383,9 @@ cadence decision rather than a ticket queue.
 - **Q12.** Does the SIS Sync `StudentSisFile` mapping support upsert, or is it
   fixed to create-only? The manual importer forces a choice between "Creating"
   and "Editing" at mapping time, which suggests one SFTP mapping cannot do both.
-  Determines whether we need one roster file or two.
+  **This decides the shape of `rpt_overgrad__students`, not just the file
+  count** — see the grain note under that model. Highest-priority vendor
+  question.
 - **Q13.** One SFTP account per Overgrad district, or one shared credential for
   both Newark and Camden?
 - **Q14.** AP scores have no exam date in the College Board file. Is a
@@ -327,14 +425,14 @@ first.
 
 ### Milestones
 
-| Week         | Work                                                                                                                                                                                | Gates                                  |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Aug 3–7      | Email `integrations@overgrad.com` for SFTP credentials on both accounts, with Q12–Q18 attached. Hold the GPA and roster-scope meeting. Record decisions in this spec.               | none                                   |
-| Aug 10–21    | Build 4 network models and 8 district passthroughs. One PR per file type. `rpt_overgrad__gpas` waits on Q1–Q5; the other three do not.                                              | GPA model gated on stakeholder answers |
-| Aug 24–28    | Generate sample CSVs from the built models. Manual upload of each file type in both accounts to establish header and value mappings — 8 uploads.                                    | models merged; credentials received    |
-| Aug 31–Sep 4 | Dagster wiring: SSH resources per code location, `config/overgrad.yaml`, assets, jobs, schedules at `0 4 * * *`. Dry-run extracts to `couchdrop` instead of Overgrad, inspect CSVs. | dry run needs no vendor involvement    |
-| Sep 7–11     | Flip destination to Overgrad. Live send on a small subset, verify against the Overgrad History page, then full send. Confirm row counts and spot-check students in the UI.          | mappings established                   |
-| Sep 14–15    | Monitor a full week of nightly runs. Hand off welcome-email ownership. Update docs. File follow-up issues.                                                                          | target met                             |
+| Week         | Work                                                                                                                                                                                                   | Gates                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Aug 3–7      | Email `integrations@overgrad.com` for SFTP credentials on both accounts, with Q12–Q18 attached. Hold the GPA and roster-scope meeting. Record decisions in this spec.                                  | none                                                                                     |
+| Aug 10–21    | Build 4 network models and 8 district passthroughs. One PR per file type. `rpt_overgrad__gpas` waits on Q1–Q5. `rpt_overgrad__students` is built upsert-shaped so Q12 changes a filter, not the grain. | GPA model gated on stakeholder answers; roster de-risked against Q12 rather than blocked |
+| Aug 24–28    | Generate sample CSVs from the built models. Manual upload of each file type in both accounts to establish header and value mappings — 8 uploads.                                                       | models merged; credentials received                                                      |
+| Aug 31–Sep 4 | Dagster wiring: SSH resources per code location, `config/overgrad.yaml`, assets, jobs, schedules at `0 4 * * *`. Dry-run extracts to `couchdrop` instead of Overgrad, inspect CSVs.                    | dry run needs no vendor involvement                                                      |
+| Sep 7–11     | Flip destination to Overgrad. Live send on a small subset, verify against the Overgrad History page, then full send. Confirm row counts and spot-check students in the UI.                             | mappings established                                                                     |
+| Sep 14–15    | Monitor a full week of nightly runs. Hand off welcome-email ownership. Update docs. File follow-up issues.                                                                                             | target met                                                                               |
 
 The dry-run-to-`couchdrop` step is worth the extra day. It shows exactly what
 Overgrad would receive — headers, date formats, the AP Physics dedupe, row
@@ -362,6 +460,15 @@ set to the week boundaries above.
 - **The GPA decision gates one model but could reshape it.** If the answer to Q4
   is a cadence other than "nightly whenever Salesforce changes",
   `rpt_overgrad__gpas` needs different logic, not just a different column.
+- **Q12 shapes the roster model.** Mitigated by building upsert-shaped rather
+  than blocking, but a late "create-only" answer still means re-testing the
+  roster file.
+- **The College Board ID crosswalk silently drops AP students**, independent of
+  the Salesforce gate. A recurring, known failure with its own data test
+  (`int_collegeboard__ap_unpivot__crosswalk_resolves`) and its own repo skill.
+  The AP send needs a row-count assertion, and crosswalk gaps must be cleared
+  before the September validation window or AP coverage will look complete while
+  being partial.
 
 Schools open in late August, so new-student Salesforce contact ids will still be
 settling during the September test window. This is realistic timing rather than
