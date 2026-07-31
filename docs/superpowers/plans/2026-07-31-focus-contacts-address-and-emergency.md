@@ -52,10 +52,11 @@ yamllint / markdownlint), `gh` CLI.
   `/workspaces/teamster/.trunk/tools/trunk check --force --no-fix <paths> </dev/null`,
   run with cwd set to the worktree.
 - Address resolution rule, verbatim from the spec: candidates are households
-  where `address_1 is not null`; identity is `address_1`, `address_2`, `city`,
-  `state`, `zip` compared case- and punctuation-insensitively with ZIP truncated
-  to 5; a contact resolves only when exactly one distinct address remains; the
-  projected values are the RAW text from the lowest-`household_id` row.
+  where `address_1 is not null`; identity is an exact match on `address_1`,
+  `address_2`, `city`, `state`, `zip` — no case-folding, punctuation-stripping,
+  or ZIP+4 truncation; a contact resolves only when exactly one distinct address
+  remains; the projected values are the RAW text from the lowest-`household_id`
+  row.
 
 ---
 
@@ -89,7 +90,8 @@ Create
 
 ```sql
 with
-    households_stripped as (
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    candidate_households as (
         -- Any household carrying a street line is a candidate. Completeness is
         -- deliberately NOT a gate: an incomplete address is visibly wrong in
         -- Focus and can be corrected there, whereas withholding it is silent.
@@ -106,51 +108,26 @@ with
             zip,
             country,
             is_complete_address,
-
-            upper(city) as city_key,
-            left(zip, 5) as zip_key,
-
-            regexp_replace(address_1, r'[^A-Za-z0-9]', '') as address_1_stripped,
-            regexp_replace(address_2, r'[^A-Za-z0-9]', '') as address_2_stripped,
         from {{ ref("int_finalsite__contacts__households") }}
         where address_1 is not null
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    candidate_households as (
-        select
-            finalsite_enrollment_id,
-            household_id,
-            address_1,
-            address_2,
-            city,
-            state,
-            zip,
-            country,
-            is_complete_address,
-            city_key,
-            zip_key,
-
-            upper(address_1_stripped) as address_1_key,
-            upper(address_2_stripped) as address_2_key,
-        from households_stripped
-    ),
-
     address_candidates as (
-        -- One row per (contact, distinct address). The key normalizes case and
-        -- punctuation so `123 Main St.` and `123 MAIN ST` are one address, and
-        -- truncates ZIP+4 to five digits. Normalization is for GROUPING only —
-        -- the projected address is the raw text from the lowest-household_id
-        -- row, so Focus receives properly formatted values. country and
-        -- is_complete_address are not part of the identity, so they come from
-        -- that same canonical row rather than being aggregated across rows,
-        -- which would blend values from different households.
+        -- One row per (contact, distinct address). Address identity is an
+        -- exact match on the five mailing fields — no case-folding, no
+        -- punctuation-stripping, no ZIP+4 truncation. Two spellings of the
+        -- same address (`123 Main St.` vs `123 MAIN ST`) therefore stay
+        -- distinct candidates, and the contact is withheld as ambiguous rather
+        -- than guessed at. country and is_complete_address are not part of the
+        -- identity, so they come from the canonical lowest-household_id row
+        -- rather than being aggregated across rows, which would blend values
+        -- from different households.
         {{
             dbt_utils.deduplicate(
                 relation="candidate_households",
                 partition_by=(
-                    "finalsite_enrollment_id, address_1_key, address_2_key,"
-                    " city_key, state, zip_key"
+                    "finalsite_enrollment_id, address_1, address_2, city,"
+                    " state, zip"
                 ),
                 order_by="household_id asc",
             )
@@ -245,14 +222,14 @@ models:
       incomplete address is visibly wrong in a receiving system and can be
       corrected there, whereas withholding it is silent. Households with no
       street at all are excluded, since each would otherwise count as its own
-      candidate and manufacture ambiguity. Address identity is `address_1`,
-      `address_2`, `city`, `state`, and `zip` compared without regard to case or
-      punctuation and with `zip` truncated to five digits, so the same address
-      recorded two ways collapses to one candidate while a genuine apartment,
-      city, state, or ZIP difference stays distinct. A contact resolves only
-      when exactly one distinct address remains; the emitted values are the raw
-      text from the lowest `household_id` in that group. SIS-agnostic — no
-      enrollment, status, or academic-year scoping.
+      candidate and manufacture ambiguity. Address identity is an exact match on
+      `address_1`, `address_2`, `city`, `state`, and `zip` — no case-folding,
+      punctuation-stripping, or ZIP+4 truncation, so two spellings of the same
+      address stay distinct candidates and the contact is withheld rather than
+      guessed at. A contact resolves only when exactly one distinct address
+      remains; the emitted values are the raw text from the lowest
+      `household_id` in that group. SIS-agnostic — no enrollment, status, or
+      academic-year scoping.
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
@@ -309,9 +286,9 @@ models:
       - name: candidate_count
         data_type: int64
         description:
-          Number of distinct addresses on this contact's household linkage after
-          normalization. One resolves; zero means no household carries a street;
-          more than one is ambiguous.
+          Number of distinct addresses on this contact's household linkage. One
+          resolves; zero means no household carries a street; more than one is
+          ambiguous.
         data_tests:
           - not_null:
               config:
@@ -368,12 +345,12 @@ models:
           visible to consumers. Null when unresolved.
 
 unit_tests:
-  - name: test_contact_address_formatting_duplicates_collapse
+  - name: test_contact_address_formatting_variants_stay_distinct
     description:
-      Two households recording the same address with different punctuation,
-      case, and a ZIP+4 collapse to one candidate, so the contact resolves. The
-      emitted values are the raw text of the lowest household_id, not the
-      normalized key.
+      Exact matching is deliberate — two households recording the same address
+      with different punctuation, case, and a ZIP+4 are two distinct candidates,
+      not one. A formatting variant is treated as a second candidate and the
+      address is withheld as ambiguous rather than guessed at.
     model: int_finalsite__contact_address_of_record
     given:
       - input: ref("stg_finalsite__contacts")
@@ -399,15 +376,58 @@ unit_tests:
       rows:
         - {
             finalsite_enrollment_id: con-1,
-            address_1: 123 Main St.,
+            address_1: null,
             address_2: null,
-            city: Miami,
-            state: FL,
-            zip: "33101",
-            country: US,
-            is_complete_address: true,
-            candidate_count: 1,
-            resolution_status: resolved,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 2,
+            resolution_status: ambiguous,
+          }
+
+  - name: test_contact_address_null_field_is_a_distinct_candidate
+    description:
+      Dropping the completeness gate means a null field groups as its own value
+      rather than matching a populated one — two households on the same street
+      where one carries a ZIP and the other has a null ZIP are two distinct
+      candidates, so the contact is ambiguous rather than resolving to either
+      one.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-7 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-7' as finalsite_enrollment_id,
+            'hh-10' as household_id,
+            '55 Coral Way' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33134' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'con-7', 'hh-11', '55 Coral Way', null, 'Miami', 'FL', null,
+            'US', false
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-7,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 2,
+            resolution_status: ambiguous,
           }
 
   - name: test_contact_address_real_differences_stay_ambiguous
@@ -562,11 +582,11 @@ uv run dbt test \
   --defer --state /workspaces/teamster/src/dbt/kippmiami/target/prod
 ```
 
-Expected: 3 unit tests PASS. If
-`test_contact_address_formatting_duplicates_collapse` returns the `hh-2` values
-instead of `hh-1`, the `order_by` in the deduplicate call is wrong. If `con-4`
-comes back `no_street`, the `where address_1 is not null` filter was written as
-`where is_complete_address`.
+Expected: 4 unit tests PASS. If
+`test_contact_address_formatting_variants_stay_distinct` resolves instead of
+coming back `ambiguous`, the model is folding case/punctuation instead of
+comparing the five raw fields exactly. If `con-4` comes back `no_street`, the
+`where address_1 is not null` filter was written as `where is_complete_address`.
 
 - [ ] **Step 5: Build the model against dev and check the counts**
 
@@ -594,7 +614,7 @@ order by 1
 ```
 
 Expected: one row per contact in `stg_finalsite__contacts` — 7,522 for Miami —
-and the guardian-scoped feed slice resolving to 2,081 rows in Task 4. A total
+and the guardian-scoped feed slice resolving to 2,071 rows in Task 4. A total
 that differs from `select count(*) from stg_finalsite__contacts` means the spine
 join fanned out; compare against that query rather than a hardcoded number,
 since Finalsite data moves.
@@ -1126,10 +1146,13 @@ from dev as d
 full join prd as p using (finalsite_enrollment_id)
 ```
 
-Expected: `only_in_dev` 0, `only_in_prod` 0, `changed_rows` 6, and all 6 of
-those `changed_from_unresolved` — the students the normalization newly resolves.
-Any row that changed from one resolved address to a different one is a refactor
-bug; stop and diagnose before continuing.
+Expected: `only_in_dev` 0, `only_in_prod` 0, `changed_rows` 1 — one contact
+whose `address_source` flips from one resolved value to the other while the five
+mailing fields stay identical on both sides (both already agreed on the same
+address). Focus never observes this flip, since `rpt_focus__addresses` only
+tests `address_source is not null`. Any row that changed from one resolved
+address to a genuinely different one is a refactor bug; stop and diagnose before
+continuing.
 
 - [ ] **Step 7: Lint and commit**
 
@@ -1660,34 +1683,15 @@ full join prd as p using (student_id, sort_order)
 ```
 
 Expected, from the spec: `total_rows` 2,601, `only_in_prod` 0, `only_in_dev` 0,
-`rows_with_address` 2,081, `newly_enabled` 42, `newly_withheld` ~426-436. Small
-drift in the totals is normal — Finalsite data moves.
+`rows_with_address` 2,071, `newly_enabled` 42, `newly_withheld` 436. Small drift
+in the totals is normal — Finalsite data moves.
 
-`address_values_changed` counts raw string differences, so it is NOT expected to
-be zero. Normalization makes a guardian with formatting-variant duplicate
-households resolve where they previously did not, and the model then projects
-the raw text of the lowest `household_id` — which can differ in punctuation or
-case from whatever `households[safe_offset(0)]` happened to hold. Same physical
-address, different spelling.
-
-The bar that MUST hold is that no row changes to a genuinely DIFFERENT address.
-Re-compare the changed rows under the normalized key to separate the two:
-
-```sql
--- over the changed rows only, from the query above
-countif(
-    upper(regexp_replace(d.address, r'[^A-Za-z0-9]', ''))
-    = upper(regexp_replace(p.address, r'[^A-Za-z0-9]', ''))
-    and upper(d.city) = upper(p.city)
-    and d.state = p.state
-    and left(d.zipcode, 5) = left(p.zipcode, 5)
-) as same_address_formatting_only
-```
-
-Every changed row must fall in `same_address_formatting_only`. A row that does
-not is an address that MOVED — stop and diagnose, because this feed is
-import-once. Measured on 2026-07-31: 2 changed rows, both formatting-only, zero
-genuinely different.
+`address_values_changed` is expected to be **zero**. The key is an exact match,
+so a guardian's resolved address is either identical to whatever
+`households[safe_offset(0)]` already held, or the guardian is withheld as
+ambiguous — there is no formatting-driven merge that could shift the raw text.
+Measured on 2026-07-31: 0 changed rows. Any nonzero count here is a bug; stop
+and diagnose before continuing, since this feed is import-once.
 
 Keep this output local. Do not paste address values anywhere.
 

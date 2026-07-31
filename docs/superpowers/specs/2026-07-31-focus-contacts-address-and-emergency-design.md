@@ -44,9 +44,9 @@ address entirely. Measured comparison, over 2,601 rows:
 | Student's address of record          | 2,197                | 66             | 53            | 321            |
 | Omit entirely                        | 0                    | —              | —             | 2,465          |
 
-Those figures hold the identity rule at #4618's strict five-field key, so the
-anchor choice is compared on its own. The next section changes the key, which
-raises the chosen option from 2,071 to 2,081.
+Those figures already reflect the strict five-field key used throughout — the
+next section explains why the key stays strict rather than normalized, so the
+anchor choice above is final, not provisional.
 
 Two measurements decided it. Anchoring on the guardian changes **zero** existing
 address values — whenever a guardian's linkage resolves to exactly one distinct
@@ -61,7 +61,7 @@ Unlike the `ADDRESS` feed, an unresolved guardian keeps their row and gets a
 null address. The CONTACT row still carries the name, relationship, email, and
 phones, which are the reason the record exists.
 
-### Address identity: street-present filter, normalized five-field key
+### Address identity: street-present filter, strict five-field key
 
 The candidate filter is `address_1 is not null`, replacing
 `is_complete_address`. Withholding on incompleteness is dropped: an incomplete
@@ -71,37 +71,39 @@ address is visibly wrong in a way a wrongly-picked complete address is not.
 Removing the filter entirely is worse, not better. 94 Miami households carry a
 city/state/ZIP fragment with no street; each would count as a distinct candidate
 and manufacture ambiguity that is not real, dropping resolution to 2,024 rows.
-Exactly 1 household has a street but is incomplete, so the filter swap admits
-one extra household today and changes the rule for future data.
 
-Address identity is all five mailing fields compared case- and
-punctuation-insensitively with ZIP truncated to 5. Normalization applies to
-**grouping only** — the address projected to Focus is the raw values from the
-lowest-`household_id` row of the group, so Focus receives properly formatted
-text.
+Dropping the completeness gate itself, measured at the guardian-feed level:
+**zero rows gained, zero rows lost.** It is a forward-looking rule change with
+no effect on today's data, not one that rescues rows today — it matters the day
+an incomplete-but-street-bearing household becomes the difference between
+resolved and ambiguous.
 
-Loosening the key to `address_1` alone was rejected. The two changes price
-separately:
+Address identity is an exact match on all five mailing fields — no case-folding,
+punctuation-stripping, or ZIP+4 truncation. Two spellings of the same address
+(`123 Main St.` vs `123 MAIN ST`) stay distinct candidates, and the contact is
+withheld as ambiguous rather than guessed at. The address projected to Focus is
+the raw values from the lowest-`household_id` row of the group.
 
-| Rule                           | CONTACT rows | Delta | What the delta is                       |
-| ------------------------------ | ------------ | ----- | --------------------------------------- |
-| Five-field key, raw comparison | 2,071        | —     | baseline                                |
-| Five-field key, normalized     | 2,081        | +10   | formatting-only merges — same address   |
-| `address_1` key, normalized    | 2,093        | +12   | genuinely different addresses collapsed |
-
-The 12 rows the `address_1` key buys come from 8 guardians: **5 differ by
-city**, 2 by apartment number, 1 by ZIP. Collapsing them means choosing a
-household by `household_id` order — a stable but meaningless ordering, the same
-class of defect as `safe_offset(0)`. Only 1 of the 8 (apartment vs. blank
-apartment) is plausibly one address recorded twice.
+Loosening the key to `address_1` alone was rejected too. Collapsing to just that
+one field would gain about 12 rows over the chosen key, from 8 guardians who
+share a street line but differ elsewhere: **5 differ by city**, 2 by apartment
+number, 1 by ZIP. Collapsing them means choosing a household by `household_id`
+order — a stable but meaningless ordering, the same class of defect as
+`safe_offset(0)`. Only 1 of the 8 (apartment vs. blank apartment) is plausibly
+one address recorded twice.
 
 The asymmetry that settles it: an incomplete address in Focus is detectable by a
 human, so the "consumers correct it" mechanism works. A wrongly-picked complete
 address looks correct and is permanent, so it does not.
 
-Net effect of the chosen rule: CONTACT 2,081 rows with an address, ADDRESS 1,270
-students (up from 1,264), and **zero exported address values change on either
-feed**.
+Net effect of the chosen rule: CONTACT 2,071 rows with an address and **zero
+exported address values change on either feed**. On the ADDRESS feed
+(`int_finalsite__student_address_of_record`, 3,428 student records), the strict
+key produces zero mailing-field changes, zero feed-membership changes, and zero
+phone changes against prod; exactly one contact's internal `address_source`
+label flips, and `rpt_focus__addresses` never observes it, since that model only
+tests `address_source is not null`. The ADDRESS feed's exported output is
+unchanged.
 
 ### Emergency rows append after guardians, ordered by slot
 
@@ -144,14 +146,12 @@ Applies the resolution rule above at contact grain — the same rule
 primary-contact fallback.
 
 1. Read `int_finalsite__contacts__households` where `address_1 is not null`.
-1. Derive the normalized grouping key as named columns in a CTE (uppercased,
-   non-alphanumerics stripped from `address_1` / `address_2`, uppercased `city`,
-   `state`, `left(zip, 5)`) — not inline, so the `dbt_utils.deduplicate` call
-   partitions on plain columns.
 1. Dedupe to one row per (contact, distinct address) with
-   `dbt_utils.deduplicate`, `order_by="household_id asc"`, so `country` and the
-   raw address values come from one canonical row rather than being blended
-   across households.
+   `dbt_utils.deduplicate`, partitioning on the five raw mailing fields
+   (`finalsite_enrollment_id, address_1, address_2, city, state, zip`) — an
+   exact match, no case-folding or truncation — `order_by="household_id asc"`,
+   so `country` and the address values come from one canonical row rather than
+   being blended across households.
 1. Count candidates per contact.
 1. Project the address only when the count is exactly 1.
 
@@ -178,8 +178,8 @@ primary contact's. The student-first-then-primary-contact pick, the
 `address_source` / `resolution_status` outputs, and the `primary_contact_phone`
 passthrough are unchanged.
 
-This refactor is required rather than cosmetic: if the identity rule normalized
-for contacts but not for students, the two feeds would resolve addresses by
+This refactor is required rather than cosmetic: if the identity rule differed
+between contacts and students, the two feeds would resolve addresses by
 different rules again, which is the defect #4651 exists to close.
 
 ### kipptaf wiring
@@ -295,9 +295,12 @@ Both feeds are import-once, so everything is validated against production before
 either PR leaves draft.
 
 - Refactor parity — `int_finalsite__student_address_of_record` dev vs prod:
-  identical row count and identical `format('%T', ...)` tuple set except exactly
-  the 6 newly-resolving students. Any other delta is a refactor bug.
-- CONTACT feed — 2,601 rows, 2,081 with an address, 0 changed values against the
+  identical row count and identical `format('%T', ...)` tuple set across every
+  mailing field and phone. The one exception is `address_source`, which flips
+  label on exactly 1 of 3,428 rows and never reaches Focus, since
+  `rpt_focus__addresses` only tests `address_source is not null`. Any other
+  delta is a refactor bug.
+- CONTACT feed — 2,601 rows, 2,071 with an address, 0 changed values against the
   current prod feed; on branch 2, 923 emergency rows across 464 students.
 - Grain — `unique_combination_of_columns(student_id, sort_order)` on the built
   model, not on paper.
