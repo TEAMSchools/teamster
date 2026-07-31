@@ -188,26 +188,25 @@ consistent:
   **truly empty**, not a stray space.
 - The **state is upper-cased** (e.g. `fl` becomes `FL`).
 
-This is formatting only — whether a record is complete enough to send is covered
-next.
+This is formatting only — what decides whether a record is sent at all is
+covered next.
 
 ### Blank addresses and nameless contacts are held back
 
-Because addresses and contacts are import-once, an incomplete record sent now
-would be locked in — a student imported with a blank address would keep that
-empty address in Focus even after a real one is entered, because import-once
-never sends them again. To prevent that, the pipeline **holds a record back
-until it is complete**:
+Because addresses and contacts are import-once, a record sent before Finalsite
+can resolve it would be locked in — a student imported with no address at all
+would keep that gap in Focus even after a real one is entered, because
+import-once never sends them again. To prevent that, the pipeline **holds a
+record back when it cannot tell which address to send**:
 
-- **Addresses** — a student's address is sent only once Finalsite points to
-  exactly one complete address for them. Two things can hold it back. The
-  address may be **incomplete** — street, city, state, and ZIP must all be
-  present. Or Finalsite may hold **more than one** address for the student: the
-  pipeline reads the households the student is linked to, falls back to the
-  households their primary contact is linked to when the student's own linkage
-  is not decisive, and sends nothing when neither narrows to one. Either way the
-  student is skipped that run and flows the first run Finalsite resolves to a
-  single complete address.
+- **Addresses** — a student's address is sent once Finalsite points to a single
+  address for them. The pipeline reads the households the student is linked to,
+  falls back to the households their primary contact is linked to when the
+  student's own linkage is not decisive, and sends nothing when neither narrows
+  to one. A household with no street line is not treated as an address at all; a
+  household that has a street but is missing its city, state, or ZIP **is**
+  sent, so the gap is visible in Focus and can be fixed there. A student held
+  back flows the first run Finalsite resolves to a single address.
 - **Contacts** — a contact is sent only once it has a name. A nameless contact
   is skipped and flows once the name is filled in. A guardian's address is
   resolved the same way a student's is, but from the guardian's own households:
@@ -217,14 +216,14 @@ until it is complete**:
   so this is more common on the contact record than on the student.
 
 > **A student can be enrolled in Focus with no address yet.** That is expected
-> when Finalsite has no complete address for them, when it has several and none
-> is marked as the one to use, or when the student has no Parent 1 designated —
-> with no primary contact to fall back on, the student doesn't reach this part
-> of the pipeline at all. Fix it in Finalsite — fill in the missing address,
-> retire the household the family no longer lives at, or designate a primary
-> contact (Parent 1) — and it flows on the next run. (Demographics is not held
-> back this way; a student's demographics import as soon as the student is
-> enrolled in Finalsite and new to Focus.)
+> when Finalsite has no street address on file for them, when it has several and
+> none is marked as the one to use, or when the student has no Parent 1
+> designated — with no primary contact to fall back on, the student doesn't
+> reach this part of the pipeline at all. Fix it in Finalsite — fill in the
+> missing address, retire the household the family no longer lives at, or
+> designate a primary contact (Parent 1) — and it flows on the next run.
+> (Demographics is not held back this way; a student's demographics import as
+> soon as the student is enrolled in Finalsite and new to Focus.)
 
 ## Where to make corrections
 
@@ -277,12 +276,11 @@ pipeline will not reconcile them for you.
   feeds now require Finalsite to mark the student **enrolled** — a student who
   is only accepted, in progress, or assigned a school does not appear in any of
   them yet.
-- **One complete address is required before it imports.** A student whose
-  Finalsite address is blank or partial gets no address in Focus — by design,
-  since an empty one would lock in. So does a student Finalsite links to more
-  than one address, where there is no way to tell which one to send. Enter the
-  full street/city/state/ZIP, or retire the household the family has moved out
-  of, and it flows next run; likewise a contact needs a name before it is sent.
+- **One address is required before it imports.** A student Finalsite links to
+  more than one address gets no address in Focus, because there is no way to
+  tell which one to send. Retire the household the family has moved out of and
+  it flows next run. A student with no street on file anywhere is skipped the
+  same way; likewise a contact needs a name before it is sent.
 - **Duplicate households are the common cause of a missing address.** A family
   with two live household records in Finalsite — usually an old address and a
   current one — cannot be resolved automatically, because Finalsite does not
