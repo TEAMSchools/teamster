@@ -9,6 +9,10 @@ on:
       - src/**
       - tests/**
       - scripts/**
+      # A PR editing a workflow runs that PR's own version of it, so a change
+      # here reviews itself. Kept in scope anyway: CI-config defects are exactly
+      # the class this workflow was silently failing to catch.
+      - .github/workflows/**
       - "!**/*.md"
 
 jobs:
