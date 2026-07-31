@@ -31,14 +31,18 @@ models:
           and free of spaces as ParentSquare requires. Repeats across the
           schools a leader is assigned to, which the spec permits.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: school_id
         data_type: string
         description:
           PowerSchool `school_number` as a string. Matches a
           `rpt_parentsquare__schools` row.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
           - relationships:
               arguments:
                 to: ref('rpt_parentsquare__schools')
@@ -51,7 +55,19 @@ models:
           The leader's KIPP Google account. ParentSquare requires an email or a
           phone to sync a staff user, and the Integration Planner sets access
           via the KIPP Google account, so this is the field ParentSquare matches
-          the user on.
+          the user on. This feed emits no phone column, so a null here means an
+          unusable staff row.
+        data_tests:
+          # `mail` is nullable on the roster, and since membership now comes from
+          # a mutable Ops-owned group a leader can be added without one. Fail
+          # loudly rather than drop the row: unlike the parent and emergency
+          # feeds, silently dropping a leader would remove someone's access with
+          # no signal, and a leader with no KIPP Google account cannot use
+          # ParentSquare at all — that is an Ops data fix, not a row to discard.
+          # It also protects the section owner, which is picked from this feed.
+          - not_null:
+              config:
+                severity: error
         config:
           meta:
             contains_pii: true

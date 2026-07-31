@@ -242,7 +242,7 @@ would need one; Newark operates none today.
 
 ## File specs (from the ParentSquare SFTP PDF)
 
-Only the four in-scope files. `Yes*` = one of email/phone required.
+All seven files sent. `Yes*` = one of email/phone required.
 
 - **`schools.csv`** — `school_id`, `school_name`, `school_zip`,
   `school_address`, `school_city`, `school_state`, `principal_first_name`,
@@ -255,6 +255,21 @@ Only the four in-scope files. `Yes*` = one of email/phone required.
   `relationship`, `language`, `secondary_phone`.
 - **`emergency_contacts.csv`** — required: `school_id`, `student_id`,
   `contact_id`, `first_name`, `last_name`, and email OR phone.
+- **`staff.csv`** — required: `school_id`, `staff_id` (unique to the staff
+  member, but the member may be at more than one school; cannot be shared with
+  another staff user), `first_name`, `last_name`, and email OR mobile (`email`
+  and `mobile` are each flagged unique). Optional: `title`, `login`,
+  `secondary_phone`. This feed emits `school_id`, `staff_id`, `first_name`,
+  `last_name`, `email`, `title` — no phone, so `email` is the only
+  deliverability field and is tested `not_null` at error.
+- **`sections.csv`** — required: `school_id`, `section_id` (no spaces or
+  periods; may repeat to support co-teachers), `staff_id`, `course_name`.
+  Optional: `term_id` (required only if sending `terms.csv`), `period_number`,
+  `section_number`, `is_primary` (1 = primary teacher, 0 = co-teacher; only one
+  primary per section). This feed emits everything except `term_id` and
+  `period_number`.
+- **`rosters.csv`** — required: `school_id`, `section_id` (no spaces or
+  periods), `student_id`. All three are emitted; there are no optional columns.
 
 ## Delivery
 
@@ -268,23 +283,21 @@ Only the four in-scope files. `Yes*` = one of email/phone required.
 
 ## Sequencing around the blocker
 
-1. **Phase 0 — now, unblocked.** Build the four `rpt_parentsquare__*` models
+1. **Phase 0 — now, unblocked.** Build the seven `rpt_parentsquare__*` models
    with properties/tests, the `parentsquare.yaml` config, the `ssh_parentsquare`
-   resource class, `dagster-cloud.yaml` env-var entries (names/placeholders, no
-   secret values), the exposure, and the paused job + schedule. Validate model
-   SQL and the asset graph in a branch deployment against `teamster-test`.
+   resource class, and the paused job + schedule. The `dagster-cloud.yaml`
+   variable mappings are deliberately NOT part of this phase — see
+   _Implementation notes_. Validate model SQL and the asset graph in a branch
+   deployment against `teamster-test`.
 
 1. **Blocker — SFTP credentials.** Per the Planner this is pending (covered in a
    Monday meeting; the team needs app access first). Set up SFTP credentials in
-   ParentSquare, capture the issued username, populate `dagster-cloud.yaml`
-   secrets, confirm the upload path, and verify a one-file round-trip before
-   sending all four.
+   ParentSquare, capture the issued username, add the `PARENTSQUARE_SFTP_*`
+   mappings plus the `OnePasswordItem` entry, confirm the upload path, and
+   verify a one-file round-trip before sending all seven.
 
 1. **Phase Final.** Un-pause the schedule, confirm ParentSquare ingests the
    files cleanly, hand off to Ops.
-
-1. **Phase 2 (later).** `staff.csv` (`school_id = 0`) for the regional Ops
-   leaders, if not fully handled by in-app Google/Okta provisioning.
 
 ## Implementation notes
 
@@ -349,13 +362,15 @@ illuminate, idauto, coupa, and egencia.
 | `students`           | 6,796  |
 | `parents`            | 9,259  |
 | `emergency_contacts` | 15,399 |
-| `staff`              | 72     |
+| `staff`              | 96     |
 | `sections`           | 53     |
 | `rosters`            | 6,796  |
 
-`staff` is 6 leaders × 12 schools with no missing email. `sections` is 53
-distinct (school, grade) pairs; every `section_id` is unique, at most 11
-characters, and free of spaces and periods. `rosters` is one row per student.
+`staff` is 8 leaders × 12 schools with no missing email, first name, or last
+name — re-measured after the group refactor, not carried over from the earlier
+hardcoded six. `sections` is 53 distinct (school, grade) pairs; every
+`section_id` is unique, at most 11 characters, and free of spaces and periods.
+`rosters` is one row per student.
 
 Referential integrity holds in both directions across the whole set — no orphan
 `school_id`, `student_id`, `section_id`, or `staff_id`; no section without
@@ -404,17 +419,32 @@ schools Newark students actually attend.
    owned by an Operations leader give them the audiences they expect, and that
    no school staff are expected to post.
 1. **Section ownership churn** — the section owner is picked as the lowest
-   `staff_id` among the leaders. If that person leaves, `sections.staff_id`
+   `staff_id` among the leaders — lexicographically lowest, since `staff_id` is
+   the string form of `employee_number`; which leader it selects does not
+   matter, only that it is stable. If that person leaves, `sections.staff_id`
    changes and ParentSquare may re-create the sections. Acceptable for phase 1;
    revisit if it causes churn.
 
 ## Testing and validation
 
-- **dbt:** contract enforcement + a uniqueness test per model (`school_id` for
-  schools; `student_id` for students; a `(student_id, contact_slot)` or
-  `contact_id` combination for the contact files). Validate row counts and key
-  uniqueness against prod via the BigQuery MCP; confirm every emergency row has
-  a non-null `contact_id` and each contact row has email or phone.
+- **dbt:** contract enforcement plus a uniqueness test per model — `school_id`
+  for schools, `student_id` for students, `section_id` for sections,
+  `contact_id` for emergency contacts, `(student_id, first_name, last_name)` for
+  parents, `(section_id, student_id)` for rosters, `(school_id, staff_id)` for
+  staff. Every key and cross-file `relationships` test carries
+  `severity: error`, including the `not_null` on each FK column — dbt's
+  `relationships` test filters nulls out of the child side, so a null FK would
+  otherwise pass it vacuously.
+- **Cross-file integrity:** `students`/`staff`/`sections`/`rosters` →
+  `schools.school_id`; `rosters` → `sections.section_id` and
+  `students.student_id`; `sections.staff_id` → `staff.staff_id`. Plus a
+  reverse-direction singular test that every `students.student_id` appears in
+  `rosters` — `relationships` only covers child→parent, so nothing else catches
+  a student who reaches the feed with no grade-level section and therefore lands
+  in no audience.
+- **Domain:** `grade_level` is asserted against ParentSquare's `-4`..`12` scale
+  at error severity, rather than relying on Newark's current domain staying
+  inside it.
 - **Asset graph:** targeted import / `dagster definitions validate` for the
   extended `kipptaf` extracts wiring.
 - **Round-trip:** in a branch deployment, deliver one file to the ParentSquare

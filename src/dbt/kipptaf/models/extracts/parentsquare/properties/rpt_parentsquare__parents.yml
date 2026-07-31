@@ -25,14 +25,18 @@ models:
           PowerSchool `student_number` of the child, as a string. Matches a
           `rpt_parentsquare__students` row.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: school_id
         data_type: string
         description:
           PowerSchool `school_number` of the child's school, as a string.
           Matches a `rpt_parentsquare__schools` row.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: first_name
         data_type: string
         description:

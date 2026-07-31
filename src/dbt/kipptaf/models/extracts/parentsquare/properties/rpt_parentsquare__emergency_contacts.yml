@@ -18,21 +18,27 @@ models:
           records — so `finalsite_contact_id` is null for every one of them and
           (student, slot) is the true grain.
         data_tests:
-          - unique
+          - unique:
+              config:
+                severity: error
       - name: student_id
         data_type: string
         description:
           PowerSchool `student_number` of the student, as a string. Matches a
           `rpt_parentsquare__students` row.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: school_id
         data_type: string
         description:
           PowerSchool `school_number` of the student's school, as a string.
           Matches a `rpt_parentsquare__schools` row.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
       - name: first_name
         data_type: string
         description:

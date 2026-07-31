@@ -24,7 +24,9 @@ models:
           PowerSchool `student_number` as a string. Matches a
           `rpt_parentsquare__students` row.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
           - relationships:
               arguments:
                 to: ref('rpt_parentsquare__students')
@@ -37,7 +39,9 @@ models:
           The student's school-and-grade section. Matches a
           `rpt_parentsquare__sections` row.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
           - relationships:
               arguments:
                 to: ref('rpt_parentsquare__sections')
@@ -50,7 +54,9 @@ models:
           PowerSchool `school_number` as a string. Matches a
           `rpt_parentsquare__schools` row.
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: error
           - relationships:
               arguments:
                 to: ref('rpt_parentsquare__schools')

@@ -15,8 +15,12 @@ models:
           PowerSchool `school_number` as a string, the school key ParentSquare
           matches students and contacts against.
         data_tests:
-          - unique
-          - not_null
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: school_name
         data_type: string
         description: The school's name as recorded in PowerSchool.
