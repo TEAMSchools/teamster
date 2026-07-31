@@ -27,6 +27,9 @@ backend.
 - Uses `reflection_level="full_with_precision"` + `remove_nullability_adapter`
   (forces all columns `NULLABLE` so upstream `NOT NULL` changes don't break the
   `replace` load — see `focus/CLAUDE.md`)
+- `interval_to_microseconds_adapter` maps Postgres `interval` to INT64
+  microseconds; without it dlt rejects the inferred `duration[us]` (see
+  `focus/CLAUDE.md`)
 - Factory:
   `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
 
