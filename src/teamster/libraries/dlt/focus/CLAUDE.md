@@ -48,6 +48,17 @@ obvious check silently matches nothing. It imports only from
 Unlike the nullability adapter, this one needs no table drop: the new column
 arrives NULLABLE, which `replace` may add.
 
+**An all-NULL `interval` column loads fine and is silently dropped**, so absence
+from BigQuery does NOT mean the column is new. pyarrow infers arrow `null`,
+which dlt maps to no `data_type` and omits from the destination; the load breaks
+only when the FIRST non-null value lands. That is why #4676's asset succeeded at
+08:04 UTC and failed at 22:31 on the same commit — one assignment populated
+`time_limit` at 13:23. Two consequences: don't date a schema change from the
+BigQuery column set, and other Focus tables may hold unpopulated `interval`
+columns that break on first use, which you cannot enumerate from BigQuery. Hence
+the adapter keys off the reflected type for every table rather than naming
+columns.
+
 ## Empty source tables
 
 The PyArrow backend writes NO BigQuery table for a 0-row source extract (the
