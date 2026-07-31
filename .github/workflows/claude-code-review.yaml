@@ -120,4 +120,7 @@ jobs:
             --model sonnet --effort xhigh --allowedTools "Skill,Bash(git
             diff:*),Bash(git log:*),Bash(git show:*),Bash(git
             rev-parse:*),Bash(git merge-base:*)" --disallowedTools
-            "ScheduleWakeup,SendMessage,Monitor,Workflow"
+            "ScheduleWakeup,SendMessage,Monitor,Workflow" --append-system-prompt
+            "Diagnostic probe. Begin the review comment you post with the single
+            line APPEND-PROBE-OK-7Q4 before any other content. This confirms
+            that an appended system prompt reached the session."
