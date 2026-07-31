@@ -1,0 +1,50 @@
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/python:3.13
+    cap_drop:
+      - NET_RAW
+      - SYS_PTRACE
+      - NET_ADMIN
+    volumes:
+      - type: tmpfs
+        target: /etc/secret-volume
+        tmpfs:
+          mode: 0777
+          size: 10485760
+      - gcloud-config:/home/vscode/.config/gcloud
+    command: sleep infinity
+
+  superset:
+    build:
+      context: ./superset
+    depends_on:
+      superset-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg2://superset:superset@superset-db:5432/superset
+      SUPERSET_SECRET_KEY: teamster-superset-dev-key
+      GOOGLE_APPLICATION_CREDENTIALS: /superset-gcloud/application_default_credentials.json
+    ports:
+      - "8088:8088"
+    volumes:
+      - gcloud-config:/superset-gcloud:ro
+      - superset-home:/app/superset_home
+
+  superset-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+    healthcheck:
+      test: [CMD, pg_isready, -U, superset]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - superset-db-data:/var/lib/postgresql/data
+
+volumes:
+  gcloud-config:
+  superset-home:
+  superset-db-data:
