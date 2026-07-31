@@ -123,6 +123,25 @@ Be straight about the limits rather than filling them with a guess:
 If the residual is unexplained, the honest answer is which uncheckable rules
 could account for it — not a fabricated cause.
 
+## The residual parameter sweep
+
+When the reported count exceeds what the checkable rules explain, the report
+adds a sweep of the tool's **own assumed parameters** — the school-year window,
+the `060X or higher` band threshold, and the name-pattern character classes.
+Each is an assumption rather than a handbook fact, so a wrong one could be the
+residual's cause.
+
+Read it the same way as the rest: a matching candidate is a hypothesis, not a
+finding. And read a negative result as informative — ruling out every sweepable
+parameter narrows the residual to the not-locally-checkable rules, which is real
+progress.
+
+Do not extend the sweep to a parameter on the exclusion list in
+`residual_sweep.py`. The CDS combinations and every handbook-enumerated domain
+are deliberately off limits: tuning a reference value until the file passes is
+the opposite of testing whether an assumption explains the state's count, and
+`rules.py` records what happened the one time that line was crossed.
+
 ## PII
 
 The upload files carry names, dates of birth, and state IDs. The report prints

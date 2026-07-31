@@ -115,6 +115,30 @@ If the numbers do not add up, the answer is probably in that list. Say that
 rather than inventing a cause — a confident wrong guess costs more than an
 honest "I don't know yet," because someone will go and act on it.
 
+## When the numbers still don't add up
+
+If the state's count is higher than anything the rules explain, the leftover is
+the **residual**, and the tool does one more thing automatically: it tests its
+own assumptions against it.
+
+A few values in this tool are assumptions rather than handbook facts — mainly
+the school-year date window, which has no cited source. If one of those is
+wrong, it could be the residual's cause. So the report sweeps each assumed value
+against a few candidates and tells you whether any of them would produce exactly
+the missing count.
+
+Most of the time on current data it comes back negative, and that is genuinely
+useful: it rules the assumptions out and points you at the not-locally-checkable
+rules instead, which is where the leftover probably lives. When it does find a
+match, treat it as a lead to confirm by fixing and re-uploading — not as an
+answer.
+
+One thing it deliberately will not do: change a value to make the file look
+cleaner. Testing whether an assumption explains a count the state already gave
+you is legitimate. Retuning a rule until the file passes hides real errors —
+that mistake has already been made once on this project and is documented in
+`rules.py` so it isn't repeated.
+
 ## Please record what you learn
 
 On [issue #4659](https://github.com/TEAMSchools/teamster/issues/4659), after
