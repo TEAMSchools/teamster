@@ -151,3 +151,105 @@ models:
         description:
           Whether the contact lives with the student. Null for Finalsite
           `contact_1` and `contact_2` rows.
+
+unit_tests:
+  - name: test_focus_slotting_contact_1_and_emergency_ranks
+    description: >-
+      Pins the Focus branch slotting. student_number is the Focus
+      local_student_id with its 8400 prefix stripped. contact_1 is the
+      sort_order 1 link. emergency_N ranks every emergency-flagged link by
+      sort_order INCLUDING the sort_order 1 link, so the primary contact
+      deliberately occupies both contact_1 and emergency_1. A link that is not
+      emergency-flagged and is not sort_order 1 produces no row at all.
+    model: int_students__contacts
+    given:
+      - input: ref('int_focus__student_contacts')
+        format: sql
+        rows: |
+          select
+            1 as student_id,
+            10 as person_id,
+            'Mother' as relationship,
+            1 as sort_order,
+            'Guardian A' as contact_name,
+            '305-555-0001' as phone_mobile,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_daytime,
+            cast(null as string) as phone_work,
+            '305-555-0001' as phone_primary,
+            true as is_emergency,
+            true as is_pickup,
+            true as is_custodial,
+            true as is_household_member,
+            'kippmiami' as _dbt_source_project,
+            'a@example.org' as email,
+            '1 Main St' as home_address,
+            '8400123456' as local_student_id
+          union all
+          select
+            1, 20, 'Father', 2, 'Guardian B',
+            '305-555-0002', null, null, null, '305-555-0002',
+            true, true, false, true,
+            'kippmiami', 'b@example.org', '1 Main St', '8400123456'
+          union all
+          select
+            1, 30, 'Neighbor', 3, 'Guardian C',
+            '305-555-0003', null, null, null, '305-555-0003',
+            false, false, false, false,
+            'kippmiami', 'c@example.org', '2 Other St', '8400123456'
+      - input: ref('int_finalsite__student_contacts')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as contact_slot,
+            cast(null as string) as finalsite_contact_id,
+            cast(null as string) as contact_name,
+            cast(null as string) as relationship,
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_daytime,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_primary,
+            cast(null as bool) as is_emergency,
+            cast(null as bool) as is_pickup,
+            cast(null as bool) as is_custodial,
+            cast(null as bool) as is_household_member,
+            cast(null as string) as _dbt_source_project,
+            cast(null as string) as email,
+            cast(null as string) as home_address,
+            cast(null as string) as finalsite_enrollment_id
+          limit 0
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            cast(null as string) as finalsite_enrollment_id,
+            cast(null as string) as _dbt_source_project,
+            cast(null as string) as powerschool_student_number
+          limit 0
+    expect:
+      rows:
+        - {
+            student_number: 123456,
+            _dbt_source_project: kippmiami,
+            contact_slot: contact_1,
+            relationship: Mother,
+            is_emergency: true,
+            is_custodial: true,
+          }
+        - {
+            student_number: 123456,
+            _dbt_source_project: kippmiami,
+            contact_slot: emergency_1,
+            relationship: Mother,
+            is_emergency: true,
+            is_custodial: true,
+          }
+        - {
+            student_number: 123456,
+            _dbt_source_project: kippmiami,
+            contact_slot: emergency_2,
+            relationship: Father,
+            is_emergency: true,
+            is_custodial: false,
+          }
