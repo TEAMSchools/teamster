@@ -164,10 +164,12 @@ does not already have it, and nothing is ever overwritten:
   enrollment when it has neither yet — never onto one Focus already shows as
   closed.
 - **Addresses and Contacts** — sent only once the student is **enrolled**, Focus
-  does not already have the record for that student, **and** the record is
-  complete (a full address; a named contact). For Contacts, it's the
-  **student's** enrolled status that gates the feed, not the guardian contact's
-  own. Blank or incomplete records are held back until populated (see below).
+  does not already have the record for that student, **and** Finalsite points to
+  a single address for them (a named contact, for Contacts). For Contacts, it's
+  the **student's** enrolled status that gates the feed, not the guardian
+  contact's own. An address Finalsite cannot narrow to one is held back; a
+  partial address is now sent rather than held, so it can be spotted and
+  corrected in Focus.
 
 ### Forward-moving enrollments are protected
 
@@ -207,7 +209,12 @@ until it is complete**:
   student is skipped that run and flows the first run Finalsite resolves to a
   single complete address.
 - **Contacts** — a contact is sent only once it has a name. A nameless contact
-  is skipped and flows once the name is filled in.
+  is skipped and flows once the name is filled in. A guardian's address is
+  resolved the same way a student's is, but from the guardian's own households:
+  when Finalsite links them to more than one address, the contact is still sent
+  with the rest of their details and the address is left blank rather than
+  guessed. Guardians are usually linked to more households than their children,
+  so this is more common on the contact record than on the student.
 
 > **A student can be enrolled in Focus with no address yet.** That is expected
 > when Finalsite has no complete address for them, when it has several and none
@@ -281,6 +288,10 @@ pipeline will not reconcile them for you.
   current one — cannot be resolved automatically, because Finalsite does not
   mark which of the two is the one to use. Retiring the stale household fixes it
   for that family.
+- **A partial address now imports rather than waiting.** An address missing its
+  city, state, or ZIP is sent to Focus so you can see and fix it there, instead
+  of the student silently having no address. An address Finalsite cannot narrow
+  down to one is still held back — that one cannot be guessed safely.
 - **A student needs a primary contact (Parent 1) designated in Finalsite before
   an address can flow.** With no Parent 1, there's no fallback household to
   check when the student's own linkage isn't decisive — the student is missing
