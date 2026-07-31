@@ -37,6 +37,25 @@ substitution would have reported a wholly non-compliant file as clean.
 
 When a rule fires on everything, that is a hypothesis to check against an
 authoritative source - not a licence to retune the rule until the file passes.
+
+## Methodology limit: Required-ness vs Validation Checks
+
+Both catalogs were built by transcribing "An error will occur if..." bullets
+from each element's **Validation Checks** section. Some handbook requirements
+are stated only in an element's **Is this Data Element Required?** section,
+with no matching Validation Checks bullet to transcribe - a transcription
+pass produces no rule for those, silently, because there is nothing in the
+section it reads that says so.
+
+Two such gaps have been found and closed by deliberate manual addition rather
+than by the transcription pass itself: the NumericGradeEarned /
+AlphaGradeEarned / CompletionStatus grade-or-completion mandate
+(`STU-GRADE-COMPLETION-REQUIRED` in `rules_student.py`, pages 34-36) and
+CourseType's mandatory-for-all-students requirement (`KTAF-COURSETYPE-BLANK`,
+a KTAF proxy since no handbook Validation Check bullet exists to transcribe
+for it). A future maintainer adding elements or rules to either catalog must
+read both sections of each element, not just Validation Checks, or a central
+requirement like this one can go silently unencoded again.
 """
 
 from __future__ import annotations
@@ -47,8 +66,18 @@ from dataclasses import dataclass, field
 
 Row = Mapping[str, str]
 
-# SY 2025-26 instructional window, inclusive, as YYYYMMDD strings. Update each
-# year to the actual first and last instructional days.
+# SY 2025-26 reporting-year window, inclusive, as YYYYMMDD strings: a
+# calendar July-to-June span (2025-07-01 through 2026-06-30). These are NOT
+# the actual first and last instructional days - the instructional calendar
+# runs a narrower span inside this window (roughly September-June). The
+# values were not derived from the sample files either: real
+# SectionEntryDate/SectionExitDate values in the 2026-07-31 extracts sit well
+# inside this window, so passing those files is not evidence the boundary
+# itself is right - a materially narrower or wider window would pass the
+# same data. OPEN ITEM: this window has not been confirmed against NJDOE's
+# own definition of the school year for Course Roster reporting purposes: it
+# is an assumption, not a verified value. Update each year, and confirm
+# against NJDOE guidance if you get the chance.
 SY_START = "20250701"
 SY_END = "20260630"
 

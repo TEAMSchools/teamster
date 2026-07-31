@@ -2,10 +2,15 @@
 
 Transcribes every "An error will occur..." statement in
 `handbook-rules-student.md` (Student Course Roster Submission Handbook,
-Version 1.4, July 2026) into a `Rule`. There are 68 handbook statements; this
-module exports exactly one `Rule` per statement, plus a small set of
-`source="ktaf"` rules for local expectations the handbook itself does not
-impose (see `rules.py`'s module docstring for why that distinction matters).
+Version 1.4, July 2026) into a `Rule`. There are 68 such statements, each
+transcribed from an element's Validation Checks section, plus one further
+handbook rule (`STU-GRADE-COMPLETION-REQUIRED`) added deliberately rather than
+transcribed, for a requirement stated only under an element's "Is this Data
+Element Required?" section with no matching Validation Checks bullet - see
+`rules.py`'s module docstring for that methodology limit. That is 69
+`source="handbook"` rules in total, plus a small set of `source="ktaf"` rules
+for local expectations the handbook itself does not impose (see `rules.py`'s
+module docstring for why that distinction matters).
 
 Several handbook elements require the SCED (School Courses for the Exchange of
 Data) Subject Area / Course Identifier code to know whether a course is
@@ -280,6 +285,54 @@ def _ktaf_cds_combo_invalid(row: Row) -> bool:
     return combo not in _KTAF_KNOWN_CDS_COMBOS
 
 
+# GradeSpan tokens in scope for the Prior-to-secondary "060X or higher" proxy
+# below. KG and PK must be excluded by this explicit membership test rather
+# than a range comparison: as strings, "KG" and "PK" both sort ABOVE "06"
+# (letters sort above digits), so a naive `token >= "06"` bound - read from
+# the handbook's "or higher" wording - would wrongly include them. Bounding
+# above at "12" does not save a range check either, since "KG"/"PK" also sort
+# above "12" and so would still need a separate exclusion; membership in the
+# concrete set is the only reading that cannot mis-admit KG/PK.
+_KTAF_GRADE_SPAN_SECONDARY_SCOPE = frozenset({"06", "07", "08", "09", "10", "11", "12"})
+
+
+def _grade_completion_missing_heuristic(row: Row) -> bool:
+    """KTAF-GRADE-COMPLETION-MISSING-HEURISTIC: proxy for
+    STU-GRADE-COMPLETION-REQUIRED (checkable=False - see that rule).
+
+    Fires when SectionExitDate is populated, NumericGradeEarned,
+    AlphaGradeEarned, and CompletionStatus are all blank, and the row is in
+    scope by proxy for one of the handbook's two triggering conditions:
+
+    - AvailableCredit parses as a number greater than 0 (proxy for a
+      Secondary course code with available credit), or
+    - GradeSpan is populated and its first two characters are a grade token
+      06-12 (proxy for a Prior-to-secondary course code with a grade span of
+      060X or higher).
+
+    Both proxies substitute for the real test, which needs the NCES SCED
+    code list this tool does not have - see STU-GRADE-COMPLETION-REQUIRED's
+    `uncheckable_reason`.
+    """
+    if blank(row.get("SectionExitDate")):
+        return False
+    if not (
+        blank(row.get("NumericGradeEarned"))
+        and blank(row.get("AlphaGradeEarned"))
+        and blank(row.get("CompletionStatus"))
+    ):
+        return False
+    available_credit = as_float(row.get("AvailableCredit"))
+    if available_credit is not None and available_credit > 0:
+        return True
+    grade_span = row.get("GradeSpan")
+    if present(grade_span):
+        token = str(grade_span).strip()[:2]
+        if token in _KTAF_GRADE_SPAN_SECONDARY_SCOPE:
+            return True
+    return False
+
+
 # --------------------------------------------------------------------------- #
 # The catalog.
 # --------------------------------------------------------------------------- #
@@ -512,11 +565,12 @@ RULES: list[Rule] = [
         checkable=True,
         predicate=_format_check("CountyCodeAssigned", r"\d{2}"),
         notes=(
-            "Acceptable Values gives Min/Max Length 2; read here as a "
-            "fixed-width 2-digit numeric check, which is exactly what a "
-            "missing leading zero would violate. Populated values in the "
-            "real Newark/Camden files are exclusively 2-digit numeric "
-            "('80'/'07'), consistent with this reading."
+            "Acceptable Values gives Min/Max Length 2. The handbook's own "
+            "'leading zeros' bullet only makes sense if the field's content "
+            "is numeric digit positions - a true alphabetic value has no "
+            "notion of a missing leading zero. That implication, not what "
+            "any particular file contains, is what justifies reading this "
+            "as a fixed-width 2-digit numeric check."
         ),
     ),
     Rule(
@@ -574,8 +628,12 @@ RULES: list[Rule] = [
         checkable=True,
         predicate=_format_check("DistrictCodeAssigned", r"\d{4}"),
         notes=(
-            "Acceptable Values gives Min/Max Length 4; the real Newark/"
-            "Camden files are exclusively 4-digit numeric ('7325'/'1799')."
+            "Acceptable Values gives Min/Max Length 4; the same reasoning "
+            "as STU-COUNTYCODE-LEADINGZEROS applies at this width - the "
+            "handbook's own 'leading zeros' bullet only makes sense for "
+            "numeric digit content, which is what justifies a fixed-width "
+            "4-digit numeric check here, independent of what any file "
+            "contains."
         ),
     ),
     Rule(
@@ -619,15 +677,20 @@ RULES: list[Rule] = [
             "the submitting LEA; not present in the upload file."
         ),
         notes=(
-            "No KTAF-known-school-code rule is included below. The "
-            "org-provided expectation (Newark school 965, Camden school "
-            "111) does not hold against the real data used to build this "
-            "catalog: the Newark file legitimately uses two School Codes "
-            "(965 and 732), and the Camden file's only School Code is 179, "
-            "not 111. Encoding either single value would misfire on real "
-            "rows, so it was left out rather than approximated - flagged in "
-            "the report for the org to confirm the correct KTAF CDS school "
-            "combinations."
+            "A KTAF school-code expectation IS encoded below, as part of "
+            "KTAF-CDS-COMBO (County+District+School together: Newark "
+            "80/7325/965, Camden 07/1799/111). An earlier version of this "
+            "note argued the opposite - that expecting 965/111 'does not "
+            "hold against real data' because the file then in hand showed "
+            "732 and 179 - and left the rule out entirely. That reasoning "
+            "was wrong: 732 and 179 were the PowerSchool School Setup "
+            "defect (Alternate School Number unset, so the extract fell "
+            "back to a prefix of the internal school number), not valid "
+            "alternative codes. The 2026-07-31 extract carries the correct "
+            "965/111 codes on every row, confirming the original "
+            "expectation rather than the substitution. See KTAF-CDS-COMBO's "
+            "own notes, and rules.py's module docstring, for the fuller "
+            "account."
         ),
         tags=("cds-list",),
     ),
@@ -642,9 +705,12 @@ RULES: list[Rule] = [
         checkable=True,
         predicate=_format_check("SchoolCodeAssigned", r"\d{3}"),
         notes=(
-            "Acceptable Values gives Min/Max Length 3; the real Newark/"
-            "Camden files are exclusively 3-digit numeric ('965'/'732'/"
-            "'179')."
+            "Acceptable Values gives Min/Max Length 3; the same reasoning "
+            "applies at this width. The check rests on the handbook's own "
+            "'leading zeros' bullet implying numeric digit content, not on "
+            "what any file contains - in particular, not on 732 or 179, "
+            "which KTAF-CDS-COMBO's notes document as the PowerSchool "
+            "School Setup defect rather than valid codes."
         ),
     ),
     Rule(
@@ -1063,6 +1129,49 @@ RULES: list[Rule] = [
         checkable=True,
         predicate=_credits_earned_exceeds_available,
     ),
+    # --- Grade-or-completion mandate, handbook pp34-36 (Is this Data Element
+    # Required?, not Validation Checks - see rules.py's module docstring for
+    # why this rule has no Validation-Checks-transcribed counterpart) -------
+    Rule(
+        id="STU-GRADE-COMPLETION-REQUIRED",
+        element="NumericGradeEarned+AlphaGradeEarned+CompletionStatus",
+        page=34,
+        error_text=(
+            "All students with a SectionExitDate entered for Secondary "
+            "course codes with an available credit of greater than 0.000 "
+            "must have either the NumericGradeEarned, AlphaGradeEarned, or "
+            "CompletionStatus field filled in. All students with a "
+            "SectionExitDate entered for Prior-to-secondary course codes "
+            "with an grade span of 060X or higher (where X is replaced with "
+            "a full GradeSpan such as 0606, 0607, 0608, and so on) must "
+            "have either the NumericGradeEarned, AlphaGradeEarned, or "
+            "CompletionStatus field filled in."
+        ),
+        checkable=False,
+        uncheckable_reason=(
+            "Deciding whether a course is Secondary or Prior-to-secondary "
+            "requires the NCES SCED (School Courses for the Exchange of "
+            "Data) code list to classify the course's SubjectArea/"
+            "CourseIdentifier combination; the upload file does not contain "
+            "that list."
+        ),
+        notes=(
+            "This is stated identically under 'Is this Data Element "
+            "Required?' on pages 34 (NumericGradeEarned), 35 "
+            "(AlphaGradeEarned), and 36 (CompletionStatus) - error_text is "
+            "quoted from the NumericGradeEarned section verbatim, including "
+            "its 'an grade span' wording. None of the three elements' "
+            "Validation Checks sections has a matching blank-check bullet, "
+            "which is why the original transcription pass never produced a "
+            "rule for this requirement; see rules.py's module docstring. A "
+            "checkable proxy is provided separately as "
+            "KTAF-GRADE-COMPLETION-MISSING-HEURISTIC, below, using "
+            "AvailableCredit and GradeSpan in place of the SCED list - it is "
+            "a KTAF rule, not this handbook rule, and is never counted "
+            "toward a state error total."
+        ),
+        tags=("sced",),
+    ),
     # --- NumericGradeEarned, handbook p34 --------------------------------------------
     Rule(
         id="STU-NUMERICGRADEEARNED-RANGE",
@@ -1249,5 +1358,61 @@ RULES: list[Rule] = [
             "draft dropped this rule entirely and what that would have cost."
         ),
         tags=("cds_list",),
+    ),
+    Rule(
+        id="KTAF-GRADE-COMPLETION-MISSING-HEURISTIC",
+        element="NumericGradeEarned+AlphaGradeEarned+CompletionStatus",
+        page=0,
+        error_text=(
+            "KTAF heuristic, not a handbook rule: SectionExitDate is "
+            "populated, NumericGradeEarned/AlphaGradeEarned/CompletionStatus "
+            "are all blank, and the row proxies into scope for the "
+            "handbook's grade-or-completion mandate (STU-GRADE-COMPLETION-"
+            "REQUIRED, checkable=False) via AvailableCredit > 0 or a "
+            "GradeSpan of 06-12."
+        ),
+        checkable=True,
+        source="ktaf",
+        predicate=_grade_completion_missing_heuristic,
+        notes=(
+            "This is a proxy for STU-GRADE-COMPLETION-REQUIRED, not the "
+            "handbook rule itself - it substitutes AvailableCredit and "
+            "GradeSpan for the NCES SCED code list that rule actually needs "
+            "to decide Secondary vs. Prior-to-secondary, so it can both "
+            "over- and under-fire relative to what the state actually "
+            "checks. As a KTAF rule it is never counted toward a state "
+            "error total; it exists to give an analyst a number to act on "
+            "the same day, not a verified violation count.\n\n"
+            "On the 2026-07-31 extract this is expected to fire on roughly "
+            "28,727 rows across the two student files, because the "
+            "submitted file is the raw PowerSchool extract without the "
+            "grade backfill applied - most rows with a SectionExitDate "
+            "genuinely have no grade or completion status recorded yet."
+        ),
+        tags=("sced", "ambiguous"),
+    ),
+    Rule(
+        id="KTAF-COURSETYPE-BLANK",
+        element="CourseType",
+        page=37,
+        error_text=(
+            "KTAF expectation, not a handbook rule: CourseType, when "
+            "blank, is flagged directly. The handbook states under 'Is "
+            "this Data Element Required?' that CourseType is mandatory for "
+            "all students, but its Validation Checks section has no "
+            "matching blank-check bullet to transcribe (only the S1/S2 "
+            "staff-assignment checks), so no handbook rule encodes this."
+        ),
+        checkable=True,
+        source="ktaf",
+        predicate=_blank_check("CourseType"),
+        notes=(
+            "Substitutes for the missing Validation Check, not a state "
+            "rule - the state may or may not actually reject a blank "
+            "CourseType, and this cannot be counted toward its error total. "
+            "Reports 0 on the 2026-07-31 files: CourseType is populated on "
+            "every row in both student files."
+        ),
+        tags=("ambiguous",),
     ),
 ]
