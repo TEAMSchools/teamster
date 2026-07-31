@@ -140,13 +140,18 @@ Not every model is confirmed to carry location or entity today —
   `int_surveys__manager_survey_details`, an intermediate model. The new extract
   wraps it, applies the contract, and adds `mail` (absent upstream). Both
   workbook data sources get repointed in Desktop.
-- **Exposures to add:** `teacher_goals`, `content_team_dashboard`,
-  `manager_survey_rollup`.
-- **Exposure to update:** `manager_survey_reports`, to the new extract.
-
-Content Team Dashboard rides `rpt_tableau__content_team` (confirmed). Teacher
-Goals and Manager Survey Rollup need their datasources confirmed from the
-workbooks rather than inferred.
+- **Exposures added:** `content_team_dashboard` → `rpt_tableau__content_team`,
+  and `manager_survey_rollup` → the new extract. Both omit `url` (only 3 of the
+  file's 47 exposures carry one) and omit `cron_schedule`, since a cron there
+  becomes a real Dagster refresh schedule and neither workbook is
+  Dagster-refreshed today.
+- **Exposure updated:** `manager_survey_reports`, repointed to the new extract.
+- **`teacher_goals` — skipped by decision, 2026-07-30.** All 13 workbooks use
+  embedded extracts rather than published datasources, and the read-only Tableau
+  MCP exposes no workbook-to-table mapping, so its model could not be
+  determined. The workbook was last modified 2024-09-19 and drew 3 views in a
+  month. Guessing would have created a false lineage edge and a wrong Dagster
+  dependency. Not deferred — declined.
 
 ## Section 2 — the Permissions block
 
@@ -230,14 +235,28 @@ fail the entity gate above, because none of those values match a full name.
 
 The old calcs handled this by hand — several tested
 `[home_business_unit_name] = 'TEAM' OR [home_business_unit_name] = 'TEAM Academy Charter Schools' OR [home_business_unit_name] = 'TEAM Academy Charter School'`.
-That is why those triple comparisons exist; they are not redundancy.
+That is why those triple comparisons exist; they were not redundancy.
 
-So each entity branch needs both forms, for example:
+**Superseded 2026-07-30: dbt now normalizes entity, so the Tableau gate compares
+one form only.** Every one of the 13 extracts maps the abbreviations to full
+names with a `case` in its select list, aliased back to
+`home_business_unit_name`, so no extract can emit `TEAM`, `KCNA`, `MIA`, or
+`KNJ` any more. Each entity branch therefore takes a single equality:
 
 ```text
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools')
-   AND [home_business_unit_name] IN ('TEAM Academy Charter School', 'TEAM') THEN TRUE
+   AND [home_business_unit_name] = 'TEAM Academy Charter School' THEN TRUE
 ```
+
+**Delete the triple comparisons rather than carrying them forward.** An
+abbreviation branch cannot match anything post-normalization, and leaving one in
+place tells the next reader the extracts still carry abbreviations.
+
+This was not a cosmetic change.
+`rpt_tableau__schoolmint_grow_observation_details` alone was emitting 276,048
+un-normalized rows — `TEAM` 189,391, `KCNA` 79,525, `MIA` 7,132 — and its
+`accepted_values` test was failing until the `case` was added. Any entity gate
+on that data was matching nothing.
 
 `KNJ` is different: it was the **network** entity, KIPP New Jersey, which is
 today's KTAF rather than any region. Evidence, not inference: of the 327 staff
@@ -262,12 +281,13 @@ Two things this deliberately accepts:
   network-staff rows into TEAM and expose them to every TEAM region viewer. The
   flat map fails closed; the location map fails open.
 
-No dbt change is needed for this. `KNJ` passes through as a real source value
-and the gate simply never matches it to a region.
+In dbt this is the `KNJ` branch of the entity `case`, which rewrites it to
+`KIPP TEAM and Family Schools Inc.`. Region branches then never match it, and
+the unconditional KTAF branch covers it for network viewers — the same outcome
+the flat map describes, reached in the view rather than in the calc.
 
-Only workbooks showing pre-2021 data are affected. SchoolMint Grow observation
-details reaches back that far; most others do not. Confirm per workbook rather
-than adding the second form everywhere by reflex.
+Because normalization happens in dbt, no workbook needs a second entity form
+regardless of how far back its data reaches.
 
 #### The entity gate reads group membership, not the viewer's own entity
 
@@ -348,15 +368,41 @@ one-sided change breaks access silently. Worth a monitored check later.
 
 ### dbt tests
 
-- `location_name` — `not_null`; `relationships` to crosswalk clean names
-- `entity` — `accepted_values` on the 5 real values, including `KIPP Paterson`
-- Singular test: every active roster location resolves to a canonical clean
-  name. This is the 100%-coverage invariant, and it is what catches a new school
-  before it silently denies staff.
-- Singular test: the `location_name` value set matches the 30 expected, so an
-  addition fails loudly rather than passing as a gap.
-- Warn-level: `email` populated wherever `sam_account_name` is populated (one
-  active record currently has neither).
+Column names below are the shipped contract names, not the working names this
+spec used before Section 2 settled: `location_clean_name`, not `location_name`;
+`home_business_unit_name`, not `entity`; `mail`, not `email`.
+
+Per-column, on each of the 13 extracts:
+
+- `location_clean_name` — `not_null`
+- `home_business_unit_name` — `not_null`, plus `accepted_values` on the 5 real
+  values including `KIPP Paterson`
+
+Singular tests, in `src/dbt/kipptaf/tests/`, all three anchored on
+`int_people__staff_roster` via `meta.dagster.ref` so each reports as one asset
+check rather than observations across both parents:
+
+- `int_people__staff_roster__locations_resolve_to_crosswalk` — every active
+  roster location resolves to a canonical clean name. This is the 100%-coverage
+  invariant, and it is what catches a new school before it silently denies
+  staff.
+- `int_people__staff_roster__tableau_location_set_expected` — the active
+  clean-name set matches the 30 expected, so an addition surfaces rather than
+  passing as a gap. Update the expected set in the same change that creates the
+  group.
+- `int_people__staff_roster__mail_populated_with_sam` — `mail` populated
+  wherever `sam_account_name` is populated. Warn-level, via the project default
+  rather than an override.
+
+All three pass against production: 0 unresolved locations, exactly 30 locations,
+0 records holding a `sam_account_name` without a `mail`.
+
+The `not_null` tests are warn-level and 5 of the 13 extracts carry non-zero
+counts, every one of them a roster-join miss rather than an unmapped location —
+verified by the absence of any row where a location is null while a
+roster-sourced column is populated. Shares: `operations_ekg` 6.57%,
+`content_team` 1.60%, `teacher_observations` 0.55%, `leadership_development`
+0.11%, `stipend_and_bonus_app` 0.01%, the rest zero.
 
 ### Preview as User personas
 
