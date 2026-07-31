@@ -7,12 +7,12 @@ default).
 
 ## Differences from Illuminate
 
-| Aspect              | Illuminate                              | Focus                        |
-| ------------------- | --------------------------------------- | ---------------------------- |
-| Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema       |
-| Type adapters       | `unbounded_numeric_adapter`             | None                         |
-| Query callbacks     | `filter_date_taken_callback` (optional) | None                         |
-| Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter` |
+| Aspect              | Illuminate                              | Focus                              |
+| ------------------- | --------------------------------------- | ---------------------------------- |
+| Schema dimension    | Multi-schema (asset key includes it)    | Single `public` schema             |
+| Type adapters       | `unbounded_numeric_adapter`             | `interval_to_microseconds_adapter` |
+| Query callbacks     | `filter_date_taken_callback` (optional) | None                               |
+| Nullability adapter | `remove_nullability_adapter`            | `remove_nullability_adapter`       |
 
 ## Nullability adapter (required)
 
@@ -25,6 +25,39 @@ mode. BigQuery forbids both adding a `REQUIRED` column and relaxing an existing
 same fix Illuminate uses. Adding/removing this adapter against existing tables
 that already have `REQUIRED` columns requires dropping those tables first
 (`replace` repopulates them on the next run).
+
+## Interval adapter (required)
+
+Postgres `interval` matches none of the branches in dlt's
+`sqla_col_to_column_schema`, so the reflected column carries no `data_type`, the
+PyArrow backend infers `duration[us]` from the `timedelta` values, and the load
+dies with `UnsupportedArrowTypeException` (#4676 —
+`gradebook_assignments.time_limit`).
+`type_adapter_callback=interval_to_microseconds_adapter` declares `BigInteger`,
+so **every Focus `interval` column lands as BigQuery INT64 microseconds** —
+divide by `1e6` for seconds when consuming one downstream.
+
+Not `Time`: dlt converts duration to `time64` by reinterpreting the buffer,
+which silently corrupts intervals of 24 hours or more and negative intervals.
+
+`_AbstractInterval` is the isinstance check —
+`isinstance(postgresql.INTERVAL(), sqltypes.Interval)` is `False`, so the
+obvious check silently matches nothing. It imports only from
+`sqlalchemy.sql.sqltypes`.
+
+Unlike the nullability adapter, this one needs no table drop: the new column
+arrives NULLABLE, which `replace` may add.
+
+**An all-NULL `interval` column loads fine and is silently dropped**, so absence
+from BigQuery does NOT mean the column is new. pyarrow infers arrow `null`,
+which dlt maps to no `data_type` and omits from the destination; the load breaks
+only when the FIRST non-null value lands. That is why #4676's asset succeeded at
+08:04 UTC and failed at 22:31 on the same commit — one assignment populated
+`time_limit` at 13:23. Two consequences: don't date a schema change from the
+BigQuery column set, and other Focus tables may hold unpopulated `interval`
+columns that break on first use, which you cannot enumerate from BigQuery. Hence
+the adapter keys off the reflected type for every table rather than naming
+columns.
 
 ## Empty source tables
 
