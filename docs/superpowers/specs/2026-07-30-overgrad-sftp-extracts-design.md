@@ -119,7 +119,7 @@ Four network models in `kipptaf_extracts`, plus eight thin district passthroughs
 | `rpt_overgrad__students`    | one row per student to send (upsert-shaped; see Q12) | `int_extracts__student_enrollments`   | anti-join `external_student_id` + `_dbt_source_project` |
 | `rpt_overgrad__gpas`        | one row per student per GPA type                     | `int_extracts__student_enrollments`   | value-compare `academics__unweighted_gpa`               |
 | `rpt_overgrad__test_scores` | one row per student, test, date                      | `int_assessments__college_assessment` | none, full resend                                       |
-| `rpt_overgrad__ap_scores`   | one row per student, exam, year                      | `int_collegeboard__ap_unpivot`        | none, full resend                                       |
+| `rpt_overgrad__ap_scores`   | one row per student, exam, year                      | `int_assessments__ap_assessments`     | none, full resend                                       |
 
 ### Dagster wiring
 
@@ -271,37 +271,18 @@ track moving to a sent-row ledger if Overgrad rejects duplicates in practice.
 
 #### `rpt_overgrad__ap_scores`
 
-From `int_collegeboard__ap_unpivot`, joined through
+From `int_assessments__ap_assessments`, joined through
 `int_extracts__student_enrollments` on `powerschool_student_number` to reach
 `salesforce_id` and `school`.
 
-Three problems, all recorded here rather than buried:
-
-**No test date.** `int_collegeboard__ap_unpivot` carries only `admin_year`.
-Overgrad requires `Test Date`. AP exams are administered in May, so the date is
-synthesized as May 15 of `admin_year`. Flagged as a vendor question (Q14).
-
-`admin_year` on this model is already a **4-digit `INT64`** — the raw College
-Board field is two-digit, but the model applies
-`extract(year from parse_date('%y', admin_year))` during the unpivot and derives
-`academic_year` as that value minus one. So the synthesized date is
-`date(admin_year, 5, 15)` with no further parsing.
-
-**AP Physics collapses.** College Board reports Physics 1, Physics 2, Physics C:
-Mechanics, and Physics C: E&M as distinct exams. Overgrad accepts exactly one
-`AP Physics`. Combined with the synthesized date, a student who sat Physics 1
-and Physics 2 in the same May produces two rows with identical student, test,
-and date — precisely the case Overgrad rejects.
-
-Resolution: dedupe to the **highest** `exam_grade` per
-`(student_id, overgrad_test, test_date)`. The file stays valid, but a student's
-second Physics exam is silently dropped. Surfaced in the stakeholder questions
-(Q11).
-
-**The College Board ID crosswalk drops students silently.**
-`int_collegeboard__ap_unpivot` reaches `powerschool_student_number` by joining
-`stg_google_sheets__collegeboard__ap_id_crosswalk` on `ap_number_ap_id`.
-Unresolved IDs fall out with no error.
+**Why this source and not `int_collegeboard__ap_unpivot`.** The College Board ID
+crosswalk drops students silently: `int_collegeboard__ap_unpivot` reaches
+`powerschool_student_number` by joining
+`stg_google_sheets__collegeboard__ap_id_crosswalk` on `ap_number_ap_id`, and
+unresolved IDs fall out with no error. Worse, that model's
+`dbt_utils.deduplicate` partitions by `powerschool_student_number`, so
+NULL-keyed rows from a crosswalk miss collapse into a single arbitrary row
+rather than failing loudly.
 
 This is known and recurring, not hypothetical. A dedicated data test exists for
 exactly this failure — `int_collegeboard__ap_unpivot__crosswalk_resolves`,
@@ -310,23 +291,54 @@ states that unresolved students have their AP scores dropped. The repo also
 carries a `collegeboard-ap-data-ingest-protocol` skill because these gaps keep
 recurring.
 
-`rpt_overgrad__ap_scores` inherits that path, and it is **independent of the
-Salesforce gate**. Two consequences for the build:
+`int_assessments__ap_assessments` wraps `int_collegeboard__ap_unpivot` for
+`academic_year >= 2018`, unions Salesforce AP scores for earlier years, and
+applies `where powerschool_student_number is not null` — which discards the
+crosswalk-miss rows instead of collapsing them. The crosswalk gap is
+**independent of the Salesforce gate**, so the AP extract still needs a
+row-count assertion before send, and crosswalk gaps must be cleared before the
+September validation window.
 
-- The AP extract needs a row-count assertion before send, not just after.
-- `int_collegeboard__ap_unpivot` runs `dbt_utils.deduplicate` partitioned by
-  `powerschool_student_number`, so NULL-keyed rows from a crosswalk miss
-  collapse to a single row rather than failing loudly. Confirm behavior while
-  building.
+Three implementation details specific to this source:
 
-**Consider `int_assessments__ap_assessments` as the source instead.** It wraps
-`int_collegeboard__ap_unpivot` (for `academic_year >= 2018`) and unions
-Salesforce AP scores for earlier years, and critically it applies
-`where powerschool_student_number is not null` — which drops exactly the
-crosswalk-miss rows described above instead of letting them collapse. It exposes
-`test_subject`, `ap_course_name`, and `title` for the Overgrad mapping. The
-tradeoff: it does not carry `admin_year`, only `academic_year`, so the
-synthesized date becomes May of `academic_year + 1`. Decision pending.
+**No test date, and no `admin_year`.** Overgrad requires `Test Date`. This model
+carries only `academic_year`, not `admin_year`. AP exams are administered in May
+of the second half of the academic year, so the date is synthesized as
+`date(academic_year + 1, 5, 15)`. For the College Board branch this is
+equivalent — `int_collegeboard__ap_unpivot` derives `academic_year` as
+`admin_year - 1`. **Confirm the Salesforce branch follows the same convention
+before relying on it**, since its `academic_year` comes from
+`int_kippadb__standardized_test_unpivot` rather than from a parsed admin year.
+Synthesized dates are a vendor question (Q14).
+
+**Do not reuse this model's `rn_highest`.** It is partitioned by
+`(powerschool_student_number, ap_course_name)` across all years, so it keeps one
+row per course for a student's entire history. Overgrad can legitimately hold
+the same subject twice on different dates, and collapsing across years would
+drop a retake we are entitled to send. The extract needs its own dedupe — see
+below.
+
+**AP Physics collapses.** College Board reports Physics 1, Physics 2, Physics C
+Mechanics, and Physics C Electricity and Magnetism as distinct exams. Overgrad
+accepts exactly one `AP Physics`. Combined with the synthesized date, a student
+who sat Physics 1 and Physics 2 in the same May produces two rows with identical
+student, test, and date — precisely the case Overgrad rejects.
+
+Resolution: dedupe to the **highest** `exam_score` per
+`(student_id, overgrad_test, test_date)`. Note the column is `exam_score` on
+this model, renamed from `exam_grade` on `int_collegeboard__ap_unpivot`. The
+file stays valid, but a student's second Physics exam is silently dropped.
+Surfaced in the stakeholder questions (Q11).
+
+**Subject vocabulary differs between the two union branches.** The Salesforce
+branch sets `test_subject` from `int_kippadb__standardized_test_unpivot`; the
+College Board branch sets it from `exam_code_description`. The mapping to
+Overgrad's five values must handle both vocabularies, or pre-2018 scores will
+fall through. Map on `ap_course_name` where possible — it is
+crosswalk-normalized — and verify actual distinct values across both branches
+while building. The model's `title` column (`concat('AP ', test_subject)`) may
+already match Overgrad's strings for some subjects, but that is not safe to
+assume.
 
 The five accepted values are mapped with an inline `case` expression rather than
 by extending `stg_google_sheets__collegeboard__ap_course_crosswalk`. Five values
