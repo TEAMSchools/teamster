@@ -105,11 +105,17 @@ def find_coextensive_rules(
     comparison, stated once under each date element, so a single bad row fires
     both and contributes 2 to the error-instance total.
 
-    Whether NJSLEDS emits one error or two for such a row is not documented, so
-    this makes no attempt to decide - it detects the overlap from the data
-    (identical violating-row sets) and discloses it, so the instance total is
-    read as a range rather than a fact. Detecting it rather than hand-tagging
-    known pairs means a pair nobody anticipated is caught too.
+    But an identical row set has a second, quite different cause: several
+    genuinely distinct conditions co-occurring on the same records, as a
+    placeholder row with a bad name and a missing date of birth does. There the
+    instance total is already correct.
+
+    So this only detects the overlap and hands both readings to the caller; it
+    does not adjust anything. `report` distinguishes the two by predicate
+    identity - rules sharing one predicate object are certainly one condition -
+    and offers an adjusted range only for that case. Detecting overlap from the
+    data rather than hand-tagging known pairs means a pair nobody anticipated
+    still surfaces, just without a claim attached.
     """
     signatures: dict[frozenset[int], list[str]] = {}
     for rule in rules:
