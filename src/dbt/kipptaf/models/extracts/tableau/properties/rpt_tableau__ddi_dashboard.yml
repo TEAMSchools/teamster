@@ -145,3 +145,12 @@ models:
         data_type: boolean
       - name: is_low_25_fl
         data_type: boolean
+      - name: is_completion_row
+        data_type: boolean
+        description: >-
+          True for the single deduplication row per student-assessment: the
+          response_type = 'overall' row for completed assessments, or the null
+          response_type row for assigned-but-incomplete assessments. Filter on
+          this field instead of response_type = 'overall' when computing
+          completion rates so that incomplete assessments are included in the
+          denominator.
