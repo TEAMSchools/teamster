@@ -44,6 +44,10 @@ address entirely. Measured comparison, over 2,601 rows:
 | Student's address of record          | 2,197                | 66             | 53            | 321            |
 | Omit entirely                        | 0                    | —              | —             | 2,465          |
 
+Those figures hold the identity rule at #4618's strict five-field key, so the
+anchor choice is compared on its own. The next section changes the key, which
+raises the chosen option from 2,071 to 2,081.
+
 Two measurements decided it. Anchoring on the guardian changes **zero** existing
 address values — whenever a guardian's linkage resolves to exactly one distinct
 complete address, offset 0 already equals it, so the entire effect is
@@ -158,6 +162,13 @@ Columns: `finalsite_enrollment_id`, the five address fields, `country`,
 Not contract-enforced (the `api/intermediate` directory default), but every
 column carries a `data_type` per convention. Uniqueness test on
 `finalsite_enrollment_id`.
+
+This model's `resolution_status` is contact-grain and describes the linkage
+(`resolved` / `ambiguous` / `no_street`). It is distinct from the same-named
+column on `int_finalsite__student_address_of_record`, which is student-grain and
+names which record the address came from (`student_household` /
+`primary_contact_household` / `ambiguous`). Both keep their existing meanings;
+the student model aliases its two joins to this one.
 
 ### `int_finalsite__student_address_of_record` (refactor)
 
