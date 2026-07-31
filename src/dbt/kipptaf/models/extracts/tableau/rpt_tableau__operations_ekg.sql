@@ -86,7 +86,13 @@ with
     final as (
         select roster.*, responses_pivoted.*, sc.location_grade_band as grade_band,
         from responses_pivoted
-        left join roster on responses_pivoted.respondent_email = roster.google_email
+        left join
+            roster
+            on (
+                lower(regexp_extract(responses_pivoted.respondent_email, r'^([^@]+)'))
+                = roster.sam_account_name
+                or responses_pivoted.respondent_email = roster.google_email
+            )
         left join
             {{ ref("int_people__location_crosswalk") }} as sc
             on responses_pivoted.school = sc.location_name
