@@ -19,6 +19,8 @@ where
     and not is_prestart
     and employee_number is not null
     and home_work_location_powerschool_school_id is not null
+    -- Miami rosters into Clever directly from Focus; excluded from all six feeds
+    and home_work_location_dagster_code_location != 'kippmiami'
 
 union all
 
@@ -40,3 +42,4 @@ select
 
     null as `password`,
 from {{ ref("int_people__temp_staff") }}
+where dagster_code_location != 'kippmiami'
