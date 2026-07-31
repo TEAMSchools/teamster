@@ -45,9 +45,9 @@ models:
         description:
           How the address was resolved — `student_household`,
           `primary_contact_household`, or `ambiguous`. `ambiguous` covers both a
-          student whose records offer several competing complete addresses and
-          one whose records hold no complete address at all; the candidate
-          counts distinguish the two.
+          student whose records offer several competing addresses and one whose
+          records hold no street-bearing household at all; the candidate counts
+          distinguish the two.
         data_tests:
           - accepted_values:
               arguments:

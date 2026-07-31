@@ -9,13 +9,16 @@ models:
       corrected there, whereas withholding it is silent. Households with no
       street at all are excluded, since each would otherwise count as its own
       candidate and manufacture ambiguity. Address identity is `address_1`,
-      `address_2`, `city`, `state`, and `zip` compared without regard to case or
-      punctuation and with `zip` truncated to five digits, so the same address
-      recorded two ways collapses to one candidate while a genuine apartment,
-      city, state, or ZIP difference stays distinct. A contact resolves only
-      when exactly one distinct address remains; the emitted values are the raw
-      text from the lowest `household_id` in that group. SIS-agnostic — no
-      enrollment, status, or academic-year scoping.
+      `address_2`, `city`, `state`, and `zip` — `address_1` and `address_2` are
+      stripped of punctuation and compared case-insensitively, `city` is
+      compared case-insensitively but stays punctuation-sensitive, `state` is
+      compared as-is (safe only because it is upper-cased upstream), and `zip`
+      is truncated to five digits — so the same address recorded two ways
+      collapses to one candidate while a genuine apartment, city, state, or ZIP
+      difference stays distinct. A contact resolves only when exactly one
+      distinct address remains; the emitted values are the raw text from the
+      lowest `household_id` in that group. SIS-agnostic — no enrollment, status,
+      or academic-year scoping.
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:

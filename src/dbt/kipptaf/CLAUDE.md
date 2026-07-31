@@ -149,7 +149,8 @@ PII-tagged package model must re-declare it. Model level suffices for a
 ### Finalsite contact unions
 
 `int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` /
-`int_finalsite__student_address_of_record` are kipptaf `union_relations` views
+`int_finalsite__student_address_of_record` /
+`int_finalsite__contact_address_of_record` are kipptaf `union_relations` views
 over per-region finalsite sources.
 
 - **Union CUTOVER regions, not merely api-enabled ones.** Miami has the

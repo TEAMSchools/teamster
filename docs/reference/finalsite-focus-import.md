@@ -163,13 +163,18 @@ does not already have it, and nothing is ever overwritten:
   drop code) is filled in once onto that student-year's **open** Focus
   enrollment when it has neither yet — never onto one Focus already shows as
   closed.
-- **Addresses and Contacts** — sent only once the student is **enrolled**, Focus
-  does not already have the record for that student, **and** Finalsite points to
-  a single address for them (a named contact, for Contacts). For Contacts, it's
-  the **student's** enrolled status that gates the feed, not the guardian
-  contact's own. An address Finalsite cannot narrow to one is held back; a
-  partial address is now sent rather than held, so it can be spotted and
-  corrected in Focus.
+- **Addresses** — sent only once the student is **enrolled**, Focus does not
+  already have the address record for that student, **and** Finalsite points to
+  a single address for them. An address Finalsite cannot narrow to one is held
+  back entirely; a partial address (missing city, state, or ZIP) is sent rather
+  than held, so it can be spotted and corrected in Focus.
+- **Contacts** — sent only once the student is **enrolled**, Focus does not
+  already have the record for that student, **and** the contact has a name. It
+  is the **student's** enrolled status that gates the feed, not the guardian
+  contact's own. A guardian's address does not gate whether the contact is sent:
+  when Finalsite can't narrow it to one, or the guardian has no street address
+  on file at all, the contact still goes out with the rest of their details and
+  the address is simply left blank.
 
 ### Forward-moving enrollments are protected
 
@@ -197,7 +202,8 @@ Because addresses and contacts are import-once, a record sent before Finalsite
 can resolve it would be locked in — a student imported with no address at all
 would keep that gap in Focus even after a real one is entered, because
 import-once never sends them again. To prevent that, the pipeline **holds a
-record back when it cannot tell which address to send**:
+student's address record back when it cannot tell which address to send**. A
+guardian's address works differently — see the Contacts bullet below.
 
 - **Addresses** — a student's address is sent once Finalsite points to a single
   address for them. The pipeline reads the households the student is linked to,
@@ -209,11 +215,19 @@ record back when it cannot tell which address to send**:
   back flows the first run Finalsite resolves to a single address.
 - **Contacts** — a contact is sent only once it has a name. A nameless contact
   is skipped and flows once the name is filled in. A guardian's address is
-  resolved the same way a student's is, but from the guardian's own households:
-  when Finalsite links them to more than one address, the contact is still sent
-  with the rest of their details and the address is left blank rather than
-  guessed. Guardians are usually linked to more households than their children,
-  so this is more common on the contact record than on the student.
+  resolved from the guardian's own households only, with no fallback: when
+  Finalsite links them to more than one address, or to no street address at all,
+  the contact still goes out with the rest of their details and the address is
+  simply left blank. Guardians are usually linked to more households than their
+  children, so this is more common on the contact record than on the student.
+
+  **A guardian's blank address is not held back the way a student's is — it is
+  permanent.** A student's address record waits until Finalsite resolves it,
+  then sends a real address the first run it can. A guardian's contact record
+  does not wait: it imports as soon as it has a name, blank address and all, and
+  once that student's contacts have imported, a later Finalsite fix — retiring
+  the extra household, or adding a street where none existed — is never re-sent.
+  A guardian's address gap has to be filled in Focus by hand.
 
 > **A student can be enrolled in Focus with no address yet.** That is expected
 > when Finalsite has no street address on file for them, when it has several and
