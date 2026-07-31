@@ -53,60 +53,125 @@ models:
                   - KIPP TEAM and Family Schools Inc.
       - name: survey_id
         data_type: string
+        description: >-
+          Identifies the survey campaign the response belongs to — the Google
+          Form id for live submissions, or the literal
+          historic_alchemer_Manager_survey for archived Alchemer rows.
       - name: survey_title
         data_type: string
+        description: >-
+          Human-readable title of the survey campaign — Manager Survey for both
+          the live form and the historic archive.
       - name: survey_response_id
         data_type: string
+        description: >-
+          Raw Google Forms response id for live submissions. Null for historic
+          Alchemer archive rows, which have no equivalent identifier (see
+          effective_survey_response_id).
       - name: date_started
         data_type: timestamp
+        description: >-
+          Timestamp the respondent began the submission. Null for historic
+          Alchemer archive rows, which recorded only a submission date.
       - name: date_submitted
         data_type: timestamp
+        description: Timestamp the response was submitted.
       - name: campaign_academic_year
         data_type: int64
+        description: Academic year of the survey campaign.
       - name: campaign_name
         data_type: string
+        description: >-
+          Reporting-term name of the survey campaign from
+          stg_google_sheets__reporting__terms. Null for historic Alchemer
+          archive rows.
       - name: campaign_reporting_term
         data_type: string
+        description: >-
+          Reporting-term code (e.g. MGR1, MGR2) identifying which campaign
+          window the response belongs to.
       - name: respondent_df_employee_number
         data_type: int64
+        description:
+          Employee number of the person who submitted the survey response.
       - name: subject_df_employee_number
         data_type: int64
+        description: >-
+          Employee number of the person being rated in this response — the
+          subject whose roster attributes populate the contract columns.
       - name: respondent_email
         data_type: string
+        description: >-
+          Email address the respondent used to submit the live Google Form. Null
+          for historic Alchemer archive rows.
       - name: survey_question_id
         data_type: string
+        description:
+          Identifier of the individual survey question this row answers.
       - name: question_shortname
         data_type: string
+        description: Short machine-readable code for the survey question.
       - name: question_title
         data_type: string
+        description: Full text of the survey question prompt.
       - name: answer
         data_type: string
+        description: Respondent's raw answer text for this question.
       - name: answer_value
         data_type: numeric
+        description: >-
+          Answer cast to a numeric score where the response is a rating. Null
+          for open-ended text answers.
       - name: is_open_ended
         data_type: int64
+        description: >-
+          Flags whether the answer is free text rather than a numeric rating (1
+          = open-ended, 0 = numeric).
       - name: respondent_preferred_name
         data_type: string
+        description: >-
+          Respondent's preferred/formatted name from the staff roster, as of the
+          submission date.
       - name: respondent_race_ethnicity_reporting
         data_type: string
+        description: >-
+          Respondent's reported race/ethnicity from the staff roster, as of the
+          submission date.
       - name: respondent_gender
         data_type: string
+        description: >-
+          Respondent's reported gender identity from the staff roster, as of the
+          submission date.
       - name: subject_preferred_name
         data_type: string
+        description: Subject's preferred/formatted name from the staff roster.
       - name: is_manager
         data_type: boolean
+        description: >-
+          Flags whether the subject holds a management position, per the staff
+          roster.
       - name: subject_manager_name
         data_type: string
+        description:
+          Formatted name of the subject's manager, per the staff roster.
       - name: subject_race_ethnicity_reporting
         data_type: string
+        description: Subject's reported race/ethnicity from the staff roster.
       - name: subject_gender
         data_type: string
+        description: Subject's reported gender identity from the staff roster.
       - name: subject_manager_userprincipalname
         data_type: string
+        description: >-
+          User principal name of the subject's manager, per the staff roster.
       - name: campus_name
         data_type: string
+        description: >-
+          Subject's campus grouping within the location hierarchy, sourced from
+          int_people__location_crosswalk alongside location_clean_name.
       - name: home_department_name
         data_type: string
+        description: Subject's home department name from the staff roster.
       - name: job_function
         data_type: string
         description: >-
@@ -114,14 +179,23 @@ models:
           job function for the person.
       - name: job_title
         data_type: string
+        description: Subject's job title from the staff roster.
       - name: mail
         data_type: string
         description: Post-cutover Tableau identity.
       - name: user_principal_name
         data_type: string
+        description: >-
+          Subject's Entra/AD user principal name, used for the Tableau identity
+          match.
       - name: sam_account_name
         data_type: string
+        description: >-
+          Subject's Entra/AD sAMAccountName, used for the Tableau identity
+          match.
       - name: reports_to_mail
         data_type: string
+        description: Mail address of the subject's manager.
       - name: reports_to_sam_account_name
         data_type: string
+        description: sAMAccountName of the subject's manager.
