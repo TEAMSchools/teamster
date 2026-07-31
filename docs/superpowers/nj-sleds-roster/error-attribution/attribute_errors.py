@@ -141,8 +141,12 @@ def rows_with_any_violation(rules: Sequence[Rule], rows: Sequence[Row]) -> int:
     This is the other reading of a bare count: the state may report one error
     per bad row rather than one per bad field.
     """
-    row_rules = [r for r in rules if r.checkable and r.predicate is not None]
-    return sum(1 for row in rows if any(r.predicate(row) for r in row_rules))
+    predicates = [
+        rule.predicate
+        for rule in rules
+        if rule.checkable and rule.predicate is not None
+    ]
+    return sum(1 for row in rows if any(check(row) for check in predicates))
 
 
 def find_explanations(counts: dict[str, int], target: int) -> list[tuple[str, ...]]:
