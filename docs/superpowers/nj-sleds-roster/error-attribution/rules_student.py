@@ -223,26 +223,36 @@ def _dual_institution_populated_for_non_c(row: Row) -> bool:
 # KTAF-local rules (source="ktaf"). Never counted toward a state error total -
 # see rules.py's module docstring and HANDOFF.md.
 #
-# The org-provided expectation was Newark county 80 / district 7325 / school
-# 965, and Camden county 07 / district 1799 / school 111 (school unconfirmed).
-# Profiling the real Newark and Camden student files against that expectation
-# found:
-#   - County and District match the given values exactly wherever populated
-#     (Newark: county always "80" or blank, district always "7325"; Camden:
-#     county always "07" or blank, district always "1799"). Both are encoded
-#     below.
-#   - School does NOT match: Newark legitimately uses two School Codes ("965"
-#     and "732"), not only "965", and Camden's only School Code in the file is
-#     "179", not "111". Encoding either single value as a KTAF check would
-#     misfire on real rows, so no KTAF school-code rule is included. This
-#     confirms the Camden "111" guess was wrong and that the org's
-#     Newark-school assumption was incomplete; flagged in the report for the
-#     org to confirm the intended KTAF CDS combinations before anyone builds
-#     on "965"/"111" elsewhere.
+# The CDS combinations KTAF reports under, set by the data team: Newark county
+# 80 / district 7325 / school 965, and Camden county 07 / district 1799 /
+# school 111.
+#
+# These rules are EXPECTED to fire heavily, and that is the point. The real
+# files carry school code 732 on a large block of Newark rows and 179 on every
+# populated-CDS Camden row. Those are not alternative valid codes - they are the
+# documented CDS defect: the Alternate School Number is unset in PowerSchool
+# School Setup for those schools, so the extract falls back to a prefix of the
+# internal school number. As of the 2026-07-29 extract this affected 20,652 of
+# 43,493 student rows, including every Camden row.
+#
+# An earlier draft of this catalog omitted the school-code rule entirely,
+# reasoning that 965/111 "does not match real data" and would misfire. It would
+# not misfire - it would correctly flag a wholly non-compliant file. Reference
+# values come from the data team or the NJDOE directory, never from the file
+# under test. See rules.py's module docstring.
+#
+# Camden's 111 is still worth confirming against the NJDOE directory before
+# anyone keys it into School Setup.
 # --------------------------------------------------------------------------- #
 
 _KTAF_KNOWN_COUNTY_CODES = frozenset({"80", "07"})
 _KTAF_KNOWN_DISTRICT_CODES = frozenset({"7325", "1799"})
+_KTAF_KNOWN_CDS_COMBOS: frozenset[tuple[str, str, str]] = frozenset(
+    {
+        ("80", "7325", "965"),  # Newark
+        ("07", "1799", "111"),  # Camden
+    }
+)
 
 
 def _county_code_not_ktaf_known(row: Row) -> bool:
@@ -255,6 +265,22 @@ def _district_code_not_ktaf_known(row: Row) -> bool:
     """KTAF-DISTRICTCODE-KNOWN: populated District Code outside KTAF's known set."""
     value = row.get("DistrictCodeAssigned")
     return present(value) and str(value).strip() not in _KTAF_KNOWN_DISTRICT_CODES
+
+
+def _ktaf_cds_combo_invalid(row: Row) -> bool:
+    """KTAF-CDS-COMBO: the CDS triple is not one KTAF reports under.
+
+    A blank component cannot form a valid combination, so a blank county counts
+    as a violation here. That is deliberate - the state attributes the row by the
+    whole triple, and an incomplete triple mis-attributes it just as a wrong one
+    does.
+    """
+    combo = (
+        str(row.get("CountyCodeAssigned", "") or "").strip(),
+        str(row.get("DistrictCodeAssigned", "") or "").strip(),
+        str(row.get("SchoolCodeAssigned", "") or "").strip(),
+    )
+    return combo not in _KTAF_KNOWN_CDS_COMBOS
 
 
 # --------------------------------------------------------------------------- #
@@ -1198,5 +1224,33 @@ RULES: list[Rule] = [
             "validate this catalog is exactly '7325' or '1799' "
             "respectively, with no blanks."
         ),
+    ),
+    Rule(
+        id="KTAF-CDS-COMBO",
+        element="CountyCodeAssigned+DistrictCodeAssigned+SchoolCodeAssigned",
+        page=0,
+        error_text=(
+            "KTAF expectation, not a handbook rule: County, District, and "
+            "School Code together must match one of the CDS combinations KTAF "
+            "reports under - Newark (80, 7325, 965) or Camden (07, 1799, 111)."
+        ),
+        checkable=True,
+        source="ktaf",
+        predicate=_ktaf_cds_combo_invalid,
+        notes=(
+            "Expected to fire heavily on the 2026-07-29 extract, and that is "
+            "the signal, not a bug. Newark carries school code 732 on a large "
+            "block of rows and Camden carries 179 on every populated-CDS row; "
+            "both are the documented CDS defect (Alternate School Number unset "
+            "in PowerSchool School Setup, so the extract falls back to a "
+            "prefix of the internal school number), affecting 20,652 of 43,493 "
+            "rows network-wide.\n\n"
+            "Do not retune the expected codes to match what the file "
+            "contains - see rules.py's module docstring for why an earlier "
+            "draft did exactly that and what it cost. Camden's 111 is still "
+            "worth confirming against the NJDOE directory before anyone keys "
+            "it into School Setup."
+        ),
+        tags=("cds_list",),
     ),
 ]

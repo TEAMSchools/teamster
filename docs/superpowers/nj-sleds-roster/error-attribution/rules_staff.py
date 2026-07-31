@@ -50,7 +50,7 @@ from rules import Row, Rule, blank, in_window, is_date8, malformed, matches, pre
 _KTAF_KNOWN_CDS_COMBOS: frozenset[tuple[str, str, str]] = frozenset(
     {
         ("80", "7325", "965"),  # Newark
-        ("07", "1799", "179"),  # Camden - see notes on KTAF-CDS-COMBO below
+        ("07", "1799", "111"),  # Camden - see notes on KTAF-CDS-COMBO below
     }
 )
 
@@ -872,17 +872,26 @@ RULES: list[Rule] = [
         predicate=_ktaf_cds_combo_invalid,
         notes=(
             "Known combinations: Newark (80, 7325, 965) and Camden "
-            "(07, 1799, 179). The brief that seeded this catalog gave the "
-            "Camden school code as 111 and flagged it unconfirmed against "
-            "the NJDOE directory; the real Camden upload used for "
-            "verification instead shows a single consistent non-blank "
-            "school code of 179 across all 380 populated-CDS rows (county "
-            "07 and district 1799 do match the brief exactly). 179 is used "
-            "here as the better-evidenced value, but it is still only "
-            "corroborated by internal consistency in one file, not by the "
-            "authoritative NJDOE CDS directory - confirm before relying on "
-            "this rule for Camden decisions, and treat any hit here as a "
-            "hypothesis to verify, not a confirmed error."
+            "(07, 1799, 111), set by the data team.\n\n"
+            "This rule is EXPECTED to fire heavily, and that is the point. "
+            "Camden's uploads carry school code 179 on every populated-CDS "
+            "row, and Newark's carry 732 on a large block of rows. Those are "
+            "not alternative valid codes - they are the documented CDS "
+            "defect: the Alternate School Number is unset in PowerSchool "
+            "School Setup for those schools, so the extract falls back to a "
+            "prefix of the internal school number. As of the 2026-07-29 "
+            "extract this affected 20,652 of 43,493 student rows, including "
+            "every Camden row.\n\n"
+            "Do not 'fix' this rule by changing the expected codes to match "
+            "what the file contains. An earlier draft of this catalog did "
+            "exactly that - it substituted 179 for 111 on the reasoning that "
+            "a rule firing on 100% of rows must have a bad reference value. "
+            "Here, 100% is the correct answer, and the substitution would "
+            "have reported a wholly non-compliant file as clean. Reference "
+            "values come from the data team or the NJDOE directory, never "
+            "from the file under test.\n\n"
+            "Camden's 111 is still worth confirming against the NJDOE "
+            "directory before anyone keys it into School Setup."
         ),
         tags=("cds_list",),
     ),
