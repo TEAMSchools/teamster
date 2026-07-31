@@ -234,7 +234,14 @@ select
     if(op.observation_id is not null, 1, 0) as is_observed,
 
 from observation_pivot as op
-left join
+/*
+ INNER, not LEFT: an observation logged against someone who was not in a
+ teaching role on the observation date is testing noise, and is excluded rather
+ than carried. A LEFT join here also emitted the row with a null
+ employee_number, since this branch projects identity from rh rather than op --
+ so the model discarded the subject it already had.
+ */
+inner join
     roster_history as rh
     on op.employee_number = rh.employee_number
     and op.observed_at between rh.effective_date_start and rh.effective_date_end
