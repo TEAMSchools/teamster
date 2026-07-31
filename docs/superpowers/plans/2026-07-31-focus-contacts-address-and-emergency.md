@@ -2394,68 +2394,63 @@ Append this to the `unit_tests:` block:
           cast(null as string) as emrg_4_phone_3_type,
           cast(null as string) as emrg_4_phone_3_number
   expect:
-    rows:
-      - {
-          student_id: "84002002002",
-          sort_order: 1,
-          student_relation: parent,
-          first_name: Alice,
-          last_name: Johnson,
-          emergency: null,
-          custody: null,
-          pickup: null,
-          resides_with_stud: null,
-          address: 100 Main St,
-          contact1_value: "+13055550100",
-          contact3_value: null,
-        }
-      - {
-          student_id: "84002002002",
-          sort_order: 2,
-          student_relation: guardian,
-          first_name: Bob,
-          last_name: Smith,
-          emergency: null,
-          custody: null,
-          pickup: null,
-          resides_with_stud: null,
-          address: 200 Oak Ave,
-          contact1_value: "+13055550200",
-          contact3_value: null,
-        }
-      - {
-          student_id: "84002002002",
-          sort_order: 3,
-          student_relation: Aunt,
-          first_name: Carla,
-          last_name: Reyes,
-          emergency: "Y",
-          custody: "Y",
-          pickup: "Y",
-          resides_with_stud: "Y",
-          address: null,
-          contact1_value: "+13055550301",
-          contact3_value: "+13055550303",
-        }
-      - {
-          student_id: "84002002002",
-          sort_order: 4,
-          student_relation: Neighbor,
-          first_name: Dan,
-          last_name: Ortiz,
-          emergency: "Y",
-          custody: null,
-          pickup: null,
-          resides_with_stud: null,
-          address: null,
-          contact1_value: "+13055550401",
-          contact3_value: null,
-        }
+    format: sql
+    rows: |
+      select
+        '84002002002' as student_id,
+        'parent' as student_relation,
+        1 as sort_order,
+        'Alice' as first_name,
+        'B' as middle_name,
+        'Johnson' as last_name,
+        -- ... every remaining layout column, in CONTACTS_LAYOUT order
+      union all
+      select '84002002002', 'guardian', 2, 'Bob', null, 'Smith', ...
 ```
 
-Every `expect` row must list the same columns — dbt builds them as `UNION ALL`
-and does not null-fill omitted keys. If dbt rejects the partial column list,
-extend every row to the full 50 columns rather than varying them.
+The `expect` block MUST list all 50 output columns. dbt compares the fixture
+against the model output with `except distinct` in both directions, so a shorter
+column list fails on a column-count mismatch rather than narrowing the
+comparison. Every unit test in this repo lists the full set, and the sibling
+`int_finalsite__student_contacts` tests use `format: sql` for exactly this
+reason — it is far more compact here than 4 x 50 dict keys.
+
+Write the four expected rows as one `select ... union all ...`, the first branch
+aliasing all 50 columns and the later branches positional. The column order is
+the model's final `SELECT` order; copy the sequence from the existing
+`test_contacts_two_guardians` expect rows in the same file. The asserted values:
+
+| Column              | Row 1        | Row 2        | Row 3        | Row 4        |
+| ------------------- | ------------ | ------------ | ------------ | ------------ |
+| `student_id`        | 84002002002  | 84002002002  | 84002002002  | 84002002002  |
+| `student_relation`  | parent       | guardian     | Aunt         | Neighbor     |
+| `sort_order`        | 1            | 2            | 3            | 4            |
+| `first_name`        | Alice        | Bob          | Carla        | Dan          |
+| `middle_name`       | B            | null         | null         | null         |
+| `last_name`         | Johnson      | Smith        | Reyes        | Ortiz        |
+| `resides_with_stud` | null         | null         | Y            | null         |
+| `custody`           | null         | null         | Y            | null         |
+| `emergency`         | null         | null         | Y            | Y            |
+| `pickup`            | null         | null         | Y            | null         |
+| `address`           | 100 Main St  | 200 Oak Ave  | null         | null         |
+| `address2`          | null         | null         | null         | null         |
+| `city`              | Miami        | Miami        | null         | null         |
+| `state`             | FL           | FL           | null         | null         |
+| `zipcode`           | 33101        | 33102        | null         | null         |
+| `email`             | alice@…      | bob@…        | carla@…      | null         |
+| `contact1_type`     | Home         | Work         | Cell         | Cell         |
+| `contact1_value`    | +13055550100 | +13055550200 | +13055550301 | +13055550401 |
+| `contact2_type`     | Cell         | null         | Home         | null         |
+| `contact2_value`    | +13055550101 | null         | +13055550302 | null         |
+| `contact3_type`     | null         | null         | Work         | null         |
+| `contact3_value`    | null         | null         | +13055550303 | null         |
+
+Use the full email addresses from the `given` fixtures, not the elided forms
+above. Every remaining column — `contact1_blocked` / `_unlisted` / `_callout`,
+the same three for `contact2`, and all of `contact3_blocked` through
+`contact7_unlisted` — is null in all four rows. Use `cast(null as string)` on
+the first branch so BigQuery types each column, and bare `null` on the later
+ones.
 
 - [ ] **Step 4: Run the whole Focus unit-test directory**
 
