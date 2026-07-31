@@ -378,3 +378,35 @@ data_tests:
         dagster:
           ref:
             name: int_people__staff_roster
+
+  - name: rpt_clever__school_id_resolves_to_schools_feed
+    description: >-
+      Cross-feed referential integrity for the six Clever SFTP extracts -- every
+      school_id in enrollments, sections, teachers and staff must exist in
+      schools. The six feeds each carry their own region filter, so a region
+      added to or removed from one but not the others ships rows referencing
+      schools Clever was never sent, which it silently drops or misroutes rather
+      than rejecting. Errors rather than warns: this is the gate on restarting
+      the hourly Clever schedule, and an orphan here means the roster Clever
+      receives is internally inconsistent.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__schools
+
+  - name: rpt_clever__enrollments__student_id_resolves_to_students_feed
+    description: >-
+      Cross-feed referential integrity for the six Clever SFTP extracts -- every
+      student_id in enrollments must exist in students. students is scoped to
+      the current academic year and enrollments is not, so a region whose SIS is
+      frozen at a prior year keeps shipping course enrollments for students that
+      no longer appear in the student feed. Errors rather than warns for the
+      same reason as the school_id check.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__students
