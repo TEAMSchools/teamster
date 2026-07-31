@@ -1,5 +1,6 @@
 with
-    households_stripped as (
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    candidate_households as (
         -- Any household carrying a street line is a candidate. Completeness is
         -- deliberately NOT a gate: an incomplete address is visibly wrong in
         -- Focus and can be corrected there, whereas withholding it is silent.
@@ -16,51 +17,26 @@ with
             zip,
             country,
             is_complete_address,
-
-            upper(city) as city_key,
-            left(zip, 5) as zip_key,
-
-            regexp_replace(address_1, r'[^A-Za-z0-9]', '') as address_1_stripped,
-            regexp_replace(address_2, r'[^A-Za-z0-9]', '') as address_2_stripped,
         from {{ ref("int_finalsite__contacts__households") }}
         where address_1 is not null
     ),
 
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    candidate_households as (
-        select
-            finalsite_enrollment_id,
-            household_id,
-            address_1,
-            address_2,
-            city,
-            state,
-            zip,
-            country,
-            is_complete_address,
-            city_key,
-            zip_key,
-
-            upper(address_1_stripped) as address_1_key,
-            upper(address_2_stripped) as address_2_key,
-        from households_stripped
-    ),
-
     address_candidates as (
-        -- One row per (contact, distinct address). The key normalizes case and
-        -- punctuation so `123 Main St.` and `123 MAIN ST` are one address, and
-        -- truncates ZIP+4 to five digits. Normalization is for GROUPING only —
-        -- the projected address is the raw text from the lowest-household_id
-        -- row, so Focus receives properly formatted values. country and
-        -- is_complete_address are not part of the identity, so they come from
-        -- that same canonical row rather than being aggregated across rows,
-        -- which would blend values from different households.
+        -- One row per (contact, distinct address). Address identity is an
+        -- exact match on the five mailing fields — no case-folding, no
+        -- punctuation-stripping, no ZIP+4 truncation. Two spellings of the
+        -- same address (`123 Main St.` vs `123 MAIN ST`) therefore stay
+        -- distinct candidates, and the contact is withheld as ambiguous rather
+        -- than guessed at. country and is_complete_address are not part of the
+        -- identity, so they come from the canonical lowest-household_id row
+        -- rather than being aggregated across rows, which would blend values
+        -- from different households.
         {{
             dbt_utils.deduplicate(
                 relation="candidate_households",
                 partition_by=(
-                    "finalsite_enrollment_id, address_1_key, address_2_key,"
-                    " city_key, state, zip_key"
+                    "finalsite_enrollment_id, address_1, address_2, city,"
+                    " state, zip"
                 ),
                 order_by="household_id asc",
             )
