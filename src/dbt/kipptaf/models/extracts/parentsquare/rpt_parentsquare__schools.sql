@@ -31,8 +31,7 @@ with
             -- dash-separated); ParentSquare wants 10 digits.
             regexp_replace(schoolphone, r'[^0-9]', '') as school_phone,
         from {{ ref("stg_powerschool__schools") }}
-        where
-            _dbt_source_relation like '%kippnewark%' and state_excludefromreporting = 0
+        where _dbt_source_project = 'kippnewark' and state_excludefromreporting = 0
     )
 
 select
