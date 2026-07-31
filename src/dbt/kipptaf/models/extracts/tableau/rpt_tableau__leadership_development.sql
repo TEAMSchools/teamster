@@ -178,7 +178,9 @@ left join
     and p.academic_year = mc.academic_year
     and p.term = mc.term
 left join metrics_lookup as m on p.metric_id = m.metric_id
-left join
+/* INNER, not LEFT: rows whose employee_number resolves to no roster record are
+   test data, and a row with no roster record cannot be gated to anyone. */
+inner join
     {{ ref("int_people__staff_roster") }} as r on p.employee_number = r.employee_number
 left join
     {{ ref("int_people__location_crosswalk") }} as lc

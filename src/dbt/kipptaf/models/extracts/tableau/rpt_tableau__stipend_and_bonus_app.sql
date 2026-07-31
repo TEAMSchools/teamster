@@ -56,7 +56,9 @@ left join
 left join
     {{ ref("int_people__staff_roster") }} as r2
     on o.second_approver_employee_number = r2.employee_number
-left join
+/* INNER, not LEFT: a stipend event whose employee_number resolves to no roster
+   record is test data, and cannot be gated to anyone. */
+inner join
     {{ ref("int_people__staff_roster") }} as r3
     on o.employee_number = r3.employee_number
 left join
