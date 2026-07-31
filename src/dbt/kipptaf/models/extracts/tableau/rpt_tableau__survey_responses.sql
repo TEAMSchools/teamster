@@ -18,7 +18,6 @@ select
     eh.employee_number,
     eh.formatted_name as respondent_name,
     eh.management_position_indicator as is_manager,
-    eh.reports_to_formatted_name as manager,
     eh.race_ethnicity_reporting as race_ethnicity,
     eh.gender_identity as gender,
     eh.reports_to_formatted_name as manager_name,

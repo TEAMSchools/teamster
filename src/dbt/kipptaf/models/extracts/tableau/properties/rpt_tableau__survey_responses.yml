@@ -54,8 +54,6 @@ models:
         data_type: string
       - name: is_manager
         data_type: boolean
-      - name: manager
-        data_type: string
       - name: race_ethnicity
         data_type: string
       - name: gender
