@@ -60,6 +60,7 @@ models:
         data_type: string
       - name: mail
         data_type: string
+        description: Post-cutover Tableau identity.
       - name: user_principal_name
         data_type: string
       - name: sam_account_name
