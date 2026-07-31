@@ -17,6 +17,10 @@ from {{ ref("int_people__staff_roster") }}
 where
     uac_account_disable = 0
     and not is_prestart
+    -- an enabled AD account does not imply active employment; offboarding can
+    -- leave the account enabled indefinitely, so gate on worker status the way
+    -- rpt_clever__staff does
+    and worker_status_code != 'Terminated'
     and employee_number is not null
     and home_work_location_powerschool_school_id is not null
     -- Miami rosters into Clever directly from Focus; excluded from all six feeds
