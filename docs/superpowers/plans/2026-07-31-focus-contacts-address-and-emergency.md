@@ -1660,11 +1660,34 @@ full join prd as p using (student_id, sort_order)
 ```
 
 Expected, from the spec: `total_rows` 2,601, `only_in_prod` 0, `only_in_dev` 0,
-`rows_with_address` 2,081, `address_values_changed` **0**, `newly_enabled` 42,
-`newly_withheld` 436. A non-zero `address_values_changed` means an address moved
-rather than being withheld — stop and diagnose. Small drift in the totals is
-possible if Finalsite data moved since 2026-07-31; a change in
-`address_values_changed` is not.
+`rows_with_address` 2,081, `newly_enabled` 42, `newly_withheld` ~426-436. Small
+drift in the totals is normal — Finalsite data moves.
+
+`address_values_changed` counts raw string differences, so it is NOT expected to
+be zero. Normalization makes a guardian with formatting-variant duplicate
+households resolve where they previously did not, and the model then projects
+the raw text of the lowest `household_id` — which can differ in punctuation or
+case from whatever `households[safe_offset(0)]` happened to hold. Same physical
+address, different spelling.
+
+The bar that MUST hold is that no row changes to a genuinely DIFFERENT address.
+Re-compare the changed rows under the normalized key to separate the two:
+
+```sql
+-- over the changed rows only, from the query above
+countif(
+    upper(regexp_replace(d.address, r'[^A-Za-z0-9]', ''))
+    = upper(regexp_replace(p.address, r'[^A-Za-z0-9]', ''))
+    and upper(d.city) = upper(p.city)
+    and d.state = p.state
+    and left(d.zipcode, 5) = left(p.zipcode, 5)
+) as same_address_formatting_only
+```
+
+Every changed row must fall in `same_address_formatting_only`. A row that does
+not is an address that MOVED — stop and diagnose, because this feed is
+import-once. Measured on 2026-07-31: 2 changed rows, both formatting-only, zero
+genuinely different.
 
 Keep this output local. Do not paste address values anywhere.
 
