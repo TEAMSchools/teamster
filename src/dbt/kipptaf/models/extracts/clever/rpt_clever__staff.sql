@@ -38,7 +38,12 @@ with
             department as home_department_name,
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
-        where dagster_code_location != 'kippmiami'
+        where
+            dagster_code_location != 'kippmiami'
+            -- int_people__temp_staff gates on idauto_status and the AD account
+            -- flag, neither of which flips on offboarding. A populated
+            -- idauto_person_term_date is the only termination signal it carries.
+            and idauto_person_term_date is null
     ),
 
     schools as (
