@@ -120,4 +120,4 @@ jobs:
             --model sonnet --effort xhigh --allowedTools "Skill,Bash(git
             diff:*),Bash(git log:*),Bash(git show:*),Bash(git
             rev-parse:*),Bash(git merge-base:*)" --disallowedTools
-            "ScheduleWakeup,SendMessage,Monitor"
+            "ScheduleWakeup,SendMessage,Monitor,Workflow"

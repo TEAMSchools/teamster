@@ -68,7 +68,7 @@ jobs:
             --model sonnet --effort xhigh --allowedTools "Skill,Bash(git
             diff:*),Bash(git log:*),Bash(git show:*),Bash(git
             rev-parse:*),Bash(git merge-base:*)" --disallowedTools
-            "ScheduleWakeup,SendMessage,Monitor" --append-system-prompt
+            "ScheduleWakeup,SendMessage,Monitor,Workflow" --append-system-prompt
             "Execution model. This job is a single non-interactive turn sequence
             with no wake-up and no second invocation. When you stop producing
             output the process exits and any unfinished work is lost. Never end
