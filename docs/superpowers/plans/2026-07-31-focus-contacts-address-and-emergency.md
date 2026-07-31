@@ -593,9 +593,11 @@ group by 1
 order by 1
 ```
 
-Expected: 6,405 rows total for Miami, and the guardian-scoped feed slice
-resolving to 2,081 rows in Task 4. A total row count other than 6,405 means the
-spine join fanned out.
+Expected: one row per contact in `stg_finalsite__contacts` — 7,522 for Miami —
+and the guardian-scoped feed slice resolving to 2,081 rows in Task 4. A total
+that differs from `select count(*) from stg_finalsite__contacts` means the spine
+join fanned out; compare against that query rather than a hardcoded number,
+since Finalsite data moves.
 
 - [ ] **Step 6: Lint**
 
