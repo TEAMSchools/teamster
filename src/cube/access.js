@@ -24,14 +24,17 @@ const STAFF_SENSITIVE_SCOPE_BY_MEMBER = {
   gender_identity: "staff_pii_scope",
   race: "staff_pii_scope",
   is_hispanic: "staff_pii_scope",
+  // Leave type (Medical / Family / Disability) or termination reason behind a
+  // period's status_name. status_name itself stays on the open directory.
+  status_reason: "staff_pii_scope",
   salary: "staff_compensation_scope",
 };
 
 // The sensitive staff columns kept out of the open staff_directory view. Each
-// maps to its gating scope column in STAFF_SENSITIVE_SCOPE_BY_MEMBER — the six
-// PII fields to staff_pii_scope (surfaced in staff_pii), salary to
-// staff_compensation_scope (forward-compat; no view yet). Not PII-only, so not
-// named *_PII_*.
+// maps to its gating scope column in STAFF_SENSITIVE_SCOPE_BY_MEMBER — the
+// personal/demographic fields plus status_reason to staff_pii_scope (surfaced
+// in staff_pii), salary to staff_compensation_scope (forward-compat; no view
+// yet). Not PII-only, so not named *_PII_*.
 const STAFF_SENSITIVE_MEMBERS = Object.keys(STAFF_SENSITIVE_SCOPE_BY_MEMBER);
 
 // One column-visibility tier per forward-compat sensitive staff scope.
