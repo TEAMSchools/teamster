@@ -386,6 +386,140 @@ with
             storecode = 'Y1' and academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
+    backfill_quarter_running as (
+        /* TODO(#4687): TEMPORARY. Delete this CTE, backfill_course_anchored,
+           backfill_running_course, and their use in quarter_grades branch 3
+           once the dashboard runs on current-year data. Tracked in Asana under
+           GPA and Gradebook Dashboard v3, Phase 4.
+
+           Reconstructs a running year-to-date course percent for the prior
+           year, which PowerSchool never stored. Q1 is exact by definition;
+           Q2 and Q3 are approximations; Q4 is replaced by the stored Y1 value
+           below so it matches exactly. Simple rather than credit-weighted
+           average because the two agree to within half a point on 98.2 percent
+           of courses. */
+        select
+            _dbt_source_relation,
+            _dbt_source_project,
+            studentid,
+            yearid,
+            course_number,
+            storecode,
+            gradescale_name_unweighted,
+
+            avg(`percent`) over (
+                partition by _dbt_source_project, studentid, yearid, course_number
+                order by storecode
+            ) as running_percent,
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            storecode in ('Q1', 'Q2', 'Q3', 'Q4')
+            and academic_year = {{ var("current_academic_year") - 1 }}
+    ),
+
+    backfill_y1_stored_raw as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running. */
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            course_number,
+            gradescale_name_unweighted,
+            dcid,
+
+            `percent` as y1_stored_percent,
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
+    ),
+
+    backfill_y1_stored as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running.
+
+           dbt_utils.deduplicate guards the pre-existing #3915 storedgrades
+           double-write, confirmed present on academic_year 2025 Y1 rows with
+           genuinely conflicting percents rather than harmless repeats. Left
+           un-deduplicated, this CTE's grain becomes a join key in
+           backfill_course_anchored below, so one duplicate would multiply
+           every quarter row for the course, not just the Y1 row it
+           originated on. Highest dcid wins: sampled duplicate pairs cluster
+           in two distinct dcid ranges, consistent with a later corrective
+           re-import superseding an earlier one. */
+        {{
+            dbt_utils.deduplicate(
+                relation="backfill_y1_stored_raw",
+                partition_by="_dbt_source_project, studentid, yearid, course_number",
+                order_by="dcid desc",
+            )
+        }}
+    ),
+
+    backfill_course_anchored as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running.
+
+           Q4 takes the stored Y1 percent verbatim so the reconstruction lands
+           exactly on the year grade. The Y1 storecode row is unioned in
+           carrying the same value, so the Y1 marking period and Q4 agree. */
+        select
+            r._dbt_source_project,
+            r.studentid,
+            r.yearid,
+            r.course_number,
+            r.storecode,
+            r.gradescale_name_unweighted,
+
+            if(
+                r.storecode = 'Q4', y1.y1_stored_percent, r.running_percent
+            ) as anchored_percent,
+        from backfill_quarter_running as r
+        left join
+            backfill_y1_stored as y1
+            on r._dbt_source_project = y1._dbt_source_project
+            and r.studentid = y1.studentid
+            and r.yearid = y1.yearid
+            and r.course_number = y1.course_number
+
+        union all
+
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            course_number,
+
+            'Y1' as storecode,
+
+            gradescale_name_unweighted,
+            y1_stored_percent as anchored_percent,
+        from backfill_y1_stored
+    ),
+
+    backfill_running_course as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running.
+
+           Bands the reconstructed percent back to a letter on the course's own
+           scale. Joins on gradescale_name rather than gradescaleid, the pattern
+           int_powerschool__gpa_term and rpt_deanslist__transcript_gpas already
+           use for storedgrades, plus _dbt_source_project because scale
+           identifiers collide across districts. */
+        select
+            a._dbt_source_project,
+            a.studentid,
+            a.yearid,
+            a.course_number,
+            a.storecode,
+            a.anchored_percent,
+
+            gsi.letter_grade as anchored_letter_grade,
+        from backfill_course_anchored as a
+        left join
+            {{ ref("int_powerschool__gradescaleitem_lookup") }} as gsi
+            on a._dbt_source_project = gsi._dbt_source_project
+            and a.gradescale_name_unweighted = gsi.gradescale_name
+            and a.anchored_percent
+            between gsi.min_cutoffpercentage and gsi.max_cutoffpercentage
+    ),
+
     quarter_grades as (
         /* current year: live gradebook */
         select
@@ -457,20 +591,20 @@ with
            which fills the quarter columns on Y1 rows like the in-progress
            branch does for the current year) */
         select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            yearid,
-            course_number,
+            sg._dbt_source_relation,
+            sg._dbt_source_project,
+            sg.studentid,
+            sg.yearid,
+            sg.course_number,
 
-            storecode as `quarter`,
+            sg.storecode as `quarter`,
 
-            cast(`percent` as float64) as quarter_course_percent_grade,
-            grade as quarter_course_letter_grade,
-            gpa_points as quarter_course_grade_points,
+            cast(sg.`percent` as float64) as quarter_course_percent_grade,
+            sg.grade as quarter_course_letter_grade,
+            sg.gpa_points as quarter_course_grade_points,
 
-            cast(null as float64) as y1_course_in_progress_percent_grade_adjusted,
-            cast(null as string) as y1_course_in_progress_letter_grade_adjusted,
+            bfc.anchored_percent as y1_course_in_progress_percent_grade_adjusted,
+            bfc.anchored_letter_grade as y1_course_in_progress_letter_grade_adjusted,
             cast(null as float64) as y1_course_in_progress_grade_points,
             cast(null as float64) as y1_course_in_progress_grade_points_unweighted,
 
@@ -481,10 +615,17 @@ with
 
             cast(null as int64) as courses_gradescaleid,
 
-        from {{ ref("stg_powerschool__storedgrades") }}
+        from {{ ref("stg_powerschool__storedgrades") }} as sg
+        left join
+            backfill_running_course as bfc
+            on sg._dbt_source_project = bfc._dbt_source_project
+            and sg.studentid = bfc.studentid
+            and sg.yearid = bfc.yearid
+            and sg.course_number = bfc.course_number
+            and sg.storecode = bfc.storecode
         where
-            storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
-            and academic_year = {{ var("current_academic_year") - 1 }}
+            sg.storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
+            and sg.academic_year = {{ var("current_academic_year") - 1 }}
     ),
 
     grade_scale_rungs as (

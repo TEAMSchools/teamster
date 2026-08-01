@@ -437,10 +437,24 @@ models:
         description: Course grade points for the row's term.
       - name: y1_course_in_progress_percent_grade_adjusted
         data_type: float64
-        description: In-progress Y1 percent grade (current-year rows only).
+        description: >-
+          Year-to-date course percent as of the row's marking period. For the
+          year in progress this is the real running value from the gradebook.
+          For the prior year it is RECONSTRUCTED from stored quarter grades — Q1
+          is exact, Q4 is anchored to the stored Y1 percent and is exact, Q2 and
+          Q3 are approximations that agree with the year value to within half a
+          point on roughly 98 percent of courses. The reconstruction is
+          temporary; see TODO(#4687) in the model.
       - name: y1_course_in_progress_letter_grade_adjusted
         data_type: string
-        description: In-progress Y1 letter grade (current-year rows only).
+        description: >-
+          Year-to-date course letter as of the row's marking period. For the
+          year in progress this comes from the gradebook. For the prior year it
+          is RECONSTRUCTED by banding the reconstructed percent back through the
+          course's own grade scale, so it inherits that percent's accuracy — Q1
+          and Q4 exact, Q2 and Q3 approximate. Carries F and F* on the same
+          prefix rule as quarter_course_letter_grade. Temporary; see TODO(#4687)
+          in the model.
       - name: y1_course_in_progress_grade_points
         data_type: float64
         description: In-progress Y1 grade points (current-year rows only).
