@@ -304,7 +304,12 @@ with
             and enr.academic_year <= {{ var("current_academic_year") }}
             /* Miami hard-excluded: region unsupported in the rebuilt
                dashboard (#4340) */
-            -- TODO(#4340): add Paterson once PS gradebook data is populated
+            /* TODO(#4340): add Paterson once PS gradebook data is populated.
+               That change also has to add a kipppaterson source to
+               int_powerschool__gradescaleitem_lookup, which unions Newark,
+               Camden and Miami only — otherwise the grade_scale_ladder join
+               below finds no scale and need_next_* stays silently null for
+               every Paterson row. */
             and enr.region in ('Newark', 'Camden')
     ),
 
@@ -720,6 +725,20 @@ select
     s.gpa_band_projected_unweighted
     - s.gpa_band_unweighted_prior_year as gpa_band_change_from_prior_year,
 
+    /* need_* is affine in the target percent — it is
+       (points_still_needed * target - points_banked) / (term_points / 100), and
+       the three non-target terms are row constants — so the need for ANY target
+       is exactly recoverable from two of the four existing columns, and the
+       CTE-internal point columns never have to cross the package boundary.
+       Reduces to need_60 + (target - 60) / 10 * (need_70 - need_60); at target
+       70 it returns need_70 identically, by construction.
+
+       Like the four it is derived from, this is the percent required IN THE
+       CURRENT TERM to land the YEAR-TO-DATE grade on the next rung — not what
+       is needed for that letter this quarter. */
+    qg.need_60
+    + (gsl.need_next_cutoff_percent - 60) / 10 * (qg.need_70 - qg.need_60) as need_next,
+
     coalesce(
         y1f.y1_course_final_letter_grade_adjusted,
         qg.y1_course_in_progress_letter_grade_adjusted
@@ -747,20 +766,6 @@ select
        The Y1 row carries the Y1 letter grade in this same column, so one flag
        covers Q1-Q4 and Y1 with no marking-period branching. */
     qg.quarter_course_letter_grade like 'F%' as is_quarter_course_failing,
-
-    /* need_* is affine in the target percent — it is
-       (points_still_needed * target - points_banked) / (term_points / 100), and
-       the three non-target terms are row constants — so the need for ANY target
-       is exactly recoverable from two of the four existing columns, and the
-       CTE-internal point columns never have to cross the package boundary.
-       Reduces to need_60 + (target - 60) / 10 * (need_70 - need_60); at target
-       70 it returns need_70 identically, by construction.
-
-       Like the four it is derived from, this is the percent required IN THE
-       CURRENT TERM to land the YEAR-TO-DATE grade on the next rung — not what
-       is needed for that letter this quarter. */
-    qg.need_60
-    + (gsl.need_next_cutoff_percent - 60) / 10 * (qg.need_70 - qg.need_60) as need_next,
 
 from student_roster as s
 left join

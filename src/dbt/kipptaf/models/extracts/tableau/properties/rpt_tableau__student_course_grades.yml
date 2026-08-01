@@ -503,8 +503,15 @@ models:
           negative when the grade is already secured regardless of remaining
           work, and can exceed 100 when the rung is out of reach in the time
           left — consumers should handle both rather than displaying a raw
-          percent. NULL wherever need_60 is null, meaning prior-year rows and
-          any course with no next rung.
+          percent.
+
+          NULL from two independent causes, and the second one surprises people.
+          Either need_60 is null, which is every prior-year row since need_* is
+          a live-gradebook calculation; OR there is no next rung, which is a
+          student already at the top whole letter and any course on a scale with
+          no letter ladder. The second case does NOT require need_60 to be null
+          — a student at 95 percent has a perfectly good need_60 and still gets
+          a null need_next, because there is nothing above an A to need.
       - name: category_name_code
         data_type: string
         description: Gradebook category code (e.g. F/S/W; NULL on Y1 rows).
