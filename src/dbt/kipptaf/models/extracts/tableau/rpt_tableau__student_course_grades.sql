@@ -405,6 +405,8 @@ with
             need_80,
             need_90,
 
+            courses_gradescaleid,
+
         from {{ ref("base_powerschool__final_grades") }}
         where
             academic_year = {{ var("current_academic_year") }}
@@ -435,6 +437,8 @@ with
             need_70,
             need_80,
             need_90,
+
+            courses_gradescaleid,
 
         from {{ ref("base_powerschool__final_grades") }}
         where
@@ -470,10 +474,70 @@ with
             cast(null as float64) as need_80,
             cast(null as float64) as need_90,
 
+            cast(null as int64) as courses_gradescaleid,
+
         from {{ ref("stg_powerschool__storedgrades") }}
         where
             storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
             and academic_year = {{ var("current_academic_year") - 1 }}
+    ),
+
+    grade_scale_rungs as (
+        /* Whole-letter rungs only, no plus-minus, taken from each course's OWN
+           scale — so the cutoffs genuinely differ. A D is 63 on KIPP NJ 2019
+           but 60 on KIPP NJ 2016, which carries no D+/D-, and NCA 2011 has no
+           A-. A hardcoded 60/70/80/90 ladder is wrong for roughly one Newark
+           row in seven.
+
+           Bands are recomputed here rather than reusing the lookup's own
+           max_cutoffpercentage, which is unusable for this: that window
+           partitions by scale id alone, so a scale carrying two items at one
+           cutoff makes lead() repeat the value and collapses the band to
+           max = min - 0.1 (119 of 976 rows). Restricting to whole letters
+           leaves no duplicate cutoffs at all. _dbt_source_project is in the
+           partition and the join because scale ids collide across districts —
+           a bare gradescaleid join fans out about 1.8x. */
+        select
+            _dbt_source_project,
+            gradescaleid,
+            min_cutoffpercentage,
+
+            row_number() over (
+                partition by _dbt_source_project, gradescaleid
+                order by min_cutoffpercentage
+            ) as rung_number,
+
+            lead(letter_grade) over (
+                partition by _dbt_source_project, gradescaleid
+                order by min_cutoffpercentage
+            ) as need_next_letter_grade,
+
+            lead(min_cutoffpercentage) over (
+                partition by _dbt_source_project, gradescaleid
+                order by min_cutoffpercentage
+            ) as need_next_cutoff_percent,
+
+            lead(min_cutoffpercentage, 1, 1000) over (
+                partition by _dbt_source_project, gradescaleid
+                order by min_cutoffpercentage
+            )
+            - 0.1 as rung_ceiling,
+        from {{ ref("int_powerschool__gradescaleitem_lookup") }}
+        where letter_grade in ('A', 'B', 'C', 'D', 'F')
+    ),
+
+    grade_scale_ladder as (
+        /* the bottom rung floors at 0 so a percent below the F cutoff — the F*
+           range on scales that split the two — still lands on a rung */
+        select
+            _dbt_source_project,
+            gradescaleid,
+            need_next_letter_grade,
+            need_next_cutoff_percent,
+            rung_ceiling,
+
+            if(rung_number = 1, 0, min_cutoffpercentage) as rung_floor,
+        from grade_scale_rungs
     ),
 
     category_grades as (
@@ -642,6 +706,9 @@ select
     c.category_y1_percent_grade_current,
     c.category_quarter_average_all_courses,
 
+    gsl.need_next_letter_grade,
+    gsl.need_next_cutoff_percent,
+
     /* signed, so negative means the projection sits below last year's actual.
        Both inputs are student-grain, so these repeat across every quarter row
        and the Y1 row for a student, which is what makes them filterable at any
@@ -681,6 +748,20 @@ select
        covers Q1-Q4 and Y1 with no marking-period branching. */
     qg.quarter_course_letter_grade like 'F%' as is_quarter_course_failing,
 
+    /* need_* is affine in the target percent — it is
+       (points_still_needed * target - points_banked) / (term_points / 100), and
+       the three non-target terms are row constants — so the need for ANY target
+       is exactly recoverable from two of the four existing columns, and the
+       CTE-internal point columns never have to cross the package boundary.
+       Reduces to need_60 + (target - 60) / 10 * (need_70 - need_60); at target
+       70 it returns need_70 identically, by construction.
+
+       Like the four it is derived from, this is the percent required IN THE
+       CURRENT TERM to land the YEAR-TO-DATE grade on the next rung — not what
+       is needed for that letter this quarter. */
+    qg.need_60
+    + (gsl.need_next_cutoff_percent - 60) / 10 * (qg.need_70 - qg.need_60) as need_next,
+
 from student_roster as s
 left join
     course_enrollments as ce
@@ -711,4 +792,10 @@ left join
     and s._dbt_source_project = c._dbt_source_project
     and ce.sectionid = c.sectionid
     and ce._dbt_source_project = c._dbt_source_project
+left join
+    grade_scale_ladder as gsl
+    on qg._dbt_source_project = gsl._dbt_source_project
+    and qg.courses_gradescaleid = gsl.gradescaleid
+    and qg.y1_course_in_progress_percent_grade_adjusted
+    between gsl.rung_floor and gsl.rung_ceiling
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')

@@ -462,6 +462,49 @@ models:
       - name: need_90
         data_type: float64
         description: Percent needed to reach a 90 (current-year rows only).
+      - name: need_next_letter_grade
+        data_type: string
+        description: >-
+          The next WHOLE letter grade above where the student's in-progress Y1
+          grade currently sits — one of A, B, C, D or F. Plus and minus rungs
+          are deliberately excluded, so a student sitting at C- and a student
+          sitting at C+ are both working toward the same B. NULL once the
+          student is at the top whole letter, and NULL on courses whose grade
+          scale has no letter ladder, such as the Camden Pass Fail Scale.
+
+          Read from the course's OWN grade scale, not a fixed ladder, so the
+          same letter means different cutoffs across courses — see
+          need_next_cutoff_percent.
+
+          Do NOT read the implied current rung as a pass or fail signal.
+          Dropping the minus rungs widens each whole-letter band downward, so on
+          KIPP NJ 2019 the F rung runs all the way to 62.9 and a student sitting
+          at 61 — a passing D- — shows a next letter of D. That is the correct
+          next WHOLE letter for them, but they are not failing. Use
+          is_quarter_course_failing for pass or fail.
+      - name: need_next_cutoff_percent
+        data_type: float64
+        description: >-
+          The percent cutoff for need_next_letter_grade on that course's grade
+          scale. It varies by scale and will NOT generally match the 60/70/80/90
+          targets behind need_60 through need_90 — on KIPP NJ 2019, which covers
+          most enrolments, a whole-letter D is 63 and a C is 73, while 60 and 70
+          are the D- and C- cutoffs. The two sets of columns are answering
+          different questions and are expected to disagree by a few points.
+      - name: need_next
+        data_type: float64
+        description: >-
+          Percent required in the CURRENT term for the student's YEAR-TO-DATE
+          course grade to reach need_next_cutoff_percent. It is not the percent
+          needed to earn that letter for the quarter alone.
+
+          Derived from need_60 and need_70, which are exactly linear in their
+          target, so this is an exact value rather than an interpolation. Can be
+          negative when the grade is already secured regardless of remaining
+          work, and can exceed 100 when the rung is out of reach in the time
+          left — consumers should handle both rather than displaying a raw
+          percent. NULL wherever need_60 is null, meaning prior-year rows and
+          any course with no next rung.
       - name: category_name_code
         data_type: string
         description: Gradebook category code (e.g. F/S/W; NULL on Y1 rows).
