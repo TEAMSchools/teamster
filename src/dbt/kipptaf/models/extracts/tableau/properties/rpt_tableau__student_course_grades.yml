@@ -301,6 +301,11 @@ models:
           Final unweighted cumulative GPA at the end of the prior academic year,
           the actual value rather than a projection of it. Student-grain, so it
           repeats across every quarter and the Y1 row. Current-year rows only.
+          Cumulative GPA accumulates per student-school upstream, which splits
+          the middle- and high-school series — for a grade 9 student this
+          baseline is their middle-school cumulative, not a high-school one, so
+          any comparison against it spans two series rather than measuring
+          movement within one.
       - name: gpa_band_projected_unweighted
         data_type: int64
         description: >-
@@ -332,7 +337,12 @@ models:
           True when the projected unweighted cumulative GPA falls at least one
           KIPP GPA Band below where the student finished the prior year. NULL
           when either band is missing, since an unbanded student is unknown
-          rather than known to be holding steady.
+          rather than known to be holding steady. Bands 1 and 5 are open-ended,
+          so movement inside them is invisible here — a student falling from
+          1.99 to 0.10 never trips this. Read it alongside
+          `cumulative_y1_gpa_unweighted_change_from_prior_year`, which does not
+          have that blind spot. Grade 9 carries the middle-to-high-school series
+          caveat on `cumulative_y1_gpa_unweighted_prior_year`.
       - name: sectionid
         data_type: int64
         description: PowerSchool section id of the course enrollment.

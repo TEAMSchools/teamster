@@ -81,11 +81,18 @@ with
            for the year in progress, so filtering it out yields the actual
            end-of-year value rather than a projection of it.
 
-           Grain is one row per student per year from AY2023 on. AY2019-AY2022
-           carried a second row for 11-29 students a year (dual-school
-           enrollment) whose values genuinely differ, so a recurrence would fan
-           this model out — the composite uniqueness test catches that loudly
-           rather than silently averaging two records. */
+           Upstream accumulates per student-school and its uniqueness key is
+           (studentid, schoolid, academic_year), so a student at two schools in
+           one year legitimately produces two rows and would fan this CTE out.
+           AY2023 onward has none; AY2019-AY2022 had 11-29 a year, values
+           genuinely differing. A recurrence would NOT fail CI — this model's
+           own key test is severity warn for the unrelated #3915 storedgrades
+           issue, so it would only inflate that warn count. Compare the count
+           against prod rather than trusting a green build.
+
+           That same per-school accumulation splits the middle- and high-school
+           series, so a grade 9 row pairs a high-school projection with a
+           middle-school baseline. See the column descriptions. */
         select
             studentid,
             _dbt_source_project,
