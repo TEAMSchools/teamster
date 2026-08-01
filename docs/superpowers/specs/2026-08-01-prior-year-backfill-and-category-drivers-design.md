@@ -231,6 +231,46 @@ honest trajectory that simply stops one step short of the Y1 value of 50.4.
 because the anchor is exact and free. GPA does not, because its anchor
 manufactures a visible artifact. Do not "fix" the inconsistency.
 
+### Isolation from the current year — mandatory, and not automatic
+
+The two halves of this backfill do **not** have the same protection, and the
+difference is the single most important implementation constraint here.
+
+**Course grades are structurally isolated.** `quarter_grades` branch 3 filters
+`academic_year = current_academic_year - 1` while branches 1 and 2 filter
+`= current_academic_year`. The branches are disjoint by `WHERE`, so a change
+confined to branch 3 cannot reach a current-year row. No extra guard needed.
+
+**GPA is not.** `gpa_y1` is assembled inside `student_roster` as
+`if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1)`, and the `gtq` join has no
+year predicate — it joins for every academic year. A backfill written as a
+conditional inside that expression would be only as safe as the condition.
+
+**Required approach.** Put the reconstruction in its own CTE and gate the join
+in the `ON` clause:
+
+```sql
+left join
+    prior_year_running_gpa as pyr
+    on enr.studentid = pyr.studentid
+    and enr.yearid = pyr.yearid
+    and enr.schoolid = pyr.schoolid
+    and enr._dbt_source_project = pyr._dbt_source_project
+    and term.quarter = pyr.term_name
+    and enr.academic_year = {{ var("current_academic_year") - 1 }}
+```
+
+Every current-year row then gets `NULL` from `pyr` by construction, and the
+selection becomes a `coalesce` that falls through to the existing expression
+untouched. This is the same gating pattern the model already applies to the
+`gc`, `lb` and `gpq` joins, which each carry
+`and enr.academic_year = {{ var("current_academic_year") }}` in `ON` so
+prior-year rows keep their NULLs.
+
+Isolation is a **verification requirement**, not just a coding style: every
+current-year value of `gpa_y1`, `gpa_for_quarter` and `gpa_n_failing_y1` must be
+byte-identical before and after. See _Verification_.
+
 ### Not backfilling `gpa_n_failing_y1`
 
 It is flat on prior years, but the only sheets reading it are the landing-page
@@ -239,13 +279,20 @@ BANs, which carry no `MP Filter` and sit on a dashboard that does not expose
 
 ## Verification
 
-Three hard invariants. These must return zero, not "mostly".
+Four hard invariants. These must return zero, not "mostly".
 
-| Check            | Requirement                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| Q4 course anchor | reconstructed percent equals the stored Y1 percent, zero exceptions                        |
-| Q1 exactness     | running-through-Q1 equals Q1's own stored percent, zero exceptions                         |
-| Letter coverage  | every reconstructed percent matches exactly one full-scale row, zero gaps and zero doubles |
+| Check                      | Requirement                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Current-year isolation** | every current-year value of `gpa_y1`, `gpa_for_quarter`, `gpa_n_failing_y1` and `y1_course_in_progress_*` byte-identical before and after, zero rows differ |
+| Q4 course anchor           | reconstructed percent equals the stored Y1 percent, zero exceptions                                                                                         |
+| Q1 exactness               | running-through-Q1 equals Q1's own stored percent, zero exceptions                                                                                          |
+| Letter coverage            | every reconstructed percent matches exactly one full-scale row, zero gaps and zero doubles                                                                  |
+
+Isolation is listed first deliberately. The course-grade half inherits it from
+the branch structure; the GPA half has it only from the `ON`-clause gate, so it
+must be proven rather than assumed. Compare current-year rows between the dev
+build and prod across those columns — any non-zero difference means the gate
+leaked and the change does not ship.
 
 Supporting checks:
 
@@ -272,12 +319,12 @@ boundary has to be explicit or someone will remove the wrong one.
 - Column descriptions state that prior-year values are reconstructed and that Q2
   and Q3 are approximate.
 
-No feature flag and no data guard. Considered and rejected: the backfill lives
-in a branch that cannot touch current-year data, so it never becomes actively
-wrong, only unnecessary. The long-term fix is operational rather than code —
-next year the dashboard falls into the normal pattern of refreshes being frozen
-at the end of the academic year, at which point the prior year stops needing
-reconstruction at all.
+No feature flag. Considered and rejected: the course-grade half lives in a
+branch that cannot touch current-year data, so it never becomes actively wrong,
+only unnecessary. The long-term fix is operational rather than code — next year
+the dashboard falls into the normal pattern of refreshes being frozen at the end
+of the academic year, at which point the prior year stops needing reconstruction
+at all.
 
 ## Out of scope
 
