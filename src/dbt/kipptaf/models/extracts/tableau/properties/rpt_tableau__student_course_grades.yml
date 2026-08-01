@@ -177,7 +177,12 @@ models:
         description: Semester GPA for the row's term. NULL on Y1 rows.
       - name: gpa_y1
         data_type: float64
-        description: Y1 GPA as of the row's term.
+        description: >-
+          Y1 GPA as of the row's term. For the prior year this is RECONSTRUCTED
+          as a running credit-weighted GPA through each term, because
+          PowerSchool stores only the end-of-year value. It is deliberately not
+          anchored to that stored value, so the Q4 reading will not equal the Y1
+          reading. Temporary; see TODO(#4687).
       - name: gpa_y1_unweighted
         data_type: float64
         description: Unweighted Y1 GPA as of the row's term.
