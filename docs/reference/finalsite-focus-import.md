@@ -241,6 +241,27 @@ below.
 > back this way; a student's demographics import as soon as the student is
 > enrolled in Finalsite and new to Focus.)
 
+### Emergency contacts
+
+The Contacts file now carries the student's emergency contacts alongside their
+parents and guardians. They come from the four emergency-contact slots on the
+student's Finalsite record — not from the family relationships — and they are
+sent after the guardians, in the order the slots appear in Finalsite. Each one
+carries its name, relationship, email, and up to three phone numbers, and is
+flagged in Focus as an emergency contact. Emergency contacts have no household
+in Finalsite, so they arrive with no address; that is expected, not a gap.
+
+The custody, pickup, and lives-with checkboxes are sent when Finalsite has them.
+KIPP Miami's emergency form does not currently collect them, so those three
+columns arrive blank today and will populate on their own if the form starts
+asking.
+
+> **Emergency contacts only reach a student Focus does not already have.** The
+> import-once rule matches on the student, not the individual contact — once any
+> contact for a student has been imported, none of that student's other contacts
+> are ever sent, including emergency contacts added later. Add them in Focus
+> directly for students already imported.
+
 ## Where to make corrections
 
 After the initial import, **the pipeline never overwrites Focus** — so any
