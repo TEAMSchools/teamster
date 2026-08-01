@@ -667,6 +667,20 @@ select
     s.gpa_band_projected_unweighted
     <= s.gpa_band_unweighted_prior_year - 1 as is_gpa_band_slide,
 
+    /* prefix match, not = 'F', because the failing domain is F and F*. F* is
+       not a PowerSchool grade — stg_powerschool__pgfinalgrades manufactures it
+       alongside the 50% floor (if percent < 0.5 then 'F*'), so an exact-equality
+       test silently drops every floored failure, roughly a third of them. This
+       matches the canonical rule the warehouse already uses for n_failing_y1.
+
+       NULL, not false, on an ungraded enrolment — no grade posted is unknown,
+       not known-to-be-passing. Consumers computing a failure rate should divide
+       by the count of non-null quarter_course_letter_grade, not by all rows.
+
+       The Y1 row carries the Y1 letter grade in this same column, so one flag
+       covers Q1-Q4 and Y1 with no marking-period branching. */
+    qg.quarter_course_letter_grade like 'F%' as is_quarter_course_failing,
+
 from student_roster as s
 left join
     course_enrollments as ce
