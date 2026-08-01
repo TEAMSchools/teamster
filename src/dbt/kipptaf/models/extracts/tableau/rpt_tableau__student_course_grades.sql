@@ -75,6 +75,27 @@ with
         from prior_year_gpa_rollup
     ),
 
+    prior_year_cumulative as (
+        /* prior-year FINAL unweighted cumulative GPA — the baseline the
+           in-progress projection is measured against. is_projected is true only
+           for the year in progress, so filtering it out yields the actual
+           end-of-year value rather than a projection of it.
+
+           Grain is one row per student per year from AY2023 on. AY2019-AY2022
+           carried a second row for 11-29 students a year (dual-school
+           enrollment) whose values genuinely differ, so a recurrence would fan
+           this model out — the composite uniqueness test catches that loudly
+           rather than silently averaging two records. */
+        select
+            studentid,
+            _dbt_source_project,
+
+            cumulative_y1_gpa_unweighted as cumulative_y1_gpa_unweighted_prior_year,
+        from {{ ref("int_powerschool__gpa_cumulative_year") }}
+        where
+            academic_year = {{ var("current_academic_year") - 1 }} and not is_projected
+    ),
+
     student_roster as (
         select
             enr._dbt_source_relation,
@@ -155,6 +176,8 @@ with
 
             pyg.gpa_y1_prior_year,
 
+            pyc.cumulative_y1_gpa_unweighted_prior_year,
+
             enr.academic_year
             = {{ var("current_academic_year") }} as is_current_academic_year,
 
@@ -169,6 +192,37 @@ with
             if(
                 term.quarter = 'Y1', gty.n_failing_y1, gtq.n_failing_y1
             ) as gpa_n_failing_y1,
+
+            /* KIPP GPA Band, the KIPP Foundation five-band unweighted scale
+               documented in models/students/CLAUDE.md. Band 5 is open-ended
+               rather than capped at the documented 4.00 because unweighted GPA
+               reaches 4.33 and a closed upper bound leaves those rows unbanded.
+               The trailing is-not-null arm keeps a null GPA out of band 1. */
+            case
+                when gc.cumulative_y1_gpa_projected_unweighted >= 3.50
+                then 5
+                when gc.cumulative_y1_gpa_projected_unweighted >= 3.00
+                then 4
+                when gc.cumulative_y1_gpa_projected_unweighted >= 2.50
+                then 3
+                when gc.cumulative_y1_gpa_projected_unweighted >= 2.00
+                then 2
+                when gc.cumulative_y1_gpa_projected_unweighted is not null
+                then 1
+            end as gpa_band_projected_unweighted,
+
+            case
+                when pyc.cumulative_y1_gpa_unweighted_prior_year >= 3.50
+                then 5
+                when pyc.cumulative_y1_gpa_unweighted_prior_year >= 3.00
+                then 4
+                when pyc.cumulative_y1_gpa_unweighted_prior_year >= 2.50
+                then 3
+                when pyc.cumulative_y1_gpa_unweighted_prior_year >= 2.00
+                then 2
+                when pyc.cumulative_y1_gpa_unweighted_prior_year is not null
+                then 1
+            end as gpa_band_unweighted_prior_year,
 
         from {{ ref("int_extracts__student_enrollments") }} as enr
         inner join
@@ -222,6 +276,14 @@ with
             on enr.studentid = pyg.studentid
             and enr._dbt_source_project = pyg._dbt_source_project
             and enr.academic_year = {{ var("current_academic_year") }}
+        /* gated to the current year in ON, matching gc — the projection it is
+           compared against is a current-year-only measure, so a prior-year row
+           would carry a baseline with nothing to measure it against */
+        left join
+            prior_year_cumulative as pyc
+            on enr.studentid = pyc.studentid
+            and enr._dbt_source_project = pyc._dbt_source_project
+            and enr.academic_year = {{ var("current_academic_year") }}
         where
             enr.rn_year = 1
             and not enr.is_out_of_district
@@ -261,6 +323,8 @@ with
             f.nj_student_tier,
 
             r.sam_account_name as teacher_tableau_username,
+            r.reports_to_formatted_name as manager,
+            r.reports_to_sam_account_name as report_to_sam_account_name,
         from {{ ref("base_powerschool__course_enrollments") }} as m
         left join
             {{ ref("int_extracts__student_enrollments_subjects") }} as f
@@ -525,6 +589,9 @@ select
     s.potential_gpa_credits_current_year,
     s.gpa_needed_for_cumulative_3_0,
     s.is_cumulative_3_0_attainable,
+    s.cumulative_y1_gpa_unweighted_prior_year,
+    s.gpa_band_projected_unweighted,
+    s.gpa_band_unweighted_prior_year,
 
     ce.sectionid,
     ce.sections_dcid,
@@ -538,6 +605,8 @@ select
     ce.teacher_number,
     ce.teacher_name,
     ce.teacher_tableau_username,
+    ce.manager,
+    ce.report_to_sam_account_name,
     ce.tutoring_nj,
     ce.nj_student_tier,
 
@@ -566,6 +635,17 @@ select
     c.category_y1_percent_grade_current,
     c.category_quarter_average_all_courses,
 
+    /* signed, so negative means the projection sits below last year's actual.
+       Both inputs are student-grain, so these repeat across every quarter row
+       and the Y1 row for a student, which is what makes them filterable at any
+       marking period. */
+    s.cumulative_y1_gpa_projected_unweighted
+    - s.cumulative_y1_gpa_unweighted_prior_year
+    as cumulative_y1_gpa_unweighted_change_from_prior_year,
+
+    s.gpa_band_projected_unweighted
+    - s.gpa_band_unweighted_prior_year as gpa_band_change_from_prior_year,
+
     coalesce(
         y1f.y1_course_final_letter_grade_adjusted,
         qg.y1_course_in_progress_letter_grade_adjusted
@@ -574,6 +654,11 @@ select
     if(
         s.grade_level < 9, ce.section_number, ce.external_expression
     ) as section_or_period,
+
+    /* NULL rather than false when either side is missing — an unbanded student
+       is unknown, not known-to-be-holding-steady */
+    s.gpa_band_projected_unweighted
+    <= s.gpa_band_unweighted_prior_year - 1 as is_gpa_band_slide,
 
 from student_roster as s
 left join
