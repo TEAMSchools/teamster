@@ -206,9 +206,8 @@ task summary so the reviewer can see them without opening the file.
 - Consumes: the `category_grades` CTE (ends at line 587), the baseline from Task
   1 Step 3
 - Produces: columns `lowest_category_y1_name`, `lowest_category_y1_percent`,
-  `lowest_category_latest_quarter_name`,
-  `lowest_category_latest_quarter_percent`, all on every row including Y1. Tasks
-  3 and 4 do not depend on these.
+  `lowest_category_recent_term_name`, `lowest_category_recent_term_percent`, all
+  on every row including Y1. Tasks 3 and 4 do not depend on these.
 
 - [ ] **Step 1: Add the two CTEs**
 
@@ -280,11 +279,11 @@ Insert immediately after the `category_grades` CTE closes and before the final
 
             max(
                 if(rn_lowest_quarter = 1, category_name_code, null)
-            ) as lowest_category_latest_quarter_name,
+            ) as lowest_category_recent_term_name,
 
             max(
                 if(rn_lowest_quarter = 1, category_quarter_percent_grade, null)
-            ) as lowest_category_latest_quarter_percent,
+            ) as lowest_category_recent_term_percent,
         from category_ranked
         where rn_latest_term = 1
         group by _dbt_source_project, studentid, yearid, sectionid
@@ -315,8 +314,8 @@ the blank-line-between-source-tables convention:
 ```sql
     cd.lowest_category_y1_name,
     cd.lowest_category_y1_percent,
-    cd.lowest_category_latest_quarter_name,
-    cd.lowest_category_latest_quarter_percent,
+    cd.lowest_category_recent_term_name,
+    cd.lowest_category_recent_term_percent,
 ```
 
 - [ ] **Step 4: Add the contract entries**
@@ -335,7 +334,7 @@ In the properties yml, after the `category_quarter_average_all_courses` entry:
   data_type: float64
   description: >-
     The year-running percent belonging to lowest_category_y1_name.
-- name: lowest_category_latest_quarter_name
+- name: lowest_category_recent_term_name
   data_type: string
   description: >-
     Gradebook category code with the lowest single-quarter percent in the latest
@@ -343,10 +342,10 @@ In the properties yml, after the `category_quarter_average_all_courses` entry:
     posted quarter on a live one. Answers what the problem is right now, where
     lowest_category_y1_name answers what dragged the whole year down. The two
     can legitimately disagree.
-- name: lowest_category_latest_quarter_percent
+- name: lowest_category_recent_term_percent
   data_type: float64
   description: >-
-    The single-quarter percent belonging to lowest_category_latest_quarter_name.
+    The single-quarter percent belonging to lowest_category_recent_term_name.
 ```
 
 - [ ] **Step 5: Build**
@@ -381,7 +380,7 @@ from `zz_anthonygwalters_kipptaf_tableau.rpt_tableau__student_course_grades`
 
 ```sql
 select
-  lowest_category_latest_quarter_name,
+  lowest_category_recent_term_name,
   count(distinct format('%T|%T', studentid, sectionid)) as student_sections
 from `zz_anthonygwalters_kipptaf_tableau.rpt_tableau__student_course_grades`
 where academic_year = 2025 and quarter = 'Q4'

@@ -47,12 +47,12 @@ Permanent. Fixes a real defect.
 
 Four columns at student-course grain, present on **every** row including Y1.
 
-| Column                                   | Type      | Meaning                                                               |
-| ---------------------------------------- | --------- | --------------------------------------------------------------------- |
-| `lowest_category_y1_name`                | `string`  | category code with the lowest year-running percent                    |
-| `lowest_category_y1_percent`             | `float64` | that percent                                                          |
-| `lowest_category_latest_quarter_name`    | `string`  | category code with the lowest percent in the latest term holding data |
-| `lowest_category_latest_quarter_percent` | `float64` | that percent                                                          |
+| Column                                | Type      | Meaning                                                               |
+| ------------------------------------- | --------- | --------------------------------------------------------------------- |
+| `lowest_category_y1_name`             | `string`  | category code with the lowest year-running percent                    |
+| `lowest_category_y1_percent`          | `float64` | that percent                                                          |
+| `lowest_category_recent_term_name`    | `string`  | category code with the lowest percent in the latest term holding data |
+| `lowest_category_recent_term_percent` | `float64` | that percent                                                          |
 
 Both drivers are read from the **same** latest term, so they describe one
 moment. On a completed year that is Q4; on a live year, whichever quarter last
@@ -303,7 +303,7 @@ Supporting checks:
 - The existing composite uniqueness test still warns at 12, the pre-existing
   `#3915` storedgrades count.
 - **Regression check on the category driver** — at Q4 on a completed year,
-  `lowest_category_latest_quarter_name` reproduces what the current
+  `lowest_category_recent_term_name` reproduces what the current
   `Category Driving Gap` calc already produces. Free ground truth from behaviour
   known to work.
 - No row picked a null-percent category over a populated one.
