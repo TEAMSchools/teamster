@@ -537,26 +537,34 @@ models:
         data_type: string
         description: >-
           Gradebook category code with the lowest year-running percent for this
-          course, read from the latest term that holds category data. Present on
-          every row including Y1, which is the point — the per-term category
-          columns are null at Y1 because there is no Y1 category term.
+          course, read from the latest term that holds category data. Null when
+          that term has no category with a non-null year-running percent — the
+          code never wins the tiebreak on a null value. Present on every row
+          including Y1, which is the point — the per-term category columns are
+          null at Y1 because there is no Y1 category term.
       - name: lowest_category_y1_percent
         data_type: float64
         description: >-
-          The year-running percent belonging to lowest_category_y1_name.
-      - name: lowest_category_latest_quarter_name
+          The year-running percent belonging to lowest_category_y1_name. Null
+          exactly when that column is null.
+      - name: lowest_category_recent_term_name
         data_type: string
         description: >-
           Gradebook category code with the lowest single-quarter percent in the
-          latest term that holds category data — Q4 on a completed year, the
-          most recently posted quarter on a live one. Answers what the problem
-          is right now, where lowest_category_y1_name answers what dragged the
-          whole year down. The two can legitimately disagree.
-      - name: lowest_category_latest_quarter_percent
+          most recent term that holds a quarter percent for this course. Falls
+          back to an earlier term when the most recent one has no category with
+          a quarter percent — a Q4 row can legitimately carry a driver sourced
+          from Q2, so this is not always "the latest quarter." Null when no term
+          in the two-year window has a category with a non-null quarter percent
+          — the code never wins the tiebreak on a null value. Answers what the
+          problem is right now, where lowest_category_y1_name answers what
+          dragged the whole year down. The two can legitimately disagree.
+      - name: lowest_category_recent_term_percent
         data_type: float64
         description: >-
           The single-quarter percent belonging to
-          lowest_category_latest_quarter_name.
+          lowest_category_recent_term_name. Null exactly when that column is
+          null.
       - name: y1_course_letter_grade_adjusted
         data_type: string
         description: >-

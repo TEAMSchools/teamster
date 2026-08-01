@@ -640,7 +640,11 @@ with
             sectionid,
 
             max(
-                if(rn_lowest_y1 = 1, category_name_code, null)
+                if(
+                    rn_lowest_y1 = 1 and category_y1_percent_grade_running is not null,
+                    category_name_code,
+                    null
+                )
             ) as lowest_category_y1_name,
 
             max(
@@ -648,12 +652,17 @@ with
             ) as lowest_category_y1_percent,
 
             max(
-                if(rn_lowest_quarter = 1, category_name_code, null)
-            ) as lowest_category_latest_quarter_name,
+                if(
+                    rn_lowest_quarter = 1
+                    and category_quarter_percent_grade is not null,
+                    category_name_code,
+                    null
+                )
+            ) as lowest_category_recent_term_name,
 
             max(
                 if(rn_lowest_quarter = 1, category_quarter_percent_grade, null)
-            ) as lowest_category_latest_quarter_percent,
+            ) as lowest_category_recent_term_percent,
         from category_ranked
         where rn_latest_term = 1
         group by _dbt_source_project, studentid, yearid, sectionid
@@ -787,8 +796,8 @@ select
 
     cd.lowest_category_y1_name,
     cd.lowest_category_y1_percent,
-    cd.lowest_category_latest_quarter_name,
-    cd.lowest_category_latest_quarter_percent,
+    cd.lowest_category_recent_term_name,
+    cd.lowest_category_recent_term_percent,
 
     gsl.need_next_letter_grade,
     gsl.need_next_cutoff_percent,
