@@ -1,3 +1,5 @@
+-- is_picked_address added upstream in #4680; this comment forces state:modified
+-- so CI rebuilds the union and picks up the new column.
 -- All four regions are unioned here, including Miami — following
 -- int_finalsite__contact_id_attributes rather than
 -- int_finalsite__student_contacts. The latter excludes Miami to avoid

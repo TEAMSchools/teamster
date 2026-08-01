@@ -120,12 +120,13 @@ models:
         data_type: string
         description:
           Line 1 of the guardian's resolved address from
-          `int_finalsite__contact_address_of_record` on guardian rows. Null on
-          guardian rows when the household linkage does not resolve to exactly
-          one address; the row is still sent. Always null on emergency rows for
-          a different reason — emergency contacts are custom fields on the
-          student's record with no household in Finalsite, so there is no
-          address to resolve.
+          `int_finalsite__contact_address_of_record` on guardian rows. A
+          guardian linked to several households gets the most complete one, not
+          just the one that resolves unambiguously — null means only that none
+          of the guardian's households carries a street line. The row is still
+          sent either way. Always null on emergency rows for a different reason
+          — emergency contacts are custom fields on the student's record with no
+          household in Finalsite, so there is no address to resolve.
       - name: address2
         data_type: string
         description:

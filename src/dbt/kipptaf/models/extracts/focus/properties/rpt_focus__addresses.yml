@@ -11,9 +11,11 @@ models:
       `finalsite_enrollment_id`), to `stg_finalsite__contacts` for the student's
       enrolled status, and to `int_finalsite__contact_id_attributes` for the
       Focus student ID, excluding contacts without a minted Focus id. Students
-      whose address could not be resolved to a single complete household address
-      are withheld rather than exported blank — the feed is import-once, so a
-      blank or wrong address would be permanent. Produces 12 columns in
+      with no street-bearing household anywhere on their linkage are withheld
+      rather than exported blank — the feed is import-once, so a blank or wrong
+      address would be permanent. A resolved address only guarantees a street
+      line, not completeness — an incomplete address is exported so the gap is
+      visible in Focus rather than withheld. Produces 12 columns in
       `ADDRESS_LAYOUT` order. Focus column header casing (`STUDENT_ID`,
       `ADDRESS`, etc.) is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
@@ -86,12 +88,12 @@ unit_tests:
       the phone come from int_finalsite__student_address_of_record, and the
       mailing columns are always null. A second student is enrolled with a
       resolved address but has status applied, confirming the enrolled-only
-      filter excludes them. A third is enrolled with an unresolved (ambiguous)
-      address, confirming unresolved rows are withheld rather than exported
-      blank. A fourth is enrolled with a resolved address but has no minted
-      Focus student id (`focus_student_id_prefixed` is null), confirming that
-      predicate keeps region rows with no Focus id (e.g. NJ, once the wrapper is
-      four-region) out of the extract.
+      filter excludes them. A third is enrolled with an unresolved address,
+      confirming unresolved rows are withheld rather than exported blank. A
+      fourth is enrolled with a resolved address but has no minted Focus student
+      id (`focus_student_id_prefixed` is null), confirming that predicate keeps
+      region rows with no Focus id (e.g. NJ, once the wrapper is four-region)
+      out of the extract.
     model: rpt_focus__addresses
     given:
       - input: ref('int_finalsite__student_address_of_record')

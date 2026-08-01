@@ -11,18 +11,18 @@ models:
       candidate and manufacture ambiguity. Address identity is an exact match on
       `address_1`, `address_2`, `city`, `state`, and `zip` — no case-folding,
       punctuation-stripping, or ZIP+4 truncation, so two spellings of the same
-      address stay distinct candidates and the contact is withheld rather than
-      guessed at. A contact resolves only when exactly one distinct address
-      remains; the emitted values are the raw text from the lowest
-      `household_id` in that group. SIS-agnostic — no enrollment, status, or
-      academic-year scoping.
+      address stay distinct candidates and are counted separately. A contact
+      with at least one candidate always emits an address — the most complete
+      one, with ties broken by the lowest `household_id`. The emitted values are
+      the raw text of the winning household. SIS-agnostic — no enrollment,
+      status, or academic-year scoping.
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
             expression: |
-              (resolution_status = 'resolved' and address_1 is not null)
+              (resolution_status != 'no_street' and address_1 is not null)
               or (
-                  resolution_status != 'resolved'
+                  resolution_status = 'no_street'
                   and address_1 is null
                   and address_2 is null
                   and city is null
@@ -36,7 +36,7 @@ models:
             expression: |
               (resolution_status = 'resolved' and candidate_count = 1)
               or (resolution_status = 'no_street' and candidate_count = 0)
-              or (resolution_status = 'ambiguous' and candidate_count > 1)
+              or (resolution_status = 'picked' and candidate_count > 1)
           config:
             severity: error
     columns:
@@ -54,15 +54,17 @@ models:
         data_type: string
         description:
           Why this contact does or does not have an address — `resolved`
-          (exactly one distinct address), `ambiguous` (several, with nothing in
-          Finalsite saying which to use), or `no_street` (no household carries a
-          street line).
+          (exactly one distinct address, no judgment applied), `picked` (several
+          distinct addresses, the most complete one chosen and ties broken by
+          the lowest `household_id`), or `no_street` (no household carries a
+          street line). `picked` is the audit signal — it marks every address
+          the pipeline chose rather than read unambiguously.
         data_tests:
           - accepted_values:
               arguments:
                 values:
                   - resolved
-                  - ambiguous
+                  - picked
                   - no_street
               config:
                 severity: error
@@ -72,9 +74,9 @@ models:
       - name: candidate_count
         data_type: int64
         description:
-          Number of distinct addresses on this contact's household linkage after
-          normalization. One resolves; zero means no household carries a street;
-          more than one is ambiguous.
+          Number of distinct addresses on this contact's household linkage. One
+          resolves outright; zero means no household carries a street; more than
+          one means the emitted address was picked from among them.
         data_tests:
           - not_null:
               config:
@@ -131,12 +133,12 @@ models:
           visible to consumers. Null when unresolved.
 
 unit_tests:
-  - name: test_contact_address_formatting_variants_stay_distinct
+  - name: test_contact_address_formatting_variants_pick_lowest_household_id
     description:
-      Exact matching is deliberate — two households recording the same address
-      with different punctuation, case, and a ZIP+4 are two distinct candidates,
-      not one. A formatting variant is treated as a second candidate and the
-      address is withheld as ambiguous rather than guessed at.
+      Exact matching is deliberate, so two households recording the same address
+      with different punctuation, case, and a ZIP+4 remain two distinct
+      candidates. Both are equally complete, so the tiebreak falls to the lowest
+      `household_id` and that row's raw text is emitted.
     model: int_finalsite__contact_address_of_record
     given:
       - input: ref("stg_finalsite__contacts")
@@ -162,24 +164,23 @@ unit_tests:
       rows:
         - {
             finalsite_enrollment_id: con-1,
-            address_1: null,
+            address_1: 123 Main St.,
             address_2: null,
-            city: null,
-            state: null,
-            zip: null,
-            country: null,
-            is_complete_address: null,
+            city: Miami,
+            state: FL,
+            zip: "33101",
+            country: US,
+            is_complete_address: true,
             candidate_count: 2,
-            resolution_status: ambiguous,
+            resolution_status: picked,
           }
 
-  - name: test_contact_address_null_field_is_a_distinct_candidate
+  - name: test_contact_address_completeness_wins_over_household_id
     description:
-      Dropping the completeness gate means a null field groups as its own value
-      rather than matching a populated one — two households on the same street
-      where one carries a ZIP and the other has a null ZIP are two distinct
-      candidates, so the contact is ambiguous rather than resolving to either
-      one.
+      A null field groups as its own value rather than matching a populated one,
+      so two households on the same street where one carries a ZIP and the other
+      does not are two distinct candidates. The complete one wins regardless of
+      `household_id` order.
     model: int_finalsite__contact_address_of_record
     given:
       - input: ref("stg_finalsite__contacts")
@@ -205,22 +206,22 @@ unit_tests:
       rows:
         - {
             finalsite_enrollment_id: con-7,
-            address_1: null,
+            address_1: 55 Coral Way,
             address_2: null,
-            city: null,
-            state: null,
-            zip: null,
-            country: null,
-            is_complete_address: null,
+            city: Miami,
+            state: FL,
+            zip: "33134",
+            country: US,
+            is_complete_address: true,
             candidate_count: 2,
-            resolution_status: ambiguous,
+            resolution_status: picked,
           }
 
-  - name: test_contact_address_real_differences_stay_ambiguous
+  - name: test_contact_address_real_differences_pick_lowest_household_id
     description:
       Households sharing a street line but differing by apartment or by city
-      stay distinct candidates, so the contact is ambiguous and no address is
-      emitted. This is the case an address_1-only key would wrongly collapse.
+      stay distinct candidates. Both are complete, so the lowest `household_id`
+      wins and its address is emitted rather than withheld.
     model: int_finalsite__contact_address_of_record
     given:
       - input: ref("stg_finalsite__contacts")
@@ -253,27 +254,27 @@ unit_tests:
       rows:
         - {
             finalsite_enrollment_id: con-2,
-            address_1: null,
-            address_2: null,
-            city: null,
-            state: null,
-            zip: null,
-            country: null,
-            is_complete_address: null,
+            address_1: 222 Bay St,
+            address_2: Apt 1,
+            city: Miami,
+            state: FL,
+            zip: "33106",
+            country: US,
+            is_complete_address: true,
             candidate_count: 2,
-            resolution_status: ambiguous,
+            resolution_status: picked,
           }
         - {
             finalsite_enrollment_id: con-3,
-            address_1: null,
+            address_1: 400 Palm Way,
             address_2: null,
-            city: null,
-            state: null,
-            zip: null,
-            country: null,
-            is_complete_address: null,
+            city: Miami,
+            state: FL,
+            zip: "33101",
+            country: US,
+            is_complete_address: true,
             candidate_count: 2,
-            resolution_status: ambiguous,
+            resolution_status: picked,
           }
 
   - name: test_contact_address_incomplete_resolves_and_fragments_excluded
@@ -343,4 +344,45 @@ unit_tests:
             is_complete_address: null,
             candidate_count: 0,
             resolution_status: no_street,
+          }
+
+  - name: test_contact_address_completeness_beats_lower_household_id
+    description:
+      When the lower `household_id` is the incomplete one, completeness still
+      decides. This is the case that distinguishes the real ordering from a
+      plain lowest-id pick.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-8 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-8' as finalsite_enrollment_id,
+            'hh-20' as household_id,
+            '7 Sunset Dr' as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            'US' as country,
+            false as is_complete_address
+          union all
+          select 'con-8', 'hh-21', '8 Sunrise Dr', null, 'Miami', 'FL',
+            '33101', 'US', true
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-8,
+            address_1: 8 Sunrise Dr,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: "33101",
+            country: US,
+            is_complete_address: true,
+            candidate_count: 2,
+            resolution_status: picked,
           }
