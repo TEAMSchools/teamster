@@ -533,6 +533,30 @@ models:
         data_type: float64
         description: >-
           Student's average percent across all courses for the category-term.
+      - name: lowest_category_y1_name
+        data_type: string
+        description: >-
+          Gradebook category code with the lowest year-running percent for this
+          course, read from the latest term that holds category data. Present on
+          every row including Y1, which is the point — the per-term category
+          columns are null at Y1 because there is no Y1 category term.
+      - name: lowest_category_y1_percent
+        data_type: float64
+        description: >-
+          The year-running percent belonging to lowest_category_y1_name.
+      - name: lowest_category_latest_quarter_name
+        data_type: string
+        description: >-
+          Gradebook category code with the lowest single-quarter percent in the
+          latest term that holds category data — Q4 on a completed year, the
+          most recently posted quarter on a live one. Answers what the problem
+          is right now, where lowest_category_y1_name answers what dragged the
+          whole year down. The two can legitimately disagree.
+      - name: lowest_category_latest_quarter_percent
+        data_type: float64
+        description: >-
+          The single-quarter percent belonging to
+          lowest_category_latest_quarter_name.
       - name: y1_course_letter_grade_adjusted
         data_type: string
         description: >-

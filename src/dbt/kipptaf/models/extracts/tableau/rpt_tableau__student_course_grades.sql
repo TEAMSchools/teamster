@@ -583,6 +583,80 @@ with
             and not is_dropped_section
             and storecode_type not in ('Q')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    ),
+
+    category_ranked as (
+        /* Ranking input for the lowest-category drivers. Rows where BOTH
+           percents are null are excluded so a term that exists but carries no
+           usable value cannot win rn_latest_term and blank out both drivers.
+
+           (percent is null) asc leads each order by because BigQuery sorts
+           NULLS FIRST ascending, which would otherwise hand "lowest" to a null.
+           category_name_code is the final tiebreaker so the pick is
+           reproducible across rebuilds. */
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            sectionid,
+            category_name_code,
+            category_quarter_percent_grade,
+            category_y1_percent_grade_running,
+
+            dense_rank() over (
+                partition by _dbt_source_project, studentid, yearid, sectionid
+                order by term desc
+            ) as rn_latest_term,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, yearid, sectionid, term
+                order by
+                    (category_y1_percent_grade_running is null) asc,
+                    category_y1_percent_grade_running asc,
+                    category_name_code asc
+            ) as rn_lowest_y1,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, yearid, sectionid, term
+                order by
+                    (category_quarter_percent_grade is null) asc,
+                    category_quarter_percent_grade asc,
+                    category_name_code asc
+            ) as rn_lowest_quarter,
+        from category_grades
+        where
+            category_quarter_percent_grade is not null
+            or category_y1_percent_grade_running is not null
+    ),
+
+    category_drivers as (
+        /* One row per student-section-year, so the join below cannot fan out.
+           Both drivers are read from the SAME latest term, so they describe one
+           moment rather than two. */
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            sectionid,
+
+            max(
+                if(rn_lowest_y1 = 1, category_name_code, null)
+            ) as lowest_category_y1_name,
+
+            max(
+                if(rn_lowest_y1 = 1, category_y1_percent_grade_running, null)
+            ) as lowest_category_y1_percent,
+
+            max(
+                if(rn_lowest_quarter = 1, category_name_code, null)
+            ) as lowest_category_latest_quarter_name,
+
+            max(
+                if(rn_lowest_quarter = 1, category_quarter_percent_grade, null)
+            ) as lowest_category_latest_quarter_percent,
+        from category_ranked
+        where rn_latest_term = 1
+        group by _dbt_source_project, studentid, yearid, sectionid
     )
 
 select
@@ -711,6 +785,11 @@ select
     c.category_y1_percent_grade_current,
     c.category_quarter_average_all_courses,
 
+    cd.lowest_category_y1_name,
+    cd.lowest_category_y1_percent,
+    cd.lowest_category_latest_quarter_name,
+    cd.lowest_category_latest_quarter_percent,
+
     gsl.need_next_letter_grade,
     gsl.need_next_cutoff_percent,
 
@@ -803,4 +882,11 @@ left join
     and qg.courses_gradescaleid = gsl.gradescaleid
     and qg.y1_course_in_progress_percent_grade_adjusted
     between gsl.rung_floor and gsl.rung_ceiling
+left join
+    category_drivers as cd
+    on s.studentid = cd.studentid
+    and s.yearid = cd.yearid
+    and s._dbt_source_project = cd._dbt_source_project
+    and ce.sectionid = cd.sectionid
+    and ce._dbt_source_project = cd._dbt_source_project
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
