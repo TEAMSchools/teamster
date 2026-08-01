@@ -12,13 +12,16 @@ models:
       minted Focus id. A second join to `stg_finalsite__contacts` on the
       student's own `finalsite_enrollment_id` restricts the feed to guardians of
       students whose own `status` is `enrolled` — the guardian's own status is
-      not considered. Produces 50 columns in `CONTACTS_LAYOUT` order.
-      `SORT_ORDER` ranks guardians per student by `is_primary desc` so the
-      primary contact sorts first. Phone slots `CONTACT1_*` and `CONTACT2_*` map
-      the guardian's two phones; `CONTACT3` through `CONTACT7` are always null.
-      Focus column header casing is applied at transport time via
-      `file_config.format.header_replacements`; dbt column names remain
-      lowercase snake_case.
+      not considered. The address comes from
+      `int_finalsite__contact_address_of_record`, resolved from the guardian's
+      own household linkage; a guardian whose linkage does not resolve keeps
+      their row and gets a null address. Produces 50 columns in
+      `CONTACTS_LAYOUT` order. `SORT_ORDER` ranks guardians per student by
+      `is_primary desc` so the primary contact sorts first. Phone slots
+      `CONTACT1_*` and `CONTACT2_*` map the guardian's two phones; `CONTACT3`
+      through `CONTACT7` are always null. Focus column header casing is applied
+      at transport time via `file_config.format.header_replacements`; dbt column
+      names remain lowercase snake_case.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -79,19 +82,32 @@ models:
           Authorized pickup flag; not sourced from Finalsite — always null.
       - name: address
         data_type: string
-        description: Line 1 of the guardian's household address (`address_1`).
+        description:
+          Line 1 of the guardian's resolved address from
+          `int_finalsite__contact_address_of_record`. Null when the guardian's
+          household linkage does not resolve to exactly one address; the row is
+          still sent.
       - name: address2
         data_type: string
-        description: Line 2 of the guardian's household address (`address_2`).
+        description:
+          Line 2 (apartment or unit) of the guardian's resolved address.
+          Legitimately null when the household has no unit line, and null
+          whenever the address is unresolved.
       - name: city
         data_type: string
-        description: City of the guardian's household address.
+        description:
+          City of the guardian's resolved address. Null when unresolved, and
+          possibly null on a resolved but incomplete address.
       - name: state
         data_type: string
-        description: State of the guardian's household address.
+        description:
+          State of the guardian's resolved address. Null when unresolved, and
+          possibly null on a resolved but incomplete address.
       - name: zipcode
         data_type: string
-        description: ZIP code of the guardian's household address.
+        description:
+          ZIP code of the guardian's resolved address. Null when unresolved, and
+          possibly null on a resolved but incomplete address.
       - name: email
         data_type: string
         description:
@@ -260,13 +276,20 @@ models:
 unit_tests:
   - name: test_contacts_two_guardians
     description:
-      Verifies the 50-column CONTACTS layout for one student with two guardian
-      relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2.
-      Asserts STUDENT_RELATION, FIRST_NAME, LAST_NAME, and CONTACT1_VALUE.
-      STUDENT_ID is sourced from int_finalsite__contact_id_attributes for the
-      student and is identical across both guardian rows. A second student whose
-      own `stg_finalsite__contacts.status` is not `enrolled` is included to
-      assert their guardian is excluded from the feed.
+      Verifies the 50-column CONTACTS layout for one student with three guardian
+      relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2,
+      and a third guardian whose household linkage does not resolve in
+      `int_finalsite__contact_address_of_record` to 3. Asserts STUDENT_RELATION,
+      FIRST_NAME, LAST_NAME, and CONTACT1_VALUE. STUDENT_ID is sourced from
+      int_finalsite__contact_id_attributes for the student and is identical
+      across all three guardian rows. The third guardian has no matching row in
+      the address mock — this proves the join to
+      `int_finalsite__contact_address_of_record` is a LEFT join, since the row
+      survives with a null address rather than being dropped, which is the
+      entire reason the model uses LEFT over INNER (an INNER join would silently
+      drop this guardian from the import-once feed). A second student whose own
+      `stg_finalsite__contacts.status` is not `enrolled` is included to assert
+      their guardian is excluded from the feed.
     model: rpt_focus__contacts
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -296,6 +319,16 @@ unit_tests:
               has_portal_access: false,
             }
           - {
+              finalsite_enrollment_id: enr-stu-001,
+              relationship_id: rel-004,
+              rel_id: enr-grd-unresolved,
+              rel_name: Dana Turner,
+              rel_type: grandparent,
+              is_primary: false,
+              is_financial: false,
+              has_portal_access: false,
+            }
+          - {
               finalsite_enrollment_id: enr-stu-002,
               relationship_id: rel-003,
               rel_id: enr-grd-003,
@@ -318,11 +351,6 @@ unit_tests:
               phone_1_number: "+13055550100",
               phone_2_type: Cell,
               phone_2_number: "+13055550101",
-              address_1: 100 Main St,
-              address_2: null,
-              city: Miami,
-              state: FL,
-              zip: "33101",
             }
           - {
               finalsite_enrollment_id: enr-grd-sec,
@@ -334,11 +362,17 @@ unit_tests:
               phone_1_number: "+13055550200",
               phone_2_type: null,
               phone_2_number: null,
-              address_1: 200 Oak Ave,
-              address_2: null,
-              city: Miami,
-              state: FL,
-              zip: "33102",
+            }
+          - {
+              finalsite_enrollment_id: enr-grd-unresolved,
+              first_name: Dana,
+              middle_name: null,
+              last_name: Turner,
+              email: dana@example.com,
+              phone_1_type: Home,
+              phone_1_number: "+13055550400",
+              phone_2_type: null,
+              phone_2_number: null,
             }
           - { finalsite_enrollment_id: enr-stu-002, status: applied }
           - {
@@ -351,11 +385,6 @@ unit_tests:
               phone_1_number: "+13055550300",
               phone_2_type: null,
               phone_2_number: null,
-              address_1: 300 Palm Rd,
-              address_2: null,
-              city: Miami,
-              state: FL,
-              zip: "33103",
             }
       - input: ref('int_finalsite__contact_id_attributes')
         format: sql
@@ -367,6 +396,18 @@ unit_tests:
           select
             'enr-stu-002' as finalsite_enrollment_id,
             '84003003003' as focus_student_id_prefixed
+      - input: ref('int_finalsite__contact_address_of_record')
+        format: sql
+        rows: |
+          select
+            'enr-grd-pri' as finalsite_enrollment_id,
+            '100 Main St' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33101' as zip
+          union all
+          select 'enr-grd-sec', '200 Oak Ave', null, 'Miami', 'FL', '33102'
     expect:
       rows:
         - {
@@ -440,6 +481,58 @@ unit_tests:
             email: bob@example.com,
             contact1_type: Work,
             contact1_value: "+13055550200",
+            contact1_blocked: null,
+            contact1_unlisted: null,
+            contact1_callout: null,
+            contact2_type: null,
+            contact2_value: null,
+            contact2_blocked: null,
+            contact2_unlisted: null,
+            contact2_callout: null,
+            contact3_type: null,
+            contact3_value: null,
+            contact3_blocked: null,
+            contact3_unlisted: null,
+            contact3_callout: null,
+            contact4_type: null,
+            contact4_value: null,
+            contact4_blocked: null,
+            contact4_unlisted: null,
+            contact4_callout: null,
+            contact5_type: null,
+            contact5_value: null,
+            contact5_blocked: null,
+            contact5_unlisted: null,
+            contact5_callout: null,
+            contact6_type: null,
+            contact6_value: null,
+            contact6_blocked: null,
+            contact6_unlisted: null,
+            contact6_callout: null,
+            contact7_type: null,
+            contact7_value: null,
+            contact7_blocked: null,
+            contact7_unlisted: null,
+          }
+        - {
+            student_id: "84002002002",
+            student_relation: grandparent,
+            sort_order: 3,
+            first_name: Dana,
+            middle_name: null,
+            last_name: Turner,
+            resides_with_stud: null,
+            custody: null,
+            emergency: null,
+            pickup: null,
+            address: null,
+            address2: null,
+            city: null,
+            state: null,
+            zipcode: null,
+            email: dana@example.com,
+            contact1_type: Home,
+            contact1_value: "+13055550400",
             contact1_blocked: null,
             contact1_unlisted: null,
             contact1_callout: null,

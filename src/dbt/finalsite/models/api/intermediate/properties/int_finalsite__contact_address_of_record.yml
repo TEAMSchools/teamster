@@ -1,0 +1,346 @@
+models:
+  - name: int_finalsite__contact_address_of_record
+    description:
+      One row per Finalsite contact — students and adults alike — carrying that
+      contact's resolved address, or nulls plus a flag when it cannot be
+      resolved. A household is a candidate when it has a street line; an
+      incomplete address is deliberately still a candidate, because an
+      incomplete address is visibly wrong in a receiving system and can be
+      corrected there, whereas withholding it is silent. Households with no
+      street at all are excluded, since each would otherwise count as its own
+      candidate and manufacture ambiguity. Address identity is an exact match on
+      `address_1`, `address_2`, `city`, `state`, and `zip` — no case-folding,
+      punctuation-stripping, or ZIP+4 truncation, so two spellings of the same
+      address stay distinct candidates and the contact is withheld rather than
+      guessed at. A contact resolves only when exactly one distinct address
+      remains; the emitted values are the raw text from the lowest
+      `household_id` in that group. SIS-agnostic — no enrollment, status, or
+      academic-year scoping.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              (resolution_status = 'resolved' and address_1 is not null)
+              or (
+                  resolution_status != 'resolved'
+                  and address_1 is null
+                  and address_2 is null
+                  and city is null
+                  and state is null
+                  and zip is null
+              )
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              (resolution_status = 'resolved' and candidate_count = 1)
+              or (resolution_status = 'no_street' and candidate_count = 0)
+              or (resolution_status = 'ambiguous' and candidate_count > 1)
+          config:
+            severity: error
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: resolution_status
+        data_type: string
+        description:
+          Why this contact does or does not have an address — `resolved`
+          (exactly one distinct address), `ambiguous` (several, with nothing in
+          Finalsite saying which to use), or `no_street` (no household carries a
+          street line).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - resolved
+                  - ambiguous
+                  - no_street
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: candidate_count
+        data_type: int64
+        description:
+          Number of distinct addresses on this contact's household linkage after
+          normalization. One resolves; zero means no household carries a street;
+          more than one is ambiguous.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: address_1
+        data_type: string
+        description:
+          Street address line 1 of the resolved address, as raw text; null when
+          unresolved.
+        config:
+          meta:
+            contains_pii: true
+      - name: address_2
+        data_type: string
+        description:
+          Street address line 2 (apartment or unit) of the resolved address.
+          Legitimately null when the household has no unit line, and null
+          whenever the address is unresolved.
+        config:
+          meta:
+            contains_pii: true
+      - name: city
+        data_type: string
+        description:
+          City of the resolved address; null when unresolved, and possibly null
+          on a resolved but incomplete address.
+        config:
+          meta:
+            contains_pii: true
+      - name: state
+        data_type: string
+        description:
+          State code of the resolved address, uppercased upstream; null when
+          unresolved, and possibly null on a resolved but incomplete address.
+      - name: zip
+        data_type: string
+        description:
+          ZIP code of the resolved address; null when unresolved, and possibly
+          null on a resolved but incomplete address.
+        config:
+          meta:
+            contains_pii: true
+      - name: country
+        data_type: string
+        description:
+          Country of the resolved address as Finalsite stores it. Not part of
+          the address identity, so it is carried from the canonical household
+          rather than compared.
+      - name: is_complete_address
+        data_type: boolean
+        description:
+          Whether the resolved address carries street, city, state, and ZIP. A
+          resolved address may be incomplete — this flag is what makes that
+          visible to consumers. Null when unresolved.
+
+unit_tests:
+  - name: test_contact_address_formatting_variants_stay_distinct
+    description:
+      Exact matching is deliberate — two households recording the same address
+      with different punctuation, case, and a ZIP+4 are two distinct candidates,
+      not one. A formatting variant is treated as a second candidate and the
+      address is withheld as ambiguous rather than guessed at.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-1 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-1' as finalsite_enrollment_id,
+            'hh-1' as household_id,
+            '123 Main St.' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33101' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'con-1', 'hh-2', '123 MAIN ST', null, 'MIAMI', 'FL',
+            '33101-4402', 'US', true
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-1,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 2,
+            resolution_status: ambiguous,
+          }
+
+  - name: test_contact_address_null_field_is_a_distinct_candidate
+    description:
+      Dropping the completeness gate means a null field groups as its own value
+      rather than matching a populated one — two households on the same street
+      where one carries a ZIP and the other has a null ZIP are two distinct
+      candidates, so the contact is ambiguous rather than resolving to either
+      one.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-7 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-7' as finalsite_enrollment_id,
+            'hh-10' as household_id,
+            '55 Coral Way' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33134' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'con-7', 'hh-11', '55 Coral Way', null, 'Miami', 'FL', null,
+            'US', false
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-7,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 2,
+            resolution_status: ambiguous,
+          }
+
+  - name: test_contact_address_real_differences_stay_ambiguous
+    description:
+      Households sharing a street line but differing by apartment or by city
+      stay distinct candidates, so the contact is ambiguous and no address is
+      emitted. This is the case an address_1-only key would wrongly collapse.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-2 }
+          - { finalsite_enrollment_id: con-3 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-2' as finalsite_enrollment_id,
+            'hh-3' as household_id,
+            '222 Bay St' as address_1,
+            'Apt 1' as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33106' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'con-2', 'hh-4', '222 Bay St', 'Apt 2', 'Miami', 'FL', '33106',
+            'US', true
+          union all
+          select 'con-3', 'hh-5', '400 Palm Way', null, 'Miami', 'FL', '33101',
+            'US', true
+          union all
+          select 'con-3', 'hh-6', '400 Palm Way', null, 'Hialeah', 'FL', '33012',
+            'US', true
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-2,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 2,
+            resolution_status: ambiguous,
+          }
+        - {
+            finalsite_enrollment_id: con-3,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 2,
+            resolution_status: ambiguous,
+          }
+
+  - name: test_contact_address_incomplete_resolves_and_fragments_excluded
+    description:
+      A household with a street but no ZIP still resolves, flagged incomplete —
+      completeness is not a gate. A household carrying only city and ZIP with no
+      street is not a candidate, so a contact holding only fragments reports
+      no_street. A contact with no household rows at all also reports no_street.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-4 }
+          - { finalsite_enrollment_id: con-5 }
+          - { finalsite_enrollment_id: con-6 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-4' as finalsite_enrollment_id,
+            'hh-7' as household_id,
+            '9 Nowhere Ln' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            cast(null as string) as zip,
+            'US' as country,
+            false as is_complete_address
+          union all
+          select 'con-4', 'hh-8', null, null, 'Miami', 'FL', '33101', 'US', false
+          union all
+          select 'con-5', 'hh-9', null, null, 'Miami', 'FL', '33108', 'US', false
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-4,
+            address_1: 9 Nowhere Ln,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: null,
+            country: US,
+            is_complete_address: false,
+            candidate_count: 1,
+            resolution_status: resolved,
+          }
+        - {
+            finalsite_enrollment_id: con-5,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 0,
+            resolution_status: no_street,
+          }
+        - {
+            finalsite_enrollment_id: con-6,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 0,
+            resolution_status: no_street,
+          }

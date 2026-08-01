@@ -5,7 +5,7 @@ models:
       `int_finalsite__student_address_of_record` models — one row per Finalsite
       student record with its resolved address of record, or an `ambiguous` flag
       when neither the student's nor their primary contact's household linkage
-      yields exactly one complete address. Includes all four regions; Focus is
+      yields exactly one distinct address. Includes all four regions; Focus is
       the Miami consumer and the NJ regions carry no Focus student id, so the
       `rpt_focus__*` filter on `focus_student_id_prefixed` keeps their rows out
       of the Focus feeds. Column documentation lives on the package model.
