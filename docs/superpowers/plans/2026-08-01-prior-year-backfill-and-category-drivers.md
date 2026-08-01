@@ -439,9 +439,9 @@ Insert before `quarter_grades`. Note the storecode ordering works because
 `'Q1' < 'Q2' < 'Q3' < 'Q4'` lexically.
 
 ```sql
-    prior_year_quarter_running as (
-        /* TODO(#4687): TEMPORARY. Delete this CTE, prior_year_course_anchored,
-           prior_year_running_course, and their use in quarter_grades branch 3
+    backfill_quarter_running as (
+        /* TODO(#4687): TEMPORARY. Delete this CTE, backfill_course_anchored,
+           backfill_running_course, and their use in quarter_grades branch 3
            once the dashboard runs on current-year data. Tracked in Asana under
            GPA and Gradebook Dashboard v3, Phase 4.
 
@@ -470,8 +470,8 @@ Insert before `quarter_grades`. Note the storecode ordering works because
             and academic_year = {{ var("current_academic_year") - 1 }}
     ),
 
-    prior_year_y1_stored as (
-        /* TODO(#4687): TEMPORARY, see prior_year_quarter_running. */
+    backfill_y1_stored as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running. */
         select
             _dbt_source_project,
             studentid,
@@ -486,8 +486,8 @@ Insert before `quarter_grades`. Note the storecode ordering works because
             and academic_year = {{ var("current_academic_year") - 1 }}
     ),
 
-    prior_year_course_anchored as (
-        /* TODO(#4687): TEMPORARY, see prior_year_quarter_running.
+    backfill_course_anchored as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running.
 
            Q4 takes the stored Y1 percent verbatim so the reconstruction lands
            exactly on the year grade. The Y1 storecode row is unioned in
@@ -503,9 +503,9 @@ Insert before `quarter_grades`. Note the storecode ordering works because
             if(
                 r.storecode = 'Q4', y1.y1_stored_percent, r.running_percent
             ) as anchored_percent,
-        from prior_year_quarter_running as r
+        from backfill_quarter_running as r
         left join
-            prior_year_y1_stored as y1
+            backfill_y1_stored as y1
             on r._dbt_source_project = y1._dbt_source_project
             and r.studentid = y1.studentid
             and r.yearid = y1.yearid
@@ -523,20 +523,20 @@ Insert before `quarter_grades`. Note the storecode ordering works because
 
             gradescale_name_unweighted,
             y1_stored_percent as anchored_percent,
-        from prior_year_y1_stored
+        from backfill_y1_stored
     ),
 ```
 
 `UNION ALL` binds by position, so both branches list the same seven columns in
 the same order. `_dbt_source_relation` is deliberately absent — nothing
 downstream consumes it, and carrying a null through the Y1 branch would be dead
-weight. `prior_year_quarter_running` still selects it because dropping it there
+weight. `backfill_quarter_running` still selects it because dropping it there
 would touch the window partitions; leave that alone.
 
 ```sql
 
-    prior_year_running_course as (
-        /* TODO(#4687): TEMPORARY, see prior_year_quarter_running.
+    backfill_running_course as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running.
 
            Bands the reconstructed percent back to a letter on the course's own
            scale. Joins on gradescale_name rather than gradescaleid, the pattern
@@ -552,7 +552,7 @@ would touch the window partitions; leave that alone.
             a.anchored_percent,
 
             gsi.letter_grade as anchored_letter_grade,
-        from prior_year_course_anchored as a
+        from backfill_course_anchored as a
         left join
             {{ ref("int_powerschool__gradescaleitem_lookup") }} as gsi
             on a._dbt_source_project = gsi._dbt_source_project
@@ -579,9 +579,9 @@ Replace:
 with:
 
 ```sql
-            pyr.anchored_percent
+            bfc.anchored_percent
             as y1_course_in_progress_percent_grade_adjusted,
-            pyr.anchored_letter_grade
+            bfc.anchored_letter_grade
             as y1_course_in_progress_letter_grade_adjusted,
 ```
 
@@ -589,12 +589,12 @@ and add the join after the `from`:
 
 ```sql
         left join
-            prior_year_running_course as pyr
-            on sg._dbt_source_project = pyr._dbt_source_project
-            and sg.studentid = pyr.studentid
-            and sg.yearid = pyr.yearid
-            and sg.course_number = pyr.course_number
-            and sg.storecode = pyr.storecode
+            backfill_running_course as bfc
+            on sg._dbt_source_project = bfc._dbt_source_project
+            and sg.studentid = bfc.studentid
+            and sg.yearid = bfc.yearid
+            and sg.course_number = bfc.course_number
+            and sg.storecode = bfc.storecode
 ```
 
 - [ ] **Step 3: Update the two column descriptions**
@@ -729,7 +729,7 @@ the current year_ section before starting.
 Insert before `student_roster`:
 
 ```sql
-    prior_year_running_gpa as (
+    backfill_running_gpa as (
         /* TODO(#4687): TEMPORARY. Delete this CTE, its join in student_roster,
            and the coalesce on gpa_y1 once the dashboard runs on current-year
            data. Tracked in Asana under GPA and Gradebook Dashboard v3, Phase 4.
@@ -772,12 +772,12 @@ predicate is the gate and is **not optional**:
 
 ```sql
         left join
-            prior_year_running_gpa as pyrg
-            on enr.studentid = pyrg.studentid
-            and enr.yearid = pyrg.yearid
-            and enr.schoolid = pyrg.schoolid
-            and enr._dbt_source_project = pyrg._dbt_source_project
-            and term.quarter = pyrg.term_name
+            backfill_running_gpa as bfg
+            on enr.studentid = bfg.studentid
+            and enr.yearid = bfg.yearid
+            and enr.schoolid = bfg.schoolid
+            and enr._dbt_source_project = bfg._dbt_source_project
+            and term.quarter = bfg.term_name
             and enr.academic_year = {{ var("current_academic_year") - 1 }}
 ```
 
@@ -793,12 +793,12 @@ with:
 
 ```sql
             coalesce(
-                pyrg.gpa_y1_running,
+                bfg.gpa_y1_running,
                 if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1)
             ) as gpa_y1,
 ```
 
-The gate makes `pyrg.gpa_y1_running` null on every current-year row, so the
+The gate makes `bfg.gpa_y1_running` null on every current-year row, so the
 coalesce falls through to the untouched original there. **Do not touch
 `gpa_for_quarter` on line 195 or `gpa_n_failing_y1` on line 201.**
 
@@ -940,10 +940,10 @@ cd /workspaces/teamster/.worktrees/anthonygwalters/feat/claude-backfill-and-cate
 In project `GPA and Gradebook Dashboard v3 (SY27 Rebuild)`, GID
 `1214228736201477`, section `Phase 4`, GID `1214243570943810`. Title:
 `Remove the temporary prior-year grade and GPA backfill`. The notes must name
-the five CTEs to delete — `prior_year_quarter_running`, `prior_year_y1_stored`,
-`prior_year_course_anchored`, `prior_year_running_course`,
-`prior_year_running_gpa` — state that the Task 2 category driver columns are
-permanent and must NOT be removed, and link the PR.
+the five CTEs to delete — `backfill_quarter_running`, `backfill_y1_stored`,
+`backfill_course_anchored`, `backfill_running_course`, `backfill_running_gpa` —
+state that the Task 2 category driver columns are permanent and must NOT be
+removed, and link the PR.
 
 - [ ] **Step 6: Push and open the PR**
 

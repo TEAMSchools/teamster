@@ -251,12 +251,12 @@ in the `ON` clause:
 
 ```sql
 left join
-    prior_year_running_gpa as pyr
-    on enr.studentid = pyr.studentid
-    and enr.yearid = pyr.yearid
-    and enr.schoolid = pyr.schoolid
-    and enr._dbt_source_project = pyr._dbt_source_project
-    and term.quarter = pyr.term_name
+    backfill_running_gpa as bfc
+    on enr.studentid = bfc.studentid
+    and enr.yearid = bfc.yearid
+    and enr.schoolid = bfc.schoolid
+    and enr._dbt_source_project = bfc._dbt_source_project
+    and term.quarter = bfc.term_name
     and enr.academic_year = {{ var("current_academic_year") - 1 }}
 ```
 
