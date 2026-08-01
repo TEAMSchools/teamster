@@ -343,6 +343,19 @@ models:
           `cumulative_y1_gpa_unweighted_change_from_prior_year`, which does not
           have that blind spot. Grade 9 carries the middle-to-high-school series
           caveat on `cumulative_y1_gpa_unweighted_prior_year`.
+      - name: is_quarter_course_failing
+        data_type: boolean
+        description: >-
+          True when `quarter_course_letter_grade` begins with `F`, which covers
+          both `F` and `F*`. `F*` marks a grade the 50 percent floor was applied
+          to; it is a real failure worth roughly a third of all failing grades,
+          so an exact match on `F` understates the failure rate by about half in
+          any single quarter. NULL rather than false on an ungraded enrolment,
+          since no grade posted is unknown rather than passing — a failure rate
+          built on this flag should divide by the count of non-null
+          `quarter_course_letter_grade`, not by all rows. The Y1 row carries the
+          Y1 letter grade in that same column, so this flag is valid at every
+          marking period without branching.
       - name: sectionid
         data_type: int64
         description: PowerSchool section id of the course enrollment.
