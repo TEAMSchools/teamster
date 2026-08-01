@@ -218,10 +218,16 @@ close to today's `where is_primary` set rather than a large widening.
 
 In the other direction, 63 Miami contacts carry `not_in_workflow` while also
 holding a `primary` relationship, so they read as children and the spine
-excludes them. None is `enrolled`, so none reaches the Focus feed today. If that
-status is ever applied to an enrolled student, they would be silently dropped —
-the failure would be invisible rather than loud, which is the weakest point in
-this design.
+excludes them. None is `enrolled` today, and none ever could be: `status` is a
+single column, so the spine's `where status != 'not_in_workflow'` and the
+ADDRESS feed's `where stu.status = 'enrolled'` are mutually exclusive by
+construction — a contact cannot be both `not_in_workflow` and `enrolled` at
+once. Every student the ADDRESS feed wants is therefore always admitted by the
+spine; there is no silent-drop failure mode for an enrolled student here. The
+only residual exposure is hypothetical: a future receiver wanting non-`enrolled`
+students (applicants, prospects) could still be affected by this
+misclassification, which is exactly the case the SIS-agnostic spine was built to
+keep open rather than close off (see the scoping discussion above).
 
 A downstream guard already limits the blast radius of any spine
 misclassification: `rpt_focus__addresses` inner-joins
