@@ -103,6 +103,43 @@ with
             academic_year = {{ var("current_academic_year") - 1 }} and not is_projected
     ),
 
+    backfill_running_gpa as (
+        /* TODO(#4687): TEMPORARY. Delete this CTE, its join in student_roster,
+           and the coalesce on gpa_y1 once the dashboard runs on current-year
+           data. Tracked in Asana under GPA and Gradebook Dashboard v3, Phase 4.
+
+           Running credit-weighted GPA through each term, accumulated from the
+           same components the real gpa_y1 uses. Deliberately NOT anchored to
+           the stored Y1: the reconstruction reads 45.1, 46.7, 46.6, 48.2
+           percent of high school students at or above 3.0 through Q1-Q4
+           (AY2025) against a stored Y1 of 48.9 — it sits slightly below
+           the stored value throughout, and anchoring Q4 to that value
+           would introduce a discontinuity there rather than let the
+           series read as one continuous trend. */
+        select
+            studentid,
+            schoolid,
+            yearid,
+            _dbt_source_project,
+            term_name,
+
+            round(
+                safe_divide(
+                    sum(weighted_gpa_points_term) over (
+                        partition by studentid, _dbt_source_project, schoolid, yearid
+                        order by term_name
+                    ),
+                    sum(total_credit_hours_term) over (
+                        partition by studentid, _dbt_source_project, schoolid, yearid
+                        order by term_name
+                    )
+                ),
+                2
+            ) as gpa_y1_running,
+        from {{ ref("int_powerschool__gpa_term") }}
+        where yearid = {{ var("current_academic_year") - 1991 }}
+    ),
+
     student_roster as (
         select
             enr._dbt_source_relation,
@@ -194,7 +231,9 @@ with
 
             if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_term) as gpa_for_quarter,
 
-            if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1) as gpa_y1,
+            coalesce(
+                bfg.gpa_y1_running, if(term.quarter = 'Y1', gty.gpa_y1, gtq.gpa_y1)
+            ) as gpa_y1,
 
             if(
                 term.quarter = 'Y1', gty.n_failing_y1, gtq.n_failing_y1
@@ -245,6 +284,18 @@ with
             and enr._dbt_source_project = gtq._dbt_source_project
             and term.quarter = gtq.term_name
             and term._dbt_source_project = gtq._dbt_source_project
+        /* bfg is gated to the prior year in ON — the inverse of gc/lb/gpq/pyc's
+           current-year gate below — so current-year rows get NULL here and
+           the coalesce on gpa_y1 falls through to the untouched original
+           expression */
+        left join
+            backfill_running_gpa as bfg
+            on enr.studentid = bfg.studentid
+            and enr.yearid = bfg.yearid
+            and enr.schoolid = bfg.schoolid
+            and enr._dbt_source_project = bfg._dbt_source_project
+            and term.quarter = bfg.term_name
+            and enr.academic_year = {{ var("current_academic_year") - 1 }}
         left join
             {{ ref("int_powerschool__gpa_term") }} as gty
             on enr.studentid = gty.studentid
@@ -386,6 +437,140 @@ with
             storecode = 'Y1' and academic_year >= {{ var("current_academic_year") - 1 }}
     ),
 
+    backfill_quarter_running as (
+        /* TODO(#4687): TEMPORARY. Delete this CTE, backfill_course_anchored,
+           backfill_running_course, and their use in quarter_grades branch 3
+           once the dashboard runs on current-year data. Tracked in Asana under
+           GPA and Gradebook Dashboard v3, Phase 4.
+
+           Reconstructs a running year-to-date course percent for the prior
+           year, which PowerSchool never stored. Q1 is exact by definition;
+           Q2 and Q3 are approximations; Q4 is replaced by the stored Y1 value
+           below so it matches exactly. Simple rather than credit-weighted
+           average because the two agree to within half a point on 97.0 percent
+           of courses. */
+        select
+            _dbt_source_relation,
+            _dbt_source_project,
+            studentid,
+            yearid,
+            course_number,
+            storecode,
+            gradescale_name_unweighted,
+
+            avg(`percent`) over (
+                partition by _dbt_source_project, studentid, yearid, course_number
+                order by storecode
+            ) as running_percent,
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            storecode in ('Q1', 'Q2', 'Q3', 'Q4')
+            and academic_year = {{ var("current_academic_year") - 1 }}
+    ),
+
+    backfill_y1_stored_raw as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running. */
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            course_number,
+            gradescale_name_unweighted,
+            dcid,
+
+            `percent` as y1_stored_percent,
+        from {{ ref("stg_powerschool__storedgrades") }}
+        where
+            storecode = 'Y1' and academic_year = {{ var("current_academic_year") - 1 }}
+    ),
+
+    backfill_y1_stored as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running.
+
+           dbt_utils.deduplicate guards the pre-existing #3915 storedgrades
+           double-write, confirmed present on academic_year 2025 Y1 rows with
+           genuinely conflicting percents rather than harmless repeats. Left
+           un-deduplicated, this CTE's grain becomes a join key in
+           backfill_course_anchored below, so one duplicate would multiply
+           every quarter row for the course, not just the Y1 row it
+           originated on. Highest dcid wins: sampled duplicate pairs cluster
+           in two distinct dcid ranges, consistent with a later corrective
+           re-import superseding an earlier one. */
+        {{
+            dbt_utils.deduplicate(
+                relation="backfill_y1_stored_raw",
+                partition_by="_dbt_source_project, studentid, yearid, course_number",
+                order_by="dcid desc",
+            )
+        }}
+    ),
+
+    backfill_course_anchored as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running.
+
+           Q4 takes the stored Y1 percent verbatim so the reconstruction lands
+           exactly on the year grade. The Y1 storecode row is unioned in
+           carrying the same value, so the Y1 marking period and Q4 agree. */
+        select
+            r._dbt_source_project,
+            r.studentid,
+            r.yearid,
+            r.course_number,
+            r.storecode,
+            r.gradescale_name_unweighted,
+
+            if(
+                r.storecode = 'Q4', y1.y1_stored_percent, r.running_percent
+            ) as anchored_percent,
+        from backfill_quarter_running as r
+        left join
+            backfill_y1_stored as y1
+            on r._dbt_source_project = y1._dbt_source_project
+            and r.studentid = y1.studentid
+            and r.yearid = y1.yearid
+            and r.course_number = y1.course_number
+
+        union all
+
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            course_number,
+
+            'Y1' as storecode,
+
+            gradescale_name_unweighted,
+            y1_stored_percent as anchored_percent,
+        from backfill_y1_stored
+    ),
+
+    backfill_running_course as (
+        /* TODO(#4687): TEMPORARY, see backfill_quarter_running.
+
+           Bands the reconstructed percent back to a letter on the course's own
+           scale. Joins on gradescale_name rather than gradescaleid, the pattern
+           int_powerschool__gpa_term and rpt_deanslist__transcript_gpas already
+           use for storedgrades, plus _dbt_source_project because scale
+           identifiers collide across districts. */
+        select
+            a._dbt_source_project,
+            a.studentid,
+            a.yearid,
+            a.course_number,
+            a.storecode,
+            a.anchored_percent,
+
+            gsi.letter_grade as anchored_letter_grade,
+        from backfill_course_anchored as a
+        left join
+            {{ ref("int_powerschool__gradescaleitem_lookup") }} as gsi
+            on a._dbt_source_project = gsi._dbt_source_project
+            and a.gradescale_name_unweighted = gsi.gradescale_name
+            and a.anchored_percent
+            between gsi.min_cutoffpercentage and gsi.max_cutoffpercentage
+    ),
+
     quarter_grades as (
         /* current year: live gradebook */
         select
@@ -457,20 +642,20 @@ with
            which fills the quarter columns on Y1 rows like the in-progress
            branch does for the current year) */
         select
-            _dbt_source_relation,
-            _dbt_source_project,
-            studentid,
-            yearid,
-            course_number,
+            sg._dbt_source_relation,
+            sg._dbt_source_project,
+            sg.studentid,
+            sg.yearid,
+            sg.course_number,
 
-            storecode as `quarter`,
+            sg.storecode as `quarter`,
 
-            cast(`percent` as float64) as quarter_course_percent_grade,
-            grade as quarter_course_letter_grade,
-            gpa_points as quarter_course_grade_points,
+            cast(sg.`percent` as float64) as quarter_course_percent_grade,
+            sg.grade as quarter_course_letter_grade,
+            sg.gpa_points as quarter_course_grade_points,
 
-            cast(null as float64) as y1_course_in_progress_percent_grade_adjusted,
-            cast(null as string) as y1_course_in_progress_letter_grade_adjusted,
+            bfc.anchored_percent as y1_course_in_progress_percent_grade_adjusted,
+            bfc.anchored_letter_grade as y1_course_in_progress_letter_grade_adjusted,
             cast(null as float64) as y1_course_in_progress_grade_points,
             cast(null as float64) as y1_course_in_progress_grade_points_unweighted,
 
@@ -481,10 +666,17 @@ with
 
             cast(null as int64) as courses_gradescaleid,
 
-        from {{ ref("stg_powerschool__storedgrades") }}
+        from {{ ref("stg_powerschool__storedgrades") }} as sg
+        left join
+            backfill_running_course as bfc
+            on sg._dbt_source_project = bfc._dbt_source_project
+            and sg.studentid = bfc.studentid
+            and sg.yearid = bfc.yearid
+            and sg.course_number = bfc.course_number
+            and sg.storecode = bfc.storecode
         where
-            storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
-            and academic_year = {{ var("current_academic_year") - 1 }}
+            sg.storecode in ('Q1', 'Q2', 'Q3', 'Q4', 'Y1')
+            and sg.academic_year = {{ var("current_academic_year") - 1 }}
     ),
 
     grade_scale_rungs as (
@@ -583,6 +775,89 @@ with
             and not is_dropped_section
             and storecode_type not in ('Q')
             and termbin_start_date <= current_date('{{ var("local_timezone") }}')
+    ),
+
+    category_ranked as (
+        /* Ranking input for the lowest-category drivers. Rows where BOTH
+           percents are null are excluded so a term that exists but carries no
+           usable value cannot win rn_latest_term and blank out both drivers.
+
+           (percent is null) asc leads each order by because BigQuery sorts
+           NULLS FIRST ascending, which would otherwise hand "lowest" to a null.
+           category_name_code is the final tiebreaker so the pick is
+           reproducible across rebuilds. */
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            sectionid,
+            category_name_code,
+            category_quarter_percent_grade,
+            category_y1_percent_grade_running,
+
+            dense_rank() over (
+                partition by _dbt_source_project, studentid, yearid, sectionid
+                order by term desc
+            ) as rn_latest_term,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, yearid, sectionid, term
+                order by
+                    (category_y1_percent_grade_running is null) asc,
+                    category_y1_percent_grade_running asc,
+                    category_name_code asc
+            ) as rn_lowest_y1,
+
+            row_number() over (
+                partition by _dbt_source_project, studentid, yearid, sectionid, term
+                order by
+                    (category_quarter_percent_grade is null) asc,
+                    category_quarter_percent_grade asc,
+                    category_name_code asc
+            ) as rn_lowest_quarter,
+        from category_grades
+        where
+            category_quarter_percent_grade is not null
+            or category_y1_percent_grade_running is not null
+    ),
+
+    category_drivers as (
+        /* One row per student-section-year, so the join below cannot fan out.
+           Both drivers are read from the SAME latest term, so they describe one
+           moment rather than two. */
+        select
+            _dbt_source_project,
+            studentid,
+            yearid,
+            sectionid,
+
+            max(
+                if(
+                    rn_lowest_y1 = 1 and category_y1_percent_grade_running is not null,
+                    category_name_code,
+                    null
+                )
+            ) as lowest_category_y1_name,
+
+            max(
+                if(rn_lowest_y1 = 1, category_y1_percent_grade_running, null)
+            ) as lowest_category_y1_percent,
+
+            max(
+                if(
+                    rn_lowest_quarter = 1
+                    and category_quarter_percent_grade is not null,
+                    category_name_code,
+                    null
+                )
+            ) as lowest_category_recent_term_name,
+
+            max(
+                if(rn_lowest_quarter = 1, category_quarter_percent_grade, null)
+            ) as lowest_category_recent_term_percent,
+        from category_ranked
+        where rn_latest_term = 1
+        group by _dbt_source_project, studentid, yearid, sectionid
     )
 
 select
@@ -711,6 +986,11 @@ select
     c.category_y1_percent_grade_current,
     c.category_quarter_average_all_courses,
 
+    cd.lowest_category_y1_name,
+    cd.lowest_category_y1_percent,
+    cd.lowest_category_recent_term_name,
+    cd.lowest_category_recent_term_percent,
+
     gsl.need_next_letter_grade,
     gsl.need_next_cutoff_percent,
 
@@ -803,4 +1083,11 @@ left join
     and qg.courses_gradescaleid = gsl.gradescaleid
     and qg.y1_course_in_progress_percent_grade_adjusted
     between gsl.rung_floor and gsl.rung_ceiling
+left join
+    category_drivers as cd
+    on s.studentid = cd.studentid
+    and s.yearid = cd.yearid
+    and s._dbt_source_project = cd._dbt_source_project
+    and ce.sectionid = cd.sectionid
+    and ce._dbt_source_project = cd._dbt_source_project
 where s.quarter_start_date <= current_date('{{ var("local_timezone") }}')
