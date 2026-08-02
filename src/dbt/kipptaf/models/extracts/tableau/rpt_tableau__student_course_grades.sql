@@ -110,10 +110,11 @@ with
 
            Running credit-weighted GPA through each term, accumulated from the
            same components the real gpa_y1 uses. Deliberately NOT anchored to
-           the stored Y1: anchoring produced a year-long decline followed by a
-           fake Q4 recovery, which is the shape a stakeholder builds a false
-           narrative around. Unanchored it reads 50.1, 48.4, 46.1, 47.7 percent
-           at or above 3.0 against a stored Y1 of 50.4. */
+           the stored Y1: the reconstruction reads 45.1, 46.7, 46.6, 48.2
+           percent at or above 3.0 through Q1-Q4 (AY2025) against a stored Y1
+           of 48.9 — it sits slightly below the stored value throughout, and
+           anchoring Q4 to that value would introduce a discontinuity there
+           rather than let the series read as one continuous trend. */
         select
             studentid,
             schoolid,
@@ -282,6 +283,10 @@ with
             and enr._dbt_source_project = gtq._dbt_source_project
             and term.quarter = gtq.term_name
             and term._dbt_source_project = gtq._dbt_source_project
+        /* bfg is gated to the prior year in ON — the inverse of gc/lb/gpq/pyc's
+           current-year gate below — so current-year rows get NULL here and
+           the coalesce on gpa_y1 falls through to the untouched original
+           expression */
         left join
             backfill_running_gpa as bfg
             on enr.studentid = bfg.studentid
