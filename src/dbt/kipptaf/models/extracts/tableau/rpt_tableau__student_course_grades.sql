@@ -111,10 +111,11 @@ with
            Running credit-weighted GPA through each term, accumulated from the
            same components the real gpa_y1 uses. Deliberately NOT anchored to
            the stored Y1: the reconstruction reads 45.1, 46.7, 46.6, 48.2
-           percent at or above 3.0 through Q1-Q4 (AY2025) against a stored Y1
-           of 48.9 — it sits slightly below the stored value throughout, and
-           anchoring Q4 to that value would introduce a discontinuity there
-           rather than let the series read as one continuous trend. */
+           percent of high school students at or above 3.0 through Q1-Q4
+           (AY2025) against a stored Y1 of 48.9 — it sits slightly below
+           the stored value throughout, and anchoring Q4 to that value
+           would introduce a discontinuity there rather than let the
+           series read as one continuous trend. */
         select
             studentid,
             schoolid,
@@ -446,7 +447,7 @@ with
            year, which PowerSchool never stored. Q1 is exact by definition;
            Q2 and Q3 are approximations; Q4 is replaced by the stored Y1 value
            below so it matches exactly. Simple rather than credit-weighted
-           average because the two agree to within half a point on 98.2 percent
+           average because the two agree to within half a point on 97.0 percent
            of courses. */
         select
             _dbt_source_relation,

@@ -182,7 +182,9 @@ models:
           as a running credit-weighted GPA through each term, because
           PowerSchool stores only the end-of-year value. It is deliberately not
           anchored to that stored value, so the Q4 reading will not equal the Y1
-          reading. Temporary; see TODO(#4687).
+          reading. Temporary; see TODO(#4687) (kept here deliberately, despite
+          the no-tracking-refs-in-descriptions convention, so a removal grep for
+          this marker also finds this YAML).
       - name: gpa_y1_unweighted
         data_type: float64
         description: Unweighted Y1 GPA as of the row's term.
@@ -448,8 +450,8 @@ models:
           For the prior year it is RECONSTRUCTED from stored quarter grades — Q1
           is exact, Q4 is anchored to the stored Y1 percent and is exact, Q2 and
           Q3 are approximations that agree with the year value to within half a
-          point on roughly 98 percent of courses. The reconstruction is
-          temporary; see TODO(#4687) in the model.
+          point on 97.0 percent of courses. The reconstruction is temporary; see
+          TODO(#4687) in the model.
       - name: y1_course_in_progress_letter_grade_adjusted
         data_type: string
         description: >-
@@ -570,14 +572,13 @@ models:
         data_type: string
         description: >-
           Gradebook category code with the lowest single-quarter percent in the
-          most recent term that holds a quarter percent for this course. Falls
-          back to an earlier term when the most recent one has no category with
-          a quarter percent — a Q4 row can legitimately carry a driver sourced
-          from Q2, so this is not always "the latest quarter." Null when no term
-          in the two-year window has a category with a non-null quarter percent
-          — the code never wins the tiebreak on a null value. Answers what the
-          problem is right now, where lowest_category_y1_name answers what
-          dragged the whole year down. The two can legitimately disagree.
+          most recent term holding any usable category percent (quarter or
+          year-running) for this course. Null when that term has no
+          quarter-level percent — which usually means an earlier term does have
+          one, so a null here does not mean the section has no quarter category
+          data anywhere in the window. Answers what the problem is right now,
+          where lowest_category_y1_name answers what dragged the whole year
+          down. The two can legitimately disagree.
       - name: lowest_category_recent_term_percent
         data_type: float64
         description: >-
