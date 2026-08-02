@@ -613,8 +613,8 @@ description: >-
   progress this is the real running value from the gradebook. For the prior year
   it is RECONSTRUCTED from stored quarter grades — Q1 is exact, Q4 is anchored
   to the stored Y1 percent and is exact, Q2 and Q3 are approximations that agree
-  with the year value to within half a point on roughly 98 percent of courses.
-  The reconstruction is temporary; see TODO(#4687) in the model.
+  with the year value to within half a point on 97.0 percent of courses. The
+  reconstruction is temporary; see TODO(#4687) in the model.
 ```
 
 For `y1_course_in_progress_letter_grade_adjusted`:
