@@ -50,8 +50,12 @@ this repo validates dbt models with `dbt build` plus BigQuery MCP queries.
   `src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml`.
 - The model's composite uniqueness test warns at **12** — the pre-existing
   `#3915` count. It must still read 12 after every task.
-- Prod baseline as of 2026-08-01: **854,245 rows, 854,209 distinct** composite
-  keys.
+- Prod baseline: **854,263 rows, 854,227 distinct** composite keys, re-verified
+  during Task 3. AY2025 is 713,227 / 713,191; AY2026 is 141,036 / 141,036.
+  **Prod drifts between sessions** — the earlier 854,245 / 854,209 figure aged
+  out when 18 rows landed in the in-progress year. Always compare a dev build
+  against a prod read taken in the same session, never against a remembered
+  number.
 
 ## File Structure
 
@@ -448,7 +452,7 @@ Insert before `quarter_grades`. Note the storecode ordering works because
            year, which PowerSchool never stored. Q1 is exact by definition;
            Q2 and Q3 are approximations; Q4 is replaced by the stored Y1 value
            below so it matches exactly. Simple rather than credit-weighted
-           average because the two agree to within half a point on 98.2 percent
+           average because the two agree to within half a point on 97.0 percent
            of courses. */
         select
             _dbt_source_relation,
@@ -735,10 +739,11 @@ Insert before `student_roster`:
 
            Running credit-weighted GPA through each term, accumulated from the
            same components the real gpa_y1 uses. Deliberately NOT anchored to
-           the stored Y1: anchoring produced a year-long decline followed by a
-           fake Q4 recovery, which is the shape a stakeholder builds a false
-           narrative around. Unanchored it reads 50.1, 48.4, 46.1, 47.7 percent
-           at or above 3.0 against a stored Y1 of 50.4. */
+           the stored Y1: anchoring would insert a step at Q4 that the data does
+           not contain, which is the shape a stakeholder builds a narrative
+           around. Unanchored, AY2025 high school reads 45.1, 46.7, 46.6, 48.2
+           percent at or above 3.0 against a stored Y1 of 48.9 — a rising
+           trajectory that stops slightly short of the year value. */
         select
             studentid,
             schoolid,
@@ -760,7 +765,7 @@ Insert before `student_roster`:
                 2
             ) as gpa_y1_running,
         from {{ ref("int_powerschool__gpa_term") }}
-        where yearid = {{ var("current_academic_year") - 1 - 1991 }}
+        where yearid = {{ var("current_academic_year") - 1991 }}
     ),
 ```
 
@@ -855,9 +860,15 @@ group by 1
 order by 1
 ```
 
-Expected roughly `50.1 / 48.4 / 46.1 / 47.7` at Q1 through Q4, and `50.4` at Y1.
+Expected roughly `45.1 / 46.7 / 46.6 / 48.2` at Q1 through Q4, and `48.9` at Y1.
 The four quarters must **differ from each other** — that is the entire purpose.
-If they are all 50.4, the coalesce is not firing.
+If all five come back identical, the coalesce is not firing.
+
+**Corrected figures.** An earlier version of this step expected
+`50.1 / 48.4 / 46.1 / 47.7` against `50.4`. Those were AY2024, produced by
+querying `int_powerschool__gpa_term` at `yearid = 34` when the convention is
+`yearid = academic_year - 1990`, making AY2025 yearid 35. The same off-by-one
+appeared in Step 1's `where` clause and is corrected there.
 
 - [ ] **Step 8: Lint and commit**
 
@@ -875,7 +886,7 @@ periods. Reconstructs a running credit-weighted GPA from the per-term
 components.
 
 Deliberately unanchored, unlike the course-grade backfill. Anchoring Q4 to the
-stored value produced a year-long decline followed by a fake Q4 recovery.
+stored value produced a step at Q4 that the data does not contain.
 
 Isolation is structural, not conditional: the join carries an academic_year gate
 in ON, so current-year rows get NULL and the coalesce falls through to the

@@ -30,8 +30,8 @@ All measured 2026-08-01 against production.
 | A year-level category percent already exists                | `category_y1_percent_grade_running` populated on quarter rows; at Q4 it equals `category_y1_percent_grade_current` at 116,011 rows |
 | Attaching categories to Y1 would fan out                    | 38,281 Y1 rows against 149,423 Q4 rows, roughly 3.9x                                                                               |
 | `y1_course_in_progress_*` is null for prior years           | 0 populated rows across every AY2025 marking period                                                                                |
-| Course reconstruction is close                              | Simple four-quarter average lands within 0.5 points of the stored Y1 for 21,273 of 21,666 Newark full-year courses, 98.2 percent   |
-| GPA reconstruction is close in aggregate, loose per student | Distribution within a few points; 173 to 645 students cross the 3.0 line depending on quarter                                      |
+| Course reconstruction is close                              | Simple four-quarter average lands within 0.5 points of the stored Y1 for 20,884 of 21,533 Newark full-year courses, 97.0 percent   |
+| GPA reconstruction is close in aggregate, loose per student | Distribution within a few points; 222 to 748 students cross the 3.0 line depending on quarter                                      |
 
 The prior-year flatness is structural, not a defect. `int_powerschool__gpa_term`
 builds historical quarters by starting from the single Y1 storedgrades row and
@@ -186,7 +186,7 @@ percent.
 - `Q2` and `Q3` approximate.
 
 Simple rather than credit-weighted average. The live-year calculation is
-weighted, but the 98.2 percent agreement measured above shows the weights are
+weighted, but the 97.0 percent agreement measured above shows the weights are
 effectively uniform, so weighting adds complexity without accuracy.
 
 The **letter** is the real work. The reconstructed percent has to be mapped back
@@ -215,21 +215,32 @@ running_gpa(Qn) = sum(weighted_gpa_points_term through Qn)
 Anchoring `Q4` to the stored value was considered and **rejected**. The
 reconstruction sits systematically below the stored Y1, because PowerSchool's
 year letter grades are more generous than a running average of quarter points.
-Anchoring therefore produces:
+Unanchored, AY2025 high school reads:
 
 ```text
-50.1  ->  48.4  ->  46.1  ->  50.4
+45.1  ->  46.7  ->  46.6  ->  48.2      stored Y1: 48.9
 ```
 
-A year-long decline followed by a sharp Q4 recovery. The decline is real —
-quarter GPAs genuinely fall, 2.987 to 2.925 to 2.824 — but the size of the final
-jump is an artifact of the anchor, and it is exactly the shape a stakeholder
-builds a narrative around. Unanchored reads `50.1 -> 48.4 -> 46.1 -> 47.7`, an
-honest trajectory that simply stops one step short of the Y1 value of 50.4.
+A rising trajectory that stops slightly short of the year value. Anchoring would
+replace that final 48.2 with 48.9, inserting a step at Q4 that the underlying
+data does not produce. The step is small at high-school grain — 0.7 points — and
+larger across all students, where the same comparison runs 52.9, 54.2, 53.7,
+56.1 against a stored 58.8. Either way it is an artifact of the anchor rather
+than anything a student did, and a step at the last marking period is precisely
+what a stakeholder builds a narrative around.
+
+**Correction, recorded deliberately.** An earlier draft of this section cited
+`50.1 -> 48.4 -> 46.1 -> 47.7` against `50.4` and argued the reconstruction
+showed a year-long decline. Those were **AY2024** figures, produced by querying
+`int_powerschool__gpa_term` at `yearid = 34`; the convention is
+`yearid = academic_year - 1990`, so AY2025 is 35. The corrected AY2025 data
+rises rather than declines. The decision not to anchor was re-confirmed against
+these corrected numbers and stands, but the original justification was wrong and
+is not preserved.
 
 **This makes course grades and GPA asymmetric on purpose.** Course grades anchor
-because the anchor is exact and free. GPA does not, because its anchor
-manufactures a visible artifact. Do not "fix" the inconsistency.
+because the anchor is exact and free. GPA does not, because its anchor inserts a
+step the data does not contain. Do not "fix" the inconsistency.
 
 ### Isolation from the current year — mandatory, and not automatic
 
