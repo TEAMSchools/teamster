@@ -5,6 +5,7 @@ with
                 relations=[
                     source("kippnewark_powerschool", model.name),
                     source("kippcamden_powerschool", model.name),
+                    source("kipppaterson_powerschool", model.name),
                 ]
             )
         }}
