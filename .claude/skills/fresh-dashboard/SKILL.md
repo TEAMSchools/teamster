@@ -425,6 +425,49 @@ feeds -- is empty/null network-wide. This is expected, not a bug, and not
 fixable by any part of this toggle; it resolves on its own once PowerSchool
 catches up, with no further action needed.
 
+## The QC worklist and its hardcoded FDOS date
+
+Two AY2026 decisions that are easy to undo by accident. Full detail in the
+reference doc; this is what to know before editing
+`int_tableau__finalsite_student_scaffold` or `rpt_tableau__fresh_dashboard_qc`.
+
+**`is_enrolled_fdos` is computed here, off a hardcoded regional date.** Newark
+and Paterson August 28, Camden August 24, Miami August 14 — month and day
+hardcoded, year from `var("finalsite_recruitment_year")`, exposed as
+`custom_fdos_date`. It deliberately does NOT pass through either SIS's own
+`is_enrolled_fdos`: Focus computes one network-wide first day, which reported
+`false` for nearly every Miami student at a later-starting school, and
+PowerSchool's is per-school. **Do not "fix" this by repointing at the upstream
+flag, and do not change `int_extracts__student_enrollments` or
+`int_focus__student_enrollments`** — they keep their own versions for their
+other consumers. When the enrollment team changes a first day, edit the `CASE`
+in `custom_fdos_dates` and nothing else.
+
+**`is_enrolled_fdos` is a bare comparison on purpose.** Its sibling flags use
+`if(<cmp>, true, false)`; that form would report every student with no SIS
+record as `false` instead of NULL. Wrapping it to match the siblings is a
+regression, not a cleanup — the same trap that produced a wrong doc claim about
+`is_grade_level_mismatch` / `is_school_mismatch`, which DO collapse NULL to
+`false` because they are wrapped.
+
+**The worklist has four flags, not five.** `is_same_day_status_tie` was deleted
+at the AY2026 review and replaced by direction 3 of `is_enroll_status_mismatch`
+(the pending-status set). The same-day tie still happens in the data and the
+Reset Protocol is still the fix — it just no longer gets its own worklist row,
+so don't re-add the flag when someone reports a wrong `latest_status`.
+
+**`finalsite_expected_enroll_status` has three non-null values**, and the
+direction-3 set is SRE-owned rather than derived: `Accepted`, `Assigned School`,
+`Did Not Enroll`, `Campus Transfer Requested`, `Parent Declined`,
+`Enrollment In Progress`. Two oddities that are NOT bugs — `Did Not Enroll` and
+`Parent Declined` read as exits rather than pending states, and `Accepted`
+matches no rows in current data. Confirm with SRE before changing the list.
+
+**Retention is SRE's to resolve, not ours.** Grade repetition makes
+`is_grade_level_mismatch` and `is_school_mismatch` fire on correctly recorded
+students. This was raised and explicitly handed to SRE — do not build
+suppression or labeling logic for it unless they come back asking.
+
 ## Verified facts (don't re-derive these — reference them)
 
 - `stg_powerschool__schools.school_level` is a single value **per school**

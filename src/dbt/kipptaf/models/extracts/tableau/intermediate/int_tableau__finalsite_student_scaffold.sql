@@ -1,40 +1,4 @@
 with
-    -- Computed directly off int_finalsite__status_report_unpivot, before the
-    -- crosswalk join below fans a single detailed_status out to multiple
-    -- status_group_value rows (by design -- one status can count toward
-    -- several goal groupings). Counting after that fan-out would double-count
-    -- a single real status change as a "duplicate" whenever it happens to
-    -- also be multi-grouped. distinct also collapses a genuine
-    -- partition-repeated row (the same enrollment/status/date can recur under
-    -- more than one loaded _dagster_partition_key, per
-    -- int_finalsite__status_report_unpivot's own documented grain) --
-    -- _dagster_partition_key is not projected here, so those collapse to one
-    -- byte-identical tuple.
-    -- grain projection: every column here is functionally determined by
-    -- (finalsite_enrollment_id, detailed_status, status_start_date); not a
-    -- mask for upstream duplicates.
-    same_day_status_dates as (
-        select distinct
-            finalsite_enrollment_id,
-            detailed_status,
-            status_start_date,
-            latest_status_date,
-
-        from {{ ref("int_finalsite__status_report_unpivot") }}
-        where enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
-    ),
-
-    same_day_status_tie_flags as (
-        select
-            finalsite_enrollment_id,
-
-            countif(status_start_date = latest_status_date)
-            > 1 as is_same_day_status_tie,
-
-        from same_day_status_dates
-        group by finalsite_enrollment_id
-    ),
-
     latest_status_calc as (
         select
             r.enrollment_academic_year,
@@ -54,14 +18,11 @@ with
             r.detailed_status,
             r.status_start_date,
             r.status_order,
-            r.latest_status_date,
 
             x.status_group_name,
             x.status_group_value,
             x.grouped_status_order,
             x.grouped_status_timeframe,
-
-            sd.is_same_day_status_tie,
 
             'All' as aligned_enrollment_type,
 
@@ -84,9 +45,6 @@ with
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
             and not x.qa_flag
-        inner join
-            same_day_status_tie_flags as sd
-            on r.finalsite_enrollment_id = sd.finalsite_enrollment_id
         where r.enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),
 
@@ -113,7 +71,6 @@ with
             grouped_status_order,
             grouped_status_timeframe,
             latest_status,
-            is_same_day_status_tie,
 
             max(status_start_date) over (
                 partition by finalsite_id, status_group_value
@@ -152,7 +109,6 @@ with
             enrollment_type,
             grouped_status,
             latest_status,
-            is_same_day_status_tie,
             aligned_enrollment_type,
             grouped_status_order,
             grouped_status_timeframe,
@@ -202,7 +158,6 @@ with
             r.enrollment_type,
             r.grouped_status,
             r.latest_status,
-            r.is_same_day_status_tie,
             r.aligned_enrollment_type,
             r.grouped_status_order,
             r.grouped_status_timeframe,
@@ -314,7 +269,7 @@ with
             e.student_number,
             e.grade_level,
             e.enroll_status,
-            e.is_enrolled_fdos,
+            e.startdate as sis_entry_date,
             e.is_enrolled_oct01,
             e.is_enrolled_oct15,
             e.is_enrolled_mar15,
@@ -339,7 +294,7 @@ with
             student_number,
             grade_level,
             enroll_status,
-            is_enrolled_fdos,
+            entrydate as sis_entry_date,
             is_enrolled_oct01,
             is_enrolled_oct15,
             is_enrolled_mar15,
@@ -360,7 +315,7 @@ with
             student_number,
             grade_level,
             enroll_status,
-            is_enrolled_fdos,
+            sis_entry_date,
             is_enrolled_oct01,
             is_enrolled_oct15,
             is_enrolled_mar15,
@@ -405,7 +360,6 @@ with
             self_contained,
             enrollment_type,
             latest_status,
-            is_same_day_status_tie,
             aligned_enrollment_type,
             grouped_status_timeframe,
 
@@ -435,7 +389,6 @@ with
             d.self_contained,
             d.enrollment_type,
             d.latest_status,
-            d.is_same_day_status_tie,
             d.aligned_enrollment_type,
             d.grouped_status_timeframe,
 
@@ -473,7 +426,6 @@ with
             r.self_contained,
             r.enrollment_type,
             r.latest_status,
-            r.is_same_day_status_tie,
             r.aligned_enrollment_type,
             r.grouped_status_timeframe,
             r.goal_name,
@@ -485,7 +437,7 @@ with
             e.grade_level as sis_grade_level,
             e.schoolid as sis_schoolid,
             e.school as sis_school,
-            e.is_enrolled_fdos,
+            e.sis_entry_date,
             e.is_enrolled_oct01,
             e.is_enrolled_oct15,
             e.is_enrolled_mar15,
@@ -497,6 +449,16 @@ with
                     r.latest_status
                     in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
                 then 1
+                when
+                    r.latest_status in (
+                        'Accepted',
+                        'Assigned School',
+                        'Did Not Enroll',
+                        'Campus Transfer Requested',
+                        'Parent Declined',
+                        'Enrollment In Progress'
+                    )
+                then 2
             end as finalsite_expected_enroll_status,
 
         from expanded_roster as r
@@ -532,7 +494,6 @@ with
             r.self_contained,
             r.enrollment_type,
             r.latest_status,
-            r.is_same_day_status_tie,
             r.aligned_enrollment_type,
             r.grouped_status_timeframe,
             r.goal_name,
@@ -544,7 +505,7 @@ with
             e.grade_level as sis_grade_level,
             e.schoolid as sis_schoolid,
             e.school as sis_school,
-            e.is_enrolled_fdos,
+            e.sis_entry_date,
             e.is_enrolled_oct01,
             e.is_enrolled_oct15,
             e.is_enrolled_mar15,
@@ -556,6 +517,16 @@ with
                     r.latest_status
                     in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
                 then 1
+                when
+                    r.latest_status in (
+                        'Accepted',
+                        'Assigned School',
+                        'Did Not Enroll',
+                        'Campus Transfer Requested',
+                        'Parent Declined',
+                        'Enrollment In Progress'
+                    )
+                then 2
             end as finalsite_expected_enroll_status,
 
         from expanded_roster as r
@@ -571,6 +542,28 @@ with
             on r.enrollment_academic_year = e.academic_year
             and r.finalsite_id = e.infosnap_id
         where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+    ),
+
+    -- Hardcoded FDOS per region; year from finalsite_recruitment_year. Own CTE
+    -- because BigQuery rejects a lateral custom_fdos_date reference. Rationale
+    -- in fresh-dashboard-data-model.md.
+    custom_fdos_dates as (
+        select
+            *,
+
+            case
+                region
+                when 'Newark'
+                then date({{ var("finalsite_recruitment_year") }}, 8, 28)
+                when 'Paterson'
+                then date({{ var("finalsite_recruitment_year") }}, 8, 28)
+                when 'Camden'
+                then date({{ var("finalsite_recruitment_year") }}, 8, 24)
+                when 'Miami'
+                then date({{ var("finalsite_recruitment_year") }}, 8, 14)
+            end as custom_fdos_date,
+
+        from final_roster
     )
 
 select
@@ -578,7 +571,8 @@ select
 
     if(
         (finalsite_expected_enroll_status = 0 and enroll_status in (2, 3))
-        or (finalsite_expected_enroll_status = 1 and enroll_status = 0),
+        or (finalsite_expected_enroll_status = 1 and enroll_status = 0)
+        or (finalsite_expected_enroll_status = 2 and enroll_status = 0),
         true,
         false
     ) as is_enroll_status_mismatch,
@@ -587,4 +581,8 @@ select
 
     if(schoolid != sis_schoolid, true, false) as is_school_mismatch,
 
-from final_roster
+    -- Bare comparison, not if(..., true, false), so a student with no SIS
+    -- record stays null rather than collapsing to false.
+    sis_entry_date <= custom_fdos_date as is_enrolled_fdos,
+
+from custom_fdos_dates

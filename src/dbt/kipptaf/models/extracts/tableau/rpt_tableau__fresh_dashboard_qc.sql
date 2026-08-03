@@ -24,7 +24,6 @@ with
             sis_schoolid,
             sis_school,
             finalsite_expected_enroll_status,
-            is_same_day_status_tie,
             is_enroll_status_mismatch,
             is_grade_level_mismatch,
             is_school_mismatch,
@@ -66,7 +65,6 @@ select
 from
     roster unpivot (
         flag_value for flag_name in (
-            is_same_day_status_tie,
             is_enroll_status_mismatch,
             is_grade_level_mismatch,
             is_school_mismatch,

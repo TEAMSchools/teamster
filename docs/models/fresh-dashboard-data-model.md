@@ -394,6 +394,13 @@ numbers and the dashboard:
   in `Enrolled` status, using the **OPEN ROSTER** button (top right) to see
   every student's current status. To prevent: avoid giving a student two status
   changes on the same calendar day.
+
+  This behavior used to be surfaced as its own QC flag
+  (`is_same_day_status_tie`). That flag was removed at the AY2026 definitions
+  review and replaced by direction 3 of `is_enroll_status_mismatch` — the tie
+  itself still happens, and the Reset Protocol is still the fix; it simply no
+  longer gets its own row on the worklist.
+
 - **Ingestion lag.** `stg_finalsite__status_report` ingests via a
   sensor/file-drop-triggered Couchdrop SFTP asset, not a fixed cron — a status
   cleanup done late in one team member's workday (e.g. a Spain-based team member
@@ -409,10 +416,12 @@ numbers and the dashboard:
   PowerSchool regions and `int_focus__student_enrollments` for Miami, the latter
   bridged to Finalsite through `int_finalsite__contact_id_attributes` on
   `focus_student_id` (Focus's `student_number` is not a Finalsite id, so that
-  bridge is what makes the join possible). Both branches supply all five
-  columns, so Miami students carry real values. The remaining reason a flag can
-  read NULL is the year-toggle window below, which applies to every region
-  equally.
+  bridge is what makes the join possible). Note that `is_enrolled_fdos` is no
+  longer among them — it is now computed in this model from `custom_fdos_date`
+  (see _First day of school is hardcoded per region_ below). Both branches
+  supply the remaining four columns, so Miami students carry real values. The
+  remaining reason a flag can read NULL is the year-toggle window below, which
+  applies to every region equally.
 - **All regions' point-in-time enrollment flags go NULL for a while right after
   the Finalsite recruitment year is toggled forward.** `enrollment_lookup`
   scopes **both** of its branches to the Finalsite recruitment year rather than
@@ -485,6 +494,50 @@ excluded deliberately — this repo treats `1` as invalid and never reports
 against it (`src/dbt/kipptaf/CLAUDE.md`). Prefer naming the code, or say
 "withdrawn" and "graduated" explicitly, rather than "inactive".
 
+### First day of school is hardcoded per region
+
+`is_enrolled_fdos` is computed in `int_tableau__finalsite_student_scaffold`,
+from a first-day-of-school date hardcoded in that model rather than read from
+either SIS:
+
+| region           | first day |
+| ---------------- | --------- |
+| Newark, Paterson | August 28 |
+| Camden           | August 24 |
+| Miami            | August 14 |
+
+**Month and day are hardcoded; the year is not.** It comes from
+`var("finalsite_recruitment_year")`, so the dates roll forward with the cycle
+instead of needing four edits every August. The value is exposed as
+`custom_fdos_date` so a reader can see which date a given row was judged
+against.
+
+**Why not use either SIS's own value.** Focus computes its `is_enrolled_fdos`
+against a single network-wide first day per school year, so Miami schools that
+start later than the earliest one reported `false` for nearly every student.
+PowerSchool's equivalent is per-school rather than per-region. Neither matches
+the date the enrollment team actually reports against, which is regional — so
+the date lives in this model, and only this model.
+
+**What it compares.** `sis_entry_date <= custom_fdos_date`, where
+`sis_entry_date` is the enrollment start date from the matched SIS record
+(`entrydate` in PowerSchool, `startdate` in Focus). This is entry-date only,
+matching the behavior it replaced: a student who enrolled before the first day
+and left before it still reads `true`.
+
+**It is a bare comparison, deliberately.** Its sibling flags use
+`if(<cmp>, true, false)`, which would report every student with no SIS record as
+`false`. A bare comparison against a NULL `sis_entry_date` yields NULL, so "not
+enrolled on day one" stays distinguishable from "we have no SIS record to
+judge". Do not wrap it to match the siblings.
+
+**This does not touch `int_extracts__student_enrollments` or
+`int_focus__student_enrollments`.** Both still compute their own
+`is_enrolled_fdos`, still consumed by everything else that reads them; this
+model simply stopped passing theirs through, and reads `entrydate` / `startdate`
+instead. Their `is_enrolled_oct01` / `oct15` / `mar15` flags are still passed
+through untouched.
+
 ### The QC worklist: `rpt_tableau__fresh_dashboard_qc`
 
 `is_enroll_status_mismatch` is one of five flags that
@@ -504,25 +557,45 @@ a student with none does not appear at all.
 Listed in the triage order SRE reviews them in, most urgent first — which is not
 the order the flags are declared in the SQL.
 
-| #   | flag                        | what it means                                                                                                                                                                                                                                                                                           | how it gets fixed                                                                                                          |
-| --- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `is_missing_sis_record`     | Not a disagreement but an absence — Finalsite says the student is enrolled and the SIS has no enrollment record at all to compare against.                                                                                                                                                              | Someone has to create or link the SIS record. A different fix from the disagreement case, which is why it is its own flag. |
-| 2   | `is_school_mismatch`        | Finalsite's assigned school is not the school the SIS has them at, so the student is counted against the wrong school's targets until it is fixed.                                                                                                                                                      | Confirm the true school, then fix whichever system is wrong.                                                               |
-| 3   | `is_enroll_status_mismatch` | Finalsite and the SIS disagree about whether the student is enrolled: Finalsite says enrolled while the SIS says withdrawn or graduated, or Finalsite says withdrawn while the SIS still has them active.                                                                                               | Decide which system is right, then correct the other one.                                                                  |
-| 4   | `is_grade_level_mismatch`   | Finalsite's grade for the student is not the grade the SIS has them in.                                                                                                                                                                                                                                 | Confirm the true grade, then fix whichever system is wrong.                                                                |
-| 5   | `is_same_day_status_tie`    | Two different statuses share the student's most recent status date, so the dashboard has to guess which one is current — and it guesses by rank, which is wrong for exits. A `Parent Declined` set the same day as `Enrollment In Progress` loses, and the student still looks like they are enrolling. | SRE, in Finalsite, via the Reset Protocol — move the student to another status, wait a day, then set the intended one.     |
+| #   | flag                        | what it means                                                                                                                                                                                                                                                                                                    | how it gets fixed                                                                                                          |
+| --- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `is_missing_sis_record`     | Not a disagreement but an absence — Finalsite says the student is enrolled and the SIS has no enrollment record at all to compare against.                                                                                                                                                                       | Someone has to create or link the SIS record. A different fix from the disagreement case, which is why it is its own flag. |
+| 2   | `is_school_mismatch`        | Finalsite's assigned school is not the school the SIS has them at, so the student is counted against the wrong school's targets until it is fixed.                                                                                                                                                               | Confirm the true school, then fix whichever system is wrong.                                                               |
+| 3   | `is_enroll_status_mismatch` | Finalsite and the SIS disagree about whether the student is enrolled, in any of three directions — Finalsite says enrolled while the SIS says withdrawn or graduated; Finalsite says withdrawn while the SIS still has them active; or Finalsite holds a pending status while the SIS already has them enrolled. | Decide which system is right, then correct the other one.                                                                  |
+| 4   | `is_grade_level_mismatch`   | Finalsite's grade for the student is not the grade the SIS has them in.                                                                                                                                                                                                                                          | Confirm the true grade, then fix whichever system is wrong.                                                                |
 
-#### Only four Finalsite statuses drive these checks
+#### Which Finalsite statuses drive these checks
 
-"Finalsite says enrolled" is not a category — it is one specific status, and the
-withdrawal side is three specific statuses. Everything else sets no expectation
-at all, so no enrollment-related flag can fire for it:
+"Finalsite says enrolled" is not a category — it is one specific status, and
+each other direction is its own named set. Everything outside these ten sets no
+expectation at all, so no enrollment-related flag can fire for it. The mapping
+lives in `finalsite_expected_enroll_status`:
 
-| the student's `latest_status`                              | drives                                                                  |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `Enrolled`                                                 | `is_missing_sis_record`, and direction 1 of `is_enroll_status_mismatch` |
-| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw` | direction 2 of `is_enroll_status_mismatch`                              |
-| anything else                                              | neither — no expectation exists, so there is nothing to contradict      |
+| the student's `latest_status`                                                                                             | expected | drives                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------- |
+| `Enrolled`                                                                                                                | `0`      | `is_missing_sis_record`, and direction 1 of `is_enroll_status_mismatch` |
+| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw`                                                                | `1`      | direction 2 of `is_enroll_status_mismatch`                              |
+| `Accepted`, `Assigned School`, `Did Not Enroll`, `Campus Transfer Requested`, `Parent Declined`, `Enrollment In Progress` | `2`      | direction 3 of `is_enroll_status_mismatch`                              |
+| anything else                                                                                                             | `NULL`   | nothing — no expectation exists, so there is nothing to contradict      |
+
+**Directions 2 and 3 make the same comparison** (against SIS `0`, currently
+enrolled) but are kept as separate expected values because they mean different
+things: direction 2 is "this student left", direction 3 is "this student has not
+finished enrolling". `Enrollment In Progress` belongs to direction 3 only.
+
+**The direction-3 set is SRE-owned, not derived.** Two things about it worth
+knowing rather than rediscovering: `Did Not Enroll` and `Parent Declined` read
+as exits rather than pending states, and `Accepted` matches no rows in current
+data (the `latest_status` values that do occur include `Assigned School`,
+`Did Not Enroll`, `Parent Declined`, `Campus Transfer Requested` and
+`Enrollment In Progress`, but not a bare `Accepted`). Neither is a defect —
+confirm with SRE before changing the list.
+
+**Direction 3 replaced a separate `is_same_day_status_tie` flag.** That flag
+surfaced students whose two most recent statuses shared a date; it was removed
+at the AY2026 definitions review in favor of this comparison. The underlying
+same-day-tie behavior is unchanged and still documented under _Known data model
+caveats_ above — it is simply no longer surfaced as its own worklist row.
 
 Two consequences worth stating explicitly, because neither is obvious from the
 flag names:
@@ -545,20 +618,14 @@ flag names:
 Raised at the AY2026 definitions review and **not yet answered** — come back and
 resolve these, then update this section and the flag definitions to match.
 
-1. **Retained students.** Grade repetition makes flags 2 and 4 fire on correctly
-   recorded students. Suppress, label, or leave firing? See the fuller entry
-   under _Open questions_ below, including what has to be settled first.
-2. **Is Finalsite's `Retained Date` actually populated?** The whole retention
-   discussion depends on it. Documented as empty network-wide, unverified since.
-   If it is empty, the prior question is whether SRE can start populating it.
-3. **Should the `Enrolled`-only gate on `is_missing_sis_record` stay?** As
+1. **Should the `Enrolled`-only gate on `is_missing_sis_record` stay?** As
    built, a student who should have an SIS record but whose Finalsite status was
    never advanced to `Enrolled` is invisible to the check. Is that acceptable,
    or should the gate widen?
-4. **Should "absent from the SIS" and "present but unlinked" be separate
+2. **Should "absent from the SIS" and "present but unlinked" be separate
    flags?** They need different fixes — create the record versus populate the
    linking id — but currently surface identically under `is_missing_sis_record`.
-5. **Confirm the triage order** in the table above. It reflects SRE's stated
+3. **Confirm the triage order** in the table above. It reflects SRE's stated
    priority as of that review, not a derived ranking, so it should be
    re-confirmed rather than assumed.
 

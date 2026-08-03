@@ -114,16 +114,37 @@ models:
           "New" or "Returning" -- whether Finalsite is recruiting this student
           into the network or re-enrolling them. Part of this model's grain, and
           what valid_detailed_status on the crosswalk is scoped against.
+      - name: sis_entry_date
+        data_type: date
+        description: >-
+          Enrollment start date from the matched SIS record -- entrydate in
+          PowerSchool, startdate in Focus. Carried through solely to compute
+          is_enrolled_fdos against custom_fdos_date; null when no SIS record
+          matched.
+      - name: custom_fdos_date
+        data_type: date
+        description: >-
+          First day of school for the student's region, hardcoded here rather
+          than read from either SIS -- Newark and Paterson August 28, Camden
+          August 24, Miami August 14. Month and day are hardcoded; the year
+          comes from the finalsite_recruitment_year variable, so the dates roll
+          forward with the cycle. Neither SIS's own first-day value matches what
+          the enrollment team reports against: Focus computes a single
+          network-wide first day, which reported false for nearly every Miami
+          student at a later-starting school. See
+          docs/models/fresh-dashboard-data-model.md.
       - name: is_enrolled_fdos
         data_type: boolean
         description: >-
-          True when the matched SIS enrollment record has the student enrolled
-          on the first day of school. Sourced from the SIS side, so it reflects
-          PowerSchool's or Focus's own calculation rather than anything
-          Finalsite reports. Known caveat -- Focus computes this against a
-          single network-wide first day per school year, so Miami schools that
-          start later than the earliest one report false for nearly every
-          student. See docs/models/fresh-dashboard-data-model.md.
+          True when the student's SIS enrollment start date falls on or before
+          custom_fdos_date. Recomputed here from the hardcoded regional date --
+          it no longer passes through either SIS's own first-day flag.
+          Entry-date only, matching the prior behavior: a student who enrolled
+          before the first day and left before it still counts as true. Null
+          when no SIS record matched, which is why this is a bare comparison
+          rather than the if(..., true, false) form its sibling flags use --
+          wrapping it would report every unmatched student as false rather than
+          unknown.
       - name: is_enrolled_oct01
         data_type: boolean
         description: >-
@@ -146,18 +167,6 @@ models:
           enrollment by status date then status rank. This is the single value
           the dashboard treats as "where the student is now", and what
           finalsite_expected_enroll_status is derived from.
-      - name: is_same_day_status_tie
-        data_type: boolean
-        description: >-
-          True when a student has more than one distinct Finalsite status set on
-          the same calendar day. Computed in same_day_status_tie_flags (in the
-          model SQL) directly off int_finalsite__status_report_unpivot, before
-          the crosswalk join fans a single detailed_status out to multiple
-          status_group_value rows (by design) -- counting after that fan-out
-          inflated this flag from a handful of genuine same-day duplicates to
-          ~30% of enrollments, verified empirically. Also deduplicates a same
-          (enrollment, status, date) recurring under more than one loaded
-          _dagster_partition_key.
       - name: aligned_enrollment_type
         data_type: string
         description: >-
@@ -192,11 +201,17 @@ models:
       - name: finalsite_expected_enroll_status
         data_type: int64
         description: >-
-          Enrollment status implied by the Finalsite latest_status (0 =
-          Enrolled, 1 = Mid Year Withdrawal/Never Attended/Summer Withdraw), for
+          Enrollment status implied by the Finalsite latest_status, for
           comparison against the SIS's actual enroll_status. Derived entirely
           from Finalsite -- it reads nothing from the SIS, and states what the
-          SIS ought to show if Finalsite is correct.
+          SIS ought to show if Finalsite is correct. 0 = Enrolled, so the
+          student should be active in the SIS. 1 = Mid Year Withdrawal, Never
+          Attended or Summer Withdraw, so they should not be. 2 = a pending
+          status (Accepted, Assigned School, Did Not Enroll, Campus Transfer
+          Requested, Parent Declined, Enrollment In Progress), which also should
+          not be active in the SIS -- the set is SRE-owned, and Accepted matches
+          no rows in current data. Null for every other status, where no
+          expectation exists and no mismatch can fire.
       - name: sis_grade_level
         data_type: int64
         description: >-
@@ -217,9 +232,11 @@ models:
         data_type: boolean
         description: >-
           True when finalsite_expected_enroll_status disagrees with the SIS's
-          actual enroll_status -- Finalsite says enrolled while the SIS says
-          withdrawn or graduated, or Finalsite says withdrawn while the SIS says
-          currently enrolled.
+          actual enroll_status, in any of three directions -- Finalsite says
+          enrolled while the SIS says withdrawn or graduated; Finalsite says
+          withdrawn while the SIS says currently enrolled; or Finalsite holds a
+          pending status while the SIS already has the student enrolled. The
+          third direction replaced a separate same-day-status-tie flag.
       - name: is_grade_level_mismatch
         data_type: boolean
         description: >-

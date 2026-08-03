@@ -5,7 +5,7 @@ models:
       the current-timeframe roster from int_tableau__finalsite_student_scaffold,
       reduces it to one row per student, then unpivots the mismatch flags and
       keeps only the rows where a flag is true -- so a student appears once for
-      each thing needing a fix, up to five times, and not at all when clean.
+      each thing needing a fix, up to four times, and not at all when clean.
       Each row pairs the Finalsite values with the SIS values they were compared
       against so the fix is actionable without a second lookup. See
       docs/models/fresh-dashboard-data-model.md.
@@ -22,15 +22,15 @@ models:
       - name: flag_name
         data_type: string
         description: >
-          Which problem fired -- is_same_day_status_tie,
-          is_enroll_status_mismatch, is_grade_level_mismatch,
-          is_school_mismatch, or is_missing_sis_record. The first four are
-          computed on int_tableau__finalsite_student_scaffold;
-          is_missing_sis_record is derived here, and fires when Finalsite says a
-          student is Enrolled but no SIS enrollment record matched at all --
-          distinct from is_enroll_status_mismatch, which compares a status
-          against a record that does exist. The two need different fixes: create
-          or link the record, versus correct a status.
+          Which problem fired -- is_enroll_status_mismatch,
+          is_grade_level_mismatch, is_school_mismatch, or is_missing_sis_record.
+          The first three are computed on
+          int_tableau__finalsite_student_scaffold; is_missing_sis_record is
+          derived here, and fires when Finalsite says a student is Enrolled but
+          no SIS enrollment record matched at all -- distinct from
+          is_enroll_status_mismatch, which compares a status against a record
+          that does exist. The two need different fixes: create or link the
+          record, versus correct a status.
       - name: flag_value
         data_type: bool
         description: >
