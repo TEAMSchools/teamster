@@ -1,12 +1,21 @@
 models:
   - name: rpt_google_directory__users_import
+    description: >
+      Google Workspace student accounts to create or update, consumed by the
+      google_directory user_create and user_update assets. Rows are the union of
+      two enrollment sources — PowerSchool for the NJ regions, and Focus for
+      Miami, whose PowerSchool instance is a frozen archive. Paterson is
+      excluded. A row appears only when the account is missing (is_create) or
+      when its name, suspension state, or org unit has drifted from the source
+      of record (is_update).
     columns:
       - name: student_number
         data_type: int64
         description: >
-          PowerSchool student identifier. Populates externalIds[type='custom',
+          Student identifier populating externalIds[type='custom',
           customType='student_number'] on new Google Workspace student accounts
-          for cross-system identity lookup.
+          for cross-system identity lookup. Carries the PowerSchool student
+          number for NJ regions and the Focus-prefixed student id for Miami.
         data_tests:
           - not_null:
               config:

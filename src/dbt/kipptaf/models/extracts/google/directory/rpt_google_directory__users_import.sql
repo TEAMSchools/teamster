@@ -1,5 +1,5 @@
 with
-    students as (
+    powerschool_students as (
         select
             student_number,
             student_first_name as first_name,
@@ -14,7 +14,71 @@ with
 
             if(enroll_status = 0, false, true) as suspended,
         from {{ ref("int_extracts__student_enrollments") }}
-        where rn_all = 1 and student_email is not null and region != 'Paterson'
+        where
+            rn_all = 1
+            and student_email is not null
+            and region not in ('Paterson', 'Miami')
+    ),
+
+    focus_students as (
+        /* Miami's PowerSchool is a frozen archive, so Focus is the enrollment
+        source. The address comes from the login generator rather than from
+        Focus, so provisioning does not wait on the import-once DEMOGRAPHICS
+        feed that still owes ~420 enrolled students an address (#4698). */
+        select
+            e.student_number,
+            e.student_first_name as first_name,
+            e.student_last_name as last_name,
+            e.school as school_name,
+            e.grade_level,
+
+            sl.google_email as student_email_google,
+            sl.default_password as student_web_password,
+
+            /* Focus surfaces no out-of-district placement field; routing is on
+            suspension alone. If a Miami student is ever placed out of district
+            they will keep an active account instead of moving to
+            /Students/Disabled -- see the note on #4513. */
+            false as is_out_of_district,
+
+            lower(e.region) as region,
+
+            if(e.enroll_status = 0, false, true) as suspended,
+        from {{ ref("int_focus__student_enrollments") }} as e
+        inner join
+            {{ ref("stg_people__student_logins") }} as sl
+            on e.student_number = sl.student_number
+        where e.academic_year = {{ var("current_academic_year") }} and e.rn_year = 1
+    ),
+
+    students as (
+        select
+            student_number,
+            first_name,
+            last_name,
+            school_name,
+            grade_level,
+            student_email_google,
+            student_web_password,
+            is_out_of_district,
+            region,
+            suspended,
+        from powerschool_students
+
+        union all
+
+        select
+            student_number,
+            first_name,
+            last_name,
+            school_name,
+            grade_level,
+            student_email_google,
+            student_web_password,
+            is_out_of_district,
+            region,
+            suspended,
+        from focus_students
     ),
 
     with_google as (
