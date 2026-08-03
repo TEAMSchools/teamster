@@ -134,10 +134,17 @@ models:
       - name: finalsite_expected_enroll_status
         data_type: int64
         description: >
-          Enrollment status implied by the Finalsite latest_status (0 =
-          Enrolled, 1 = Mid Year Withdrawal/Never Attended/Summer Withdraw), for
-          comparison against sis_enroll_status. This is what the SIS ought to
-          show if Finalsite is correct -- it is derived entirely from Finalsite
-          and reads nothing from the SIS. Null for most of the funnel, where an
-          applicant has no business having an SIS record yet and no mismatch can
-          fire.
+          The enroll_status the SIS ought to show if Finalsite is correct, for
+          comparison against sis_enroll_status. Derived entirely from Finalsite
+          -- it reads nothing from the SIS. Values deliberately mirror the SIS's
+          own enroll_status domain so a comparison between the two columns means
+          the same thing on both sides: 0 when latest_status is Enrolled, 2 when
+          it is one of the nine statuses that imply the student should not be
+          currently enrolled, null for everything else -- most of the funnel,
+          where an applicant has no business having an SIS record yet and no
+          mismatch can fire. Those nine cover two situations that share one
+          expected value because the comparison is identical -- the student left
+          (Mid Year Withdrawal, Never Attended, Summer Withdraw) or has not
+          finished enrolling (Accepted, Assigned School, Did Not Enroll, Campus
+          Transfer Requested, Parent Declined, Enrollment In Progress). Which
+          situation a row came from is still readable from latest_status.

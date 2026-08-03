@@ -676,7 +676,7 @@ resolve these, then update this section and the flag definitions to match.
 Two properties worth knowing before reading it:
 
 - **`is_missing_sis_record` is derived in this model, not upstream.** The other
-  four come through from `int_tableau__finalsite_student_scaffold`; this one is
+  three come through from `int_tableau__finalsite_student_scaffold`; this one is
   computed here as
   `finalsite_expected_enroll_status = 0 and enroll_status is null`.
 - **The two comparison flags read `false`, not `true`, when the SIS side is
