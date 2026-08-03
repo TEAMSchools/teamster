@@ -77,7 +77,7 @@ models:
         description: >-
           Grade level as reported by Finalsite, decoded to an integer in the
           finalsite package (PK = -1, K = 0, 1-12 as themselves). Compared
-          against ps_grade_level to produce is_grade_level_mismatch.
+          against sis_grade_level to produce is_grade_level_mismatch.
       - name: enroll_status
         data_type: int64
         description: >-
@@ -85,8 +85,11 @@ models:
           or Focus for Miami) -- 0 currently enrolled, 2 withdrawn, 3 graduated.
           Null when no SIS record matched, which is the case
           is_missing_sis_record covers downstream. Distinct from
-          ps_enroll_status, which is derived from Finalsite rather than read
-          from the SIS.
+          finalsite_expected_enroll_status, which is derived from Finalsite
+          rather than read from the SIS. Exposed as sis_enroll_status on
+          rpt_tableau__fresh_dashboard_qc, where the pairing needs to be
+          explicit; kept as enroll_status here because the other two
+          fresh_dashboard views expose it under that name.
       - name: gender
         data_type: string
         description: Student gender as recorded in Finalsite.
@@ -142,8 +145,8 @@ models:
           The student's most recent Finalsite status for this cycle, picked per
           enrollment by status date then status rank. This is the single value
           the dashboard treats as "where the student is now", and what
-          ps_enroll_status is derived from.
-      - name: is_same_day_status_duplicate
+          finalsite_expected_enroll_status is derived from.
+      - name: is_same_day_status_tie
         data_type: boolean
         description: >-
           True when a student has more than one distinct Finalsite status set on
@@ -186,39 +189,46 @@ models:
           Days the student has been in the current grouped status, inclusive --
           a status set and ended on the same day counts as 1 rather than 0.
           Feeds the Pending Offers day-bucket splits on the dashboard.
-      - name: ps_enroll_status
+      - name: finalsite_expected_enroll_status
         data_type: int64
         description: >-
           Enrollment status implied by the Finalsite latest_status (0 =
           Enrolled, 1 = Mid Year Withdrawal/Never Attended/Summer Withdraw), for
-          comparison against PowerSchool's actual enroll_status.
-      - name: ps_grade_level
+          comparison against the SIS's actual enroll_status. Derived entirely
+          from Finalsite -- it reads nothing from the SIS, and states what the
+          SIS ought to show if Finalsite is correct.
+      - name: sis_grade_level
         data_type: int64
         description: >-
           Grade level from the matched SIS enrollment record (PowerSchool, or
           Focus for Miami), for comparison against the Finalsite-reported
           grade_level.
-      - name: ps_school
+      - name: sis_school
         data_type: string
         description: >-
           School name from the matched SIS enrollment record (PowerSchool, or
           Focus for Miami).
-      - name: ps_schoolid
+      - name: sis_schoolid
         data_type: int64
         description: >-
           School ID from the matched SIS enrollment record (PowerSchool, or
           Focus for Miami), for comparison against schoolid.
-      - name: is_active_inactive_mismatch
+      - name: is_enroll_status_mismatch
         data_type: boolean
         description: >-
-          True when the Finalsite-implied enrollment status (ps_enroll_status)
-          disagrees with PowerSchool's actual enroll_status.
+          True when finalsite_expected_enroll_status disagrees with the SIS's
+          actual enroll_status -- Finalsite says enrolled while the SIS says
+          withdrawn or graduated, or Finalsite says withdrawn while the SIS says
+          currently enrolled.
       - name: is_grade_level_mismatch
         data_type: boolean
         description: >-
-          True when the Finalsite-reported grade_level differs from
-          PowerSchool's ps_grade_level.
+          True when the Finalsite-reported grade_level differs from the SIS's
+          sis_grade_level. Null rather than true when no SIS record matched,
+          since it is a plain inequality comparison.
       - name: is_school_mismatch
         data_type: boolean
         description: >-
-          True when schoolid differs from PowerSchool's ps_schoolid.
+          True when the Finalsite-reported schoolid differs from the SIS's
+          sis_schoolid. Null rather than true when no SIS record matched, since
+          it is a plain inequality comparison.

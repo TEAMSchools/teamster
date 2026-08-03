@@ -29,7 +29,7 @@ with
             finalsite_enrollment_id,
 
             countif(status_start_date = latest_status_date)
-            > 1 as is_same_day_status_duplicate,
+            > 1 as is_same_day_status_tie,
 
         from same_day_status_dates
         group by finalsite_enrollment_id
@@ -61,7 +61,7 @@ with
             x.grouped_status_order,
             x.grouped_status_timeframe,
 
-            sd.is_same_day_status_duplicate,
+            sd.is_same_day_status_tie,
 
             'All' as aligned_enrollment_type,
 
@@ -113,7 +113,7 @@ with
             grouped_status_order,
             grouped_status_timeframe,
             latest_status,
-            is_same_day_status_duplicate,
+            is_same_day_status_tie,
 
             max(status_start_date) over (
                 partition by finalsite_id, status_group_value
@@ -152,7 +152,7 @@ with
             enrollment_type,
             grouped_status,
             latest_status,
-            is_same_day_status_duplicate,
+            is_same_day_status_tie,
             aligned_enrollment_type,
             grouped_status_order,
             grouped_status_timeframe,
@@ -202,7 +202,7 @@ with
             r.enrollment_type,
             r.grouped_status,
             r.latest_status,
-            r.is_same_day_status_duplicate,
+            r.is_same_day_status_tie,
             r.aligned_enrollment_type,
             r.grouped_status_order,
             r.grouped_status_timeframe,
@@ -405,7 +405,7 @@ with
             self_contained,
             enrollment_type,
             latest_status,
-            is_same_day_status_duplicate,
+            is_same_day_status_tie,
             aligned_enrollment_type,
             grouped_status_timeframe,
 
@@ -435,7 +435,7 @@ with
             d.self_contained,
             d.enrollment_type,
             d.latest_status,
-            d.is_same_day_status_duplicate,
+            d.is_same_day_status_tie,
             d.aligned_enrollment_type,
             d.grouped_status_timeframe,
 
@@ -473,7 +473,7 @@ with
             r.self_contained,
             r.enrollment_type,
             r.latest_status,
-            r.is_same_day_status_duplicate,
+            r.is_same_day_status_tie,
             r.aligned_enrollment_type,
             r.grouped_status_timeframe,
             r.goal_name,
@@ -482,9 +482,9 @@ with
             d.days_in_grouped_status,
 
             e.enroll_status,
-            e.grade_level as ps_grade_level,
-            e.schoolid as ps_schoolid,
-            e.school as ps_school,
+            e.grade_level as sis_grade_level,
+            e.schoolid as sis_schoolid,
+            e.school as sis_school,
             e.is_enrolled_fdos,
             e.is_enrolled_oct01,
             e.is_enrolled_oct15,
@@ -497,7 +497,7 @@ with
                     r.latest_status
                     in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
                 then 1
-            end as ps_enroll_status,
+            end as finalsite_expected_enroll_status,
 
         from expanded_roster as r
         left join
@@ -532,7 +532,7 @@ with
             r.self_contained,
             r.enrollment_type,
             r.latest_status,
-            r.is_same_day_status_duplicate,
+            r.is_same_day_status_tie,
             r.aligned_enrollment_type,
             r.grouped_status_timeframe,
             r.goal_name,
@@ -541,9 +541,9 @@ with
             d.days_in_grouped_status,
 
             e.enroll_status,
-            e.grade_level as ps_grade_level,
-            e.schoolid as ps_schoolid,
-            e.school as ps_school,
+            e.grade_level as sis_grade_level,
+            e.schoolid as sis_schoolid,
+            e.school as sis_school,
             e.is_enrolled_fdos,
             e.is_enrolled_oct01,
             e.is_enrolled_oct15,
@@ -556,7 +556,7 @@ with
                     r.latest_status
                     in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
                 then 1
-            end as ps_enroll_status,
+            end as finalsite_expected_enroll_status,
 
         from expanded_roster as r
         inner join
@@ -577,14 +577,14 @@ select
     *,
 
     if(
-        (ps_enroll_status = 0 and enroll_status in (2, 3))
-        or (ps_enroll_status = 1 and enroll_status = 0),
+        (finalsite_expected_enroll_status = 0 and enroll_status in (2, 3))
+        or (finalsite_expected_enroll_status = 1 and enroll_status = 0),
         true,
         false
-    ) as is_active_inactive_mismatch,
+    ) as is_enroll_status_mismatch,
 
-    if(grade_level != ps_grade_level, true, false) as is_grade_level_mismatch,
+    if(grade_level != sis_grade_level, true, false) as is_grade_level_mismatch,
 
-    if(schoolid != ps_schoolid, true, false) as is_school_mismatch,
+    if(schoolid != sis_schoolid, true, false) as is_school_mismatch,
 
 from final_roster
