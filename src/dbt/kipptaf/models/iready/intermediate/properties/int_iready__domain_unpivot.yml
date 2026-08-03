@@ -22,6 +22,15 @@ models:
       - name: completion_date
         data_type: date
         description: Date the student completed the diagnostic.
+      - name: test_round
+        data_type: string
+        description:
+          i-Ready testing round (BOY, MOY, EOY) the administration falls within,
+          or Outside Round when it doesn't match any of the school's defined
+          windows.
+      - name: _dbt_source_project
+        data_type: string
+        description: District code location derived from _dbt_source_relation.
       - name: domain_name
         data_type: string
         description:
@@ -55,7 +64,8 @@ unit_tests:
       to prove BigQuery's multi-column UNPIVOT drops a domain row only when
       every value in its tuple is null, matching the prior single-column
       unpivot's behavior of excluding an unmeasured domain rather than emitting
-      a row of nulls for it.
+      a row of nulls for it. Also verifies test_round and _dbt_source_project
+      pass through unchanged onto every unpivoted domain row.
     model: int_iready__domain_unpivot
     given:
       - input: ref('int_iready__diagnostic_results')
@@ -69,6 +79,8 @@ unit_tests:
               2026 as academic_year_int,
               date('2025-09-01') as `start_date`,
               date('2025-09-15') as completion_date,
+              'BOY' as test_round,
+              'kippnewark' as _dbt_source_project,
 
               'P9' as phonics_placement,
               'RP9' as phonics_relative_placement,
@@ -134,6 +146,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: algebra_and_algebraic_thinking,
             placement: P1,
             relative_placement: RP1,
@@ -146,6 +160,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: comprehension_informational_text,
             placement: P2,
             relative_placement: RP2,
@@ -158,6 +174,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: comprehension_literature,
             placement: P3,
             relative_placement: RP3,
@@ -170,6 +188,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: comprehension_overall,
             placement: P4,
             relative_placement: RP4,
@@ -182,6 +202,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: geometry,
             placement: P5,
             relative_placement: RP5,
@@ -194,6 +216,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: high_frequency_words,
             placement: P6,
             relative_placement: RP6,
@@ -206,6 +230,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: measurement_and_data,
             placement: P7,
             relative_placement: RP7,
@@ -218,6 +244,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: number_and_operations,
             placement: P8,
             relative_placement: RP8,
@@ -230,6 +258,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: phonics,
             placement: P9,
             relative_placement: RP9,
@@ -242,6 +272,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: phonological_awareness,
             placement: P10,
             relative_placement: RP10,
@@ -254,6 +286,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: reading_comprehension_informational_text,
             placement: P11,
             relative_placement: RP11,
@@ -266,6 +300,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: reading_comprehension_literature,
             placement: P12,
             relative_placement: RP12,
@@ -278,6 +314,8 @@ unit_tests:
             academic_year_int: 2026,
             start_date: 2025-09-01,
             completion_date: 2025-09-15,
+            test_round: BOY,
+            _dbt_source_project: kippnewark,
             domain_name: reading_comprehension_overall,
             placement: P13,
             relative_placement: RP13,
