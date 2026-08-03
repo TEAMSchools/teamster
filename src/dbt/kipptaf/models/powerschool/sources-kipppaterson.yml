@@ -743,6 +743,15 @@ sources:
                 - kipppaterson
                 - powerschool
                 - int_powerschool__gpa_cumulative
+      - name: int_powerschool__gpa_cumulative_year
+        config:
+          meta:
+            dagster:
+              group: powerschool
+              asset_key:
+                - kipppaterson
+                - powerschool
+                - int_powerschool__gpa_cumulative_year
       - name: int_powerschool__gradebook_assignments
         config:
           meta:

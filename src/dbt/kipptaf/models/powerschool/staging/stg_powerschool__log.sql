@@ -6,6 +6,7 @@ with
                     source("kippnewark_powerschool", "stg_powerschool__log"),
                     source("kippcamden_powerschool", "stg_powerschool__log"),
                     source("kippmiami_powerschool", "stg_powerschool__log"),
+                    source("kipppaterson_powerschool", "stg_powerschool__log"),
                 ]
             )
         }}
