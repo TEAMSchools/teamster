@@ -4,30 +4,53 @@
 
 FRESH is the network's enrollment recruitment dashboard: it tracks progress
 against recruitment targets (seats, new students, application/offer/ enrollment
-funnel counts) broken out by region, school, and grade. It has two Tableau views
-— **Progress to Goals** (`rpt_tableau__fresh_dashboard_progress_to_goals`) and
-**Aggregated** (`rpt_tableau__fresh_dashboard_aggregated`) — both built from the
-same underlying scaffold and goals data.
+funnel counts) broken out by region, school, and grade. It has two reporting
+views — **Progress to Goals** (`rpt_tableau__fresh_dashboard_progress_to_goals`)
+and **Aggregated** (`rpt_tableau__fresh_dashboard_aggregated`) — both built from
+the same underlying scaffold and goals data, plus a third data-quality surface,
+**`rpt_tableau__fresh_dashboard_qc`**, which lists the individual students whose
+Finalsite record disagrees with the SIS (see "The QC worklist" below). All three
+are wired into the `fresh_dashboard` exposure.
 
 ## Data model overview
 
 ```text
-stg_powerschool__schools ─────────────┐
-stg_powerschool__students ────────────┤
-int_focus__schools ───────────────────┤
-int_focus__student_enrollments ───────┼─▶ int_tableau__fresh_enrollment_scaffold ─┬─▶ rpt_tableau__fresh_dashboard_progress_to_goals
-stg_google_sheets__people__locations ─┤                                           │
-int_finalsite__status_report_unpivot ─┘ (net-new schools/grades only)             │
-                                                                                 └─▶ int_tableau__fresh_goals_scaffold ─▶ rpt_tableau__fresh_dashboard_aggregated
-                                                                                       ▲
-stg_google_sheets__finalsite__goals ──────────────────────────────────────────────────┘
+1. THE SPINE (one row per school x grade)
 
-stg_finalsite__status_report ─▶ int_finalsite__status_report_unpivot ─┐
-                                                                        ├─▶ int_tableau__finalsite_student_scaffold ─▶ both rpt_ models above
-stg_google_sheets__finalsite__status_crosswalk ─▶ int_google_sheets__finalsite__status_crosswalk_unpivot ─┘                    ▲
-                                                                                                                                  │
-int_extracts__student_enrollments (PowerSchool-only, zero Miami rows) ──────────────────────────────────────────────────────────┤
-int_focus__student_enrollments (Miami-only, Focus-sourced) ──────────────────────────────────────────────────────────────────────┘
+  stg_powerschool__schools ─────────────┐
+  stg_powerschool__students ────────────┤
+  int_focus__schools ───────────────────┤
+  int_focus__student_enrollments ───────┼─▶ int_tableau__fresh_enrollment_scaffold
+  stg_google_sheets__people__locations ─┤
+  int_finalsite__status_report_unpivot ─┘   (net-new schools/grades only)
+
+2. THE GOALS (numeric targets)
+
+  stg_google_sheets__finalsite__goals ─┬─▶ int_tableau__fresh_goals_scaffold
+                                       │     (inner-joined to the spine above)
+                                       └─▶ int_google_sheets__finalsite__goals_pivot
+                                             (Enrollment goal_type targets only)
+
+3. THE ACTUALS (where students are in the funnel)
+
+  stg_finalsite__status_report ─▶ int_finalsite__status_report_unpivot ────────┐
+  stg_google_sheets__finalsite__status_crosswalk                              │
+    └─▶ int_google_sheets__finalsite__status_crosswalk_unpivot ───────────────┤
+  int_extracts__student_enrollments (PowerSchool; zero Miami rows) ───────────┼─▶ int_tableau__finalsite_student_scaffold
+  int_focus__student_enrollments (Miami; Focus-sourced) ──────────────────────┤
+  int_finalsite__contact_id_attributes (Focus <-> Finalsite id bridge) ───────┘
+
+4. THE CONSUMERS (the fresh_dashboard exposure)
+
+  int_tableau__fresh_enrollment_scaffold ────┐
+  int_google_sheets__finalsite__goals_pivot ─┤
+  int_people__location_crosswalk ────────────┼─▶ rpt_tableau__fresh_dashboard_progress_to_goals
+  int_tableau__finalsite_student_scaffold ───┘
+
+  int_tableau__fresh_goals_scaffold ─────────┐
+  int_tableau__finalsite_student_scaffold ───┴─▶ rpt_tableau__fresh_dashboard_aggregated
+
+  int_tableau__finalsite_student_scaffold ─────▶ rpt_tableau__fresh_dashboard_qc
 ```
 
 The **scaffold** (school × grade spine) and the **goals** (numeric targets) are
@@ -73,7 +96,9 @@ it used to supply is computed here instead.
    `stg_google_sheets__people__locations` on `focus_school_id` to pick up the
    school abbreviation and the PowerSchool-space `schoolid`. Focus's own
    `school_number` is a Focus code (`2332A`), not a PowerSchool id, so that join
-   is what puts Miami in the same id space as everything else.
+   is what puts Miami in the same id space as everything else. That join also
+   carries `not loc.is_pathways`, keeping Pathways locations out of the
+   recruitment spine — they are not schools FRESH recruits into.
 1. **`current_grade_levels`** — which grades each school actually serves,
    derived from current enrollment rather than a static grade span.
    `stg_powerschool__students` at `enroll_status = 0` for non-Miami;
@@ -374,27 +399,27 @@ numbers and the dashboard:
   cleanup done late in one team member's workday (e.g. a Spain-based team member
   whose day ends mid-US-night) may not show on the dashboard until the next
   day's pull. Unconfirmed whether this specifically applies to Miami.
-- **Miami's point-in-time enrollment flags (`enroll_status`, `is_enrolled_fdos`,
-  `is_enrolled_oct01`, `is_enrolled_oct15`, `is_enrolled_mar15`) are always
-  NULL, on top of and separate from the scaffold's Miami carve-out above.**
-  `int_tableau__finalsite_student_scaffold.sql` backfills these 5 fields via a
-  `left join` to `int_extracts__student_enrollments`, keyed on
-  `(academic_year, infosnap_id)` -- `int_extracts__student_enrollments` is
-  PowerSchool-only and carries **zero Miami rows** (verified: `0` of `9,917`
-  total rows for AY2026). The `left join` means Miami students still appear on
-  the dashboard (this isn't the scaffold gap -- it affects every Miami student,
-  not just growing-school edge cases), but every one of them shows NULL for
-  these 5 fields. Fixing this needs the same Focus-sourced data as the scaffold
-  carve-out, plus this specific field set, joinable by `infosnap_id` -- see the
-  Open Questions entry below.
+- **Miami's point-in-time enrollment flags are Focus-sourced, not a gap.**
+  Earlier versions of this doc recorded `enroll_status` / `is_enrolled_fdos` /
+  `is_enrolled_oct01` / `is_enrolled_oct15` / `is_enrolled_mar15` as always NULL
+  for Miami, because `int_extracts__student_enrollments` is PowerSchool-only and
+  carries zero Miami rows. That is no longer true.
+  `int_tableau__finalsite_student_scaffold`'s `enrollment_lookup` CTE is a
+  `union all` of two branches: `int_extracts__student_enrollments` for
+  PowerSchool regions and `int_focus__student_enrollments` for Miami, the latter
+  bridged to Finalsite through `int_finalsite__contact_id_attributes` on
+  `focus_student_id` (Focus's `student_number` is not a Finalsite id, so that
+  bridge is what makes the join possible). Both branches supply all five
+  columns, so Miami students carry real values. The remaining reason a flag can
+  read NULL is the year-toggle window below, which applies to every region
+  equally.
 - **All regions' point-in-time enrollment flags go NULL for a while right after
-  the Finalsite recruitment year is toggled forward (separate from the
-  Miami-specific gap above).** `enrollment_lookup` scopes
-  `int_extracts__student_enrollments` to the Finalsite recruitment year rather
-  than `var("current_academic_year")` -- these two only match once PowerSchool
+  the Finalsite recruitment year is toggled forward.** `enrollment_lookup`
+  scopes **both** of its branches to the Finalsite recruitment year rather than
+  `var("current_academic_year")` -- these two only match once the SIS
   independently rolls over to the new year, which happens later, on its own
-  schedule. Until then PowerSchool has no real enrollment rows for that year at
-  all, so
+  schedule. Until then neither PowerSchool nor Focus has real enrollment rows
+  for that year, so
   `enroll_status`/`is_enrolled_fdos`/`is_enrolled_oct01`/`is_enrolled_oct15`/`is_enrolled_mar15`
   are NULL for every student, network-wide. Expected, not fixable by the toggle
   -- see the fresh-dashboard skill's year-toggle procedure.
@@ -444,6 +469,38 @@ Note the asymmetry: the enrolled-side check accepts SIS `2` (withdrawn) and `3`
 (graduated) as contradicting, while the withdrawn-side check only treats SIS `0`
 as contradicting. `enroll_status = 1` (inactive) and `-1` (pre-registered) never
 trigger a mismatch on either side.
+
+### The QC worklist: `rpt_tableau__fresh_dashboard_qc`
+
+`is_active_inactive_mismatch` is one of five flags that
+`int_tableau__finalsite_student_scaffold` computes per student.
+`rpt_tableau__fresh_dashboard_qc` is the SRE-facing surface for all five: it
+takes the roster at `grouped_status_timeframe = 'Current'`, `UNPIVOT`s the flags
+into `(flag_name, flag_value)`, and keeps only the rows where a flag actually
+fired (`where flag_value`). So it is a **worklist, not a report** — one row per
+student per problem, and an empty result is the good outcome.
+
+| flag                           | fires when                                                                                                |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `is_same_day_status_duplicate` | More than one status shares the student's latest status date — the same-day tie described above.          |
+| `is_active_inactive_mismatch`  | Finalsite's expected enrollment state contradicts the SIS, per the table above.                           |
+| `is_grade_level_mismatch`      | Finalsite's `grade_level` differs from the SIS's `ps_grade_level`.                                        |
+| `is_school_mismatch`           | Finalsite's `schoolid` differs from the SIS's `ps_schoolid`.                                              |
+| `is_missing_sis_record`        | Finalsite says the student is enrolled (`ps_enroll_status = 0`) but no SIS enrollment row matched at all. |
+
+Two properties worth knowing before reading it:
+
+- **`is_missing_sis_record` is derived in this model, not upstream.** The other
+  four come through from `int_tableau__finalsite_student_scaffold`; this one is
+  computed here as `ps_enroll_status = 0 and enroll_status is null`.
+- **The two comparison flags go NULL, not `true`, when the SIS side is
+  missing.** `is_grade_level_mismatch` and `is_school_mismatch` are plain `!=`
+  comparisons, and `!=` against NULL yields NULL — which `where flag_value` then
+  drops. So a student with no SIS record surfaces once, under
+  `is_missing_sis_record`, rather than three times. During the year-toggle
+  window (see the caveat above), when the SIS has no rows for the new year at
+  all, expect the two comparison flags to fall silent network-wide and
+  `is_missing_sis_record` to carry the volume.
 
 ## Rolling the dashboard over to a new cycle
 
@@ -562,7 +619,7 @@ expected, resolves on its own once PowerSchool catches up, and needs no action.
 
 ## Open questions
 
-- **`stg_finalsite__status_report.active_school_year` could give the blend a
+- **`stg_finalsite__status_report.active_school_year` could give the scaffold a
   finer per-record rollover signal.** Format is `YYYY-YYYY` (e.g. `2026-2027`)
   -- it's the school year a given student's Finalsite record is currently active
   under, and it's genuinely mixed at any moment (verified: as of this writing
