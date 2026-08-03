@@ -50,14 +50,14 @@ regions, `missing = 50`), partly because 54 sections were deliberately excluded
 from the pull and partly because Camden is no longer in scope — see _Region
 scope_ below.
 
-These three are now the gate's only failures. Everything else passes, so a
-fourth failure appearing means something genuinely changed, not more of the same
-backlog.
-
 Both describe the same underlying gap: for these rows, PowerSchool holds no
 usable `Y1` stored grade and no usable live final grade either, so this tool has
 nothing to fill in from. It is not a query bug, and there is no flag or override
 that makes it go away — the gate has no bypass, on purpose.
+
+These are now the gate's only failures — everything else passes. A fourth
+failure appearing means something genuinely changed, not more of the same
+backlog.
 
 **Required action:** someone with PowerSchool access must post the missing
 grades for those students and sections, or exclude the affected sections from
@@ -98,23 +98,26 @@ the 108 rows; those were the sections excluded from the pull, so what remains is
 entirely per-student rather than per-section. That changes the fix: no section
 needs a scheduling or School Setup change, only individual grades.
 
-What each combination implies:
+What each combination implies. Both live categories are partial sections, so
+neither is fixed by excluding a section — that would drop classmates who do have
+grades:
 
-- **Whole section ungraded (41 rows):** the section appears never to have been
-  graded. If it genuinely should not be reported, the fix is PowerSchool's
-  "Exclude from Course Roster Reports" checkbox on the section's Course
-  Submission Information panel (see the audit runbook). Then re-pull and re-load
-  the extract.
-- **Partial, classmates were graded (34 rows):** the section was graded and
-  these individual students were missed. Excluding the section would wrongly
-  drop the students who do have grades — post the missing grades instead.
-- **Conflicting grades (31 rows):** a grade exists, but sources or reporting
-  terms disagree, so the query refuses to pick one. Reconcile in PowerSchool.
-  These are the cheapest to clear.
-- **Grade exists but outside the handbook domain (2 rows):** the only available
-  grade was `F*`, a warehouse-internal marker that is not a legal
-  `AlphaGradeEarned` value. Determine the real grade and correct it in
-  PowerSchool.
+- **No grade in either source, partial (27 rows):** the section was graded and
+  these individual students were missed. Post the missing grades in PowerSchool.
+- **Conflicting grades, partial (20 rows):** a grade exists, but sources or
+  reporting terms disagree, so the query refuses to pick one. Reconcile in
+  PowerSchool. These are the cheapest to clear.
+
+Two further categories are empty on this extract but can reappear:
+
+- **Whole section ungraded:** the section appears never to have been graded. If
+  it genuinely should not be reported, the fix is PowerSchool's "Exclude from
+  Course Roster Reports" checkbox on the section's Course Submission Information
+  panel (see the audit runbook), then re-pull and re-load. This held 41 rows on
+  2026-07-29; the 54-section exclusion cleared all of them.
+- **Grade exists but outside the handbook domain:** the only available grade was
+  `F*`, a warehouse-internal marker that is not a legal `AlphaGradeEarned`
+  value. Determine the real grade and correct it in PowerSchool.
 
 The worklist CSV is PII-bearing (local student and section IDs) — same handling
 as the submission CSV: write it to `.claude/scratch/` (gitignored), never commit
