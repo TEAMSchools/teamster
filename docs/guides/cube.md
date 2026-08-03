@@ -288,16 +288,24 @@ put the viewer's email in `user`, and switch viewers by opening a new connection
 rather than restarting. `MEASURE()` wraps measures:
 
 ```bash
-uv run --with psycopg2-binary python - <<'PY'
-import psycopg2
+uv run --with 'psycopg[binary]>=3.3' python - <<'PY'
+import psycopg
 
-# identity = the `user` you connect as; swap it to test a different viewer
-conn = psycopg2.connect(host="127.0.0.1", port=15432,
-                        user="you@apps.teamschools.org",
-                        password="local-dev-sql", dbname="cube")
-cur = conn.cursor()
-cur.execute("SELECT MEASURE(count_employees) FROM staff_directory")
-print(cur.fetchall())
+# identity = the `user` you connect as; swap it to test a different viewer.
+# prepare_threshold=None disables psycopg's automatic statement preparation —
+# Cube's SQL API is a partial Postgres implementation, and there is no reason
+# to prepare a statement that runs once per connection (see
+# scripts/cube_rls_matrix.py, which follows the same pattern).
+with psycopg.connect(
+    host="127.0.0.1",
+    port=15432,
+    user="you@apps.teamschools.org",
+    password="local-dev-sql",
+    dbname="cube",
+    prepare_threshold=None,
+) as conn, conn.cursor() as cur:
+    cur.execute("SELECT MEASURE(count_employees) FROM staff_directory")
+    print(cur.fetchall())
 PY
 ```
 
@@ -373,8 +381,15 @@ Emulation works on two surfaces, with the same gate on each:
 
 | Surface                           | Pass the target as                                     | Caller identity                                      |
 | --------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
-| REST / MCP                        | an `act_as` claim in the signed token                  | the signed `email` claim                             |
+| REST (hand-minted token)          | an `act_as` claim in the signed token                  | the signed `email` claim                             |
 | Cube Cloud Playground and Explore | `{"email": "<viewer>"}` in the Security Context editor | `cubeCloud.username`, as authenticated by Cube Cloud |
+
+**The shipped `cube` MCP server cannot emulate.** `_mint_token(email)` in
+`src/cube/mcp/server.py` takes a single argument and hardcodes its JWT claims to
+`{"email", "iat", "exp"}` — there is no code path that sets `act_as`. To
+emulate, hand-mint the JWT yourself and call the REST API directly (see the
+"Alternative: REST `/load` with your own JWT" example below), not through the
+`cube` MCP tools.
 
 The SQL API needs neither: identity is the connecting user, so switch viewers by
 reconnecting (that is what the matrix tool does).
@@ -527,15 +542,19 @@ zero rows on `staff_pii`, not an error and not every row. Over the SQL API
 (viewer identity = the connecting `user`):
 
 ```bash
-uv run --with psycopg2-binary python - <<'PY'
-import psycopg2
+uv run --with 'psycopg[binary]>=3.3' python - <<'PY'
+import psycopg
 
-conn = psycopg2.connect(host="127.0.0.1", port=15432,
-                        user="a-department-scope-none-viewer@apps.teamschools.org",
-                        password="local-dev-sql", dbname="cube")
-cur = conn.cursor()
-cur.execute("SELECT MEASURE(count_employees) FROM staff_pii")
-print(cur.fetchall())  # expect zero rows / zero count, not an error
+with psycopg.connect(
+    host="127.0.0.1",
+    port=15432,
+    user="a-department-scope-none-viewer@apps.teamschools.org",
+    password="local-dev-sql",
+    dbname="cube",
+    prepare_threshold=None,
+) as conn, conn.cursor() as cur:
+    cur.execute("SELECT MEASURE(count_employees) FROM staff_pii")
+    print(cur.fetchall())  # expect zero rows / zero count, not an error
 PY
 ```
 

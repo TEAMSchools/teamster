@@ -261,9 +261,14 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   LEVEL**, so every top-level value there is caller-supplied: pasting
   `{"groups": ["staff-pii-all_in_scope"], "allowed_abbreviations": [...]}` was
   honored verbatim before the overwrite landed. Never reintroduce a
-  `!securityContext.groups` guard here — that guard IS the bypass. A REST
-  context (no `cubeCloud` key) is passed through untouched, since `checkAuth`
-  already resolved it.
+  `!securityContext.groups` guard here — that guard IS the bypass. The branch
+  gates on the presence of the top-level `cubeCloud` key, not on
+  `cubeCloud.username` being truthy: a REST/MCP context (no `cubeCloud` key at
+  all) skips the block entirely and is passed through untouched, since
+  `checkAuth` already resolved it. A Cube Cloud request (`cubeCloud` key
+  present) whose `username` is missing still enters the block and resolves to
+  the empty default-deny context via `resolveAccess` — a missing `username` is a
+  DENY, not a pass-through.
 - **Every securityContext field a policy interpolates MUST be returned by
   `access.buildSecurityContext`.** This is what makes the overwrite above a
   COMPLETE one, and it is the load-bearing assumption of the paste fix — not a
@@ -491,17 +496,18 @@ exercise it; a plain dev server silently default-denies every gated view.
 - **Testing RLS locally — SQL API is ground truth; the REST Playground also
   works in dev mode.** `checkSqlAuth` resolves identity from the connecting
   `user`: set `CUBEJS_PG_SQL_PORT` + `CUBEJS_SQL_USER`/`_PASSWORD`, connect via
-  `psycopg2` as the viewer's email in the SQL `user`, switch viewers per
-  connection with no restart. (`CUBE_SQL_DEV_EMAIL=<viewer>` optionally pins
-  every connection to one alias, overriding the connecting user — change +
-  restart to switch.) It's the prod BI/Superset surface. Tesseract
-  (`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on both APIs
-  and joining views is supported (multi-fact views); the old
-  `JoinDefinitionStatic` note was a Playground observation, not a SQL-API limit
-  — verified `student_attendance_view` / `staff_directory` /
-  `student_assessment_scores_view` query cleanly. **`checkAuth` DOES run in dev
-  mode (verified on Cube 1.6.59 and 1.7.14)** — the prior "REST skips auth in
-  dev mode / needs `NODE_ENV=production`" claim was WRONG, and Cube's own
+  `psycopg` v3 (not `psycopg2` — see `scripts/cube_rls_matrix.py`) as the
+  viewer's email in the SQL `user`, switch viewers per connection with no
+  restart. (`CUBE_SQL_DEV_EMAIL=<viewer>` optionally pins every connection to
+  one alias, overriding the connecting user — change + restart to switch.) It's
+  the prod BI/Superset surface. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`,
+  default `true`) is the planner on both APIs and joining views is supported
+  (multi-fact views); the old `JoinDefinitionStatic` note was a Playground
+  observation, not a SQL-API limit — verified `student_attendance_view` /
+  `staff_directory` / `student_assessment_scores_view` query cleanly.
+  **`checkAuth` DOES run in dev mode (verified on Cube 1.6.59 and 1.7.14)** —
+  the prior "REST skips auth in dev mode / needs `NODE_ENV=production`" claim
+  was WRONG, and Cube's own
   `🔓 Authentication checks are disabled in developer mode` boot banner is
   misleading here: a signed `email` claim still resolves a full scope. To
   emulate over the REST Playground, paste `{"email": "<viewer>"}` into its

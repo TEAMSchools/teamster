@@ -2,6 +2,9 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const jwt = require("jsonwebtoken");
+const fs = require("node:fs");
+const path = require("node:path");
+const access = require("./access");
 
 const SECRET = "test-secret-for-jwt-expiry-spec";
 
@@ -26,6 +29,20 @@ async function capturedEmulationLog(fn) {
     console.log = original;
   }
   return lines.filter((line) => line.includes("cube_emulation"));
+}
+
+// Same pattern as capturedEmulationLog, for the ADC-fallback breadcrumb, which
+// is logged via console.warn (not console.log).
+async function capturedWarnLog(fn) {
+  const lines = [];
+  const original = console.warn;
+  console.warn = (...args) => lines.push(args.join(" "));
+  try {
+    await fn();
+  } finally {
+    console.warn = original;
+  }
+  return lines.filter((line) => line.includes("cube_bq_credentials_fallback"));
 }
 
 test.beforeEach(() => {
@@ -289,6 +306,41 @@ test("checkAuth: a signature rejection points at the deployment's signing secret
   assert.doesNotMatch(message, /too old/i);
 });
 
+test("checkAuth: an unset signing secret withholds jsonwebtoken's own message, naming only that verification failed", async () => {
+  // jsonwebtoken reports an unset secret as "secret or public key must be
+  // provided" — that is deployment state (this environment has no signing
+  // secret configured at all), not a fact about the caller's own token. An
+  // unauthenticated caller must not learn that from a 403 body.
+  delete process.env.CUBEJS_API_SECRET;
+  const now = Math.floor(Date.now() / 1000);
+  // Signed with an arbitrary secret — irrelevant, since jwt.verify errors
+  // before ever checking the signature when its own secretOrPublicKey is
+  // missing.
+  const token = jwt.sign(
+    { email: "unset-secret@apps.teamschools.org", iat: now, exp: now + 300 },
+    "whatever",
+    { algorithm: "HS256" },
+  );
+  const message = await rejectionMessage(token);
+  assert.match(message, /the server could not verify it/);
+  assert.doesNotMatch(message, /secret or public key/);
+});
+
+test("checkAuth: a bad-signature rejection still echoes jsonwebtoken's own message text (withholding is narrow, not blanket)", async () => {
+  // Every OTHER JsonWebTokenError message stays verbatim — only the unset-
+  // secret case above is withheld. This is the non-regression half: a real
+  // signature mismatch must still name jsonwebtoken's own diagnostic text.
+  const now = Math.floor(Date.now() / 1000);
+  const message = await rejectionMessage(
+    jwt.sign(
+      { email: "badsig@apps.teamschools.org", iat: now, exp: now + 300 },
+      "not-the-real-secret",
+      { algorithm: "HS256" },
+    ),
+  );
+  assert.match(message, /invalid signature/i);
+});
+
 test("checkSqlAuth: an unset SQL password rejects the connection (fail-closed)", async () => {
   delete process.env.CUBEJS_SQL_PASSWORD;
   const res = await cube.checkSqlAuth({}, "sqlnopw@apps.teamschools.org", "x");
@@ -340,6 +392,136 @@ test("resolveAccess (production path) fails closed to default-deny when BigQuery
     assert.equal(res.password, "server-known-pw");
   } finally {
     cached.exports = origExports;
+  }
+});
+
+// --- ADC fallback when CUBEJS_DB_BQ_CREDENTIALS is unset --------------------
+// The documented local RLS sign-off runs `NODE_ENV=production
+// CUBEJS_DEV_MODE=false npm run dev`, so gating the ADC fallback on
+// NODE_ENV === "production" would fail-close that exact workflow (the bug a
+// prior draft of this change nearly reintroduced). The fallback is
+// unconditional; an unset CUBEJS_DB_BQ_CREDENTIALS instead logs a one-time
+// console.warn breadcrumb (`cube_bq_credentials_fallback`), latched by a
+// module-level flag so it fires once per process, not once per identity
+// resolution. These tests re-require "./cube" fresh (via require.cache
+// deletion) to get an unlatched module instance, rather than reaching into
+// cube.js's internals — the shared top-level `cube` binding used by every
+// other test in this file is untouched by that cache deletion.
+
+function stubBigQueryExports(queryImpl) {
+  const bqPath = require.resolve("@google-cloud/bigquery");
+  require("@google-cloud/bigquery"); // ensure it is in the require cache
+  const cached = require.cache[bqPath];
+  const origExports = cached.exports;
+  cached.exports = {
+    BigQuery: class {
+      async query(opts) {
+        return queryImpl(opts);
+      }
+    },
+  };
+  return () => {
+    cached.exports = origExports;
+  };
+}
+
+function freshCubeModule() {
+  const cubePath = require.resolve("./cube");
+  delete require.cache[cubePath];
+  return require("./cube");
+}
+
+test("resolveAccess: with CUBEJS_DB_BQ_CREDENTIALS unset, identity resolution falls back to ADC and still resolves — not a fail-closed empty context — in both dev and NODE_ENV=production", async () => {
+  delete process.env.CUBEJS_DB_BQ_CREDENTIALS;
+  process.env.CUBEJS_SQL_PASSWORD = "server-known-pw";
+
+  const restoreBigQuery = stubBigQueryExports(({ query }) => {
+    if (query.includes("dim_staff_reporting_chain")) return [[]];
+    if (query.includes("dim_locations")) {
+      return [[{ abbreviation: "ABC", region_key: "R1" }]];
+    }
+    if (query.includes("DISTINCT department_group")) return [[]];
+    return [
+      [
+        {
+          staff_key: "adc-fallback-staff",
+          student_location_scope: "school",
+          staff_pii_scope: "none",
+          region_key: "R1",
+          location_abbreviation: "ABC",
+          department_group: null,
+          job_function_level: 2,
+          staff_location_scope: "school",
+          staff_department_scope: "none",
+        },
+      ],
+    ];
+  });
+
+  try {
+    for (const nodeEnv of [undefined, "production"]) {
+      if (nodeEnv) process.env.NODE_ENV = nodeEnv;
+      else delete process.env.NODE_ENV;
+
+      const freshCube = freshCubeModule();
+      const email = `adc-fallback-${nodeEnv ?? "dev"}@apps.teamschools.org`;
+      const res = await freshCube.checkSqlAuth({}, email, "ignored");
+
+      assert.equal(res.password, "server-known-pw");
+      // Populated, HR-derived scope — the opposite of the empty default-deny
+      // shape that a fail-closed throw would have produced.
+      assert.ok(res.securityContext.groups.includes("staff-directory"));
+      assert.equal(res.securityContext.region_key, "R1");
+    }
+  } finally {
+    restoreBigQuery();
+    delete require.cache[require.resolve("./cube")];
+    delete process.env.NODE_ENV;
+  }
+});
+
+test("resolveAccess: the ADC-fallback warning is emitted once per process, not once per call", async () => {
+  delete process.env.CUBEJS_DB_BQ_CREDENTIALS;
+  process.env.CUBEJS_SQL_PASSWORD = "server-known-pw";
+
+  const restoreBigQuery = stubBigQueryExports(() => [[]]);
+  const freshCube = freshCubeModule();
+
+  try {
+    const lines = await capturedWarnLog(async () => {
+      await freshCube.checkSqlAuth({}, "warn-once-a@apps.teamschools.org", "x");
+      await freshCube.checkSqlAuth({}, "warn-once-b@apps.teamschools.org", "x");
+    });
+    assert.equal(lines.length, 1);
+    const entry = JSON.parse(lines[0]);
+    assert.equal(entry.event, "cube_bq_credentials_fallback");
+  } finally {
+    restoreBigQuery();
+    delete require.cache[require.resolve("./cube")];
+  }
+});
+
+test("resolveAccess: with CUBEJS_DB_BQ_CREDENTIALS set, no ADC-fallback warning is emitted", async () => {
+  process.env.CUBEJS_SQL_PASSWORD = "server-known-pw";
+  process.env.CUBEJS_DB_BQ_CREDENTIALS = Buffer.from(
+    JSON.stringify({
+      client_email: "test@example.iam.gserviceaccount.com",
+      private_key: "not-a-real-key",
+    }),
+  ).toString("base64");
+
+  const restoreBigQuery = stubBigQueryExports(() => [[]]);
+  const freshCube = freshCubeModule();
+
+  try {
+    const lines = await capturedWarnLog(async () => {
+      await freshCube.checkSqlAuth({}, "creds-set@apps.teamschools.org", "x");
+    });
+    assert.deepEqual(lines, []);
+  } finally {
+    restoreBigQuery();
+    delete process.env.CUBEJS_DB_BQ_CREDENTIALS;
+    delete require.cache[require.resolve("./cube")];
   }
 });
 
@@ -627,7 +809,51 @@ test("contextToGroups: a Cube Cloud context with no username stays default-deny"
     iss: "cubecloud",
   };
   assert.deepEqual(await cube.contextToGroups({ securityContext }), []);
-  assert.ok(!("groups" in securityContext));
+  // The context is now OVERWRITTEN with the empty default-deny shape rather than
+  // left untouched. This assertion used to read `!("groups" in securityContext)`,
+  // which encoded the old `if (consoleUser)` gate: a missing username skipped
+  // enrichment entirely and left the object alone. Gating on the `cubeCloud` key
+  // means a username-less console context is neutralized like any other, so
+  // asserting the default-deny VALUES is both the stronger check and the one
+  // that matches intent — an absent key proves nothing about what a paste left
+  // behind.
+  assert.deepEqual(securityContext.groups, []);
+  assert.equal(securityContext.region_key, null);
+  assert.deepEqual(securityContext.allowed_abbreviations, []);
+});
+
+// --- Change A load-bearing negative: the gate must fire on the `cubeCloud`
+// KEY, not on `cubeCloud.username` -------------------------------------------
+// This is the exact bypass the overwrite exists to close: a console context
+// that carries `cubeCloud` but no `username` must still enter the enrichment
+// block and resolve to the empty default-deny context — never fall through to
+// `securityContext?.groups ?? []` and honor whatever was pasted alongside it.
+// Verified this FAILS against the OLD `if (consoleUser)` gate (where
+// `consoleUser = securityContext?.cubeCloud?.username ?? null` is null here,
+// so the block is skipped and the pasted `groups` + forged allow-lists are
+// returned/left in place verbatim) — reverted `cube.js` locally to that gate,
+// confirmed the failure, then restored the file (not committed).
+test("contextToGroups: a Cube Cloud context with no username is neutralized, not passed through (Change A load-bearing negative)", async () => {
+  const pasted = {
+    cubeCloud: { roles: ["Developer"] }, // no username
+    iss: "cubecloud",
+    groups: ["staff-pii-all_in_scope"],
+    region_key: "FORGED",
+    allowed_abbreviations: ["FORGED"],
+    allowed_department_groups: ["FORGED"],
+  };
+
+  const lines = await capturedEmulationLog(async () => {
+    const groups = await cube.contextToGroups({ securityContext: pasted });
+    assert.deepEqual(groups, []);
+  });
+
+  assert.ok(!pasted.groups.includes("staff-pii-all_in_scope"));
+  assert.notEqual(pasted.region_key, "FORGED");
+  assert.notDeepEqual(pasted.allowed_abbreviations, ["FORGED"]);
+  assert.notDeepEqual(pasted.allowed_department_groups, ["FORGED"]);
+  // No caller identity to resolve (username absent) means no emulation to log.
+  assert.deepEqual(lines, []);
 });
 
 test("contextToGroups: an unresolvable console user stays default-deny", async () => {
@@ -752,9 +978,116 @@ test("contextToGroups: a target mirrored only at userAttributes.email is honored
   ]);
 });
 
+// --- Change B on the Cube Cloud surface -------------------------------------
+// The pasted `email` target is a JSON value the console user fully controls,
+// so it is just as likely to be an object/array as a string. Before Change B,
+// a bare `.toLowerCase()` on it threw a TypeError out of contextToGroups (a
+// 500), not a clean deny. Verified (in access.test.js) that the old
+// `?? null` coercion throws here; this test proves the surface-level
+// consequence — no throw, no emulation, caller resolves as themselves.
+test("contextToGroups: a pasted non-string email target does not throw and resolves the caller as themselves", async () => {
+  process.env.CUBE_IMPERSONATORS = "cloudadmin11@apps.teamschools.org";
+  process.env.CUBE_GROUP_MAP = JSON.stringify({
+    "cloudadmin11@apps.teamschools.org": ["student-network"],
+  });
+  const securityContext = {
+    cubeCloud: { username: "cloudadmin11@apps.teamschools.org" },
+    iss: "cubecloud",
+    email: { a: 1 }, // a pasted JSON object, not a string
+  };
+
+  const lines = await capturedEmulationLog(async () => {
+    const groups = await cube.contextToGroups({ securityContext });
+    assert.deepEqual(groups, ["student-network"]);
+  });
+
+  assert.deepEqual(lines, []);
+});
+
 test("contextToGroups: no security context at all is default-deny", async () => {
   assert.deepEqual(
     await cube.contextToGroups({ securityContext: undefined }),
     [],
   );
+});
+
+// --- Structural invariant: every securityContext.<field> a policy
+// interpolates must be a key access.buildSecurityContext returns -----------
+// src/cube/CLAUDE.md states this in prose: it is what makes the Object.assign
+// overwrite in contextToGroups a COMPLETE one. A new `row_level` filter that
+// interpolates a securityContext field buildSecurityContext doesn't return
+// would silently reopen the Cube Cloud paste vector for that field alone —
+// Object.assign can't overwrite a pasted value for a key it never sets. Prose
+// can't enforce this; this test derives the actual set of interpolated field
+// names from the model YAML on disk and checks it against
+// buildSecurityContext's real return, so it fails the moment the two drift.
+
+function listYamlFilesRecursive(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...listYamlFilesRecursive(full));
+    } else if (entry.isFile() && /\.ya?ml$/.test(entry.name)) {
+      out.push(full);
+    }
+  }
+  return out;
+}
+
+test("structural invariant: every securityContext.<field> interpolated in model/ is returned by access.buildSecurityContext", () => {
+  const modelDir = path.join(__dirname, "model");
+  const files = listYamlFilesRecursive(modelDir);
+  assert.ok(
+    files.length > 0,
+    `no YAML files found under ${modelDir} — check __dirname resolution before trusting this test`,
+  );
+
+  const found = new Set();
+  const pattern = /securityContext\.([a-zA-Z_][a-zA-Z0-9_]*)/g;
+  for (const file of files) {
+    const text = fs.readFileSync(file, "utf8");
+    for (const match of text.matchAll(pattern)) {
+      found.add(match[1]);
+    }
+  }
+
+  // A regex that silently matched nothing would make every assertion below
+  // vacuously pass. Guard against that explicitly with a floor plausible for
+  // the current model, rather than trusting an empty derived set.
+  assert.ok(
+    found.size >= 6,
+    `expected at least 6 distinct securityContext.<field> tokens under ${modelDir}, ` +
+      `found ${found.size}: ${[...found].sort().join(", ")}. Either the model ` +
+      "lost its row_level filters, or the extraction regex broke.",
+  );
+
+  const contextKeys = new Set(
+    Object.keys(access.buildSecurityContext(null, [], [], [])),
+  );
+  const missing = [...found].filter((key) => !contextKeys.has(key));
+  assert.deepEqual(
+    missing,
+    [],
+    missing.length
+      ? `securityContext field(s) interpolated in model/ but NOT returned by ` +
+          `access.buildSecurityContext: ${missing.join(", ")}. Add the field ` +
+          "to buildSecurityContext's return in access.js — otherwise the " +
+          "Cube Cloud Object.assign overwrite in contextToGroups cannot " +
+          "neutralize a pasted value for it, reopening the paste vector for " +
+          "that field alone."
+      : undefined,
+  );
+
+  // Sanity check against the six fields known today (#4526 / Task 5b). This is
+  // in addition to, not instead of, the derived assertion above — it exists
+  // so a reader can see at a glance what the model currently interpolates.
+  assert.deepEqual([...found].sort(), [
+    "allowed_abbreviations",
+    "allowed_department_groups",
+    "job_function_level",
+    "location_abbreviation",
+    "region_key",
+    "reportee_staff_keys",
+  ]);
 });

@@ -11,6 +11,9 @@ const groupCache = new Map(); // email → { ctx, expiresAt }
 // / computeAllowedDepartmentGroups need: every location abbreviation+region
 // and every distinct department_group. Same midnight-ET expiry as
 // groupCache — one shared entry, not one per viewer.
+// Latched so the ADC-fallback notice is emitted once per process, not once per
+// identity-resolution cache miss.
+let adcFallbackWarned = false;
 let universeCache = null; // { data: { locations: [...], deptGroups: [...] }, expiresAt }
 
 function nextMidnightEastern() {
@@ -105,6 +108,27 @@ async function resolveAccess(email) {
         Buffer.from(process.env.CUBEJS_DB_BQ_CREDENTIALS, "base64").toString(
           "utf8",
         ),
+      );
+    } else if (!adcFallbackWarned) {
+      // Falling back to ADC, which is what local dev runs on. Say so once, then
+      // stay quiet. The fallback itself is correct, but on a DEPLOYMENT it
+      // silently switches identity reads to the ambient Cube Cloud host
+      // principal, which lacks bigquery.jobs.create and default-denies every
+      // viewer for a reason that looks nothing like the cause (#4466). This line
+      // is the breadcrumb that turns that into a two-second diagnosis.
+      //
+      // NODE_ENV is deliberately NOT the discriminator. The documented local RLS
+      // sign-off runs `NODE_ENV=production CUBEJS_DEV_MODE=false npm run dev`,
+      // so refusing the fallback under NODE_ENV=production would fail-close the
+      // exact workflow the fallback exists for. There is no reliable Cube Cloud
+      // marker to gate on, so warn rather than throw.
+      adcFallbackWarned = true;
+      console.warn(
+        JSON.stringify({
+          event: "cube_bq_credentials_fallback",
+          message:
+            "CUBEJS_DB_BQ_CREDENTIALS is unset; identity reads are using ambient ADC. Expected locally. On a deployment, set it on THIS environment — branch environments do not inherit it.",
+        }),
       );
     }
     const bq = new BigQuery(bqOptions);
@@ -212,7 +236,15 @@ function jwtRejectionReason(err) {
     // deployment, a missing `iat` under maxAge, and alg:none. Naming the secret
     // matters: an unset one on a branch environment is the likeliest cause and
     // is otherwise invisible.
-    return `Invalid token: ${err.message}. Check the signing secret matches this deployment's CUBEJS_API_SECRET, and that the token carries an \`iat\`.`;
+    // One message is withheld. jsonwebtoken reports an UNSET secret as "secret
+    // or public key must be provided" — that is deployment state, not a fact
+    // about the caller's own token, and an unauthenticated caller learns from it
+    // that this deployment has no signing secret at all. Every other message
+    // here describes the token they minted, so it stays verbatim.
+    const detail = String(err.message).startsWith("secret or public key")
+      ? "the server could not verify it"
+      : err.message;
+    return `Invalid token: ${detail}. Check the signing secret matches this deployment's CUBEJS_API_SECRET, and that the token carries an \`iat\`.`;
   }
   return "Invalid token";
 }
@@ -274,8 +306,15 @@ module.exports = {
     // (`CompilerApi.hashRequestContext`), so the same input must always produce
     // the same output. Re-deriving unconditionally is deterministic — the
     // per-email cache in resolveAccess makes re-entry cheap.
-    const consoleUser = securityContext?.cubeCloud?.username ?? null;
-    if (consoleUser) {
+    // Gate on the `cubeCloud` KEY, not on `cubeCloud.username`. A Cube Cloud
+    // context whose username is absent must still be neutralized: falling
+    // through to the `securityContext?.groups` return below would honor a pasted
+    // `groups`, which is the exact bypass the overwrite exists to close. The
+    // body needs no null handling for it — emulationInputsFromCubeCloud yields a
+    // null caller, resolveEmulationTarget fails closed to a null target, and
+    // resolveAccess(null) returns the empty default-deny context. So a missing
+    // username denies cleanly instead of passing the paste through.
+    if (securityContext?.cubeCloud) {
       const { caller, target, emulating } = access.resolveEmulationTarget({
         // Same shape as the REST branch above, via the surface adapter — the
         // caller/target extraction lives in access.js so both paths and their
