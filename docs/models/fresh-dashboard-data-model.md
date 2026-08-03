@@ -462,28 +462,36 @@ two `fresh_dashboard` views already expose it that way.
 `finalsite_expected_enroll_status` is the status the SIS _ought_ to show if
 Finalsite is right, mapped from the student's `latest_status`:
 
-| `latest_status`                                            | `finalsite_expected_enroll_status` | meaning                       |
-| ---------------------------------------------------------- | ---------------------------------- | ----------------------------- |
-| `Enrolled`                                                 | `0`                                | should be active in the SIS   |
-| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw` | `1`                                | should be inactive in the SIS |
-| anything else                                              | `NULL`                             | no expectation                |
+| `latest_status`                                  | `finalsite_expected_enroll_status` | meaning                     |
+| ------------------------------------------------ | ---------------------------------- | --------------------------- |
+| `Enrolled`                                       | `0`                                | should be active in the SIS |
+| the nine statuses listed in the QC section below | `2`                                | should not be active        |
+| anything else                                    | `NULL`                             | no expectation              |
+
+**The values deliberately mirror the SIS's own `enroll_status` domain** — `0`
+means the SIS should read `0`, `2` means it should read `2`. That alignment is
+load-bearing: these two columns are compared to each other, so a value meaning
+one thing here and another there is a trap. An earlier version used `1` for
+withdrawals and `2` for pending statuses, where the SIS's own `2` means
+withdrawn — same number, different meaning, in adjacent columns.
 
 The `NULL` case is deliberate and covers most of the funnel — an applicant who
-is Waitlisted or Enrollment In Progress has no business having an SIS enrollment
-record yet, so there is nothing to compare and no mismatch can fire.
+is Waitlisted or Deferred has no business having an SIS enrollment record yet,
+so there is nothing to compare and no mismatch can fire.
 
 `is_enroll_status_mismatch` then fires when the expectation and the SIS disagree
 in either direction:
 
 - Finalsite says enrolled (`finalsite_expected_enroll_status = 0`) but the SIS
   says withdrawn or graduated (`enroll_status in (2, 3)`)
-- Finalsite says withdrawn (`finalsite_expected_enroll_status = 1`) but the SIS
-  says currently enrolled (`enroll_status = 0`)
+- Finalsite says the student should not be active
+  (`finalsite_expected_enroll_status = 2`) but the SIS says currently enrolled
+  (`enroll_status = 0`)
 
 Note the asymmetry: the enrolled-side check accepts SIS `2` (withdrawn) and `3`
-(graduated) as contradicting, while the withdrawn-side check only treats SIS `0`
-as contradicting. `enroll_status = 1` and `-1` (pre-registered) never trigger a
-mismatch on either side.
+(graduated) as contradicting, while the not-active-side check only treats SIS
+`0` as contradicting. `enroll_status = 1` and `-1` (pre-registered) never
+trigger a mismatch on either side.
 
 **Beware the word "inactive" here** — it covers two different things and the
 collision causes real confusion when reading results with SRE. A **withdrawn**
@@ -557,12 +565,12 @@ a student with none does not appear at all.
 Listed in the triage order SRE reviews them in, most urgent first — which is not
 the order the flags are declared in the SQL.
 
-| #   | flag                        | what it means                                                                                                                                                                                                                                                                                                    | how it gets fixed                                                                                                          |
-| --- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `is_missing_sis_record`     | Not a disagreement but an absence — Finalsite says the student is enrolled and the SIS has no enrollment record at all to compare against.                                                                                                                                                                       | Someone has to create or link the SIS record. A different fix from the disagreement case, which is why it is its own flag. |
-| 2   | `is_school_mismatch`        | Finalsite's assigned school is not the school the SIS has them at, so the student is counted against the wrong school's targets until it is fixed.                                                                                                                                                               | Confirm the true school, then fix whichever system is wrong.                                                               |
-| 3   | `is_enroll_status_mismatch` | Finalsite and the SIS disagree about whether the student is enrolled, in any of three directions — Finalsite says enrolled while the SIS says withdrawn or graduated; Finalsite says withdrawn while the SIS still has them active; or Finalsite holds a pending status while the SIS already has them enrolled. | Decide which system is right, then correct the other one.                                                                  |
-| 4   | `is_grade_level_mismatch`   | Finalsite's grade for the student is not the grade the SIS has them in.                                                                                                                                                                                                                                          | Confirm the true grade, then fix whichever system is wrong.                                                                |
+| #   | flag                        | what it means                                                                                                                                                                                                                                                                                                                | how it gets fixed                                                                                                          |
+| --- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `is_missing_sis_record`     | Not a disagreement but an absence — Finalsite says the student is enrolled and the SIS has no enrollment record at all to compare against.                                                                                                                                                                                   | Someone has to create or link the SIS record. A different fix from the disagreement case, which is why it is its own flag. |
+| 2   | `is_school_mismatch`        | Finalsite's assigned school is not the school the SIS has them at, so the student is counted against the wrong school's targets until it is fixed.                                                                                                                                                                           | Confirm the true school, then fix whichever system is wrong.                                                               |
+| 3   | `is_enroll_status_mismatch` | Finalsite and the SIS disagree about whether the student is enrolled — Finalsite says enrolled while the SIS says withdrawn or graduated, or Finalsite says the student left or has not finished enrolling while the SIS still has them active. Documented below as three directions; the last two share one expected value. | Decide which system is right, then correct the other one.                                                                  |
+| 4   | `is_grade_level_mismatch`   | Finalsite's grade for the student is not the grade the SIS has them in.                                                                                                                                                                                                                                                      | Confirm the true grade, then fix whichever system is wrong.                                                                |
 
 #### Which Finalsite statuses drive these checks
 
@@ -574,14 +582,21 @@ lives in `finalsite_expected_enroll_status`:
 | the student's `latest_status`                                                                                             | expected | drives                                                                  |
 | ------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------- |
 | `Enrolled`                                                                                                                | `0`      | `is_missing_sis_record`, and direction 1 of `is_enroll_status_mismatch` |
-| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw`                                                                | `1`      | direction 2 of `is_enroll_status_mismatch`                              |
+| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw`                                                                | `2`      | direction 2 of `is_enroll_status_mismatch`                              |
 | `Accepted`, `Assigned School`, `Did Not Enroll`, `Campus Transfer Requested`, `Parent Declined`, `Enrollment In Progress` | `2`      | direction 3 of `is_enroll_status_mismatch`                              |
 | anything else                                                                                                             | `NULL`   | nothing — no expectation exists, so there is nothing to contradict      |
 
-**Directions 2 and 3 make the same comparison** (against SIS `0`, currently
-enrolled) but are kept as separate expected values because they mean different
-things: direction 2 is "this student left", direction 3 is "this student has not
-finished enrolling". `Enrollment In Progress` belongs to direction 3 only.
+**Directions 2 and 3 share the expected value `2`** because they make the
+identical comparison — against SIS `0`, currently enrolled. They stay separate
+in this documentation because the follow-up differs: direction 2 is "this
+student left", direction 3 is "this student has not finished enrolling". Which
+one a row came from is readable from its `latest_status`, so nothing is lost by
+the column not distinguishing them. `Enrollment In Progress` belongs to
+direction 3 only.
+
+`2` is a slight overstatement for the pending group — their truer expectation is
+"no active record" rather than "withdrawn" — but the check only ever tests
+against `enroll_status = 0`, so it changes no outcome.
 
 **The direction-3 set is SRE-owned, not derived.** Two things about it worth
 knowing rather than rediscovering: `Did Not Enroll` and `Parent Declined` read

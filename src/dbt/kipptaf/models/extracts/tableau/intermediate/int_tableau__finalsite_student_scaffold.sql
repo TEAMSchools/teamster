@@ -446,11 +446,12 @@ with
                 when r.latest_status = 'Enrolled'
                 then 0
                 when
-                    r.latest_status
-                    in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
-                then 1
-                when
                     r.latest_status in (
+                        -- left
+                        'Mid Year Withdrawal',
+                        'Never Attended',
+                        'Summer Withdraw',
+                        -- pending
                         'Accepted',
                         'Assigned School',
                         'Did Not Enroll',
@@ -514,11 +515,12 @@ with
                 when r.latest_status = 'Enrolled'
                 then 0
                 when
-                    r.latest_status
-                    in ('Mid Year Withdrawal', 'Never Attended', 'Summer Withdraw')
-                then 1
-                when
                     r.latest_status in (
+                        -- left
+                        'Mid Year Withdrawal',
+                        'Never Attended',
+                        'Summer Withdraw',
+                        -- pending
                         'Accepted',
                         'Assigned School',
                         'Did Not Enroll',
@@ -571,7 +573,6 @@ select
 
     if(
         (finalsite_expected_enroll_status = 0 and enroll_status in (2, 3))
-        or (finalsite_expected_enroll_status = 1 and enroll_status = 0)
         or (finalsite_expected_enroll_status = 2 and enroll_status = 0),
         true,
         false

@@ -201,17 +201,23 @@ models:
       - name: finalsite_expected_enroll_status
         data_type: int64
         description: >-
-          Enrollment status implied by the Finalsite latest_status, for
-          comparison against the SIS's actual enroll_status. Derived entirely
-          from Finalsite -- it reads nothing from the SIS, and states what the
-          SIS ought to show if Finalsite is correct. 0 = Enrolled, so the
-          student should be active in the SIS. 1 = Mid Year Withdrawal, Never
-          Attended or Summer Withdraw, so they should not be. 2 = a pending
-          status (Accepted, Assigned School, Did Not Enroll, Campus Transfer
-          Requested, Parent Declined, Enrollment In Progress), which also should
-          not be active in the SIS -- the set is SRE-owned, and Accepted matches
-          no rows in current data. Null for every other status, where no
-          expectation exists and no mismatch can fire.
+          The enroll_status the SIS ought to show if Finalsite is correct.
+          Derived entirely from Finalsite -- it reads nothing from the SIS.
+          Values deliberately mirror the SIS's own enroll_status domain so a
+          comparison between the two columns means the same thing on both sides:
+          0 when latest_status is Enrolled, 2 when it is one of the nine
+          statuses that imply the student should not be currently enrolled, null
+          for everything else (no expectation exists, so no mismatch can fire).
+          Those nine cover two situations that share one expected value because
+          the comparison is identical -- the student left (Mid Year Withdrawal,
+          Never Attended, Summer Withdraw) or has not finished enrolling
+          (Accepted, Assigned School, Did Not Enroll, Campus Transfer Requested,
+          Parent Declined, Enrollment In Progress, an SRE-owned set in which
+          Accepted matches no rows in current data). Which situation a row came
+          from is still readable from latest_status. 2 is a slight overstatement
+          for the pending group, whose truer expectation is no active record
+          rather than a withdrawal, but the check only ever tests against
+          enroll_status = 0 so the distinction does not change any outcome.
       - name: sis_grade_level
         data_type: int64
         description: >-
@@ -232,11 +238,14 @@ models:
         data_type: boolean
         description: >-
           True when finalsite_expected_enroll_status disagrees with the SIS's
-          actual enroll_status, in any of three directions -- Finalsite says
-          enrolled while the SIS says withdrawn or graduated; Finalsite says
-          withdrawn while the SIS says currently enrolled; or Finalsite holds a
-          pending status while the SIS already has the student enrolled. The
-          third direction replaced a separate same-day-status-tie flag.
+          actual enroll_status -- Finalsite implies enrolled while the SIS says
+          withdrawn or graduated, or Finalsite implies not-enrolled while the
+          SIS says currently enrolled. The second case covers both a student who
+          left and one who has not finished enrolling; the SRE-facing
+          documentation presents those as separate directions because the
+          follow-up differs, but the comparison is the same and they share one
+          expected value. The pending group replaced a separate
+          same-day-status-tie flag.
       - name: is_grade_level_mismatch
         data_type: boolean
         description: >-

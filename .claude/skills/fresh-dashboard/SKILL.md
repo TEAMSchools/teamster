@@ -456,12 +456,18 @@ at the AY2026 review and replaced by direction 3 of `is_enroll_status_mismatch`
 Reset Protocol is still the fix — it just no longer gets its own worklist row,
 so don't re-add the flag when someone reports a wrong `latest_status`.
 
-**`finalsite_expected_enroll_status` has three non-null values**, and the
-direction-3 set is SRE-owned rather than derived: `Accepted`, `Assigned School`,
-`Did Not Enroll`, `Campus Transfer Requested`, `Parent Declined`,
-`Enrollment In Progress`. Two oddities that are NOT bugs — `Did Not Enroll` and
-`Parent Declined` read as exits rather than pending states, and `Accepted`
-matches no rows in current data. Confirm with SRE before changing the list.
+**`finalsite_expected_enroll_status` has two non-null values, 0 and 2, and they
+deliberately mirror the SIS's own `enroll_status` codes** so a comparison
+between the two columns means the same thing on both sides. Do not renumber them
+and do not split `2` back out per situation -- an earlier version used `1` for
+withdrawals and `2` for pending, colliding with the SIS's `2` (withdrawn). The
+nine statuses sharing `2` cover both "left" and "not finished enrolling"; which
+one a row came from is readable from `latest_status`. The pending set is
+SRE-owned rather than derived: `Accepted`, `Assigned School`, `Did Not Enroll`,
+`Campus Transfer Requested`, `Parent Declined`, `Enrollment In Progress`. Two
+oddities that are NOT bugs — `Did Not Enroll` and `Parent Declined` read as
+exits rather than pending states, and `Accepted` matches no rows in current
+data. Confirm with SRE before changing the list.
 
 **Retention is SRE's to resolve, not ours.** Grade repetition makes
 `is_grade_level_mismatch` and `is_school_mismatch` fire on correctly recorded
