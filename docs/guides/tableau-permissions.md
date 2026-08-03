@@ -116,9 +116,24 @@ needed only where senior leaders are shielded.
 | `RLS - Subject Is Senior Leader` | Should this row be shielded from peers?                              |
 | `Permissions`                    | The five tiers. **This is the field that goes on the filter shelf.** |
 
+**Build them in that order.** It is also the dependency order — `Permissions`
+references the four helpers, so it cannot validate until they exist.
+
+1. Create `RLS - Entity Gate`, `RLS - Location Gate`, and `RLS - Role Gate` from
+   the sections below. Nothing depends on the order among these three.
+1. On the three senior-leader workbooks only, create
+   `RLS - Subject Is Senior Leader`. Skip it everywhere else.
+1. Create `Permissions`, applying any variant listed for this workbook in
+   _Per-workbook variants_.
+1. Put `Permissions` on the filter shelf set to `TRUE` and apply it to all
+   sheets using that data source. **Only `Permissions` goes on the shelf** — the
+   other four are helpers and belong on no shelf.
+1. Work through _After editing a workbook_ before moving to the next one.
+
 Copy the fields between workbooks via the Data pane — right-click a field,
 **Copy**, then paste into the next workbook's Data pane. Every gated extract
-exposes identical column names, so a pasted field resolves with no edits.
+exposes identical column names, so a pasted field resolves with no edits. After
+the first workbook, steps 1 and 2 become paste operations rather than typing.
 
 Reasons for the split rather than one large calculation:
 
@@ -129,7 +144,7 @@ Reasons for the split rather than one large calculation:
 - Each gate can be dropped on a sheet by itself and compared against a row,
   which is how you debug a persona seeing the wrong thing.
 
-### `RLS - Entity Gate`
+### Field 1 of 5 — `RLS - Entity Gate`
 
 ```text
 IF     ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools') AND [home_business_unit_name] = 'TEAM Academy Charter School'  THEN TRUE
@@ -207,7 +222,7 @@ one shared entity gate rather than forking it per workbook.
     rather than falling out of the entity gate as a side effect, which is how the
     leak above arose.
 
-### `RLS - Location Gate`
+### Field 2 of 5 — `RLS - Location Gate`
 
 One branch per school location, because `ISMEMBEROF()` requires a literal
 string. Tableau's
@@ -281,7 +296,7 @@ a bridge once its group is renamed to match.
     `int_people__staff_roster__tableau_location_set_expected` asserts the data
     side of this invariant, but nothing can assert the Tableau side.
 
-### `RLS - Role Gate`
+### Field 3 of 5 — `RLS - Role Gate`
 
 ```text
 ISMEMBEROF('KNJ-SG-Tableau All DSO')
@@ -308,7 +323,7 @@ drops teachers out of the AP branch. It can be removed once
 [#4631](https://github.com/TEAMSchools/teamster/issues/4631) lands, at which
 point this becomes `[job_function_code] IN ('TEACH', 'TIR')`.
 
-### `RLS - Subject Is Senior Leader`
+### Field 4 of 5 — `RLS - Subject Is Senior Leader`
 
 Needed only in the workbooks that shield senior leaders — currently Manager
 Survey Reports, Manager Survey Rollup, and Leadership Development.
@@ -355,7 +370,7 @@ shield them, widen the first line to
 `IFNULL([job_function], '') IN ('Chief Level', 'EDs, HOSs, MDOs')`; deputy chief
 has no clean field and would still need a title test.
 
-### `Permissions`
+### Field 5 of 5 — `Permissions`
 
 The field that goes on the filter shelf, set to `TRUE`. Five tiers in one `OR`
 chain, in the same order in every workbook so they diff by eye.
@@ -478,8 +493,8 @@ Anything not listed here takes the base form unmodified.
 
 ### After editing a workbook
 
-1. Put `[Permissions]` on the filter shelf set to `TRUE`, and apply it to all
-   sheets using that data source.
+1. Confirm `[Permissions]` is on the filter shelf set to `TRUE` and applied to
+   all sheets using that data source — step 4 of _Field structure_.
 1. Search the workbook for `USERNAME()` compared against a **literal string**.
    There should be zero hits — Tier 1 compares against fields, never literals.
    That search is how you prove no individual grant survived.
