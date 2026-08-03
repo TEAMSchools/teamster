@@ -602,10 +602,11 @@ the order the flags are declared in the SQL.
 
 #### Which Finalsite statuses drive these checks
 
-"Finalsite says enrolled" is not a category — it is one specific status, and
-each other direction is its own named set. Everything outside these ten sets no
-expectation at all, so no enrollment-related flag can fire for it. The mapping
-lives in `finalsite_expected_enroll_status`:
+"Finalsite says enrolled" is not a category — it is one specific status. Three
+named sets carry an expectation in total: `Enrolled` on its own, the three
+"left" statuses, and the six "pending" ones. Anything outside those ten statuses
+carries no expectation at all, so no enrollment-related flag can fire for it.
+The mapping lives in `finalsite_expected_enroll_status`:
 
 | the student's `latest_status`                                                                                             | expected | drives                                                                  |
 | ------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------- |
