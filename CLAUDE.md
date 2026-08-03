@@ -405,6 +405,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `roles/artifactregistry.writer` on the target project to push the built image.
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
+  "The docs", "the ref doc", or "the reference" means the **published** page in
+  the `mkdocs.yml` nav (e.g. `docs/models/<dashboard>-data-model.md`) — NOT the
+  design specs and implementation plans under `docs/superpowers/`, which are
+  working documents excluded from the nav. When asked whether docs are stale,
+  audit the published page against the shipped code first; a spec/plan
+  describing a superseded design is expected, a wrong published page is a bug.
 
 ### PII reference
 
