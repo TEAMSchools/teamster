@@ -145,6 +145,32 @@ independent layers:
 To grant a new developer access: add them to
 `teamster-analysts@apps.teamschools.org`.
 
+#### Two independent credential stores
+
+`gcloud auth login` and `gcloud auth application-default login` write to
+different places and expire independently:
+
+| Store                                  | Written by                              | Read by                                |
+| -------------------------------------- | --------------------------------------- | -------------------------------------- |
+| `credentials.db`                       | `gcloud auth login`                     | `gcloud` CLI commands, `bq`            |
+| `application_default_credentials.json` | `gcloud auth application-default login` | client libraries, every GCP MCP server |
+
+A Workspace Cloud-session-length policy expires the **user** store roughly
+daily. ADC is unaffected. The symptom is lopsided: `bq` and bare `gcloud` start
+failing with "Reauthentication failed" while every MCP server and client-library
+script keeps working normally.
+
+The **GCloud: Application Default Login** task refreshes ADC only — there is no
+task for the user store, so re-run `gcloud auth login` yourself when you need
+`bq`.
+
+**Prefer ADC when writing tooling.** A script that shells out to `gcloud`
+inherits the daily expiry; one that calls `google.auth.default()` does not.
+`.claude/skills/dagster-day2/scripts/day2_collect.py` is the worked example — it
+authenticates every GCP call with ADC for exactly this reason. Note that ADC
+resolves to the `codespaces@` service account, whose IAM is narrower than your
+own, so a call that worked under your user credential can still 403 under ADC.
+
 ??? note "GCloud quirks"
 
     - To check if ADC is valid, use

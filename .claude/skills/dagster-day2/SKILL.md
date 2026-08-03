@@ -12,7 +12,7 @@ description: >-
 ## Phase 1: Collect data
 
 Run [`scripts/day2_collect.py`](scripts/day2_collect.py) — it issues all 15
-queries (Dagster GraphQL + GCP REST + `gcloud logging`) and writes a single
+queries (Dagster GraphQL + GCP REST, authenticated with ADC) and writes a single
 artifact to `.claude/scratch/day2.json`. No subagent dispatch.
 
 ```bash
