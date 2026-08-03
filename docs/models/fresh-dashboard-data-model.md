@@ -473,8 +473,17 @@ in either direction:
 
 Note the asymmetry: the enrolled-side check accepts SIS `2` (withdrawn) and `3`
 (graduated) as contradicting, while the withdrawn-side check only treats SIS `0`
-as contradicting. `enroll_status = 1` (inactive) and `-1` (pre-registered) never
-trigger a mismatch on either side.
+as contradicting. `enroll_status = 1` and `-1` (pre-registered) never trigger a
+mismatch on either side.
+
+**Beware the word "inactive" here** — it covers two different things and the
+collision causes real confusion when reading results with SRE. A **withdrawn**
+student (`2`) typically displays as "inactive" in the SIS interface, and that
+student _is_ caught: the comparison keys on `2`, not on the interface label.
+Separately, `enroll_status = 1` is _also_ called inactive, and that one is
+excluded deliberately — this repo treats `1` as invalid and never reports
+against it (`src/dbt/kipptaf/CLAUDE.md`). Prefer naming the code, or say
+"withdrawn" and "graduated" explicitly, rather than "inactive".
 
 ### The QC worklist: `rpt_tableau__fresh_dashboard_qc`
 
@@ -525,8 +534,11 @@ flag names:
   Finalsite status was never advanced to `Enrolled`; this check cannot see them.
 - **On the SIS side the comparison is asymmetric.** Only `enroll_status` `0`
   (currently enrolled), `2` (withdrawn) and `3` (graduated) count as
-  contradicting. `1` (inactive) and `-1` (pre-registered) never trip
-  `is_enroll_status_mismatch` in either direction.
+  contradicting. `1` and `-1` (pre-registered) never trip
+  `is_enroll_status_mismatch` in either direction — `1` because this repo treats
+  it as invalid data. Note that a withdrawn student (`2`) often _displays_ as
+  "inactive" in the SIS; that student is still caught, since the comparison keys
+  on the code rather than the interface label. See the warning above.
 
 #### Questions pending SRE input
 
