@@ -16,7 +16,7 @@ with
 
 -- latest status: deferred and waitlisted
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -53,7 +53,7 @@ select
 from {{ ref("int_tableau__fresh_goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.enrollment_academic_year
+    on s.enrollment_academic_year = f.enrollment_academic_year
     and s.region = f.region
     and s.schoolid = f.schoolid
     and s.grade_level = f.grade_level
@@ -67,7 +67,7 @@ union all
 
 -- latest status: enrollment in progress
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -104,7 +104,7 @@ select
 from {{ ref("int_tableau__fresh_goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.enrollment_academic_year
+    on s.enrollment_academic_year = f.enrollment_academic_year
     and s.region = f.region
     and s.schoolid = f.schoolid
     and s.grade_level = f.grade_level
@@ -120,7 +120,7 @@ union all
 
 -- pending offers and offers (join includes schoolid)
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -157,7 +157,7 @@ select
 from {{ ref("int_tableau__fresh_goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.enrollment_academic_year
+    on s.enrollment_academic_year = f.enrollment_academic_year
     and s.region = f.region
     and s.schoolid = f.schoolid
     and s.grade_level = f.grade_level
@@ -170,7 +170,7 @@ union all
 
 -- inquiries and applications (no schoolid join -- students lack a schoolid)
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -207,7 +207,7 @@ select
 from {{ ref("int_tableau__fresh_goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.enrollment_academic_year
+    on s.enrollment_academic_year = f.enrollment_academic_year
     and s.region = f.region
     and s.grade_level = f.grade_level
     and s.goal_type = f.goal_type
@@ -221,7 +221,7 @@ union all
 
 -- benchmark conversions
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -258,7 +258,7 @@ select
 from {{ ref("int_tableau__fresh_goals_scaffold") }} as s
 left join
     {{ ref("int_tableau__finalsite_student_scaffold") }} as f
-    on s.academic_year = f.enrollment_academic_year
+    on s.enrollment_academic_year = f.enrollment_academic_year
     and s.region = f.region
     and s.schoolid = f.schoolid
     and s.grade_level = f.grade_level

@@ -3,7 +3,7 @@ with
         /* dont have a better location where only one schoolid matches a single school
            name */
         select distinct
-            s.academic_year,
+            s.enrollment_academic_year,
             s.org,
             s.region,
             s.schoolid,
@@ -28,7 +28,7 @@ with
         /* dont have a better location where only one schoolid matches a single school
            name */
         select distinct
-            s.academic_year,
+            s.enrollment_academic_year,
             s.org,
             s.region,
             s.schoolid,
@@ -281,7 +281,7 @@ with
     )
 
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -312,7 +312,7 @@ select
 from scaffold as s
 left join
     data_stack_school as d
-    on s.academic_year = d.enrollment_academic_year
+    on s.enrollment_academic_year = d.enrollment_academic_year
     and s.region = d.region
     and s.schoolid = d.schoolid
     and s.grade_level = d.grade_level
@@ -322,7 +322,7 @@ where s.grade_level = -9
 union all
 
 select
-    s.academic_year,
+    s.enrollment_academic_year as academic_year,
     s.org,
     s.region,
     s.school_level,
@@ -353,7 +353,7 @@ select
 from scaffold as s
 left join
     data_stack_school_grade as d
-    on s.academic_year = d.enrollment_academic_year
+    on s.enrollment_academic_year = d.enrollment_academic_year
     and s.region = d.region
     and s.schoolid = d.schoolid
     and s.grade_level = d.grade_level

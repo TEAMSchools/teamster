@@ -755,7 +755,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
-      - ref("int_surveys__manager_survey_details")
+      - ref("rpt_tableau__manager_survey_details")
     config:
       meta:
         dagster:
@@ -772,6 +772,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__fresh_dashboard_aggregated")
       - ref("rpt_tableau__fresh_dashboard_progress_to_goals")
+      - ref("rpt_tableau__fresh_dashboard_qc")
       - ref("int_tableau__finalsite_student_scaffold")
     config:
       meta:
@@ -797,3 +798,33 @@ exposures:
         dagster:
           kinds:
             - tableau
+  - name: manager_survey_rollup
+    label: Manager Survey Rollup
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__manager_survey_details")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 400e54b2-4b34-4185-b7e6-72765e6f1c86
+  - name: content_team_dashboard
+    label: Content Team Dashboard
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__content_team")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: 7f960a60-8ddd-4b66-92f0-20cad02a34f1

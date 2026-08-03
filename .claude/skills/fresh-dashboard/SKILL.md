@@ -15,7 +15,7 @@ description: >-
 ## Always read first
 
 - Reference doc:
-  [`docs/reference/fresh-dashboard-data-model.md`](../../../docs/reference/fresh-dashboard-data-model.md)
+  [`docs/models/fresh-dashboard-data-model.md`](../../../docs/models/fresh-dashboard-data-model.md)
 - Design spec:
   [`docs/superpowers/specs/2026-07-20-fresh-dashboard-scaffold-source-swap-design.md`](../../../docs/superpowers/specs/2026-07-20-fresh-dashboard-scaffold-source-swap-design.md)
 - Implementation plan:
@@ -23,16 +23,25 @@ description: >-
 
 **Key facts to confirm before touching anything:**
 
-- `academic_year` is start-year form (AY2026-2027 = `2026`).
-- Miami is **always** 100% sheet-sourced — a deliberate, temporary carve-out
-  (Miami's SIS moved to Focus, not ready yet as a scaffold source). Don't "fix"
-  this by trying to onboard Miami schools into `stg_powerschool__schools` — ask
-  first.
+- The scaffold's year column is `enrollment_academic_year`, in start-year form
+  (AY2026-2027 = `2026`). The `rpt_tableau__fresh_dashboard_*` views alias it
+  back to `academic_year` for Tableau, so the external column name is unchanged.
+- **Miami is Focus-sourced, not sheet-sourced.** `int_focus__schools` (joined
+  through `stg_google_sheets__people__locations` for the abbreviation and the
+  PowerSchool-space `schoolid`) and `int_focus__student_enrollments` supply it.
+  Don't "fix" Miami by onboarding it into `stg_powerschool__schools` — those
+  rows are a frozen pre-migration snapshot and are excluded on purpose.
+- **The scaffold is fully SIS-derived; the scaffold sheet is retired**
+  (`enabled: false`). Nothing is hand-entered. See the retired-generator note
+  below before offering to add sheet rows.
 - `grade_level = -9` means "whole-school total row" in this scaffold's
   convention — never conflate with PowerSchool's own use of negative grade
-  levels (pre-registration/pre-K). The scaffold sheet stores this row as `-9`
-  natively (Ops recodes it in the sheet, not the pipeline); `-1` is reserved for
-  Pre-K everywhere downstream.
+  levels (pre-registration/pre-K). It is now derived, one row per school; `-1`
+  is reserved for Pre-K everywhere downstream and never appears in the scaffold.
+- `school_level` is banded per grade (`>= 9` HS, `>= 5` MS, else ES), NOT read
+  from either SIS's per-school field. These are NJ bands, so **Miami grade 5
+  reports `MS` here but `ES` on the goals sheet** — an accepted divergence, not
+  a bug. Don't reconcile it.
 - The goals sheet is a **live-read** Google Sheets external table — a number can
   change between two queries run seconds apart if someone is editing it. A
   mismatch against a materialized table doesn't necessarily mean a bug; check
@@ -65,9 +74,14 @@ Start here if you're on the school/enrollment team, not an engineer.
      live, so give it a moment and re-check; if it's still wrong, ask an
      engineer to rematerialize the affected models and confirm.
 
-2. **Adding a new grade or school mid-cycle?** Ask an engineer to run the `-9`
-   candidate-row generator and the goals gap-row generator (below) — don't
-   hand-type full rows from scratch.
+2. **Adding a new grade or school?** Nothing gets hand-entered into a scaffold
+   sheet any more — the school × grade spine builds itself from PowerSchool and
+   Focus. A school appears once a student is enrolled in that grade in the SIS.
+   For a grade you are **recruiting for but haven't enrolled anyone into yet**,
+   enter it in **Finalsite** under the Finalsite academic year and tell the data
+   team; it comes in when the Finalsite enrollment year rolls over. You still
+   need **goals** for it either way — ask the data team to run the goals
+   reconciliation (below) rather than hand-typing rows.
 
 ## For an engineer: troubleshooting a count discrepancy
 
@@ -103,46 +117,123 @@ Standard checks, roughly in order of likelihood:
    sheet directly (or against `int_google_sheets__finalsite__goals_pivot`, also
    a live read) before assuming a code bug.
 
+## Sanity-checking the scaffold against SRE's target sheet
+
+SRE maintains the workbook the goals ultimately come from, and its cover sheet
+lists the schools they expect to recruit for. That makes it the outside check on
+`int_tableau__fresh_enrollment_scaffold` — if a school SRE is recruiting for is
+missing from the scaffold, or the scaffold carries one SRE doesn't recognize,
+the spine is wrong.
+
+**Workbook:** `26-27 KNJMIA Application Target Formulas`, id
+`1YP8MR--r__7DpS-Al8C9fv0NLAuJI6S6IpW5mObZwdI`, owned by mventresca@. The school
+list is on the `cover sheet` tab; per-school grade detail is on per-region tabs
+(`KCNA`, `Newark`, …). SRE re-shares a new workbook each cycle, so confirm the
+id before trusting it.
+
+**How to read it:** use the Drive connector —
+`mcp__claude_ai_Google_Drive__get_file_metadata` returns a content snippet
+spanning several tabs, and `read_file_content` returns the body. **Do not reach
+for the Sheets API** (`uv run --with google-api-python-client`): ADC here
+authenticates as a service account that has no access to the workbook and
+returns `403 The caller does not have permission`. The connector runs as the
+signed-in user, which does.
+
+**Two things will trip up a naive comparison:**
+
+- **The workbook is KNJMIA — Newark, Camden, and Miami only. Paterson is
+  absent.** Scope Paterson out, or its two schools (PPES, PPMS) read as spurious
+  extras.
+- **Abbreviations don't match and the sheet has no `schoolid`,** so this is a
+  region + level + count check or a hand-mapped name comparison, never a join:
+
+  | sheet | scaffold   |
+  | ----- | ---------- |
+  | KRA   | Royalty    |
+  | KCA   | Courage    |
+  | KMT   | Miami Tech |
+  | KLE   | Legacy ES  |
+  | KLM   | Legacy MS  |
+  | NLHS  | NLH        |
+
+As of AY2026 this check passes: 22 schools expected across the three regions, 22
+produced (Newark 12, Camden 5, Miami 5), plus Paterson's 2 outside the
+workbook's scope.
+
+**Corroboration worth knowing:** the per-region tabs band Sumner's own rows as
+`MS,Sumner Academy,5` and `MS,Sumner Academy,6` while the cover sheet files
+Sumner under Camden **ES**. SRE themselves treat grades 5-6 as MS at the grade
+level and the school as ES at the school level — which is exactly the per-grade
+banding the scaffold's `school_level` reproduces. Don't "fix" that split.
+
+## Goals reconciliation — offer this at the start of FRESH work
+
+**SRE does not always flag goal changes.** So before doing anything substantive
+on the FRESH dashboard, and always when the user asks to update goals, ask:
+
+> Do you want to run a goals reconciliation against SRE's sheet first?
+
+If yes, run the loop below. If the user declines, note that goal-value
+discrepancies are then out of scope for whatever you find.
+
+### The reconciliation loop
+
+1. **Ask for the workbook URL.** SRE issues a new one each cycle; don't reuse
+   the id recorded above without confirming.
+1. **Confirm goal names are unchanged.** The goals sheet joins on `goal_name`,
+   so a rename silently stops matching rather than erroring. Compare SRE's goal
+   labels against `distinct goal_name` in `stg_google_sheets__finalsite__goals`
+   and surface any that don't appear.
+1. **Compare.** Read the workbook via the Drive connector, compare against
+   `stg_google_sheets__finalsite__goals` on
+   `(region, schoolid, grade_level, goal_type, goal_name)`, and classify each
+   difference as missing / extra / value-mismatch.
+1. **Hand back a paste-ready block.** Plain delimited rows in a fenced code
+   block, one row per line, column order matching the sheet — not a markdown
+   table, which can't be pasted into Sheets.
+1. **Re-run after they paste.** The goals sheet is a **live read**, so the next
+   comparison sees their edits immediately — no rebuild needed. Repeat until
+   there are no discrepancies.
+
+Suggest the user drive this with `/loop` (no interval — self-paced) so each
+round re-compares automatically after they finish a batch of edits. Stop the
+loop when a comparison comes back clean, and say so explicitly rather than going
+quiet.
+
+**Mid-year goal updates** can optionally be applied through the Claude Chrome
+extension instead of hand-pasting: generate a change-set prompt naming the
+workbook, the tab, each target row keyed by
+`(region, schoolid, grade_level, goal_type, goal_name)`, old value → new value,
+and an explicit instruction to change nothing else. The user drops that into the
+extension, which edits the sheet. **Then re-run the comparison** — the
+extension's write is unverified from here, so the reconciliation query is what
+confirms it landed.
+
 ## Rollover / maintenance generators
 
-Both are ad hoc BigQuery queries, run on demand — not persistent dbt models.
-Both end with the same verify-and-confirm step: after the analyst pastes rows
-into the sheet, rematerialize `int_tableau__fresh_enrollment_scaffold` (or the
-goals sheet's consumers) and confirm the change reached prod before telling them
-it's done — the same rematerialize-then-verify workflow used throughout this
-project's own build (compare row counts / a value sample against the prod table
-via a BigQuery MCP query or `bq`, and check `__TABLES__.last_modified_time` for
-staleness).
+The generator below is an ad hoc BigQuery query, run on demand — not a
+persistent dbt model. It ends with a verify-and-confirm step: after the analyst
+pastes rows into the sheet, rematerialize the goals sheet's consumers and
+confirm the change reached prod before telling them it's done (compare row
+counts / a value sample against the prod table via a BigQuery MCP query or `bq`,
+and check `__TABLES__.last_modified_time` for staleness).
 
-### `-9` candidate-row generator (scaffold sheet)
+### The `-9` candidate-row generator is retired — do not look for it
 
-Lists every currently-existing, non-Miami school missing its whole-school-total
-row (`grade_level = -9` in `stg_google_sheets__finalsite__school_scaffold`) for
-the current academic year — Miami needs its full spine, not just this
-generator's output (see the Miami note above).
+`stg_google_sheets__finalsite__school_scaffold` and its source entry are both
+`enabled: false` — disabled rather than deleted, per the archive convention.
+`int_tableau__fresh_enrollment_scaffold` now derives every row type that sheet
+supplied: per-grade membership from PowerSchool and Focus, `grade_level = -9`
+whole-school totals, and `schoolid = 0` region rollups. There is nothing to
+hand-enter and nothing to generate — new schools and grades appear automatically
+once the SIS has at least one enrolled student in them.
 
-```sql
-select distinct
-  2026 as academic_year, -- finalsite year toggle: see skill
-  ps.region,
-  ps.abbreviation as school,
-  ps.school_number as schoolid,
-  -9 as grade_level,
-  'KTAF' as org,
-from `teamster-332318`.kipptaf_powerschool.stg_powerschool__schools as ps
--- sheet and warehouse now agree: -9 is both the value to PASTE INTO THE SHEET
--- and what stg_google_sheets__finalsite__school_scaffold carries through
--- unchanged (no recode).
-left join `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__school_scaffold as s
-  on ps.school_number = s.schoolid
-  and s.grade_level = -9
-  and s.academic_year = 2026 -- finalsite year toggle: see skill
-where
-  ps.state_excludefromreporting = 0
-  -- extract_region logic inline since this is an ad hoc query, not a dbt model:
-  and initcap(regexp_extract(ps._dbt_source_project, r'kipp(\w+)')) != 'Miami'
-  and s.schoolid is null
-```
+If someone asks for the `-9` generator, the answer is that the rows are computed
+now. Do not re-add sheet rows or re-enable the model.
+
+The Google Sheet itself still exists in Drive and Ops may still look at it; only
+the dbt read of it is gone. Its BigQuery relations linger after the disable —
+dbt never drops a relation — so they need a manual drop once this ships.
 
 ### Goals-sheet gap-row generator
 
@@ -196,86 +287,125 @@ automatic bump off of. **Always confirm the new year with SRE (or by reading the
 goals sheet directly) before changing anything below — don't infer it from a
 calendar date or from ingestion data.**
 
-**Step 0 — pre-flight: confirm the sheets are actually ready for the new year.**
-Toggling the literal before the source sheets carry the new year's data doesn't
-error — it silently zeroes out or truncates the pipeline (an `inner join` scoped
-to a year with no rows just returns nothing). Check both, and don't proceed
-until both are resolved:
+**Step 0a — ask for the new SRE workbook.** Before anything else, ask the user:
+_"Do you have a new SRE target sheet URL for this cycle?"_ SRE re-shares a new
+workbook each cycle (the AY2026 one was
+`26-27 KNJMIA Application Target Formulas`), so the id recorded in
+"Sanity-checking the scaffold against SRE's target sheet" above is stale by
+definition at rollover time. Get the new URL, read it via the Drive connector,
+and use its cover sheet as the expected-school list for the post-toggle
+verification. If the user doesn't have it yet, note that the rollover can still
+proceed — the scaffold derives itself — but the sanity check is deferred until
+they do, and say so rather than silently skipping it.
 
-1. **`status_crosswalk` has config for the new year:**
+Update the recorded id in this skill once you have the new one.
 
-   ```sql
-   select count(*) as row_count
-   from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__status_crosswalk
-   where file_year = <new_year>
-   ```
+**Step 0b — confirm SRE and the data team agree which Finalsite enrollment year
+is active.** This is the real gate on the whole rollover, not a formality: the
+two year vars diverging is what activates `finalsite_new`, which is how
+not-yet-enrolled schools and grades enter the scaffold. Don't infer the year
+from a calendar date or from ingestion data — ask.
 
-   If `0`, **stop** — the crosswalk sheet's detailed-status → category mapping
-   is institutional judgment with no source of truth to derive it from (same
-   reason its own rollover is a manual process, not a generator — see the note
-   at the end of "Rollover / maintenance generators" above). An analyst must add
-   the new year's rows to the sheet before the toggle proceeds; toggling first
-   would make `latest_status_calc`'s `inner join` (and every other site below)
-   silently return zero rows for the new year.
+**Step 0c — new schools or grades?** There is nothing to hand-enter. Ask SRE to
+enter them **in Finalsite** under the new Finalsite academic year; the year bump
+then brings them in through `finalsite_new`. If SRE hasn't entered them yet, the
+bump will simply not include them, so it's worth confirming before proceeding.
 
-2. **`school_scaffold` (the sheet) has its `-9` whole-school rows for the new
-   year, for every currently-existing non-Miami school**: run the `-9`
-   candidate-row generator above, but with `<new_year>` substituted for `2026`
-   in both places (the generator's own hardcoded year is a pre-toggle artifact —
-   it's still pointed at the outgoing year until you do this substitution). For
-   a brand-new academic year the sheet typically has **zero** rows yet, so this
-   isn't a partial-gap check — the generator's full output _is_ the complete
-   `-9` row set the new year needs. Since the PowerSchool builder can never
-   produce a whole-school row (structural, not a gap that closes on its own),
-   don't just report that gaps exist: **run the query now and hand the user its
-   full result as a ready-to-paste block** (plain delimited rows in a fenced
-   code block, one row per line, matching the "Goals-sheet gap-row generator"
-   batch-delivery convention — not a markdown table), so they can paste it
-   directly into `stg_google_sheets__finalsite__school_scaffold` before or
-   alongside the toggle. Leaving this until "later" means every affected
-   school's `School`-granularity goal rollup goes silently missing from the
-   scaffold the moment the toggle lands.
+**Step 0d — `status_crosswalk` partition key and columns.** Two things, both on
+the sheet, both before the bump:
 
-Only once both checks are clean — status_crosswalk has real rows for
-`<new_year>`, and the pasted `-9` rows are confirmed in the sheet — proceed to
-the file edits below.
+```sql
+select distinct _dagster_partition_key, file_year, count(*) as row_count
+from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__status_crosswalk
+group by 1, 2
+```
+
+- The **`_dagster_partition_key` (column A)** must match the new Finalsite
+  enrollment year. It's a **replace, not an append** — the sheet holds exactly
+  one year at a time, guarded by
+  `test_stg_google_sheets__finalsite__status_crosswalk_single_year`. If the key
+  still reads the outgoing year, `latest_status_calc`'s `inner join` returns
+  zero rows for the new year and the dashboard goes empty with no error.
+- **Ask SRE whether columns D, H and I→P still make sense** for the new cycle.
+  Use the table below to ask the question in their terms rather than by column
+  letter — these encode funnel judgment and cannot be derived.
+
+| col     | column                                                                                                                                              | question to put to SRE                                                                           |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **D**   | `detailed_status_ranking`                                                                                                                           | When a student hits several statuses, which wins? Has that priority changed?                     |
+| **H**   | `qa_flag`                                                                                                                                           | Which statuses should be excluded from reporting as bad data this cycle?                         |
+| **I-P** | `status_enrollment`, `status_group_numerator`, `status_group_denominator`, `conversion_metric_numerator_1..3`, `conversion_metric_denominator_1..2` | Which funnel bucket does each status roll into, and which conversion rates does it count toward? |
+
+If D changes, the `status_order` CASE in `int_finalsite__status_report_unpivot`
+must change with it —
+`test_int_finalsite__status_order_matches_crosswalk_ranking` guards the pair and
+will fail if they drift. Full column reference, including the columns SRE does
+_not_ need to review, is in the reference doc.
+
+**Step 0e — goals.** Get the new workbook URL from SRE, confirm goal names are
+unchanged, and run the reconciliation loop in "Goals reconciliation" above until
+it comes back clean.
+
+There is **no scaffold-sheet pre-flight check** any more — the sheet is retired,
+so the old `-9` row check is gone. Once the year is agreed, the crosswalk key is
+updated and goals reconcile, proceed to the file edits below.
 
 **Files to edit** — every dbt model/test site reads from one shared var:
 
 - `src/dbt/kipptaf/dbt_project.yml` — bump `finalsite_recruitment_year` (e.g.
   `2026` → `2027`). This alone updates every site below; none of them hold their
   own literal any more.
-  - `int_tableau__fresh_enrollment_scaffold.sql` (`powerschool_scaffold`'s
-    `academic_year` and `gsheet_scaffold`'s `where` filter)
+  - `int_tableau__fresh_enrollment_scaffold.sql` (`school_directory`'s
+    `enrollment_academic_year`, and `finalsite_new`'s `where` filter — which
+    also carries the constant gate predicate
+    `finalsite_recruitment_year != current_academic_year`, so bumping the var is
+    what switches that CTE from zero rows to live)
   - `int_tableau__finalsite_student_scaffold.sql` (`same_day_status_dates`'s
     `where` filter and `enrollment_lookup`'s two branches)
   - `rpt_tableau__fresh_dashboard_progress_to_goals.sql` (the `School` and
     `School/Grade Level` goal CTEs)
   - `test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
     (`crosswalk_ranking`'s `where` filter)
-- This file (1 occurrence — the `-9` candidate-row generator query above) is the
-  one remaining independent literal: it's an ad hoc BigQuery query, not a dbt
-  model, so it can't read `{{ var(...) }}` — substitute `<new_year>` by hand
-  each time you run it.
 
-Grep to confirm every model site still reads the var (none reverted to a bare
-literal) and that this file's generator query is the only literal left:
+`rpt_tableau__fresh_dashboard_qc` is a descendant of
+`int_tableau__finalsite_student_scaffold`, so it inherits the year change
+without holding a literal of its own — but it IS a verification site. It is
+enabled, contract-enforced, and wired into the `fresh_dashboard` exposure, and
+it is the SRE-facing mismatch worklist, so a bump that quietly empties or
+inflates it is worth catching. Make sure the build command below selects it.
+
+The goals gap-row generator in this file is an ad hoc BigQuery query, not a dbt
+model, so it can't read `{{ var(...) }}` — substitute the new year by hand each
+time you run it.
+
+Grep to confirm every model site reads the var and none reverted to a bare
+literal:
 
 ```bash
 grep -rn 'var("finalsite_recruitment_year")' src/dbt/kipptaf
-grep -n "as academic_year" .claude/skills/fresh-dashboard/SKILL.md
 ```
 
 Build and verify after all changes:
 
 ```bash
 uv run dbt build \
-  --select int_tableau__fresh_enrollment_scaffold int_tableau__finalsite_student_scaffold \
-    rpt_tableau__fresh_dashboard_progress_to_goals \
+  --select int_tableau__fresh_enrollment_scaffold+ int_tableau__finalsite_student_scaffold+ \
     test_int_finalsite__status_order_matches_crosswalk_ranking \
   --project-dir src/dbt/kipptaf \
+  --target dev \
   --defer \
+  --favor-state \
   --state target/prod
+```
+
+`--favor-state` is required, not optional: without it `--defer` resolves
+unselected upstreams to your `zz_<user>_*` dev schema and fails on anything you
+haven't personally built (e.g. `int_focus__schools`). If it still fails to
+resolve a recently-added upstream, the `target/prod` manifest is stale — refresh
+it with:
+
+```bash
+uv run dbt parse --target prod --project-dir src/dbt/kipptaf --target-path target/prod
 ```
 
 **When to make the change:** whenever SRE says the recruitment cycle has rolled

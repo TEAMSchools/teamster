@@ -49,6 +49,15 @@ sources:
                 - kippmiami
                 - finalsite
                 - int_finalsite__contact_id_attributes
+      - name: int_finalsite__student_address_of_record
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippmiami
+                - finalsite
+                - int_finalsite__student_address_of_record
       - name: int_finalsite__contact_custom_attributes
         config:
           meta:
@@ -58,3 +67,12 @@ sources:
                 - kippmiami
                 - finalsite
                 - int_finalsite__contact_custom_attributes
+      - name: int_finalsite__contact_address_of_record
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kippmiami
+                - finalsite
+                - int_finalsite__contact_address_of_record
