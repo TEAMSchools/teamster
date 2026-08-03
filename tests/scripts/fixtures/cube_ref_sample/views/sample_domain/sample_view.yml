@@ -1,0 +1,38 @@
+views:
+  - name: sample_view
+    description: A sample view for tests.
+    cubes:
+      - join_path: sample_fact
+        includes:
+          - count_rows
+          - grade_level
+          - no_desc_dim
+      - join_path: sample_fact.sample_dim
+        prefix: true
+        includes:
+          - region_name
+      - join_path: sample_fact.sample_alias
+        prefix: false
+        includes:
+          - base_key
+    meta:
+      folders:
+        - name: Sample
+          members:
+            - grade_level
+            - no_desc_dim
+        - name: Region
+          members:
+            - sample_dim_region_name
+    access_policy:
+      - group: sample-network
+        member_level:
+          includes: "*"
+      - group: sample-region
+        member_level:
+          includes: "*"
+        row_level:
+          filters:
+            - member: sample_dim_region_name
+              operator: equals
+              values: ["{ securityContext.region_key }"]

@@ -1,0 +1,19 @@
+cubes:
+  - name: sample_fact
+    public: false
+    sql_table: kipptaf_marts.fct_sample
+    dimensions:
+      - name: grade_level
+        description: Student grade level.
+        sql: grade_level
+        type: number
+        public: true
+      - name: no_desc_dim
+        sql: no_desc_dim
+        type: string
+        public: true
+    measures:
+      - name: count_rows
+        description: Row count.
+        type: count
+        public: true
