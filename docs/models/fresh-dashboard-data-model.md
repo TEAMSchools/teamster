@@ -806,12 +806,16 @@ them, and picks up not-yet-enrolled ones from Finalsite per steps 1-2 above.
 
 ### After the bump
 
-Expect `enrollment_lookup`'s PowerSchool-vs-Finalsite quality-check columns
-(`enroll_status`, `is_enrolled_*`) in `int_tableau__finalsite_student_scaffold`
-to be null network-wide for a while. That CTE scopes
-`int_extracts__student_enrollments` to the Finalsite recruitment year, and
-PowerSchool has no enrollment rows for a year it hasn't rolled into yet. This is
-expected, resolves on its own once PowerSchool catches up, and needs no action.
+Expect `enrollment_lookup`'s SIS-vs-Finalsite quality-check columns
+(`enroll_status`, `sis_entry_date`, `is_enrolled_*`) in
+`int_tableau__finalsite_student_scaffold` to be null network-wide for a while.
+That CTE scopes **both** of its branches — `int_extracts__student_enrollments`
+and `int_focus__student_enrollments` — to the Finalsite recruitment year, and
+neither SIS has enrollment rows for a year it hasn't rolled into yet, so Miami
+is affected exactly as much as the PowerSchool regions. This is expected,
+resolves on its own once each SIS catches up, and needs no action. Same
+mechanism as the "All regions' point-in-time enrollment flags go NULL" bullet
+under _Known data model caveats_ above.
 
 ## Open questions
 
