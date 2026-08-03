@@ -14,14 +14,7 @@ with
 
             if(enroll_status = 0, false, true) as suspended,
         from {{ ref("int_extracts__student_enrollments") }}
-        /* Paterson stays excluded: its student org units carry an empty
-        description, which is the column the org-unit join below matches on, so
-        including it would emit rows with a null orgUnitPath. Re-enable once Ops
-        populates those descriptions -- see #4513. */
-        where
-            rn_all = 1
-            and student_email is not null
-            and region not in ('Paterson', 'Miami')
+        where rn_all = 1 and student_email is not null and region != 'Miami'
     ),
 
     finalsite_enrolled as (
@@ -191,6 +184,16 @@ with
     ),
 
     with_google as (
+        /* The org unit is named explicitly in the people__locations sheet rather
+        than matched against the org unit's free-text description. The three
+        branches above carry three different school-name vocabularies -- Focus
+        and Finalsite resolve to the sheet's name, PowerSchool keeps its own
+        (KIPP Hatch Academy vs the sheet's KIPP Hatch Middle) -- and the
+        crosswalk maps every one of them to the same row, since each row there
+        is one alias. Joining stg_google_directory__orgunits on the sheet's path
+        keeps it honest: a path that does not exist in Google resolves to null
+        and the student drops out below rather than being sent with a bad
+        orgUnitPath. */
         select
             s.*,
 
@@ -208,9 +211,11 @@ with
             {{ ref("stg_google_directory__users") }} as u
             on s.student_email_google = u.primary_email
         left join
+            {{ ref("int_people__location_crosswalk") }} as x
+            on s.school_name = x.location_name
+        left join
             {{ ref("stg_google_directory__orgunits") }} as o
-            on s.school_name = o.description
-            and o.org_unit_path like '/Students/%'
+            on x.location_google_student_org_unit_path = o.org_unit_path
     ),
 
     final as (
@@ -249,4 +254,7 @@ select
 
     if(grade_level >= 3, true, false) as `changePasswordAtNextLogin`,
 from final
-where is_create or is_update
+/* A null org unit means the school has no student org unit named in the
+locations sheet. Dropping those students is deliberate -- provisioning an
+account with no orgUnitPath would file it at the domain root. */
+where (is_create or is_update) and org_unit_path is not null
