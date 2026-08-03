@@ -9,10 +9,20 @@
 **and** after the Entra ID identity cutover, with one canonical Permissions
 block pasted across all of them apart from documented per-workbook variants.
 
-**Design doc:**
-`docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md`. That
-is the reasoning; this is the sequence. Where they disagree, the design doc is
-authoritative and this file is stale.
+**Authoritative reference:**
+[the Tableau permissions guide](../../guides/tableau-permissions.md). It carries
+the current text of all five calculated fields. Where this runbook and the guide
+disagree, **the guide wins** — copy calc text from there, and treat a difference
+as a bug in this file.
+
+`docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md` holds
+the design reasoning behind each tier. This file is the sequence.
+
+Note the field count: the design settled on **five** calculated fields, not
+four. The fifth is the senior-leader shield, needed only on Manager Survey
+Reports, Manager Survey Rollup, and Leadership Development. This runbook was
+written before the shield existed and does not describe it — take it from the
+guide.
 
 ---
 
@@ -27,16 +37,18 @@ Do not start until all four hold.
 1. **The location groups exist.** See _Groups_ below. A missing group does not
    error; it silently denies, which is the failure this rebuild exists to
    eliminate.
-1. **You have tested whether `ISMEMBEROF()` accepts a non-literal argument** on
-   this Server version. Make a scratch calc:
+1. **`ISMEMBEROF()` takes a literal string only — this is settled, do not
+   re-test it.** The concatenated form
 
    ```text
    ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])
    ```
 
-   If it validates, the location gate is one line. If it does not, it becomes 26
-   explicit `ISMEMBEROF` branches — one per school location, Rooms excluded.
-   This single answer changes the size of every Tier 5 edit, so settle it first.
+   does not validate. A parameter does not rescue it either: a parameter holds
+   one value per view, so the calc evaluates once instead of per row and
+   degenerates to all-rows-or-none — a bypass, not a gate. The location gate is
+   therefore 26 explicit `ISMEMBEROF` branches, one per school location, Rooms
+   excluded. See _Tier 5_ below.
 
 1. **You know which Tier 2 groups each workbook currently grants.** Tier 2 is
    the only tier that legitimately differs across the 13, and this runbook
@@ -116,12 +128,27 @@ IF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools') AND [home_business_unit_n
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KCNA')     AND [home_business_unit_name] = 'KIPP Cooper Norcross Academy' THEN TRUE
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff MIA')      AND [home_business_unit_name] = 'KIPP Miami' THEN TRUE
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson' THEN TRUE
-ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF') THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF')
+       AND [home_business_unit_name] IN (
+           'TEAM Academy Charter School',
+           'KIPP Cooper Norcross Academy',
+           'KIPP Miami',
+           'KIPP Paterson'
+       ) THEN TRUE
 ELSE FALSE END
 ```
 
-The Paterson branch is new and unblocks 96 staff. The KTAF branch stays
-unconditional, preserving current behaviour.
+The Paterson branch is new and unblocks 96 staff.
+
+**The KTAF branch is scoped to the four regions, not unconditional.** Central
+office oversees the regions; it does not get visibility into itself. An earlier
+version of this runbook said the branch stays unconditional — that was wrong and
+caused a real leak, found while testing Manager Survey Rollup: two senior
+leaders at the same level, both central office, both reporting to the same
+manager, could see each other. The unconditional branch made the entity gate
+TRUE on every row, and since KTAF staff sit in Rooms — absent from the location
+gate by design — Tier 4 is their only route, so any regional-leadership group
+membership became whole-extract access. Do not restore the unconditional form.
 
 Two things not to "clean up" here. First, **single equality per branch** — dbt
 now normalizes entity, so no extract can emit `TEAM`, `KCNA`, `MIA`, or `KNJ`
@@ -133,15 +160,20 @@ TEAM employee who oversees Paterson gets Paterson visibility by being added to
 the Paterson group, with no calc change. Deriving entity from the viewer's
 roster row would silently revoke access from every cross-entity supervisor.
 
-Location gate:
+Location gate: 26 explicit branches, one per school location, each of the form
 
 ```text
-ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])
+OR ([location_clean_name] = 'KIPP TEAM Academy' AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP TEAM Academy'))
 ```
 
+Copy the full 26-branch block, including the five bridge branches, from
+`RLS - Location Gate` in
+[the Tableau permissions guide](../../guides/tableau-permissions.md) rather than
+retyping it. That guide is authoritative for this field; keeping one copy is why
+it is not duplicated here.
+
 Rooms are absent by design — central office reaches data through Tiers 2 and 4,
-never through location. If prerequisite 3 failed, expand to 26 explicit
-branches.
+never through location.
 
 Role gate:
 
@@ -258,7 +290,10 @@ design doc's earlier estimate.
   `[report_to_sam_account_name]` → `[reports_to_sam_account_name]`
 - **Note:** this model now excludes rows whose employee number resolves to no
   roster record, so a small number of previously-visible rows are gone by design
-- **Verify:** a participant sees their own record; their manager sees it too
+- **Senior-leader shield:** this workbook needs the fifth calculated field plus
+  the council branch in Tier 2. Copy both from the guide.
+- **Verify:** a participant sees their own record; their manager sees it too.
+  Also run the two senior-leader personas in _Preview as User_.
 
 ### SchoolMint Grow Dashboard
 
@@ -363,15 +398,22 @@ design doc's earlier estimate.
 - **Keep:** `subject_preferred_name`, `subject_manager_name`,
   `subject_manager_userprincipalname`, `subject_df_employee_number`,
   `is_manager`, and the `respondent_*` fields — all genuinely different values
-- **Verify:** a rated manager sees their own results; their manager sees them
+- **Senior-leader shield:** this workbook needs the fifth calculated field plus
+  the council branch in Tier 2. Copy both from the guide.
+- **Verify:** a rated manager sees their own results; their manager sees them.
+  Also run the two senior-leader personas in _Preview as User_.
 
 ### Manager Survey Rollup
 
 - **Datasource change:** same repoint as Manager Survey Reports
 - **Fields:** same seven `subject_*` repoints
+- **Senior-leader shield:** same as Manager Survey Reports — the fifth
+  calculated field plus the council branch in Tier 2, copied from the guide.
+  This is the workbook the leak was found in.
 - **Verify:** rollup totals match the pre-repoint numbers — the new extract
   wraps the same intermediate at the same grain, 175,670 rows, so any change in
-  a total means a field was mapped wrong
+  a total means a field was mapped wrong. Also run the two senior-leader
+  personas in _Preview as User_.
 
 ### Teacher Goals
 
@@ -400,11 +442,25 @@ gate. Both matter.
 | School Leader                   | own school                                            |
 | DSO                             | own schools                                           |
 | MDSO / HOS / AcOps              | own region; cross-region **only** on norming sheets   |
-| KTAF central office             | everything, via the unconditional KTAF branch         |
+| KTAF central office             | the four regions, **not** other central office rows   |
 | Paterson school staff           | Paterson rows — this is the branch that did not exist |
 | Room 12 staff under TEAM        | gates through the TEAM branch, not Paterson           |
 | Cross-entity supervisor         | the supervised entity's rows, via group membership    |
 | One of the 3 UPN-mismatch staff | self, proving the UPN hedge works                     |
+
+On the three senior-leader workbooks — Manager Survey Reports, Manager Survey
+Rollup, Leadership Development — add these two. They are the cases that caught
+the real leak, so run them rather than assuming.
+
+| Persona                                          | Expect                                                |
+| ------------------------------------------------ | ----------------------------------------------------- |
+| A KTAF senior leader who is also in an ops group | regional rows yes; **another KTAF senior leader, no** |
+| The manager both senior leaders report to        | **both of them**, via Tier 1                          |
+
+The first passes only if the entity gate excludes KTAF-on-KTAF _and_ the Tier 2
+shield is negated correctly. The second is the counter-test proving you have not
+over-blocked — a manager who cannot see their own reports means the shield is
+too wide.
 
 ### Cutover rehearsal
 

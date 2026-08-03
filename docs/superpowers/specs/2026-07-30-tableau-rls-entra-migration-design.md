@@ -2,6 +2,19 @@
 
 Refs #4638
 
+> **Authoritative reference:**
+> [the Tableau permissions guide](../../guides/tableau-permissions.md) carries
+> the current text of all five calculated fields. This spec is the design
+> reasoning behind them. Where the two disagree, the guide wins.
+>
+> Two parts of the design landed after this spec was first written and are
+> documented only in the guide: the **Tier 2 senior-leader shield** (the fifth
+> calculated field, used on Manager Survey Reports, Manager Survey Rollup, and
+> Leadership Development), and the fact that the shield and the entity gate are
+> **coupled** — the shield is sufficient only because the entity gate excludes
+> KTAF-on-KTAF. A shield inside one branch of an `OR` chain does nothing about
+> the other branches.
+
 ## Problem
 
 KIPP Tableau Server is migrating identities from Active Directory usernames to
@@ -232,14 +245,40 @@ IF ISMEMBEROF('KNJ-SG-Tableau All Staff TEAM Schools') AND [home_business_unit_n
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KCNA')     AND [home_business_unit_name] = 'KIPP Cooper Norcross Academy' THEN TRUE
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff MIA')      AND [home_business_unit_name] = 'KIPP Miami' THEN TRUE
 ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff Paterson') AND [home_business_unit_name] = 'KIPP Paterson' THEN TRUE
-ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF') THEN TRUE
+ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF')
+       AND [home_business_unit_name] IN (
+           'TEAM Academy Charter School',
+           'KIPP Cooper Norcross Academy',
+           'KIPP Miami',
+           'KIPP Paterson'
+       ) THEN TRUE
 ELSE FALSE END
 ```
 
 The Paterson branch is new and unblocks 96 staff (55 Prep Elementary, 33 Prep
 Middle, 8 in Room 12). A further 3 staff sit in Room 12 under the
-`TEAM Academy Charter School` entity and gate through that branch instead. The
-KTAF branch stays unconditional, preserving current behavior.
+`TEAM Academy Charter School` entity and gate through that branch instead.
+
+#### The KTAF branch is scoped to the regions
+
+An earlier revision of this design kept the KTAF branch unconditional to
+preserve existing behavior. **That was wrong.** Central office oversees the
+regions; it does not get visibility into itself, and the unconditional form
+returned TRUE on every row including other central office rows.
+
+The leak was found live in Manager Survey Rollup: two senior leaders at the same
+level, both KTAF, both reporting to the same manager, could see each other.
+Tiers 1, 3, and 5 all correctly returned FALSE and the Tier 2 shield correctly
+returned FALSE — Tier 4 was the sole TRUE, because the viewer sat in a
+regional-leadership group and the unconditional branch made the entity gate TRUE
+on every row.
+
+The non-obvious part: KTAF staff sit in Rooms, Rooms are absent from the
+location gate by design, so Tier 5 can never fire for them and **Tier 4 is their
+only route**. That makes any regional-leadership group membership equal to
+whole-extract access. Scoping the branch to the four regions closes it, and is a
+no-op wherever there are no KTAF subjects — 0.0% in the three teacher-population
+extracts.
 
 #### Historical entity values are abbreviations
 
@@ -280,10 +319,16 @@ who ever carried `KNJ`, 262 (80%) next appear under
 at Room 9, the network office. The two figures agree.
 
 **Decision: `KNJ` maps flatly to KTAF.** In practice that means adding it to no
-region branch at all — the unconditional
-`ELSEIF ISMEMBEROF('KNJ-SG-Tableau All Staff KTAF') THEN TRUE` branch already
-covers those rows for network viewers, and region viewers correctly do not see
-historical network staff.
+region branch at all, so region viewers correctly do not see historical network
+staff.
+
+Note what scoping the KTAF branch to the four regions changed here. When that
+branch was unconditional it also covered these rows for network viewers. It no
+longer does: `KIPP TEAM and Family Schools Inc.` is not in the four-region list,
+so historical `KNJ` rows now fail the entity gate for everyone, and reach a
+viewer only through Tier 1 (self or manager) or a Tier 2 all-access group. That
+follows directly from central office not getting visibility into central office
+rows — these are network rows. It is a deliberate consequence, not an oversight.
 
 Two things this deliberately accepts:
 
@@ -297,9 +342,9 @@ Two things this deliberately accepts:
   flat map fails closed; the location map fails open.
 
 In dbt this is the `KNJ` branch of the entity `case`, which rewrites it to
-`KIPP TEAM and Family Schools Inc.`. Region branches then never match it, and
-the unconditional KTAF branch covers it for network viewers — the same outcome
-the flat map describes, reached in the view rather than in the calc.
+`KIPP TEAM and Family Schools Inc.`. Region branches then never match it — the
+same outcome the flat map describes, reached in the view rather than in the
+calc.
 
 Because normalization happens in dbt, no workbook needs a second entity form
 regardless of how far back its data reaches.
@@ -323,12 +368,24 @@ instead of from group membership. **Do not.** It would silently revoke access
 from every cross-entity supervisor, and silent revocation is the failure mode
 this whole rebuild exists to eliminate.
 
-Location gate — one line if `ISMEMBEROF()` accepts a non-literal argument on
-this Server version, otherwise 26 explicit branches:
+Location gate — 26 explicit branches, one per school location:
 
 ```text
-ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])
+OR ([location_clean_name] = 'KIPP TEAM Academy' AND ISMEMBEROF('KNJ-SG-Tableau All Staff KIPP TEAM Academy'))
 ```
+
+The one-line form
+`ISMEMBEROF('KNJ-SG-Tableau All Staff ' + [location_clean_name])` was the
+original hope. It does not work: `ISMEMBEROF()` takes a literal string only, so
+the concatenation does not validate. A parameter does not rescue it either — a
+parameter holds one value per view, so the calc would evaluate once instead of
+per row and degenerate to all-rows-or-none, a bypass rather than a gate. The
+same limitation is why subject-side seniority has to come from the data:
+`ISMEMBEROF()` only ever answers for the current viewer, never for the row's
+person.
+
+The full 26-branch block, including the five retired-location bridges, is in
+[the Tableau permissions guide](../../guides/tableau-permissions.md).
 
 Rooms are absent by design. Central office reaches data through Tiers 2 and 4,
 never through location.
