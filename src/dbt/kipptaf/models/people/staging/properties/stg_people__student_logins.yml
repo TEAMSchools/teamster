@@ -11,6 +11,18 @@ models:
     columns:
       - name: student_number
         data_type: int64
+        description: >
+          Student identifier this login belongs to. The PowerSchool student
+          number for NJ regions and the Focus-prefixed student id for Miami.
+          Serves as the incremental merge key, so a duplicate here would fan out
+          every consumer that joins on it.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: username
         data_type: string
       - name: default_password
