@@ -8,6 +8,14 @@ models:
       excluded. A row appears only when the account is missing (is_create) or
       when its name, suspension state, or org unit has drifted from the source
       of record (is_update).
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - primaryEmail
     columns:
       - name: student_number
         data_type: int64
