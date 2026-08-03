@@ -484,10 +484,17 @@ regression, not a cleanup — the same trap that produced a wrong doc claim abou
 `false` because they are wrapped.
 
 **The worklist has four flags, not five.** `is_same_day_status_tie` was deleted
-at the AY2026 review and replaced by direction 3 of `is_enroll_status_mismatch`
-(the pending-status set). The same-day tie still happens in the data and the
+at the AY2026 review and replaced by the pending-status set inside
+`is_enroll_status_mismatch`. The same-day tie still happens in the data and the
 Reset Protocol is still the fix — it just no longer gets its own worklist row,
 so don't re-add the flag when someone reports a wrong `latest_status`.
+
+**`is_enroll_status_mismatch` has TWO directions in the docs, not three.** The
+"left" and "not finished enrolling" statuses were presented separately until the
+AY2026 review; they make one comparison (expected `2` against SIS `0`), so they
+are now documented as one direction with two halves, matching the SQL's two
+branches. The follow-up still differs between the halves — read `latest_status`
+to tell them apart. Don't re-split them into separate directions.
 
 **`finalsite_expected_enroll_status` has two non-null values, 0 and 2, and they
 deliberately mirror the SIS's own `enroll_status` codes** so a comparison

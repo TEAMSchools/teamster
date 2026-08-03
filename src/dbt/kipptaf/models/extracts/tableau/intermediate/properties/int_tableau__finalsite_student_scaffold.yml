@@ -241,11 +241,11 @@ models:
           actual enroll_status -- Finalsite implies enrolled while the SIS says
           withdrawn or graduated, or Finalsite implies not-enrolled while the
           SIS says currently enrolled. The second case covers both a student who
-          left and one who has not finished enrolling; the SRE-facing
-          documentation presents those as separate directions because the
-          follow-up differs, but the comparison is the same and they share one
-          expected value. The pending group replaced a separate
-          same-day-status-tie flag.
+          left and one who has not finished enrolling -- one comparison, so the
+          SRE-facing documentation presents it as one direction with two halves
+          rather than two directions. The follow-up differs between the halves;
+          latest_status is what tells them apart. The pending group replaced a
+          separate same-day-status-tie flag.
       - name: is_grade_level_mismatch
         data_type: boolean
         description: >-
