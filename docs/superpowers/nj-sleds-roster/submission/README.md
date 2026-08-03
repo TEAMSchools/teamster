@@ -37,13 +37,22 @@ so step 2 is only for iterating.
 
 ## The gate is red on arrival — this is expected
 
-As of the 2026-07-29 extract, two check groups fail and are expected to keep
+As of the 2026-08-02 extract, two check groups fail and are expected to keep
 failing until someone acts on the source data:
 
-- `check_in_scope_rows_have_grades` reports **108** in-scope rows with no letter
-  grade (Newark HS 20, Newark MS 55, Camden HS 30, Camden MS 3).
-- `check_credits_earned` reports **`missing = 50`** — HS rows with no
-  `CreditsEarned`.
+- `check_in_scope_rows_have_grades` reports **47** in-scope rows with no letter
+  grade (Newark HS 12, Newark MS 35).
+- `check_credits_earned` reports **`missing = 12`** — HS rows with no
+  `CreditsEarned`, the same 12 rows.
+
+Both figures are down from the 2026-07-29 extract (108 ungraded across both
+regions, `missing = 50`), partly because 54 sections were deliberately excluded
+from the pull and partly because Camden is no longer in scope — see _Region
+scope_ below.
+
+These three are now the gate's only failures. Everything else passes, so a
+fourth failure appearing means something genuinely changed, not more of the same
+backlog.
 
 Both describe the same underlying gap: for these rows, PowerSchool holds no
 usable `Y1` stored grade and no usable live final grade either, so this tool has
@@ -77,14 +86,17 @@ thing it exists to fix would be circular.
 
 Each row carries `reason` (why the row has no grade) and `section_shape`
 (whether the whole section is affected or just this student). As of the
-2026-07-29 extract the 108 rows break down like this:
+2026-08-02 extract the 47 rows break down like this:
 
-| Reason                                       | Section shape                    | Rows |
-| -------------------------------------------- | -------------------------------- | ---: |
-| no grade in either source                    | whole section ungraded           |   41 |
-| no grade in either source                    | partial — classmates were graded |   34 |
-| conflicting grades                           | partial                          |   31 |
-| grade exists but outside the handbook domain | partial                          |    2 |
+| Reason                    | Section shape                    | Rows |
+| ------------------------- | -------------------------------- | ---: |
+| no grade in either source | partial — classmates were graded |   27 |
+| conflicting grades        | partial — classmates were graded |   20 |
+
+The whole-section-ungraded category is now empty. On 2026-07-29 it held 41 of
+the 108 rows; those were the sections excluded from the pull, so what remains is
+entirely per-student rather than per-section. That changes the fix: no section
+needs a scheduling or School Setup change, only individual grades.
 
 What each combination implies:
 
@@ -111,6 +123,25 @@ it, never paste row-level values anywhere external.
 After fixing a source record, the extract must be re-pulled and re-loaded before
 the gate reflects the fix — re-running the gate against the old extract will
 still show the same failures.
+
+## Region scope
+
+`REGIONS_IN_SCOPE` in `submission_query.py` is the single source of truth for
+which regions this tool still processes. It is currently `("newark",)`.
+
+Camden's 2026-07-31 submission was accepted, error-free, and certified, so its
+extract is final — reprocessing it can only produce a difference from what the
+state already holds. Its rows were also holding the gate red, which blocked
+Newark from exporting for work nobody intended to redo.
+
+The constant feeds the gate's base-table iteration, `build_submission.py`, and
+`export_worklist.py`, and filters `SUBMISSION_SQL` itself. `SUBMISSION_SQL`
+still builds both regions' branches and filters at the end, so restoring a
+region is a one-tuple edit plus a re-baseline, not SQL reconstruction.
+
+Both baseline dicts keep their Camden entries at the certified values. They are
+skipped at evaluation while Camden is out of scope, and are there so the numbers
+survive for the record.
 
 ## Re-baselining per cycle
 
