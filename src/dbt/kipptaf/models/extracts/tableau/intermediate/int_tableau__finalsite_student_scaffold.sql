@@ -24,7 +24,7 @@ with
         where enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),
 
-    same_day_duplicate_flags as (
+    same_day_status_tie_flags as (
         select
             finalsite_enrollment_id,
 
@@ -85,7 +85,7 @@ with
             and x.valid_detailed_status
             and not x.qa_flag
         inner join
-            same_day_duplicate_flags as sd
+            same_day_status_tie_flags as sd
             on r.finalsite_enrollment_id = sd.finalsite_enrollment_id
         where r.enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),

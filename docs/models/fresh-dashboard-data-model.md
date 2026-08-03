@@ -570,14 +570,19 @@ Two properties worth knowing before reading it:
   four come through from `int_tableau__finalsite_student_scaffold`; this one is
   computed here as
   `finalsite_expected_enroll_status = 0 and enroll_status is null`.
-- **The two comparison flags go NULL, not `true`, when the SIS side is
-  missing.** `is_grade_level_mismatch` and `is_school_mismatch` are plain `!=`
-  comparisons, and `!=` against NULL yields NULL — which `where flag_value` then
-  drops. So a student with no SIS record surfaces once, under
-  `is_missing_sis_record`, rather than three times. During the year-toggle
-  window (see the caveat above), when the SIS has no rows for the new year at
-  all, expect the two comparison flags to fall silent network-wide and
-  `is_missing_sis_record` to carry the volume.
+- **The two comparison flags read `false`, not `true`, when the SIS side is
+  missing — and `false`, not NULL.** `is_grade_level_mismatch` and
+  `is_school_mismatch` wrap their `!=` in `if(<cmp>, true, false)`. The bare
+  comparison against NULL would yield NULL, but `if()` takes its else branch on
+  a NULL condition exactly as it does on FALSE, so the column materializes as
+  `false` (verified against BigQuery: `if(a != b, true, false)` with `b` NULL
+  returns `false`, while the bare `a != b` returns NULL). Do not treat
+  `is_grade_level_mismatch is null` as a missing-SIS proxy — it never fires.
+  Either way `where flag_value` drops the row, so a student with no SIS record
+  still surfaces once, under `is_missing_sis_record`, rather than three times.
+  During the year-toggle window (see the caveat above), when the SIS has no rows
+  for the new year at all, expect the two comparison flags to fall silent
+  network-wide and `is_missing_sis_record` to carry the volume.
 
 ## Rolling the dashboard over to a new cycle
 

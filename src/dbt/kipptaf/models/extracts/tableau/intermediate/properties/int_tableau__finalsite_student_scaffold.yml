@@ -150,7 +150,7 @@ models:
         data_type: boolean
         description: >-
           True when a student has more than one distinct Finalsite status set on
-          the same calendar day. Computed in same_day_duplicate_flags (in the
+          the same calendar day. Computed in same_day_status_tie_flags (in the
           model SQL) directly off int_finalsite__status_report_unpivot, before
           the crosswalk join fans a single detailed_status out to multiple
           status_group_value rows (by design) -- counting after that fan-out
@@ -224,11 +224,13 @@ models:
         data_type: boolean
         description: >-
           True when the Finalsite-reported grade_level differs from the SIS's
-          sis_grade_level. Null rather than true when no SIS record matched,
-          since it is a plain inequality comparison.
+          sis_grade_level. Materializes as false, not null, when no SIS record
+          matched -- the comparison is wrapped in if(), which takes the else
+          branch on a null condition. Verified against BigQuery.
       - name: is_school_mismatch
         data_type: boolean
         description: >-
           True when the Finalsite-reported schoolid differs from the SIS's
-          sis_schoolid. Null rather than true when no SIS record matched, since
-          it is a plain inequality comparison.
+          sis_schoolid. Materializes as false, not null, when no SIS record
+          matched -- the comparison is wrapped in if(), which takes the else
+          branch on a null condition. Verified against BigQuery.
