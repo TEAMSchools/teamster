@@ -437,33 +437,39 @@ numbers and the dashboard:
 ### How Finalsite's `latest_status` becomes an expected enrollment status
 
 `int_tableau__finalsite_student_scaffold` carries two enrollment-status columns
-that are easy to mix up, because the naming runs opposite to intuition:
+that answer different questions — one is what the SIS actually says, the other
+is what Finalsite implies the SIS _should_ say:
 
-| column             | where it comes from                                                                                                        |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `enroll_status`    | the **SIS** — PowerSchool via `int_extracts__student_enrollments`, or Focus via `int_focus__student_enrollments` for Miami |
-| `ps_enroll_status` | **Finalsite**, derived from `latest_status` — despite the `ps_` prefix, nothing about it is read from PowerSchool          |
+| column                             | where it comes from                                                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `enroll_status`                    | the **SIS** — PowerSchool via `int_extracts__student_enrollments`, or Focus via `int_focus__student_enrollments` for Miami |
+| `finalsite_expected_enroll_status` | **Finalsite**, derived from `latest_status` — it reads nothing from the SIS                                                |
 
-`ps_enroll_status` is the status the SIS _ought_ to show if Finalsite is right,
-mapped from the student's `latest_status`:
+`rpt_tableau__fresh_dashboard_qc` exposes the first of these as
+`sis_enroll_status`, so the two sides of every comparison name their source
+explicitly. The int model keeps the bare `enroll_status` name because the other
+two `fresh_dashboard` views already expose it that way.
 
-| `latest_status`                                            | `ps_enroll_status` | meaning                       |
-| ---------------------------------------------------------- | ------------------ | ----------------------------- |
-| `Enrolled`                                                 | `0`                | should be active in the SIS   |
-| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw` | `1`                | should be inactive in the SIS |
-| anything else                                              | `NULL`             | no expectation                |
+`finalsite_expected_enroll_status` is the status the SIS _ought_ to show if
+Finalsite is right, mapped from the student's `latest_status`:
+
+| `latest_status`                                            | `finalsite_expected_enroll_status` | meaning                       |
+| ---------------------------------------------------------- | ---------------------------------- | ----------------------------- |
+| `Enrolled`                                                 | `0`                                | should be active in the SIS   |
+| `Mid Year Withdrawal`, `Never Attended`, `Summer Withdraw` | `1`                                | should be inactive in the SIS |
+| anything else                                              | `NULL`                             | no expectation                |
 
 The `NULL` case is deliberate and covers most of the funnel — an applicant who
 is Waitlisted or Enrollment In Progress has no business having an SIS enrollment
 record yet, so there is nothing to compare and no mismatch can fire.
 
-`is_active_inactive_mismatch` then fires when the expectation and the SIS
-disagree in either direction:
+`is_enroll_status_mismatch` then fires when the expectation and the SIS disagree
+in either direction:
 
-- Finalsite says enrolled (`ps_enroll_status = 0`) but the SIS says withdrawn or
-  graduated (`enroll_status in (2, 3)`)
-- Finalsite says withdrawn (`ps_enroll_status = 1`) but the SIS says currently
-  enrolled (`enroll_status = 0`)
+- Finalsite says enrolled (`finalsite_expected_enroll_status = 0`) but the SIS
+  says withdrawn or graduated (`enroll_status in (2, 3)`)
+- Finalsite says withdrawn (`finalsite_expected_enroll_status = 1`) but the SIS
+  says currently enrolled (`enroll_status = 0`)
 
 Note the asymmetry: the enrolled-side check accepts SIS `2` (withdrawn) and `3`
 (graduated) as contradicting, while the withdrawn-side check only treats SIS `0`
@@ -472,7 +478,7 @@ trigger a mismatch on either side.
 
 ### The QC worklist: `rpt_tableau__fresh_dashboard_qc`
 
-`is_active_inactive_mismatch` is one of five flags that
+`is_enroll_status_mismatch` is one of five flags that
 `int_tableau__finalsite_student_scaffold` computes per student.
 `rpt_tableau__fresh_dashboard_qc` is the SRE-facing surface for all five: it
 takes the roster at `grouped_status_timeframe = 'Current'`, `UNPIVOT`s the flags
@@ -480,19 +486,28 @@ into `(flag_name, flag_value)`, and keeps only the rows where a flag actually
 fired (`where flag_value`). So it is a **worklist, not a report** — one row per
 student per problem, and an empty result is the good outcome.
 
-| flag                           | fires when                                                                                                |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `is_same_day_status_duplicate` | More than one status shares the student's latest status date — the same-day tie described above.          |
-| `is_active_inactive_mismatch`  | Finalsite's expected enrollment state contradicts the SIS, per the table above.                           |
-| `is_grade_level_mismatch`      | Finalsite's `grade_level` differs from the SIS's `ps_grade_level`.                                        |
-| `is_school_mismatch`           | Finalsite's `schoolid` differs from the SIS's `ps_schoolid`.                                              |
-| `is_missing_sis_record`        | Finalsite says the student is enrolled (`ps_enroll_status = 0`) but no SIS enrollment row matched at all. |
+#### The five flags, in plain language
+
+For explaining the worklist to a non-technical audience. Each row is one student
+with one problem; a student with several problems appears once per problem, and
+a student with none does not appear at all.
+
+| flag                        | what it means                                                                                                                                                                                                                                                                                           | how it gets fixed                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `is_same_day_status_tie`    | Two different statuses share the student's most recent status date, so the dashboard has to guess which one is current — and it guesses by rank, which is wrong for exits. A `Parent Declined` set the same day as `Enrollment In Progress` loses, and the student still looks like they are enrolling. | SRE, in Finalsite, via the Reset Protocol — move the student to another status, wait a day, then set the intended one.     |
+| `is_enroll_status_mismatch` | Finalsite and the SIS disagree about whether the student is enrolled: Finalsite says enrolled while the SIS says withdrawn or graduated, or Finalsite says withdrawn while the SIS still has them active.                                                                                               | Decide which system is right, then correct the other one.                                                                  |
+| `is_grade_level_mismatch`   | Finalsite's grade for the student is not the grade the SIS has them in.                                                                                                                                                                                                                                 | Confirm the true grade, then fix whichever system is wrong.                                                                |
+| `is_school_mismatch`        | Finalsite's assigned school is not the school the SIS has them at.                                                                                                                                                                                                                                      | Confirm the true school, then fix whichever system is wrong.                                                               |
+| `is_missing_sis_record`     | Not a disagreement but an absence — Finalsite says the student is enrolled and the SIS has no enrollment record at all to compare against.                                                                                                                                                              | Someone has to create or link the SIS record. A different fix from the disagreement case, which is why it is its own flag. |
+
+#### Implementation notes
 
 Two properties worth knowing before reading it:
 
 - **`is_missing_sis_record` is derived in this model, not upstream.** The other
   four come through from `int_tableau__finalsite_student_scaffold`; this one is
-  computed here as `ps_enroll_status = 0 and enroll_status is null`.
+  computed here as
+  `finalsite_expected_enroll_status = 0 and enroll_status is null`.
 - **The two comparison flags go NULL, not `true`, when the SIS side is
   missing.** `is_grade_level_mismatch` and `is_school_mismatch` are plain `!=`
   comparisons, and `!=` against NULL yields NULL — which `where flag_value` then
