@@ -346,9 +346,26 @@ _not_ need to review, is in the reference doc.
 unchanged, and run the reconciliation loop in "Goals reconciliation" above until
 it comes back clean.
 
+**Step 0f — re-confirm the four first-day-of-school dates with SRE.** SRE
+supplied them directly; they are not derived from either SIS and nothing detects
+a change. Ask for the new cycle's first day per region and compare against the
+`CASE` in `custom_fdos_dates` (`int_tableau__finalsite_student_scaffold`) —
+AY2026 held Newark and Paterson August 28, Camden August 24, Miami August 14.
+
+**Bumping the var alone is not enough here.** It substitutes the year and leaves
+last cycle's month and day in place, so a start date that moved lands silently
+wrong — no error, no test, just a flag judged against the wrong day. The dates
+do move: in the SIS's own history Paterson's first day sat around September 3 in
+AY2024 and around August 26-28 in AY2025.
+
+Edit the `CASE` and nothing else — see the reference doc's _First day of school
+is hardcoded per region_ for why this date lives in this one model and does not
+touch `int_extracts__student_enrollments` or `int_focus__student_enrollments`.
+
 There is **no scaffold-sheet pre-flight check** any more — the sheet is retired,
 so the old `-9` row check is gone. Once the year is agreed, the crosswalk key is
-updated and goals reconcile, proceed to the file edits below.
+updated, goals reconcile and the FDOS dates are confirmed, proceed to the file
+edits below.
 
 **Files to edit** — every dbt model/test site reads from one shared var:
 
@@ -360,8 +377,10 @@ updated and goals reconcile, proceed to the file edits below.
     also carries the constant gate predicate
     `finalsite_recruitment_year != current_academic_year`, so bumping the var is
     what switches that CTE from zero rows to live)
-  - `int_tableau__finalsite_student_scaffold.sql` (`same_day_status_dates`'s
-    `where` filter and `enrollment_lookup`'s two branches)
+  - `int_tableau__finalsite_student_scaffold.sql` (`latest_status_calc`'s
+    `where` filter, `enrollment_lookup`'s two branches, and `custom_fdos_dates`'
+    `CASE` — the var supplies only the YEAR there; the month and day are
+    separate literals that Step 0f covers)
   - `rpt_tableau__fresh_dashboard_progress_to_goals.sql` (the `School` and
     `School/Grade Level` goal CTEs)
   - `test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
@@ -442,6 +461,20 @@ flag, and do not change `int_extracts__student_enrollments` or
 `int_focus__student_enrollments`** — they keep their own versions for their
 other consumers. When the enrollment team changes a first day, edit the `CASE`
 in `custom_fdos_dates` and nothing else.
+
+**The dates came from SRE, so they are a rollover checklist item** — Step 0f of
+_Update the Finalsite recruitment year_ above. The var carries the year forward
+on its own but leaves the month and day untouched, and start dates do move
+between cycles, so a bump without asking SRE judges the flag against last year's
+date with no error and no failing test.
+
+**Do not expect a dev-vs-prod comparison to show this change moving anybody
+before school starts.** Both SISs stamp every enrolled student with the same
+bulk entry date at rollover (July 1 in NJ, mid-August in Miami), well ahead of
+any first day, so every student with a record reads `true` and every student
+without one reads `NULL` in BOTH versions. A zero delta then is the expected
+result, not evidence the change is inert — the AY2025 Miami correction it was
+built for is worth ~990 students.
 
 **`is_enrolled_fdos` is a bare comparison on purpose.** Its sibling flags use
 `if(<cmp>, true, false)`; that form would report every student with no SIS

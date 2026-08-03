@@ -520,12 +520,37 @@ instead of needing four edits every August. The value is exposed as
 `custom_fdos_date` so a reader can see which date a given row was judged
 against.
 
+**The dates came from SRE directly, and only the year rolls itself forward.**
+Start dates move from one year to the next, so the hardcoded month and day are
+right only for the cycle SRE supplied them for — in the SIS's own history
+Paterson's first day sat around September 3 in AY2024 but around August 26-28 in
+AY2025. Re-confirming all four dates with SRE is therefore a required step of
+the recruitment-year rollover, not an optional one.
+
 **Why not use either SIS's own value.** Focus computes its `is_enrolled_fdos`
 against a single network-wide first day per school year, so Miami schools that
 start later than the earliest one reported `false` for nearly every student.
 PowerSchool's equivalent is per-school rather than per-region. Neither matches
 the date the enrollment team actually reports against, which is regional — so
 the date lives in this model, and only this model.
+
+**The trade-off this accepts.** One date per region is coarser than
+PowerSchool's per-school date, so wherever schools inside an NJ region open on
+different days the regional date is the less precise of the two. Measured
+against each SIS's own flag on settled prior-year data, it corrects far more
+than it costs: applied to AY2025 it would move 990 Miami students from `false`
+to `true` — Focus's single network-wide cutoff fell on August 11, before Miami's
+own first day — against 83 NJ students moving the other way, having enrolled
+after the regional date at a school that started later. Miami is the case this
+was built for; the NJ imprecision is known and accepted.
+
+**Expect no visible change until school starts.** At rollover both SISs assign
+every enrolled student the same bulk entry date (July 1 in NJ, mid-August in
+Miami), all of it well before any first day, so `is_enrolled_fdos` reads `true`
+for every student with a record and `NULL` for every student without one. The
+flag only begins to discriminate once real per-student entry dates land after
+the first day — so a comparison run before then shows this change moving nobody,
+which is expected rather than evidence it does nothing.
 
 **What it compares.** `sis_entry_date <= custom_fdos_date`, where
 `sis_entry_date` is the enrollment start date from the matched SIS record
@@ -548,15 +573,17 @@ through untouched.
 
 ### The QC worklist: `rpt_tableau__fresh_dashboard_qc`
 
-`is_enroll_status_mismatch` is one of five flags that
-`int_tableau__finalsite_student_scaffold` computes per student.
-`rpt_tableau__fresh_dashboard_qc` is the SRE-facing surface for all five: it
-takes the roster at `grouped_status_timeframe = 'Current'`, `UNPIVOT`s the flags
-into `(flag_name, flag_value)`, and keeps only the rows where a flag actually
-fired (`where flag_value`). So it is a **worklist, not a report** — one row per
+`is_enroll_status_mismatch` is one of the worklist's four flags. Three of them —
+this one, `is_grade_level_mismatch` and `is_school_mismatch` — are computed in
+`int_tableau__finalsite_student_scaffold`; `is_missing_sis_record` is derived in
+`rpt_tableau__fresh_dashboard_qc` itself. `rpt_tableau__fresh_dashboard_qc` is
+the SRE-facing surface for all four: it takes the roster at
+`grouped_status_timeframe = 'Current'`, `UNPIVOT`s the flags into
+`(flag_name, flag_value)`, and keeps only the rows where a flag actually fired
+(`where flag_value`). So it is a **worklist, not a report** — one row per
 student per problem, and an empty result is the good outcome.
 
-#### The five flags, in plain language
+#### The four flags, in plain language
 
 For explaining the worklist to a non-technical audience. Each row is one student
 with one problem; a student with several problems appears once per problem, and
