@@ -5,7 +5,7 @@ models:
       the current-timeframe roster from int_tableau__finalsite_student_scaffold,
       reduces it to one row per student, then unpivots the mismatch flags and
       keeps only the rows where a flag is true -- so a student appears once for
-      each thing needing a fix, up to five times, and not at all when clean.
+      each thing needing a fix, up to four times, and not at all when clean.
       Each row pairs the Finalsite values with the SIS values they were compared
       against so the fix is actionable without a second lookup. See
       docs/models/fresh-dashboard-data-model.md.
@@ -22,15 +22,15 @@ models:
       - name: flag_name
         data_type: string
         description: >
-          Which problem fired -- is_same_day_status_duplicate,
-          is_active_inactive_mismatch, is_grade_level_mismatch,
-          is_school_mismatch, or is_missing_sis_record. The first four are
-          computed on int_tableau__finalsite_student_scaffold;
-          is_missing_sis_record is derived here, and fires when Finalsite says a
-          student is Enrolled but no SIS enrollment record matched at all --
-          distinct from is_active_inactive_mismatch, which compares a status
-          against a record that does exist. The two need different fixes: create
-          or link the record, versus correct a status.
+          Which problem fired -- is_enroll_status_mismatch,
+          is_grade_level_mismatch, is_school_mismatch, or is_missing_sis_record.
+          The first three are computed on
+          int_tableau__finalsite_student_scaffold; is_missing_sis_record is
+          derived here, and fires when Finalsite says a student is Enrolled but
+          no SIS enrollment record matched at all -- distinct from
+          is_enroll_status_mismatch, which compares a status against a record
+          that does exist. The two need different fixes: create or link the
+          record, versus correct a status.
       - name: flag_value
         data_type: bool
         description: >
@@ -54,7 +54,7 @@ models:
         data_type: int64
         description: >
           PowerSchool-space school id the student is assigned to in Finalsite. 0
-          when Finalsite has no school assigned. Compare against ps_schoolid.
+          when Finalsite has no school assigned. Compare against sis_schoolid.
       - name: school
         data_type: string
         description: >
@@ -94,7 +94,7 @@ models:
         data_type: int64
         description: >
           Grade level as reported by Finalsite (PK = -1, K = 0, 1-12 as
-          themselves). Compare against ps_grade_level.
+          themselves). Compare against sis_grade_level.
       - name: self_contained
         data_type: string
         description: >
@@ -112,27 +112,39 @@ models:
           The student's most recent Finalsite status for this cycle. This is
           what the expected enrollment status is derived from, so it is usually
           the field to check first when a flag looks wrong.
-      - name: enroll_status
+      - name: sis_enroll_status
         data_type: int64
         description: >
           Enrollment status from the matched SIS record (PowerSchool, or Focus
           for Miami) -- 0 currently enrolled, 2 withdrawn, 3 graduated. Null
           means no SIS record matched, which is what is_missing_sis_record
-          flags.
-      - name: ps_grade_level
+          flags. Named sis_ here to pair with finalsite_expected_enroll_status;
+          the upstream column on int_tableau__finalsite_student_scaffold is
+          still enroll_status, because the other two fresh_dashboard views
+          expose it under that name.
+      - name: sis_grade_level
         data_type: int64
         description: Grade level from the matched SIS enrollment record.
-      - name: ps_schoolid
+      - name: sis_schoolid
         data_type: int64
         description: School id from the matched SIS enrollment record.
-      - name: ps_school
+      - name: sis_school
         data_type: string
         description: School name from the matched SIS enrollment record.
-      - name: ps_enroll_status
+      - name: finalsite_expected_enroll_status
         data_type: int64
         description: >
-          Enrollment status implied by the Finalsite latest_status (0 =
-          Enrolled, 1 = Mid Year Withdrawal/Never Attended/Summer Withdraw), for
-          comparison against the SIS enroll_status. Derived from Finalsite
-          despite the ps_ prefix -- the prefix marks it as the
-          PowerSchool-comparable value, not its source.
+          The enroll_status the SIS ought to show if Finalsite is correct, for
+          comparison against sis_enroll_status. Derived entirely from Finalsite
+          -- it reads nothing from the SIS. Values deliberately mirror the SIS's
+          own enroll_status domain so a comparison between the two columns means
+          the same thing on both sides: 0 when latest_status is Enrolled, 2 when
+          it is one of the nine statuses that imply the student should not be
+          currently enrolled, null for everything else -- most of the funnel,
+          where an applicant has no business having an SIS record yet and no
+          mismatch can fire. Those nine cover two situations that share one
+          expected value because the comparison is identical -- the student left
+          (Mid Year Withdrawal, Never Attended, Summer Withdraw) or has not
+          finished enrolling (Accepted, Assigned School, Did Not Enroll, Campus
+          Transfer Requested, Parent Declined, Enrollment In Progress). Which
+          situation a row came from is still readable from latest_status.
