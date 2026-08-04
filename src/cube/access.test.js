@@ -453,3 +453,38 @@ test("emulationInputsFromCubeCloud: with no pasted context the console user is t
   assert.equal(r.target, "admin@x.org");
   assert.equal(r.emulating, false);
 });
+
+// --- Non-string identities from a pasted Cube Cloud context -----------------
+// On Cube Cloud the target (and, less commonly, the caller identity feeding
+// this function) is a pasted JSON value, so it can be an object or an array
+// just as easily as a string. A bare `.toLowerCase()` on a non-string used to
+// throw a TypeError out of contextToGroups — a 500 instead of a clean
+// decision. Coercing anything non-string to null treats "no usable identity"
+// as "no emulation," which fails closed without erroring. Verified this
+// throws under the old `callerEmail ?? null` / `requestedTarget ?? null`
+// coercion (temporarily reverted locally, restored — not committed).
+
+test("resolveEmulationTarget: a non-string requestedTarget from an impersonator caller yields no emulation, not a throw", () => {
+  const impersonators = a.parseImpersonators("admin@x.org");
+  for (const requestedTarget of [{ email: { a: 1 } }, ["x"], 42]) {
+    const r = a.resolveEmulationTarget({
+      callerEmail: "admin@x.org",
+      requestedTarget,
+      impersonators,
+    });
+    assert.deepEqual(r, {
+      caller: "admin@x.org",
+      target: "admin@x.org",
+      emulating: false,
+    });
+  }
+});
+
+test("resolveEmulationTarget: a non-string callerEmail resolves to no caller and no target", () => {
+  const r = a.resolveEmulationTarget({
+    callerEmail: { username: "admin@x.org" },
+    requestedTarget: "target@x.org",
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.deepEqual(r, { caller: null, target: null, emulating: false });
+});

@@ -261,9 +261,28 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   LEVEL**, so every top-level value there is caller-supplied: pasting
   `{"groups": ["staff-pii-all_in_scope"], "allowed_abbreviations": [...]}` was
   honored verbatim before the overwrite landed. Never reintroduce a
-  `!securityContext.groups` guard here — that guard IS the bypass. A REST
-  context (no `cubeCloud` key) is passed through untouched, since `checkAuth`
-  already resolved it.
+  `!securityContext.groups` guard here — that guard IS the bypass. The branch
+  gates on the presence of the top-level `cubeCloud` key, not on
+  `cubeCloud.username` being truthy: a REST/MCP context (no `cubeCloud` key at
+  all) skips the block entirely and is passed through untouched, since
+  `checkAuth` already resolved it. A Cube Cloud request (`cubeCloud` key
+  present) whose `username` is missing still enters the block and resolves to
+  the empty default-deny context via `resolveAccess` — a missing `username` is a
+  DENY, not a pass-through.
+- **Gating on the `cubeCloud` key assumes a paste cannot REPLACE that key.**
+  Cube Cloud must apply its own block after the merged paste; if a paste could
+  win, pasting `{"cubeCloud": {"username": "<anyone>"}}` would resolve that
+  person's real context and collapse the design, not merely the gate. Tested on
+  a Dev Mode deployment: a network-scoped caller pasting a school-scoped
+  viewer's email as `cubeCloud.username` still got their own four-region scope,
+  so the injected block wins. It wins against a FALSY paste too: pasting
+  `{"cubeCloud": null, "groups": ["student-region"], "region_key": "<a region>"}`
+  returned the caller's own four-region scope rather than the single pasted
+  region, so the gate still fired AND the pasted `groups` / `region_key` were
+  both overwritten. The merge order is therefore
+  `{...paste, cubeCloud: realBlock}`, which makes the pasted value irrelevant.
+  Empirical, not guaranteed — Cube Cloud's merge is closed-source and the OSS
+  tree has no `cubeCloud` reference — so re-confirm after a Cube Cloud upgrade.
 - **Every securityContext field a policy interpolates MUST be returned by
   `access.buildSecurityContext`.** This is what makes the overwrite above a
   COMPLETE one, and it is the load-bearing assumption of the paste fix — not a
@@ -491,17 +510,18 @@ exercise it; a plain dev server silently default-denies every gated view.
 - **Testing RLS locally — SQL API is ground truth; the REST Playground also
   works in dev mode.** `checkSqlAuth` resolves identity from the connecting
   `user`: set `CUBEJS_PG_SQL_PORT` + `CUBEJS_SQL_USER`/`_PASSWORD`, connect via
-  `psycopg2` as the viewer's email in the SQL `user`, switch viewers per
-  connection with no restart. (`CUBE_SQL_DEV_EMAIL=<viewer>` optionally pins
-  every connection to one alias, overriding the connecting user — change +
-  restart to switch.) It's the prod BI/Superset surface. Tesseract
-  (`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on both APIs
-  and joining views is supported (multi-fact views); the old
-  `JoinDefinitionStatic` note was a Playground observation, not a SQL-API limit
-  — verified `student_attendance_view` / `staff_directory` /
-  `student_assessment_scores_view` query cleanly. **`checkAuth` DOES run in dev
-  mode (verified on Cube 1.6.59 and 1.7.14)** — the prior "REST skips auth in
-  dev mode / needs `NODE_ENV=production`" claim was WRONG, and Cube's own
+  `psycopg` v3 (not `psycopg2` — see `scripts/cube_rls_matrix.py`) as the
+  viewer's email in the SQL `user`, switch viewers per connection with no
+  restart. (`CUBE_SQL_DEV_EMAIL=<viewer>` optionally pins every connection to
+  one alias, overriding the connecting user — change + restart to switch.) It's
+  the prod BI/Superset surface. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`,
+  default `true`) is the planner on both APIs and joining views is supported
+  (multi-fact views); the old `JoinDefinitionStatic` note was a Playground
+  observation, not a SQL-API limit — verified `student_attendance_view` /
+  `staff_directory` / `student_assessment_scores_view` query cleanly.
+  **`checkAuth` DOES run in dev mode (verified on Cube 1.6.59 and 1.7.14)** —
+  the prior "REST skips auth in dev mode / needs `NODE_ENV=production`" claim
+  was WRONG, and Cube's own
   `🔓 Authentication checks are disabled in developer mode` boot banner is
   misleading here: a signed `email` claim still resolves a full scope. To
   emulate over the REST Playground, paste `{"email": "<viewer>"}` into its
@@ -534,6 +554,16 @@ exercise it; a plain dev server silently default-denies every gated view.
   tables, `WHERE (1 = 0)` — check the deployment log for
   `resolveAccess failed for` and that the BigQuery variables are set on **that**
   environment (branch environments do not inherit them).
+- **Cube Cloud Explore's "Semantic SQL" tab IS a valid surface for testing the
+  Cube Cloud path.** It accepts the SQL API dialect (dimensions bare,
+  `MEASURE(measure)`, query the view not the cube) AND honors a pasted Security
+  Context through `contextToGroups` — verified by pasting
+  `{"email": "<viewer>"}` as an impersonator and getting the target's scope
+  back. Do not assume "SQL" implies `checkSqlAuth`: that applies to the Postgres
+  wire protocol on `CUBEJS_PG_SQL_PORT`, not this tab. Member names follow the
+  view's `prefix:` settings, so a `prefix: true` join surfaces
+  `<lastJoinPathSegment>_<member>` (`regions_region_name`,
+  `dates_academic_year`).
 - **The committed matrix tool is the RLS validation path** —
   `uv run scripts/cube_rls_matrix.py --viewers-file <local file>` opens one SQL
   connection per viewer email and runs the same query, so a scope difference is

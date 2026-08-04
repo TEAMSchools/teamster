@@ -240,8 +240,16 @@ function resolveEmulationTarget({
   requestedTarget,
   impersonators,
 }) {
-  const caller = callerEmail ?? null;
-  const requested = requestedTarget ?? null;
+  // Both identities are coerced to "a string or nothing" before any comparison.
+  // On Cube Cloud the target is a pasted JSON value, so it can just as easily be
+  // an object or an array as a string, and a bare `requested.toLowerCase()`
+  // throws a TypeError out of contextToGroups — a 500 instead of a decision.
+  // Treating a non-string as absent is the fail-closed reading: no target means
+  // no emulation, and a non-string caller means no caller, which resolveAccess
+  // turns into the empty default-deny context.
+  const caller = typeof callerEmail === "string" ? callerEmail : null;
+  const requested =
+    typeof requestedTarget === "string" ? requestedTarget : null;
   // No target, or the caller's own email: an ordinary request, not an emulation
   // (also keeps no-op self-emulation out of the audit log).
   const isSelf =
