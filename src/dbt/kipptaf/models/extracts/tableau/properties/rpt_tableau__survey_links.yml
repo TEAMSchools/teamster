@@ -16,6 +16,8 @@ models:
               - survey
               - academic_year
               - survey_round
+          config:
+            severity: error
     columns:
       - name: employee_number
         data_type: int64

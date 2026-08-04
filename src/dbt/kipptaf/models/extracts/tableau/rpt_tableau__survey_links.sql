@@ -510,13 +510,13 @@ select
     case
         when f.survey in ('TNTP Insight Survey', 'Gallup Q12 Survey')
         then null
-        when sr.survey_response_id is not null
+        when resp.survey_response_id is not null
         then 1
         else 0
     end as completion,
 from final as f
 left join
-    deduplicate as sr
-    on f.employee_number = sr.employee_number
-    and f.academic_year = sr.academic_year
-    and f.survey_round = sr.survey_code
+    deduplicate as resp
+    on f.employee_number = resp.employee_number
+    and f.academic_year = resp.academic_year
+    and f.survey_round = resp.survey_code
