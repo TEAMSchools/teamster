@@ -168,9 +168,9 @@ the roster files are re-read each sync).
 1. **Destination resource** — `SSH_RESOURCE_PARENTSQUARE` (`SSHResource`, host
    `sftp3.parentsquare.com`) in `kipptaf/resources.py` (not `core/resources.py`
    — every other kipptaf-only SFTP destination lives there), wired as
-   `ssh_parentsquare` into `kipptaf/definitions.py`. The three environment
-   variables are NOT mapped in `dagster-cloud.yaml` yet; see _Implementation
-   notes_.
+   `ssh_parentsquare` into `kipptaf/definitions.py`. All three variables are
+   mapped to the `op-parentsquare-sftp` Secret at both `dagster-cloud.yaml`
+   insertion points; see _Credential wiring_.
 
 1. **Job + schedule** — `kipptaf__extracts__parentsquare__asset_job` in
    `extracts/jobs.py`, plus a daily `ScheduleDefinition` in
@@ -290,11 +290,12 @@ All seven files sent. `Yes*` = one of email/phone required.
    _Implementation notes_. Validate model SQL and the asset graph in a branch
    deployment against `teamster-test`.
 
-1. **Blocker — SFTP credentials.** Per the Planner this is pending (covered in a
-   Monday meeting; the team needs app access first). Set up SFTP credentials in
-   ParentSquare, capture the issued username, add the `PARENTSQUARE_SFTP_*`
-   mappings plus the `OnePasswordItem` entry, confirm the upload path, and
-   verify a one-file round-trip before sending all seven.
+1. ~~**Blocker — SFTP credentials.**~~ CLEARED. The credential is in 1Password
+   as **ParentSquare SFTP**, and the `OnePasswordItem` plus all four
+   `dagster-cloud.yaml` mappings are in this branch — see _Credential wiring_
+   for the two steps that must precede a deploy (apply the item, confirm the key
+   names). Still outstanding from this step: confirm the upload path, and verify
+   a one-file round-trip before sending all seven.
 
 1. **Phase Final.** Un-pause the schedule, confirm ParentSquare ingests the
    files cleanly, hand off to Ops.
@@ -326,17 +327,37 @@ carries honorifics, so `rpt_parentsquare__schools` resolves the name pair from
 reporting Newark schools match, `mail` is unique on the roster so the join
 cannot fan out, and the one honorific-bearing value resolves correctly.
 
-### SFTP environment variables are deferred to the credentials phase
+### Credential wiring
 
-The design called for adding the variable names to `dagster-cloud.yaml` now.
-That is unsafe: those entries are `secretKeyRef`s into a 1Password-synced Secret
-(`op-parentsquare-sftp`) that does not exist yet, and a `secretKeyRef` to a
-missing Secret fails container creation — taking the whole `kipptaf` code server
-down on deploy, not just this feed. `EnvVar` resolves lazily at resource init,
-so an unmapped variable is inert while the schedule stays stopped. The
-credentials phase adds `PARENTSQUARE_SFTP_HOST` / `_USERNAME` / `_PASSWORD` at
-the four insertion points, plus the `OnePasswordItem` entry in
-`.k8s/1password/items.yaml`.
+The credential landed in 1Password as **ParentSquare SFTP** (Data Team vault),
+so the mappings this design originally deferred are now in place:
+
+- `.k8s/1password/items.yaml` gains a `OnePasswordItem` named
+  `op-parentsquare-sftp` pointing at `vaults/Data Team/items/ParentSquare SFTP`,
+  which is what creates the k8s Secret.
+- `dagster-cloud.yaml` maps `PARENTSQUARE_SFTP_HOST` / `_USERNAME` / `_PASSWORD`
+  at all four insertion points — the credentials and host blocks of both
+  `server_k8s_config` and `run_k8s_config`. `EnvVar` resolves in both places
+  under `k8s_job_executor`, so omitting either half breaks one of them.
+
+**Two ordering constraints, both load-bearing.** A `secretKeyRef` naming a
+Secret or key that does not exist fails container creation for the whole
+`kipptaf` code server — not just this feed — so before any deploy carrying these
+mappings:
+
+1. The `OnePasswordItem` must be applied to the cluster (`kubectl apply`), which
+   is what materializes the Secret. It is not applied by CI.
+1. The three key names must be confirmed against the synced Secret. k8s Secret
+   keys come from the 1Password field's **internal** name, not the UI label, and
+   SFTP items in this vault are known to remap (`password` → `newPassword`,
+   `host` → `url`). These mappings assume the plain `password` / `username` /
+   `host`; if the synced Secret disagrees, the `key:` values need updating.
+
+Verify with
+`kubectl -n dagster-cloud get secret op-parentsquare-sftp -o jsonpath='{.data}' | jq keys`.
+
+The schedule stays stopped regardless — wiring the credential does not imply the
+round-trip has been verified.
 
 ### Phone numbers are validated to exactly 10 digits
 

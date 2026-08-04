@@ -148,12 +148,12 @@ SSH_RESOURCE_LITTLESIS = SSHResource(
 
 # ParentSquare's district-level SFTP endpoint is sftp3.parentsquare.com; the
 # username is issued when the connection is created in the ParentSquare admin UI.
-# None of these three variables is mapped in dagster-cloud.yaml yet — the
-# credential does not exist in 1Password, and a secretKeyRef to a missing k8s
-# Secret fails container creation for the whole code server. `EnvVar` resolves
-# lazily at resource init, so an unmapped variable is harmless while the
-# parentsquare schedule stays stopped. Mapping them is the first step of the
-# credentials phase.
+# All three variables map to the `op-parentsquare-sftp` Secret at both
+# dagster-cloud.yaml insertion points. That Secret is synced by the
+# OnePasswordItem in .k8s/1password/items.yaml, which is applied by hand — a
+# secretKeyRef whose Secret or key does not exist fails container creation for
+# the whole code server, so the apply and a key-name check both precede any
+# deploy carrying these mappings.
 SSH_RESOURCE_PARENTSQUARE = SSHResource(
     remote_host=EnvVar("PARENTSQUARE_SFTP_HOST"),
     remote_port=22,
