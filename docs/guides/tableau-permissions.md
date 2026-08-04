@@ -490,6 +490,59 @@ Anything not listed here takes the base form unmodified.
 | Manager Survey Reports      | Senior-leader field plus the council branch in Tier 2    |
 | Manager Survey Rollup       | Senior-leader field plus the council branch in Tier 2    |
 | Leadership Development      | Senior-leader field plus the council branch in Tier 2    |
+| Coaching Conversation Tool  | Tier 1 self-branches gated by `RLS - Release Gate`       |
+
+#### Coaching Conversation Tool — the release gate
+
+The only workbook whose Tier 1 differs. An observee must not see their own PM
+scores before the observation is locked, or their own PM comments before the
+term's lockbox date. Their manager and coach see both throughout.
+
+This is a sixth field, used only here:
+
+```text
+IF [observation_type_abbreviation] = 'PMS'
+THEN IFNULL([locked], FALSE)
+ELSEIF ISNULL([tracking_academic_year])
+THEN TRUE
+ELSE NOT ISNULL([lockbox_date]) AND TODAY() >= [lockbox_date]
+END
+```
+
+It attaches to the three self-match branches of Tier 1, never to the
+`reports_to_*` branches:
+
+```text
+(
+    (
+        LOWER(USERNAME()) = LOWER([sam_account_name])
+        OR LOWER(USERNAME()) = LOWER([mail])
+        OR LOWER(USERNAME()) = LOWER([user_principal_name])
+    )
+    AND [RLS - Release Gate]  // observee waits: PMS for lock, PMC for lockbox date
+)
+OR LOWER(USERNAME()) = LOWER([reports_to_sam_account_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_mail])
+```
+
+Also add a **data source filter** `[is_observed] = 1`. It drops the
+completion-tracking scaffold rows, which carry no scores or comments.
+
+Three things about this gate that are deliberate:
+
+- **Tier 1 is a sufficient place to gate here, unlike anywhere else.** The
+  extract filters subjects to teachers, and teachers hold no DSO, SL, or AP
+  membership, so Tier 1 is their only route to their own row. On a workbook
+  whose subjects included school leaders this would leak through Tier 5 — see
+  the `!!! danger` under Tier 2.
+- **`ISNULL([tracking_academic_year])` is the prior-year test, and it is what
+  makes a missing lockbox date fail closed.** Prior-year rows come from the
+  model's second `union all` branch, which hardcodes a null `lockbox_date`; a
+  current-year row always carries a tracking year. Testing the lockbox date for
+  nullness instead would release a current-year term the moment someone forgot
+  to set its date.
+- **`IFNULL([locked], FALSE)` fails closed** on the small number of PMS rows
+  where `locked` is null.
 
 ### After editing a workbook
 
