@@ -67,6 +67,23 @@ exposures:
             metadata:
               id: 8aff929f-9e6b-4fc9-833a-7edfab8500b6
               cron_schedule: 0 1 * * *
+  - name: federal_grants_timesheet_approval
+    label: Federal Grants Timesheet Approval
+    type: dashboard
+    owner:
+      name: Data Team
+    depends_on:
+      - ref("rpt_tableau__grants_timesheets")
+    config:
+      enabled: false
+      meta:
+        dagster:
+          kinds:
+            - tableau
+          asset:
+            metadata:
+              id: c7c821a4-a236-4da8-b41e-52b2fd62cbed
+              cron_schedule: 0 * * * *
   - name: finance_accounting_tools_resources
     label: Finance & Accounting Tools & Resources
     type: dashboard
