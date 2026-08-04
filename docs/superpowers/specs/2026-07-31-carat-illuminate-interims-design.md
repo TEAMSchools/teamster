@@ -237,6 +237,13 @@ silently undercounts because `count(distinct)` skips nulls. A fourth derives
 `Subject` and `Administration_Round` columns. Note `scope_round` already reads
 `ssk.administration_round` and needs no change.
 
+**The sheet's `Subject` is `Mathematics`, not `Math`** — verified across all 12
+existing rows. Switching the source from Illuminate to the sheet therefore does
+_not_ retire the `Mathematics` to `Math` rename, and does not by itself fix the
+`course_discipline` defect. The values to expect from the sheet are
+`Mathematics`, `Reading and Writing`, `Reading`, `Writing`, `English`, and
+`Science`.
+
 **Do not add band columns or a `score_basis` discriminator.** Earlier drafts of
 this design projected `performance_band_label`, `is_mastery`, and a
 `score_basis` column. All three are dropped: the bands are unused, and with
@@ -307,8 +314,19 @@ Consequences the implementation must handle:
   `Administration_Round` regardless of its conversion columns, since those
   fields are what the model reads in place of Illuminate's nulls.
 
-`Administration_Round` in the sheet carries the season. Per the decision below,
-BOY is entered as `Fall` and MOY as `Winter`.
+**`Administration_Round` in this sheet does not use season names.** All 12
+existing rows carry `SAT1` or `ACT1`. `Fall` / `Winter` belong to
+`expected_admin_season` in `stg_google_sheets__kippfwd__expected_assessments`, a
+different sheet — do not enter them here. Follow the existing convention: `SAT1`
+for BOY, `SAT2` for MOY.
+
+BOY and MOY **must** receive different values. The composite branch partitions
+its `sum(scale_score)` by
+`(academic_year, powerschool_student_number, scope_round, administration_round)`,
+`scope_round` is this column, and the derived `administration_round` is null for
+these assessments because `administered_at` is null. If both rounds shared one
+value, a student's BOY and MOY sections would land in one partition and sum into
+a single meaningless ~1600-plus total.
 
 `stg_google_sheets__kippfwd__act_scale_score_key` has no `data_tests:` and no
 column descriptions, which violates the staging conventions in
@@ -469,10 +487,55 @@ Also out of scope:
 ## Prerequisites
 
 - The data team enters the four assessment ids in the `act_scale_score_key`
-  spreadsheet, with `Administration_Round` set to `Fall` for BOY and `Winter`
-  for MOY. Foundation's scale-score conversions are in hand and are being
+  spreadsheet. Foundation's scale-score conversions are in hand and are being
   entered alongside them, so these rows should carry complete conversion ranges
-  rather than blanks. This is owned by us, not a wait on another team.
+  rather than blanks. This is owned by us, not a wait on another team. Column
+  values, following the 12 existing rows and the grade-11 precedent (138849 /
+  138850):
+
+  | column                 | 226182                | 226183        | 226184                | 226185        |
+  | ---------------------- | --------------------- | ------------- | --------------------- | ------------- |
+  | `Academic_Year`        | 2026                  | 2026          | 2026                  | 2026          |
+  | `Test_Type`            | `SAT`                 | `SAT`         | `SAT`                 | `SAT`         |
+  | `Administration_Round` | `SAT1`                | `SAT1`        | `SAT2`                | `SAT2`        |
+  | `Subject`              | `Reading and Writing` | `Mathematics` | `Reading and Writing` | `Mathematics` |
+  | `Grade_Level`          | 11                    | 11            | 11                    | 11            |
+
+  `Academic_Year` is 2026 to match `academic_year_clean`, which is what
+  `int_assessments__response_rollup` exposes as `academic_year` — Illuminate's
+  own `academic_year` field reads 2027. `Test_Type` stays `SAT` even though
+  Illuminate `scope` is `Benchmark`; the sheet is the authority and this is what
+  aligns the rows to SAT reporting.
+
+  One row per raw-score value, with `Raw_Score_Low` and `Raw_Score_High`
+  collapsing only where consecutive raw scores share a scale score (e.g. 138850
+  maps raw 0-8 to 200, then 1:1 from 9 upward). Rows must cover 0 through the
+  section's maximum raw score with no gaps, or a response at an uncovered raw
+  score gets a null scale score.
+
 - Illuminate administration windows on the four assessments are null. Setting
   them is not required by this design, but without them `response_rollup`'s
   `term_administered` will not resolve for practice rows.
+
+- **Blocking, and outside this work: Illuminate has no SY26-27 sessions yet.**
+  The four assessments are `is_internal_assessment = false`, so they reach
+  `int_assessments__scaffold` only through its
+  `where not a.is_internal_assessment` branch, which carries:
+
+  ```sql
+  inner join int_illuminate__student_session_aff as ssa
+      on a.academic_year = ssa.academic_year
+  ```
+
+  That predicate uses Illuminate's **raw** `academic_year`, which is the spring
+  year — 2027 for these assessments (confirmed: 138849 / 138850 are raw 2024 /
+  clean 2023). `stg_illuminate__public__sessions` currently tops out at raw
+  2026, so `int_illuminate__student_session_aff` has no 2027 rows at all.
+
+  Until Illuminate has SY26-27 sessions with students affiliated to them, the
+  four assessments produce **zero rows through the entire chain** — scaffold,
+  `response_rollup`, and `_practice` — no matter how correct the model changes
+  and the sheet entry are. This is the single most likely reason for BOY scores
+  to appear to go missing, and it is exactly the silent-zero failure mode this
+  work exists to remove. Confirm 2027 sessions exist before concluding anything
+  is wrong with the model.
