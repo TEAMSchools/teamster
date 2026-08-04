@@ -58,6 +58,16 @@ network-wide.
 | `Test_Type`            | `SAT` / `ACT`                                                                    | Stays `SAT` even when Illuminate `scope` is `Benchmark`. The sheet is the authority.                                                              |
 | `Scale_Score`          | From the **`Scale Score Lower`** column of College Board's table                 | Verified: PT1 Math lower collapsed is byte-identical to assessment 138849's existing 45 rows. A perfect section therefore reads **790, not 800**. |
 
+**`Academic_Year` is not a join key.** Both sheet joins in
+`int_assessments__college_assessment_practice` are on `assessment_id` plus
+`points between raw_score_low and raw_score_high` — nothing else. The model does
+not project the sheet's `Academic_Year` either; the `academic_year` it outputs
+comes from `int_assessments__response_rollup`. So a wrong year does **not**
+break the conversion and does **not** produce a silent zero: the rows still join
+and still resolve scale scores. What it does break is the year-scoped audit
+query below, which stops seeing the rows, and any human trying to filter the
+sheet by year. Do not describe a wrong `Academic_Year` as a join failure.
+
 **Grade level**: sheet `Grade_Level` = Illuminate `grade_level_id` **− 1**
 (verified across all 12 legacy rows: 10→9, 11→10, 12→11).
 
