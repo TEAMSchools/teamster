@@ -144,17 +144,17 @@ being repointed.
 
 Value translations, all available on `int_focus__students`:
 
-| Network column                                                  | Focus column                                                 | Work                                      |
-| --------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------- |
-| `student_number`                                                | `student_id`                                                 | strip the `8400` prefix                   |
-| `lep_status`                                                    | `english_language_learner_pk_12`                             | code to boolean                           |
-| `spedlep`, `special_education_code`                             | `ese_fefp_code`                                              | FL ESE FEFP code to the archive's strings |
-| `lunchstatus`                                                   | `free_reduced_meals_program`                                 | FL program code to the archive's values   |
-| race and ethnicity                                              | `race_*`, `ethnicity_hispanic_or_latino`, `single_ethnicity` | direct, already decoded                   |
-| `entrydate`, `exitdate`                                         | `startdate`, `exitdate`                                      | rename                                    |
-| `cohort`                                                        | `year_entered_ninth_grade`                                   | derive; null for K-8                      |
-| `rn_year`, `year_in_school`, `year_in_network`, `is_enrolled_*` | same names                                                   | already computed                          |
-| `students_dcid`, NJ state fields                                | none                                                         | null for Miami, by design                 |
+| Network column                                                  | Focus column                                                 | Work                                    |
+| --------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------- |
+| `student_number`                                                | `student_id`                                                 | strip the `8400` prefix                 |
+| `lep_status`                                                    | `english_language_learner_pk_12`                             | code to boolean                         |
+| `spedlep`                                                       | no adequate Focus source — see below                         | archive carry-forward; null for new     |
+| `lunchstatus`                                                   | `free_reduced_meals_program`                                 | FL program code to the archive's values |
+| race and ethnicity                                              | `race_*`, `ethnicity_hispanic_or_latino`, `single_ethnicity` | direct, already decoded                 |
+| `entrydate`, `exitdate`                                         | `startdate`, `exitdate`                                      | rename                                  |
+| `cohort`                                                        | `year_entered_ninth_grade`                                   | derive; null for K-8                    |
+| `rn_year`, `year_in_school`, `year_in_network`, `is_enrolled_*` | same names                                                   | already computed                        |
+| `students_dcid`, NJ state fields                                | none                                                         | null for Miami, by design               |
 
 **The governing rule for every translation is to reproduce the values Miami's
 PowerSchool archive carried.** Every consumer was written against those, and
@@ -162,6 +162,42 @@ PowerSchool archive carried.** Every consumer was written against those, and
 to pass Miami's own domain through for `spedlep`, `lunchstatus`, and
 `lep_status`. Because Focus covers AY2018 through AY2026, each translation is
 testable against the archive across eight overlapping years.
+
+### `spedlep` has no adequate Focus source
+
+Verified, and this is a source-data gap rather than a modeling choice:
+
+| Source                                   | Miami students marked SPED |
+| ---------------------------------------- | -------------------------- |
+| Archive `spedlep = 'SPED'`               | 419                        |
+| Focus `ese_fefp_code`                    | 162                        |
+| Focus `ESE Exceptionalities` log entries | 10                         |
+
+`ese_fefp_code` is a Florida Education Finance Program **funding** code,
+populated only for specific ESE service levels — not a general IEP flag. Using
+it would under-report Miami SPED by roughly 60%, silently, which is worse than
+reporting nothing.
+
+Focus does define richer fields (`ESE Exceptionalities` /
+`primary_exceptionality`, `ESE`, `ESE Primary Computed`, `IEP`,
+`504 Indicator Computed`, `Gifted (Computed)`), but they are log-based custom
+fields that are almost entirely unpopulated — the exceptionalities log covers 10
+students. Same root cause as attendance and gradebook: AY2026-27 is Miami's
+first Focus year and ESE data has not been entered or migrated.
+
+Handling for this phase:
+
+- **Returning students** carry `spedlep` forward from the frozen archive. The
+  value is student-level and the archive is static, so it is stable.
+- **New students** get `null`, not `'No IEP'`. A false negative on IEP status is
+  a compliance-adjacent error; unknown must read as unknown.
+- Add a warn-severity test on the count of Miami students with null `spedlep`,
+  so the gap stays visible and closes when Focus ESE is populated.
+- Track ESE population as a data-availability item alongside #4220 rather than
+  as modeling work here.
+
+Do not use `ese_fefp_code` for `spedlep`. It is the right source for a future
+FEFP-funding measure and nothing else.
 
 ## Enrollment: history and alumni placeholders
 
@@ -234,9 +270,12 @@ appendix and belongs in the PR description too.
   (`int_tableau__fresh_enrollment_scaffold`, `rpt_focus__student_enrollment`)
   need checking for that assumption. Rename is out of scope here but should be
   filed.
-- Confirm the Focus `ese_fefp_code` domain reconciles against the archive's
-  `special_education_code` values for AY2018–2025 before finalizing that
-  translation. If it does not, Miami SPED status needs a different source.
+- Confirm the `lunchstatus` translation the same way `spedlep` was checked.
+  `free_reduced_meals_program` has not been reconciled against the archive's
+  `lunchstatus` domain, and it may turn out to be as thin as `ese_fefp_code`
+  was.
+- Decide who owns getting Focus ESE fields populated, since `spedlep` stays null
+  for new Miami students until that happens.
 - The one AY2026 student whose Focus id lacks the `8400` prefix needs an Ops
   correction.
 
