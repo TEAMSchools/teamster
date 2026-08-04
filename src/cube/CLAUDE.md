@@ -554,6 +554,16 @@ exercise it; a plain dev server silently default-denies every gated view.
   tables, `WHERE (1 = 0)` — check the deployment log for
   `resolveAccess failed for` and that the BigQuery variables are set on **that**
   environment (branch environments do not inherit them).
+- **Cube Cloud Explore's "Semantic SQL" tab IS a valid surface for testing the
+  Cube Cloud path.** It accepts the SQL API dialect (dimensions bare,
+  `MEASURE(measure)`, query the view not the cube) AND honors a pasted Security
+  Context through `contextToGroups` — verified by pasting
+  `{"email": "<viewer>"}` as an impersonator and getting the target's scope
+  back. Do not assume "SQL" implies `checkSqlAuth`: that applies to the Postgres
+  wire protocol on `CUBEJS_PG_SQL_PORT`, not this tab. Member names follow the
+  view's `prefix:` settings, so a `prefix: true` join surfaces
+  `<lastJoinPathSegment>_<member>` (`regions_region_name`,
+  `dates_academic_year`).
 - **The committed matrix tool is the RLS validation path** —
   `uv run scripts/cube_rls_matrix.py --viewers-file <local file>` opens one SQL
   connection per viewer email and runs the same query, so a scope difference is
