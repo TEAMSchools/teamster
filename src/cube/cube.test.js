@@ -1045,12 +1045,65 @@ test("structural invariant: every securityContext.<field> interpolated in model/
 
   const found = new Set();
   const pattern = /securityContext\.([a-zA-Z_][a-zA-Z0-9_]*)/g;
+  // Cube Cloud shorthand identifiers ("Cube Cloud shorthand identifiers" in
+  // CubePropContextTranspiler.js: userAttributes / user_attributes / groups)
+  // are rewritten, INSIDE an access_policy only, into
+  // securityContext.cubeCloud.<name> -- a destination the plain pattern above
+  // never sees, since no literal "securityContext.<name>" token appears for
+  // it. cubeCloud.* is where a pasted Cube Cloud Security Context is mirrored,
+  // and contextToGroups's Object.assign overwrite in cube.js only overwrites
+  // TOP-LEVEL keys -- so a row_level filter reading the shorthand's rewritten
+  // destination (or reading securityContext.cubeCloud.* directly) would read
+  // an attacker-pasted value that nothing overwrites, reopening the paste
+  // vector for that field on the Cube Cloud surface alone. Requiring a "{"
+  // immediately before the identifier is what keeps this from false-firing on
+  // the legitimate "group:" / "groups:" access_policy YAML keys throughout
+  // model/ (e.g. staff_pii.yml's "- group: staff-pii-all_in_scope") -- those
+  // keys contain no interpolation brace at all, only a hypothetical
+  // "{ userAttributes.foo }" does.
+  const shorthandPattern = /\{\{?\s*(userAttributes|user_attributes|groups)\b/g;
+  const shorthandHits = [];
+  const cubeCloudHits = [];
   for (const file of files) {
     const text = fs.readFileSync(file, "utf8");
     for (const match of text.matchAll(pattern)) {
       found.add(match[1]);
     }
+    for (const match of text.matchAll(shorthandPattern)) {
+      shorthandHits.push(
+        `${path.relative(modelDir, file)}: ${match[0].trim()}`,
+      );
+    }
+    if (text.includes("securityContext.cubeCloud")) {
+      cubeCloudHits.push(path.relative(modelDir, file));
+    }
   }
+
+  assert.deepEqual(
+    shorthandHits,
+    [],
+    shorthandHits.length
+      ? `Cube Cloud shorthand identifier(s) interpolated in an access_policy: ` +
+          `${shorthandHits.join(", ")}. Cube's CubePropContextTranspiler rewrites ` +
+          "userAttributes./user_attributes./groups. inside an access_policy into " +
+          "securityContext.cubeCloud.<name> - cubeCloud.* is caller-pasted on the Cube " +
+          "Cloud surface and is not covered by the Object.assign overwrite in " +
+          "contextToGroups, so a policy reading it is a paste vector. Put the value in " +
+          "buildSecurityContext and read it from the top level instead."
+      : undefined,
+  );
+
+  assert.deepEqual(
+    cubeCloudHits,
+    [],
+    cubeCloudHits.length
+      ? `model/ reads securityContext.cubeCloud directly in: ${cubeCloudHits.join(", ")}. ` +
+          "cubeCloud.* is caller-pasted on the Cube Cloud surface and is not covered by " +
+          "the Object.assign overwrite in contextToGroups, so a policy reading it is a " +
+          "paste vector. Put the value in buildSecurityContext and read it from the top " +
+          "level instead."
+      : undefined,
+  );
 
   // A regex that silently matched nothing would make every assertion below
   // vacuously pass. Guard against that explicitly with a floor plausible for
@@ -1082,12 +1135,22 @@ test("structural invariant: every securityContext.<field> interpolated in model/
   // Sanity check against the six fields known today (#4526 / Task 5b). This is
   // in addition to, not instead of, the derived assertion above — it exists
   // so a reader can see at a glance what the model currently interpolates.
-  assert.deepEqual([...found].sort(), [
+  const expected = [
     "allowed_abbreviations",
     "allowed_department_groups",
     "job_function_level",
     "location_abbreviation",
     "region_key",
     "reportee_staff_keys",
-  ]);
+  ];
+  assert.deepEqual(
+    [...found].sort(),
+    expected,
+    `model/ now interpolates a different securityContext field set than the six documented ` +
+      `here: found ${[...found].sort().join(", ")}, expected ${expected.join(", ")}. If the ` +
+      "'missing' assertion above passed, the new/removed field IS already covered by " +
+      "buildSecurityContext - this list is a deliberate, human-reviewed sanity check, not a " +
+      "second correctness gate. Update it to match once you've confirmed the change is " +
+      "intentional.",
+  );
 });

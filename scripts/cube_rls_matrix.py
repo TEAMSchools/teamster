@@ -199,12 +199,26 @@ def main() -> int:
 
     print(f"\n{len(viewers)} viewer(s) checked, {failures} failed, {empty} at 0 rows.")
     all_zero = empty == len(viewers)
-    if all_zero:
+    # A SINGLE viewer at 0 rows is a documented, legitimate PASS: validating
+    # default-deny for a `none`-scope viewer is exactly this scenario (see the
+    # docstring's usage example and docs/guides/cube.md), and the cross-viewer
+    # comparison this gate exists for needs at least two viewers to mean
+    # anything. Only 2+ viewers all landing at 0 rows is never legitimate.
+    multi_viewer_all_zero = all_zero and len(viewers) > 1
+    if multi_viewer_all_zero:
         print(
             "EVERY viewer returned 0 rows, including any network-scoped one. That"
             " usually means the identity read itself failed rather than the"
             " policies denying - check the dev-server log for 'resolveAccess"
             " failed for', and confirm CUBE_GROUP_MAP is not set."
+        )
+    elif all_zero:
+        print(
+            "0 rows for the single viewer checked. That is the expected result"
+            " when deliberately validating default-deny for a `none`-scope"
+            " viewer - not an error. This tool's cross-viewer comparison needs"
+            " 2+ viewers to say anything; pass more viewers if you meant to"
+            " compare scopes."
         )
     elif len(fingerprints) > 1 and len(set(fingerprints)) == 1:
         print(
@@ -214,14 +228,16 @@ def main() -> int:
             " user and pins every connection to one identity - unset it and"
             " restart the dev server."
         )
-    # "All zero" can never be a legitimate pass (see docstring above), so it must
-    # fail the gate on its own even when every individual connection succeeded.
-    # The "all identical" case is left at the ordinary exit status: it can be a
-    # true positive (two viewers who really do share one scope) as well as a
-    # false positive (CUBE_SQL_DEV_EMAIL pinning), and telling those apart needs
-    # a human to check the viewer list - the diagnostic flags it, but exit status
-    # would be misleading either way we exited from here.
-    return 1 if failures or all_zero else 0
+    # "All zero" across 2+ viewers can never be a legitimate pass (see docstring
+    # above), so it must fail the gate on its own even when every individual
+    # connection succeeded. A single viewer at 0 rows is left at the ordinary
+    # exit status - see multi_viewer_all_zero above. The "all identical" case is
+    # also left at the ordinary exit status: it can be a true positive (two
+    # viewers who really do share one scope) as well as a false positive
+    # (CUBE_SQL_DEV_EMAIL pinning), and telling those apart needs a human to
+    # check the viewer list - the diagnostic flags it, but exit status would be
+    # misleading either way we exited from here.
+    return 1 if failures or multi_viewer_all_zero else 0
 
 
 if __name__ == "__main__":

@@ -301,6 +301,20 @@ module.exports = {
     // authentication establishes identity for RLS. Deliberate, and on par with
     // the trust the SQL API places in the connecting user.
     //
+    // SECOND, SEPARATE ASSUMPTION, load-bearing and worth stating: a paste
+    // cannot REPLACE the `cubeCloud` key itself. Cube Cloud must apply its own
+    // block after the paste (`{...paste, cubeCloud: realBlock}`), or a console
+    // user could paste `{"cubeCloud": {"username": "<anyone>"}}` and resolve that
+    // person's real context — which would collapse this whole design, not just
+    // the gate below. Tested on a Cube Cloud Dev Mode deployment: a
+    // network-scoped caller pasting a school-scoped viewer's email as
+    // `cubeCloud.username` still got their own four-region scope, so the injected
+    // block wins. Cube Cloud's merge is closed-source and the OSS tree carries no
+    // reference to `cubeCloud`, so this is an empirical result, not a guarantee.
+    // A falsy paste (`{"cubeCloud": null}`) was not tested explicitly; it would
+    // skip the gate below and return pasted groups, so re-confirm after any Cube
+    // Cloud upgrade rather than treating it as settled.
+    //
     // Determinism matters: Cube caches the selected policies under a hash of
     // this context computed BEFORE the hook runs
     // (`CompilerApi.hashRequestContext`), so the same input must always produce

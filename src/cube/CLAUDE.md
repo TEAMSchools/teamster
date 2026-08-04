@@ -269,6 +269,16 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   present) whose `username` is missing still enters the block and resolves to
   the empty default-deny context via `resolveAccess` — a missing `username` is a
   DENY, not a pass-through.
+- **Gating on the `cubeCloud` key assumes a paste cannot REPLACE that key.**
+  Cube Cloud must apply its own block after the merged paste; if a paste could
+  win, pasting `{"cubeCloud": {"username": "<anyone>"}}` would resolve that
+  person's real context and collapse the design, not merely the gate. Tested on
+  a Dev Mode deployment: a network-scoped caller pasting a school-scoped
+  viewer's email as `cubeCloud.username` still got their own four-region scope,
+  so the injected block wins. Cube Cloud's merge is closed-source and the OSS
+  tree has no `cubeCloud` reference, so this is empirical, not guaranteed — a
+  falsy paste (`{"cubeCloud": null}`) is untested and would skip the gate.
+  Re-confirm after a Cube Cloud upgrade; do not treat it as settled.
 - **Every securityContext field a policy interpolates MUST be returned by
   `access.buildSecurityContext`.** This is what makes the overwrite above a
   COMPLETE one, and it is the load-bearing assumption of the paste fix — not a

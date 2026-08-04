@@ -6,7 +6,7 @@ import importlib.util
 import sys
 from pathlib import Path
 
-_SCRIPT = Path("scripts/cube_rls_matrix.py")
+_SCRIPT = Path(__file__).parents[1] / "scripts" / "cube_rls_matrix.py"
 _MODULE_NAME = "cube_rls_matrix"
 
 
@@ -140,8 +140,11 @@ def test_main_all_viewers_zero_rows_returns_nonzero(monkeypatch, capsys) -> None
     assert "EVERY viewer returned 0 rows" in capsys.readouterr().out
 
 
-def test_main_single_viewer_zero_rows_returns_nonzero(monkeypatch) -> None:
-    """The all-zero gate must also fire with just one viewer (empty == len(viewers))."""
+def test_main_single_viewer_zero_rows_returns_zero(monkeypatch, capsys) -> None:
+    """A single viewer at 0 rows is a legitimate default-deny check (e.g. a
+    `none`-scope viewer), not a failure - the all-zero gate must NOT fire with
+    just one viewer, since the cross-viewer comparison it exists for needs 2+
+    viewers to mean anything."""
     mod = _load_script()
     monkeypatch.setattr(
         sys,
@@ -149,7 +152,10 @@ def test_main_single_viewer_zero_rows_returns_nonzero(monkeypatch) -> None:
         ["cube_rls_matrix.py", "--viewers", "a@x.org", "--password", "pw"],
     )
     monkeypatch.setattr(mod, "run_for_viewer", lambda viewer, connection: ([], None))
-    assert mod.main() == 1
+    assert mod.main() == 0
+    out = capsys.readouterr().out
+    assert "0 rows for the single viewer checked" in out
+    assert "EVERY viewer returned 0 rows" not in out
 
 
 def test_main_connection_failures_still_return_nonzero(monkeypatch) -> None:
