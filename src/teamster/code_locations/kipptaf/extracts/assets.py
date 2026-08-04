@@ -191,6 +191,16 @@ littlesis_extract = build_bigquery_query_sftp_asset(
     destination_config={"name": "littlesis"},
 )
 
+parentsquare_extract_assets = [
+    build_bigquery_query_sftp_asset(
+        code_location=CODE_LOCATION,
+        timezone=LOCAL_TIMEZONE,
+        destination_config={"name": "parentsquare"},
+        **a,
+    )
+    for a in config_from_files([f"{config_dir}/parentsquare.yaml"])["assets"]
+]
+
 assets = [
     coupa_extract,
     deanslist_continuous_extract,
@@ -202,4 +212,5 @@ assets = [
     *clever_extract_assets,
     *deanslist_annual_extract_assets,
     *illuminate_extract_assets,
+    *parentsquare_extract_assets,
 ]

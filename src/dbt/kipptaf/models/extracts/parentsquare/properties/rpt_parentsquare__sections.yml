@@ -1,0 +1,86 @@
+models:
+  - name: rpt_parentsquare__sections
+    description:
+      ParentSquare `sections.csv` for KIPP Newark — one synthetic section per
+      (school, grade). The Integration Planner sets granularity at school and
+      grade level only and excludes teacher-classroom rostering, so these stand
+      in for real course sections — they give ParentSquare the grade-level
+      grouping that `sections.csv` and `rosters.csv` require without importing a
+      single teacher. Sections are derived from the (school, grade) pairs
+      students are actually enrolled in, so none is empty. `term_id` is omitted
+      because no `terms.csv` is sent — ParentSquare's spec makes terms required
+      only when terms are enabled, and makes `sections.term_id` required only
+      when sending `terms.csv`.
+    columns:
+      - name: section_id
+        data_type: string
+        description:
+          School number concatenated with the zero-padded grade level. Contains
+          no spaces or periods, as ParentSquare requires, and stays well inside
+          the 30-character identifier limit.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        data_type: string
+        description:
+          PowerSchool `school_number` as a string. Matches a
+          `rpt_parentsquare__schools` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('rpt_parentsquare__schools')
+                field: school_id
+              config:
+                severity: error
+      - name: staff_id
+        data_type: string
+        description:
+          The Operations leader who owns the section. Which one owns it is a
+          formality — their access comes from their staff rows, not from section
+          membership — so one is picked deterministically from the staff feed,
+          which also guarantees the value resolves in `staff.csv`.
+        data_tests:
+          # `severity: error` matters more here than it looks. The owner comes
+          # from `min(staff_id)` over the staff feed, and an ungrouped aggregate
+          # over an empty input returns one row holding NULL rather than no rows
+          # — so if the Ops group is ever renamed or emptied, staff.csv goes to
+          # zero rows (which the extract factory skips, leaving ParentSquare on a
+          # stale file) while sections.csv still ships every section with a null
+          # owner. The relationships test below cannot catch that: dbt's
+          # relationships test filters nulls out of the child side, so it passes
+          # vacuously. This is the guard that fires.
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('rpt_parentsquare__staff')
+                field: staff_id
+              config:
+                severity: error
+      - name: section_number
+        data_type: string
+        description:
+          The grade level as a string, used for ParentSquare's section naming.
+          Not domain-tested here — `rpt_parentsquare__students.grade_level`
+          asserts the `-4`..`12` scale over the same enrollment set, so a
+          violation surfaces there.
+      - name: is_primary
+        data_type: string
+        description:
+          Always 1. ParentSquare allows exactly one primary staff member per
+          section and these sections carry a single owner, so no co-teacher rows
+          are emitted.
+      - name: course_name
+        data_type: string
+        description:
+          Human-readable section name — `Kindergarten`, or `Grade N` for grades
+          1 through 12.
