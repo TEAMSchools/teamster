@@ -88,6 +88,7 @@ with
                     ) as 'comprehension_overall'
                 )
             )
+        where relative_placement is not null
     )
 
 select

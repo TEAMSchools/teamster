@@ -3,7 +3,10 @@ models:
     description:
       Unpivots per-domain placement, relative placement, and scale score from
       i-Ready diagnostic results into one row per domain per test
-      administration.
+      administration. A domain's row is emitted only when its relative_placement
+      value is populated for that test administration — placement and
+      scale_score may independently be null, matching the prior single-column
+      unpivot's inclusion rule exactly.
     config:
       materialized: table
     columns:
@@ -64,8 +67,16 @@ unit_tests:
       to prove BigQuery's multi-column UNPIVOT drops a domain row only when
       every value in its tuple is null, matching the prior single-column
       unpivot's behavior of excluding an unmeasured domain rather than emitting
-      a row of nulls for it. Also verifies test_round and _dbt_source_project
-      pass through unchanged onto every unpivoted domain row.
+      a row of nulls for it. geometry is given a populated placement and
+      scale_score but a null relative_placement, to prove a domain is excluded
+      whenever relative_placement alone is null — the model's inclusion rule
+      matches the prior single-column unpivot exactly, regardless of what
+      placement/scale_score hold. high_frequency_words is given a populated
+      relative_placement but a null scale_score (the pattern that actually
+      occurs in prod for several domains), to prove that combination is still
+      included, just with a null scale_score. Also verifies test_round and
+      _dbt_source_project pass through unchanged onto every unpivoted domain
+      row.
     model: int_iready__domain_unpivot
     given:
       - input: ref('int_iready__diagnostic_results')
@@ -91,7 +102,7 @@ unit_tests:
               401 as algebra_and_algebraic_thinking_scale_score,
 
               'P5' as geometry_placement,
-              'RP5' as geometry_relative_placement,
+              cast(null as string) as geometry_relative_placement,
               405 as geometry_scale_score,
 
               'P7' as measurement_and_data_placement,
@@ -104,7 +115,7 @@ unit_tests:
 
               'P6' as high_frequency_words_placement,
               'RP6' as high_frequency_words_relative_placement,
-              406 as high_frequency_words_scale_score,
+              cast(null as int64) as high_frequency_words_scale_score,
 
               'P10' as phonological_awareness_placement,
               'RP10' as phonological_awareness_relative_placement,
@@ -204,25 +215,11 @@ unit_tests:
             completion_date: 2025-09-15,
             test_round: BOY,
             _dbt_source_project: kippnewark,
-            domain_name: geometry,
-            placement: P5,
-            relative_placement: RP5,
-            scale_score: 405,
-            rn_subject_test: 5,
-          }
-        - {
-            student_id: 90001,
-            subject: Reading,
-            academic_year_int: 2026,
-            start_date: 2025-09-01,
-            completion_date: 2025-09-15,
-            test_round: BOY,
-            _dbt_source_project: kippnewark,
             domain_name: high_frequency_words,
             placement: P6,
             relative_placement: RP6,
-            scale_score: 406,
-            rn_subject_test: 6,
+            scale_score: null,
+            rn_subject_test: 5,
           }
         - {
             student_id: 90001,
@@ -236,7 +233,7 @@ unit_tests:
             placement: P7,
             relative_placement: RP7,
             scale_score: 407,
-            rn_subject_test: 7,
+            rn_subject_test: 6,
           }
         - {
             student_id: 90001,
@@ -250,7 +247,7 @@ unit_tests:
             placement: P8,
             relative_placement: RP8,
             scale_score: 408,
-            rn_subject_test: 8,
+            rn_subject_test: 7,
           }
         - {
             student_id: 90001,
@@ -264,7 +261,7 @@ unit_tests:
             placement: P9,
             relative_placement: RP9,
             scale_score: 409,
-            rn_subject_test: 9,
+            rn_subject_test: 8,
           }
         - {
             student_id: 90001,
@@ -278,7 +275,7 @@ unit_tests:
             placement: P10,
             relative_placement: RP10,
             scale_score: 410,
-            rn_subject_test: 10,
+            rn_subject_test: 9,
           }
         - {
             student_id: 90001,
@@ -292,7 +289,7 @@ unit_tests:
             placement: P11,
             relative_placement: RP11,
             scale_score: 411,
-            rn_subject_test: 11,
+            rn_subject_test: 10,
           }
         - {
             student_id: 90001,
@@ -306,7 +303,7 @@ unit_tests:
             placement: P12,
             relative_placement: RP12,
             scale_score: 412,
-            rn_subject_test: 12,
+            rn_subject_test: 11,
           }
         - {
             student_id: 90001,
@@ -320,5 +317,5 @@ unit_tests:
             placement: P13,
             relative_placement: RP13,
             scale_score: 413,
-            rn_subject_test: 13,
+            rn_subject_test: 12,
           }
