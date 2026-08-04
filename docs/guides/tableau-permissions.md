@@ -7,6 +7,10 @@ This page has two halves. **Part 1** is for anyone who wants to understand or
 question what they can see, and needs no Tableau knowledge. **Part 2** is the
 implementation reference for whoever is building or editing a gated workbook.
 
+**Status: live.** Eleven workbooks were remediated during the Entra ID identity
+migration and carry the model described here. The entity gate is region-scoped
+in all eleven, so the central-office leak described in Part 2 is closed.
+
 ---
 
 ## Part 1 — Who can see what
@@ -475,22 +479,52 @@ undocumented difference is what the next reader "corrects".
 OR ([RLS - Entity Gate] AND [RLS - Location Gate] AND [RLS - Role Gate])
 ```
 
-### Per-workbook variants
+### The gated workbooks
 
-Anything not listed here takes the base form unmodified.
+Eleven workbooks carry the `Permissions` field. All sit in the `Production`
+project and all are tagged `entra-ready` on Tableau Server. **That tag is the
+inventory** — a gated workbook without it is either unfinished or was built
+without following this guide.
 
-| Workbook                    | Variant                                                  |
-| --------------------------- | -------------------------------------------------------- |
-| Content Team Dashboard      | Role gate adds `OR ISMEMBEROF('TS-DL-NTN Coordinators')` |
-| Miami Instructional Rubrics | Role gate adds `OR ISMEMBEROF('TS-DL-NTN Coordinators')` |
-| Stipend and Bonus Dashboard | Role gate: delete the AP branch                          |
-| Operations Systems          | Role gate: delete the AP branch                          |
-| SchoolMint Grow Dashboard   | Tier 4 ungated on the `Permissions - Norming*` fields    |
-| Survey Dashboard            | Tier 4 ungated on the `Permissions - PulseChecker` field |
-| Manager Survey Reports      | Senior-leader field plus the council branch in Tier 2    |
-| Manager Survey Rollup       | Senior-leader field plus the council branch in Tier 2    |
-| Leadership Development      | Senior-leader field plus the council branch in Tier 2    |
-| Coaching Conversation Tool  | Tier 1 self-branches gated by `RLS - Release Gate`       |
+Anything blank in the Variant column takes the base form unmodified.
+
+| Workbook                          | Datasource                                                                                                                    | Variant                                                  |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Manager Survey Reports            | `rpt_tableau__manager_survey_details`                                                                                         | Senior-leader field plus the council branch in Tier 2    |
+| Manager Survey Rollup             | `rpt_tableau__manager_survey_details`                                                                                         | Senior-leader field plus the council branch in Tier 2    |
+| Leadership Development            | `rpt_tableau__leadership_development`                                                                                         | Senior-leader field plus the council branch in Tier 2    |
+| Coaching Conversation Tool        | `rpt_tableau__schoolmint_grow_observation_details`                                                                            | Tier 1 self-branches gated by `RLS - Release Gate`       |
+| SchoolMint Grow Dashboard         | `rpt_tableau__schoolmint_grow_observation_details`, `rpt_tableau__schoolmint_grow_goals`, `rpt_tableau__teacher_observations` | Tier 4 ungated on the `Permissions - Norming*` fields    |
+| Survey Dashboard                  | `rpt_tableau__survey_responses`, `rpt_tableau__survey_completion`                                                             | Tier 4 ungated on the `Permissions - PulseChecker` field |
+| Miami Instructional Rubrics       | `rpt_tableau__content_team`                                                                                                   | Role gate adds `OR ISMEMBEROF('TS-DL-NTN Coordinators')` |
+| Operations Systems                | `rpt_tableau__operations_pm`, `rpt_tableau__operations_ekg`                                                                   | Role gate: delete the AP branch                          |
+| Stipend and Bonus Dashboard       | `rpt_tableau__stipend_and_bonus_app`                                                                                          | Role gate: delete the AP branch                          |
+| Personalized Survey Links         | `rpt_tableau__survey_completion`, `rpt_tableau__survey_responses`                                                             | —                                                        |
+| Federal Grants Timesheet Approval | `rpt_tableau__grants_timesheets`                                                                                              | —                                                        |
+
+Datasource names come from the migration runbook, which derived them per
+workbook in Desktop. Nothing on Tableau Server links a workbook to its table —
+each of these uses an **embedded** extract — so this table is the mapping, and
+it has to be maintained by hand when a workbook is repointed.
+
+!!! warning "Two archived workbooks still hold pre-migration calculations"
+
+    `Content Team Dashboard` and `Teacher Goals` appear in the migration runbook
+    and were archived rather than remediated. Restoring either from its archived
+    version brings back the old calculation — individual username grants
+    included — and its field references no longer match the extracts. Re-apply
+    this guide before republishing either one.
+
+#### Federal Grants Timesheet Approval — `USERNAME()`, not `USERATTRIBUTE()`
+
+Tier 1 in this workbook used `USERATTRIBUTE()` where every other workbook uses
+`USERNAME()`. That was a defect, not a variant, and the migration replaced it
+with the standard Tier 1 block.
+
+Worth knowing because the mistake is easy to repeat: `USERATTRIBUTE()` reads an
+attribute asserted by a connected app or embedding JWT, not the identity of the
+person signed in to Tableau Server. On a workbook opened directly on Server
+there is no such assertion to read, so it is not a substitute for `USERNAME()`.
 
 #### Coaching Conversation Tool — the release gate
 
@@ -544,13 +578,50 @@ Three things about this gate that are deliberate:
 - **`IFNULL([locked], FALSE)` fails closed** on the small number of PMS rows
   where `locked` is null.
 
+### One workbook can hold several permission fields
+
+A workbook is not finished when `Permissions` is correct. Several carry
+additional gates for particular sheets, and **every one of them is a separate
+copy of the tier chain** that has to be brought forward independently.
+
+The Survey Dashboard is the worst case, with four: `Permissions`,
+`Permissions - PulseChecker`, `Permissions - Support`, and a dead
+`Permissions - Support (Preview)`. A `Permissions - Support` left at its old
+text grants the support sheets unconditionally to central office no matter how
+correct the main `Permissions` field is — the sheets using it are simply gated
+by a different, stale calculation.
+
+Before calling a workbook done, enumerate its permission fields rather than
+assuming there is one:
+
+1. Sort the Data pane by name and read every field beginning `Permissions`. Fix
+   or delete each. A field nothing uses is still a field the next editor will
+   copy.
+1. For each sheet, open the Filters shelf and note **which** permission field it
+   filters on. Do not infer it from the sheet's topic.
+1. Resolve each filter's field to its caption before believing it. A `.twb`
+   filter stores the field's **internal** name, which never changes on rename —
+   a filter reading `Permissions - ITR (copy)_155726081272713223` is displaying
+   as `Permissions - Support`.
+
+!!! danger "A dead permission field is not harmless"
+
+    `Permissions - Support (Preview)` was a four-line leftover containing an
+    individual by-name grant. Nothing filtered on it, so it passed every persona
+    test — and it would have been the natural thing to copy when someone next
+    added a support sheet. Delete dead permission fields; do not leave them for
+    later.
+
 ### After editing a workbook
 
 1. Confirm `[Permissions]` is on the filter shelf set to `TRUE` and applied to
    all sheets using that data source — step 4 of _Field structure_.
 1. Search the workbook for `USERNAME()` compared against a **literal string**.
    There should be zero hits — Tier 1 compares against fields, never literals.
-   That search is how you prove no individual grant survived.
+   That search is how you prove no individual grant survived. Search
+   `ISMEMBEROF('The Syndicate')` too; it is retired and grants broadly.
+1. Confirm every field named `Permissions*` was handled, not just the one on the
+   shelf — see _One workbook can hold several permission fields_.
 1. Run the personas below. Seeing **more** than expected is a security finding;
    seeing **less** is a broken gate. Both matter.
 1. Tag the workbook `entra-ready` on Tableau Server.

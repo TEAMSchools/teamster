@@ -5,9 +5,26 @@
 > workbook at a time; each section below is self-contained and ends with its own
 > verification.
 
-**Goal:** every one of the 13 permission-gated workbooks keeps working before
-**and** after the Entra ID identity cutover, with one canonical Permissions
-block pasted across all of them apart from documented per-workbook variants.
+> **This runbook is complete.** All work described below shipped. It is kept as
+> the record of what was done per workbook — the field rename maps in particular
+> are the only place those are written down. For the current state of the
+> permissions model, read the guide, not this file.
+>
+> **Shipped: 11 workbooks**, each tagged `entra-ready` on Tableau Server —
+> Manager Survey Reports, Manager Survey Rollup, Leadership Development,
+> Coaching Conversation Tool, SchoolMint Grow Dashboard, Survey Dashboard, Miami
+> Instructional Rubrics, Operations Systems, Stipend and Bonus Dashboard,
+> Personalized Survey Links, Federal Grants Timesheet Approval.
+>
+> **Not shipped: 2 workbooks**, archived rather than remediated — Content Team
+> Dashboard and Teacher Goals. Their sections below are retained because an
+> archived workbook still holds its pre-migration calculation, so restoring
+> either one means redoing that section first.
+
+**Goal:** every permission-gated workbook keeps working before **and** after the
+Entra ID identity cutover, with one canonical Permissions block pasted across
+all of them apart from documented per-workbook variants. Scoped at 13 workbooks;
+finished at 11, the other two having been archived in the meantime.
 
 **Authoritative reference:**
 [the Tableau permissions guide](../../guides/tableau-permissions.md). It carries
