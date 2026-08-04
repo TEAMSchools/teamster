@@ -283,11 +283,20 @@ deleting dead code:
 
 Data layer:
 
-- `not_null` on `abbreviation` in the staging model, so a sheet row cannot lose
-  its key.
-- A singular test asserting one distinct `rated_department_code` per
-  `abbreviation`. This is the guard that makes the join's `distinct` a
-  projection rather than a dedupe.
+- **No `not_null` on `abbreviation`.** An earlier draft of this spec called for
+  one; it would fail on day one. Section-header rows carry a `Title` and no
+  abbreviation, and the sheet's row-unbounded named range yields several hundred
+  fully null phantom rows — roughly 525 of 881 staged rows have a null
+  abbreviation. Both `question_departments` and the guard test below filter
+  `where abbreviation is not null` instead.
+- A singular test asserting one distinct
+  `(rated_department_code, rated_department_name)` **pair** per `abbreviation`.
+  This is the guard that makes the join's `distinct` a projection rather than a
+  dedupe. It must cover the pair, not the code alone: `distinct` keys on every
+  projected column, so two rows sharing an abbreviation and a code but differing
+  in display name would survive it and fan the join out — a display-text tweak
+  or re-casing applied to one occurrence breaks the projection exactly as a
+  wrong code does.
 - `accepted_values` on `rated_department_code` against the department list, with
   the blank included as a valid value. Blocked on the taxonomy decision in open
   question 1 — the list cannot be written before the codes are agreed.

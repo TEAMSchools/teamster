@@ -171,10 +171,11 @@ with
     ),
 
     question_departments as (
-        /* grain projection: the department a question rates is a property of the
-           question shortname, not of the form it appeared on, so the sheet's
-           (form_id, item_id) rows collapse to one row per shortname. The
-           one_department_per_abbreviation singular test guards that premise. */
+        /* grain projection: the code/name pair a question rates is a property of
+           the question shortname, not of the form it appeared on, so the sheet's
+           (form_id, item_id) rows collapse to one row per shortname. Distinct
+           keys on the pair, so drift in either column would fan this out -- the
+           one_department_per_abbreviation singular test guards against both. */
         select distinct
             rated_department_code,
             rated_department_name,

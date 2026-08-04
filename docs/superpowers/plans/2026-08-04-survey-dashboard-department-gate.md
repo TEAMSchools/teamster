@@ -21,6 +21,10 @@ Tableau Desktop / Tableau Cloud.
 Design:
 `docs/superpowers/specs/2026-08-04-survey-dashboard-department-gate-design.md`
 
+**Status:** Tasks 2, 3 and 4 shipped in PR #4728. Task 1 (the sheet) and Task 5
+(re-staging the external) are the immediate blockers — nothing built until they
+land. Tasks 6 through 10 follow.
+
 ## Global Constraints
 
 - Target project is `kipptaf`. Every dbt command runs through `uv run`, never a
@@ -100,9 +104,9 @@ Re-open Data → Named ranges and read the range back. It must say `A:H`, not
 - Produces:
   `stg_google_sheets__google_forms__form_items_extension.rated_department_code`
   and `.rated_department_name`, both `string`, both nullable, with at most one
-  distinct code per `abbreviation`.
+  distinct `(code, name)` pair per `abbreviation`.
 
-- [ ] **Step 1: Add the two columns to the source**
+- [x] **Step 1: Add the two columns to the source**
 
 Append to the `columns:` list of
 `src_google_sheets__google_forms__form_items_extension`, after `url_id`:
@@ -114,7 +118,7 @@ Append to the `columns:` list of
   data_type: string
 ```
 
-- [ ] **Step 2: Add the two columns to the staging properties**
+- [x] **Step 2: Add the two columns to the staging properties**
 
 Append to the `columns:` list. The staging model is `select *,` so its SQL is
 untouched; the contract is what needs the declaration.
@@ -135,25 +139,53 @@ untouched; the contract is what needs the declaration.
     only; authorization matches on the code.
 ```
 
-- [ ] **Step 3: Write the functional-dependency test**
+- [x] **Step 3: Write the functional-dependency test**
 
 `int_surveys__survey_responses` projects the mapping to one row per
 `abbreviation` with `distinct`. That is only a projection if every row sharing
-an abbreviation carries the same code — otherwise `distinct` keeps both and the
-join fans out. This test fails on that condition.
+an abbreviation carries the same `(code, name)` **pair** — `distinct` keys on
+every projected column, so two rows agreeing on the code but differing in
+display name survive it and fan the join out just as surely as a wrong code. The
+test asserts one distinct pair per abbreviation, not one distinct code.
 
 ```sql
-select
-    lower(abbreviation) as abbreviation,
+with
+    sheet_rows as (
+        select
+            format(
+                '%T|%T', rated_department_code, rated_department_name
+            ) as department_mapping,
 
-    count(distinct rated_department_code) as distinct_department_codes,
-from {{ ref("stg_google_sheets__google_forms__form_items_extension") }}
-where abbreviation is not null
-group by lower(abbreviation)
-having count(distinct rated_department_code) > 1
+            lower(abbreviation) as abbreviation,
+        from {{ ref("stg_google_sheets__google_forms__form_items_extension") }}
+        where abbreviation is not null
+    ),
+
+    department_mappings as (
+        select
+            abbreviation,
+
+            count(distinct department_mapping) as distinct_department_mappings,
+        from sheet_rows
+        group by abbreviation
+    )
+
+select *,
+from department_mappings
+where distinct_department_mappings > 1
 ```
 
-- [ ] **Step 4: Register the test's description**
+`format('%T|%T', ...)` rather than `concat()` — `concat` returns null when any
+argument is null and would silently miscount violations while the columns are
+still sparsely populated.
+
+Do **not** add `not_null` to `abbreviation` here. Roughly 525 of 881 staged rows
+have a null abbreviation — section headers carry a `Title` and no abbreviation,
+and the row-unbounded named range yields several hundred phantom rows — so the
+test would fail on day one. The `where abbreviation is not null` filters above
+are the intended handling.
+
+- [x] **Step 4: Register the test's description**
 
 Append to `src/dbt/kipptaf/tests/properties.yml`:
 
@@ -161,14 +193,17 @@ Append to `src/dbt/kipptaf/tests/properties.yml`:
 - name: stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation
   description: >-
     The sheet's grain is (form_id, item_id), so the same question abbreviation
-    recurs across survey forms and years -- 33 abbreviations sit on more than
-    one row. int_surveys__survey_responses projects the mapping to one row per
-    abbreviation with distinct before joining it to response rows, which is a
-    grain projection only while every row sharing an abbreviation carries the
-    same rated_department_code. A single typo breaks that, and distinct then
-    duplicates instead of deduplicating -- fanning out survey responses and
-    breaking the response-grain uniqueness test downstream. This test fails
-    loudly on any abbreviation carrying more than one distinct code.
+    recurs across survey forms and years -- dozens of abbreviations sit on more
+    than one row. int_surveys__survey_responses projects the mapping to one row
+    per abbreviation with distinct before joining it to response rows, which is
+    a grain projection only while every row sharing an abbreviation carries the
+    same (rated_department_code, rated_department_name) pair. The pair is what
+    distinct keys on, so drift in EITHER column breaks the projection -- a
+    display-text tweak or re-casing applied to one occurrence of an abbreviation
+    does it just as surely as a wrong code. Distinct then duplicates instead of
+    deduplicating, fanning out survey responses and breaking the response-grain
+    uniqueness test downstream. This test fails loudly on any abbreviation
+    carrying more than one distinct pair.
   config:
     severity: error
     meta:
@@ -177,12 +212,12 @@ Append to `src/dbt/kipptaf/tests/properties.yml`:
           name: stg_google_sheets__google_forms__form_items_extension
 ```
 
-- [ ] **Step 5: Parse**
+- [x] **Step 5: Parse**
 
 Run: `uv run dbt parse --project-dir src/dbt/kipptaf --target prod` Expected:
 parses clean, no warnings naming either new column.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/dbt/kipptaf/models/google/sheets/sources-external.yml \
@@ -211,32 +246,35 @@ git commit -m "feat(dbt): carry the rated department on the form items extension
 - Produces: the same two columns on `int_surveys__survey_responses`, one value
   per response row, null where the question is absent from the sheet.
 
-- [ ] **Step 1: Add the mapping CTE**
+- [x] **Step 1: Add the mapping CTE**
 
 Insert after the `enriched` CTE's closing paren, before the final `select`. The
-`distinct` is load-bearing and annotated, per the SQL conventions.
+`distinct` is load-bearing and annotated, per the SQL conventions. Plain columns
+come before the `lower()` expression — ST06 orders simple functions after column
+enumerations, and sqlfluff fails the reverse.
 
 ```sql
     question_departments as (
-        /* grain projection: the department a question rates is a property of the
-           question shortname, not of the form it appeared on, so the sheet's
-           (form_id, item_id) rows collapse to one row per shortname. Guarded by
-           stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation. */
+        /* grain projection: the code/name pair a question rates is a property of
+           the question shortname, not of the form it appeared on, so the sheet's
+           (form_id, item_id) rows collapse to one row per shortname. Distinct
+           keys on the pair, so drift in either column would fan this out -- the
+           one_department_per_abbreviation singular test guards against both. */
         select distinct
-            lower(abbreviation) as question_shortname,
             rated_department_code,
             rated_department_name,
+
+            lower(abbreviation) as question_shortname,
         from {{ ref("stg_google_sheets__google_forms__form_items_extension") }}
         where abbreviation is not null
     ),
 
     enriched_keyed as (
-        select *, lower(question_shortname) as question_shortname_key,
-        from enriched
+        select *, lower(question_shortname) as question_shortname_key, from enriched
     )
 ```
 
-- [ ] **Step 2: Rewrite the final select**
+- [x] **Step 2: Rewrite the final select**
 
 `question_shortname_key` exists only to keep the join predicate free of
 one-sided calculations, so it is dropped from the output. `question_shortname`
@@ -256,7 +294,7 @@ from enriched_keyed as e
 left join question_departments as qd on e.question_shortname_key = qd.question_shortname
 ```
 
-- [ ] **Step 3: Document the two columns**
+- [x] **Step 3: Document the two columns**
 
 Append to the `columns:` list in the properties yml:
 
@@ -274,7 +312,7 @@ Append to the `columns:` list in the properties yml:
     Display label for rated_department_code.
 ```
 
-- [ ] **Step 4: Parse and compile**
+- [x] **Step 4: Parse and compile**
 
 Run:
 
@@ -289,7 +327,7 @@ Expected: both succeed. Read
 and confirm the `except (question_shortname_key)` survived and the join is on
 plain columns.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/dbt/kipptaf/models/surveys/intermediate/int_surveys__survey_responses.sql \
@@ -315,7 +353,7 @@ git commit -m "feat(dbt): join the rated department onto survey responses"
   contract-enforced `rpt_tableau__survey_responses`, which is what the workbook
   extract reads.
 
-- [ ] **Step 1: Project the columns**
+- [x] **Step 1: Project the columns**
 
 Add to the `sr.` block, after `sr.round_rn`:
 
@@ -324,7 +362,7 @@ Add to the `sr.` block, after `sr.round_rn`:
     sr.rated_department_name,
 ```
 
-- [ ] **Step 2: Add the contract entries**
+- [x] **Step 2: Add the contract entries**
 
 The model is contract-enforced, so an undeclared column fails the build. Append
 to the `columns:` list:
@@ -343,7 +381,7 @@ to the `columns:` list:
     Display label for rated_department_code.
 ```
 
-- [ ] **Step 3: Parse and compile**
+- [x] **Step 3: Parse and compile**
 
 Run:
 
@@ -355,7 +393,7 @@ uv run dbt compile --select rpt_tableau__survey_responses \
 
 Expected: both succeed, and the compiled SQL lists both columns.
 
-- [ ] **Step 4: Lint**
+- [x] **Step 4: Lint**
 
 Run from inside the worktree, since the `--force` check resolves paths against
 the cwd:
@@ -367,7 +405,7 @@ cd <worktree> && /workspaces/teamster/.trunk/tools/trunk check --force --no-fix 
 
 Expected: no `sqlfluff` or `yamllint` findings on the changed files.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__survey_responses.sql \
@@ -445,6 +483,13 @@ G and its label in column H. Leave both blank on `open_ended_*`, `*_overall_*`,
 abbreviations break their own naming scheme and must be entered by hand rather
 than pattern-filled: `sre_oe` belongs with `student_recruitment_*`, and
 `teaching_and_learning_oe` belongs with `teaching_learning_*`.
+
+An abbreviation on more than one row must get the **same code AND the same
+name** on every one of its rows — the display label is part of what makes the
+mapping one row per abbreviation, so a differing name fans out survey responses
+even when the code matches. Copy the pair down rather than retyping it. Task 2's
+test fails on any drift, but catching it in the sheet is cheaper than catching
+it in a failed build.
 
 - [ ] **Step 2: Pin the agreed list**
 
