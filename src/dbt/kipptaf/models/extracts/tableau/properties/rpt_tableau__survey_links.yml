@@ -1,43 +1,104 @@
 models:
   - name: rpt_tableau__survey_links
+    description: >-
+      One row per staff survey assignment, at the grain of employee_number,
+      survey, academic_year, and survey_round. Carries the personalized form
+      link for each assignment and a completion flag derived from the latest
+      response for that round, so a person's outstanding surveys can be read
+      without joining a second source. Limited to active, primary-assignment
+      staff hired at least three weeks ago, since a brand-new hire has not yet
+      been asked to respond.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - employee_number
+              - survey
+              - academic_year
+              - survey_round
     columns:
       - name: employee_number
         data_type: int64
+        description: Staff identifier from the ADP-derived roster.
       - name: assignment_status
         data_type: string
+        description: >-
+          Roster assignment status. Always Active, because only active staff are
+          assigned a survey.
       - name: preferred_name_lastfirst
         data_type: string
+        description: Staff preferred name, last name first.
       - name: business_unit
         data_type: string
+        description: Legal entity the person is employed by.
       - name: location
         data_type: string
+        description: Home work location the person is assigned to.
       - name: department
         data_type: string
+        description: Home department the person is assigned to.
       - name: job_title
         data_type: string
+        description: Job title on the person's primary assignment.
       - name: hire_date
         data_type: date
+        description: Original hire date from the roster.
       - name: mail
         data_type: string
+        description: Work email address, used to send survey reminders.
       - name: google_email
         data_type: string
+        description: Google Workspace address, where that differs from mail.
       - name: report_to_employee_number
         data_type: int64
+        description: Employee number of the person's manager.
       - name: report_to_preferred_name_lastfirst
         data_type: string
+        description: Manager's preferred name, last name first.
       - name: samaccountname
         data_type: string
+        description: Active Directory account name.
       - name: username
         data_type: string
+        description: >-
+          Login name taken from the part of the user principal name before the
+          domain, lowercased with hyphens removed.
       - name: academic_year
         data_type: int64
+        description: Academic year of the survey round.
       - name: survey_round
         data_type: string
+        description: >-
+          Reporting term code identifying which administration of the survey
+          this assignment belongs to.
       - name: is_current
         data_type: boolean
+        description: >-
+          True where the survey round is the one currently open, per the
+          reporting terms sheet.
       - name: survey
         data_type: string
+        description: Name of the survey the person is assigned.
       - name: assignment
         data_type: string
+        description: >-
+          Label shown to the person for the assignment. Usually a call to
+          action; for the Manager Survey it identifies the manager being
+          evaluated.
       - name: link
         data_type: string
+        description: >-
+          Personalized survey URL. Most surveys prefill the person's name,
+          location, and employee number so responses can be attributed. The
+          Staff Info and Certification Update form additionally prefills the
+          person's current demographic and education answers so they only have
+          to correct what changed. TNTP Insight and Gallup Q12 link to a help
+          article instead, because those surveys are reached from an emailed
+          link.
+      - name: completion
+        data_type: int64
+        description: >-
+          1 where a response to this survey round exists for the person, 0 where
+          none does. Null for TNTP Insight and Gallup Q12, which are
+          administered outside Google Forms and so never produce a response here
+          — a 0 would read as confirmed incomplete rather than unknown.

@@ -1,4 +1,26 @@
 with
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    responses as (
+        select
+            employee_number,
+            academic_year,
+            survey_code,
+            survey_response_id,
+            date_submitted,
+        from {{ ref("rpt_tableau__survey_responses") }}
+        where round_rn = 1
+    ),
+
+    deduplicate as (
+        {{
+            dbt_utils.deduplicate(
+                relation="responses",
+                partition_by="employee_number, academic_year, survey_code",
+                order_by="date_submitted desc",
+            )
+        }}
+    ),
+
     eligible_roster as (
         select
             sr.employee_number,
@@ -463,5 +485,38 @@ with
             and rt.name = 'Gallup Q12 Survey'
     )
 
-select *,
-from final
+select
+    f.employee_number,
+    f.assignment_status,
+    f.preferred_name_lastfirst,
+    f.business_unit,
+    f.location,
+    f.department,
+    f.job_title,
+    f.hire_date,
+    f.mail,
+    f.google_email,
+    f.report_to_employee_number,
+    f.report_to_preferred_name_lastfirst,
+    f.samaccountname,
+    f.username,
+    f.academic_year,
+    f.survey_round,
+    f.is_current,
+    f.survey,
+    f.assignment,
+    f.link,
+
+    case
+        when f.survey in ('TNTP Insight Survey', 'Gallup Q12 Survey')
+        then null
+        when sr.survey_response_id is not null
+        then 1
+        else 0
+    end as completion,
+from final as f
+left join
+    deduplicate as sr
+    on f.employee_number = sr.employee_number
+    and f.academic_year = sr.academic_year
+    and f.survey_round = sr.survey_code
