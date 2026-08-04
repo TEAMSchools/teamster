@@ -4,10 +4,13 @@ models:
       One row per Grow user, comparing the desired source-of-truth state (from
       ADP / staff roster) against the current destination state in SchoolMint
       Grow. Drives `grow_user_sync` create / update / archive / restore
-      decisions via `surrogate_key_source` vs `surrogate_key_destination`. Users
-      matching both the Coach predicate (instructional manager) and the Teacher
-      predicate (job title contains "Teacher" or "Learning") receive both roles
-      in `role_names` / `role_ids`. Admin classifications take precedence over
+      decisions via `surrogate_key_source` vs `surrogate_key_destination`.
+      Excludes Paterson staff, who do not use Grow. The Teacher predicate is ADP
+      `job_function` of "Teacher" or "Teacher in Residence", falling back to a
+      job title containing "Teacher" or "Learning" while `job_function` is null
+      on a new work assignment. Users matching both the Coach predicate
+      (instructional manager) and the Teacher predicate receive both roles in
+      `role_names` / `role_ids`. Admin classifications take precedence over
       Coach / Teacher.
     data_tests:
       - dbt_utils.expression_is_true:
