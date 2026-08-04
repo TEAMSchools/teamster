@@ -346,15 +346,24 @@ Secret or key that does not exist fails container creation for the whole
 mappings:
 
 1. The `OnePasswordItem` must be applied to the cluster (`kubectl apply`), which
-   is what materializes the Secret. It is not applied by CI.
-1. The three key names must be confirmed against the synced Secret. k8s Secret
-   keys come from the 1Password field's **internal** name, not the UI label, and
-   SFTP items in this vault are known to remap (`password` → `newPassword`,
-   `host` → `url`). These mappings assume the plain `password` / `username` /
-   `host`; if the synced Secret disagrees, the `key:` values need updating.
+   is what materializes the Secret. It is not applied by CI. **Done.**
+1. The key names must be read off the synced Secret rather than assumed. k8s
+   Secret keys come from the 1Password field's **internal** name, not the UI
+   label. **Verified** —
+   `kubectl -n dagster-cloud get secret op-parentsquare-sftp -o jsonpath='{.data}' | jq keys`
+   returns `["URL", "password", "username"]`, so the mappings are:
 
-Verify with
-`kubectl -n dagster-cloud get secret op-parentsquare-sftp -o jsonpath='{.data}' | jq keys`.
+   | Variable                     | Secret key |
+   | ---------------------------- | ---------- |
+   | `PARENTSQUARE_SFTP_HOST`     | `URL`      |
+   | `PARENTSQUARE_SFTP_USERNAME` | `username` |
+   | `PARENTSQUARE_SFTP_PASSWORD` | `password` |
+
+   The host field is the documented remap case and it bit here: `host` was the
+   natural guess and is wrong. Note the capitalization is item-specific too —
+   `op-couchdrop-sftp` uses `URL` but `op-lattice-sftp` uses lowercase `url`, so
+   neither the name nor its case generalizes. A `secretKeyRef` to a missing
+   **key** fails container creation exactly as a missing Secret does.
 
 The schedule stays stopped regardless — wiring the credential does not imply the
 round-trip has been verified.

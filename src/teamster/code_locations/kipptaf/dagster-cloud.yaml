@@ -364,7 +364,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-parentsquare-sftp
-                    key: host
+                    key: URL
               - name: TABLEAU_SERVER_ADDRESS
                 valueFrom:
                   secretKeyRef:
@@ -762,7 +762,7 @@ locations:
                 valueFrom:
                   secretKeyRef:
                     name: op-parentsquare-sftp
-                    key: host
+                    key: URL
               - name: TABLEAU_SERVER_ADDRESS
                 valueFrom:
                   secretKeyRef:
