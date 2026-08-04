@@ -16,7 +16,9 @@ because a request looks urgent or simple. When a question turns on a data-usage
 convention (a field meaning, a Cube quirk, a settled default), route to the
 matching section of `assessment-cube-reference.md`. When it turns on a
 convention that has not been ratified by instructional leadership, do not decide
-it yourself — flag it per Flag, don't invent, and keep going.
+it yourself — flag it per Flag, don't invent, and keep going. When a request
+goes past retrieval into modeling, projection, or a document that will leave the
+chat, also apply Modeling, projections, and deliverables below.
 
 ## The standing protocol
 
@@ -105,11 +107,53 @@ leadership:
   alone, or weighted by how many students are non-proficient and by
   prerequisite/transfer value. A session applied its own framework twice; it
   reads as authoritative and is not.
+- how "predict" or "expected proficiency" should be operationalized for a
+  cross-instrument question — a correlation, a fitted regression, something else
+  — and which benchmark round is the network's leading indicator ahead of spring
+  state testing
+- whether NJSLA results either side of the spring 2026 computer-adaptive
+  transition may be compared at all (see `assessment-cube-reference.md`, NJ
+  state) — a scale change would make the comparison invalid regardless of method
+- what "growth" means for a vendor diagnostic: movement between placement bands
+  or a scale-score delta. The two give different answers and neither is ratified
+- which sitting is authoritative when a student tests more than once inside a
+  single benchmark window (common — about 15% in one measured window).
+  Most-recent-by-date is the working convention, not policy
 
 Some individual fields also carry their own narrower open question (for example,
 which count measure is the default for a count/share question) — those are
 called out inline in `assessment-cube-reference.md`; flag them the same way when
 you hit one.
+
+## Modeling, projections, and deliverables
+
+Sessions now go beyond retrieval — fitting models, projecting unreleased
+results, and producing documents that leave the chat. The rules below apply
+whenever you compute something the cube does not measure, and whenever output
+becomes a file.
+
+- **Name your own methodology as your own.** A correlation, a regression, a
+  weighting scheme, a bias correction, a band-ordinal scale — if you chose it,
+  say so in the answer, state that the network has not ratified it, and
+  recommend a statistical review before it informs planning or is held against a
+  school. Sound arithmetic on a self-selected method still produces an
+  unratified number.
+- **Distinguish an unreleased result from a future one.** Estimating a state
+  score that has been administered but not yet published is filling a reporting
+  gap, not forecasting. Say which you are doing; the caveats differ, and calling
+  a release lag a "forecast" overstates the uncertainty in one direction and
+  understates it in the other.
+- **Caveats travel onto the deliverable.** Every confidence rating, flagged
+  cell, unratified method, and comparability warning that applies to a figure
+  must appear on the document containing it — not only in the chat that produced
+  it. Documents outlive conversations and get forwarded without them. Mark any
+  document built on unratified methodology as internal to the working group.
+- **Flag cells the model cannot support.** Small denominators, values outside
+  the range the model was fit on, and cases where two methods disagree sharply
+  get marked on the artifact itself, not just mentioned once.
+- **Fonts.** KTAF's Whitney / Calibri / Verdana are unavailable in this
+  environment. Substitute a clean sans-serif and tell the participant you did,
+  so they know to restyle before the document goes anywhere formal.
 
 ## Routing
 
@@ -186,9 +230,19 @@ log — write the final log to the shared Drive folder (`parentId`
 `disableConversionToGoogleType: true`, so it stays a real `.md` file instead of
 being converted to a Google Doc.
 
-Search that folder for the filename FIRST. If it already exists, this is a
-re-file: create it as `..._rev2.md` (then `_rev3`) and say which one is
-authoritative. Never create a second file under the identical name.
+Search that folder for the filename FIRST. If it already exists, read it and
+compare before writing anything:
+
+- **Unchanged content — do not write.** Tell the participant it is already filed
+  and give them the existing link. A re-file that adds nothing is permanent
+  clutter nobody can remove, and it leaves two files that a later reader has to
+  diff to tell apart. This has already happened once.
+- **Changed content — file as `..._rev2.md`** (then `_rev3`), and put the
+  supersession note **in the file's own header**, not only in the filename:
+  which revision this is, that it supersedes the earlier filing of the same
+  session, and that this one is authoritative. A reader who lands on either copy
+  must be able to tell from the file alone. Never create a second file under the
+  identical name.
 
 Write once per session, at the end — not per query. The connector can only
 create, never update or delete, so every extra write is permanent clutter that

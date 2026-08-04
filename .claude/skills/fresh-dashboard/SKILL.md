@@ -346,9 +346,26 @@ _not_ need to review, is in the reference doc.
 unchanged, and run the reconciliation loop in "Goals reconciliation" above until
 it comes back clean.
 
+**Step 0f — re-confirm the four first-day-of-school dates with SRE.** SRE
+supplied them directly; they are not derived from either SIS and nothing detects
+a change. Ask for the new cycle's first day per region and compare against the
+`CASE` in `custom_fdos_dates` (`int_tableau__finalsite_student_scaffold`) —
+AY2026 held Newark and Paterson August 28, Camden August 24, Miami August 14.
+
+**Bumping the var alone is not enough here.** It substitutes the year and leaves
+last cycle's month and day in place, so a start date that moved lands silently
+wrong — no error, no test, just a flag judged against the wrong day. The dates
+do move: in the SIS's own history Paterson's first day sat around September 3 in
+AY2024 and around August 26-28 in AY2025.
+
+Edit the `CASE` and nothing else — see the reference doc's _First day of school
+is hardcoded per region_ for why this date lives in this one model and does not
+touch `int_extracts__student_enrollments` or `int_focus__student_enrollments`.
+
 There is **no scaffold-sheet pre-flight check** any more — the sheet is retired,
 so the old `-9` row check is gone. Once the year is agreed, the crosswalk key is
-updated and goals reconcile, proceed to the file edits below.
+updated, goals reconcile and the FDOS dates are confirmed, proceed to the file
+edits below.
 
 **Files to edit** — every dbt model/test site reads from one shared var:
 
@@ -360,8 +377,10 @@ updated and goals reconcile, proceed to the file edits below.
     also carries the constant gate predicate
     `finalsite_recruitment_year != current_academic_year`, so bumping the var is
     what switches that CTE from zero rows to live)
-  - `int_tableau__finalsite_student_scaffold.sql` (`same_day_status_dates`'s
-    `where` filter and `enrollment_lookup`'s two branches)
+  - `int_tableau__finalsite_student_scaffold.sql` (`latest_status_calc`'s
+    `where` filter, `enrollment_lookup`'s two branches, and `custom_fdos_dates`'
+    `CASE` — the var supplies only the YEAR there; the month and day are
+    separate literals that Step 0f covers)
   - `rpt_tableau__fresh_dashboard_progress_to_goals.sql` (the `School` and
     `School/Grade Level` goal CTEs)
   - `test_int_finalsite__status_order_matches_crosswalk_ranking.sql`
@@ -424,6 +443,76 @@ year, so the whole CTE -- and every `enroll_status`/`is_enrolled_*` column it
 feeds -- is empty/null network-wide. This is expected, not a bug, and not
 fixable by any part of this toggle; it resolves on its own once PowerSchool
 catches up, with no further action needed.
+
+## The QC worklist and its hardcoded FDOS date
+
+Two AY2026 decisions that are easy to undo by accident. Full detail in the
+reference doc; this is what to know before editing
+`int_tableau__finalsite_student_scaffold` or `rpt_tableau__fresh_dashboard_qc`.
+
+**`is_enrolled_fdos` is computed here, off a hardcoded regional date.** Newark
+and Paterson August 28, Camden August 24, Miami August 14 — month and day
+hardcoded, year from `var("finalsite_recruitment_year")`, exposed as
+`custom_fdos_date`. It deliberately does NOT pass through either SIS's own
+`is_enrolled_fdos`: Focus computes one network-wide first day, which reported
+`false` for nearly every Miami student at a later-starting school, and
+PowerSchool's is per-school. **Do not "fix" this by repointing at the upstream
+flag, and do not change `int_extracts__student_enrollments` or
+`int_focus__student_enrollments`** — they keep their own versions for their
+other consumers. When the enrollment team changes a first day, edit the `CASE`
+in `custom_fdos_dates` and nothing else.
+
+**The dates came from SRE, so they are a rollover checklist item** — Step 0f of
+_Update the Finalsite recruitment year_ above. The var carries the year forward
+on its own but leaves the month and day untouched, and start dates do move
+between cycles, so a bump without asking SRE judges the flag against last year's
+date with no error and no failing test.
+
+**Do not expect a dev-vs-prod comparison to show this change moving anybody
+before school starts.** Both SISs stamp every enrolled student with the same
+bulk entry date at rollover (July 1 in NJ, mid-August in Miami), well ahead of
+any first day, so every student with a record reads `true` and every student
+without one reads `NULL` in BOTH versions. A zero delta then is the expected
+result, not evidence the change is inert — the AY2025 Miami correction it was
+built for is worth ~990 students.
+
+**`is_enrolled_fdos` is a bare comparison on purpose.** Its sibling flags use
+`if(<cmp>, true, false)`; that form would report every student with no SIS
+record as `false` instead of NULL. Wrapping it to match the siblings is a
+regression, not a cleanup — the same trap that produced a wrong doc claim about
+`is_grade_level_mismatch` / `is_school_mismatch`, which DO collapse NULL to
+`false` because they are wrapped.
+
+**The worklist has four flags, not five.** `is_same_day_status_tie` was deleted
+at the AY2026 review and replaced by the pending-status set inside
+`is_enroll_status_mismatch`. The same-day tie still happens in the data and the
+Reset Protocol is still the fix — it just no longer gets its own worklist row,
+so don't re-add the flag when someone reports a wrong `latest_status`.
+
+**`is_enroll_status_mismatch` has TWO directions in the docs, not three.** The
+"left" and "not finished enrolling" statuses were presented separately until the
+AY2026 review; they make one comparison (expected `2` against SIS `0`), so they
+are now documented as one direction with two halves, matching the SQL's two
+branches. The follow-up still differs between the halves — read `latest_status`
+to tell them apart. Don't re-split them into separate directions.
+
+**`finalsite_expected_enroll_status` has two non-null values, 0 and 2, and they
+deliberately mirror the SIS's own `enroll_status` codes** so a comparison
+between the two columns means the same thing on both sides. Do not renumber them
+and do not split `2` back out per situation -- an earlier version used `1` for
+withdrawals and `2` for pending, colliding with the SIS's `2` (withdrawn). The
+nine statuses sharing `2` cover both "left" and "not finished enrolling"; which
+one a row came from is readable from `latest_status`. The pending set is
+SRE-owned rather than derived: `Accepted`, `Assigned School`, `Did Not Enroll`,
+`Campus Transfer Requested`, `Parent Declined`, `Enrollment In Progress`. Two
+oddities that are NOT bugs — `Did Not Enroll` and `Parent Declined` read as
+exits rather than pending states, and `Accepted` matches no rows in current
+data. Confirm with SRE before changing the list.
+
+**Retention is SRE's to resolve, not ours.** Grade repetition makes
+`is_grade_level_mismatch` and `is_school_mismatch` fire on correctly recorded
+students. This was raised and explicitly handed to SRE — do not build
+suppression or labeling logic for it unless they come back asking.
 
 ## Verified facts (don't re-derive these — reference them)
 

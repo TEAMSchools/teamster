@@ -11,14 +11,13 @@ with
         left join focus_address as f on d.student_id = f.student_id
         where
             f.student_id is null
-            -- don't import a blank/partial address: presence-based import-once
-            -- would create an empty Focus address record and then suppress the
-            -- student forever, so the real address never syncs. Defer until the
-            -- mailable address is complete. See #4320.
+            -- don't import a blank address: presence-based import-once would
+            -- create an empty Focus address record and then suppress the
+            -- student forever, so the real address never syncs. A street line
+            -- is the bar — an address missing its city, state, or ZIP is sent
+            -- so the gap is visible in Focus and can be corrected there, the
+            -- way a blank record cannot. See #4320.
             and d.address is not null
-            and d.city is not null
-            and d.state is not null
-            and d.zipcode is not null
     )
 
 select

@@ -42,6 +42,15 @@ models:
           Focus SIS school-number code (alphanumeric SCH_ID) passed through from
           stg_google_sheets__people__locations; NULL for locations not yet
           mapped to Focus.
+      - name: location_google_student_org_unit_path
+        data_type: string
+        description: |
+          Full Google Workspace org unit path for this school's student
+          accounts, passed through from stg_google_sheets__people__locations.
+          Resolving it through this model means every consumer reaches the same
+          path from whichever school-name spelling its source uses, since each
+          row here is one alias. NULL for campuses and any school with no
+          student org unit yet.
       - name: location_is_campus
         data_type: boolean
       - name: location_is_pathways
