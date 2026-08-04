@@ -410,3 +410,23 @@ data_tests:
         dagster:
           ref:
             name: rpt_clever__students
+
+  - name: rpt_parentsquare__students__every_student_has_a_roster_row
+    description: >-
+      Every student in the ParentSquare students feed must also appear in the
+      rosters feed. A student present in students.csv with no roster row is not
+      a vendor error -- ParentSquare accepts both files -- but that student sits
+      in no school-and-grade section, so they silently drop out of every
+      audience the feed exists to build. The rosters relationships tests only
+      check the child-to-parent direction, so nothing else catches this. It
+      matters because five models independently restate the same
+      enrolled-student filter (_dbt_source_project, academic_year, rn_year,
+      is_out_of_district, enroll_status) and the design's guarantee that rosters
+      covers students rests on those copies staying textually identical. This
+      test is what makes that a checked invariant rather than an assumption.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_parentsquare__students

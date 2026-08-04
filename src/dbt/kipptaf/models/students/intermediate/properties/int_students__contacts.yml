@@ -83,6 +83,25 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: contact_first_name
+        data_type: string
+        description:
+          The contact's given name as a discrete field, for receivers that
+          require first and last name separately rather than a single full-name
+          string. Sourced from the Finalsite contact record on the Finalsite
+          branch and from the Focus person record on the Miami branch, so it is
+          never derived by splitting `contact_name`.
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_last_name
+        data_type: string
+        description:
+          The contact's family name as a discrete field, the companion to
+          `contact_first_name`. Same per-branch sourcing.
+        config:
+          meta:
+            contains_pii: true
       - name: relationship
         data_type: string
         description: The contact's relationship to the student.
@@ -177,6 +196,8 @@ unit_tests:
             'Mother' as relationship,
             1 as sort_order,
             'Guardian A' as contact_name,
+            'Guardian' as contact_first_name,
+            'A' as contact_last_name,
             '305-555-0001' as phone_mobile,
             cast(null as string) as phone_home,
             cast(null as string) as phone_daytime,
@@ -192,13 +213,13 @@ unit_tests:
             '8400123456' as local_student_id
           union all
           select
-            1, 20, 'Father', 2, 'Guardian B',
+            1, 20, 'Father', 2, 'Guardian B', 'Guardian', 'B',
             '305-555-0002', null, null, null, '305-555-0002',
             true, true, false, true,
             'kippmiami', 'b@example.org', '1 Main St', '8400123456'
           union all
           select
-            1, 30, 'Neighbor', 3, 'Guardian C',
+            1, 30, 'Neighbor', 3, 'Guardian C', 'Guardian', 'C',
             '305-555-0003', null, null, null, '305-555-0003',
             false, false, false, false,
             'kippmiami', 'c@example.org', '2 Other St', '8400123456'
@@ -209,6 +230,8 @@ unit_tests:
             cast(null as string) as contact_slot,
             cast(null as string) as finalsite_contact_id,
             cast(null as string) as contact_name,
+            cast(null as string) as contact_first_name,
+            cast(null as string) as contact_last_name,
             cast(null as string) as relationship,
             cast(null as string) as phone_mobile,
             cast(null as string) as phone_home,

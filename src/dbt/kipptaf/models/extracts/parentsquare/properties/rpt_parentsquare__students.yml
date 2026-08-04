@@ -1,0 +1,101 @@
+models:
+  - name: rpt_parentsquare__students
+    description:
+      ParentSquare `students.csv` for KIPP Newark — one row per student enrolled
+      in the current academic year, including pre-registered students, who
+      ParentSquare represents as incoming. Delivered as a full snapshot each
+      run. Every value is emitted as a string because ParentSquare ingests all
+      fields as text. Two optional spec fields are deliberately absent — student
+      email, because populating it makes ParentSquare mail an account-creation
+      invitation to every student in the file and student logins are out of
+      scope, and the state student id, which has no ParentSquare consumer.
+    columns:
+      - name: student_id
+        data_type: string
+        description:
+          PowerSchool `student_number` as a string, the student key ParentSquare
+          matches parents and emergency contacts against.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        data_type: string
+        description:
+          PowerSchool `school_number` of the student's school, as a string.
+          Matches a `rpt_parentsquare__schools` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          # This model derives school_id from the enrollment record while the
+          # schools feed derives it from stg_powerschool__schools filtered on
+          # state_excludefromreporting — two independent filters that agree today
+          # but that nothing in the DAG forces to keep agreeing. ParentSquare
+          # rejects a student row naming a school it has no record of, so enforce
+          # the cross-file guarantee here rather than assume it.
+          - relationships:
+              arguments:
+                to: ref('rpt_parentsquare__schools')
+                field: school_id
+              config:
+                severity: error
+      - name: grade_level
+        data_type: string
+        description:
+          The student's grade level as a string. ParentSquare's scale runs -4 to
+          12 with kindergarten as 0, which the Newark grade domain of 0 through
+          12 already satisfies, so no remapping is applied.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          # `grade_level = 99` (ungraded) exists upstream in
+          # base_powerschool__student_enrollments and no filter on this model
+          # excludes it — it simply never coincides with the active-enrollment
+          # filter today. ParentSquare would reject a row outside -4..12, silently
+          # cutting that family out of emergency comms, so assert the domain
+          # rather than leave it an assumption. A hit here is a signal to agree a
+          # real mapping with Ops, not to invent one.
+          - accepted_values:
+              arguments:
+                values:
+                  - "-4"
+                  - "-3"
+                  - "-2"
+                  - "-1"
+                  - "0"
+                  - "1"
+                  - "2"
+                  - "3"
+                  - "4"
+                  - "5"
+                  - "6"
+                  - "7"
+                  - "8"
+                  - "9"
+                  - "10"
+                  - "11"
+                  - "12"
+              config:
+                severity: error
+      - name: first_name
+        data_type: string
+        description: The student's given name.
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        data_type: string
+        description: The student's family name.
+        config:
+          meta:
+            contains_pii: true
+      - name: status
+        data_type: string
+        description:
+          ParentSquare enrollment status — 1 for an actively enrolled student, 0
+          for a pre-registered student, which ParentSquare treats as incoming.
