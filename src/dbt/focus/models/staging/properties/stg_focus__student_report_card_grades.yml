@@ -1,0 +1,149 @@
+models:
+  - name: stg_focus__student_report_card_grades
+    description: >-
+      Focus student report-card grades — one row per student per course per
+      marking period. Every row Miami carries today is imported course history
+      (course_history is Y) spanning school years well before the Focus rollout,
+      so the letter grade, GPA points and credits are denormalized onto the row
+      and the foreign keys a live report card would use — report_card_grade_id,
+      grade_scale_id, course_period_id, course_id — are all empty and are not
+      projected. Add them once Focus starts posting live report-card grades in
+      Miami. Distinct from stg_focus__report_card_grades, which is the grade
+      definition table (the available letter grades and their GPA values), not
+      student grades.
+    columns:
+      - name: id
+        description: Primary key — Focus student_report_card_grades id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Focus student id the grade belongs to.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+      - name: marking_period_id
+        description: >-
+          Focus marking-period id the grade was earned in. Focus stores this as
+          text on this table alone, so it is cast to an integer here to match
+          stg_focus__marking_periods and every other reference to a marking
+          period.
+        data_type: int
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_focus__marking_periods')
+                field: marking_period_id
+              config:
+                severity: error
+      - name: syear
+        description: >-
+          Focus school year start year the grade was earned in (e.g. 2025 =
+          2025-26). Spans many years before the Focus rollout because the rows
+          are imported course history.
+        data_type: int
+      - name: school_id
+        description: >-
+          Focus school id that recorded the grade. For imported history this is
+          the Focus school that received the import, not necessarily the school
+          the student attended — school_number carries the originating school.
+        data_type: int
+      - name: grad_subject_id
+        description: >-
+          Focus graduation-subject id the course counts toward, populated only
+          where the import supplied a graduation-requirement mapping.
+        data_type: int
+      - name: course_num
+        description: >-
+          State course number for the graded course, as it appeared on the
+          imported transcript.
+        data_type: string
+      - name: course_title
+        description: >-
+          Course name as it appeared on the imported transcript. Free text, not
+          joined to stg_focus__courses — the course foreign key is empty on
+          these rows.
+        data_type: string
+      - name: grade_title
+        description: >-
+          Letter grade earned, using the Focus grade titles (A through F plus
+          the non-letter marks N, NG, S and U).
+        data_type: string
+      - name: gpa_points
+        description: Unweighted GPA points the letter grade is worth.
+        data_type: numeric
+      - name: weighted_gpa_points
+        description: >-
+          GPA points the letter grade is worth after the course weight is
+          applied.
+        data_type: numeric
+      - name: credits
+        description: Credits the course was worth if passed.
+        data_type: numeric
+      - name: credits_earned
+        description: >-
+          Credits the student actually earned, which differs from credits when
+          the grade did not carry credit.
+        data_type: numeric
+      - name: affects_gpa
+        description: Whether the grade is included in GPA calculations.
+        data_type: string
+      - name: carries_credits
+        description: Whether the grade can earn credit toward graduation.
+        data_type: string
+      - name: course_history
+        description: >-
+          Whether the row is imported course history rather than a grade posted
+          in Focus. Y on every Miami row today.
+        data_type: string
+      - name: course_flag_1
+        description: >-
+          Course Flag 1 custom field — a transcript annotation such as Honors,
+          Gifted or a state course-substitution indicator. Stores the option
+          code; int_focus__report_card_grades resolves it to a label.
+        data_type: string
+      - name: course_flag_2
+        description: >-
+          Course Flag 2 custom field — a second transcript annotation drawn from
+          the same option list as course_flag_1. Stores the option code.
+        data_type: string
+      - name: district_number
+        description: >-
+          District custom field — Florida district number the imported grade
+          originated in. No option list exists for this field, so the stored
+          value is carried through undecoded.
+        data_type: string
+      - name: school_number
+        description: >-
+          School custom field — zero-padded Florida school number the imported
+          grade originated at. No option list exists for this field, so the
+          stored value is carried through undecoded.
+        data_type: string
+      - name: grade_level
+        description: >-
+          Gradelevel custom field — zero-padded grade level the student was in
+          when the grade was earned (PK, KG, 01 through 12). Not decoded because
+          the option labels are identical to the stored codes.
+        data_type: string
+      - name: uuid
+        description: Focus-assigned universally unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

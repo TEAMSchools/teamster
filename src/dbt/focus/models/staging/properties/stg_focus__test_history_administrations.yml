@@ -1,0 +1,117 @@
+models:
+  - name: stg_focus__test_history_administrations
+    description: >-
+      Focus test-history administrations — one row per student sitting of a
+      standardized test, holding the when/where/how of the sitting. The scores
+      themselves live in stg_focus__test_history_scores, one row per part and
+      score type per administration.
+    columns:
+      - name: id
+        description: >-
+          Primary key — Focus test_history_administrations id. Referenced by
+          stg_focus__test_history_scores.administration_id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Focus student id who sat the test.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+      - name: test_id
+        description:
+          Focus test id identifying which assessment was administered.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__test_history_tests')
+                field: id
+              config:
+                severity: error
+      - name: fas_assignment_id
+        description: >-
+          Florida Assessment System assignment id, populated when the sitting
+          was created from an FAS roster rather than entered in Focus.
+        data_type: int
+      - name: administration_date
+        description: Date the student sat the test.
+        data_type: date
+      - name: syear
+        description: >-
+          Focus school year start year of the sitting (e.g. 2025 = 2025-26).
+        data_type: int
+      - name: gradelevel
+        description: >-
+          Grade level the student was in when the test was administered, as a
+          zero-padded code (PK, KG, 01 through 12).
+        data_type: string
+      - name: test_level
+        description: >-
+          Level or tier of the assessment administered, where the test offers
+          more than one.
+        data_type: string
+      - name: test_form
+        description: Form or version of the assessment the student received.
+        data_type: string
+      - name: lep_info
+        description: >-
+          Limited-English-proficiency accommodation detail recorded for the
+          sitting.
+        data_type: string
+      - name: djj_info
+        description: >-
+          Department of Juvenile Justice reporting detail, recorded where state
+          reporting requires it for the sitting.
+        data_type: string
+      - name: transcript
+        description: >-
+          Whether the sitting should appear on the student's printed transcript.
+        data_type: string
+      - name: program_number
+        description: >-
+          State program number the sitting is reported under, used by Florida
+          assessment reporting.
+        data_type: string
+      - name: custom_1
+        description: >-
+          Unlabeled Focus custom slot. The custom_fields catalog has no entry
+          for the test-history tables, so the stored value is carried through
+          undecoded.
+        data_type: string
+      - name: custom_2
+        description: >-
+          Unlabeled Focus custom slot — see custom_1 for why it is not decoded.
+        data_type: string
+      - name: custom_3
+        description: >-
+          Unlabeled Focus custom slot — see custom_1 for why it is not decoded.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: uuid
+        description: Focus-assigned universally unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
