@@ -27,6 +27,9 @@ Departments have also merged over time, so the mapping from question prefix to
 current department is not one-to-one. **A string parse cannot express this**,
 and a mis-parsed row is one department reading another's feedback.
 
+The Survey Dashboard is the **last** of the 13 workbooks in the Tableau RLS
+rollout still awaiting its edit; every other workbook has been worked.
+
 ### What the workbook does today
 
 Read from the published workbook, 2026-08-04:
@@ -67,8 +70,6 @@ Read from the published workbook, 2026-08-04:
 - Pre-aggregating in dbt. Suppression stays a sheet filter; moving it into the
   warehouse would require enumerating every cut and would break the
   parameter-driven `Cut By` the dashboard is built on.
-- Anonymizing the rated department's own view. See _Respondent identity_ below
-  for what is in scope.
 - Ingesting Tableau group membership. Worth doing, tracked separately; its
   absence is why no test can assert the calc's groups exist.
 
@@ -104,20 +105,63 @@ Two new columns:
 
 A question that rates no department gets a blank code.
 
+#### The sheet's own mechanics
+
+Three properties of this source govern how the columns get added, and getting
+any of them wrong yields a silently wrong column rather than an error:
+
+- **The declared `columns:` map positionally, not by name.** The sheet's header
+  row reads `Form ID`, `Item ID`, `Question ID`, `Title`, `Abbreviation`,
+  `URL ID`, while `sources-external.yml` declares `form_id` through `url_id`.
+  `skip_leading_rows: 1` discards the header, so BigQuery binds column 1 to the
+  first declared name and so on. The two new columns must therefore be appended
+  at the **end** of both the sheet and the `columns:` list, in the same order.
+- **The `sheet_range` is a named range, not a tab.**
+  `src_google_forms__form_items_extension` currently spans columns A through F
+  of the `Form Items Extension` tab. Appending sheet columns without widening
+  the named range to A through H leaves the new columns invisible to BigQuery.
+- **`abbreviation` is not unique in the sheet.** It carries 356 rows at
+  2026-08-04, 309 distinct abbreviations across 16 forms; 33 abbreviations
+  appear on more than one row, up to 4. See _Join grain_ below.
+
 Files changed:
 
 1. `models/google/sheets/sources-external.yml` — two `columns:` entries on the
    existing source.
-2. `models/google/sheets/staging/properties/stg_google_sheets__google_forms__form_items_extension.yml`
+1. `models/google/sheets/staging/properties/stg_google_sheets__google_forms__form_items_extension.yml`
    — declare both columns. The staging model is `select *` so its SQL is
    untouched, but the directory default enforces a contract and an undeclared
    sheet column fails the build.
-3. `models/surveys/intermediate/int_surveys__survey_responses.sql` — left join
-   the staging model on `question_shortname = abbreviation` and project both
-   columns. This model already owns question identity for both the Google Forms
-   and legacy Alchemer branches, so one join covers every row.
-4. `models/extracts/tableau/rpt_tableau__survey_responses.sql` and its
+1. `models/surveys/intermediate/int_surveys__survey_responses.sql` — join the
+   question-to-department mapping and project both columns. This model already
+   owns question identity for both the Google Forms and legacy Alchemer
+   branches, so one join covers every row.
+1. `models/extracts/tableau/rpt_tableau__survey_responses.sql` and its
    properties — pass both columns through.
+
+#### Join grain
+
+The sheet's grain is `(form_id, item_id)`, not `abbreviation` — the same
+question shortname recurs across survey forms and across years. Joining
+`question_shortname = abbreviation` directly would fan out a response row once
+per matching sheet row, up to 4x, and would break the model's own
+`(survey_id, survey_response_id, survey_question_id, question_shortname, answer)`
+uniqueness test.
+
+The mapping is therefore projected to one row per shortname before the join, as
+a `distinct` over the lowered abbreviation plus the two department columns —
+grain projection, valid only because the department a shortname rates is a
+property of the shortname and not of the form it appeared on.
+
+That premise needs enforcing, because a typo in one of two sheet rows sharing a
+shortname would reintroduce the fan-out. A singular test on the staging model
+fails when any abbreviation carries more than one distinct
+`rated_department_code`. Without it the `distinct` silently duplicates instead
+of deduplicating.
+
+`question_shortname` is lowered on both sides. `rpt_tableau__survey_responses`
+already publishes `lower(sr.question_shortname)`, and sheet abbreviations are
+entered lowercase but are not constrained to be.
 
 **Left join, deliberately.** A question absent from the sheet yields a null
 code, which lands in the same restricted bucket as a blank one. A survey that
@@ -166,32 +210,32 @@ together would produce a single calc over 150 lines.
 
 ### Respondent identity
 
-Department scoping and anonymity are separate rules and neither implies the
-other. A cross-department viewer sees a row **without** the respondent's name;
-the department gate decides which rows they reach, this decides what a reached
-row shows.
+**No viewer of the support views sees respondent names, including the rated
+department.** This is the decision taken 2026-08-04, and it is what lets the
+support surveys be described to staff as anonymous. Department scoping decides
+which rows a viewer reaches; this decides that a reached row never shows who
+wrote it.
 
 Two fields carry identity: the `respondent_name` column and the
-`Teammate (copy)` calculated field that aliases it. Both are wrapped:
+`Teammate (copy)` calculated field that aliases it. Both are removed from every
+support sheet — including tooltips, which are the easiest place to leave one
+behind — and then hidden in the Data pane so neither can be dragged back on.
 
-```text
-IF [RLS - Department Gate Is Departmental] THEN [respondent_name] END
-```
+Nothing in the calc layer implements this, and that is the point: a wrapper such
+as `IF <viewer is departmental> THEN [respondent_name] END` would keep the field
+present and one drag away from a support sheet. Removal plus hiding has no such
+edge.
 
-where `RLS - Department Gate Is Departmental` is true when the viewer reaches
-the row through a department branch rather than a cross-department one. The raw
-`respondent_name` and `Teammate (copy)` are then hidden in the Data pane so
-neither can be dragged onto a sheet ungated.
+Hiding is still not a boundary. Tableau has no column-level security, so a
+viewer with Download Data or Web Edit on the workbook can reach
+`respondent_name` in the extract regardless. **Anonymity therefore depends on
+revoking those two capabilities on the workbook** for every group that is not
+all-access; no calculation substitutes for that, and the claim of anonymity is
+false without it.
 
-This is a display gate, not a boundary. Tableau has no column-level security, so
-a viewer with Download Data or Web Edit on the workbook can still reach
-`respondent_name` in the extract. If the name must be genuinely unreachable,
-those two capabilities have to be revoked on the workbook; no calculation
-substitutes for that.
-
-Note the scope limit: this hides the name from cross-department viewers only.
-Whether the rated department sees the names of its own respondents is open
-question 4.
+The manager-survey and other non-support views of the same extract are out of
+scope — they identify respondents by design, and this change does not touch
+them.
 
 ### Group coverage
 
@@ -227,12 +271,12 @@ deleting dead code:
 
 1. Add `Permissions - Support` and the `COUNTD(employee_number) >= 4` filter to
    `support_open_ended`.
-2. Scope the unconditional `KNJ-SG-Tableau All Staff KTAF` grant in
+1. Scope the unconditional `KNJ-SG-Tableau All Staff KTAF` grant in
    `Permissions - Support` to the four regions, matching the entity gate in the
    permissions guide.
-3. Delete `Permissions - Support (Preview)` and its individual by-name grant.
-4. Remove `KNJ-SG-Tableau The Syndicate`.
-5. Apply the #4656 renames: `legal_entity` to `home_business_unit_name`,
+1. Delete `Permissions - Support (Preview)` and its individual by-name grant.
+1. Remove `KNJ-SG-Tableau The Syndicate`.
+1. Apply the #4656 renames: `legal_entity` to `home_business_unit_name`,
    `location` to `location_clean_name`, `department` to `home_department_name`.
 
 ## Testing
@@ -241,11 +285,14 @@ Data layer:
 
 - `not_null` on `abbreviation` in the staging model, so a sheet row cannot lose
   its key.
+- A singular test asserting one distinct `rated_department_code` per
+  `abbreviation`. This is the guard that makes the join's `distinct` a
+  projection rather than a dedupe.
 - `accepted_values` on `rated_department_code` against the department list, with
-  the blank included as a valid value.
+  the blank included as a valid value. Blocked on the taxonomy decision in open
+  question 1 — the list cannot be written before the codes are agreed.
 - Confirm the join adds no rows: `count(*)` on `rpt_tableau__survey_responses`
-  before and after must match, since a duplicated `abbreviation` in the sheet
-  would fan out.
+  before and after must match.
 
 Workbook personas, run with Preview as User:
 
@@ -257,6 +304,7 @@ Workbook personas, run with Preview as User:
 | `All Data` or `TC`                   | Everything, unchanged                                                                               |
 | A viewer in no departmental group    | Nothing on the support sheets                                                                       |
 | Any viewer, on a blank-code question | Visible only if they are all-access or cross-department                                             |
+| Every persona above                  | No respondent name anywhere on a support sheet, including tooltips                                  |
 
 Both directions matter. Seeing more than expected is a security finding; seeing
 less is a broken gate.
@@ -267,13 +315,11 @@ less is a broken gate.
    Merged departments must resolve to one current code, and the SUP-side scopes
    (`cmo_*`, `regional_*`) need deciding: one code per department, or separate
    codes per scope.
-2. **The `IN` list for each group.** `Special Education Directors` and
+1. **The `IN` list for each group.** `Special Education Directors` and
    `School Support Directors` get their own department plus a few others; which
    others is not yet decided.
-3. **Which of the seven uncovered departments get groups**, and under which
+1. **Which of the seven uncovered departments get groups**, and under which
    naming convention.
-4. **Does the rated department see its own respondents' names?** The design
-   hides names from cross-department viewers only. Hiding them from the
-   department as well is a one-word change to the wrapper, but it is a policy
-   call, not a technical one — and it affects whether the survey can be
-   described to staff as anonymous.
+
+Resolved 2026-08-04: whether the rated department sees its own respondents'
+names. It does not — see _Respondent identity_.
