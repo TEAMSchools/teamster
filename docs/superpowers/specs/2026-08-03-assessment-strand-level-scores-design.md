@@ -2,8 +2,10 @@
 
 Issue: [#4708](https://github.com/TEAMSchools/teamster/issues/4708)
 
-Depends on: [#4706](https://github.com/TEAMSchools/teamster/issues/4706)
-(`int_iready__domain_unpivot` placement/`scale_score`)
+Depends on: [#4706](https://github.com/TEAMSchools/teamster/issues/4706) /
+[#4709](https://github.com/TEAMSchools/teamster/pull/4709)
+(`int_iready__domain_unpivot` placement/`scale_score`) — **merged**. See
+_i-Ready_ below for what landed and the one column still outstanding.
 
 ## Problem
 
@@ -127,11 +129,32 @@ pass-through column populated on every `measure_standard` row in
 
 ### i-Ready
 
-`int_iready__domain_unpivot` is assumed to expose, post-#4706: `domain_name`
-(clean slug), `placement`, `relative_placement`, `scale_score`, plus
-`_dbt_source_project`, `illuminate_subject`, and `test_round`. The last three
-are being added to that PR at this spec's request; without them this half is
-blocked.
+#### What #4709 landed
+
+`int_iready__domain_unpivot` now exposes `domain_name` (clean slug),
+`placement`, `relative_placement`, `scale_score`, `test_round`, and
+`_dbt_source_project`. Two things changed versus what this spec originally
+assumed:
+
+- **`illuminate_subject` was NOT included.** It is required: the vendor branch
+  joins the resolver on `va.illuminate_subject = sr.subject_area`, so domain
+  rows without it match nothing and the INNER JOIN drops all of them. Close this
+  by adding the pass-through to `int_iready__domain_unpivot` as the first commit
+  of this work — a one-line additive edit to the CTE and final `SELECT` plus a
+  `properties.yml` entry, exactly matching how `test_round` and
+  `_dbt_source_project` were just added. The marts convention explicitly permits
+  additive upstream edits in a mart-focused PR, so this needs no separate
+  cross-team dependency. Do NOT re-derive the `subject`-to-`illuminate_subject`
+  mapping in the fact: `int_iready__diagnostic_results` already derives it, and
+  duplicating a two-value translation downstream is the pattern this repo
+  avoids.
+- **The model now applies `where relative_placement is not null` itself**, and
+  its description documents that inclusion rule. This is deliberate: with a
+  three-column tuple `UNPIVOT`, BigQuery's implicit null-drop only removes a
+  domain when all three values are null, so a tuple carrying a `placement` or
+  `scale_score` but no `relative_placement` would otherwise survive. The fact
+  therefore does NOT repeat that predicate — see the filter note in the CTE
+  below.
 
 The existing `iready_scores_raw` CTE stays as the subject-level anchor, gaining
 only the two NULL discriminator literals for the union. A new sibling CTE adds
@@ -146,6 +169,10 @@ domain rows:
 -- with a placement but no scale score IS retained: the grade-level placement is
 -- the primary domain signal, and the fact already carries scoreless rows
 -- (internal Illuminate rows have a null scale_score throughout).
+--
+-- No 'relative_placement is not null' predicate here: int_iready__domain_unpivot
+-- enforces it upstream as its documented inclusion rule (#4709). Repeating it
+-- would imply the guarantee lives here.
 iready_domain_scores_raw as (
     select
         student_id as student_number,
@@ -176,7 +203,6 @@ iready_domain_scores_raw as (
     where
         completion_date is not null
         and _dbt_source_project is not null
-        and relative_placement is not null
         and relative_placement != 'Not Assessed'
 ),
 ```
@@ -286,6 +312,11 @@ clarification — they remain NULL for both sources.
 
 ## Validation
 
+- **Adding `illuminate_subject` breaks the unit test #4709 shipped.**
+  `unit_iready_domain_unpivot_placement_scale_score` enumerates every output
+  column across 12 `expect` rows, and dbt builds them as `UNION ALL` with no
+  null-fill — so the new column must be added to the `given` SQL block and to
+  all 12 rows in the same commit, or the test fails on mismatched column counts.
 - `unique` and `not_null` on `assessment_score_key` must pass — this is the
   proof `response_type_description` is a sufficient discriminator.
 - Row-count assertion in the PR body: the count of rows where
@@ -295,10 +326,16 @@ clarification — they remain NULL for both sources.
   and `assessment_key` must be non-null at the same rate on breakdown rows as on
   summary rows. A null-rate gap means the anchoring failed and orphans were
   created.
-- i-Ready domain row count post-filter should reconcile against the profiled
-  candidate set: of 4.34M unpivot candidates, 2,708,776 have neither placement
-  nor score (domain not applicable), 62,174 are `Not Assessed`, leaving
-  ~1,572,858 eligible before enrollment scoping.
+- i-Ready domain row count post-filter should reconcile against the merged
+  model's output. Re-verified against prod after #4709: of 4,343,808 raw
+  domain-column tuples, 2,708,776 carry no `relative_placement` (domain not
+  applicable) and are dropped by the model's own inclusion rule, so
+  `int_iready__domain_unpivot` emits **1,635,032** rows. Of those, 62,174 are
+  `Not Assessed`, leaving **1,572,858** eligible for the fact before enrollment
+  scoping. Note that prod had not yet rematerialized the model at the time of
+  writing, so these counts were computed by replaying the merged inclusion rule
+  against `int_iready__diagnostic_results`; re-confirm against the rebuilt table
+  before relying on them.
 
 ## Out of scope
 
@@ -306,8 +343,9 @@ clarification — they remain NULL for both sources.
 - State-assessment subclaim or strand breakdowns.
 - Unifying `response_type` across all sources.
 - Domain-level `national_percentile`.
-- A uniqueness test on `int_iready__domain_unpivot` (pre-existing gap, also
-  deferred by #4706).
+- A uniqueness test on `int_iready__domain_unpivot` — still absent after #4709,
+  which added a unit test but no `data_tests:` block. Pre-existing gap, deferred
+  there and here.
 - Consuming i-Ready's absolute `placement` column.
 
 Follow-up items for a data engineer, including the unguarded i-Ready label
