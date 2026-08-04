@@ -341,9 +341,20 @@ would look correct and the account would be unusable. Confirmed by Ops
 2026-08-04. This is where the feed diverges from `rpt_clever__staff`, whose
 consumer matches on the AD identity.
 
-The principal-name join above is a separate case and legitimately uses `mail`:
-PowerSchool's `principalemail` is the AD address, and all 12 schools match on
-it.
+`schools.csv` keeps the AD address in both of its uses, deliberately:
+
+- **As the name-resolution join key**, matching `lower(principalemail)` against
+  `lower(mail)`. It has to be `mail` — `principalemail` is what PowerSchool
+  stores and it is the AD address, so matching against `google_email` would
+  resolve none of the 12. This value never leaves the model.
+- **As the emitted `principal_email` column**, which is `@kippnj.org` for all 12
+  schools. Ops confirmed 2026-08-04 that ParentSquare does not create a login
+  from this field — it is school metadata, not an authentication identity, so
+  the `staff.csv` reasoning above does not apply and no change is needed. Worth
+  stating explicitly because the field looks like the same bug and is not: the
+  12 principals appear in no other feed (`staff.csv` carries only the 8 Ops
+  leaders at `school_id = 0`), so a reviewer reasonably reads it as an uncaught
+  gap.
 
 ### Student email and state id are omitted
 
