@@ -1,0 +1,111 @@
+models:
+  - name: stg_focus__test_history_scores
+    description: >-
+      Focus test-history scores — one row per score reported for a test sitting,
+      broken out by test part and score type. A single administration therefore
+      yields several rows (for example a scale score and an achievement level
+      for each section of the test).
+    columns:
+      - name: id
+        description: Primary key — Focus test_history_scores id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: administration_id
+        description: >-
+          Focus test-history administration id the score belongs to; the sitting
+          that produced this score.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__test_history_administrations')
+                field: id
+              config:
+                severity: error
+      - name: student_id
+        description: >-
+          Focus student id the score belongs to, denormalized from the
+          administration.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+      - name: test_id
+        description: >-
+          Focus test id the score belongs to, denormalized from the
+          administration.
+        data_type: int
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_focus__test_history_tests')
+                field: id
+              config:
+                severity: error
+      - name: part_id
+        description: >-
+          Focus test-part id identifying which section of the test the score
+          covers.
+        data_type: int
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_focus__test_history_parts')
+                field: id
+              config:
+                severity: error
+      - name: score_type_id
+        description: >-
+          Focus score-type id identifying what the score measures (scale score,
+          achievement level, percentile, and so on). Determines how score should
+          be read.
+        data_type: int
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_focus__test_history_score_types')
+                field: id
+              config:
+                severity: error
+      - name: score
+        description: >-
+          Reported score value. Its meaning depends on score_type_id, so never
+          aggregate across score types.
+        data_type: numeric
+      - name: test_code
+        description: >-
+          Vendor or state code for the test as it appeared on the score file.
+        data_type: string
+      - name: session_id
+        description: >-
+          Testing session identifier from the vendor file, grouping students
+          tested together.
+        data_type: string
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: uuid
+        description: Focus-assigned universally unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp
