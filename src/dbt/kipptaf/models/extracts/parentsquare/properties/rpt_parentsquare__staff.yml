@@ -52,14 +52,16 @@ models:
       - name: email
         data_type: string
         description:
-          The leader's KIPP Google account. ParentSquare requires an email or a
-          phone to sync a staff user, and the Integration Planner sets access
-          via the KIPP Google account, so this is the field ParentSquare matches
+          The leader's KIPP Google account, from the staff roster's
+          `google_email` — the @apps.teamschools.org address, not the
+          @kippnj.org / @kippteamandfamily.org one on `mail`. ParentSquare
+          requires an email or a phone to sync a staff user and these users
+          authenticate through Google, so this is the field ParentSquare matches
           the user on. This feed emits no phone column, so a null here means an
           unusable staff row.
         data_tests:
-          # `mail` is nullable on the roster, and since membership now comes from
-          # a mutable Ops-owned group a leader can be added without one. Fail
+          # `google_email` is nullable on the roster, and since membership comes
+          # from a mutable Ops-owned group a leader can be added without one. Fail
           # loudly rather than drop the row: unlike the parent and emergency
           # feeds, silently dropping a leader would remove someone's access with
           # no signal, and a leader with no KIPP Google account cannot use

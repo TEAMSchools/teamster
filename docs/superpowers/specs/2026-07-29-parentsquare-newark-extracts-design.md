@@ -249,7 +249,9 @@ All seven files sent. `Yes*` = one of email/phone required.
   `principal_last_name`, `principal_email`, `school_phone` (all required).
 - **`students.csv`** — required: `school_id`, `student_id`, `first_name`,
   `last_name`, `grade_level`. Optional: `state_student_id`, `status` (1 =
-  active, 0 = incoming), `student_email`, `cellphone` (10 digits).
+  active, 0 = incoming), `student_email`, `cellphone` (10 digits). Of the
+  optional four this feed emits only `status` — see _Student email and state id
+  are omitted_.
 - **`parents.csv`** — required: `school_id`, `student_id`, `first_name`,
   `last_name`, and email OR mobile. Optional: `parent_id` (unused),
   `relationship`, `language`, `secondary_phone`.
@@ -326,6 +328,37 @@ carries honorifics, so `rpt_parentsquare__schools` resolves the name pair from
 `int_people__staff_roster` on `lower(principalemail) = lower(mail)`. All 12
 reporting Newark schools match, `mail` is unique on the roster so the join
 cannot fan out, and the one honorific-bearing value resolves correctly.
+
+### Staff email is the Google account, not the AD address
+
+`staff.csv` emits the roster's `google_email` (`@apps.teamschools.org`). The
+roster also carries `mail` / `work_email` / `user_principal_name`, all of which
+hold the AD/Exchange address (`@kippnj.org` or `@kippteamandfamily.org`); for
+every one of the 8 leaders in the group the Google and AD addresses differ, so
+the two are not interchangeable. ParentSquare authenticates these users through
+Google, so an AD address would sync a staff user nobody can sign in as — the row
+would look correct and the account would be unusable. Confirmed by Ops
+2026-08-04. This is where the feed diverges from `rpt_clever__staff`, whose
+consumer matches on the AD identity.
+
+The principal-name join above is a separate case and legitimately uses `mail`:
+PowerSchool's `principalemail` is the AD address, and all 12 schools match on
+it.
+
+### Student email and state id are omitted
+
+Both are optional in ParentSquare's spec and both are excluded at Ops' request
+(2026-08-04):
+
+- **`student_email`** — populating it makes ParentSquare send its automatic
+  account-creation invitation to every student in the file, ~6,800 for Newark.
+  Student logins are not part of this deployment, so the column is dropped
+  rather than sent and suppressed downstream.
+- **`state_student_id`** — no consumer on the ParentSquare side.
+
+Restoring either is a column add to `rpt_parentsquare__students` plus a
+properties entry; both values are already present on
+`int_extracts__student_enrollments`, so no upstream change is involved.
 
 ### Credential wiring
 
@@ -406,9 +439,8 @@ Referential integrity holds in both directions across the whole set — no orpha
 `school_id`, `student_id`, `section_id`, or `staff_id`; no section without
 students; no student without a roster row. No contact row lacks both email and
 phone, no phone is other than 10 digits, every school has a resolved principal
-name, and `state_student_id` / `student_email` are unique as ParentSquare's spec
-requires. The `state_excludefromreporting = 0` filter yields exactly the 12
-schools Newark students actually attend.
+name. The `state_excludefromreporting = 0` filter yields exactly the 12 schools
+Newark students actually attend.
 
 ## Open questions
 

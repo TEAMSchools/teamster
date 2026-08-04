@@ -5,7 +5,10 @@ models:
       in the current academic year, including pre-registered students, who
       ParentSquare represents as incoming. Delivered as a full snapshot each
       run. Every value is emitted as a string because ParentSquare ingests all
-      fields as text.
+      fields as text. Two optional spec fields are deliberately absent — student
+      email, because populating it makes ParentSquare mail an account-creation
+      invitation to every student in the file and student logins are out of
+      scope, and the state student id, which has no ParentSquare consumer.
     columns:
       - name: student_id
         data_type: string
@@ -79,12 +82,6 @@ models:
                   - "12"
               config:
                 severity: error
-      - name: student_email
-        data_type: string
-        description: The student's KIPP email address.
-        config:
-          meta:
-            contains_pii: true
       - name: first_name
         data_type: string
         description: The student's given name.
@@ -94,14 +91,6 @@ models:
       - name: last_name
         data_type: string
         description: The student's family name.
-        config:
-          meta:
-            contains_pii: true
-      - name: state_student_id
-        data_type: string
-        description:
-          The student's New Jersey state identifier. Null where the state has
-          not issued one.
         config:
           meta:
             contains_pii: true

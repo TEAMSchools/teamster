@@ -22,7 +22,19 @@ with
         -- The group spans all four regions and both regional and school-based
         -- staff, so the scoping below is what reduces it to Newark regional
         -- Operations. LDAP join shape follows rpt_clever__staff.
-        select r.employee_number, r.job_title, r.given_name, r.family_name_1, r.mail,
+        -- `google_email` (@apps.teamschools.org), NOT the roster's `mail` /
+        -- `user_principal_name`, which are the AD/Exchange addresses
+        -- (@kippnj.org, @kippteamandfamily.org). The two never coincide for any
+        -- leader in this group, and ParentSquare authenticates these users
+        -- through Google — so an AD address here syncs a staff user nobody can
+        -- sign in as. This is where rpt_parentsquare__staff diverges from
+        -- rpt_clever__staff, whose consumer matches on AD.
+        select
+            r.employee_number,
+            r.job_title,
+            r.given_name,
+            r.family_name_1,
+            r.google_email,
         from {{ ref("stg_ldap__group") }} as g
         cross join unnest(g.member) as group_member_distinguished_name
         inner join
@@ -51,7 +63,7 @@ select
     o.job_title as title,
     o.given_name as first_name,
     o.family_name_1 as last_name,
-    o.mail as email,
+    o.google_email as email,
 
     s.school_id,
 
