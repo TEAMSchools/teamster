@@ -275,10 +275,14 @@ access policies above) — `queryRewrite` retains only the snapshot-anchor guard
   person's real context and collapse the design, not merely the gate. Tested on
   a Dev Mode deployment: a network-scoped caller pasting a school-scoped
   viewer's email as `cubeCloud.username` still got their own four-region scope,
-  so the injected block wins. Cube Cloud's merge is closed-source and the OSS
-  tree has no `cubeCloud` reference, so this is empirical, not guaranteed — a
-  falsy paste (`{"cubeCloud": null}`) is untested and would skip the gate.
-  Re-confirm after a Cube Cloud upgrade; do not treat it as settled.
+  so the injected block wins. It wins against a FALSY paste too: pasting
+  `{"cubeCloud": null, "groups": ["student-region"], "region_key": "<a region>"}`
+  returned the caller's own four-region scope rather than the single pasted
+  region, so the gate still fired AND the pasted `groups` / `region_key` were
+  both overwritten. The merge order is therefore
+  `{...paste, cubeCloud: realBlock}`, which makes the pasted value irrelevant.
+  Empirical, not guaranteed — Cube Cloud's merge is closed-source and the OSS
+  tree has no `cubeCloud` reference — so re-confirm after a Cube Cloud upgrade.
 - **Every securityContext field a policy interpolates MUST be returned by
   `access.buildSecurityContext`.** This is what makes the overwrite above a
   COMPLETE one, and it is the load-bearing assumption of the paste fix — not a

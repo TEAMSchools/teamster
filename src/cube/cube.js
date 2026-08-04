@@ -309,11 +309,17 @@ module.exports = {
     // the gate below. Tested on a Cube Cloud Dev Mode deployment: a
     // network-scoped caller pasting a school-scoped viewer's email as
     // `cubeCloud.username` still got their own four-region scope, so the injected
-    // block wins. Cube Cloud's merge is closed-source and the OSS tree carries no
-    // reference to `cubeCloud`, so this is an empirical result, not a guarantee.
-    // A falsy paste (`{"cubeCloud": null}`) was not tested explicitly; it would
-    // skip the gate below and return pasted groups, so re-confirm after any Cube
-    // Cloud upgrade rather than treating it as settled.
+    // block wins — including against a FALSY paste. Pasting
+    // `{"cubeCloud": null, "groups": ["student-region"], "region_key": "<a region>"}`
+    // returned the caller's own four-region scope, not the single pasted region:
+    // the gate still fired (so `cubeCloud: null` did not survive the merge) and
+    // the pasted `groups` + `region_key` were both overwritten. That is the merge
+    // order this gate needs, `{...paste, cubeCloud: realBlock}`, which makes the
+    // pasted VALUE irrelevant.
+    //
+    // Empirical, not guaranteed: Cube Cloud's merge is closed-source and the OSS
+    // tree carries no reference to `cubeCloud`, so re-confirm after a Cube Cloud
+    // upgrade rather than treating it as settled.
     //
     // Determinism matters: Cube caches the selected policies under a hash of
     // this context computed BEFORE the hook runs
