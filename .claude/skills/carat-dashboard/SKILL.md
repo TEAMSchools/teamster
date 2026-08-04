@@ -137,8 +137,26 @@ Foundation supplies these, usually as Excel. Tell the user:
 > and paste from Notepad. Pasting straight from Excel arrives as an image, and
 > hidden columns don't survive a copy at all.
 
-Ask for the **maximum raw score** per section too, so coverage can be checked
-against a known value rather than just against itself.
+**Derive the maximum raw score rather than asking for it.** Illuminate's
+question metadata exists before anyone sits the test, so coverage can be checked
+against an independent value instead of only against itself:
+
+```sql
+select
+  assessment_id,
+  count(*) as n_questions,
+  sum(maximum) as total_points_possible,
+  countif(is_extra_credit) as extra_credit_items
+from `teamster-332318.kipptaf_illuminate.stg_illuminate__dna_assessments__fields`
+where assessment_id in (<ids>)
+group by 1
+order by 1
+```
+
+`total_points_possible` is the value `Raw_Score_High` must reach on the top row.
+Verified for the SY26-27 four: 66 / 54 / 66 / 54, matching the sheet exactly,
+with no extra-credit items (when `extra_credit_items` is non-zero, decide
+whether those points belong in the denominator before trusting the total).
 
 Expect one table per subject per round. Real pastes are messy: descending sort,
 headers repeated mid-stream, data rows above the header, an extra `Percentage`
@@ -184,10 +202,30 @@ mcp__dagster__get_asset_materializations(
 )
 ```
 
-**Gate on `dagster/data_version`, not the timestamp.** This asset
-re-materializes often (observed three times in ~12 minutes) with an unchanged
-data version — a fresh timestamp alone does not mean your paste landed. A
-changed data version does.
+**`dagster/data_version` is useless as a signal here — do not gate on it.** It
+reads the same value on every materialization of this asset going back months,
+including ones that demonstrably changed content. The reason is in the tags:
+`dagster/input_data_version/kipptaf/google/sheets/kippfwd/act_scale_score_key`
+is `INITIAL` on every run, because the sheet source is a non-observable stub
+that never emits observations. The data version is therefore a hash of the code
+version plus a constant, and sheet edits cannot enter it. Gating on it means
+waiting forever and wrongly concluding the paste never landed.
+
+The timestamp is also weak on its own — this asset re-materializes often
+(observed three times in ~12 minutes) with no content change.
+
+**Use BigQuery time travel to prove the rows landed**, comparing the table now
+against a point before the paste:
+
+```sql
+select count(*) as rows_then
+from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__act_scale_score_key`
+  for system_time as of timestamp('<before the paste>')
+where Assessment_ID in (<ids>)
+```
+
+Zero then and non-zero now is direct evidence, independent of Dagster metadata.
+Use the materialization timestamp only to corroborate _when_ it happened.
 
 Searching for the model under a `kipptaf/google/sheets/...` prefix returns an
 empty list, which reads as "no such asset" rather than "wrong key."
