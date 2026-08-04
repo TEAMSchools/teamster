@@ -40,9 +40,14 @@ models:
           Focus marking-period id the grade was earned in. Focus stores this as
           text on this table alone, so it is cast to an integer here to match
           stg_focus__marking_periods and every other reference to a marking
-          period.
+          period. Tested not_null as well as for referential integrity —
+          relationships skips null foreign keys, so it alone would not catch the
+          column going empty.
         data_type: int
         data_tests:
+          - not_null:
+              config:
+                severity: error
           - relationships:
               arguments:
                 to: ref('stg_focus__marking_periods')

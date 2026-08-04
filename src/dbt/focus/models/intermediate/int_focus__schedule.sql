@@ -79,17 +79,18 @@ select
     c.course_hours,
     c.homeroom,
 
-    mp.title as marking_period_title,
-    mp.short_name as marking_period_short_name,
-    mp.type as marking_period_type,
-    mp.start_date as marking_period_start_date,
-    mp.end_date as marking_period_end_date,
+    mkp.title as marking_period_title,
+    mkp.short_name as marking_period_short_name,
+    mkp.type as marking_period_type,
+    mkp.start_date as marking_period_start_date,
+    mkp.end_date as marking_period_end_date,
 
 from student_schedule as s
 inner join
     {{ ref("stg_focus__course_periods") }} as cp
     on s.course_period_id = cp.course_period_id
 inner join {{ ref("stg_focus__courses") }} as c on s.course_id = c.course_id
+-- aliased mkp, not mp: schedule has its own mp column (the FY/SEM/QTR term code)
 left join
-    {{ ref("stg_focus__marking_periods") }} as mp
-    on s.marking_period_id = mp.marking_period_id
+    {{ ref("stg_focus__marking_periods") }} as mkp
+    on s.marking_period_id = mkp.marking_period_id

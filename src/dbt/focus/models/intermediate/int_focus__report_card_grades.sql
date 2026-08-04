@@ -28,21 +28,23 @@ select
     g.course_flag_1,
     g.course_flag_2,
 
-    mp.syear as marking_period_academic_year,
-    mp.title as marking_period_title,
-    mp.short_name as marking_period_short_name,
-    mp.type as marking_period_type,
-    mp.start_date as marking_period_start_date,
-    mp.end_date as marking_period_end_date,
+    mkp.syear as marking_period_academic_year,
+    mkp.title as marking_period_title,
+    mkp.short_name as marking_period_short_name,
+    mkp.type as marking_period_type,
+    mkp.start_date as marking_period_start_date,
+    mkp.end_date as marking_period_end_date,
 
     f1.label as course_flag_1_label,
 
     f2.label as course_flag_2_label,
 
 from {{ ref("stg_focus__student_report_card_grades") }} as g
+-- aliased mkp to match int_focus__schedule, where mp is already schedule's own
+-- term-code column
 left join
-    {{ ref("stg_focus__marking_periods") }} as mp
-    on g.marking_period_id = mp.marking_period_id
+    {{ ref("stg_focus__marking_periods") }} as mkp
+    on g.marking_period_id = mkp.marking_period_id
 -- Course Flag 1 and 2 are the only decodable custom fields on this table, and
 -- both read the same option list, so they are resolved with two joins here
 -- rather than in a dedicated __pivot model. District and School have no option
