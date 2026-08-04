@@ -7,6 +7,10 @@ models:
       so completion is a per-assignment flag rather than a per-question one.
       TNTP Insight and Gallup Q12 are excluded because both are administered
       outside Google Forms and never produce a trackable response here.
+      rpt_tableau__survey_links derives an equivalent completion column of its
+      own, nullable so it can also carry those two excluded surveys. The two
+      derivations are deliberately independent rather than one reading the
+      other, so neither view's consumers are coupled to the other's filters.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
