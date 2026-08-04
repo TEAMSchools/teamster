@@ -1,0 +1,77 @@
+models:
+  - name: rpt_parentsquare__emergency_contacts
+    description:
+      ParentSquare `emergency_contacts.csv` for KIPP Newark — one row per
+      emergency contact of a currently-enrolled student, drawn from the
+      Finalsite emergency-contact slots 1 through 4. Delivered as a full
+      snapshot each run. Rows carrying neither an email nor a phone are dropped,
+      since ParentSquare cannot reach them. Emergency contacts receive only
+      Smart and Urgent Alerts and get no ParentSquare account.
+    columns:
+      - name: contact_id
+        data_type: string
+        description:
+          Surrogate key over the student and their emergency slot, the contact
+          identifier ParentSquare requires. Keyed on the slot rather than on
+          `finalsite_contact_id` because emergency contacts are scalar custom
+          fields on the student's own Finalsite record — not linked contact
+          records — so `finalsite_contact_id` is null for every one of them and
+          (student, slot) is the true grain.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+      - name: student_id
+        data_type: string
+        description:
+          PowerSchool `student_number` of the student, as a string. Matches a
+          `rpt_parentsquare__students` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        data_type: string
+        description:
+          PowerSchool `school_number` of the student's school, as a string.
+          Matches a `rpt_parentsquare__schools` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: first_name
+        data_type: string
+        description:
+          The emergency contact's given name, taken from the Finalsite
+          emergency-slot fields rather than split out of a full-name string.
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        data_type: string
+        description:
+          The emergency contact's family name, taken from the Finalsite
+          emergency-slot fields rather than split out of a full-name string.
+        config:
+          meta:
+            contains_pii: true
+      - name: phone
+        data_type: string
+        description:
+          The emergency contact's best phone number as 10 digits, with the US
+          country code and any extension digits removed — mobile where present,
+          then home, work, and the untyped primary number. Null when they have
+          no phone on file, in which case `email` is present. A number that does
+          not reduce to exactly 10 digits is an upstream data-entry typo and is
+          dropped rather than sent in a form ParentSquare would reject.
+        config:
+          meta:
+            contains_pii: true
+      - name: email
+        data_type: string
+        description:
+          The emergency contact's email address. Null when they have none on
+          file, in which case `phone` is present.
+        config:
+          meta:
+            contains_pii: true

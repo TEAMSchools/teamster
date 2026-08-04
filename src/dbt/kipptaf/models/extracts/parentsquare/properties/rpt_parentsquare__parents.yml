@@ -1,0 +1,86 @@
+models:
+  - name: rpt_parentsquare__parents
+    description:
+      ParentSquare `parents.csv` for KIPP Newark — one row per household parent
+      of a currently-enrolled student, drawn from the Finalsite Household 1
+      Parent 1 and Parent 2 slots. Delivered as a full snapshot each run. Rows
+      carrying neither an email nor a mobile number are dropped, since
+      ParentSquare cannot create a contactable account without one. `parent_id`
+      is deliberately not emitted — ParentSquare then matches a parent across
+      their children by email and phone, which keeps one account per person
+      instead of one per child.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_id
+              - first_name
+              - last_name
+          config:
+            severity: error
+    columns:
+      - name: student_id
+        data_type: string
+        description:
+          PowerSchool `student_number` of the child, as a string. Matches a
+          `rpt_parentsquare__students` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        data_type: string
+        description:
+          PowerSchool `school_number` of the child's school, as a string.
+          Matches a `rpt_parentsquare__schools` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: first_name
+        data_type: string
+        description:
+          The parent's given name, taken from their Finalsite contact record
+          rather than split out of a full-name string.
+        config:
+          meta:
+            contains_pii: true
+      - name: last_name
+        data_type: string
+        description:
+          The parent's family name, taken from their Finalsite contact record
+          rather than split out of a full-name string.
+        config:
+          meta:
+            contains_pii: true
+      - name: relationship
+        data_type: string
+        description: The parent's relationship to the student.
+      - name: mobile
+        data_type: string
+        description:
+          The parent's mobile number as 10 digits, with the US country code and
+          any extension digits removed. Null when they have no mobile on file,
+          in which case `email` is present. A number that does not reduce to
+          exactly 10 digits is an upstream data-entry typo and is dropped rather
+          than sent in a form ParentSquare would reject.
+        config:
+          meta:
+            contains_pii: true
+      - name: secondary_phone
+        data_type: string
+        description:
+          The parent's voice fallback number as 10 digits — the typed home phone
+          where present, otherwise the work phone. Null when they have neither,
+          and subject to the same 10-digit validity rule as `mobile`.
+        config:
+          meta:
+            contains_pii: true
+      - name: email
+        data_type: string
+        description:
+          The parent's email address. Null when they have none on file, in which
+          case `mobile` is present.
+        config:
+          meta:
+            contains_pii: true
