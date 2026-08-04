@@ -1,0 +1,115 @@
+models:
+  - name: int_focus__report_card_grades
+    description: >-
+      Focus student report-card grades with marking-period context and decoded
+      course flags — one row per student per course per marking period, the same
+      grain as stg_focus__student_report_card_grades. Narrower than the original
+      Focus integration design intended — that design called for joining the
+      grade and grade-scale definition tables, but every Miami row is imported
+      course history whose report_card_grade_id and grade_scale_id are empty, so
+      there is nothing to join on. The letter grade, GPA points and credits are
+      already denormalized onto the row, and marking period is the one foreign
+      key that resolves. Revisit the design once Focus posts live report-card
+      grades in Miami. Internal-only — a rpt_ view must sit between this model
+      and any external consumer.
+    columns:
+      - name: student_report_card_grade_id
+        description: >-
+          Primary key — Focus student_report_card_grades id; one row per student
+          per course per marking period.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
+        description: >-
+          Focus school year start year the grade was earned in (e.g. 2025 =
+          2025-26). Spans years before the Focus rollout because the rows are
+          imported course history.
+      - name: schoolid
+        description: >-
+          Focus school id that recorded the grade — for imported history, the
+          school that received the import rather than the one the student
+          attended. school_number carries the originating school.
+      - name: student_id
+        description: Focus student id the grade belongs to.
+      - name: marking_period_id
+        description: Focus marking-period id the grade was earned in.
+      - name: grad_subject_id
+        description: >-
+          Focus graduation-subject id the course counts toward, populated only
+          where the import supplied a graduation-requirement mapping.
+      - name: course_num
+        description: State course number for the graded course.
+      - name: course_title
+        description: >-
+          Course name as it appeared on the imported transcript. Free text — the
+          course foreign key is empty on these rows, so it is not resolved
+          against stg_focus__courses.
+      - name: grade_title
+        description: >-
+          Letter grade earned, using the Focus grade titles (A through F plus
+          the non-letter marks N, NG, S and U).
+      - name: gpa_points
+        description: Unweighted GPA points the letter grade is worth.
+      - name: weighted_gpa_points
+        description: >-
+          GPA points the letter grade is worth after the course weight is
+          applied.
+      - name: credits
+        description: Credits the course was worth if passed.
+      - name: credits_earned
+        description: >-
+          Credits the student actually earned, which differs from credits when
+          the grade did not carry credit.
+      - name: affects_gpa
+        description: Whether the grade is included in GPA calculations.
+      - name: carries_credits
+        description: Whether the grade can earn credit toward graduation.
+      - name: course_history
+        description: >-
+          Whether the row is imported course history rather than a grade posted
+          in Focus. Y on every Miami row today.
+      - name: grade_level
+        description: >-
+          Zero-padded grade level the student was in when the grade was earned
+          (PK, KG, 01 through 12).
+      - name: district_number
+        description: Florida district number the imported grade originated in.
+      - name: school_number
+        description: >-
+          Zero-padded Florida school number the imported grade originated at.
+      - name: course_flag_1
+        description: >-
+          Course Flag 1 option code — the raw transcript annotation stored on
+          the row.
+      - name: course_flag_2
+        description: Course Flag 2 option code, drawn from the same option list.
+      - name: course_flag_1_label
+        description: >-
+          Readable Course Flag 1 annotation resolved from the custom-field
+          option crosswalk, such as Honors, Gifted or a state
+          course-substitution indicator.
+      - name: course_flag_2_label
+        description: >-
+          Readable Course Flag 2 annotation resolved from the same crosswalk as
+          course_flag_1_label.
+      - name: marking_period_academic_year
+        description: >-
+          School year the marking period itself belongs to. Compare with
+          academic_year to spot imported history pointed at a marking period
+          from another year.
+      - name: marking_period_title
+        description: Marking-period name from stg_focus__marking_periods.
+      - name: marking_period_short_name
+        description: Abbreviated marking-period name.
+      - name: marking_period_type
+        description: >-
+          Marking-period granularity (year, semester, quarter, progress period).
+      - name: marking_period_start_date
+        description: First date of the marking period.
+      - name: marking_period_end_date
+        description: Last date of the marking period.
