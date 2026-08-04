@@ -630,6 +630,7 @@ exposures:
     owner:
       name: Data Team
     depends_on:
+      - ref("rpt_tableau__survey_links")
       - ref("rpt_tableau__survey_completion")
       - ref("rpt_tableau__survey_responses")
     config:
