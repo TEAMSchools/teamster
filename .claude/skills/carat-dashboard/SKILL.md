@@ -234,6 +234,67 @@ empty list, which reads as "no such asset" rather than "wrong key."
 
 Run _Procedure: Audit sheet rows_, below. Report the results to the user.
 
+## Exception: PSAT 8/9 and PSAT 10 use official College Board tables
+
+**Status: partially specified.** The conversion tables are understood; the
+`Assessment_ID` values do not exist yet, so no rows can be finalized. Finish
+this section when the assessments are created in Illuminate.
+
+PSAT 8/9 and PSAT 10 do not follow the practice-SAT path above. They use College
+Board's **official** raw-score conversion tables, which differ in three ways
+that break assumptions elsewhere in this skill.
+
+**1. The source is a PDF, not an Excel paste.** In practice it arrives as a
+screenshot of the PDF. That is the weakest input in this whole workflow: a
+screenshot must be read by eye, so the transcription cannot be verified the way
+an Excel paste can. Mitigations, in order of preference:
+
+- Ask for the **PDF itself** and extract the table programmatically. A parsed
+  table is checkable; a transcribed one is a claim.
+- If only a screenshot exists, transcribe it twice **independently** — a second
+  reader (subagent) working blind from the same image — and diff the two. A
+  silent single-digit misread is otherwise undetectable, and every downstream
+  check will pass on wrong data.
+- Never present transcribed-from-image numbers as verified. Say they are
+  transcribed and unconfirmed until something independent corroborates them.
+
+**2. Use the `LOWER` column only.** The PDF presents each section as a
+`LOWER`/`UPPER` pair per raw score. Take `LOWER`, and derive
+`Raw_Score_Low`/`Raw_Score_High` by collapsing runs of consecutive raw scores
+that share the same `LOWER` value — the same collapse rule as the practice SAT.
+Ignore `UPPER` entirely.
+
+**3. The scale range is 120-720 per section, not 200-800.** This is the change
+with teeth. Both the audit's expectations and
+`scripts/build_scale_score_rows.py`'s guard
+(`min(scales) < 200 or max(scales) > 800`) are hard-coded to the SAT range and
+will reject valid PSAT rows. **Pending code change:** parameterize the range by
+test type before running the generator for PSAT. The failure is loud rather than
+silent, so it will not corrupt data — it will just block confusingly until
+fixed.
+
+**`Test_Type` values**: use `PSAT 8/9` and `PSAT10`. These match the `scope`
+values already in `int_assessments__college_assessment` (verified: `PSAT 8/9`,
+`PSAT10`, `PSAT NMSQT`, alongside `SAT` and `ACT`) and the `benchmark_group`
+prefixes in `_benchmark_calcs` (`PSAT 8/9_...`, `PSAT10/NMSQT_...`). Do not
+invent a new spelling — `_benchmark_calcs` folds `PSAT10` and `PSAT NMSQT` into
+one `PSAT10/NMSQT` threshold group, so the vocabulary is load-bearing beyond
+this sheet.
+
+**Grade level**: PSAT 8/9 is grades 8-9, PSAT 10 is grade 10, which puts these
+rows adjacent to the historical `× 10` rescale path. That guard is
+`scope = 'SAT' and subject_area in ('Reading', 'Writing') and grade_level in (9, 10)`.
+A PSAT row with `Subject = 'Reading and Writing'` does not match the subject
+list, so it does not fire today — but any future change to that predicate must
+not widen it to catch these.
+
+**Known unresolved anomaly in the PSAT 8/9 Reading and Writing table**: raw 65
+maps to 710 while raw 66 — a perfect raw score — maps to 700. A student
+answering everything correctly would score 10 points _below_ one who missed a
+question. This is either a typo in College Board's published table or a
+transcription error from the screenshot. Resolve against the PDF before entering
+these rows. Math has no such anomaly.
+
 ## Procedure: Audit sheet rows after an update
 
 Structural audit — one row per assessment, everything should be self-evident:
