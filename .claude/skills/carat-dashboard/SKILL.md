@@ -345,6 +345,89 @@ movement. This is consistent with the shipped SAT rows, which flatten raws 0-8
 to 200, so `LOWER` remains the convention — but expect the question and have
 this answer ready.
 
+## Goals — sources, authoritative values, and traps
+
+KIPP Forward owns the goals. Two source documents drive the SY26-27 rewrite:
+
+| Document                                  | Id                                             | Owner                          |
+| ----------------------------------------- | ---------------------------------------------- | ------------------------------ |
+| `SY26-27 SAT Strategy` (Google Doc)       | `1FKXrTW5TY_7ORnQOvIOp4XWuUgKAi04pi0vqj2emNWs` | `kkenny@apps.teamschools.org`  |
+| `SAT_GPA Goals Updated July 2026` (Sheet) | `1Mgfaxnte2M1N4_sfxhjeCe4oVpwBoaTTcSMfKXrkEuI` | `mmarrer@apps.teamschools.org` |
+
+Neither will be shared with the ADC service account, so tab names and cell
+addresses are unavailable — see `.claude/context/claude_ai_Google_Drive.md`.
+**Ask which tab, or ask for a paste.** Do not report a cross-tab discrepancy
+from a Drive MCP read; you cannot attribute content to a tab.
+
+**The goals sheet contains a deprecated tab named `DO NOT USE THESE`** holding a
+two-column `Class of / 1010+ SAT goal` table reading 23 / 28 / 33 percent. Those
+are dead. Reading the workbook flat makes them look authoritative.
+
+### Authoritative topline goals
+
+Percent of students hitting the benchmark **by end of junior year**, by
+graduating class. Confirmed identical in the strategy doc and the sheet's main
+nine-column table:
+
+| Class of | College Ready (1010+) | HS Grad Bar (890+) |
+| -------- | --------------------- | ------------------ |
+| 2027     | 22%                   | 45%                |
+| 2028     | 28%                   | 55%                |
+| 2029     | 34%                   | 60%                |
+| 2030     | 40%                   | 70%                |
+| 2031     | 47%                   | 80%                |
+
+### Thresholds
+
+Fourteen of the fifteen values hardcoded in
+`rpt_tableau__college_assessment_dashboard_benchmark_calcs` match the strategy
+doc. Two decisions have been taken:
+
+- **`EA/ED-Ready` is retired.** The three hardcoded entries — PSAT 8/9 and
+  PSAT10/NMSQT at 1100, SAT at 1200 — come out. SAT 1200 exists nowhere else, so
+  check for downstream filters on that `benchmark_group` before deleting.
+- **PSAT 8/9 HS-Ready is 790, not the hardcoded 800.** Fixed in the new goals
+  staging sheet rather than in code, so the number becomes data.
+
+Subject thresholds are currently split across two systems — the College-Ready
+tier (EBRW 480, Math 530) lives in `_benchmark_calcs`, the grad-bar tier (EBRW
+450, Math 440) lives in the goals sheet as `Board` metrics. Same concept, two
+homes.
+
+### Two dimensions the current schema cannot express
+
+`stg_google_sheets__kippfwd__goals` has no column for either, so the SY26-27
+goals are not a value-only sheet update:
+
+- **School year.** The sheet carries `College Ready goal SY26-27` _and_
+  `SY27-28` — the same goal with different percentages per year.
+- **Goal horizon.** `Goals by EOY 26-27` versus `Goals by 11th grade` — an
+  interim and a terminal target for the same cohort.
+
+Also unmodelled: per-school goals arrive as free text in one cell
+(`KHS: 52% NCA: 53% Lab: 69%`).
+
+### Practice is first-class in the strategy
+
+The strategy's third pillar commissions this work directly — track progress
+"across baseline, practice and actual exams" with "group and individual" growth,
+"overall and subject-specific". The testing calendar gives every grade a
+`Date 1 (Practice)` and a `Date 2 (official)`. Grade 11 has **two** official
+dates, so official administrations need round identity too, not just practice.
+
+### Where the new goals tab belongs
+
+Put it in the **existing** kippfwd workbook,
+`12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI`, which already backs
+`act_scale_score_key` and `kippfwd goals`. It is already readable by the BigLake
+connection that Sheets external tables use, so no new access has to be arranged
+— a different identity again from both the Drive MCP and ADC.
+
+Pin `sheet_range:` to the exact tab name. That is what makes a dbt source immune
+to a neighbouring `DO NOT USE THESE` tab. Note the shared-trigger cost: every
+Sheets source on one URI re-triggers together, so editing the goals tab also
+refreshes `act_scale_score_key`.
+
 ## Procedure: Audit sheet rows after an update
 
 Structural audit — one row per assessment, everything should be self-evident:
