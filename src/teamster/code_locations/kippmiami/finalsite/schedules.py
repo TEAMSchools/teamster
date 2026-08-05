@@ -8,13 +8,19 @@ finalsite_contacts_daily_asset_job_schedule = ScheduleDefinition(
     # tick history.
     name=f"{CODE_LOCATION}__finalsite__contacts__daily_asset_job_schedule",
     # 04:00 stays for the overnight refresh every other Finalsite consumer reads.
-    # 12:10 feeds the midday Focus import cycle: it runs after enrollment ops push
-    # the Finalsite SFTP export at 12:00, and int_finalsite__enrollment_lifecycle
-    # needs BOTH this API pull and that SFTP drop before the rpt_focus__* extracts
-    # mean anything. Miami is the only district on a midday tick, so the
-    # finalsite_api pool is uncontended then -- at 04:00 the four districts
-    # serialize and Miami has waited up to 46 minutes for a slot.
-    cron_schedule=["0 4 * * *", "10 12 * * *"],
+    # 12:05 feeds the midday Focus import cycle, firing alongside the Focus dlt
+    # pull rather than staggered behind it: they share no pool and neither gates
+    # the other (this API pull and the manually-pushed SFTP drop feed opposite
+    # sides of int_finalsite__enrollment_lifecycle; the dlt pull feeds the
+    # import-once anti-join). 12:05 rather than 12:00 because top-of-hour GKE
+    # Autopilot fan-out is the dominant cause of step-pod scheduling waits (3-9
+    # min), and because it leaves ops a few minutes' slop around the 12:00 manual
+    # SFTP push so both sides of the join share one cutoff.
+    #
+    # Miami is the only district on a midday tick, so the finalsite_api pool
+    # (limit 1) is uncontended then -- at 04:00 the four districts serialize and
+    # Miami has waited up to 46 minutes for a slot.
+    cron_schedule=["0 4 * * *", "5 12 * * *"],
     execution_timezone=str(LOCAL_TIMEZONE),
     target=[f"{CODE_LOCATION}/finalsite/contacts"],
     # Covers a full sequential pull plus GKE step-pod scheduling wait. The

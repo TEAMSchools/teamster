@@ -34,13 +34,23 @@ both:
    overnight on a schedule that is not ours to change. Without a manual push,
    the 12:45 delivery carries Finalsite data as of roughly 2:50 a.m. — silently,
    with no error and nothing on screen to notice. Push it after the noon cutoff,
-   every day.
+   every day. **This is Miami only** — no other region needs it.
+
+   **It does not have to be noon sharp.** Anything from about 11:55 to 12:05
+   lines the push up with the 12:05 Finalsite contacts pull, so both halves of a
+   student's record share one cutoff. Earlier is safe — it just moves the cutoff
+   earlier, and a student entered after it waits for tomorrow. The hard deadline
+   is roughly **12:29**: past that, the file may not be ingested and rebuilt in
+   time for the 12:45 delivery. A push at an odd time never sends wrong or
+   duplicate data — a student whose two halves straddle the cutoff is skipped
+   for the day, not half-imported.
+
 1. **Run the four Focus imports.** The pipeline only delivers files to Focus's
    `incoming/` folder; nothing imports them for you. The 12:45 delivery leaves a
    75-minute window before 2 p.m.
 
 > **Do not re-run the delivery after you have imported.** The pipeline decides
-> what Focus already has by reading a copy of Focus taken at 12:15 p.m., not
+> what Focus already has by reading a copy of Focus taken at 12:05 p.m., not
 > live Focus. Re-running the delivery before the next Focus sync at 2:45 p.m.
 > sends every record a second time and duplicates it in Focus. After 2:45 p.m. a
 > re-run is safe.
