@@ -22,6 +22,10 @@ models:
               - additional_location_name
           config:
             severity: error
+            where: >-
+              status = 'active' and (expiry_date is null or expiry_date >=
+              current_date('{{ var("local_timezone") }}')) and (grant_date is
+              null or grant_date <= current_date('{{ var("local_timezone") }}'))
       - dbt_utils.expression_is_true:
           arguments:
             expression: >-
