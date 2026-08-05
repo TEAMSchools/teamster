@@ -20,7 +20,7 @@ jq -r '.extraKnownMarketplaces | to_entries[] | .value.source.repo' "${SETTINGS}
 echo '--- Installing plugins ---'
 jq -r '.enabledPlugins | keys[]' "${SETTINGS}" |
   while read -r plugin; do
-    "${CLAUDE}" plugins install "${plugin}" || true
+    "${CLAUDE}" plugins install "${plugin}" --scope project || true
   done
 
 echo '--- Done ---'
