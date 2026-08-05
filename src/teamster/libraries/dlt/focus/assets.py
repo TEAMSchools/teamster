@@ -1,15 +1,24 @@
 from collections.abc import Iterator
 
+import dlt
+import sqlalchemy as sa
 from dagster import AssetExecutionContext, AssetKey, AssetSpec
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
-from dlt.sources.sql_database import remove_nullability_adapter, sql_database
+from dlt.extract.items import DataItemWithMeta
+from dlt.extract.source import DltSource
+from dlt.sources.sql_database import remove_nullability_adapter
+from dlt.sources.sql_database.helpers import table_rows
 from sqlalchemy import BigInteger
 from sqlalchemy.sql.sqltypes import _AbstractInterval
 from sqlalchemy.types import TypeEngine
+
+FOCUS_SOURCE_NAME = "focus"
+FOCUS_DB_SCHEMA = "public"
+FOCUS_CHUNK_SIZE = 50000
 
 
 class FocusDagsterDltTranslator(DagsterDltTranslator):
@@ -26,7 +35,7 @@ class FocusDagsterDltTranslator(DagsterDltTranslator):
                     self.code_location,
                     "dlt",
                     "focus",
-                    data.resource.explicit_args["table"],
+                    data.resource.name,
                 ]
             ),
             deps=[],
@@ -65,6 +74,77 @@ def interval_to_microseconds_adapter(col_type: TypeEngine) -> TypeEngine | None:
     return col_type
 
 
+def _build_focus_resource(
+    sql_database_credentials: ConnectionStringCredentials,
+    table_name: str,
+    db_schema: str | None = FOCUS_DB_SCHEMA,
+):
+    """Build one full-replace dlt resource for a Focus table.
+
+    Drives the exported ``table_rows`` generator rather than wrapping
+    ``sql_table``, so the resource can append
+    ``dlt.mark.materialize_table_schema()`` when the source yielded no data. A
+    table with 0 rows otherwise produces nothing dlt can act on, normalize drops
+    the package, and BigQuery never gets a table — leaving no target for a dbt
+    staging model (#4740). Same ``table_rows`` pattern as
+    ``libraries/dlt/powerschool/``.
+
+    The engine is created inside the generator, at extract time: the factory runs
+    at module import in the code location, which must not open a connection.
+    """
+
+    @dlt.resource(name=table_name, write_disposition="replace", parallelized=True)
+    def _focus_table() -> Iterator:
+        engine = sa.create_engine(sql_database_credentials.to_native_representation())
+        try:
+            saw_data = False
+
+            for item in table_rows(
+                engine=engine,
+                table=table_name,
+                metadata=sa.MetaData(schema=db_schema),
+                chunk_size=FOCUS_CHUNK_SIZE,
+                backend="pyarrow",
+                incremental=None,
+                table_adapter_callback=remove_nullability_adapter,
+                reflection_level="full_with_precision",
+                backend_kwargs={},
+                type_adapter_callback=interval_to_microseconds_adapter,
+                included_columns=None,
+                excluded_columns=None,
+                query_adapter_callback=None,
+                resolve_foreign_keys=False,
+            ):
+                # table_rows opens with a HintsMeta item carrying the reflected
+                # schema, then yields arrow tables. Only the latter is data.
+                if not isinstance(item, DataItemWithMeta):
+                    saw_data = True
+
+                yield item
+
+            if not saw_data:
+                yield dlt.mark.materialize_table_schema()
+        finally:
+            engine.dispose()
+
+    return _focus_table
+
+
+@dlt.source(name=FOCUS_SOURCE_NAME)
+def build_focus_source(
+    sql_database_credentials: ConnectionStringCredentials,
+    table_name: str,
+    db_schema: str | None = FOCUS_DB_SCHEMA,
+) -> Iterator:
+    """One-resource source. The name must stay `focus` — it is the dlt schema
+    name the destination's stored schema and state are keyed on."""
+    yield _build_focus_resource(
+        sql_database_credentials=sql_database_credentials,
+        table_name=table_name,
+        db_schema=db_schema,
+    )
+
+
 def build_focus_dlt_assets(
     sql_database_credentials: ConnectionStringCredentials,
     code_location: str,
@@ -74,15 +154,8 @@ def build_focus_dlt_assets(
     if op_tags is None:
         op_tags = {}
 
-    dlt_source = sql_database.with_args(name="focus", parallelized=True)(
-        credentials=sql_database_credentials,
-        schema="public",
-        table_names=[table_name],
-        defer_table_reflect=True,
-        backend="pyarrow",
-        reflection_level="full_with_precision",
-        table_adapter_callback=remove_nullability_adapter,
-        type_adapter_callback=interval_to_microseconds_adapter,
+    dlt_source: DltSource = build_focus_source(
+        sql_database_credentials=sql_database_credentials, table_name=table_name
     )
 
     dlt_pipeline = pipeline(
