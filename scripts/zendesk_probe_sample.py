@@ -24,6 +24,7 @@ Design reference:
 
 from __future__ import annotations
 
+import argparse
 import collections
 import csv
 import json
@@ -119,24 +120,51 @@ def clean(text: str, limit: int) -> str:
     return text[:limit].replace("\t", " ").replace("\n", " ")
 
 
-def main() -> int:
-    corpus = load_corpus()
+def select_pool(corpus: list[dict], pool: str) -> list[dict]:
+    """Tickets eligible for partition labeling.
 
-    pool = [
+    `uncategorized` is the subset the 20% kill criterion is actually measured
+    on, so it is the stratum worth deepening. `mixed` adds grant-lexicon
+    matches for a broader but less decision-relevant read.
+    """
+    uncategorized = [t for t in corpus if t["category"] is None]
+    if pool == "uncategorized":
+        return uncategorized
+    grant_matched = [
         t
         for t in corpus
-        if t["category"] is None or matches_grant_lexicon(first_public_reply_body(t))
+        if t["category"] is not None
+        and matches_grant_lexicon(first_public_reply_body(t))
     ]
+    return uncategorized + grant_matched
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--pool",
+        choices=("mixed", "uncategorized"),
+        default="mixed",
+        help="Ticket pool to sample from. Default mixed.",
+    )
+    parser.add_argument(
+        "--size", type=int, default=SAMPLE_SIZE, help="Rows to draw. Default 150."
+    )
+    args = parser.parse_args()
+
+    corpus = load_corpus()
+    pool = select_pool(corpus, args.pool)
 
     picked = stratified_sample(
         pool,
         lambda t: (t["academic_year"], t["group_id"]),
-        n=SAMPLE_SIZE,
+        n=args.size,
         seed=SEED,
     )
     picked.sort(key=lambda t: t["created_at"])
 
-    with (SCRATCH / "partition_sample.tsv").open(
+    suffix = "" if args.pool == "mixed" else f"_{args.pool}"
+    with (SCRATCH / f"partition_sample{suffix}.tsv").open(
         "w", newline="", encoding="utf-8"
     ) as f:
         writer = csv.writer(f, delimiter="\t")
@@ -170,8 +198,8 @@ def main() -> int:
                 ]
             )
 
-    print(f"pool: {len(pool)} tickets ({len(corpus)} in corpus)")
-    print(f"sample: {len(picked)} rows in partition_sample.tsv")
+    print(f"pool [{args.pool}]: {len(pool)} tickets ({len(corpus)} in corpus)")
+    print(f"sample: {len(picked)} rows in partition_sample{suffix}.tsv")
     print("\nLabel each row: self_inflicted | genuine | vendor_or_user_error")
     print("Choosing self_inflicted REQUIRES artifact_name and one_line_fix.")
     print("Kill criterion: under 20% self_inflicted in the uncategorized subset.")

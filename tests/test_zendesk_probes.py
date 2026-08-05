@@ -205,6 +205,48 @@ def test_first_agent_reply_falls_back_to_position_without_a_requester_id():
     assert reply_shape.first_agent_reply(ticket)["seq"] == 2
 
 
+def test_select_pool_uncategorized_takes_only_null_categories():
+    corpus = [
+        {"category": None, "requester_id": "1", "comments": []},
+        {
+            "category": "data__deanslist",
+            "requester_id": "1",
+            "comments": [
+                {"is_public": True, "author_id": "1", "plain_body": "help"},
+                {"is_public": True, "author_id": "9", "plain_body": "granted access"},
+            ],
+        },
+    ]
+    pool = sample_mod.select_pool(corpus, "uncategorized")
+    assert len(pool) == 1
+    assert pool[0]["category"] is None
+
+
+def test_select_pool_mixed_adds_grant_matches():
+    corpus = [
+        {"category": None, "requester_id": "1", "comments": []},
+        {
+            "category": "data__deanslist",
+            "requester_id": "1",
+            "comments": [
+                {"is_public": True, "author_id": "1", "plain_body": "help"},
+                {"is_public": True, "author_id": "9", "plain_body": "granted access"},
+            ],
+        },
+        {
+            "category": "data__grow",
+            "requester_id": "1",
+            "comments": [
+                {"is_public": True, "author_id": "1", "plain_body": "help"},
+                {"is_public": True, "author_id": "9", "plain_body": "runs Tuesdays"},
+            ],
+        },
+    ]
+    pool = sample_mod.select_pool(corpus, "mixed")
+    assert len(pool) == 2
+    assert {t["category"] for t in pool} == {None, "data__deanslist"}
+
+
 def test_sample_reply_body_also_skips_the_requester():
     ticket = {
         "requester_id": "111",
