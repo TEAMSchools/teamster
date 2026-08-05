@@ -10,8 +10,8 @@ and is validated by automated tests.
 
 ## What the pipeline does
 
-Each **nightly** run (3 a.m.) builds four files from current Finalsite data and
-delivers them to Focus over SFTP, matching Focus's import templates:
+Each **midday** run builds four files from current Finalsite data and delivers
+them to Focus over SFTP at **12:45 p.m. ET**, matching Focus's import templates:
 
 | File               | Focus template       | Status |
 | ------------------ | -------------------- | ------ |
@@ -19,6 +19,31 @@ delivers them to Focus over SFTP, matching Focus's import templates:
 | Student Enrollment | `STUDENT_ENROLLMENT` | Active |
 | Addresses          | `ADDRESS`            | Active |
 | Contacts           | `CONTACTS`           | Active |
+
+## The 2 p.m. commitment and the two manual steps
+
+The midday timing exists to support one promise: **a student entered in
+Finalsite by 12:00 p.m. ET is usable in Focus by 2:00 p.m. ET.** The promise
+covers **new students only** — a correction made in Finalsite to a student Focus
+already has never flows, at any hour (see _Where to make corrections_ below).
+
+Two steps in that chain are done by hand, and the 2 p.m. promise depends on
+both:
+
+1. **Push the Finalsite SFTP export at 12:00 p.m.** Finalsite's own export runs
+   overnight on a schedule that is not ours to change. Without a manual push,
+   the 12:45 delivery carries Finalsite data as of roughly 2:50 a.m. — silently,
+   with no error and nothing on screen to notice. Push it after the noon cutoff,
+   every day.
+1. **Run the four Focus imports.** The pipeline only delivers files to Focus's
+   `incoming/` folder; nothing imports them for you. The 12:45 delivery leaves a
+   75-minute window before 2 p.m.
+
+> **Do not re-run the delivery after you have imported.** The pipeline decides
+> what Focus already has by reading a copy of Focus taken at 12:25 p.m., not
+> live Focus. Re-running the delivery before the next Focus sync at 2:45 p.m.
+> sends every record a second time and duplicates it in Focus. After 2:45 p.m. a
+> re-run is safe.
 
 The pipeline is **import-once**: each run sends only records that Focus does not
 already have. Once a record has been imported, the pipeline never re-sends or
