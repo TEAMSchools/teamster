@@ -672,34 +672,42 @@ Tier 4 plus the peer exclusion and nothing else. Note `AcOps` carries no `All`.
 leadership sits in them, and without them none of Miami's 5,991 ITR rows reach
 any regional viewer.
 
-!!! warning "Peer means something different for MDO and AcOps than for MDSO and
-HOS"
+!!! warning "One helper, four viewer groups, and peer means something different
+to each"
 
-    One exclusion field now serves four viewer groups whose own titles differ.
     `RLS - ITR Respondent Is Regional Leadership` catches the HOS, managing
-    director, chief, president and executive director ranks — the peers of MDSOs
-    and heads of schools. It does not catch director-rank titles, and those sit
-    inside the entity gate in region entities:
+    director, chief, president and executive director ranks, plus `Director` in
+    the Operations department — 160 rows across 6 people in Miami, KCNA and TEAM,
+    which is the Syndicate's own level.
 
-    | Title | ITR rows | People | Entities |
-    | --- | --- | --- | --- |
-    | `Director` | 944 | 33 | TEAM, Miami, KCNA |
-    | `Associate Director` | 416 | 13 | TEAM, KCNA |
+    The department predicate is what makes that clause safe. `Director` alone is
+    944 rows across 33 people, most of them in Special Education, Student Support,
+    KIPP Forward and Teaching and Learning, who are not anyone's regional peer.
+    Exact-matching `DIRECTOR` also leaves `Associate Director of School Operations`
+    (209 rows) and `Fellow School Operations Director` (48 rows) visible, as
+    intended.
 
-    So **if AcOps or MDO members hold the bare title `Director`, they now read
-    each other's responses.** Nothing on Tableau Server exposes group membership
-    to a calculation or to this repo, so only someone who can open the group can
-    settle it.
-
-    If they do, the fix is not to add `DIRECTOR` to the shared helper — that would
-    also hide those 33 people from the MDSOs and heads of schools who supervise
-    them. Split branch 3 in two instead, one branch per viewer group with its own
-    exclusion.
+    **The trade to be aware of:** one shared helper serves all four viewer groups,
+    so excluding ops directors hides those 6 people from the MDSOs and heads of
+    schools who supervise them, not only from each other. If regional leadership
+    needs to see its own ops directors' intent to return, branch 3 has to split
+    into one branch per viewer group, each with its own exclusion. Nothing on
+    Tableau Server exposes group membership to a calculation, so which titles
+    belong to which group can only be settled by someone who can open the group.
 
     The achievement-director family (`Achievement Director`,
     `Director Literacy Achievement`, `Director Math Achievement` — 162 rows across
     10 people) needs no decision: all of it sits in the central office entity,
     which the region-scoped entity gate already excludes.
+
+!!! note "`The Syndicate` is not currently a viewer group here"
+
+    The exclusion above describes the Syndicate's level, but branch 3 grants to
+    `All MDSO`, `All HOS`, `All MDO` and `AcOps` only. The migration retired
+    `The Syndicate` network-wide and the remediation runbook lists it under
+    _Remove everywhere_. If Syndicate members are meant to reach their region on
+    this survey, the group has to be added to branch 3 — and that decision should
+    be recorded here, because it reverses a documented network-wide removal.
 
 #### The two peer-exclusion helpers
 
@@ -713,6 +721,11 @@ OR CONTAINS(UPPER([job_title]), 'MANAGING DIRECTOR')
 OR CONTAINS(UPPER([job_title]), 'CHIEF')
 OR CONTAINS(UPPER([job_title]), 'PRESIDENT')
 OR CONTAINS(UPPER([job_title]), 'EXECUTIVE DIRECTOR')
+// ops directors: the Syndicate's own level
+OR (
+    UPPER([job_title]) = 'DIRECTOR'
+    AND [home_department_name] = 'Operations'
+)
 ```
 
 ```text
