@@ -1,9 +1,11 @@
 from collections.abc import Iterator
+from typing import Any
 
 import dlt
 import sqlalchemy as sa
-from dagster import AssetExecutionContext, AssetKey, AssetSpec
+from dagster import AssetExecutionContext, AssetKey, AssetSpec, Config
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dlt import config as dlt_config
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
@@ -20,6 +22,19 @@ from sqlalchemy.types import TypeEngine
 FOCUS_SOURCE_NAME = "focus"
 FOCUS_DB_SCHEMA = "public"
 FOCUS_CHUNK_SIZE = 50000
+
+
+class FocusDltConfig(Config):
+    """Run config for the Focus dlt op.
+
+    `refresh` is unset on every scheduled run. It exists for the one-time
+    migration that recreates already-populated tables so they gain the
+    `_dlt_id` / `_dlt_load_id` columns — BigQuery refuses to add REQUIRED
+    columns to an existing table, so they must be dropped and reloaded
+    (`drop_resources`, #4740).
+    """
+
+    refresh: str | None = None
 
 
 class FocusDagsterDltTranslator(DagsterDltTranslator):
@@ -197,12 +212,33 @@ def build_focus_dlt_assets(
         pool=f"dlt_focus_{code_location}",
         op_tags=op_tags,
     )
-    def _assets(context: AssetExecutionContext, dlt: DagsterDltResource) -> Iterator:
+    def _assets(
+        context: AssetExecutionContext,
+        config: FocusDltConfig,
+        dlt: DagsterDltResource,
+    ) -> Iterator:
+        # Both knobs make the arrow data path carry `_dlt_id` / `_dlt_load_id`,
+        # which dlt's object path injects as REQUIRED when
+        # `materialize_table_schema()` creates an empty table. Without them the
+        # first real load into such a table fails with
+        # `Field _dlt_load_id is missing in new schema` (#4740). Set here, not at
+        # import: each step runs in its own pod, so it cannot leak to another
+        # pipeline. NOT `dlt.config` — `dlt` is the resource parameter here.
+        dlt_config["normalize.parquet_normalizer.add_dlt_id"] = True
+        dlt_config["normalize.parquet_normalizer.add_dlt_load_id"] = True
+
         # loader_file_format="parquet": BigQuery schema autodetection rejects the
         # empty jsonl file dlt writes to truncate a `replace` table whose source
         # went to 0 rows. See `replace` write-disposition in ../CLAUDE.md (#4733).
-        yield from dlt.run(
-            context=context, write_disposition="replace", loader_file_format="parquet"
-        )
+        run_kwargs: dict[str, Any] = {
+            "write_disposition": "replace",
+            "loader_file_format": "parquet",
+        }
+
+        if config.refresh is not None:
+            context.log.info(f"dlt refresh mode: {config.refresh}")
+            run_kwargs["refresh"] = config.refresh
+
+        yield from dlt.run(context=context, **run_kwargs)
 
     return _assets

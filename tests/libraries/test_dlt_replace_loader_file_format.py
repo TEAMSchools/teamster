@@ -37,7 +37,7 @@ class _RecordingDltResource:
         return iter(())
 
 
-def _run_kwargs(assets: Any) -> dict[str, Any]:
+def _run_kwargs(assets: Any, config: Any = None) -> dict[str, Any]:
     """Invoke the asset body with a recording resource and return its run kwargs.
 
     Nothing in the body touches the context or opens a connection before
@@ -45,8 +45,16 @@ def _run_kwargs(assets: Any) -> dict[str, Any]:
     """
     dlt_resource = _RecordingDltResource()
 
+    kwargs: dict[str, Any] = {"context": None, "dlt": dlt_resource}
+
+    # the focus op takes run config; the illuminate op does not
+    if "config" in assets.op.compute_fn.decorated_fn.__annotations__:
+        from teamster.libraries.dlt.focus.assets import FocusDltConfig
+
+        kwargs["config"] = config or FocusDltConfig()
+
     # consume the generator so the `yield from dlt.run(...)` line executes
-    list(assets.op.compute_fn.decorated_fn(context=None, dlt=dlt_resource))
+    list(assets.op.compute_fn.decorated_fn(**kwargs))
 
     return dlt_resource.kwargs
 
