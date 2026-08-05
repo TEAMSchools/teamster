@@ -654,6 +654,20 @@ OR (
         OR CONTAINS(UPPER([job_title]), 'LEARNING SPECIALIST')
     )
 )
+
+// 6. Departmental directors: their own department, and nobody
+//    holding any director title. No entity gate - the department
+//    spans regions.
+OR (
+    ISMEMBEROF('KNJ-SG-Tableau Special Education Directors')
+    AND [home_department_name] = 'Special Education'
+    AND NOT CONTAINS(UPPER([job_title]), 'DIRECTOR')
+)
+OR (
+    ISMEMBEROF('KNJ-SG-Tableau KIPP Forward Directors')
+    AND [home_department_name] = 'KIPP Forward'
+    AND NOT CONTAINS(UPPER([job_title]), 'DIRECTOR')
+)
 ```
 
 Note what is **absent** from Tier 2: `All Data`, `TEAM Council`, and
@@ -661,6 +675,48 @@ Note what is **absent** from Tier 2: `All Data`, `TEAM Council`, and
 and are deliberately excluded here. Those groups contain peers and subordinates
 of the people answering. `Leadership Development` carries no `KNJ-SG-Tableau`
 prefix — that is the real group name, not a typo.
+
+#### Branch 6 — the two departmental director groups
+
+`Special Education Directors` and `KIPP Forward Directors` are scoped to a
+**department** rather than an entity or a location, and their peer exclusion is
+the bluntest of the three: nobody holding **any** director title.
+
+`NOT CONTAINS(UPPER([job_title]), 'DIRECTOR')` is exact here rather than
+approximate, because neither department contains a chief, head of schools,
+managing director or executive director. The only director-titled people in
+either are:
+
+| Department        | Title                  | ITR rows | People |
+| ----------------- | ---------------------- | -------- | ------ |
+| Special Education | `Director`             | 224      | 7      |
+| KIPP Forward      | `Director`             | 144      | 4      |
+| KIPP Forward      | `Associate Director`   | 112      | 6      |
+| KIPP Forward      | `Achievement Director` | 16       | 1      |
+
+So the substring catches every peer and nothing above them, and no composed
+regional exclusion is needed. Note this is the one place `Associate Director`
+counts as a peer — these groups see no director of any rank, unlike the school
+branches where associate and fellow ranks stay visible.
+
+What each group does see: a special education director reaches
+paraprofessionals, learning specialists, ESE and ESL teachers, speech-language
+pathologists, school psychologists, occupational therapists, behaviour analysts
+and specialists, and the department's compliance manager. A KIPP Forward
+director reaches teachers, counsellors, college placement counsellors and
+fellows.
+
+!!! note "These two branches carry no entity gate, so they span regions"
+
+    A special education director in TEAM sees special education staff in Miami and
+    KCNA as well. That follows the shape of the pre-existing KIPP Forward branch,
+    which was also department-only, and it reads as intended for a network-wide
+    function — but it is a choice, not a consequence. Add `AND [RLS - Entity Gate]`
+    to scope either group to its own region.
+
+    If a third department group is ever added, factor
+    `NOT CONTAINS(UPPER([job_title]), 'DIRECTOR')` into its own field rather than
+    pasting it a third time.
 
 #### Branch 3's viewer set matches the canonical Tier 4
 
