@@ -4,14 +4,22 @@ Design spec for [#4739](https://github.com/TEAMSchools/teamster/issues/4739).
 
 ## Goal
 
-Identify the recurring request types in the Data team's Zendesk queue over two
-completed school years, identify the recurring responses behind them, and
-recommend — per cluster, on evidence — whether the right intervention is an
+Partition the Data team's Zendesk queue into tickets that should never have
+existed and tickets that represent genuine demand. For the genuine remainder,
+identify the recurring request types and the recurring responses behind them,
+and recommend — per cluster, on evidence — whether the right intervention is an
 automated reply, an agent macro, an AI-drafted suggestion, a link to an existing
 Help Center article, a change to intake, or nothing at all.
 
-Phase 1 is analysis. It produces a report and draft reply templates. It does not
-ship anything into Zendesk and adds no models to the warehouse.
+The partition comes first and it is load-bearing. This team owns the platform
+the tickets are about, so a request caused by its own design decision is a
+defect, not demand — and templating a defect's reply lowers the cost of the
+symptom until nobody funds the cure. See
+[Phase 0](#phase-0--the-self-inflicted-partition-gate).
+
+Phase 1 is analysis. It produces a report, a platform defect backlog, and draft
+reply templates. It does not ship anything into Zendesk and adds no models to
+the warehouse.
 
 ## Scope
 
@@ -120,6 +128,12 @@ matching the count the Zendesk API reports for that ticket.
 One known ceiling: 5 of the 4,608 tickets have `description` capped at exactly
 65,535 characters by the Airbyte sync. Read those five through the MCP.
 
+`fct_support_tickets` is **not** a usable base for this work, despite being the
+obvious candidate. It inner-joins submitters to `int_people__staff_roster`,
+which drops roughly a third of tickets (63,670 rows against 95,564 raw for the
+two years network-wide), and it carries no `group_id`, so it cannot express the
+scope filter at all. Read the raw source tables.
+
 ### Zendesk MCP, for exemplar reads
 
 `get_ticket_conversation` returns chronologically ordered entries with
@@ -171,9 +185,60 @@ their `get_ticket_conversation` output and confirm the retained text is the
 actual request or reply. A silent over-strip would suppress real clusters, so
 this check gates the rest of the work.
 
-## Signals across the full corpus
+## Phase 0 — the self-inflicted partition (gate)
 
-Run over all 4,608 tickets. Their purpose is to decide what gets read, not to
+Runs before any reply clustering, and gates it.
+
+The corpus splits two ways:
+
+- **Self-inflicted** — a platform defect this team owns and could remove. An
+  integration that silently drops records, a measure named to invite misreading,
+  an access model that needs a human for every grant, a dashboard with no
+  drill-through.
+- **Genuine** — new questions, one-off analyses, vendor outages, school-side
+  data entry. A real service-response problem, where macros and articles help.
+
+Classifying a ticket as self-inflicted requires **all three** of the following.
+Anything failing all three returns to the genuine pile, and the audit reports
+its demotion rate so a reader can see how hard the rubric bit:
+
+1. It resolved with no change outside the team's control.
+1. The resolving action is one of re-run, backfill, grant, or explain.
+1. At least N other tickets resolve the same way against the same named
+   artifact. Recurrence is what turns an incident into a defect.
+
+Two joins do most of the work without reading any text:
+
+- Ticket `created_at` landing shortly after a failed or late Dagster
+  materialization of an asset upstream of the artifact the ticket names. The
+  requester is functioning as the alert nobody built.
+- Any ticket resolved by a permission grant. Count distinct grantees per view —
+  a view needing thirty manual grants is one config bug, not thirty requests.
+
+The "this number looks wrong" genre splits by what happened next. A commit
+touching the referenced dbt model within ~14 days means a real defect plus a
+missing test. No code change plus a long explanatory reply means a naming or
+semantics defect, owned by whoever named the measure.
+
+Artifact names resolve against inventories the team already publishes — dbt
+models and exposures, Cube `meta`, Tableau views, Dagster asset keys,
+CODEOWNERS.
+
+**Region as a natural control.** One platform, four populations. Normalize
+tickets-per-artifact by active users per region and treat variance as the
+discriminator: uniform load means platform defect, a single-region spike means
+config, roster, or onboarding gap. This is the cheapest guard against the most
+expensive mislabel — rebuilding a dashboard that is fine everywhere except the
+one region that never got trained on it.
+
+**Kill criterion, committed before labeling starts.** If the self-inflicted rate
+in the uncategorized pool comes in under 20%, the thesis is wrong. Say so in the
+report and let clustering proceed against the whole corpus unchanged.
+
+## Signals across the genuine partition
+
+Run over the tickets Phase 0 classifies as genuine — or over all 4,608 if Phase
+0 hits its kill criterion. Their purpose is to decide what gets read, not to
 produce the deliverable.
 
 1. **Near-duplicate reply clusters.** MinHash over 5-gram shingles of the
@@ -188,7 +253,7 @@ produce the deliverable.
    reply, single-exchange rate, and the 344 no-public-reply tickets. High
    single-exchange rate plus low reply variance is the auto-reply signature.
 1. **Request-side sub-typing** within the six categories above 200 tickets, so
-   DeansList's 951 split into actual request types rather than staying one
+   DeansList's 930 split into actual request types rather than staying one
    label.
 1. **Article-link analysis.** The 216 article-linking tickets, resolved to the
    62 distinct articles, cross-tabulated against cluster. Produces both the
@@ -216,18 +281,27 @@ removes the clarifying round trip instead of scripting it.
 
 ## Mechanism assignment
 
-Per cluster, on evidence, from five options:
+Per cluster, on evidence, from six options. **Fix the platform is checked
+first** — every other row presumes the ticket should exist:
 
-| Mechanism       | Evidence required                                                                                         |
-| --------------- | --------------------------------------------------------------------------------------------------------- |
-| Link an article | A published article already answers it; agents link it inconsistently or not at all                       |
-| True auto-reply | Response is invariant after placeholder substitution, needs no judgment, and single-exchange rate is high |
-| Agent macro     | Response is stable in shape but an agent must fill or verify something                                    |
-| AI-drafted      | Intent is consistent, wording and specifics vary too much for fixed text                                  |
-| Do not automate | Low volume, high variance, or consequential enough that a wrong send costs more than the time saved       |
+| Mechanism        | Evidence required                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| Fix the platform | Phase 0 classified the cluster self-inflicted, with a named artifact and a buildable fix                  |
+| Link an article  | A published article already answers it; agents link it inconsistently or not at all                       |
+| True auto-reply  | Response is invariant after placeholder substitution, needs no judgment, and single-exchange rate is high |
+| Agent macro      | Response is stable in shape but an agent must fill or verify something                                    |
+| AI-drafted       | Intent is consistent, wording and specifics vary too much for fixed text                                  |
+| Do not automate  | Low volume, high variance, or consequential enough that a wrong send costs more than the time saved       |
 
 Every recommendation carries its supporting numbers — cluster size, variance
 measure, single-exchange rate — so the call is auditable rather than asserted.
+
+Self-inflicted clusters are additionally priced in annual hours: agent handle
+time (comment count times median minutes) plus requester wait time. Platform
+defects lose prioritization fights because their cost is diffuse and lands on
+other people's calendars, mostly teachers' and school leaders'. A number is
+usually the difference between a defect that gets discussed and one that gets
+scheduled.
 
 ## Named question: did the DeansList articles move volume?
 
@@ -243,6 +317,8 @@ on the premise of the whole project. Candidate explanations to test:
 - the articles exist but are not discoverable, and agents do not link them
 - ticket volume is driven by requests articles cannot satisfy (data pulls,
   permission grants, corrections to records)
+- **documenting a defect does not reduce demand for the defect** — the article
+  explains a workaround for something that should have been fixed
 - volume would have grown without them, so flat is a win
 
 Method: sub-type the DeansList tickets, compare sub-type mix across the two
@@ -250,11 +326,61 @@ years, and cross-reference each sub-type against the article set published in
 July 2025. A shift in mix under flat totals means something different from no
 shift at all.
 
+The fourth explanation gets its own cheap test — **read the Help Center as an
+inverted defect log**. Score every Data-relevant article as defect-documenting
+(it exists to explain a confusing metric name, document a workaround, or
+reconcile why this number differs from PowerSchool) versus genuinely
+instructional. The defect-documenting ones are bug reports with good SEO, and
+they route straight into the Phase 0 backlog. This needs no ticket-text
+extraction at all — the articles are already written, and whoever wrote them
+already prioritized them.
+
 Answering this honestly may weaken the case for reply automation. That is the
 point of asking it first.
 
+## Opening week
+
+Three probes, each half a day to a day, each with a kill criterion committed
+before it runs. None requires a branch, a model, or a code change. Their results
+decide whether the rest of this spec runs as written.
+
+1. **Partition probe.** Pull the 581 uncategorized tickets plus every ticket
+   whose first agent reply matches an access or grant lexicon. Stratified-sample
+   ~150 across both school years and all four regions. Hand-label three ways —
+   self-inflicted, genuine, vendor-or-user-error — where choosing self-inflicted
+   requires two mandatory fields: the artifact name and a one-sentence fix.
+   Output: a base rate plus roughly ten candidate artifacts. **Kill at under 20%
+   self-inflicted.**
+1. **Reply-shape probe.** Read the first agent reply on ~200 recently solved
+   tickets in `data_data_analysis_and_reports` and `data_blended_learning`. Code
+   each as pasted value, attached file, link to an existing object, or not a
+   data ask, plus a free-text question-shape slug. Output: what share of volume
+   is even number-shaped, and how many slugs recur. **Kill if fewer than ~20
+   slugs cover half the number-shaped volume** — that is a long tail, and a
+   re-runnable-object policy would be a tax rather than a saving.
+1. **Seasonality probe.** Count tickets by category and
+   week-offset-from-first-instructional-day per academic year. For the top five
+   cells consistent across both years, hand-tag whether the tickets inside are
+   the same ask or merely the same week. Output: whether seasonal pre-building
+   has a target at all. **Kill if no cell holds 10 or more same-ask tickets in
+   both years.**
+
+Week-offset, not calendar week: school calendars diverge across the four
+regions, particularly at year-end, so calendar-week grouping smears the very
+spikes it is meant to find.
+
+The seasonality probe has a fallback worth more than its parent. Even if no cell
+supports pre-building, multiplying forecast volume by median resolve time per
+category yields a load calendar the team can schedule its own project work,
+deploy freezes, and coverage around — all of the forecast's value, none of the
+speculative build.
+
 ## Deliverables
 
+1. **Platform defect backlog** — one row per artifact: ticket count, estimated
+   annual hours, named owner from dbt meta / CODEOWNERS / Dagster code location,
+   and a one-line fix. Any artifact with no nameable fix is demoted back to
+   genuine, and the demotion rate is reported.
 1. **Ticket-type map** — categories to sub-types, with volumes, year-over-year
    trend, and single-exchange rate.
 1. **Response-pattern catalog** — clusters with size, representative normalized
@@ -283,6 +409,8 @@ what leaves the machine.
   already near-identical copy-paste, which is a text-normalization problem
   rather than a clustering one. Reserved, not rejected.
 - No changes to Zendesk macros, triggers, forms, or Help Center articles.
+- Phase 0 **produces** the defect backlog; it does not work it. Fixing the
+  artifacts is separate, scheduled engineering with its own prioritization.
 - No other function's queue. Technology (21,179 tickets), Accounts Payable
   (20,206), Facilities (18,086), and HR (16,114) are deliberately excluded.
 
@@ -317,6 +445,17 @@ it stays local.
 
 ## Risks
 
+- **"Self-inflicted" is a counterfactual, and therefore elastic.** With enough
+  motivation any ticket becomes a platform defect — "we should have built a
+  clearer dashboard" — and the bucket inflates into a several-hundred-item
+  backlog nobody works, read by the team as blame rather than diagnosis.
+  Contained by the three-part rubric, the mandatory artifact-plus-fix fields,
+  and publishing the demotion rate.
+- **Reply text describes the fix, not the cause.** "Reran the sync" is written
+  identically for the team's own orchestration bug and for a vendor's malformed
+  file drop, so verb-based classification systematically over-attributes
+  external failures to the team. Every self-inflicted label needs a named
+  artifact the team actually owns, not just a matching verb.
 - **Normalization over-strips and suppresses real clusters.** Mitigated by the
   30-sample validation gate, which blocks the rest of the work until it passes.
 - **The two years are not comparable.** Five `data*` categories more than
