@@ -60,6 +60,7 @@ def stratified_sample(rows: list[dict], stratum_of, n: int, seed: int) -> list[d
     for row in rows:
         buckets[stratum_of(row)].append(row)
 
+    # trunk-ignore(bandit/B311): reproducible sampling, not a security context
     rng = random.Random(seed)
     ordered = sorted(buckets.items(), key=lambda kv: (-len(kv[1]), str(kv[0])))
 

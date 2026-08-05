@@ -61,6 +61,7 @@ EXPECTED = {
     "n_comments_with_attachments": 1082,
 }
 
+# trunk-ignore(bandit/B608): interpolates module constants only, no user input
 TICKETS_QUERY = f"""
 select
     t.id as ticket_id,
@@ -79,6 +80,7 @@ where date(t.created_at) between '{START_DATE}' and '{END_DATE}'
     and t.group_id in {GROUP_IDS}
 """
 
+# trunk-ignore(bandit/B608): interpolates module constants only, no user input
 COMMENTS_QUERY = f"""
 with scoped as (
     select id
