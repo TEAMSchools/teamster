@@ -97,6 +97,12 @@ def build_illuminate_dlt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource) -> Iterator:
-        yield from dlt.run(context=context, write_disposition="replace")
+        # loader_file_format="parquet": once a table has loaded data, a later 0-row
+        # extract still gets an empty file so `replace` truncates it. BigQuery
+        # schema autodetection rejects an empty jsonl file ("Schema has no
+        # fields"); an empty parquet carries the schema's columns, so it loads.
+        yield from dlt.run(
+            context=context, write_disposition="replace", loader_file_format="parquet"
+        )
 
     return _assets
