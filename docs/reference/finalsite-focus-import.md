@@ -36,15 +36,17 @@ both:
    with no error and nothing on screen to notice. Push it after the noon cutoff,
    every day. **This is Miami only** — no other region needs it.
 
-   **It does not have to be noon sharp.** Pushing a few minutes _before_ noon is
-   the cleanest — the pipeline's own Finalsite pull runs at 12:00, so a push
-   just ahead of it means both halves of a student's record share one cutoff.
-   Earlier than that is still safe; it only moves the cutoff earlier, and a
-   student entered after it waits for tomorrow. The hard deadline is roughly
-   **12:29**: past that, the file may not be ingested and rebuilt in time for
-   the 12:30 delivery. A push at an odd time never sends wrong or duplicate data
-   — a student whose two halves straddle the cutoff is skipped for the day, not
-   half-imported.
+   **The window is 12:00 to 12:15 — push at noon or just after, not before.** An
+   early push misses anything entered between it and the 12:00 cutoff, and those
+   students then wait for tomorrow. The late bound is **12:15**: past that, the
+   file may not be ingested and rebuilt in time for the 12:30 delivery. Most of
+   that 15 minutes is not the pipeline being slow — the sensor watching the SFTP
+   folder polls every 10 minutes, so in the worst case your file sits unnoticed
+   for 10 minutes after you drop it.
+
+   Nothing breaks if a push lands outside the window. A student whose record is
+   only half-captured is skipped for that day, not half-imported — there is no
+   way to send wrong or duplicate data to Focus by pushing at an odd time.
 
 1. **Run the four Focus imports.** The pipeline only delivers files to Focus's
    `incoming/` folder; nothing imports them for you. The imports themselves are

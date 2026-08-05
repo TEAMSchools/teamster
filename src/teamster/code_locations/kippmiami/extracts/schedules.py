@@ -20,10 +20,11 @@ focus_extract_assets_schedule = ScheduleDefinition(
     # any ordering between Finalsite and Focus: worst case ~16 min from push to
     # rebuilt (10 min couchdrop sensor poll + 2 min ingest + 3.5 min dbt). The
     # scheduled pulls need only 4-7 min. So the push deadline is always this time
-    # minus ~16 min -- currently ~12:14, i.e. 14 min after the noon cutoff. Moving
-    # this LATER is the only lever that buys ops more push tolerance, and there is
-    # ~90 min of slack before 2pm to spend if they turn out to need it. Anything
-    # before ~12:16 makes the push deadline land before noon, which contradicts the
+    # minus ~16 min, which gives ops a 12:00-12:15 push window. Pushing EARLY is
+    # not a safe fallback: it misses anything entered between the push and the noon
+    # cutoff. Moving this delivery LATER is the only lever that widens that window,
+    # and there is ~90 min of slack before 2pm to spend on it if ops needs it.
+    # Anything before ~12:16 puts the late bound before noon, which contradicts the
     # "entered by 12:00" promise outright.
     cron_schedule="30 12 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
