@@ -102,10 +102,9 @@ def build_focus_dlt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource) -> Iterator:
-        # loader_file_format="parquet": once a table has loaded data, a later 0-row
-        # extract still gets an empty file so `replace` truncates it. BigQuery
-        # schema autodetection rejects an empty jsonl file ("Schema has no
-        # fields"); an empty parquet carries the schema's columns, so it loads.
+        # loader_file_format="parquet": BigQuery schema autodetection rejects the
+        # empty jsonl file dlt writes to truncate a `replace` table whose source
+        # went to 0 rows. See `replace` write-disposition in ../CLAUDE.md (#4733).
         yield from dlt.run(
             context=context, write_disposition="replace", loader_file_format="parquet"
         )
