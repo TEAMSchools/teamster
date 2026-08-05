@@ -40,7 +40,7 @@ both:
    75-minute window before 2 p.m.
 
 > **Do not re-run the delivery after you have imported.** The pipeline decides
-> what Focus already has by reading a copy of Focus taken at 12:25 p.m., not
+> what Focus already has by reading a copy of Focus taken at 12:15 p.m., not
 > live Focus. Re-running the delivery before the next Focus sync at 2:45 p.m.
 > sends every record a second time and duplicates it in Focus. After 2:45 p.m. a
 > re-run is safe.

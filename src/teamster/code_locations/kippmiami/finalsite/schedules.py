@@ -3,6 +3,9 @@ from dagster import MAX_RUNTIME_SECONDS_TAG, ScheduleDefinition
 from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 
 finalsite_contacts_daily_asset_job_schedule = ScheduleDefinition(
+    # "daily" is now twice a day. The name is kept as-is on purpose -- renaming
+    # mints a NEW Dagster+ schedule object and abandons this one's status and
+    # tick history.
     name=f"{CODE_LOCATION}__finalsite__contacts__daily_asset_job_schedule",
     # 04:00 stays for the overnight refresh every other Finalsite consumer reads.
     # 12:10 feeds the midday Focus import cycle: it runs after enrollment ops push
