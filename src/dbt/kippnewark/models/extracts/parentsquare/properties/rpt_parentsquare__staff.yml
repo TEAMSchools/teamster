@@ -1,0 +1,15 @@
+models:
+  - name: rpt_parentsquare__staff
+    columns:
+      - name: staff_id
+        data_type: string
+      - name: school_id
+        data_type: string
+      - name: email
+        data_type: string
+      - name: title
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string

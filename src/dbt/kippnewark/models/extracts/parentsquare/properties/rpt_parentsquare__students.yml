@@ -1,0 +1,15 @@
+models:
+  - name: rpt_parentsquare__students
+    columns:
+      - name: student_id
+        data_type: string
+      - name: school_id
+        data_type: string
+      - name: grade_level
+        data_type: string
+      - name: first_name
+        data_type: string
+      - name: last_name
+        data_type: string
+      - name: status
+        data_type: string
