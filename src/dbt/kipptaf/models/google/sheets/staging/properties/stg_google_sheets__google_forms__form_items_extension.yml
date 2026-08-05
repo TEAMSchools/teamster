@@ -9,8 +9,9 @@ models:
           department, which the Survey Dashboard routes to its most restricted
           audience. Several question abbreviations may share one code -- that is
           how departments that have merged are expressed. Purchasing questions
-          carry finance, and student recruitment questions carry
-          marketing_comms_enrollment.
+          carry finance, student recruitment questions carry
+          marketing_comms_enrollment, and facilities questions carry
+          real_estate_facilities.
         data_tests:
           - accepted_values:
               arguments:
@@ -18,13 +19,12 @@ models:
                   - advocacy
                   - compliance
                   - data
-                  - facilities
                   - finance
                   - human_resources_operations
                   - leadership_development
                   - marketing_comms_enrollment
                   - operations
-                  - real_estate
+                  - real_estate_facilities
                   - special_education
                   - talent_acquisition
                   - teacher_development
