@@ -21,11 +21,13 @@ Tableau Desktop / Tableau Cloud.
 Design:
 `docs/superpowers/specs/2026-08-04-survey-dashboard-department-gate-design.md`
 
-**Status:** Tasks 1 through 5 are done — the sheet carries both columns, the
-external is re-staged, and the whole chain builds against `staging` with the
-guard test passing and no fan-out. Task 6 (populating the taxonomy) is the next
-blocker and needs open question 1 decided. Tasks 7 through 10 are Tableau
-workbook edits.
+**Status:** Tasks 1 through 6 are done. The sheet carries both columns and 67
+populated rows across 14 agreed department codes, the external is re-staged, the
+chain builds against `staging` with both tests passing, and the join adds no
+rows (3,614,537 staged against 3,614,537 in production). Open question 1 is
+resolved — see _Department taxonomy_ below. Tasks 7 through 10 are Tableau
+workbook edits, blocked until this merges because the calculated fields cannot
+reference columns that do not exist yet.
 
 ## Global Constraints
 
@@ -485,7 +487,7 @@ per scope.
 - Modify:
   `src/dbt/kipptaf/models/google/sheets/staging/properties/stg_google_sheets__google_forms__form_items_extension.yml`
 
-- [ ] **Step 1: Fill in the sheet**
+- [x] **Step 1: Fill in the sheet**
 
 For every abbreviation that rates a department, enter the agreed code in column
 G and its label in column H. Leave both blank on `open_ended_*`, `*_overall_*`,
@@ -501,7 +503,7 @@ even when the code matches. Copy the pair down rather than retyping it. Task 2's
 test fails on any drift, but catching it in the sheet is cheaper than catching
 it in a failed build.
 
-- [ ] **Step 2: Pin the agreed list**
+- [x] **Step 2: Pin the agreed list**
 
 Add an `accepted_values` test to `rated_department_code`, replacing the
 placeholder list with the agreed codes. `accepted_values` passes nulls, so the
@@ -520,11 +522,36 @@ data_tests:
         severity: error
 ```
 
-- [ ] **Step 3: Verify nothing fanned out**
+- [x] **Step 3: Verify nothing fanned out**
 
 Re-run Task 5 Step 2 and Step 3. The functional-dependency test is now doing
 real work — a code entered inconsistently across two rows sharing an
 abbreviation fails it.
+
+---
+
+### Department taxonomy, as shipped
+
+Open question 1 is resolved. One code per function, with `regional_*` and
+`cmo_*` question families folded into the unprefixed function. Fourteen codes,
+pinned by `accepted_values` on `rated_department_code`:
+
+`compliance`, `data`, `development`, `finance`, `human_resources_operations`,
+`leadership_development`, `marketing_comms_enrollment`, `operations`,
+`real_estate_facilities`, `special_education`, `talent_acquisition`,
+`teacher_development`, `teaching_learning`, `technology`
+
+Three merges are not derivable from the question names and must be preserved on
+any future sheet edit:
+
+- `purchasing_*` carries `finance`.
+- `student_recruitment_*` and `sre_oe` carry `marketing_comms_enrollment`.
+- `real_estate_*` and `regional_facilities_*` both carry
+  `real_estate_facilities`.
+
+The retired `advocacy_*` questions carry `development`. Sixty-seven of the
+sheet's 403 populated rows carry a code; the rest rate no department and stay
+null, which the gate routes to its most restricted audience.
 
 ---
 
