@@ -279,18 +279,35 @@ playbook.
 
 ### Known gaps
 
-From the 2026-08-05 audit. Each needs a change in Tableau Desktop and a
-republish; the working checklist with exact edits is in `.claude/scratch/`,
+From the 2026-08-05 audit, reviewed the same day. Two are fixed, three are
+accepted, one is open. The working checklist is in `.claude/scratch/`,
 uncommitted because it names staff usernames.
 
-| #   | Workbook                          | Gap                                                                                                                                                             |
-| --- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` are on the `Home` dashboard and ungated — full roster names, employee numbers, job titles and completion status |
-| 2   | Miami Instructional Rubrics       | a correct `Permissions` field exists but is applied at no scope, so both data sheets are ungated                                                                |
-| 3   | Survey Dashboard                  | `Permissions - Support` still grants every central office staff member every row, and is the only gate on five sheets                                           |
-| 4   | Operations Systems                | `rpt_tableau__operations_ekg` has a group-only gate with no entity or location check, so any school leader sees every school                                    |
-| 5   | Federal Grants Timesheet Approval | no permission fields at all. Retirement is in flight                                                                                                            |
-| 6   | Leadership Development            | the entity gate has no Paterson branch, so Paterson rows are invisible to Paterson's leadership. Archival is in flight                                          |
+| #   | Workbook                          | Gap                                                                                                                                                              | Status                                                                                                                             |
+| --- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` were on the `Home` dashboard and ungated — full roster names, employee numbers, job titles and completion status | **Fixed** — five-tier gate built on `rpt_tableau__survey_completion`                                                               |
+| 2   | Miami Instructional Rubrics       | a correct `Permissions` field existed but was applied at no scope, so both data sheets were ungated                                                              | **Fixed** — field attached datasource-wide                                                                                         |
+| 3   | Survey Dashboard                  | `Permissions - Support` grants every central office staff member every row, and is the only gate on five sheets                                                  | **Accepted for now** — replaced by department scoping in [#4728](https://github.com/TEAMSchools/teamster/pull/4728)                |
+| 4   | Operations Systems                | `rpt_tableau__operations_ekg` has a group-only gate with no location check                                                                                       | **Open** — the broad groups are intentionally cross-regional; school leaders and DSOs need school scoping. Blocked upstream, below |
+| 5   | Federal Grants Timesheet Approval | no permission fields at all                                                                                                                                      | **Accepted** — intentional                                                                                                         |
+| 6   | Leadership Development            | the entity gate has no Paterson branch, so Paterson rows are invisible to Paterson's leadership                                                                  | **Accepted** — intentional                                                                                                         |
+
+Gap 4 is blocked on data, not on a calculation. Two of its details generalise
+beyond this workbook:
+
+- **A stale embedded extract makes a correct gate impossible to write.** The
+  model gained the full access contract in PR #4656 and prod carries all ten
+  roster columns, but the workbook's extract predates that and has none of them
+  — which is why its gate could only ever have been a flat group list. An
+  extract refresh is the first step of the fix, and worth checking on any
+  workbook whose gate looks unexpectedly crude.
+- **On a walkthrough or observation model there are two schools per row**: the
+  respondent's own location, and the location being observed. Scoping a school
+  leader by the respondent's location gives them "walkthroughs I performed", not
+  "walkthroughs of my school". The observed school is the one to gate on — and
+  here it arrives as a form dropdown value that does not always match the
+  canonical location names the Tableau groups are built from, so it needs
+  resolving through the location crosswalk before a gate can use it.
 
 The audit also found three dead permission fields, three legacy fields on
 SchoolMint Grow that are contained today only because a datasource-wide gate

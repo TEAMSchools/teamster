@@ -1057,23 +1057,127 @@ everything else does. If the answer is "none", that is the finding.
 ## Known gaps
 
 Found by the 2026-08-05 audit of all 11 shipped workbooks, which read the
-calculations out of the `.twbx` files. Ranked by severity. The working checklist
-with exact edits is in `.claude/scratch/tableau_permissions_audit/`, uncommitted
-because it names staff usernames.
+calculations out of the `.twbx` files, and reviewed with the owner the same day.
+The working checklist is in `.claude/scratch/tableau_permissions_audit/`,
+uncommitted because it names staff usernames.
 
-| #   | Workbook                          | Gap                                                                                                                                                                                                                                             |
-| --- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` are on the `Home` dashboard and **ungated** — full roster names, employee numbers, job titles, and completion status. `rpt_tableau__survey_completion` has no permission field in this workbook |
-| 2   | Miami Instructional Rubrics       | a correct five-tier `Permissions` exists and is **applied at no scope**, so both data sheets are ungated                                                                                                                                        |
-| 3   | Survey Dashboard                  | `Permissions - Support` still carries the unconditional `All Staff KTAF` branch, still grants `AcOps`, and is the only gate on five sheets                                                                                                      |
-| 4   | Operations Systems                | `rpt_tableau__operations_ekg`'s `Permissions` is 8 lines of group tests with no self clause, no entity gate, and no location gate — applied datasource-wide over 10 sheets                                                                      |
-| 5   | Federal Grants Timesheet Approval | no permission fields at all, 7 ungated data sheets. Retirement is in flight                                                                                                                                                                     |
-| 6   | Leadership Development            | `RLS - Entity Gate` has no Paterson branch, so Paterson rows are invisible to Paterson's own leadership. Archival is in flight                                                                                                                  |
+| #   | Workbook                          | Gap                                                                                                                                                                   | Status                                                                                                                          |
+| --- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` were on the `Home` dashboard and **ungated** — full roster names, employee numbers, job titles, and completion status | **Fixed** — five-tier gate built on `rpt_tableau__survey_completion`                                                            |
+| 2   | Miami Instructional Rubrics       | a correct five-tier `Permissions` existed and was **applied at no scope**, so both data sheets were ungated                                                           | **Fixed** — field attached datasource-wide                                                                                      |
+| 3   | Survey Dashboard                  | `Permissions - Support` carries the unconditional `All Staff KTAF` branch, still grants `AcOps`, and is the only gate on five sheets                                  | **Accepted for now** — replaced by department scoping in [#4728](https://github.com/TEAMSchools/teamster/pull/4728), Tasks 7-10 |
+| 4   | Operations Systems                | `rpt_tableau__operations_ekg`'s `Permissions` is 8 lines of group tests with no self clause and no location gate — applied datasource-wide over 10 sheets             | **Open** — see below                                                                                                            |
+| 5   | Federal Grants Timesheet Approval | no permission fields at all, 7 ungated data sheets                                                                                                                    | **Accepted** — intentional                                                                                                      |
+| 6   | Leadership Development            | `RLS - Entity Gate` has no Paterson branch, so Paterson rows are invisible to Paterson's own leadership                                                               | **Accepted** — intentional                                                                                                      |
 
-Three cleanups with no live leak: three dead permission fields, SchoolMint
-Grow's three legacy sheet-local fields (contained today only because a
-datasource-wide gate ANDs over them), and 16 by-name `USERNAME()` grants across
-five fields.
+Three cleanups with no live leak: two dead permission fields, SchoolMint Grow's
+three legacy sheet-local fields (contained today only because a datasource-wide
+gate ANDs over them), and 16 by-name `USERNAME()` grants across five fields.
+
+### Gap 3 — what #4728 already covers
+
+#4728 lists the Tableau slice as its Tasks 7-10: the `RLS - Department Gate`
+field, scoping the blanket KTAF grant, deleting
+`Permissions - Support (Preview)`, removing `The Syndicate`, and the #4656
+renames.
+
+Two of those are already done. The audit found **no**
+`Permissions - Support (Preview)` field and **no** `The Syndicate` reference in
+`Permissions - Support`. What remains is the department gate, the KTAF scoping,
+and the renames.
+
+### Gap 4 — Operations Systems
+
+The broad groups (`All Data`, `TEAM Council`, `All MDSO`, `All MDO`,
+`The Syndicate`) are intentionally cross-regional and stay. `All DSO` and
+`All SL` come out of the flat list and get scoped to their own school.
+
+That cannot be written yet, and the blocker is data rather than the calculation.
+
+**Why the field is a flat group list today.** The workbook's embedded extract is
+stale. The model gained the full access contract in `801303f80` (PR #4656) and
+prod carries all ten roster columns populated on all 3,577 rows — but the
+extract has 23 columns and none of them: no `location_clean_name`, no
+`home_business_unit_name`, no identity columns. Someone already hit this: the
+ekg datasource holds a `Region (copy)` field whose formula is just
+`[home_business_unit_name]`, pasted from `operations_pm` and referencing a
+column its own datasource does not have.
+
+**The trap once the columns arrive.** `location_clean_name` on this model
+describes **the respondent** — the person who performed the walkthrough —
+because the roster joins on `respondent_email`. The school being walked is a
+separate column, `[school]`, pivoted out of form item `669334db`. Scoping school
+leaders by `location_clean_name` would give them "walkthroughs I performed", not
+"walkthroughs of my school".
+
+**And `[school]` cannot be gated as-is.** It is a form dropdown value, and 5 of
+its 23 values disagree with the canonical location names the groups are built
+from:
+
+| `school` value                     | Canonical `location_clean_name`   | Resolves via crosswalk?            |
+| ---------------------------------- | --------------------------------- | ---------------------------------- |
+| `KIPP Cooper Norcross High School` | `KIPP Cooper Norcross High`       | yes                                |
+| `KIPP Hatch Academy`               | `KIPP Hatch Middle`               | yes                                |
+| `KIPP Sumner Academy`              | `KIPP Sumner Elementary`          | yes                                |
+| `KIPP Paterson Prep ES`            | `Paterson Prep Elementary School` | **no — absent from the crosswalk** |
+| `KIPP Paterson Prep MS`            | `Paterson Prep Middle School`     | **no — absent from the crosswalk** |
+
+Two details make this worse than a rename list. `KIPP Hatch Academy` and
+`KIPP Hatch Middle` both appear, as do `KIPP Sumner Academy` and
+`KIPP Sumner Elementary` — the same physical school under two labels, so a gate
+on the raw string silently denies half of that school's rows. And the two
+Paterson labels resolve to nothing: the crosswalk holds ten Paterson aliases and
+neither is among them, so **602 rows across 25 walkthroughs already carry a null
+`grade_band`**. That is a live defect independent of permissions.
+
+The fix, in order:
+
+1. **Ops appends two rows to the location crosswalk sheet** behind
+   `stg_google_sheets__people__location_crosswalk` — `name` to `clean_name`:
+   `KIPP Paterson Prep ES` to `Paterson Prep Elementary School`, and
+   `KIPP Paterson Prep MS` to `Paterson Prep Middle School`. This also clears
+   the 602 null `grade_band` rows, so it is worth doing regardless.
+1. **dbt surfaces the walked school's clean name.** The model already joins the
+   crosswalk on `school` for `grade_band`; it just does not select the clean
+   name from that join. One additive line in the `final` CTE:
+
+   ```sql
+   sc.location_clean_name as school_clean_name,
+   ```
+
+1. **Refresh the workbook's embedded extract** so the roster columns and
+   `school_clean_name` appear.
+1. **Build the gate.** Recreate `RLS - Location Gate` on the ekg datasource with
+   every branch testing `[school_clean_name]` rather than
+   `[location_clean_name]` — group names and the five bridges unchanged — then:
+
+   ```text
+   //Admin and all access - deliberately cross-regional
+   ISMEMBEROF('KNJ-SG-Tableau All Data')
+   OR ISMEMBEROF('Group Staff TEAM Council')
+   OR ISMEMBEROF('KNJ-SG-Tableau All MDSO')
+   OR ISMEMBEROF('KNJ-SG-Tableau All MDO')
+   OR ISMEMBEROF('KNJ-SG-Tableau The Syndicate')
+
+   //School leaders and DSOs - own school only, on the school walked
+   OR (
+       (ISMEMBEROF('KNJ-SG-Tableau All DSO') OR ISMEMBEROF('KNJ-SG-Tableau All SL'))
+       AND [RLS - Location Gate]
+   )
+   ```
+
+   No entity gate on the second clause: the location gate is already strictly
+   narrower, since every location belongs to exactly one entity.
+
+Verify on `detail_scores`, an ekg-only sheet — one school for a school leader,
+every school for an MDSO. Check a Hatch or Sumner leader specifically, since
+those are the two-label schools and both labels' rows should now appear.
+
+!!! note "This is the generalisable lesson"
+
+    A gate that looks unexplainably crude is often a stale extract rather than a
+    lazy author. Before rewriting one, check whether the columns it would need are
+    actually in the workbook's extract.
 
 ---
 
