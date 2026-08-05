@@ -1,4 +1,4 @@
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 
 import dlt
 import sqlalchemy as sa
@@ -9,6 +9,7 @@ from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 from dlt.extract.items import DataItemWithMeta
+from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
 from dlt.sources.sql_database import remove_nullability_adapter
 from dlt.sources.sql_database.helpers import table_rows
@@ -129,7 +130,7 @@ def _build_focus_resource(
     sql_database_credentials: ConnectionStringCredentials,
     table_name: str,
     db_schema: str | None = FOCUS_DB_SCHEMA,
-) -> Callable[[], Iterator]:
+) -> DltResource:
     """Build one full-replace dlt resource for a Focus table.
 
     Drives the exported ``table_rows`` generator (via `_focus_table_items`)
