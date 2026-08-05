@@ -10,15 +10,16 @@ models:
           audience. Several question abbreviations may share one code -- that is
           how departments that have merged are expressed. Purchasing questions
           carry finance, student recruitment questions carry
-          marketing_comms_enrollment, and facilities questions carry
-          real_estate_facilities.
+          marketing_comms_enrollment, facilities questions carry
+          real_estate_facilities, and the retired advocacy questions carry
+          development.
         data_tests:
           - accepted_values:
               arguments:
                 values:
-                  - advocacy
                   - compliance
                   - data
+                  - development
                   - finance
                   - human_resources_operations
                   - leadership_development
