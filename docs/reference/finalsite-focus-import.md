@@ -53,11 +53,13 @@ both:
    time you need — a student is usable in Focus within minutes of you running
    them, typically well before 1 p.m.
 
-> **Do not re-run the delivery after you have imported.** The pipeline decides
-> what Focus already has by reading a copy of Focus taken at 12:00 p.m., not
-> live Focus. Re-running the delivery before the next Focus sync at 2:45 p.m.
-> sends every record a second time and duplicates it in Focus. After 2:45 p.m. a
-> re-run is safe.
+> **Do not re-run the delivery after you have imported — ask the data team
+> first.** The pipeline decides what Focus already has by reading a copy of
+> Focus taken at 12:00 p.m., not live Focus. Re-run the delivery after you have
+> imported and it sends every record a second time, duplicating it in Focus. A
+> copy is taken again at 2:00 p.m., which normally clears it — but only if your
+> import finished before that copy was taken. If you imported late, 2:00 p.m. is
+> not enough, so check rather than assuming a time makes it safe.
 
 The pipeline is **import-once**: each run sends only records that Focus does not
 already have. Once a record has been imported, the pipeline never re-sends or
