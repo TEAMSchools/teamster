@@ -387,8 +387,7 @@ is its negation. Writing the shielded condition here without negating it grants
 the council exactly the rows meant to be hidden — the inversion is easy to miss
 because both forms read plausibly.
 
-!!! danger "The shield is only sufficient because the entity gate excludes
-central-office-on-central-office"
+!!! danger "The shield only works because the entity gate excludes KTAF-on-KTAF"
 
     The two are coupled, and that coupling is what a future edit is most likely to
     break. A shield sitting in one branch of an `OR` chain does nothing about the
@@ -430,8 +429,7 @@ typo, which has never matched anything.
 
 Keep `Group Staff NJ Regional` and `Group Staff MIA Regional`.
 
-!!! warning "Tier 3 has no Paterson clause in any of the 8 workbooks that carry
-it"
+!!! warning "No Tier 3 in any of the 8 workbooks names Paterson"
 
     Paterson is in NJ and appears in both the entity gate and the location gate,
     but never in Tier 3 — so NJ regional ops staff see TEAM and KCNA rows and not

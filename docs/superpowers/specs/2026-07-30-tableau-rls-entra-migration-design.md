@@ -660,8 +660,7 @@ directors.
 If a third department group is added, it reuses
 `RLS - ITR Respondent Is a Department Director` unchanged.
 
-!!! warning "Region-scoping leaves Miami's KIPP Forward staff with no
-departmental viewer"
+!!! warning "Miami KIPP Forward staff have no departmental viewer"
 
     Miami has 3 KIPP Forward respondents and **no** KIPP Forward director of its
     own — the zero in the last column is the tell. Before the entity gate was

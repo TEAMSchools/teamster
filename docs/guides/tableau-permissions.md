@@ -108,8 +108,7 @@ keep access to your older answers, and a new manager does not gain access to
 answers you gave before they managed you. And the free-text boxes carry the same
 restriction as the rest — there is no wider audience for comments.
 
-!!! warning "Peer exclusions are matched against the title you held when you
-answered"
+!!! warning "Peer exclusions match the title you held when you answered"
 
     Every attribute on a survey response is a snapshot from the moment it was
     given, while Tableau group membership is always current. So a school leader
