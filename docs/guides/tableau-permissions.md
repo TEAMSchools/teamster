@@ -659,35 +659,16 @@ prefix — that is the real group name, not a typo.
 
 #### The two peer-exclusion helpers
 
-Both enumerate titles explicitly. See below for why that beats a substring test
-here.
+They are shaped differently on purpose — see _Why one matches patterns and the
+other enumerates_ below.
 
 ```text
 // RLS - ITR Respondent Is Regional Leadership
-UPPER([job_title]) IN (
-    'HEAD OF SCHOOLS',
-    'MANAGING DIRECTOR',
-    'MANAGING DIRECTOR OF SCHOOL OPERATIONS',
-    'MANAGING DIRECTOR OF OPERATIONS',
-    'MANAGING DIRECTOR ACCOUNTING',
-    'MANAGING DIRECTOR, ACCOUNTING',
-    'MANAGING DIRECTOR OF GROWTH',
-    'MANAGING DIRECTOR OF TALENT ACQUISITION',
-    'MANAGING DIRECTOR OF TEACHING & LEARNING',
-    'DEPUTY CHIEF',
-    'CHIEF',
-    'CHIEF OF STAFF',
-    'CHIEF ACADEMIC OFFICER',
-    'CHIEF COLLEGE AND CAREER OFFICER',
-    'CHIEF DEVELOPMENT OFFICER',
-    'CHIEF EQUITY STRATEGIST',
-    'CHIEF EXECUTIVE OFFICER',
-    'CHIEF FINANCIAL OFFICER',
-    'CHIEF OPERATING OFFICER',
-    'CHIEF PEOPLE OFFICER',
-    'CO-PRESIDENT',
-    'EXECUTIVE DIRECTOR'
-)
+UPPER([job_title]) = 'HEAD OF SCHOOLS'
+OR CONTAINS(UPPER([job_title]), 'MANAGING DIRECTOR')
+OR CONTAINS(UPPER([job_title]), 'CHIEF')
+OR CONTAINS(UPPER([job_title]), 'PRESIDENT')
+OR CONTAINS(UPPER([job_title]), 'EXECUTIVE DIRECTOR')
 ```
 
 ```text
@@ -701,7 +682,10 @@ UPPER([job_title]) IN (
 OR [RLS - ITR Respondent Is Regional Leadership]
 ```
 
-#### Who these lists deliberately leave visible
+The Survey Dashboard displays this field with the caption `[Job Title]`. Use
+whatever the Data pane shows; `job_title` is the underlying contract column.
+
+#### Who these helpers deliberately leave visible
 
 A viewer is blocked from their **own level only**. Every rank below a peer, and
 every developing or associate version of a peer role, stays visible — those are
@@ -717,26 +701,41 @@ the people whose retention their leader is responsible for.
 | `School Operations Manager`                    | 899      | 27     | School leaders, DSOs, regional |
 | `Fellow` (unqualified)                         | 81       | 4      | School leaders, DSOs, regional |
 
-#### Why explicit titles rather than substring tests
+`Executive Assistant` is also visible, and is the reason the regional helper
+tests `EXECUTIVE DIRECTOR` rather than `EXECUTIVE` — bare `EXECUTIVE` once hid
+an executive assistant from the Team Council.
 
-An earlier version of these helpers used `CONTAINS`. It cannot express this
-policy without collapsing under its own exceptions.
+#### Why one matches patterns and the other enumerates
 
-`CONTAINS(UPPER([job_title]), 'SCHOOL LEADER')` catches `School Leader`, but
-also `Assistant School Leader` and `School Leader in Residence`, both of which
-must stay visible — so it needs
-`AND NOT ... 'ASSISTANT' AND NOT ... 'RESIDENCE'`. The DSO clause has the same
-problem in three directions: the title exists as both
-`Director School Operations` and `Fellow School Operations Director`, so a
-phrase test misses one and a two-word test catches both, then needs
-`NOT ... 'ASSOCIATE'` and `NOT ... 'FELLOW'` bolted on. Each carve-out is a
-place to be wrong, and the stack of negations stops reading as a policy anyone
-can check.
+The asymmetry is not an oversight. The two levels fail in opposite directions.
 
-The peer set is 26 titles. Enumerated, it **is** the policy — someone can read
-the list against an org chart and say yes or no. `EXECUTIVE ASSISTANT` existing
-in the same roster is a standing reminder of the alternative: bare `EXECUTIVE`
-once hid an executive assistant from the Team Council.
+**Regional titles proliferate.** New chief and managing-director variants appear
+regularly, and a list would be stale the week after it was written — the current
+roster already holds eight distinct `Managing Director` forms and eleven `Chief`
+forms. `CONTAINS` absorbs the next one automatically, and there is no
+non-leadership title on the roster containing `CHIEF`, `PRESIDENT`, or
+`MANAGING DIRECTOR`, so it over-reaches nowhere.
+
+**School peer titles have near-miss neighbours that must stay visible.** Here
+`CONTAINS` cannot express the policy without collapsing under exceptions.
+`CONTAINS('SCHOOL LEADER')` catches `School Leader`, but also
+`Assistant School Leader` and `School Leader in Residence`, so it needs
+`AND NOT ... 'ASSISTANT' AND NOT ... 'RESIDENCE'`. The DSO clause is worse: the
+title exists as both `Director School Operations` and
+`Fellow School Operations Director`, so a phrase test misses one while a
+two-word test catches both and then needs `NOT ... 'ASSOCIATE'` and
+`NOT ... 'FELLOW'` bolted on. Four negations to express four titles, each one a
+place to be wrong. Enumerated, the list reads as the policy and can be checked
+against an org chart.
+
+`HEAD OF SCHOOLS` uses `=` inside the pattern-matching helper for the same
+reason: `CONTAINS('HEAD OF SCHOOL')` would catch `Head of Schools in Residence`,
+which must stay visible. The cost is that a future variant such as
+`Head of Schools, Elementary` would not be caught. If those appear, the robust
+equivalent is
+`CONTAINS(UPPER([job_title]), 'HEAD OF SCHOOL') AND NOT CONTAINS(UPPER([job_title]), 'RESIDENCE')`.
+
+Two further points hold for both helpers:
 
 - **They test job title, not `job_function`.** This is the one place the guide
   contradicts _Field 4 of 5_, and the reason is data, not preference:
@@ -744,40 +743,49 @@ once hid an executive assistant from the Team Council.
   and **0% for 2019 through 2024**. `School Leader` appears on 63,644 rows of
   that extract with a job function set on 34 of them. Keying these helpers on
   `job_function` would be a no-op dressed as a principle. Revisit after
-  [#4631](https://github.com/TEAMSchools/teamster/issues/4631) backfills history
-  — at which point both lists collapse to a job-function test and the
-  maintenance problem below disappears.
-- **`SCHOOL LEADER` appears only in the school list.** School leaders and DSOs
-  are subordinates of regional leadership, so putting them in the regional list
-  would hide the 2,003 rows regional leaders most need.
-- **The school helper composes the regional one**, so a school leader or DSO
-  never sees above their own level either. Every regional-leadership response
-  currently sits at a Room and Rooms are absent from the location gate, so this
-  is insurance against a regional leader later being assigned a school location,
-  not a live fix.
+  [#4631](https://github.com/TEAMSchools/teamster/issues/4631) backfills
+  history, at which point both collapse to a job-function test.
+- **`SCHOOL LEADER` appears only in the school helper**, and the school helper
+  **composes the regional one**. School leaders and DSOs are subordinates of
+  regional leadership, so putting them in the regional helper would hide the
+  2,003 rows regional leaders most need; composing the other way keeps a school
+  leader from seeing above their own level. Every regional-leadership response
+  currently sits at a Room, and Rooms are absent from the location gate, so the
+  composition is insurance against a regional leader later being assigned a
+  school location rather than a live fix.
 
-!!! warning "An explicit list has to be re-audited when titles change"
+!!! warning "Re-audit after each survey wave"
 
-    This is the real cost of enumerating, and it fails silently in the unsafe
-    direction: a **new** leadership title is not in the list, so it is visible to
-    that person's peers until someone notices. Re-run this after each ITR wave and
-    compare the output against both lists.
+    Both helpers fail silently in the unsafe direction — an uncaught peer title is
+    visible to that person's peers until someone notices. The school list goes
+    stale when a title is added; the regional patterns go stale if a peer title
+    arrives using none of their five markers. This returns every
+    leadership-looking title that **neither** helper catches:
 
     ```sql
     select job_title, count(*) as rows_
     from `teamster-332318.kipptaf_tableau.rpt_tableau__survey_responses`
     where survey_title = 'Intent to Return Survey'
+      and upper(job_title) != 'HEAD OF SCHOOLS'
+      and not contains_substr(upper(job_title), 'MANAGING DIRECTOR')
+      and not contains_substr(upper(job_title), 'CHIEF')
+      and not contains_substr(upper(job_title), 'PRESIDENT')
+      and not contains_substr(upper(job_title), 'EXECUTIVE DIRECTOR')
+      and upper(job_title) not in (
+        'SCHOOL LEADER',
+        'DIRECTOR SCHOOL OPERATIONS',
+        'DIRECTOR CAMPUS OPERATIONS',
+        'DIRECTOR OF CAMPUS OPERATIONS'
+      )
       and regexp_contains(
-        upper(job_title),
-        r'CHIEF|PRESIDENT|MANAGING|HEAD OF|SCHOOL LEADER'
-        r'|DEPUTY|SCHOOL OPERATIONS|CAMPUS OPERATIONS'
+        upper(job_title), r'DIRECTOR|LEADER|HEAD|PRINCIPAL|SUPERINTENDENT'
       )
     group by job_title
     order by rows_ desc
     ```
 
-    Anything in that output that is a full peer and absent from the field is a
-    live gap.
+    Today every row it returns is a rank that should be visible. Anything in the
+    output that is a **full peer** is a live gap.
 
 #### Use the shared gates, not inline copies
 
