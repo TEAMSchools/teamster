@@ -21,9 +21,11 @@ Tableau Desktop / Tableau Cloud.
 Design:
 `docs/superpowers/specs/2026-08-04-survey-dashboard-department-gate-design.md`
 
-**Status:** Tasks 2, 3 and 4 shipped in PR #4728. Task 1 (the sheet) and Task 5
-(re-staging the external) are the immediate blockers — nothing built until they
-land. Tasks 6 through 10 follow.
+**Status:** Tasks 1 through 5 are done — the sheet carries both columns, the
+external is re-staged, and the whole chain builds against `staging` with the
+guard test passing and no fan-out. Task 6 (populating the taxonomy) is the next
+blocker and needs open question 1 decided. Tasks 7 through 10 are Tableau
+workbook edits.
 
 ## Global Constraints
 
@@ -59,26 +61,26 @@ lands, and the dbt tasks below will fail their build until it does.
 **Files:** none. Google Sheet `1OvJ95fuDCWVu9YQoVZnjauC8mdpgL4BmqdfqvgT7gAw`,
 tab `Form Items Extension`.
 
-- [ ] **Step 1: Append two header cells**
+- [x] **Step 1: Append two header cells**
 
 In row 1, set `G1` to `Rated Department Code` and `H1` to
 `Rated Department Name`. Column F is `URL ID` — the new columns go after it,
 with no blank column between.
 
-- [ ] **Step 2: Widen the named range**
+- [x] **Step 2: Widen the named range**
 
 The named range `src_google_forms__form_items_extension` currently covers
 columns A through F. Extend it to A through H: Data → Named ranges →
 `src_google_forms__form_items_extension` → edit the range to
 `'Form Items Extension'!A:H`.
 
-- [ ] **Step 3: Leave the value cells empty for now**
+- [x] **Step 3: Leave the value cells empty for now**
 
 Populating the codes is Task 6, which is blocked on the taxonomy decision. An
 empty column is the correct interim state: every code reads null, which the
 design routes to the restricted default.
 
-- [ ] **Step 4: Confirm the range**
+- [x] **Step 4: Confirm the range**
 
 Re-open Data → Named ranges and read the range back. It must say `A:H`, not
 `A1:H` or `A:F`.
@@ -424,7 +426,7 @@ Tasks 2 through 4 until this happens.
 
 **Files:** none.
 
-- [ ] **Step 1: Recreate the staging external**
+- [x] **Step 1: Recreate the staging external**
 
 ```bash
 uv run dbt run-operation stage_external_sources \
@@ -436,7 +438,7 @@ The selector is `<source_name>.<table_name>` — not project-qualified.
 `ext_full_refresh: true` is required; without it an existing table is skipped
 and the new columns never appear.
 
-- [ ] **Step 2: Build the chain**
+- [x] **Step 2: Build the chain**
 
 ```bash
 uv run dbt build --select stg_google_sheets__google_forms__form_items_extension+ \
@@ -448,7 +450,7 @@ Expected: the staging model, `int_google_forms__form__items`,
 `fct_survey_responses` all build, and the new functional-dependency test passes
 (trivially, while the column is empty).
 
-- [ ] **Step 3: Confirm the join added no rows**
+- [x] **Step 3: Confirm the join added no rows**
 
 Compare against prod, which does not yet have the join:
 
@@ -460,6 +462,14 @@ select
 
 Expected: equal. A staged count that is a multiple of prod means the mapping
 fanned out — the `distinct` is not holding, so re-check Task 2's test.
+
+Verified 2026-08-05: 3,614,503 staged and 3,614,503 prod — equal, so the join
+added no rows. `rated_department_code` is non-null on 0 rows, which is correct
+while the sheet columns are still empty. The guard test
+`stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation`
+passed. The one build failure in the run,
+`rpt_clever__enrollments__student_id_resolves_to_students_feed`, is pre-existing
+on `main` and has no lineage overlap with the survey chain.
 
 ---
 
