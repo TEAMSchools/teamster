@@ -61,11 +61,22 @@ columns.
 
 ## Empty source tables
 
-The PyArrow backend writes NO BigQuery table for a 0-row source extract (the
-asset still SUCCEEDS — no `rows_loaded`, `jobs: []`). A configured Focus table
-absent from `dagster_<district>_dlt_focus` is therefore **empty in the source**
-(Focus is mid-rollout in Miami), not an extraction failure — confirm via the
-asset materialization metadata before investigating.
+A 0-row source extract behaves differently before and after the table's first
+successful load, because dlt's empty-table handling keys off
+`seen_data_only=True`:
+
+- **Never loaded data**: the PyArrow backend writes NO BigQuery table and no
+  load jobs (the asset SUCCEEDS — no `rows_loaded`, `jobs: []`). A configured
+  Focus table absent from `dagster_<district>_dlt_focus` is therefore **empty in
+  the source** (Focus is mid-rollout in Miami), not an extraction failure —
+  confirm via the asset materialization metadata before investigating.
+- **Has loaded data before**: dlt emits an empty file so the `replace` root is
+  truncated. That file must be parquet or BigQuery autodetection fails the load
+  — hence `loader_file_format="parquet"` in `assets.py`. See _`replace`
+  write-disposition_ in `../CLAUDE.md` (#4733).
+
+So a Focus asset going quiet is not evidence the table is new, and a table
+emptying out is not a data loss — the truncate is the intended outcome.
 
 ## Testing Constraints
 
