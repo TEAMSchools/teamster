@@ -14,7 +14,8 @@ inner join
     and s.enroll_status in (0, -1)
 where
     cc.dateleft >= current_date('{{ var("local_timezone") }}')
-    and cc._dbt_source_relation not like '%kipppaterson%'
+    -- Miami rosters into Clever directly from Focus; excluded from all six feeds
+    and cc._dbt_source_relation not like '%kippmiami%'
 
 union all
 
@@ -30,4 +31,4 @@ select
 
     student_number as student_id,
 from {{ ref("stg_powerschool__students") }}
-where enroll_status in (0, -1) and _dbt_source_relation not like '%kipppaterson%'
+where enroll_status in (0, -1) and _dbt_source_relation not like '%kippmiami%'

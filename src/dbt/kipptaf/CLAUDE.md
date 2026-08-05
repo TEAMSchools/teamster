@@ -148,16 +148,19 @@ PII-tagged package model must re-declare it. Model level suffices for a
 
 ### Finalsite contact unions
 
-`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` are
-kipptaf `union_relations` views over per-region finalsite sources.
+`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` /
+`int_finalsite__student_address_of_record` /
+`int_finalsite__contact_address_of_record` are kipptaf `union_relations` views
+over per-region finalsite sources.
 
 - **Union CUTOVER regions, not merely api-enabled ones.** Miami has the
   finalsite api enabled with contacts data AND `powerschool_student_number`s, so
   unioning it into `int_finalsite__student_contacts` double-counts against the
   PowerSchool branch of `int_students__contacts` (the grain test catches it).
-  `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
-  and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
-  Newark rows (null prefix) never reach the Focus feeds.
+  `int_finalsite__contact_id_attributes` and
+  `int_finalsite__student_address_of_record` DO include Miami — Focus consumes
+  them, and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`,
+  so Newark rows (null prefix) never reach the Focus feeds.
 - **Source schema staging branch**: all four regions' finalsite sources
   (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
   `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
@@ -188,7 +191,7 @@ pass-throughs — they are the reconciliation layer (import-once / diff against
 current Focus via the `focus` package, which only kippmiami has). kipptaf
 `rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
 actual SFTP feed. Per feed: addresses/contacts/demographics import-once
-(presence anti-join, with a null/completeness gate #4320); enrollment diffs and
+(presence anti-join, with a null/street-line gate #4320); enrollment diffs and
 additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 

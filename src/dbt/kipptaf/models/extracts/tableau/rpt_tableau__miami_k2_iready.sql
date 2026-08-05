@@ -39,9 +39,7 @@ select
     up.relative_placement,
     up.rn_subject_test,
 
-    regexp_replace(
-        left(up.domain_name, length(up.domain_name) - 19), '_', ' '
-    ) as domain_name,
+    regexp_replace(up.domain_name, '_', ' ') as domain_name,
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as ar

@@ -403,3 +403,206 @@ test("STAFF_SENSITIVE_MEMBERS lists all gated sensitive columns", () => {
     "salary",
   ]);
 });
+
+// --- Internal user emulation (#4526) ---------------------------------------
+
+test("parseImpersonators: trims, lowercases, and drops empty entries", () => {
+  const set = a.parseImpersonators(" Admin@Apps.Teamschools.Org , ,b@x.org ");
+  assert.deepEqual([...set].sort(), ["admin@apps.teamschools.org", "b@x.org"]);
+});
+
+test("parseImpersonators: an unset variable yields an empty set", () => {
+  assert.equal(a.parseImpersonators(undefined).size, 0);
+  assert.equal(a.parseImpersonators("").size, 0);
+});
+
+test("isImpersonator: membership is case-insensitive; absent email is false", () => {
+  const set = a.parseImpersonators("admin@x.org");
+  assert.equal(a.isImpersonator("ADMIN@x.org", set), true);
+  assert.equal(a.isImpersonator("someone@x.org", set), false);
+  assert.equal(a.isImpersonator(null, set), false);
+});
+
+test("resolveEmulationTarget: an impersonator resolves the requested target", () => {
+  const r = a.resolveEmulationTarget({
+    callerEmail: "admin@x.org",
+    requestedTarget: "teacher@x.org",
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.deepEqual(r, {
+    caller: "admin@x.org",
+    target: "teacher@x.org",
+    emulating: true,
+  });
+});
+
+test("resolveEmulationTarget: a NON-impersonator gets their OWN scope, not the target", () => {
+  // The critical negative case: supplying a target must never elevate.
+  const r = a.resolveEmulationTarget({
+    callerEmail: "teacher@x.org",
+    requestedTarget: "superintendent@x.org",
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.equal(r.target, "teacher@x.org");
+  assert.equal(r.emulating, false);
+});
+
+test("resolveEmulationTarget: the returned emails keep their original case", () => {
+  // resolveAccess queries `WHERE google_email = @email` and keys its cache on
+  // the raw string, so lowercasing here would change resolution for every
+  // request. Membership matching is case-insensitive; the value passed
+  // downstream is not rewritten.
+  const r = a.resolveEmulationTarget({
+    callerEmail: "Admin@X.org",
+    requestedTarget: "Teacher@X.org",
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.equal(r.caller, "Admin@X.org");
+  assert.equal(r.target, "Teacher@X.org");
+  assert.equal(r.emulating, true);
+});
+
+test("resolveEmulationTarget: a non-emulated caller is passed through unchanged", () => {
+  // The regression guard for every ordinary request: the email reaching
+  // resolveAccess must be byte-identical to the one in the token.
+  const r = a.resolveEmulationTarget({
+    callerEmail: "MixedCase@Apps.Teamschools.Org",
+    requestedTarget: null,
+    impersonators: a.parseImpersonators(""),
+  });
+  assert.equal(r.target, "MixedCase@Apps.Teamschools.Org");
+  assert.equal(r.emulating, false);
+});
+
+test("resolveEmulationTarget: no requested target is not an emulation", () => {
+  const r = a.resolveEmulationTarget({
+    callerEmail: "admin@x.org",
+    requestedTarget: null,
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.deepEqual(r, {
+    caller: "admin@x.org",
+    target: "admin@x.org",
+    emulating: false,
+  });
+});
+
+test("resolveEmulationTarget: targeting yourself is not an emulation", () => {
+  // Keeps the audit log free of no-op self-emulation lines.
+  const r = a.resolveEmulationTarget({
+    callerEmail: "admin@x.org",
+    requestedTarget: "ADMIN@x.org",
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.equal(r.emulating, false);
+});
+
+test("resolveEmulationTarget: an absent caller can never emulate", () => {
+  const r = a.resolveEmulationTarget({
+    callerEmail: null,
+    requestedTarget: "superintendent@x.org",
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.deepEqual(r, { caller: null, target: null, emulating: false });
+});
+
+test("emulationInputsFromToken: caller is `email`, target is `act_as`", () => {
+  assert.deepEqual(
+    a.emulationInputsFromToken({ email: "admin@x.org", act_as: "t@x.org" }),
+    { callerEmail: "admin@x.org", requestedTarget: "t@x.org" },
+  );
+  assert.deepEqual(a.emulationInputsFromToken(undefined), {
+    callerEmail: null,
+    requestedTarget: null,
+  });
+});
+
+test("emulationInputsFromCubeCloud: caller is cubeCloud.username, target is email", () => {
+  assert.deepEqual(
+    a.emulationInputsFromCubeCloud({
+      email: "teacher@x.org",
+      cubeCloud: { username: "admin@x.org" },
+      iss: "cubecloud",
+    }),
+    { callerEmail: "admin@x.org", requestedTarget: "teacher@x.org" },
+  );
+});
+
+test("emulationInputsFromCubeCloud: falls back to userAttributes.email for the target", () => {
+  // Cube Cloud mirrors a pasted Security Context under cubeCloud.userAttributes
+  // as well as merging it into the top level, and 1.7.14 has been observed
+  // presenting only the mirror on follow-up requests within a session.
+  assert.deepEqual(
+    a.emulationInputsFromCubeCloud({
+      cubeCloud: {
+        username: "admin@x.org",
+        userAttributes: { email: "target@x.org" },
+      },
+      iss: "cubecloud",
+    }),
+    { callerEmail: "admin@x.org", requestedTarget: "target@x.org" },
+  );
+});
+
+test("emulationInputsFromCubeCloud: a top-level email wins over the mirror", () => {
+  assert.deepEqual(
+    a.emulationInputsFromCubeCloud({
+      email: "toplevel@x.org",
+      cubeCloud: {
+        username: "admin@x.org",
+        userAttributes: { email: "mirror@x.org" },
+      },
+    }),
+    { callerEmail: "admin@x.org", requestedTarget: "toplevel@x.org" },
+  );
+});
+
+test("emulationInputsFromCubeCloud: with no pasted context the console user is the target", () => {
+  // Cube Cloud with nothing typed into Security Context: the caller resolves as
+  // themselves, which is what fixes plain (non-emulated) Explore.
+  const inputs = a.emulationInputsFromCubeCloud({
+    cubeCloud: { username: "admin@x.org" },
+    iss: "cubecloud",
+  });
+  const r = a.resolveEmulationTarget({
+    ...inputs,
+    impersonators: a.parseImpersonators(""),
+  });
+  assert.equal(r.target, "admin@x.org");
+  assert.equal(r.emulating, false);
+});
+
+// --- Non-string identities from a pasted Cube Cloud context -----------------
+// On Cube Cloud the target (and, less commonly, the caller identity feeding
+// this function) is a pasted JSON value, so it can be an object or an array
+// just as easily as a string. A bare `.toLowerCase()` on a non-string used to
+// throw a TypeError out of contextToGroups — a 500 instead of a clean
+// decision. Coercing anything non-string to null treats "no usable identity"
+// as "no emulation," which fails closed without erroring. Verified this
+// throws under the old `callerEmail ?? null` / `requestedTarget ?? null`
+// coercion (temporarily reverted locally, restored — not committed).
+
+test("resolveEmulationTarget: a non-string requestedTarget from an impersonator caller yields no emulation, not a throw", () => {
+  const impersonators = a.parseImpersonators("admin@x.org");
+  for (const requestedTarget of [{ email: { a: 1 } }, ["x"], 42]) {
+    const r = a.resolveEmulationTarget({
+      callerEmail: "admin@x.org",
+      requestedTarget,
+      impersonators,
+    });
+    assert.deepEqual(r, {
+      caller: "admin@x.org",
+      target: "admin@x.org",
+      emulating: false,
+    });
+  }
+});
+
+test("resolveEmulationTarget: a non-string callerEmail resolves to no caller and no target", () => {
+  const r = a.resolveEmulationTarget({
+    callerEmail: { username: "admin@x.org" },
+    requestedTarget: "target@x.org",
+    impersonators: a.parseImpersonators("admin@x.org"),
+  });
+  assert.deepEqual(r, { caller: null, target: null, emulating: false });
+});

@@ -1,5 +1,15 @@
 models:
   - name: stg_google_sheets__finalsite__school_scaffold
+    description: >
+      Retired as a scaffold input. int_tableau__fresh_enrollment_scaffold now
+      derives every row type this sheet supplied -- per-grade membership from
+      PowerSchool and Focus, grade_level = -9 whole-school totals, and schoolid
+      = 0 region rollups. Disabled rather than deleted, per the archive
+      convention; confirmed no downstream consumers remain. The Google Sheet
+      document itself is outside dbt's control and is no longer read by any
+      pipeline. See docs/models/fresh-dashboard-data-model.md.
+    config:
+      enabled: false
     columns:
       - name: grade_level
         data_type: int64

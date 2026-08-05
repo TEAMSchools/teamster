@@ -29,6 +29,24 @@ models/
   school years) with the intended SIS action (`create` / `re_enroll` /
   `transfer_out`); SIS-agnostic (feeds both the Focus and PowerSchool
   receivers).
+- `int_finalsite__contacts__households` — one row per (contact, household), the
+  per-contact-household flattening off `stg_finalsite__contacts`'s raw
+  `households` array. Moved out of the staging layer since it reads a
+  contract-widened column on `stg_finalsite__contacts` rather than the raw
+  source directly; not contract-enforced (the `api/intermediate` directory
+  default), though every column still carries a `data_type` per convention.
+- `int_finalsite__contact_address_of_record` — one row per Finalsite contact
+  (students and adults alike) carrying that contact's resolved address. A
+  household is a candidate once it has a street line — completeness is
+  deliberately not required. A contact with several candidates gets the most
+  complete one, ties broken by lowest `household_id`, flagged `picked`; only a
+  contact with no street-bearing household at all gets no address.
+- `int_finalsite__student_address_of_record` — one row per student record (a
+  contact carrying a workflow status; adults sit at `not_in_workflow`) with the
+  resolved address of record: their primary contact's household when
+  `int_finalsite__contact_address_of_record` gives them one, else the student's
+  own, else no address and an `unresolved` flag. Also carries the primary
+  contact's phone, since student records almost never hold one.
 - `int_finalsite__contact_id_attributes` — pivots every `id_attributes` field to
   its own column, aliased to the original field name (`power_school_contact_id`,
   `powerschool_student_number`, `focus_student_id`). The PIVOT enumerates fields

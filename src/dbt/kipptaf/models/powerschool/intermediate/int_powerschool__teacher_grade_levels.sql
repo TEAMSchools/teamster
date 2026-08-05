@@ -15,6 +15,10 @@ with
                         "kippmiami_powerschool",
                         "int_powerschool__teacher_grade_levels",
                     ),
+                    source(
+                        "kipppaterson_powerschool",
+                        "int_powerschool__teacher_grade_levels",
+                    ),
                 ]
             )
         }}

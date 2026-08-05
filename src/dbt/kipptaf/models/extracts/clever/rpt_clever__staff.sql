@@ -17,8 +17,9 @@ with
         where
             not is_prestart
             and worker_status_code != 'Terminated'
-            -- Paterson gated from Clever until #4193; drop with the sibling feeds
-            and home_work_location_dagster_code_location != 'kipppaterson'
+            -- Miami rosters into Clever directly from Focus; excluded from all
+            -- six feeds
+            and home_work_location_dagster_code_location != 'kippmiami'
 
         union all
 
@@ -37,7 +38,12 @@ with
             department as home_department_name,
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
-        where dagster_code_location != 'kipppaterson'
+        where
+            dagster_code_location != 'kippmiami'
+            -- int_people__temp_staff gates on idauto_status and the AD account
+            -- flag, neither of which flips on offboarding. A populated
+            -- idauto_person_term_date is the only termination signal it carries.
+            and idauto_person_term_date is null
     ),
 
     schools as (
@@ -52,7 +58,7 @@ with
         from {{ ref("stg_powerschool__schools") }}
         where
             state_excludefromreporting = 0
-            and _dbt_source_relation not like '%kipppaterson%'
+            and _dbt_source_relation not like '%kippmiami%'
     ),
 
     assignments as (

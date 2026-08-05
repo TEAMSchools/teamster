@@ -89,7 +89,9 @@ SSH_RESOURCE_CLEVER = SSHResource(
     remote_port=22,
     username=EnvVar("CLEVER_SFTP_USERNAME"),
     password=EnvVar("CLEVER_SFTP_PASSWORD"),
-    timeout=30,
+    # No `timeout` override: 30s sits exactly ON paramiko's banner + handshake
+    # ceiling, which reintroduces the inversion in #4636. The `SSHResource`
+    # default (45s) already exceeds the 30s this was raised to.
 )
 
 SSH_RESOURCE_COUPA = SSHResource(
@@ -118,7 +120,9 @@ SSH_RESOURCE_ILLUMINATE = SSHResource(
     remote_port=22,
     username=EnvVar("ILLUMINATE_SFTP_USERNAME"),
     password=EnvVar("ILLUMINATE_SFTP_PASSWORD"),
-    timeout=30,
+    # No `timeout` override: 30s sits exactly ON paramiko's banner + handshake
+    # ceiling, which reintroduces the inversion in #4636. The `SSHResource`
+    # default (45s) already exceeds the 30s this was raised to.
 )
 
 SSH_RESOURCE_IDAUTO = SSHResource(
@@ -140,4 +144,19 @@ SSH_RESOURCE_LITTLESIS = SSHResource(
     remote_port=EnvVar.int("LITTLESIS_SFTP_PORT"),
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
+)
+
+# ParentSquare's district-level SFTP endpoint is sftp3.parentsquare.com; the
+# username is issued when the connection is created in the ParentSquare admin UI.
+# All three variables map to the `op-parentsquare-sftp` Secret at both
+# dagster-cloud.yaml insertion points. That Secret is synced by the
+# OnePasswordItem in .k8s/1password/items.yaml, which is applied by hand — a
+# secretKeyRef whose Secret or key does not exist fails container creation for
+# the whole code server, so the apply and a key-name check both precede any
+# deploy carrying these mappings.
+SSH_RESOURCE_PARENTSQUARE = SSHResource(
+    remote_host=EnvVar("PARENTSQUARE_SFTP_HOST"),
+    remote_port=22,
+    username=EnvVar("PARENTSQUARE_SFTP_USERNAME"),
+    password=EnvVar("PARENTSQUARE_SFTP_PASSWORD"),
 )

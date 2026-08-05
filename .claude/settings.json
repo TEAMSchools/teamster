@@ -101,9 +101,7 @@
       "Read(//workspaces/teamster/**)",
       "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(commit-commands:commit:*)",
-      "Skill(dbt:using-dbt-for-analytics-engineering:*)",
-      "Write(//workspaces/teamster/.claude/scratch/**)",
-      "Write(//workspaces/teamster/.worktrees/**)"
+      "Skill(dbt:using-dbt-for-analytics-engineering:*)"
     ],
     "deny": [
       "Bash(gcloud *)",
