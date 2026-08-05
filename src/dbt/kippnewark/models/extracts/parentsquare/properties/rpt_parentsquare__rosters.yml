@@ -1,0 +1,9 @@
+models:
+  - name: rpt_parentsquare__rosters
+    columns:
+      - name: student_id
+        data_type: string
+      - name: section_id
+        data_type: string
+      - name: school_id
+        data_type: string
