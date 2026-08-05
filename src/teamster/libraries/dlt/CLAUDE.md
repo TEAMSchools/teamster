@@ -138,6 +138,12 @@ changes on existing tables.
   for days starts failing the day its source goes to 0 rows; the destination
   table is already correctly truncated (dlt truncates autodetect tables before
   the load job), so there is no data to repair.
+- **Focus additionally materializes never-loaded tables** — its resource yields
+  `materialize_table_schema()` when the source has 0 rows, which requires the
+  `normalize.parquet_normalizer.add_dlt_*` knobs and made every Focus table gain
+  `_dlt_id` / `_dlt_load_id` (see `focus/CLAUDE.md`, #4740). Illuminate does NOT
+  do this: its one absent table is absorbed by the
+  `illuminate_repository_unpivot` macro's empty fallback.
 - `replace` never changes an existing table's column **mode** (not just type):
   an all-`NULLABLE` load into a table whose column is `REQUIRED` fails with BQ
   400 "changed mode from REQUIRED to NULLABLE". Drop the table so the pipeline
