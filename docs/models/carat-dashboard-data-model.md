@@ -95,23 +95,75 @@ type added upstream in future is therefore included automatically. That makes
 the view resilient to new assessments but means an unexpected score type appears
 in the scope columns without a code change.
 
-**Duplicate rows inflate averages slightly.** The upstream hub distinguishes
-some rows only by `rn_highest`, which this model does not project. Those rows
-arrive identical on every projected column, so roughly 260 of the 29,000 rows —
-under one percent — are exact duplicates. For a view whose only measure is an
-average, a duplicated score is double-weighted. The effect is small but
-non-zero, and it is inherited rather than introduced here.
+**This model is deduplicated, and the duplicates come from Salesforce.** See
+_Known issue — duplicate kippadb test records_ below. The model applies
+`dbt_utils.deduplicate` on `student_number`, `score_type`, `test_date`, and
+`scale_score`, which is lossless because those four columns functionally
+determine every other projected column. A uniqueness test on that key guards the
+deduplication, so new non-identical duplicates upstream fail loudly instead of
+shifting a reported average.
 
 **A small number of rows carry no graduation year.** Fewer than ten. They fall
 out of any grad-year-grouped view silently rather than appearing in an unknown
 bucket.
 
-### Convention gaps
+## Known issue — duplicate kippadb test records
 
-The contract is enforced through the `extracts/` directory default and the
-properties file lists every column with its type. Two conventions are unmet:
+**A long-standing source problem, not a modeling bug.** It is recorded here so
+that anyone reading a CARAT number knows it is understood rather than
+undiscovered. This is not the only duplication in the assessment data; it is the
+one traced end to end so far.
 
-- No uniqueness test, which `rpt_` models require. The natural key is not
-  currently unique because of the inherited duplicates above, so adding one
-  means either projecting `rn_highest` or deduplicating first.
-- No `description` on the model or any column.
+### What it is
+
+In `int_kippadb__standardized_test_unpivot`, 87 SAT sittings appear twice. Each
+pair is **two distinct Salesforce record ids** sharing the same contact, test
+date, and score — one real sitting entered twice. Measured on `sat_total_score`:
+
+| Copies per sitting | Sittings | Every copy is a separate Salesforce record |
+| ------------------ | -------- | ------------------------------------------ |
+| 1                  | 3,401    | yes                                        |
+| 2                  | 87       | yes, all 87                                |
+
+The duplication is confined to SAT. PSAT 8/9, PSAT 10, PSAT NMSQT, and ACT show
+none. Because the SAT unpivots into three score types, each duplicated sitting
+produces three duplicated rows — `sat_ebrw`, `sat_math`, and `sat_total_score` —
+for 258 excess rows reaching the reporting layer.
+
+### Two distinct effects
+
+**Averages were understated.** Before deduplication the SAT average on the
+landing-page view read 1013.41 where the deduplicated value is 1017.84 — roughly
+four points low, because the duplicated sittings happen to carry below-average
+scores. Now fixed in `_scores`.
+
+**Attempt counts are still inflated.** `rn_highest` in the official hub ranks
+the two copies as separate attempts, visible as rank patterns `1,2`, `1,3`, and
+`2,3`. Anything counting the hub with `count(*)` therefore credits a
+double-entered sitting as two attempts — including the `alt_attempts` CTE in
+`_over_time`, which is the count that actually determines the reported Attempts
+figure. Up to 87 students may read as having taken one more SAT than they did,
+which can move them across an `Attempts` goal threshold. **This is not fixed.**
+
+### Where it is and is not handled
+
+| Layer                                                | Status                                                |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| Salesforce / kippadb source                          | Not fixed — the real fix is deduplicating the records |
+| `int_kippadb__standardized_test_unpivot`             | Not deduplicated                                      |
+| `int_assessments__college_assessment` (official hub) | Not deduplicated                                      |
+| `rpt_tableau__college_assessment_dashboard_scores`   | **Deduplicated**, with a guarding uniqueness test     |
+| Attempt counts in `_over_time`                       | Not fixed                                             |
+
+Deduplicating in `_scores` was chosen over a source-layer fix so the reported
+averages stop being wrong today, without masking the problem where other
+consumers read it. The inline `TODO` in the model names the source fix so the
+workaround can be removed once the records are cleaned up.
+
+### One case that is not a duplicate
+
+Exactly one student has two rows with the same `score_type` and `test_date` but
+**different** scale scores. That is a genuine source disagreement, not a
+duplicate, so `scale_score` is deliberately part of the deduplication key and
+both rows survive. Collapsing on the three-column key would silently discard one
+of the two scores.
