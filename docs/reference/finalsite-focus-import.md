@@ -10,8 +10,8 @@ and is validated by automated tests.
 
 ## What the pipeline does
 
-Each **nightly** run (3 a.m.) builds four files from current Finalsite data and
-delivers them to Focus over SFTP, matching Focus's import templates:
+Each **midday** run builds four files from current Finalsite data and delivers
+them to Focus over SFTP at **12:45 p.m. ET**, matching Focus's import templates:
 
 | File               | Focus template       | Status |
 | ------------------ | -------------------- | ------ |
@@ -19,6 +19,47 @@ delivers them to Focus over SFTP, matching Focus's import templates:
 | Student Enrollment | `STUDENT_ENROLLMENT` | Active |
 | Addresses          | `ADDRESS`            | Active |
 | Contacts           | `CONTACTS`           | Active |
+
+## The 2 p.m. commitment and the two manual steps
+
+The midday timing exists to support one promise: **a student entered in
+Finalsite by 12:00 p.m. ET is usable in Focus by 2:00 p.m. ET.** The promise
+covers **new students only** — a correction made in Finalsite to a student Focus
+already has never flows, at any hour (see _Where to make corrections_ below).
+
+Two steps in that chain are done by hand, and the 2 p.m. promise depends on
+both:
+
+1. **Push the Finalsite SFTP export at 12:00 p.m.** Finalsite's own export runs
+   overnight on a schedule that is not ours to change. Without a manual push,
+   the 12:45 delivery carries Finalsite data as of roughly 2:50 a.m. — silently,
+   with no error and nothing on screen to notice. Push it after the noon cutoff,
+   every day. **This is Miami only** — no other region needs it.
+
+   **The window is 12:00 to 12:15 — push at noon or just after, not before.** An
+   early push misses anything entered between it and the 12:00 cutoff, and those
+   students then wait for tomorrow. The late bound is **12:15**: past that, the
+   file may not be ingested and rebuilt in time for the 12:45 delivery. From a
+   12:15 push the pipeline needs about 11 minutes to have everything rebuilt, so
+   the delivery clears it with roughly 19 minutes to spare.
+
+   Nothing breaks if a push lands outside the window. A student whose record is
+   only half-captured is skipped for that day, not half-imported — there is no
+   way to send wrong or duplicate data to Focus by pushing at an odd time.
+
+1. **Run the four Focus imports.** The pipeline only delivers files to Focus's
+   `incoming/` folder; nothing imports them for you. The imports themselves are
+   quick, so the 75 minutes between the 12:45 delivery and 2 p.m. is slack, not
+   time you need — a student is usable in Focus within minutes of you running
+   them, typically well before 1 p.m.
+
+> **Do not re-run the delivery after you have imported — ask the data team
+> first.** The pipeline decides what Focus already has by reading a copy of
+> Focus taken at 12:00 p.m., not live Focus. Re-run the delivery after you have
+> imported and it sends every record a second time, duplicating it in Focus. A
+> copy is taken again at 2:00 p.m., which normally clears it — but only if your
+> import finished before that copy was taken. If you imported late, 2:00 p.m. is
+> not enough, so check rather than assuming a time makes it safe.
 
 The pipeline is **import-once**: each run sends only records that Focus does not
 already have. Once a record has been imported, the pipeline never re-sends or
