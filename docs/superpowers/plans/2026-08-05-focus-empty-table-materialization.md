@@ -1009,11 +1009,15 @@ Use `.github/pull_request_template.md`. The body must state:
 - That the 11 staging models are a deliberate follow-up, and why (contract types
   need materialized tables).
 - The verification table from the spec, plus the offline test list.
-- **The migration is a required post-merge step**, not optional: launch the
-  Focus asset job once with run config `refresh: drop_resources` at a quiet
-  hour, then confirm all 77 tables. Until it runs, populated tables keep loading
-  exactly as today, and the 11 empty ones cannot be created — so the PR is inert
-  but safe if the migration is delayed.
+- **The migration is a required post-merge step, and deferring it is an
+  outage.** Launch the Focus asset job once with run config
+  `refresh: drop_resources`, then confirm all 77 tables. Until it runs, every
+  already-populated table FAILS to load: the knobs are pipeline-wide, the arrow
+  normalizer stamps both row-id columns non-nullable into every load file, and
+  dlt's BigQuery load job sets `ALLOW_FIELD_ADDITION` without
+  `ALLOW_FIELD_RELAXATION`, so BigQuery rejects each one with
+  `Cannot add required fields to an existing schema` — row 1 of the verification
+  table. Merge immediately before the migration window, not "whenever".
 - In the Dagster self-review section, note that
   `uv run dagster definitions validate` is not runnable in the Codespace for
   `kippmiami` (Focus credentials resolve eagerly at module load) and that the

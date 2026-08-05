@@ -104,3 +104,15 @@ def test_refresh_is_forwarded_when_set(focus_assets: Any) -> None:
     kwargs = _run(focus_assets, FocusDltConfig(refresh="drop_resources"))
 
     assert kwargs["refresh"] == "drop_resources"
+
+
+def test_unrecognized_refresh_raises(focus_assets: Any) -> None:
+    """A typo must fail loudly, not silently mean `drop_resources`.
+
+    dlt's `prepare_refresh_source` compares only against `drop_sources` and
+    `drop_data`, so any other non-None value takes the `drop_resources` branch
+    and recreates every table in the run. Dagster cannot validate this at launch
+    (its Pythonic config rejects a `Literal`), so the op guards it.
+    """
+    with pytest.raises(ValueError, match="refresh must be one of"):
+        _run(focus_assets, FocusDltConfig(refresh="drop_resource"))

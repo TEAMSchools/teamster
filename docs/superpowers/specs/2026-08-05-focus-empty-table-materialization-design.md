@@ -107,9 +107,10 @@ Every scheduled run keeps the default and behaves exactly as today.
   explicitly, and the 3 that use `select *` read through a source CTE and then
   project explicitly (`stg_focus__address`, `stg_focus__students_join_people`,
   `stg_focus__students_join_address`).
-- Column **order** differs between a table created empty (`_dlt_*` first) and
-  one created by a data load (`_dlt_*` last). BigQuery matches load files by
-  name, and every staging model projects explicitly, so this is cosmetic.
+- Column **order matches** between a table created empty and one created by a
+  data load — both emit the row-id columns last. An earlier draft of this spec
+  claimed they differ; that came from a probe whose resource carried no column
+  hints, and the real paths agree.
 - During the migration a table is dropped before it reloads. Focus dbt staging
   models fail if they build in that window, so the run wants a quiet hour, and
   drop plus load must be the same run.

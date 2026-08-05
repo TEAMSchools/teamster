@@ -11,6 +11,7 @@ dlt casts the duration to int64 microseconds instead.
 """
 
 from datetime import timedelta
+from typing import Any
 
 import pytest
 from dagster_dlt.constants import META_KEY_SOURCE
@@ -20,6 +21,7 @@ from dlt.common.libs.pyarrow import (
     py_arrow_to_table_schema_columns,
 )
 from dlt.common.schema.typing import TTableSchemaColumns
+from dlt.sources.sql_database import remove_nullability_adapter
 from dlt.sources.sql_database.arrow_helpers import row_tuples_to_arrow
 from dlt.sources.sql_database.schema_types import (
     TTypeAdapter,
@@ -150,6 +152,45 @@ def test_extract_invokes_both_adapters(monkeypatch, tmp_path):
 
     assert type_calls, "type_adapter_callback was not passed to table_rows"
     assert table_calls, "table_adapter_callback was not passed to table_rows"
+
+
+def test_reflection_settings_reach_table_rows(monkeypatch):
+    """Pin the extract settings, not just the adapters.
+
+    `reflection_level="full_with_precision"` is what preserves Postgres
+    precision and scale; a silent regression to `"minimal"` would widen or
+    truncate every Focus column with nothing else failing. `backend="pyarrow"`
+    is what the interval adapter and the parquet loader assume.
+    """
+    from teamster.libraries.dlt.focus import assets as focus_assets
+
+    captured: dict[str, Any] = {}
+
+    def spy_table_rows(**kwargs):
+        captured.update(kwargs)
+        return iter(())
+
+    monkeypatch.setattr(focus_assets, "table_rows", spy_table_rows)
+
+    resource = focus_assets._build_focus_resource(
+        sql_database_credentials=ConnectionStringCredentials("sqlite://"),
+        table_name="gradebook_assignments",
+        db_schema="public",
+    )
+    list(resource())
+
+    assert captured["reflection_level"] == "full_with_precision"
+    assert captured["backend"] == "pyarrow"
+    assert captured["table_adapter_callback"] is remove_nullability_adapter
+    assert captured["type_adapter_callback"] is interval_to_microseconds_adapter
+    assert captured["table"] == "gradebook_assignments"
+    assert captured["metadata"].schema == "public"
+
+    # table_rows takes no defaults but `table_loader_class`; a dropped kwarg
+    # would silently change extract behavior
+    assert captured["incremental"] is None
+    assert captured["query_adapter_callback"] is None
+    assert captured["resolve_foreign_keys"] is False
 
 
 def test_interval_column_without_adapter_reproduces_prod_failure():

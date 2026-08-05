@@ -79,9 +79,12 @@ Consequences to know:
   already populated has to be recreated once, by launching the Focus asset job
   with run config `refresh: drop_resources`. Any table that predates that
   migration, or is created outside this path, needs the same treatment.
-- **Column order differs** between a table created empty (`_dlt_*` first) and
-  one created by a data load (`_dlt_*` last). Cosmetic — loads match by name and
-  every staging model projects explicitly.
+- **Until that migration runs, every already-populated table FAILS to load.**
+  The knobs are pipeline-wide: the arrow normalizer stamps both columns
+  non-nullable into every load file, and dlt's BigQuery load job sets
+  `ALLOW_FIELD_ADDITION` without `ALLOW_FIELD_RELAXATION`, so BigQuery rejects
+  each one. Deploying this code and deferring the migration is a prod outage,
+  not a no-op — sequence the two together.
 - A table absent from `dagster_<district>_dlt_focus` now means a **config or
   load problem**, not an empty source. That is the diagnostic this change buys.
 - A table that empties out AFTER loading is truncated, not dropped — see

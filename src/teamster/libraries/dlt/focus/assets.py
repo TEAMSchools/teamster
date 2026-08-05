@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, get_args
 
 import dlt
 import sqlalchemy as sa
@@ -9,6 +9,7 @@ from dlt import config as dlt_config
 from dlt import pipeline
 from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
+from dlt.common.typing import TRefreshMode
 from dlt.destinations import bigquery
 from dlt.extract.items import DataItemWithMeta
 from dlt.extract.resource import DltResource
@@ -22,6 +23,18 @@ from sqlalchemy.types import TypeEngine
 FOCUS_SOURCE_NAME = "focus"
 FOCUS_DB_SCHEMA = "public"
 FOCUS_CHUNK_SIZE = 50000
+
+REFRESH_MODES = frozenset(get_args(TRefreshMode))
+"""dlt's accepted `refresh` values, read from dlt so this cannot drift.
+
+The config field is a plain `str`, not this `Literal`: Dagster's Pythonic config
+cannot resolve one (`DagsterInvalidConfigDefinitionError: ... cannot be
+resolved`), so the op validates the string against this set instead. Without
+that guard dlt treats ANY unrecognized value as `drop_resources`
+(`dlt/pipeline/helpers.py::prepare_refresh_source` compares only against
+`drop_sources` and `drop_data`), so a typo would silently drop and recreate
+every table in the run.
+"""
 
 
 class FocusDltConfig(Config):
@@ -236,6 +249,13 @@ def build_focus_dlt_assets(
         }
 
         if config.refresh is not None:
+            if config.refresh not in REFRESH_MODES:
+                raise ValueError(
+                    f"refresh must be one of {sorted(REFRESH_MODES)}, got"
+                    f" {config.refresh!r} — dlt would silently treat that as"
+                    " drop_resources and recreate every table in this run"
+                )
+
             context.log.info(f"dlt refresh mode: {config.refresh}")
             run_kwargs["refresh"] = config.refresh
 
