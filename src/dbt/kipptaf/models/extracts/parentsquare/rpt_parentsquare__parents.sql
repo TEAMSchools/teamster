@@ -1,9 +1,17 @@
 with
     students as (
-        select student_number, cast(schoolid as string) as school_id,
+        select
+            student_number,
+            _dbt_source_project as code_location,
+
+            cast(schoolid as string) as school_id,
         from {{ ref("int_extracts__student_enrollments") }}
         where
-            _dbt_source_project = 'kippnewark'
+            -- Every NJ region is in scope and each district wrapper filters this
+            -- view down to its own `code_location`. Miami is excluded because it
+            -- rosters from Focus rather than PowerSchool — the same carve-out the
+            -- six rpt_clever__* feeds make.
+            _dbt_source_project != 'kippmiami'
             and academic_year = {{ var("current_academic_year") }}
             and rn_year = 1
             and not is_out_of_district
@@ -21,11 +29,12 @@ with
             relationship,
             email_current,
             phone_mobile,
+            _dbt_source_project as code_location,
 
             coalesce(phone_home, phone_work) as phone_secondary,
         from {{ ref("int_students__contacts") }}
         where
-            _dbt_source_project = 'kippnewark'
+            _dbt_source_project != 'kippmiami'
             and contact_slot in ('contact_1', 'contact_2')
     ),
 
@@ -40,6 +49,7 @@ with
             contact_last_name,
             relationship,
             email_current,
+            code_location,
 
             nullif(
                 regexp_replace(phone_mobile, r'[^0-9]', ''), ''
@@ -59,6 +69,7 @@ with
             contact_last_name,
             relationship,
             email_current,
+            code_location,
 
             left(
                 regexp_replace(phone_mobile_digits, r'^1', ''), 10
@@ -79,6 +90,7 @@ with
             contact_last_name,
             relationship,
             email_current,
+            code_location,
 
             if(length(mobile_candidate) = 10, mobile_candidate, null) as mobile,
             if(
@@ -96,10 +108,14 @@ select
     c.email_current as email,
 
     s.school_id,
+    s.code_location,
 
     cast(s.student_number as string) as student_id,
 from contacts as c
-inner join students as s on c.student_number = s.student_number
+inner join
+    students as s
+    on c.student_number = s.student_number
+    and c.code_location = s.code_location
 -- ParentSquare needs an email or a mobile number to create a contactable parent
 -- account, so a parent carrying neither is not deliverable and is dropped.
 where c.email_current is not null or c.mobile is not null

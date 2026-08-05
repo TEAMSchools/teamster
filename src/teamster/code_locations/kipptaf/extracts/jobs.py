@@ -11,7 +11,6 @@ from teamster.code_locations.kipptaf.extracts.assets import (
     illuminate_extract_assets,
     lattice_extract,
     littlesis_extract,
-    parentsquare_extract_assets,
 )
 
 coupa_extract_asset_job = define_asset_job(
@@ -57,9 +56,4 @@ deanslist_annual_extract_asset_job = define_asset_job(
 illuminate_extract_asset_job = define_asset_job(
     name=f"{CODE_LOCATION}__extracts__illuminate__asset_job",
     selection=illuminate_extract_assets,
-)
-
-parentsquare_extract_asset_job = define_asset_job(
-    name=f"{CODE_LOCATION}__extracts__parentsquare__asset_job",
-    selection=parentsquare_extract_assets,
 )

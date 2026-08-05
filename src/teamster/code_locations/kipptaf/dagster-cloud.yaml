@@ -230,16 +230,6 @@ locations:
                   secretKeyRef:
                     name: op-littlesis-sftp
                     key: username
-              - name: PARENTSQUARE_SFTP_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-parentsquare-sftp
-                    key: password
-              - name: PARENTSQUARE_SFTP_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-parentsquare-sftp
-                    key: username
               - name: SCHOOLMINT_GROW_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
@@ -360,11 +350,6 @@ locations:
                   secretKeyRef:
                     name: op-littlesis-sftp
                     key: port
-              - name: PARENTSQUARE_SFTP_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-parentsquare-sftp
-                    key: URL
               - name: TABLEAU_SERVER_ADDRESS
                 valueFrom:
                   secretKeyRef:
@@ -613,16 +598,6 @@ locations:
                   secretKeyRef:
                     name: op-littlesis-sftp
                     key: username
-              - name: PARENTSQUARE_SFTP_PASSWORD
-                valueFrom:
-                  secretKeyRef:
-                    name: op-parentsquare-sftp
-                    key: password
-              - name: PARENTSQUARE_SFTP_USERNAME
-                valueFrom:
-                  secretKeyRef:
-                    name: op-parentsquare-sftp
-                    key: username
               - name: SCHOOLMINT_GROW_CLIENT_ID
                 valueFrom:
                   secretKeyRef:
@@ -758,11 +733,6 @@ locations:
                   secretKeyRef:
                     name: op-littlesis-sftp
                     key: port
-              - name: PARENTSQUARE_SFTP_HOST
-                valueFrom:
-                  secretKeyRef:
-                    name: op-parentsquare-sftp
-                    key: URL
               - name: TABLEAU_SERVER_ADDRESS
                 valueFrom:
                   secretKeyRef:
