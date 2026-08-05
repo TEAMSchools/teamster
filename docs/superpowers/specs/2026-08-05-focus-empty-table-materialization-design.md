@@ -151,35 +151,24 @@ hints before relying on it.
 - `dbt build` the Focus staging models against the migrated dataset before the
   new staging models are written.
 
-## Sequencing hazard for the same-PR staging models
+## Scope: two PRs
 
-The 11 staging models are contract-enforced, so their `properties.yml` needs
-exact column names and BigQuery types — which normally come from the
-materialized table. That creates an ordering problem:
+**Decided: the staging models ship separately.** This PR carries the pipeline
+change plus the migration. The 11 staging models follow in a second PR, written
+against the tables once they exist.
 
-- The tables do not exist until the new code runs.
-- Creating them early from a branch deployment writes to the **prod** dataset
-  (dlt has no branch-deployment redirect, per `focus/CLAUDE.md`), and once
-  created they carry REQUIRED `_dlt_*` columns. Prod is still running the old
-  code, whose loads omit those columns, so the next scheduled Focus run would
-  fail on those tables until this PR merges.
+The reason is a sequencing hazard. Those models are contract-enforced, so their
+`properties.yml` needs exact column names and BigQuery types, which normally
+come from the materialized table — and the tables do not exist until this code
+runs. Creating them early from a branch deployment is not a way out: dlt has no
+branch-deployment redirect (`focus/CLAUDE.md`), so it writes to the **prod**
+dataset, and the new tables carry REQUIRED `_dlt_*` columns that prod's
+still-old code omits, breaking the next scheduled Focus run until this merges.
 
-Three ways to resolve, to be decided before implementation:
-
-1. Split the work: pipeline change plus migration in this PR, staging models in
-   a follow-up written against real materialized tables. Removes the hazard
-   entirely.
-1. Keep one PR and derive the contract types from the reflected Postgres schema
-   (dlt's type mapping is deterministic, and `remove_nullability_adapter` plus
-   `interval_to_microseconds_adapter` fix the two non-obvious cases). Verify by
-   building the staging models immediately after the post-merge migration; a
-   mistyped column fails the build, not the load.
-1. Keep one PR and capture the reflected schema first via a throwaway
-   branch-deployment run that logs column names and types without creating
-   tables, then write contracts from that log.
-
-Option 1 is recommended. Option 2 is viable but front-loads type risk into
-review; option 3 costs throwaway code.
+Splitting removes the hazard rather than managing it. The alternative — deriving
+contract types from the reflected Postgres schema and letting the post-merge
+build catch mistakes — was considered and rejected as front-loading type risk
+into review for no schedule gain.
 
 ## Out of scope
 
@@ -194,20 +183,13 @@ review; option 3 costs throwaway code.
 
 ## Rollout
 
-Current decision is one PR containing both the pipeline change and the 11
-staging models, so their contract types come from the reflected Postgres schema
-(_Sequencing hazard_, option 2) and are proven by the post-merge build.
-
-1. Merge the PR.
+1. Merge this PR (pipeline change plus migration mechanism).
 1. Confirm the `kippmiami` code location loads the new commit.
 1. Launch the Focus asset job once with run config `refresh: drop_resources`, at
    a quiet hour. All 66 populated tables are recreated with the row-id columns
    and the 11 empty ones are created in the same run.
 1. Confirm all 77 tables exist, the 66 retain their row counts, and the 11 are
    empty with the expected column sets.
-1. Build the Focus staging models, including the 11 new ones. A mistyped
-   contract column fails here, which is the intended catch point for option 2.
-
-If the hazard decision moves to option 1 instead, steps 1 through 4 carry the
-pipeline change alone and the staging models follow in a second PR written
-against the now-materialized tables.
+1. Rebuild the existing Focus staging models against the migrated dataset.
+1. Second PR: staging models for the 11 new tables, with contracts read from the
+   materialized schemas.
