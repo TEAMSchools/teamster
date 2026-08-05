@@ -75,9 +75,10 @@ Consequences to know:
   either off breaks the first real load into an empty-created table with
   `Field _dlt_load_id is missing in new schema`.
 - **Adding those columns to an existing table is impossible** (BigQuery:
-  `Cannot add required fields to an existing schema`), which is why the rollout
-  recreated all populated tables once via run config `refresh: drop_resources`.
-  Any future table created outside this path needs the same treatment.
+  `Cannot add required fields to an existing schema`), so every table that was
+  already populated has to be recreated once, by launching the Focus asset job
+  with run config `refresh: drop_resources`. Any table that predates that
+  migration, or is created outside this path, needs the same treatment.
 - **Column order differs** between a table created empty (`_dlt_*` first) and
   one created by a data load (`_dlt_*` last). Cosmetic — loads match by name and
   every staging model projects explicitly.

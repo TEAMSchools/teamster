@@ -20,7 +20,6 @@ from dlt.common.libs.pyarrow import (
     py_arrow_to_table_schema_columns,
 )
 from dlt.common.schema.typing import TTableSchemaColumns
-from dlt.sources.sql_database import remove_nullability_adapter
 from dlt.sources.sql_database.arrow_helpers import row_tuples_to_arrow
 from dlt.sources.sql_database.schema_types import (
     TTypeAdapter,
