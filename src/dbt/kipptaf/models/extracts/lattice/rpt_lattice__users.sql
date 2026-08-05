@@ -35,7 +35,8 @@ with
                         'Director School Operations',
                         'Director Campus Operations',
                         'Managing Director of School Operations',
-                        'Managing Director of Operations'
+                        'Managing Director of Operations',
+                        'Fellow School Operations Director'
                     )
                 )
                 or (

@@ -88,8 +88,9 @@ Cube YAML files, the existing manifest stays valid.
 Run the **Cube: Dev Server** VS Code task to start Cube at `localhost:4000` —
 see [Local Dev](#local-dev). To exercise **row-level security** (not just that
 models compile), see
-[Testing row-level security locally](#testing-row-level-security-locally) —
-developer mode disables auth, so RLS needs a specific setup.
+[Testing row-level security locally](#testing-row-level-security-locally) — both
+auth hooks run in developer mode, but each surface emulates a viewer
+differently.
 
 ### 4. Test in Cube Cloud
 
@@ -97,16 +98,38 @@ Push your branch, then switch to it in the Cube Cloud UI's development mode
 branch switcher. Cube Cloud activates a staging environment for the branch
 automatically.
 
-Test in the Cube Cloud Playground. Your real access row from
-`kipptaf_marts.dim_staff_cube_access` applies here — use this to verify security
-behavior against live HR data.
+Test in the Cube Cloud Playground or Explore. Cube Cloud does **not** run our
+`checkAuth` — it injects its own security context (`cubeCloud.username`,
+`iss: "cubecloud"`) directly, so `resolveAccess` never runs there. Instead
+`contextToGroups` enriches that injected context: it resolves
+`cubeCloud.username` against `dim_staff_cube_access` and populates the groups
+and `row_level` values the access policies read, so **you see your own real
+scope** ([#4526](https://github.com/TEAMSchools/teamster/issues/4526)).
+
+If every view is hidden and you see only source tables, that enrichment did not
+run — check the deployment log for `resolveAccess failed for`, and confirm the
+BigQuery connection variables are set on _that_ environment (branch environments
+do not inherit them from production).
 
 Check:
 
 - Cubes and views load without errors
 - Queries return expected results against live BigQuery data
-- Row-level security behaves correctly for your groups
+- Your own scope is what you expect (a region-scoped viewer sees one region)
 - Existing cubes and views still work (no regressions)
+
+!!! warning "Pasted groups and scope values are discarded."
+
+    Cube Cloud merges whatever you paste into the top level of the security
+    context. `contextToGroups` therefore treats every top-level value as
+    untrusted and **overwrites** it by re-resolving `cubeCloud.username` — so a
+    pasted `groups`, `region_key`, or `allowed_abbreviations` is discarded, not
+    honored. Pasting them used to grant them (fixed in #4526); do not write code
+    that trusts them again.
+
+    The one paste that _is_ honored is `{"email": "<a viewer>"}`, and only for a
+    caller listed in `CUBE_IMPERSONATORS` — see
+    [Emulating another viewer](#emulating-another-viewer-with-act_as).
 
 ### 5. Open a PR
 
@@ -124,10 +147,10 @@ The reviewing analyst:
    - Do all cubes and views load without errors?
    - Do queries return expected results against live BigQuery data?
    - Do existing cubes and views still work?
-3. To test row-level security behavior, follow
-   [Testing row-level security locally](#testing-row-level-security-locally)
-   (auth must be on — developer mode bypasses it), or test in Cube Cloud dev
-   mode where your real access row applies
+3. To test row-level security behavior, either use
+   [the local matrix tool](#testing-row-level-security-locally) — ground truth,
+   one connection per viewer — or emulate a viewer in Cube Cloud if your email
+   is in `CUBE_IMPERSONATORS` on that environment
 4. Leaves review comments on the PR, or approves
 
 Author and reviewer can work together in the same Cube Cloud Playground session
@@ -158,30 +181,80 @@ When a business user needs to validate changes before merge:
    is stale
 3. Run the **Cube: Dev Server** VS Code task (`Ctrl+Shift+P` → Tasks: Run Task)
 4. Playground opens at `http://localhost:4000`
+
+!!! tip "Claude can start the dev server itself — it does not need to ask you."
+
+    Claude runs `npm run dev` (cwd `src/cube`) as a **backgrounded** shell call,
+    redirecting output to a log under `.claude/scratch/` and polling it for
+    `is listening on 4000`. Only a foreground call fails, because a server never
+    exits and the call hangs until timeout.
+
+    The task and Claude's invocation are the same command with the same
+    configuration, so they are interchangeable. Use the task when you want the
+    server visible in a terminal panel or under your own control; let Claude
+    start one when it is verifying its own work. Claude stops it with
+    `pkill -f 'cubejs[-]server'`.
+
+    Two servers cannot both bind port 4000 — if Claude reports the port in use,
+    one of you already has it running.
+
 5. Click **Edit Security Context** and set
-   `{"email": "you@apps.teamschools.org"}`. **Caveat:** in developer mode this
-   only reaches `contextToGroups` as an `email` claim — it does NOT run identity
-   resolution, so gated views return zero rows. See
-   [Testing row-level security locally](#testing-row-level-security-locally).
+`{"email": "you@apps.teamschools.org"}`. `checkAuth` runs in developer mode, so
+`resolveAccess` enriches that email into the real `securityContext` and gated
+views resolve. If every view still returns zero rows, a stale cached Playground
+token is the usual cause — see
+[Testing row-level security locally](#testing-row-level-security-locally).
+
+!!! warning "The dev server always serves the main checkout — never a worktree."
+
+    The **Cube: Dev Server** task runs `npm --prefix src/cube run dev` from the
+    VS Code workspace root, so it serves `/workspaces/teamster/src/cube/` no
+    matter which worktree you are editing in. Branch changes to `cube.js` or
+    model YAML are **not exercised** — you are testing whichever branch the main
+    checkout happens to be sitting on, which may be an unrelated one.
+
+    Repointing `--prefix` at the worktree does not fix it on its own: `.env` is
+    gitignored, so a fresh worktree has only `.env.example`. The server would
+    start with no BigQuery connection variables and no SQL API port at all.
+
+    **For local Cube work, check the branch out in the main checkout.** If you
+    must use a worktree, copy `src/cube/.env` into it first, then run
+    `npm --prefix {worktree}/src/cube run dev`.
+
+    Symptom: every viewer returns 0 rows in the RLS matrix while ADC is healthy
+    and the identity table is readable. You are running a different checkout's
+    `resolveAccess`.
 
 ## Testing row-level security locally
 
 Row-level security is enforced by per-view `access_policy`, driven by the
-`securityContext` that `resolveAccess` builds **inside the auth hooks**
-(`checkAuth` for REST, `checkSqlAuth` for the SQL API). That placement has a
-sharp consequence for local testing:
+`securityContext` that `resolveAccess` builds. Both local auth hooks run in
+developer mode (verified on Cube 1.6.59 and 1.7.14), and Cube Cloud is covered
+by the `contextToGroups` enrichment — so **every surface can emulate a viewer by
+email**, which is how a user's scope gets signed off before they are granted
+access:
 
-Developer mode skips `checkAuth` (REST) — so the Playground and REST `/load`
-default-deny every gated view (empty `securityContext`, `contextToGroups`
-returns `[]`) unless you turn auth on. But `checkSqlAuth` (the SQL API's hook)
-runs **even in developer mode**, which makes the SQL API the easier and
-truer-to-prod way to validate.
+| Surface                         | Emulate a viewer by                                                                    | Use it for                                                                                      |
+| ------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Local SQL API                   | connecting as the viewer's email in the SQL `user`                                     | **ground truth** — the prod BI/Superset path, and one loop covers a whole matrix of viewers     |
+| Local REST Playground           | pasting `{"email": "viewer@apps.teamschools.org"}` into Edit Security Context          | spot checks and response metadata (e.g. `usedPreAggregations`)                                  |
+| Cube Cloud Playground / Explore | pasting `{"email": "viewer@apps.teamschools.org"}`, if you are in `CUBE_IMPERSONATORS` | the surface a pilot user actually uses — and the only one that shows how a denial behaves there |
 
-**Prefer the SQL API for validation.** It resolves your real identity with no
-`NODE_ENV` change, and it is the surface Superset/BI actually use — so you
-validate the production path. Tesseract (`CUBEJS_TESSERACT_SQL_PLANNER`, default
-`true`) is the planner on the SQL API, and joining views is a supported feature
-there
+**First, credentials.** `resolveAccess` issues its own BigQuery reads, separate
+from the driver's. With the BigQuery credentials variable unset — the normal
+local setup — it falls back to Application Default Credentials while keeping the
+`teamster-332318` project pin, so a current ADC login is all you need. Run the
+**GCloud: Application Default Login** task if your token is stale. A uniform
+zero across _every_ viewer, including a network-scoped one, means the identity
+read itself failed rather than the policies denying; check the dev-server log
+for `resolveAccess failed for <email>`. Two causes, in order of likelihood: a
+stale ADC token, or the dev server is serving a checkout whose `resolveAccess`
+predates the ADC fallback — see the warning under [Local Dev](#local-dev).
+
+**The SQL API is ground truth.** It is the surface Superset/BI actually use, and
+identity resolves per connection, so one script covers every viewer. Tesseract
+(`CUBEJS_TESSERACT_SQL_PLANNER`, default `true`) is the planner on the SQL API,
+and joining views is a supported feature there
 ([multi-fact views](https://docs.cube.dev/docs/data-modeling/multi-fact-views)).
 Enable the SQL API in `src/cube/.env`:
 
@@ -189,11 +262,25 @@ Enable the SQL API in `src/cube/.env`:
 CUBEJS_PG_SQL_PORT=15432
 CUBEJS_SQL_USER=cube_dev
 CUBEJS_SQL_PASSWORD=local-dev-sql
+# Signs REST/Playground tokens. Cube Cloud generates its OWN value per
+# deployment, so this local one is a fixed placeholder, never a real credential.
+CUBEJS_API_SECRET=local-dev-secret
+# Who may emulate another viewer via an `act_as` claim (#4526). Unset means
+# emulation is inert, which is the correct production default.
+CUBE_IMPERSONATORS=you@apps.teamschools.org
 # Optional: pin EVERY connection to one viewer (dev-only override of the
 # connecting user). Leave it commented to resolve as the connecting SQL user
 # instead, which lets you switch viewers per connection with no restart.
 # CUBE_SQL_DEV_EMAIL=someone@apps.teamschools.org
 ```
+
+The local values above are **fixed placeholders, deliberately documented here**
+rather than treated as secrets. Local Cube binds to `127.0.0.1`, and Cube Cloud
+generates its own `CUBEJS_API_SECRET` per deployment, so nothing here reaches
+production. The payoff is that anyone — a teammate, or Claude Code, which is
+blocked from reading dotenv files — can run the local validation tooling without
+handling a real credential. Keep it that way: never set a local value equal to a
+production secret, and never document a Cube Cloud value here.
 
 Restart the **Cube: Dev Server** task. Identity resolves from the **SQL `user`
 you connect as** (unless `CUBE_SQL_DEV_EMAIL` is set, which overrides it) — so
@@ -201,16 +288,24 @@ put the viewer's email in `user`, and switch viewers by opening a new connection
 rather than restarting. `MEASURE()` wraps measures:
 
 ```bash
-uv run --with psycopg2-binary python - <<'PY'
-import psycopg2
+uv run --with 'psycopg[binary]>=3.3' python - <<'PY'
+import psycopg
 
-# identity = the `user` you connect as; swap it to test a different viewer
-conn = psycopg2.connect(host="127.0.0.1", port=15432,
-                        user="you@apps.teamschools.org",
-                        password="local-dev-sql", dbname="cube")
-cur = conn.cursor()
-cur.execute("SELECT MEASURE(count_employees) FROM staff_directory")
-print(cur.fetchall())
+# identity = the `user` you connect as; swap it to test a different viewer.
+# prepare_threshold=None disables psycopg's automatic statement preparation —
+# Cube's SQL API is a partial Postgres implementation, and there is no reason
+# to prepare a statement that runs once per connection (see
+# scripts/cube_rls_matrix.py, which follows the same pattern).
+with psycopg.connect(
+    host="127.0.0.1",
+    port=15432,
+    user="you@apps.teamschools.org",
+    password="local-dev-sql",
+    dbname="cube",
+    prepare_threshold=None,
+) as conn, conn.cursor() as cur:
+    cur.execute("SELECT MEASURE(count_employees) FROM staff_directory")
+    print(cur.fetchall())
 PY
 ```
 
@@ -218,42 +313,129 @@ PY
 real `securityContext`, and the policies enforce. Compare a scoped viewer's
 counts against a network viewer's breakdown to confirm scoping.
 
-A quick region-isolation check on student data — loop the SAME query over a few
-viewer emails (a region-scoped viewer, a network viewer, a `none`-scope viewer):
+For the whole viewer matrix at once, use the committed tool rather than an
+ad-hoc script. It takes the viewer list as input, so no staff emails land in the
+repo:
 
 ```bash
-uv run --with psycopg2-binary python - <<'PY'
-import psycopg2
+# one email per line; .claude/scratch/ is gitignored
+uv run scripts/cube_rls_matrix.py --viewers-file .claude/scratch/viewers.txt
 
-for email in ["a-region-scoped-viewer@apps.teamschools.org",
-              "a-network-viewer@apps.teamschools.org",
-              "a-none-scope-viewer@apps.teamschools.org"]:
-    conn = psycopg2.connect(host="127.0.0.1", port=15432, user=email,
-                            password="local-dev-sql", dbname="cube")
-    cur = conn.cursor()
-    cur.execute("SELECT regions_region_name, MEASURE(count_students) "
-                "FROM student_enrollments_view GROUP BY 1 ORDER BY 1")
-    print(email, cur.fetchall())
-    conn.close()
-PY
+# or inline
+uv run scripts/cube_rls_matrix.py --viewers a-viewer@apps.teamschools.org
 ```
 
-Expect the region-scoped viewer to return only their own region, the network
-viewer all four regions, and the `none`-scope viewer no rows (default-deny) —
-which confirms `resolveAccess` and the `student-<scope>` policies agree. Because
-identity is the connecting `user`, one loop covers the whole viewer matrix with
-no restart.
+Include a network-scoped, a region-scoped, a school-scoped, a `none`-scope, and
+one deliberately unresolvable viewer. Expect the network viewer to return all
+four regions, the region viewer only their own, the school viewer a subset of
+that region, and the last two no rows at all (default-deny) — which confirms
+`resolveAccess` and the `student-<scope>` policies agree. Because identity is
+the connecting `user`, one run covers the matrix with no restart.
 
-**Alternative: REST `/load` with a JWT.** The REST hook is disabled in developer
-mode, so this path needs auth **on** — run with `NODE_ENV=production` and drop
-`CUBEJS_DEV_MODE` (it overrides `NODE_ENV`):
+It exits non-zero if any viewer's connection or query fails, and calls out the
+one ambiguous result explicitly: if **every** viewer returns zero rows,
+including a network-scoped one, the identity read itself failed rather than the
+policies denying — check the dev-server log for `resolveAccess failed for`.
 
-```bash
-NODE_ENV=production npm run dev
+Treat the output as PII. Summarize it ("5 viewers checked, all scopes as
+intended") rather than pasting it into a PR, issue, or Slack message.
+
+**Alternative: the REST Playground.** `checkAuth` runs in developer mode, so no
+`NODE_ENV` flip is needed: click **Edit Security Context**, paste
+`{"email": "someone@apps.teamschools.org"}`, and `resolveAccess` enriches it
+into that viewer's real context. One gotcha to know before you conclude a policy
+is broken — the Playground caches its signed token in `localhost` local storage,
+and `checkAuth` caps token age at 12h (`maxAge`, derived from `iat`, independent
+of the token's own `exp`). A token minted more than 12h ago fails with
+`TokenExpiredError: maxAge exceeded` and **every** view denies. Clear
+`localhost` local storage, or re-save the security context, to re-mint a fresh
+token.
+
+### Emulating another viewer with `act_as`
+
+On the REST surface an approved caller can resolve **another** viewer's real
+context, which is how a pilot user's scope gets signed off
+([#4526](https://github.com/TEAMSchools/teamster/issues/4526)). Put your own
+email in `CUBE_IMPERSONATORS` and restart, then pass both claims:
+
+```json
+{
+  "email": "you@apps.teamschools.org",
+  "act_as": "a-viewer@apps.teamschools.org"
+}
 ```
 
-Then sign an HS256 JWT whose `email` claim is the viewer (with
-`CUBEJS_API_SECRET`) and POST it:
+`checkAuth` resolves the target's context and the query returns **their** scope,
+not yours. Each emulated request writes one `cube_emulation` line to the
+dev-server log carrying both identities and a timestamp — identities only, no
+row data.
+
+The gate reads the **signed `email` claim**, so it cannot be forged: a caller
+who is not in `CUBE_IMPERSONATORS` keeps their own scope, and their `act_as` is
+silently ignored rather than rejected. Verify that yourself before trusting the
+feature — mint a token as a narrowly-scoped viewer with `act_as` set to a
+broader one and confirm you get the narrow scope back. With `CUBE_IMPERSONATORS`
+unset entirely, emulation is inert, which is the correct production default.
+
+Emulation works on two surfaces, with the same gate on each:
+
+| Surface                           | Pass the target as                                     | Caller identity                                      |
+| --------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| REST (hand-minted token)          | an `act_as` claim in the signed token                  | the signed `email` claim                             |
+| Cube Cloud Playground and Explore | `{"email": "<viewer>"}` in the Security Context editor | `cubeCloud.username`, as authenticated by Cube Cloud |
+
+**The shipped `cube` MCP server cannot emulate.** `_mint_token(email)` in
+`src/cube/mcp/server.py` takes a single argument and hardcodes its JWT claims to
+`{"email", "iat", "exp"}` — there is no code path that sets `act_as`. To
+emulate, hand-mint the JWT yourself and call the REST API directly (see the
+"Alternative: REST `/load` with your own JWT" example below), not through the
+`cube` MCP tools.
+
+The SQL API needs neither: identity is the connecting user, so switch viewers by
+reconnecting (that is what the matrix tool does).
+
+### Choosing the impersonator list
+
+`CUBE_IMPERSONATORS` is read from the environment on every request, so it is
+purely deployment configuration — nothing is committed to enable it, and it
+takes effect on the next deploy or dev-server restart.
+
+Where you set it determines whether it is a control at all:
+
+| Where                                  | Effect                                                                                                                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cube Cloud production / branch staging | A real control — the config is not the user's to edit                                                                                                                                                               |
+| Local `src/cube/.env`                  | **Not** a control. Any developer can list themselves; running the local server already requires ADC credentials that grant direct `kipptaf_marts` access, so emulation grants nothing they could not query directly |
+
+So treat the local line in `.env.example` as developer convenience, and spend
+the scrutiny on the deployment values.
+
+**Selection rule: prefer callers whose own scope already covers anything they
+could emulate.** For a viewer who already holds `network` student scope and
+`all_in_scope` staff PII, emulating someone else can only ever show them a
+_subset_ of what they already see — emulation is a viewport change, not a grant.
+For anyone narrower, it is a genuine privilege grant and should be decided on
+its own merits rather than folded into a team roster.
+
+To see who qualifies today:
+
+```sql
+select google_email
+from `teamster-332318.kipptaf_marts.dim_staff_cube_access`
+where department_group = 'data_technology'
+  and student_location_scope = 'network'
+  and staff_pii_scope = 'all_in_scope'
+order by google_email
+```
+
+Those emails are staff PII: they belong in deployment configuration, never in a
+commit, PR, or issue. Re-run the query when the team changes — the list does not
+maintain itself, and a departure leaves a live grant behind.
+
+**Alternative: REST `/load` with your own JWT.** Sign an HS256 JWT whose `email`
+claim is the viewer (with `CUBEJS_API_SECRET`) and POST it — again no `NODE_ENV`
+change. `jsonwebtoken` stamps `iat` automatically, so mint it fresh per session
+for the same `maxAge` reason:
 
 ```bash
 tok=$(node -e "const j=require('jsonwebtoken');console.log(j.sign({email:'you@apps.teamschools.org'},process.env.CUBEJS_API_SECRET,{algorithm:'HS256'}))")
@@ -262,15 +444,17 @@ curl -s -H "Authorization: $tok" -H 'Content-Type: application/json' \
   http://localhost:4000/cubejs-api/v1/load
 ```
 
-**The `CUBE_GROUP_MAP` trap.** `.env.example` ships a `CUBE_GROUP_MAP` line
-whose placeholder value uses **stale group names** (`cube-network-detail`,
+**The `CUBE_GROUP_MAP` trap.** `.env.example` no longer ships this variable, and
+it should stay that way — but **check an older `.env` for it**, because a copy
+made before it was removed still carries it. It is a dev bypass that supplies
+`groups` only, so it cannot validate `row_level` scoping at all, and its old
+placeholder value used group names (`cube-network-detail`,
 `cube-access-student-data`) that predate the current taxonomy (`student-<scope>`
-/ `staff-directory` / `staff-pii-<scope>`). If you `cp .env.example .env`
-verbatim, that map's dev-bypass **overrides real resolution with dead groups no
-policy matches → every view denies**. Comment out (or delete) `CUBE_GROUP_MAP`
-so `resolveAccess` reads real HR data. (The bypass fires whenever
-`NODE_ENV !== production`, so it is inert on the REST auth-on path but active on
-the SQL-API/dev-mode path — keep it commented out either way.)
+/ `staff-directory` / `staff-pii-<scope>`) — dead groups no policy matches, so
+**every view denies**. The bypass fires whenever `NODE_ENV !== production` and
+the variable is set, and it sits in the resolution path _shared_ by both auth
+hooks, so it corrupts the REST and SQL surfaces alike. Leave it unset locally;
+never set it in Cube Cloud.
 
 **Testing branch models not yet in production.** The cubes and `resolveAccess`
 read `kipptaf_marts` (production). If your branch reworks a mart the cubes read
@@ -297,6 +481,54 @@ has the old schema and resolution fails closed. To test against your branch:
 For a location-scoping check that returns real numbers year-round, use
 `student_attendance`'s `count_students` (additive over a date range).
 
+### Signing off a new user's scope
+
+Before granting someone access, confirm what they will actually see. The point
+is to catch a wrong scope while it is still a spreadsheet row, not after they
+open a dashboard.
+
+1. **Check ground truth over the SQL API**, against a server started with auth
+   on (see the warning below). Put their email in a local, gitignored viewer
+   file and run `uv run scripts/cube_rls_matrix.py --viewers-file <file>`.
+   Include a network-scoped viewer in the same run as a control — if everyone
+   returns zero, the identity read failed rather than the policies denying, and
+   the tool says so.
+1. **Compare against their intended scope.** A region lead should see one
+   region; a school leader a subset of it; someone with no student scope, no
+   rows. A mismatch is an HR-data problem in `dim_staff_cube_access`, so fix it
+   upstream rather than adding a policy to compensate.
+1. **Check the surface they will actually use.** For a BI tool over the SQL API,
+   step 1 already exercised the real path. For Cube Cloud, emulate them in
+   Explore — that catches surface-specific behavior the SQL API does not. Note
+   that an out-of-tier member **hard-errors** on Cube Cloud; it also hard-errors
+   locally, but only with auth on — see the warning below.
+1. **Record the sign-off without the emails.** "5 viewers checked, all scopes as
+   intended" is the durable artifact; the identities are PII and stay local.
+
+!!! warning "Run the matrix with auth ON, or denials read as falsely benign."
+
+    A **dev-mode** server reports an out-of-tier member request as a quiet zero
+    rows. With auth on it is a hard failure — `You requested hidden member` (500)
+    on REST, and `Table or CTE with name '{view}' not found` on the SQL API,
+    because the view is absent from that viewer's schema entirely. Cube Cloud runs
+    with auth on, so a dev-mode "no rows" can mean "the query fails" in
+    production: an empty chart versus an error.
+
+    This is a **mode** difference, not a version difference. Measured on both
+    Cube 1.6.59 and 1.7.14, all four combinations, the denial shape tracks the
+    mode and is identical across versions (#4605). Upgrading Cube does not change
+    it.
+
+    So start the server with auth enabled before signing off:
+
+    ```bash
+    cd src/cube && NODE_ENV=production CUBEJS_DEV_MODE=false npm run dev
+    ```
+
+    Scoped viewers return **identical** row counts either way, so a dev-mode run
+    is still authoritative for **which rows** a viewer can reach. Only the shape
+    of a denial needs auth on.
+
 ### SQL-level RLS invariants to check
 
 The default-deny behavior rests entirely on Cube compiling an empty allow-list
@@ -310,15 +542,19 @@ zero rows on `staff_pii`, not an error and not every row. Over the SQL API
 (viewer identity = the connecting `user`):
 
 ```bash
-uv run --with psycopg2-binary python - <<'PY'
-import psycopg2
+uv run --with 'psycopg[binary]>=3.3' python - <<'PY'
+import psycopg
 
-conn = psycopg2.connect(host="127.0.0.1", port=15432,
-                        user="a-department-scope-none-viewer@apps.teamschools.org",
-                        password="local-dev-sql", dbname="cube")
-cur = conn.cursor()
-cur.execute("SELECT MEASURE(count_employees) FROM staff_pii")
-print(cur.fetchall())  # expect zero rows / zero count, not an error
+with psycopg.connect(
+    host="127.0.0.1",
+    port=15432,
+    user="a-department-scope-none-viewer@apps.teamschools.org",
+    password="local-dev-sql",
+    dbname="cube",
+    prepare_threshold=None,
+) as conn, conn.cursor() as cur:
+    cur.execute("SELECT MEASURE(count_employees) FROM staff_pii")
+    print(cur.fetchall())  # expect zero rows / zero count, not an error
 PY
 ```
 
@@ -349,9 +585,15 @@ a live server.
 Do **not** set `CUBE_GROUP_MAP` in Cube Cloud. This variable is a dev bypass
 that short-circuits BigQuery identity reads; it must never be configured in
 production. It only supplies `groups` (not the `row_level` interpolation
-values), so it cannot validate row-level scoping — and `.env.example`'s
-placeholder value uses stale group names that deny everything. See
+values), so it cannot validate row-level scoping even locally. It is no longer
+in `.env.example`; leave it out. See
 [Testing row-level security locally](#testing-row-level-security-locally).
+
+Do **not** set `CUBE_IMPERSONATORS` in Cube Cloud without deciding the list
+deliberately. Every listed email can resolve any internal user's full context on
+that deployment, including student PII and the gated staff fields. Unset means
+emulation is inert, which is the right default. See
+[Choosing the impersonator list](#choosing-the-impersonator-list).
 
 Do **not** use the Cube Playground **Models** tab in dev mode. It overwrites
 YAML files in `model/cubes/` and `model/views/` with auto-generated content,

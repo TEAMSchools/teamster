@@ -41,3 +41,12 @@ sources:
                 - kipppaterson
                 - finalsite
                 - int_finalsite__student_address_of_record
+      - name: int_finalsite__contact_address_of_record
+        config:
+          meta:
+            dagster:
+              group: finalsite
+              asset_key:
+                - kipppaterson
+                - finalsite
+                - int_finalsite__contact_address_of_record

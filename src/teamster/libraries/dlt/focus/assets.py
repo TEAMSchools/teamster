@@ -7,6 +7,9 @@ from dlt.common.configuration.specs import ConnectionStringCredentials
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter, sql_database
+from sqlalchemy import BigInteger
+from sqlalchemy.sql.sqltypes import _AbstractInterval
+from sqlalchemy.types import TypeEngine
 
 
 class FocusDagsterDltTranslator(DagsterDltTranslator):
@@ -34,6 +37,34 @@ class FocusDagsterDltTranslator(DagsterDltTranslator):
         return asset_spec
 
 
+def interval_to_microseconds_adapter(col_type: TypeEngine) -> TypeEngine | None:
+    """Map Postgres ``interval`` columns to int64 microseconds.
+
+    Postgres ``interval`` matches none of the branches in dlt's
+    ``sqla_col_to_column_schema``, so the reflected column carries no
+    ``data_type``, the PyArrow backend infers ``duration[us]`` from the
+    ``timedelta`` values, and dlt rejects the load with
+    ``UnsupportedArrowTypeException``. Declaring ``BigInteger`` makes dlt cast
+    the duration to int64 microseconds instead.
+
+    ``BigInteger`` rather than ``Time``: dlt converts duration to ``time64`` by
+    reinterpreting the underlying buffer, which silently corrupts intervals of
+    24 hours or more and negative intervals. int64 microseconds spans roughly
+    292,000 years — lossless for any realistic interval, though narrower than
+    Postgres ``interval``'s full +/-178,000,000-year range.
+
+    Note the check is ``_AbstractInterval``, the only base shared by
+    ``postgresql.INTERVAL`` and ``sqltypes.Interval`` —
+    ``isinstance(INTERVAL(), sqltypes.Interval)`` is ``False``.
+
+    See https://dlthub.com/docs/dlt-ecosystem/verified-sources/arrow-pandas#supported-arrow-data-types
+    """
+    if isinstance(col_type, _AbstractInterval):
+        return BigInteger()
+
+    return col_type
+
+
 def build_focus_dlt_assets(
     sql_database_credentials: ConnectionStringCredentials,
     code_location: str,
@@ -51,6 +82,7 @@ def build_focus_dlt_assets(
         backend="pyarrow",
         reflection_level="full_with_precision",
         table_adapter_callback=remove_nullability_adapter,
+        type_adapter_callback=interval_to_microseconds_adapter,
     )
 
     dlt_pipeline = pipeline(
@@ -70,6 +102,11 @@ def build_focus_dlt_assets(
         op_tags=op_tags,
     )
     def _assets(context: AssetExecutionContext, dlt: DagsterDltResource) -> Iterator:
-        yield from dlt.run(context=context, write_disposition="replace")
+        # loader_file_format="parquet": BigQuery schema autodetection rejects the
+        # empty jsonl file dlt writes to truncate a `replace` table whose source
+        # went to 0 rows. See `replace` write-disposition in ../CLAUDE.md (#4733).
+        yield from dlt.run(
+            context=context, write_disposition="replace", loader_file_format="parquet"
+        )
 
     return _assets

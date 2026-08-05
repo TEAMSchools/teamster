@@ -378,3 +378,74 @@ data_tests:
         dagster:
           ref:
             name: int_people__staff_roster
+
+  - name: rpt_clever__school_id_resolves_to_schools_feed
+    description: >-
+      Cross-feed referential integrity for the six Clever SFTP extracts -- every
+      school_id in enrollments, sections, teachers and staff must exist in
+      schools. The six feeds each carry their own region filter, so a region
+      added to or removed from one but not the others ships rows referencing
+      schools Clever was never sent, which it silently drops or misroutes rather
+      than rejecting. Errors rather than warns: this is the gate on restarting
+      the hourly Clever schedule, and an orphan here means the roster Clever
+      receives is internally inconsistent.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__schools
+
+  - name: rpt_clever__enrollments__student_id_resolves_to_students_feed
+    description: >-
+      Cross-feed referential integrity for the six Clever SFTP extracts -- every
+      student_id in enrollments must exist in students. students is scoped to
+      the current academic year and enrollments is not, so a region whose SIS is
+      frozen at a prior year keeps shipping course enrollments for students that
+      no longer appear in the student feed. Errors rather than warns for the
+      same reason as the school_id check.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__students
+
+  - name: rpt_parentsquare__sections__staff_id_resolves_at_its_own_school
+    description: >-
+      Every ParentSquare section's owner must hold a staff row at that section's
+      own school, not merely somewhere in staff.csv. The relationships test on
+      sections.staff_id is single-column, so an owner drawn from another region
+      satisfies it while dangling in this region's file -- and these views span
+      every NJ region, with each district wrapper slicing one region out. The
+      staff feed fans a leader across the schools of their own region only, so
+      (school_id, staff_id) is the pair that has to resolve. Errors rather than
+      warns: ParentSquare rejects a section naming a staff member it has no
+      record of at that school, which fails the whole sections import rather
+      than one row.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_parentsquare__sections
+
+  - name: rpt_parentsquare__students__every_student_has_a_roster_row
+    description: >-
+      Every student in the ParentSquare students feed must also appear in the
+      rosters feed. A student present in students.csv with no roster row is not
+      a vendor error -- ParentSquare accepts both files -- but that student sits
+      in no school-and-grade section, so they silently drop out of every
+      audience the feed exists to build. The rosters relationships tests only
+      check the child-to-parent direction, so nothing else catches this. It
+      matters because five models independently restate the same
+      enrolled-student filter (_dbt_source_project, academic_year, rn_year,
+      is_out_of_district, enroll_status) and the design's guarantee that rosters
+      covers students rests on those copies staying textually identical. This
+      test is what makes that a checked invariant rather than an assumption.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_parentsquare__students

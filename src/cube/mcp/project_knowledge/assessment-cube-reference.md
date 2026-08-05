@@ -36,6 +36,15 @@ Apply to every assessment source unless a source section overrides them.
   scope-bound — meaningful only within one source/subject/grade; pooling them
   across sources returns a valid-looking but meaningless number. Use
   `pct_proficient` / `is_mastery` for any cross-source comparison.
+- **A cross-instrument gap is a calibration artifact until proven otherwise.**
+  Two instruments measuring the same students in the same year routinely
+  disagree by double digits, because each carries its own proficiency definition
+  and cut-score. This holds for every pairing — internal-vs-state,
+  internal-vs-vendor, and vendor-vs-state alike. Report the two rates side by
+  side, label the difference as a gap between instruments rather than a gap in
+  achievement, and flag it for team review instead of presenting it as a
+  finding. (A logged session had to extend this reasoning by analogy because it
+  was documented for internal-vs-state only; it applies generally.)
 - **Grain.** `count_scores` is additive and resilient (scored-response count) —
   it succeeded across every logged session. `count_students` is a distinct
   student count and is heavier and historically fragile at fine (standard) grain
@@ -109,6 +118,13 @@ Apply to every assessment source unless a source section overrides them.
   `Outside Round` sittings lose roughly a third. So a Cube count will not
   reconcile to a vendor or state report, and the gap is expected, not a bug. Say
   which one you are quoting.
+- **Region coverage is uneven, and Paterson is the outlier.** Paterson carries
+  Illuminate and DIBELS for 2025-26 only, plus NJSLA and NJSLA-Science for
+  2022-23 and 2023-24 — and no i-Ready, STAR, or NJGPA at all. Its state history
+  therefore reaches back further than its internal history, the reverse of every
+  other region (Newark and Camden run Illuminate from 2014-15). A narrow
+  Paterson result is expected coverage, not a load failure; say which regions a
+  "network-wide" answer actually covers.
 - **Open decisions — flag, never assume a value** (per the orchestrator):
   minimum-sample suppression threshold; intervention tier cut-scores;
   pool-vs-per-instrument for multi-module "overall mastery"; which subjects
@@ -125,6 +141,13 @@ Apply to every assessment source unless a source section overrides them.
 - **Module types:** `module_type` / `module_code` cover QA (Quick Assessments),
   MQQ (Multiple-Choice Quick Questions), and CRQ (Constructed Response
   Questions); `module_code` looks like `QA1`, `QA3`.
+- **`module_code` is not a subject filter — always pair it with
+  `academic_subject`.** One module code spans every subject assessed in that
+  round. `QA3` in 2025-26 covers 21 distinct `academic_subject` values across
+  25,842 `overall` scores, of which `Mathematics` is 7,854 — under a third.
+  Filtering `module_code = 'QA3'` alone and calling the result "QA3 math" mixes
+  Text Study, Science, Social Studies, the `English 100`–`400` and AP courses,
+  and the HS math courses into one number.
 - **Measures:** `pct_proficient_formative` pools all three formative module
   types (QA + MQQ + CRQ); `pct_proficient_crq` isolates CRQ. (Whether to pool
   across module types or report per-instrument is an open decision — flag it.)
@@ -171,6 +194,13 @@ Apply to every assessment source unless a source section overrides them.
   above grade level", and it is roughly half of all proficient scores. If a
   participant means the stricter definition, filter `proficiency_level` directly
   instead of using `pct_proficient`.
+- **EOY is administered _after_ NJSLA, so it cannot be a leading indicator for
+  the same year's state test.** Median math test dates in 2024-25: BOY
+  2024-09-04, MOY 2025-01-15, **NJSLA Math 2025-05-14**, EOY 2025-06-04. MOY is
+  the last named round that precedes the state test. Any "does i-Ready predict
+  NJSLA" framing must therefore use MOY (or a prior-year EOY); an EOY-vs-NJSLA
+  comparison within one year is concurrent-or-trailing, not predictive. Say
+  which it is — the direction of the claim depends on it.
 - **Region coverage: Newark, Camden, and Miami only — there is no i-Ready data
   for Paterson.** A "compare i-Ready across all regions" question therefore
   returns three of the four regions; say so rather than implying network-wide
@@ -187,7 +217,13 @@ Apply to every assessment source unless a source section overrides them.
 - **`is_replacement` is Illuminate-only by design** — null for i-Ready (and all
   vendor/state sources), not a gap. Genuine multiple sittings occur even within
   a single benchmark window, so dedup to the most recent `date_taken` per
-  student per window before computing anything student-level.
+  student per window before computing anything student-level. This is common,
+  not exceptional: in one measured window (Camden grade 6 ELA, MOY 2025-26) 30
+  of 195 students — 15.4% — had more than one sitting. It is genuine repeat
+  testing, not a section-join fan-out. Skipping the dedup inflates any
+  student-level count or growth figure. (Which sitting is _authoritative_ for
+  reporting is an open decision; most-recent-by-date is the working convention,
+  not ratified policy.)
 - **Query this view, not the upstream i-Ready model.** i-Ready arrives with
   fiscal-year re-pull duplicates — the same physical test landing under two
   partitions. The mart collapses them, so counts here are right; a query
@@ -246,6 +282,30 @@ Apply to every assessment source unless a source section overrides them.
 - **Time:** `academic_year` / `academic_year_label` now resolve for state
   (derived from the test date) — filter the school year with them.
   `administration_period` is the testing season (Fall / Winter / Spring).
+- **Spring 2026 onward, NJSLA and NJGPA are computer-adaptive — and this view
+  cannot tell you which form a score came from.** NJDOE, with Cambium, launched
+  NJSLA-Adaptive (ELA/Math) and NJGPA-Adaptive; announced August 2025, first
+  operational windows spring 2026 (NJGPA-A March 16-20 2026; NJSLA-A April 27 to
+  May 22 2026). NJSLA-Science is not part of the transition. `assessment_type`
+  carries one value per state test and each resolves to a single `title`, so
+  **no field distinguishes adaptive from fixed-form**. Any NJSLA or NJGPA
+  comparison that crosses the spring 2026 boundary may therefore be comparing
+  two different scales. Flag that every time, and never present a cross-year NJ
+  state trend spanning the boundary as settled. Whether NJDOE reset
+  achievement-level cut-scores for the adaptive forms is an open question for
+  instructional leadership — it is not answerable from this view.
+- **A Fall NJGPA slice is the routine retake window, not adaptive field-test
+  data.** Small Fall administrations appear every year alongside the main Spring
+  one (193 scores in October 2024; 137 in October 2025). The prior-year
+  precedent settles it — do not read a Fall slice as an anomaly, and do not
+  attribute it to the adaptive rollout.
+- **A missing current-year NJSLA is a release lag, not a defect.** State results
+  land well after the testing window closes; as of this writing 2025-26 NJSLA
+  and NJSLA-Science carried no rows in any NJ region while 2025-26 NJGPA did.
+  Absence here means "not yet released," so do not log it as a data-quality
+  defect or build a workaround around it — and do not describe estimating those
+  values as forecasting a future event, because the test itself has already been
+  given.
 - **Student identifier:** for NJ, `lea_student_identifier` (KIPP's SIS number)
   is the canonical student number; `district_student_identifier` is null for NJ
   (host-district IDs are Miami-only). `state_student_identifier` is the

@@ -25,6 +25,7 @@ snapshots:
         - staffing_model_id
       updated_at: edited_at
       dbt_valid_to_current: "'9999-12-31'"
+      hard_deletes: new_record
       meta:
         dagster:
           group: google_appsheet

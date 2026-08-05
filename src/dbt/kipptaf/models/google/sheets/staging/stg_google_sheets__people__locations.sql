@@ -19,6 +19,7 @@ select
     `City` as city,
     `Postal_Code` as postal_code,
     `Focus_School_ID` as focus_school_id,
+    `Google_Student_orgUnitPath` as google_student_org_unit_path,
 
     case
         `Dagster_Code_Location`

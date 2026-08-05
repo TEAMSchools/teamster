@@ -1,0 +1,70 @@
+models:
+  - name: stg_focus__students_join_users
+    description: >-
+      Focus student-to-staff links — one row per association between a student
+      and a Focus user account, the table behind a staff member's student
+      caseload or advisory list. Distinct from stg_focus__students_join_people,
+      which links students to guardian/contact people rather than staff.
+    columns:
+      - name: id
+        description: Primary key — Focus students_join_users id.
+        data_type: int
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: student_id
+        description: Focus student id on the link.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__students')
+                field: student_id
+              config:
+                severity: error
+      - name: staff_id
+        description: Focus staff id of the linked user account.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__users')
+                field: staff_id
+              config:
+                severity: error
+      - name: person_id
+        description: >-
+          Focus person id of the linked user, when the account is backed by a
+          people record. Unpopulated for staff accounts created directly in
+          Focus rather than from a person import.
+        data_type: int
+      - name: enabled
+        description: Whether the student-to-staff link is currently active.
+        data_type: string
+      - name: request_date
+        description: >-
+          Date the link was requested, used where Focus routes caseload
+          assignment through an approval step.
+        data_type: date
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+        data_type: string
+      - name: uuid
+        description: Focus-assigned universally unique identifier for the row.
+        data_type: string
+      - name: created_at
+        description: Row creation timestamp in Focus.
+        data_type: timestamp
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+        data_type: timestamp

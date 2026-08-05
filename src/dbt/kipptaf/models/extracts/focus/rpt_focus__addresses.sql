@@ -27,5 +27,7 @@ inner join
     and ida.focus_student_id_prefixed is not null
 -- an unresolved address is withheld, not exported blank: the feed is
 -- import-once with no overwrite path, so a blank or wrong address of record is
--- permanent. address_source is not null guarantees a complete address.
+-- permanent. address_source is not null guarantees a street line, not a
+-- complete address — an incomplete one is exported for Ops to correct in Focus,
+-- since a missing field is visible there in a way a wrong pick is not.
 where stu.status = 'enrolled' and aor.address_source is not null

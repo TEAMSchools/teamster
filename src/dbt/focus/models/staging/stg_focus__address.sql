@@ -65,5 +65,9 @@ select
     uuid,
     created_at,
     updated_at,
+
+    nullif(
+        array_to_string([address, address2, city, state, zipcode], ', '), ''
+    ) as home_address,
 from source
 where deleted is null

@@ -1,0 +1,388 @@
+models:
+  - name: int_finalsite__contact_address_of_record
+    description:
+      One row per Finalsite contact — students and adults alike — carrying that
+      contact's resolved address, or nulls plus a flag when it cannot be
+      resolved. A household is a candidate when it has a street line; an
+      incomplete address is deliberately still a candidate, because an
+      incomplete address is visibly wrong in a receiving system and can be
+      corrected there, whereas withholding it is silent. Households with no
+      street at all are excluded, since each would otherwise count as its own
+      candidate and manufacture ambiguity. Address identity is an exact match on
+      `address_1`, `address_2`, `city`, `state`, and `zip` — no case-folding,
+      punctuation-stripping, or ZIP+4 truncation, so two spellings of the same
+      address stay distinct candidates and are counted separately. A contact
+      with at least one candidate always emits an address — the most complete
+      one, with ties broken by the lowest `household_id`. The emitted values are
+      the raw text of the winning household. SIS-agnostic — no enrollment,
+      status, or academic-year scoping.
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              (resolution_status != 'no_street' and address_1 is not null)
+              or (
+                  resolution_status = 'no_street'
+                  and address_1 is null
+                  and address_2 is null
+                  and city is null
+                  and state is null
+                  and zip is null
+              )
+          config:
+            severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: |
+              (resolution_status = 'resolved' and candidate_count = 1)
+              or (resolution_status = 'no_street' and candidate_count = 0)
+              or (resolution_status = 'picked' and candidate_count > 1)
+          config:
+            severity: error
+    columns:
+      - name: finalsite_enrollment_id
+        data_type: string
+        description: Finalsite contact UUID; the grain.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: resolution_status
+        data_type: string
+        description:
+          Why this contact does or does not have an address — `resolved`
+          (exactly one distinct address, no judgment applied), `picked` (several
+          distinct addresses, the most complete one chosen and ties broken by
+          the lowest `household_id`), or `no_street` (no household carries a
+          street line). `picked` is the audit signal — it marks every address
+          the pipeline chose rather than read unambiguously.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - resolved
+                  - picked
+                  - no_street
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: candidate_count
+        data_type: int64
+        description:
+          Number of distinct addresses on this contact's household linkage. One
+          resolves outright; zero means no household carries a street; more than
+          one means the emitted address was picked from among them.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: address_1
+        data_type: string
+        description:
+          Street address line 1 of the resolved address, as raw text; null when
+          unresolved.
+        config:
+          meta:
+            contains_pii: true
+      - name: address_2
+        data_type: string
+        description:
+          Street address line 2 (apartment or unit) of the resolved address.
+          Legitimately null when the household has no unit line, and null
+          whenever the address is unresolved.
+        config:
+          meta:
+            contains_pii: true
+      - name: city
+        data_type: string
+        description:
+          City of the resolved address; null when unresolved, and possibly null
+          on a resolved but incomplete address.
+        config:
+          meta:
+            contains_pii: true
+      - name: state
+        data_type: string
+        description:
+          State code of the resolved address, uppercased upstream; null when
+          unresolved, and possibly null on a resolved but incomplete address.
+      - name: zip
+        data_type: string
+        description:
+          ZIP code of the resolved address; null when unresolved, and possibly
+          null on a resolved but incomplete address.
+        config:
+          meta:
+            contains_pii: true
+      - name: country
+        data_type: string
+        description:
+          Country of the resolved address as Finalsite stores it. Not part of
+          the address identity, so it is carried from the canonical household
+          rather than compared.
+      - name: is_complete_address
+        data_type: boolean
+        description:
+          Whether the resolved address carries street, city, state, and ZIP. A
+          resolved address may be incomplete — this flag is what makes that
+          visible to consumers. Null when unresolved.
+
+unit_tests:
+  - name: test_contact_address_formatting_variants_pick_lowest_household_id
+    description:
+      Exact matching is deliberate, so two households recording the same address
+      with different punctuation, case, and a ZIP+4 remain two distinct
+      candidates. Both are equally complete, so the tiebreak falls to the lowest
+      `household_id` and that row's raw text is emitted.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-1 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-1' as finalsite_enrollment_id,
+            'hh-1' as household_id,
+            '123 Main St.' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33101' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'con-1', 'hh-2', '123 MAIN ST', null, 'MIAMI', 'FL',
+            '33101-4402', 'US', true
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-1,
+            address_1: 123 Main St.,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: "33101",
+            country: US,
+            is_complete_address: true,
+            candidate_count: 2,
+            resolution_status: picked,
+          }
+
+  - name: test_contact_address_completeness_wins_over_household_id
+    description:
+      A null field groups as its own value rather than matching a populated one,
+      so two households on the same street where one carries a ZIP and the other
+      does not are two distinct candidates. The complete one wins regardless of
+      `household_id` order.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-7 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-7' as finalsite_enrollment_id,
+            'hh-10' as household_id,
+            '55 Coral Way' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33134' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'con-7', 'hh-11', '55 Coral Way', null, 'Miami', 'FL', null,
+            'US', false
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-7,
+            address_1: 55 Coral Way,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: "33134",
+            country: US,
+            is_complete_address: true,
+            candidate_count: 2,
+            resolution_status: picked,
+          }
+
+  - name: test_contact_address_real_differences_pick_lowest_household_id
+    description:
+      Households sharing a street line but differing by apartment or by city
+      stay distinct candidates. Both are complete, so the lowest `household_id`
+      wins and its address is emitted rather than withheld.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-2 }
+          - { finalsite_enrollment_id: con-3 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-2' as finalsite_enrollment_id,
+            'hh-3' as household_id,
+            '222 Bay St' as address_1,
+            'Apt 1' as address_2,
+            'Miami' as city,
+            'FL' as state,
+            '33106' as zip,
+            'US' as country,
+            true as is_complete_address
+          union all
+          select 'con-2', 'hh-4', '222 Bay St', 'Apt 2', 'Miami', 'FL', '33106',
+            'US', true
+          union all
+          select 'con-3', 'hh-5', '400 Palm Way', null, 'Miami', 'FL', '33101',
+            'US', true
+          union all
+          select 'con-3', 'hh-6', '400 Palm Way', null, 'Hialeah', 'FL', '33012',
+            'US', true
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-2,
+            address_1: 222 Bay St,
+            address_2: Apt 1,
+            city: Miami,
+            state: FL,
+            zip: "33106",
+            country: US,
+            is_complete_address: true,
+            candidate_count: 2,
+            resolution_status: picked,
+          }
+        - {
+            finalsite_enrollment_id: con-3,
+            address_1: 400 Palm Way,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: "33101",
+            country: US,
+            is_complete_address: true,
+            candidate_count: 2,
+            resolution_status: picked,
+          }
+
+  - name: test_contact_address_incomplete_resolves_and_fragments_excluded
+    description:
+      A household with a street but no ZIP still resolves, flagged incomplete —
+      completeness is not a gate. A household carrying only city and ZIP with no
+      street is not a candidate, so a contact holding only fragments reports
+      no_street. A contact with no household rows at all also reports no_street.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-4 }
+          - { finalsite_enrollment_id: con-5 }
+          - { finalsite_enrollment_id: con-6 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-4' as finalsite_enrollment_id,
+            'hh-7' as household_id,
+            '9 Nowhere Ln' as address_1,
+            cast(null as string) as address_2,
+            'Miami' as city,
+            'FL' as state,
+            cast(null as string) as zip,
+            'US' as country,
+            false as is_complete_address
+          union all
+          select 'con-4', 'hh-8', null, null, 'Miami', 'FL', '33101', 'US', false
+          union all
+          select 'con-5', 'hh-9', null, null, 'Miami', 'FL', '33108', 'US', false
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-4,
+            address_1: 9 Nowhere Ln,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: null,
+            country: US,
+            is_complete_address: false,
+            candidate_count: 1,
+            resolution_status: resolved,
+          }
+        - {
+            finalsite_enrollment_id: con-5,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 0,
+            resolution_status: no_street,
+          }
+        - {
+            finalsite_enrollment_id: con-6,
+            address_1: null,
+            address_2: null,
+            city: null,
+            state: null,
+            zip: null,
+            country: null,
+            is_complete_address: null,
+            candidate_count: 0,
+            resolution_status: no_street,
+          }
+
+  - name: test_contact_address_completeness_beats_lower_household_id
+    description:
+      When the lower `household_id` is the incomplete one, completeness still
+      decides. This is the case that distinguishes the real ordering from a
+      plain lowest-id pick.
+    model: int_finalsite__contact_address_of_record
+    given:
+      - input: ref("stg_finalsite__contacts")
+        rows:
+          - { finalsite_enrollment_id: con-8 }
+      - input: ref("int_finalsite__contacts__households")
+        format: sql
+        rows: |
+          select
+            'con-8' as finalsite_enrollment_id,
+            'hh-20' as household_id,
+            '7 Sunset Dr' as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            'US' as country,
+            false as is_complete_address
+          union all
+          select 'con-8', 'hh-21', '8 Sunrise Dr', null, 'Miami', 'FL',
+            '33101', 'US', true
+    expect:
+      rows:
+        - {
+            finalsite_enrollment_id: con-8,
+            address_1: 8 Sunrise Dr,
+            address_2: null,
+            city: Miami,
+            state: FL,
+            zip: "33101",
+            country: US,
+            is_complete_address: true,
+            candidate_count: 2,
+            resolution_status: picked,
+          }

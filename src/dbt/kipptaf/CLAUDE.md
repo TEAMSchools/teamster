@@ -149,7 +149,8 @@ PII-tagged package model must re-declare it. Model level suffices for a
 ### Finalsite contact unions
 
 `int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` /
-`int_finalsite__student_address_of_record` are kipptaf `union_relations` views
+`int_finalsite__student_address_of_record` /
+`int_finalsite__contact_address_of_record` are kipptaf `union_relations` views
 over per-region finalsite sources.
 
 - **Union CUTOVER regions, not merely api-enabled ones.** Miami has the
@@ -177,20 +178,36 @@ over per-region finalsite sources.
 data, and push to their own PowerSchool instance. Exposures live in regional
 projects, not kipptaf.
 
-This cross-project shape generalizes (e.g. finalsite→focus): the heavy `rpt_*`
-view lives in kipptaf sourcing district data via `source()`, and each district
-has a thin wrapper sourcing `kipptaf_extracts`. The wrapper is
-contract-columns-only — NO data tests or descriptions (those live on the kipptaf
-view). A new kipptaf region source (`sources-kipp*.yml`) needs the
-`dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
-can't read it.
+This cross-project shape generalizes (e.g. finalsite→focus,
+`extracts/parentsquare/`): the heavy `rpt_*` view lives in kipptaf sourcing
+district data via `source()`, and each district has a thin wrapper sourcing
+`kipptaf_extracts`. The wrapper is contract-columns-only — NO data tests or
+descriptions (those live on the kipptaf view). A new kipptaf region source
+(`sources-kipp*.yml`) needs the `dev`/`staging` (`zz_stg_`)/prod schema branch,
+or single-PR cross-project CI can't read it.
+
+**The wrapper's region filter is a `code_location` column** the kipptaf view
+exposes (`_dbt_source_project as code_location`, or the roster's
+`home_work_location_dagster_code_location` for staff feeds) — the wrapper then
+filters `where code_location = '{{ project_name }}'` and does NOT project it.
+Don't expose `_dbt_source_project` under its own name for this; `code_location`
+is what `rpt_powerschool__autocomm_students` and `rpt_parentsquare__*` use.
+
+**Widening a Newark-only view to NJ is not just a filter swap** — a bare
+`cross join` to schools fans a region's staff across every NJ school, and an
+ungrouped `min()` pick over a sibling feed assigns one owner network-wide that
+dangles in every other region's file while a single-column `relationships` test
+still passes. Region-key both, and check school-number / `student_number`
+collisions and enum-domain tests (e.g. grade level) against prod before
+implementing, since widening changes the population every error-severity test
+runs over.
 
 **finalsite→focus exception**: the kippmiami `rpt_focus__*` are NOT thin
 pass-throughs — they are the reconciliation layer (import-once / diff against
 current Focus via the `focus` package, which only kippmiami has). kipptaf
 `rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
 actual SFTP feed. Per feed: addresses/contacts/demographics import-once
-(presence anti-join, with a null/completeness gate #4320); enrollment diffs and
+(presence anti-join, with a null/street-line gate #4320); enrollment diffs and
 additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 

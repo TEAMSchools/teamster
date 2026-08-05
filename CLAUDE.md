@@ -53,6 +53,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   merge-after-parent — but base ≠ main skips `claude-review` (dbt Cloud CI still
   runs; it is not base-gated — see `.github/CLAUDE.md`).
 
+- **A stacked `git worktree add -b <new> <abs-path> <parent-branch>` sets the
+  new branch's upstream to the PARENT** — a bare `git push` then pushes your
+  commits onto that branch, which is usually someone else's. Run
+  `git -C <worktree> branch --unset-upstream` immediately after creating it,
+  then `git -C <worktree> push -u origin <new-branch>`.
+
 - **Linking an existing remote branch to an issue**:
   `mcp__github__create_branch` and GraphQL `createLinkedBranch` both no-op when
   the branch already exists. Delete the remote branch, then
@@ -147,6 +153,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
 
+- **A subagent's "pre-existing failure" baseline is the working tree AS
+  DISPATCHED**, including your own uncommitted edits. "Already failing before I
+  touched anything" can mean "failing because of the coordinator's change."
+  Check whether your own work caused it before accepting that framing.
+
 - **Subagent worktree dispatches must spell out the absolute worktree path**: a
   subagent starts in the MAIN checkout, so the dispatch prompt must give the
   worktree path and mandate `git -C <worktree>` + `uv run` from it (bare edits
@@ -172,6 +183,16 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   process/worktree level. Concurrency cap = `min(16, cpu_cores-2)` (4-core
   Codespace → 2; raising it needs a larger machine, whose restart kills
   in-flight runs).
+
+- **`git merge-tree` reads the committed tip, not the index** — a staged-but-
+  uncommitted conflict resolution still reports CONFLICT. Commit first, then
+  verify with `git merge-tree --write-tree --name-only origin/main <branch>`.
+
+- **A version-only dependency conflict resolves by taking main's blobs whole**:
+  `git checkout origin/main -- <manifest> <lockfile>`, then run the installer
+  and confirm it leaves the lockfile unchanged (proof main's pair is coherent).
+  Both files end byte-identical to main, so the conflict cannot recur. Do NOT
+  hand-merge a lockfile.
 
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
@@ -275,16 +296,20 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   comments — an initial "Reviewing…" status stub and a separate final findings
   comment — and the stub can stay stuck mid-render even after the check-run
   reports `success`. Fetch ALL issue comments and read the newest / longest, not
-  the first. It may instead EDIT its checklist stub comment in place with the
-  findings, minutes AFTER the check-run reports `success` — so a findings-poll
-  must gate on the comment's `updated_at` / body growing, not the check-run
-  conclusion or a naive length threshold (the ~500-char checklist stub trips
-  it). Trunk's check-runs are RE-CREATED on each push, so a `gh pr checks` poll
-  gating on "nothing pending" can sample the gap between them and report done
-  prematurely — re-check after a delay before calling CI complete. To get
-  `claude-review` onto code pushed after its pass, toggle draft state
-  (`gh api -X PATCH .../pulls/<n> -f draft=true`, then `false`) — that re-fires
-  `ready_for_review`.
+  the first. A re-fired run creates a NEW comment rather than updating the
+  previous one, even with `use_sticky_comment: true` — poll by enumerating
+  comments, never by a cached comment id. It may instead EDIT its checklist stub
+  comment in place with the findings, minutes AFTER the check-run reports
+  `success` — so a findings-poll must gate on the comment's `updated_at` / body
+  growing, not the check-run conclusion or a naive length threshold (the
+  ~500-char checklist stub trips it). Trunk's check-runs are RE-CREATED on each
+  push, so a `gh pr checks` poll gating on "nothing pending" can sample the gap
+  between them and report done prematurely — re-check after a delay before
+  calling CI complete. To get `claude-review` onto code pushed after its pass,
+  toggle draft state — that re-fires `ready_for_review`. REST
+  `gh api -X PATCH .../pulls/<n> -f draft=true` silently no-ops (returns
+  `draft: false`, no error); use GraphQL `convertPullRequestToDraft` then
+  `markPullRequestReadyForReview`.
 
 - **A merged PR's CI status is not evidence the change was validated** — a PR
   merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
@@ -347,6 +372,23 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `'<path>' does not exist` when the PR deletes files — filter to existing paths
   first.
 
+- **`.trunk/tools/` is gitignored and lazily populated** — the `trunk` symlink
+  there does not exist until trunk has run once, so on a cold Codespace the
+  documented path above fails with "No such file or directory". Fall back to
+  `~/.cache/trunk/launcher/trunk`, which is always present; the first run
+  creates the `.trunk/tools/trunk` symlink.
+
+- **A `--force` check over ~10 files takes >2 minutes — background it.** Its
+  progress spinner emits no result lines, so grepping interim output returns
+  nothing and reads as a false "clean". Only interpret the output after the run
+  exits.
+
+- **Two concurrent trunk runs produce spurious `✖ N failures`.** A `FAILURES`
+  block names a TOOL plus a `.trunk/out/*.yaml` and no rule — that is the linter
+  crashing (e.g. `grype`), not a finding. Distinct from `✖ N unformatted files`
+  (the pre-commit `fmt` hook fixes those) and from real lint issues, which name
+  `file:line` + rule. Re-run single-instance before chasing one.
+
 - **Linter**: Suppress with `trunk-ignore(linter/rule): reason` (e.g.
   `# trunk-ignore(bandit/B603): static argv, no shell`) on the line immediately
   before the flagged line — not linter-native disable syntax. Wrapping the
@@ -401,6 +443,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `roles/artifactregistry.writer` on the target project to push the built image.
 
 - **Docs**: "docs" means the `docs/` folder (MkDocs site), not CLAUDE.md files.
+  "The docs", "the ref doc", or "the reference" means the **published** page in
+  the `mkdocs.yml` nav (e.g. `docs/models/<dashboard>-data-model.md`) — NOT the
+  design specs and implementation plans under `docs/superpowers/`, which are
+  working documents excluded from the nav. When asked whether docs are stale,
+  audit the published page against the shipped code first; a spec/plan
+  describing a superseded design is expected, a wrong published page is a bug.
 
 ### PII reference
 
@@ -633,6 +681,10 @@ the allowlist.
   `mcp__github__add_issue_comment` posts top-level PR comments only, not thread
   replies. Use
   `gh api -X POST repos/<owner>/<repo>/pulls/<pr>/comments/<id>/replies -f body='...'`.
+- `gh api repos/<owner>/<repo>/contents/<path>?ref=<sha> -H 'Accept: application/vnd.github.raw'`
+  — read a third-party file at a pinned SHA (for the verify-behavior-from-source
+  rule above). The `--jq .content | base64 -d` form is hook-blocked as an
+  encoding bypass.
 - `gh api -X POST repos/<owner>/<repo>/labels -f name=... -f color=... -f description=...`
   — no `mcp__github__*` label-create tool.
 - `gh api -X POST repos/<owner>/<repo>/issues/<n>/labels -f 'labels[]=<name>'` —
@@ -641,6 +693,8 @@ the allowlist.
 - GitHub Search API caps at 5 OR/AND/NOT operators per query (422 otherwise).
   Loop per-term via `gh api -X GET search/issues -f q='...'` for larger searches
   — without `-X GET`, `-f` turns the request into a POST and 404s.
+  `search/issues` also requires `is:issue` or `is:pull-request` in `q` — 422
+  "Query must include..." otherwise.
 - `mcp__github__search_issues` returns full issue **bodies** — a broad query
   (bare model/column name) overflows the context budget and dumps to a file.
   Narrow with `in:title`, a label, or `state:open`.

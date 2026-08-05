@@ -27,6 +27,9 @@ backend.
 - Uses `reflection_level="full_with_precision"` + `remove_nullability_adapter`
   (forces all columns `NULLABLE` so upstream `NOT NULL` changes don't break the
   `replace` load — see `focus/CLAUDE.md`)
+- `interval_to_microseconds_adapter` maps Postgres `interval` to INT64
+  microseconds; without it dlt rejects the inferred `duration[us]` (see
+  `focus/CLAUDE.md`)
 - Factory:
   `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
 
@@ -119,6 +122,22 @@ changes on existing tables.
   narrowed source to
   `DagsterDltResource.run(dlt_source=source.with_resources(*subset))` (its
   `is_subset` filter intersects with `selected_asset_keys`).
+- **`autodetect_schema=True` + `replace` requires
+  `loader_file_format="parquet"`** (passed to `dlt.run()` in the focus and
+  illuminate factories). `Extract._handle_empty_tables` writes an EMPTY file for
+  a `replace` table that received no items this run so its root still gets
+  truncated — but only once the table has **seen data** before
+  (`schema.data_tables(seen_data_only=True)`, restored from the destination). It
+  comes from the object extractor, so the default is empty `jsonl.gz`, and
+  BigQuery schema autodetection rejects that with
+  `400 Schema has no fields. Table: {table}_{uuid}_source` (dlt calls
+  `invalidQuery` transient, so it burns 5 retries first). An empty parquet
+  carries the dlt schema's columns, so autodetect resolves and the truncate load
+  succeeds. Forcing parquet changes nothing else — the pyarrow backend already
+  loads data files as parquet. Symptom to recognize: a table that loaded fine
+  for days starts failing the day its source goes to 0 rows; the destination
+  table is already correctly truncated (dlt truncates autodetect tables before
+  the load job), so there is no data to repair.
 - `replace` never changes an existing table's column **mode** (not just type):
   an all-`NULLABLE` load into a table whose column is `REQUIRED` fails with BQ
   400 "changed mode from REQUIRED to NULLABLE". Drop the table so the pipeline

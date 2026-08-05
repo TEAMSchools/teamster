@@ -56,4 +56,23 @@ jobs:
           # or https://code.claude.com/docs/en/cli-reference for available options
           # claude_args: '--allowed-tools Bash(gh pr:*)'
           track_progress: true
-          claude_args: --model sonnet --effort xhigh
+          # A second --allowedTools accumulates with the action's own list
+          # (parse-sdk-options.ts ACCUMULATING_FLAGS) rather than replacing it,
+          # so the comment-update and git-push tools stay allowed. This mode has
+          # no prompt input, so the single-shot guard rides on the system prompt.
+          # The --disallowedTools set is upstream's tested workaround for
+          # anthropics/claude-code-action#1462: these tools assume a turn can be
+          # resumed later, which a headless run cannot do. Not gated by
+          # --allowedTools, so denying them explicitly is the only guard.
+          claude_args: >-
+            --model sonnet --effort xhigh --allowedTools "Skill,Bash(git
+            diff:*),Bash(git log:*),Bash(git show:*),Bash(git
+            rev-parse:*),Bash(git merge-base:*)" --disallowedTools
+            "ScheduleWakeup,SendMessage,Monitor,Workflow" --append-system-prompt
+            "Execution model. This job is a single non-interactive turn sequence
+            with no wake-up and no second invocation. When you stop producing
+            output the process exits and any unfinished work is lost. Never end
+            a turn waiting on background work. Dispatch any subagents
+            synchronously and collect their results in the same turn, otherwise
+            work inline. Posting your reply with update_claude_comment must be
+            your final action."
