@@ -59,6 +59,13 @@ def test_week_offset_is_negative_before_the_anchor():
     assert extract.week_offset(anchor - datetime.timedelta(days=8), anchor) == -2
 
 
+def test_ticket_url_points_at_the_agent_view():
+    assert (
+        extract.ticket_url(469873)
+        == "https://teamschools.zendesk.com/agent/tickets/469873"
+    )
+
+
 def test_anchors_cover_both_school_years_in_scope():
     assert extract.FIRST_INSTRUCTIONAL_DAY[2024] == datetime.date(2024, 8, 22)
     assert extract.FIRST_INSTRUCTIONAL_DAY[2025] == datetime.date(2025, 8, 25)

@@ -9,6 +9,11 @@ Worksheets live in `.claude/scratch/zendesk/`. They contain student and staff
 names. Do not copy rows into Slack, email, Asana, or any document outside that
 folder. Counts and rates are fine to share; ticket text is not.
 
+Every worksheet has a `url` column linking straight to the ticket in Zendesk.
+The excerpt columns are truncated, so when a row is ambiguous, open the ticket
+and read the real thread before deciding. That is faster and more reliable than
+guessing from a 400-character excerpt.
+
 ## Why this exists
 
 The Data team answers about 2,300 Zendesk tickets a year. The obvious response
@@ -90,6 +95,13 @@ Paraphrased from real tickets, identifiers removed.
 | "Final ADA for that school is 93.08%."                                                                               | `genuine`              | A data pull. Someone wanted a number and got it.                                                                                         |
 | "You're right, that dashboard was still showing last year's term. Fixed now."                                        | `self_inflicted`       | We shipped a stale default. Artifact: the dashboard. Fix: drive the term filter off the current academic year.                           |
 | "We don't have capacity to support that right now."                                                                  | `genuine`              | A demand-versus-capacity answer, not a defect.                                                                                           |
+
+### Misrouted mail
+
+A small number of rows (roughly 3%) are not support tickets at all — vendor
+invoices, statements of account, and sales outreach that landed in the Data
+queue by accident. Label those `vendor_or_user_error` and move on. They are not
+a defect and they are not demand; there are too few to matter to the result.
 
 ### When you are unsure
 

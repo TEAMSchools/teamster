@@ -118,13 +118,22 @@ def main() -> int:
     with (SCRATCH / "slug_worksheet.tsv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f, delimiter="\t")
         writer.writerow(
-            ["ticket_id", "category", "shape", "subject", "reply_excerpt", "slug"]
+            [
+                "ticket_id",
+                "url",
+                "category",
+                "shape",
+                "subject",
+                "reply_excerpt",
+                "slug",
+            ]
         )
         for ticket, reply, shape in worksheet[:WORKSHEET_LIMIT]:
             excerpt = reply["plain_body"][:300].replace("\t", " ").replace("\n", " ")
             writer.writerow(
                 [
                     ticket["ticket_id"],
+                    ticket["url"],
                     ticket["category"],
                     shape,
                     ticket["subject"].replace("\t", " ").replace("\n", " "),

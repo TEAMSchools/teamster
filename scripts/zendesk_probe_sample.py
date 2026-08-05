@@ -171,6 +171,7 @@ def main() -> int:
         writer.writerow(
             [
                 "ticket_id",
+                "url",
                 "academic_year",
                 "group_id",
                 "category",
@@ -186,6 +187,7 @@ def main() -> int:
             writer.writerow(
                 [
                     t["ticket_id"],
+                    t["url"],
                     t["academic_year"],
                     t["group_id"],
                     t["category"] or "(none)",

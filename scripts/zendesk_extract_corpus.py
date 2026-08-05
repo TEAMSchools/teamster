@@ -43,6 +43,9 @@ END_DATE = "2026-06-30"
 
 OUTPUT_DIR = Path(".claude/scratch/zendesk")
 
+# Agent-view URL. Matches the `url` column on fct_support_tickets.
+TICKET_URL_TEMPLATE = "https://teamschools.zendesk.com/agent/tickets/{ticket_id}"
+
 # Derived from dim_school_calendars: the first date on or after July 1 where the
 # count of in-session locations reaches at least 90% of that year's peak. The
 # naive min(is_in_session) anchors on summer programming (2 of 21 locations) and
@@ -157,6 +160,11 @@ def week_offset(d: datetime.date, anchor: datetime.date) -> int:
     return (d - anchor).days // 7
 
 
+def ticket_url(ticket_id: int) -> str:
+    """Agent-view URL so labelers can open the full thread from a worksheet."""
+    return TICKET_URL_TEMPLATE.format(ticket_id=ticket_id)
+
+
 def fetch(client: bigquery.Client, query: str) -> list[dict]:
     return [dict(row) for row in client.query(query).result()]
 
@@ -179,6 +187,7 @@ def build_corpus(tickets: list[dict], comments: list[dict]) -> list[dict]:
         corpus.append(
             {
                 "ticket_id": t["ticket_id"],
+                "url": ticket_url(t["ticket_id"]),
                 "created_at": created.isoformat(),
                 "academic_year": year,
                 "week_offset": week_offset(created_date, anchor),

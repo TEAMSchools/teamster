@@ -100,6 +100,7 @@ def main() -> int:
                 "week_offset",
                 "academic_year",
                 "ticket_id",
+                "url",
                 "subject",
                 "same_ask_group",
             ]
@@ -115,6 +116,7 @@ def main() -> int:
                             offset,
                             year,
                             t["ticket_id"],
+                            t["url"],
                             t["subject"].replace("\t", " ").replace("\n", " "),
                             "",
                         ]
