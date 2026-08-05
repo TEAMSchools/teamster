@@ -71,18 +71,22 @@ workbook.
 
 ### The Intent to Return survey is different
 
-Your answers to the Intent to Return survey are visible to **you**, to **the
-person who managed you when you answered**, and to the HR, Recruiting, and
-Leadership Development teams. Nobody else — not colleagues, not other leaders at
-your school, not people who report to you.
+Intent to Return answers reach fewer people than anything else on Tableau, and
+who they reach depends on your own level. **Nobody at your own level ever sees
+them.**
 
-This survey deliberately does not follow the five routes above. Everywhere else
-access follows group membership and site. Here it follows the reporting
-relationship and nothing else, because the answers are only worth collecting if
-people can give them honestly.
+| If you are                                       | Your answers reach                                                                                                                                                                        |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A teacher or learning specialist                 | Your manager, your school's assistant principals, your school leader and director of school operations, your regional leadership, and the HR, Recruiting and Leadership Development teams |
+| An assistant school leader                       | Your manager, your school leader and director of school operations, your regional leadership, and those three teams — **not** other assistant principals                                  |
+| A school leader or director of school operations | Your manager, your regional leadership, and those three teams — **not** other school leaders or DSOs                                                                                      |
+| Regional leadership                              | Your manager and those three teams — **not** other regional leaders                                                                                                                       |
+| Central office staff                             | Your manager and those three teams. No regional leader sees central office answers                                                                                                        |
 
-A manager who changes roles does not keep access to your older answers, and a
-new manager does not gain access to answers you gave before they managed you.
+Two further protections apply to everyone. A manager who changes roles does not
+keep access to your older answers, and a new manager does not gain access to
+answers you gave before they managed you. And the free-text boxes carry the same
+restriction as the rest — there is no wider audience for comments.
 
 ### Rooms do not grant access
 
@@ -593,72 +597,152 @@ Three things about this gate that are deliberate:
 - **`IFNULL([locked], FALSE)` fails closed** on the small number of PMS rows
   where `locked` is null.
 
-### Survey Dashboard — Intent to Return is relationship-gated
+### Survey Dashboard — Intent to Return
 
-The Intent to Return sheets do not use the five-tier model. They use this
-instead, and nothing else:
+The Intent to Return sheets keep the tier model but add a **peer exclusion at
+every level**: a viewer never sees a respondent at their own level. The
+requirement is that peers and subordinates learn nothing about whether someone
+plans to return; leaders above the respondent legitimately need to know.
 
 ```text
 // Permissions - ITR
-// Intent to Return: self, direct manager, and three named all-access groups.
-// No entity, location, or role tier. See below for why.
+
+// 1. Self, and the manager recorded on the response
 LOWER(USERNAME()) = LOWER([sam_account_name])
 OR LOWER(USERNAME()) = LOWER([mail])
 OR LOWER(USERNAME()) = LOWER([user_principal_name])
 OR LOWER(USERNAME()) = LOWER([reports_to_sam_account_name])
 OR LOWER(USERNAME()) = LOWER([reports_to_mail])
+
+// 2. Administrators of the process
 OR ISMEMBEROF('KNJ-SG-Tableau All HR')
 OR ISMEMBEROF('KNJ-SG-Tableau All Recruiting')
 OR ISMEMBEROF('Leadership Development')
+
+// 3. Regional leaders: their region, minus their own level
+OR (
+    (ISMEMBEROF('KNJ-SG-Tableau All MDSO') OR ISMEMBEROF('KNJ-SG-Tableau All HOS'))
+    AND [RLS - Entity Gate]
+    AND NOT [RLS - ITR Respondent Is Regional Leadership]
+)
+
+// 4. School leaders and DSOs: their school, minus each other
+OR (
+    (ISMEMBEROF('KNJ-SG-Tableau All DSO') OR ISMEMBEROF('KNJ-SG-Tableau All SL'))
+    AND [RLS - Entity Gate]
+    AND [RLS - Location Gate]
+    AND NOT [RLS - ITR Respondent Is School Leadership]
+)
+
+// 5. Assistant principals: teachers at their school, nobody else
+OR (
+    ISMEMBEROF('KNJ-SG-Tableau All AP')
+    AND [RLS - Entity Gate]
+    AND [RLS - Location Gate]
+    AND (
+        CONTAINS(UPPER([job_title]), 'TEACHER')
+        OR CONTAINS(UPPER([job_title]), 'LEARNING SPECIALIST')
+    )
+)
 ```
 
-`Leadership Development` carries no `KNJ-SG-Tableau` prefix. That is the real
-group name, not a typo — group naming on this server is inconsistent by history,
-so copy names exactly rather than normalizing them.
+Note what is **absent** from Tier 2: `All Data`, `TEAM Council`, and
+`All Parliament` hold network-wide access on the other Survey Dashboard fields
+and are deliberately excluded here. Those groups contain peers and subordinates
+of the people answering. `Leadership Development` carries no `KNJ-SG-Tableau`
+prefix — that is the real group name, not a typo.
 
-#### Why the tier model does not apply
+#### The two peer-exclusion helpers
 
-The requirement is that **peers and subordinates learn nothing** about whether
-someone plans to return. Tiers 3, 4, and 5 grant on group membership plus site
-or region, which is lateral visibility by construction: a viewer in `All SL` or
-`All DSO` reads every teacher, assistant school leader, dean, and office staff
-member at their school, and a viewer in `All AP` reads every teacher there.
-Almost none of those viewers is the respondent's manager.
+```text
+// RLS - ITR Respondent Is Regional Leadership
+CONTAINS(UPPER([job_title]), 'HEAD OF SCHOOL')
+OR CONTAINS(UPPER([job_title]), 'MANAGING DIRECTOR')
+OR CONTAINS(UPPER([job_title]), 'CHIEF')
+OR CONTAINS(UPPER([job_title]), 'PRESIDENT')
+OR CONTAINS(UPPER([job_title]), 'EXECUTIVE DIRECTOR')
+```
 
-That cannot be repaired by excluding job titles. A title exclusion changes who
-is **observed**; this requirement is about who **observes**. An earlier version
-of this field excluded seven leadership titles and still left every teacher's
-and dean's response readable by a roomful of their colleagues.
+```text
+// RLS - ITR Respondent Is School Leadership
+(
+    CONTAINS(UPPER([job_title]), 'SCHOOL LEADER')
+    AND NOT CONTAINS(UPPER([job_title]), 'ASSISTANT')
+)
+OR CONTAINS(UPPER([job_title]), 'DIRECTOR SCHOOL OPERATIONS')
+OR CONTAINS(UPPER([job_title]), 'CAMPUS OPERATIONS')
+OR [RLS - ITR Respondent Is Regional Leadership]
+```
 
-So the tiers are deleted rather than narrowed. What remains is a relationship
-test — self, plus the one manager the extract records — and an explicitly named
-administrative set.
+Four things about these are deliberate:
 
-!!! note "Applies to any confidential self-report survey"
+- **They test job title, not `job_function`.** This is the one place the guide
+  contradicts _Field 4 of 5_, and the reason is data, not preference:
+  `job_function` is populated on **0.06%** of `rpt_tableau__survey_responses`
+  and **0% for 2019 through 2024**. `School Leader` appears on 63,644 rows of
+  that extract with a job function set on 34 of them. Keying these helpers on
+  `job_function` would be a no-op dressed as a principle. Revisit after
+  [#4631](https://github.com/TEAMSchools/teamster/issues/4631) backfills
+  history.
+- **`SCHOOL LEADER` appears only in the school helper.** School leaders and DSOs
+  are subordinates of regional leadership, so excluding them from branch 3 would
+  hide the 2,003 rows regional leaders most need.
+- **`AND NOT CONTAINS(... 'ASSISTANT')` protects 4,568 rows.** Without it,
+  `SCHOOL LEADER` swallows every assistant-school-leader response, which school
+  leaders and DSOs are meant to see.
+- **Substring tests, not equality.** The exact-match literals they replaced
+  missed `Head of Schools in Residence`, `School Leader in Residence`,
+  `Managing Director of Operations`, and `Director of Campus Operations` — the
+  last of those purely on the word "of". One literal,
+  `MANAGING DIRECTOR OF SCHOOLS`, matched no title in the data at all.
+  `EXECUTIVE DIRECTOR` rather than `EXECUTIVE` is equally deliberate: bare
+  `EXECUTIVE` catches an executive assistant.
 
-    The five-tier model assumes the row describes someone the viewer has a
-    legitimate supervisory interest in. A self-report survey about staying or
-    leaving breaks that assumption: the interest that justifies access is the
-    reporting relationship itself and nothing wider. Reach for a relationship
-    gate whenever the respondent would not have answered honestly knowing the
-    audience.
+#### Use the shared gates, not inline copies
+
+Branches 3 to 5 reference `[RLS - Entity Gate]` and `[RLS - Location Gate]`. The
+field these replaced carried its own pasted copies of both, which had drifted:
+the entity gate still had the unconditional `KTAF` branch and neither copy had a
+Paterson branch. Referencing the shared fields fixed both without touching this
+calc.
+
+That substitution also does the work no title test could: central office is not
+in the entity gate's four-region list, so 112 rows from 7 central-office leaders
+stop being reachable by regional leaders, and central office staff (467 rows, 27
+people) reach only their manager and the three admin groups.
 
 #### What this extract looks like, and two traps
 
-`rpt_tableau__survey_responses` holds 63,648 Intent to Return rows across
-2023–2025, roughly 1,250 respondents a year.
+63,648 Intent to Return rows across 2023–2025, roughly 1,250 respondents a year.
+
+| Respondent level                  | Rows   | People | At a Room         |
+| --------------------------------- | ------ | ------ | ----------------- |
+| Regional leadership               | 784    | 27     | 784 — all of them |
+| School leadership                 | 2,003  | 62     | 96                |
+| Assistant school leaders          | 4,568  | 130    | 16                |
+| Teachers and learning specialists | 34,928 | 1,049  | 497               |
+| Everyone else                     | 21,365 | 598    | 3,156             |
+
+Every regional-leadership response sits at a Room, and Rooms are absent from the
+location gate, so branches 4 and 5 cannot reach them regardless. The composed
+`OR [RLS - ITR Respondent Is Regional Leadership]` inside the school helper is
+insurance against a leader later being assigned a school location, not a live
+fix.
+
+Two traps specific to this survey:
 
 - **`is_open_ended` is 1 on every ITR row**, including `itr_plans`, which has
-  only 10 distinct answers and is the categorical intent question. The flag
-  cannot separate aggregate-safe content from prose, so do not build an
-  "aggregates only" variant on it. Free prose reaches 2,794 characters on
+  ten distinct answers and is the categorical intent question. The flag cannot
+  separate aggregate-safe content from prose, so do not build an "aggregates
+  only" variant on it. Free prose reaches 2,794 characters on
   `itr_considering_reasons`.
 - **37% of ITR rows carry a null `question_shortname`** — 23,853 of them — so
   any rule written per question silently lets those rows through.
 
 The extract also carries `respondent_name`, `race_ethnicity`, and `gender`. With
-~1,250 respondents across 23 locations, a single-school view plus a demographic
-breakdown re-identifies people whether or not the name field is on the sheet.
+~1,250 respondents across 22 school locations, a single-school view plus a
+demographic breakdown re-identifies people whether or not the name field is on
+the sheet.
 
 One thing works in your favour: `reports_to_mail` is **point-in-time, not
 current-state**. Of 1,197 people who answered in more than one year, 833 have a
@@ -666,22 +750,28 @@ different manager recorded across years, so a 2023 response reaches whoever
 managed them in 2023. A promotion does not hand someone their new report's older
 answers.
 
-#### The cost, and the wrong way to buy it back
+#### If leaders ask for rates rather than responses
 
-A head of schools loses school-level retention rates. That need is real, and the
-tempting fix — a second, wider permission field on the same extract, used only
-on "aggregate" sheets — is the failure documented in the next section. Sheets
-gated by a looser field on a row-level extract are one filter swap away from
-exposing the prose behind them.
+The tempting way to give a head of schools a school-level retention rate is a
+second, wider permission field on this extract, used only on "aggregate" sheets.
+That is the failure documented in the next section: sheets gated by a looser
+field on a row-level extract are one filter swap away from exposing the prose
+behind them.
 
-Build it in dbt instead: counts by `itr_plans` per location and year, minimum-N
-suppression, no identity or demographic columns, published as its own data
+Build it in dbt instead — counts by `itr_plans` per location and year, minimum-N
+suppression, no identity or demographic columns — and publish it as its own data
 source with its own permissions. Then who may see rates and who may read
 comments are different objects rather than different filters on one object.
 
-Members of the three all-access groups can read each other's responses. That is
-accepted — those groups administer the process — but it is worth knowing before
-someone in one of them assumes their own answers are private.
+!!! note "The general rule this survey establishes"
+
+    The five tiers assume a viewer's group membership implies a legitimate
+    interest in everyone at their site or region. A confidential self-report
+    survey breaks that at one level only: a respondent's **peers**. Keep the
+    tiers, add a peer exclusion per tier, and drop the network-wide groups that
+    exist for analysis rather than administration. Expect the same shape for the
+    Survey Dashboard department gate under
+    [#4721](https://github.com/TEAMSchools/teamster/issues/4721).
 
 ### One workbook can hold several permission fields
 
