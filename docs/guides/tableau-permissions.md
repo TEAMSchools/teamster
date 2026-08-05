@@ -669,7 +669,11 @@ OR CONTAINS(UPPER([job_title]), 'EXECUTIVE DIRECTOR')
     CONTAINS(UPPER([job_title]), 'SCHOOL LEADER')
     AND NOT CONTAINS(UPPER([job_title]), 'ASSISTANT')
 )
-OR CONTAINS(UPPER([job_title]), 'DIRECTOR SCHOOL OPERATIONS')
+OR (
+    CONTAINS(UPPER([job_title]), 'SCHOOL OPERATIONS')
+    AND CONTAINS(UPPER([job_title]), 'DIRECTOR')
+    AND NOT CONTAINS(UPPER([job_title]), 'ASSOCIATE')
+)
 OR CONTAINS(UPPER([job_title]), 'CAMPUS OPERATIONS')
 OR [RLS - ITR Respondent Is Regional Leadership]
 ```
@@ -697,6 +701,31 @@ Four things about these are deliberate:
   `MANAGING DIRECTOR OF SCHOOLS`, matched no title in the data at all.
   `EXECUTIVE DIRECTOR` rather than `EXECUTIVE` is equally deliberate: bare
   `EXECUTIVE` catches an executive assistant.
+- **The DSO clause tests two words separately rather than one phrase**, because
+  job titles put them in either order. `Fellow School Operations Director` — 48
+  rows from 2 people, none of them at a Room, so reachable by every DSO and
+  school leader at their school — does not contain the phrase
+  `DIRECTOR SCHOOL OPERATIONS`. Requiring `SCHOOL OPERATIONS` and `DIRECTOR`
+  independently catches it whichever way round the title reads. The
+  `NOT ... 'ASSOCIATE'` carve-out then keeps
+  `Associate Director of School Operations` visible: 209 rows from 6 people
+  whose `job_function` is `ADSOs, Ops-SOMs, AOMs, & Receptionists`, a rank below
+  DSO. `School Operations Manager` (899 rows) stays visible for want of
+  `DIRECTOR`.
+
+  Excluding the fellows does not hide them from their own manager — that is
+  branch 1, and a DSO Fellow reports to a DSO. It removes them from peer DSOs
+  and from the school leader at their site.
+
+!!! warning "Four people whose rank no title test can determine"
+
+    `Fellow`, with no qualifier, accounts for 81 ITR rows from 4 people at school
+    locations. Nothing in the title says whether they are a teaching fellow or an
+    operations fellow, so they fall through every pattern above and are visible to
+    their school's leadership. Titles like `Director` on its own (1,040 rows, 39
+    people, 880 of them at Rooms) have the same problem one level up. Pattern
+    matching on titles has a floor, and this is it — the durable fix is
+    [#4631](https://github.com/TEAMSchools/teamster/issues/4631).
 
 #### Use the shared gates, not inline copies
 
