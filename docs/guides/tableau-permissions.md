@@ -69,6 +69,21 @@ Seniority is read from the ADP job function rather than from job title text, so
 a newly created senior title is covered automatically without anyone editing a
 workbook.
 
+### The Intent to Return survey is different
+
+Your answers to the Intent to Return survey are visible to **you**, to **the
+person who managed you when you answered**, and to the HR, Recruiting, and
+Leadership Development teams. Nobody else — not colleagues, not other leaders at
+your school, not people who report to you.
+
+This survey deliberately does not follow the five routes above. Everywhere else
+access follows group membership and site. Here it follows the reporting
+relationship and nothing else, because the answers are only worth collecting if
+people can give them honestly.
+
+A manager who changes roles does not keep access to your older answers, and a
+new manager does not gain access to answers you gave before they managed you.
+
 ### Rooms do not grant access
 
 Working in a Room — the office locations rather than a school — does not grant
@@ -488,19 +503,19 @@ without following this guide.
 
 Anything blank in the Variant column takes the base form unmodified.
 
-| Workbook                          | Datasource                                                                                                                    | Variant                                                  |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Manager Survey Reports            | `rpt_tableau__manager_survey_details`                                                                                         | Senior-leader field plus the council branch in Tier 2    |
-| Manager Survey Rollup             | `rpt_tableau__manager_survey_details`                                                                                         | Senior-leader field plus the council branch in Tier 2    |
-| Leadership Development            | `rpt_tableau__leadership_development`                                                                                         | Senior-leader field plus the council branch in Tier 2    |
-| Coaching Conversation Tool        | `rpt_tableau__schoolmint_grow_observation_details`                                                                            | Tier 1 self-branches gated by `RLS - Release Gate`       |
-| SchoolMint Grow Dashboard         | `rpt_tableau__schoolmint_grow_observation_details`, `rpt_tableau__schoolmint_grow_goals`, `rpt_tableau__teacher_observations` | Tier 4 ungated on the `Permissions - Norming*` fields    |
-| Survey Dashboard                  | `rpt_tableau__survey_responses`, `rpt_tableau__survey_completion`                                                             | Tier 4 ungated on the `Permissions - PulseChecker` field |
-| Miami Instructional Rubrics       | `rpt_tableau__content_team`                                                                                                   | Role gate adds `OR ISMEMBEROF('TS-DL-NTN Coordinators')` |
-| Operations Systems                | `rpt_tableau__operations_pm`, `rpt_tableau__operations_ekg`                                                                   | Role gate: delete the AP branch                          |
-| Stipend and Bonus Dashboard       | `rpt_tableau__stipend_and_bonus_app`                                                                                          | Role gate: delete the AP branch                          |
-| Personalized Survey Links         | `rpt_tableau__survey_completion`, `rpt_tableau__survey_responses`                                                             | —                                                        |
-| Federal Grants Timesheet Approval | `rpt_tableau__grants_timesheets`                                                                                              | —                                                        |
+| Workbook                          | Datasource                                                                                                                    | Variant                                                                                                                            |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Manager Survey Reports            | `rpt_tableau__manager_survey_details`                                                                                         | Senior-leader field plus the council branch in Tier 2                                                                              |
+| Manager Survey Rollup             | `rpt_tableau__manager_survey_details`                                                                                         | Senior-leader field plus the council branch in Tier 2                                                                              |
+| Leadership Development            | `rpt_tableau__leadership_development`                                                                                         | Senior-leader field plus the council branch in Tier 2                                                                              |
+| Coaching Conversation Tool        | `rpt_tableau__schoolmint_grow_observation_details`                                                                            | Tier 1 self-branches gated by `RLS - Release Gate`                                                                                 |
+| SchoolMint Grow Dashboard         | `rpt_tableau__schoolmint_grow_observation_details`, `rpt_tableau__schoolmint_grow_goals`, `rpt_tableau__teacher_observations` | Tier 4 ungated on the `Permissions - Norming*` fields                                                                              |
+| Survey Dashboard                  | `rpt_tableau__survey_responses`, `rpt_tableau__survey_completion`                                                             | Tier 4 ungated on the `Permissions - PulseChecker` field. The Intent to Return sheets do not use the tier model at all — see below |
+| Miami Instructional Rubrics       | `rpt_tableau__content_team`                                                                                                   | Role gate adds `OR ISMEMBEROF('TS-DL-NTN Coordinators')`                                                                           |
+| Operations Systems                | `rpt_tableau__operations_pm`, `rpt_tableau__operations_ekg`                                                                   | Role gate: delete the AP branch                                                                                                    |
+| Stipend and Bonus Dashboard       | `rpt_tableau__stipend_and_bonus_app`                                                                                          | Role gate: delete the AP branch                                                                                                    |
+| Personalized Survey Links         | `rpt_tableau__survey_completion`, `rpt_tableau__survey_responses`                                                             | —                                                                                                                                  |
+| Federal Grants Timesheet Approval | `rpt_tableau__grants_timesheets`                                                                                              | —                                                                                                                                  |
 
 Datasource names come from the migration runbook, which derived them per
 workbook in Desktop. Nothing on Tableau Server links a workbook to its table —
@@ -577,6 +592,96 @@ Three things about this gate that are deliberate:
   to set its date.
 - **`IFNULL([locked], FALSE)` fails closed** on the small number of PMS rows
   where `locked` is null.
+
+### Survey Dashboard — Intent to Return is relationship-gated
+
+The Intent to Return sheets do not use the five-tier model. They use this
+instead, and nothing else:
+
+```text
+// Permissions - ITR
+// Intent to Return: self, direct manager, and three named all-access groups.
+// No entity, location, or role tier. See below for why.
+LOWER(USERNAME()) = LOWER([sam_account_name])
+OR LOWER(USERNAME()) = LOWER([mail])
+OR LOWER(USERNAME()) = LOWER([user_principal_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_sam_account_name])
+OR LOWER(USERNAME()) = LOWER([reports_to_mail])
+OR ISMEMBEROF('KNJ-SG-Tableau All HR')
+OR ISMEMBEROF('KNJ-SG-Tableau All Recruiting')
+OR ISMEMBEROF('Leadership Development')
+```
+
+`Leadership Development` carries no `KNJ-SG-Tableau` prefix. That is the real
+group name, not a typo — group naming on this server is inconsistent by history,
+so copy names exactly rather than normalizing them.
+
+#### Why the tier model does not apply
+
+The requirement is that **peers and subordinates learn nothing** about whether
+someone plans to return. Tiers 3, 4, and 5 grant on group membership plus site
+or region, which is lateral visibility by construction: a viewer in `All SL` or
+`All DSO` reads every teacher, assistant school leader, dean, and office staff
+member at their school, and a viewer in `All AP` reads every teacher there.
+Almost none of those viewers is the respondent's manager.
+
+That cannot be repaired by excluding job titles. A title exclusion changes who
+is **observed**; this requirement is about who **observes**. An earlier version
+of this field excluded seven leadership titles and still left every teacher's
+and dean's response readable by a roomful of their colleagues.
+
+So the tiers are deleted rather than narrowed. What remains is a relationship
+test — self, plus the one manager the extract records — and an explicitly named
+administrative set.
+
+!!! note "Applies to any confidential self-report survey"
+
+    The five-tier model assumes the row describes someone the viewer has a
+    legitimate supervisory interest in. A self-report survey about staying or
+    leaving breaks that assumption: the interest that justifies access is the
+    reporting relationship itself and nothing wider. Reach for a relationship
+    gate whenever the respondent would not have answered honestly knowing the
+    audience.
+
+#### What this extract looks like, and two traps
+
+`rpt_tableau__survey_responses` holds 63,648 Intent to Return rows across
+2023–2025, roughly 1,250 respondents a year.
+
+- **`is_open_ended` is 1 on every ITR row**, including `itr_plans`, which has
+  only 10 distinct answers and is the categorical intent question. The flag
+  cannot separate aggregate-safe content from prose, so do not build an
+  "aggregates only" variant on it. Free prose reaches 2,794 characters on
+  `itr_considering_reasons`.
+- **37% of ITR rows carry a null `question_shortname`** — 23,853 of them — so
+  any rule written per question silently lets those rows through.
+
+The extract also carries `respondent_name`, `race_ethnicity`, and `gender`. With
+~1,250 respondents across 23 locations, a single-school view plus a demographic
+breakdown re-identifies people whether or not the name field is on the sheet.
+
+One thing works in your favour: `reports_to_mail` is **point-in-time, not
+current-state**. Of 1,197 people who answered in more than one year, 833 have a
+different manager recorded across years, so a 2023 response reaches whoever
+managed them in 2023. A promotion does not hand someone their new report's older
+answers.
+
+#### The cost, and the wrong way to buy it back
+
+A head of schools loses school-level retention rates. That need is real, and the
+tempting fix — a second, wider permission field on the same extract, used only
+on "aggregate" sheets — is the failure documented in the next section. Sheets
+gated by a looser field on a row-level extract are one filter swap away from
+exposing the prose behind them.
+
+Build it in dbt instead: counts by `itr_plans` per location and year, minimum-N
+suppression, no identity or demographic columns, published as its own data
+source with its own permissions. Then who may see rates and who may read
+comments are different objects rather than different filters on one object.
+
+Members of the three all-access groups can read each other's responses. That is
+accepted — those groups administer the process — but it is worth knowing before
+someone in one of them assumes their own answers are private.
 
 ### One workbook can hold several permission fields
 
