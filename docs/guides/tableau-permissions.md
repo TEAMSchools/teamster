@@ -83,6 +83,11 @@ them.**
 | Regional leadership                              | Your manager and those three teams — **not** other regional leaders                                                                                                                       |
 | Central office staff                             | Your manager and those three teams. No regional leader sees central office answers                                                                                                        |
 
+Roles in training are treated as the level they are developing into, not the
+level above: a school leader in residence, a school operations fellow and an
+associate director of school operations are all visible to their school's
+leadership, the same as an assistant school leader is.
+
 Two further protections apply to everyone. A manager who changes roles does not
 keep access to your older answers, and a new manager does not gain access to
 answers you gave before they managed you. And the free-text boxes carry the same
@@ -654,31 +659,84 @@ prefix — that is the real group name, not a typo.
 
 #### The two peer-exclusion helpers
 
+Both enumerate titles explicitly. See below for why that beats a substring test
+here.
+
 ```text
 // RLS - ITR Respondent Is Regional Leadership
-CONTAINS(UPPER([job_title]), 'HEAD OF SCHOOL')
-OR CONTAINS(UPPER([job_title]), 'MANAGING DIRECTOR')
-OR CONTAINS(UPPER([job_title]), 'CHIEF')
-OR CONTAINS(UPPER([job_title]), 'PRESIDENT')
-OR CONTAINS(UPPER([job_title]), 'EXECUTIVE DIRECTOR')
+UPPER([job_title]) IN (
+    'HEAD OF SCHOOLS',
+    'MANAGING DIRECTOR',
+    'MANAGING DIRECTOR OF SCHOOL OPERATIONS',
+    'MANAGING DIRECTOR OF OPERATIONS',
+    'MANAGING DIRECTOR ACCOUNTING',
+    'MANAGING DIRECTOR, ACCOUNTING',
+    'MANAGING DIRECTOR OF GROWTH',
+    'MANAGING DIRECTOR OF TALENT ACQUISITION',
+    'MANAGING DIRECTOR OF TEACHING & LEARNING',
+    'DEPUTY CHIEF',
+    'CHIEF',
+    'CHIEF OF STAFF',
+    'CHIEF ACADEMIC OFFICER',
+    'CHIEF COLLEGE AND CAREER OFFICER',
+    'CHIEF DEVELOPMENT OFFICER',
+    'CHIEF EQUITY STRATEGIST',
+    'CHIEF EXECUTIVE OFFICER',
+    'CHIEF FINANCIAL OFFICER',
+    'CHIEF OPERATING OFFICER',
+    'CHIEF PEOPLE OFFICER',
+    'CO-PRESIDENT',
+    'EXECUTIVE DIRECTOR'
+)
 ```
 
 ```text
 // RLS - ITR Respondent Is School Leadership
-(
-    CONTAINS(UPPER([job_title]), 'SCHOOL LEADER')
-    AND NOT CONTAINS(UPPER([job_title]), 'ASSISTANT')
+UPPER([job_title]) IN (
+    'SCHOOL LEADER',
+    'DIRECTOR SCHOOL OPERATIONS',
+    'DIRECTOR CAMPUS OPERATIONS',
+    'DIRECTOR OF CAMPUS OPERATIONS'
 )
-OR (
-    CONTAINS(UPPER([job_title]), 'SCHOOL OPERATIONS')
-    AND CONTAINS(UPPER([job_title]), 'DIRECTOR')
-    AND NOT CONTAINS(UPPER([job_title]), 'ASSOCIATE')
-)
-OR CONTAINS(UPPER([job_title]), 'CAMPUS OPERATIONS')
 OR [RLS - ITR Respondent Is Regional Leadership]
 ```
 
-Four things about these are deliberate:
+#### Who these lists deliberately leave visible
+
+A viewer is blocked from their **own level only**. Every rank below a peer, and
+every developing or associate version of a peer role, stays visible — those are
+the people whose retention their leader is responsible for.
+
+| Title                                          | ITR rows | People | Visible to                     |
+| ---------------------------------------------- | -------- | ------ | ------------------------------ |
+| `School Leader in Residence`                   | 96       | 6      | School leaders, DSOs, regional |
+| `Head of Schools in Residence`                 | 16       | 1      | Regional leadership            |
+| `Fellow School Operations Director`            | 48       | 2      | School leaders, DSOs, regional |
+| `Associate Director of School Operations`      | 209      | 6      | School leaders, DSOs, regional |
+| `Assistant School Leader` and its two variants | 4,568    | 149    | School leaders, DSOs, regional |
+| `School Operations Manager`                    | 899      | 27     | School leaders, DSOs, regional |
+| `Fellow` (unqualified)                         | 81       | 4      | School leaders, DSOs, regional |
+
+#### Why explicit titles rather than substring tests
+
+An earlier version of these helpers used `CONTAINS`. It cannot express this
+policy without collapsing under its own exceptions.
+
+`CONTAINS(UPPER([job_title]), 'SCHOOL LEADER')` catches `School Leader`, but
+also `Assistant School Leader` and `School Leader in Residence`, both of which
+must stay visible — so it needs
+`AND NOT ... 'ASSISTANT' AND NOT ... 'RESIDENCE'`. The DSO clause has the same
+problem in three directions: the title exists as both
+`Director School Operations` and `Fellow School Operations Director`, so a
+phrase test misses one and a two-word test catches both, then needs
+`NOT ... 'ASSOCIATE'` and `NOT ... 'FELLOW'` bolted on. Each carve-out is a
+place to be wrong, and the stack of negations stops reading as a policy anyone
+can check.
+
+The peer set is 26 titles. Enumerated, it **is** the policy — someone can read
+the list against an org chart and say yes or no. `EXECUTIVE ASSISTANT` existing
+in the same roster is a standing reminder of the alternative: bare `EXECUTIVE`
+once hid an executive assistant from the Team Council.
 
 - **They test job title, not `job_function`.** This is the one place the guide
   contradicts _Field 4 of 5_, and the reason is data, not preference:
@@ -686,46 +744,40 @@ Four things about these are deliberate:
   and **0% for 2019 through 2024**. `School Leader` appears on 63,644 rows of
   that extract with a job function set on 34 of them. Keying these helpers on
   `job_function` would be a no-op dressed as a principle. Revisit after
-  [#4631](https://github.com/TEAMSchools/teamster/issues/4631) backfills
-  history.
-- **`SCHOOL LEADER` appears only in the school helper.** School leaders and DSOs
-  are subordinates of regional leadership, so excluding them from branch 3 would
-  hide the 2,003 rows regional leaders most need.
-- **`AND NOT CONTAINS(... 'ASSISTANT')` protects 4,568 rows.** Without it,
-  `SCHOOL LEADER` swallows every assistant-school-leader response, which school
-  leaders and DSOs are meant to see.
-- **Substring tests, not equality.** The exact-match literals they replaced
-  missed `Head of Schools in Residence`, `School Leader in Residence`,
-  `Managing Director of Operations`, and `Director of Campus Operations` — the
-  last of those purely on the word "of". One literal,
-  `MANAGING DIRECTOR OF SCHOOLS`, matched no title in the data at all.
-  `EXECUTIVE DIRECTOR` rather than `EXECUTIVE` is equally deliberate: bare
-  `EXECUTIVE` catches an executive assistant.
-- **The DSO clause tests two words separately rather than one phrase**, because
-  job titles put them in either order. `Fellow School Operations Director` — 48
-  rows from 2 people, none of them at a Room, so reachable by every DSO and
-  school leader at their school — does not contain the phrase
-  `DIRECTOR SCHOOL OPERATIONS`. Requiring `SCHOOL OPERATIONS` and `DIRECTOR`
-  independently catches it whichever way round the title reads. The
-  `NOT ... 'ASSOCIATE'` carve-out then keeps
-  `Associate Director of School Operations` visible: 209 rows from 6 people
-  whose `job_function` is `ADSOs, Ops-SOMs, AOMs, & Receptionists`, a rank below
-  DSO. `School Operations Manager` (899 rows) stays visible for want of
-  `DIRECTOR`.
+  [#4631](https://github.com/TEAMSchools/teamster/issues/4631) backfills history
+  — at which point both lists collapse to a job-function test and the
+  maintenance problem below disappears.
+- **`SCHOOL LEADER` appears only in the school list.** School leaders and DSOs
+  are subordinates of regional leadership, so putting them in the regional list
+  would hide the 2,003 rows regional leaders most need.
+- **The school helper composes the regional one**, so a school leader or DSO
+  never sees above their own level either. Every regional-leadership response
+  currently sits at a Room and Rooms are absent from the location gate, so this
+  is insurance against a regional leader later being assigned a school location,
+  not a live fix.
 
-  Excluding the fellows does not hide them from their own manager — that is
-  branch 1, and a DSO Fellow reports to a DSO. It removes them from peer DSOs
-  and from the school leader at their site.
+!!! warning "An explicit list has to be re-audited when titles change"
 
-!!! warning "Four people whose rank no title test can determine"
+    This is the real cost of enumerating, and it fails silently in the unsafe
+    direction: a **new** leadership title is not in the list, so it is visible to
+    that person's peers until someone notices. Re-run this after each ITR wave and
+    compare the output against both lists.
 
-    `Fellow`, with no qualifier, accounts for 81 ITR rows from 4 people at school
-    locations. Nothing in the title says whether they are a teaching fellow or an
-    operations fellow, so they fall through every pattern above and are visible to
-    their school's leadership. Titles like `Director` on its own (1,040 rows, 39
-    people, 880 of them at Rooms) have the same problem one level up. Pattern
-    matching on titles has a floor, and this is it — the durable fix is
-    [#4631](https://github.com/TEAMSchools/teamster/issues/4631).
+    ```sql
+    select job_title, count(*) as rows_
+    from `teamster-332318.kipptaf_tableau.rpt_tableau__survey_responses`
+    where survey_title = 'Intent to Return Survey'
+      and regexp_contains(
+        upper(job_title),
+        r'CHIEF|PRESIDENT|MANAGING|HEAD OF|SCHOOL LEADER'
+        r'|DEPUTY|SCHOOL OPERATIONS|CAMPUS OPERATIONS'
+      )
+    group by job_title
+    order by rows_ desc
+    ```
+
+    Anything in that output that is a full peer and absent from the field is a
+    live gap.
 
 #### Use the shared gates, not inline copies
 
