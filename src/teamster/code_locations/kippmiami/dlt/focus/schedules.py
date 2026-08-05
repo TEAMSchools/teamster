@@ -28,8 +28,8 @@ focus_dlt_daily_asset_job_schedule = ScheduleDefinition(
     #
     # 12:00 fires alongside the Finalsite contacts pull, not staggered behind it:
     # they share no pool and neither gates the other. That matters because the
-    # 12:30 delivery is a plain cron with nothing gating it on this pull
-    # finishing. Observed fire-to-stg_focus latency is 4-7 min against 30 min of
+    # 12:45 delivery is a plain cron with nothing gating it on this pull
+    # finishing. Observed fire-to-stg_focus latency is 4-7 min against 45 min of
     # budget; top-of-hour GKE step-pod scheduling wait (3-9 min) only queues the
     # run, so it fits too. Do not narrow that gap.
     cron_schedule=["0 4 * * *", "0 12 * * *", "45 14 * * *"],

@@ -11,7 +11,7 @@ and is validated by automated tests.
 ## What the pipeline does
 
 Each **midday** run builds four files from current Finalsite data and delivers
-them to Focus over SFTP at **12:30 p.m. ET**, matching Focus's import templates:
+them to Focus over SFTP at **12:45 p.m. ET**, matching Focus's import templates:
 
 | File               | Focus template       | Status |
 | ------------------ | -------------------- | ------ |
@@ -32,16 +32,16 @@ both:
 
 1. **Push the Finalsite SFTP export at 12:00 p.m.** Finalsite's own export runs
    overnight on a schedule that is not ours to change. Without a manual push,
-   the 12:30 delivery carries Finalsite data as of roughly 2:50 a.m. — silently,
+   the 12:45 delivery carries Finalsite data as of roughly 2:50 a.m. — silently,
    with no error and nothing on screen to notice. Push it after the noon cutoff,
    every day. **This is Miami only** — no other region needs it.
 
    **The window is 12:00 to 12:15 — push at noon or just after, not before.** An
    early push misses anything entered between it and the 12:00 cutoff, and those
    students then wait for tomorrow. The late bound is **12:15**: past that, the
-   file may not be ingested and rebuilt in time for the 12:30 delivery. From a
-   12:15 push the pipeline needs about 8 minutes to have everything rebuilt, so
-   the delivery still clears it.
+   file may not be ingested and rebuilt in time for the 12:45 delivery. From a
+   12:15 push the pipeline needs about 11 minutes to have everything rebuilt, so
+   the delivery clears it with roughly 19 minutes to spare.
 
    Nothing breaks if a push lands outside the window. A student whose record is
    only half-captured is skipped for that day, not half-imported — there is no
@@ -49,7 +49,7 @@ both:
 
 1. **Run the four Focus imports.** The pipeline only delivers files to Focus's
    `incoming/` folder; nothing imports them for you. The imports themselves are
-   quick, so the 90 minutes between the 12:30 delivery and 2 p.m. is slack, not
+   quick, so the 75 minutes between the 12:45 delivery and 2 p.m. is slack, not
    time you need — a student is usable in Focus within minutes of you running
    them, typically well before 1 p.m.
 

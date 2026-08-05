@@ -13,8 +13,8 @@ finalsite_contacts_daily_asset_job_schedule = ScheduleDefinition(
     # the other (this API pull and the manually-pushed SFTP drop feed opposite
     # sides of int_finalsite__enrollment_lifecycle; the dlt pull feeds the
     # import-once anti-join). Top-of-hour GKE Autopilot fan-out can add 3-9 min of
-    # step-pod scheduling wait, which only queues the run -- against 30 min before
-    # the 12:30 delivery that is noise, and the 3600s max_runtime below absorbs it.
+    # step-pod scheduling wait, which only queues the run -- against 45 min before
+    # the 12:45 delivery that is noise, and the 3600s max_runtime below absorbs it.
     #
     # Miami is the only district on a midday tick, so the finalsite_api pool
     # (limit 1) is uncontended then -- at 04:00 the four districts serialize and
