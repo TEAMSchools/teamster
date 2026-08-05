@@ -626,7 +626,12 @@ OR ISMEMBEROF('Leadership Development')
 
 // 3. Regional leaders: their region, minus their own level
 OR (
-    (ISMEMBEROF('KNJ-SG-Tableau All MDSO') OR ISMEMBEROF('KNJ-SG-Tableau All HOS'))
+    (
+        ISMEMBEROF('KNJ-SG-Tableau All MDSO')
+        OR ISMEMBEROF('KNJ-SG-Tableau All HOS')
+        OR ISMEMBEROF('KNJ-SG-Tableau All MDO')
+        OR ISMEMBEROF('KNJ-SG-Tableau AcOps')
+    )
     AND [RLS - Entity Gate]
     AND NOT [RLS - ITR Respondent Is Regional Leadership]
 )
@@ -656,6 +661,45 @@ Note what is **absent** from Tier 2: `All Data`, `TEAM Council`, and
 and are deliberately excluded here. Those groups contain peers and subordinates
 of the people answering. `Leadership Development` carries no `KNJ-SG-Tableau`
 prefix — that is the real group name, not a typo.
+
+#### Branch 3's viewer set matches the canonical Tier 4
+
+All four regional-leadership groups appear — `All MDSO`, `All HOS`, `All MDO`,
+`AcOps` — the same set as _Tier 4_ in the five-tier model, so ITR's branch 3 is
+Tier 4 plus the peer exclusion and nothing else. Note `AcOps` carries no `All`.
+
+`All MDO` and `AcOps` are load-bearing rather than tidiness: Miami's regional
+leadership sits in them, and without them none of Miami's 5,991 ITR rows reach
+any regional viewer.
+
+!!! warning "Peer means something different for MDO and AcOps than for MDSO and
+HOS"
+
+    One exclusion field now serves four viewer groups whose own titles differ.
+    `RLS - ITR Respondent Is Regional Leadership` catches the HOS, managing
+    director, chief, president and executive director ranks — the peers of MDSOs
+    and heads of schools. It does not catch director-rank titles, and those sit
+    inside the entity gate in region entities:
+
+    | Title | ITR rows | People | Entities |
+    | --- | --- | --- | --- |
+    | `Director` | 944 | 33 | TEAM, Miami, KCNA |
+    | `Associate Director` | 416 | 13 | TEAM, KCNA |
+
+    So **if AcOps or MDO members hold the bare title `Director`, they now read
+    each other's responses.** Nothing on Tableau Server exposes group membership
+    to a calculation or to this repo, so only someone who can open the group can
+    settle it.
+
+    If they do, the fix is not to add `DIRECTOR` to the shared helper — that would
+    also hide those 33 people from the MDSOs and heads of schools who supervise
+    them. Split branch 3 in two instead, one branch per viewer group with its own
+    exclusion.
+
+    The achievement-director family (`Achievement Director`,
+    `Director Literacy Achievement`, `Director Math Achievement` — 162 rows across
+    10 people) needs no decision: all of it sits in the central office entity,
+    which the region-scoped entity gate already excludes.
 
 #### The two peer-exclusion helpers
 
