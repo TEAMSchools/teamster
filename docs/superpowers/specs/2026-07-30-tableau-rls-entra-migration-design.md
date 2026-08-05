@@ -2,18 +2,23 @@
 
 Refs #4638
 
-> **Authoritative reference:**
-> [the Tableau permissions guide](../../guides/tableau-permissions.md) carries
-> the current text of all five calculated fields. This spec is the design
-> reasoning behind them. Where the two disagree, the guide wins.
+> **Authoritative reference for calc text:** the playbook,
+> `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`. This spec
+> is the design reasoning behind those fields;
+> [the Tableau permissions guide](../../guides/tableau-permissions.md) describes
+> the resulting behaviour for a non-technical reader. Where this spec and the
+> playbook disagree about the text of a field, the playbook wins.
 >
 > Two parts of the design landed after this spec was first written and are
-> documented only in the guide: the **Tier 2 senior-leader shield** (the fifth
+> documented in the playbook: the **Tier 2 senior-leader shield** (the fifth
 > calculated field, used on Manager Survey Reports, Manager Survey Rollup, and
 > Leadership Development), and the fact that the shield and the entity gate are
 > **coupled** — the shield is sufficient only because the entity gate excludes
 > KTAF-on-KTAF. A shield inside one branch of an `OR` chain does nothing about
 > the other branches.
+>
+> _Section 4_ below was added 2026-08-05 and covers the Intent to Return
+> variant.
 
 ## Problem
 
@@ -384,8 +389,8 @@ same limitation is why subject-side seniority has to come from the data:
 `ISMEMBEROF()` only ever answers for the current viewer, never for the row's
 person.
 
-The full 26-branch block, including the five retired-location bridges, is in
-[the Tableau permissions guide](../../guides/tableau-permissions.md).
+The full 26-branch block, including the five retired-location bridges, is in the
+playbook, `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`.
 
 Rooms are absent by design. Central office reaches data through Tiers 2 and 4,
 never through location.
@@ -530,6 +535,238 @@ behavior is understood rather than discovered later.
 
 Capture each workbook's current calc text before editing, so a bad publish has a
 known-good string to restore. Tableau revision history is the backstop.
+
+## Section 4 — the Intent to Return variant
+
+Added 2026-08-05, when the design settled. The field text is in the playbook;
+this section is why it has the shape it has.
+
+The five tiers assume a viewer's group membership implies a legitimate interest
+in everyone at their site or region. A confidential self-report survey breaks
+that at one level only: a respondent's **peers**. So the variant keeps the
+tiers, adds a peer exclusion per tier, and drops the network-wide groups that
+exist for analysis rather than administration.
+
+### Why title tests rather than `job_function`
+
+This is the one place the design contradicts `RLS - Subject Is Senior Leader`,
+and the reason is data rather than preference. `job_function` is populated on
+**0.06%** of `rpt_tableau__survey_responses` and **0% for 2019 through 2024**.
+`School Leader` appears on 63,644 rows of that extract with a job function set
+on 34 of them. Keying these helpers on `job_function` would be a no-op dressed
+as a principle.
+
+`RLS - Subject Is Senior Leader` is also unusable here for a second, independent
+reason: its `ISNULL` fallback matches the bare string `Executive`, which catches
+an executive assistant. On an extract where the fallback fires on essentially
+every row, that false positive would be the rule rather than the exception.
+
+Revisit after [#4631](https://github.com/TEAMSchools/teamster/issues/4631)
+backfills history, at which point every title test collapses to a job-function
+test.
+
+### Why one helper matches patterns and the other enumerates
+
+The asymmetry is not an oversight. The two levels fail in opposite directions.
+
+**Regional titles proliferate.** New chief and managing-director variants appear
+regularly, and a list would be stale the week after it was written — the current
+roster already holds eight distinct `Managing Director` forms and eleven `Chief`
+forms. `CONTAINS` absorbs the next one automatically, and no non-leadership
+title on the roster contains `CHIEF`, `PRESIDENT`, or `MANAGING DIRECTOR`, so it
+over-reaches nowhere.
+
+**School peer titles have near-miss neighbours that must stay visible.** Here
+`CONTAINS` cannot express the policy without collapsing under exceptions.
+`CONTAINS('SCHOOL LEADER')` catches `School Leader`, but also
+`Assistant School Leader` and `School Leader in Residence`, so it needs
+`AND NOT ... 'ASSISTANT' AND NOT ... 'RESIDENCE'`. The DSO clause is worse: the
+title exists as both `Director School Operations` and
+`Fellow School Operations Director`, so a phrase test misses one while a
+two-word test catches both and then needs `NOT ... 'ASSOCIATE'` and
+`NOT ... 'FELLOW'` bolted on. Four negations to express four titles, each one a
+place to be wrong. Enumerated, the list reads as the policy and can be checked
+against an org chart.
+
+`HEAD OF SCHOOLS` uses `=` inside the pattern-matching helper for the same
+reason: `CONTAINS('HEAD OF SCHOOL')` would catch `Head of Schools in Residence`,
+which must stay visible. The cost is that a future variant such as
+`Head of Schools, Elementary` would not be caught. If those appear, the robust
+equivalent is
+`CONTAINS(UPPER([job_title]), 'HEAD OF SCHOOL') AND NOT CONTAINS(UPPER([job_title]), 'RESIDENCE')`.
+
+`SCHOOL LEADER` appears only in the school helper, and **the school helper
+composes the regional one**. School leaders and DSOs are subordinates of
+regional leadership, so putting them in the regional helper would hide the 2,003
+rows regional leaders most need; composing the other way keeps a school leader
+from seeing above their own level.
+
+### Who the helpers deliberately leave visible
+
+A viewer is blocked from their **own level only**. Every rank below a peer, and
+every developing or associate version of a peer role, stays visible — those are
+the people whose retention their leader is responsible for.
+
+| Title                                          | ITR rows | People | Visible to                     |
+| ---------------------------------------------- | -------- | ------ | ------------------------------ |
+| `School Leader in Residence`                   | 96       | 6      | School leaders, DSOs, regional |
+| `Head of Schools in Residence`                 | 16       | 1      | Regional leadership            |
+| `Fellow School Operations Director`            | 48       | 2      | School leaders, DSOs, regional |
+| `Associate Director of School Operations`      | 209      | 6      | School leaders, DSOs, regional |
+| `Assistant School Leader` and its two variants | 4,568    | 149    | School leaders, DSOs, regional |
+| `School Operations Manager`                    | 899      | 27     | School leaders, DSOs, regional |
+| `Fellow` (unqualified)                         | 81       | 4      | School leaders, DSOs, regional |
+
+### Why branch 3 splits into three
+
+One shared exclusion helper cannot serve viewer groups that sit at different
+levels. `RLS - ITR Respondent Is Regional Leadership` describes the MDSO / HOS /
+MDO level, so applying it alone to the Syndicate and to School Support Directors
+would have hidden the wrong people:
+
+- **3a — MDSO / HOS / MDO** sit above every director, so directors stay visible.
+  The helper alone is the right exclusion.
+- **3b — The Syndicate** is at director rank, so director-rank peers are
+  excluded too — except school operations directors, who are the Syndicate's own
+  line of report and must stay visible. That is what
+  `RLS - ITR Respondent Is a School Operations Director` exists for.
+- **3c — School Support Directors** are at director rank with no line of report
+  among directors, so every director rank is excluded.
+
+`AcOps` was removed from this branch. `The Syndicate` appears here and nowhere
+else — that reverses the migration's network-wide removal of the group, and this
+paragraph is the record of that decision.
+
+### Branch 6 — the two departmental director groups
+
+`Special Education Directors` and `KIPP Forward Directors` are scoped by
+**department and region**, and exclude director-rank peers while leaving
+associate directors visible. `RLS - ITR Respondent Is a Department Director` is
+exact rather than approximate here, because neither department contains a chief,
+head of schools, managing director or executive director. The
+`NOT ... 'ASSOCIATE'` clause keeps `Associate Director` visible — 112 rows from
+6 people in KIPP Forward, and none in Special Education, which has no associate
+directors.
+
+| Department        | Region | Rows   | People | Peer rows excluded |
+| ----------------- | ------ | ------ | ------ | ------------------ |
+| Special Education | TEAM   | 11,161 | 327    | 144                |
+| Special Education | KCNA   | 2,896  | 94     | 32                 |
+| Special Education | Miami  | 627    | 20     | 48                 |
+| KIPP Forward      | TEAM   | 896    | 28     | 96                 |
+| KIPP Forward      | KCNA   | 451    | 13     | 48                 |
+| KIPP Forward      | Miami  | 64     | 3      | 0                  |
+
+If a third department group is added, it reuses
+`RLS - ITR Respondent Is a Department Director` unchanged.
+
+!!! warning "Region-scoping leaves Miami's KIPP Forward staff with no
+departmental viewer"
+
+    Miami has 3 KIPP Forward respondents and **no** KIPP Forward director of its
+    own — the zero in the last column is the tell. Before the entity gate was
+    added, TEAM's and KCNA's directors covered them; now nobody in branch 6 does,
+    and those 3 people reach only their manager and the three admin groups. Either
+    add Miami's KIPP Forward lead to the group once one exists, or accept the gap
+    knowingly.
+
+    The same applies to the KIPP Forward `Achievement Director` row, which sits in
+    the central office entity and so fails the four-region list.
+
+### Branch 7 — the TEAM Council shield is approximate
+
+The council sees every response network-wide except other chief-level
+respondents. `RLS - ITR Respondent Is Chief Level` covers 64 rows from 4 people:
+`Chief Academic Officer`, `Chief of Staff` and `Deputy Chief`. The `PRESIDENT`
+clause matches nothing in the current waves and is there for the `Co-President`
+title, which exists on the roster. `Deputy Chief` is included even though its
+`job_function` is `EDs, HOSs, MDOs` rather than `Chief Level`, so this test is
+marginally broader than the canonical shield — the safe direction for a
+confidential survey.
+
+!!! warning "The shield hides chief-level titles, not council membership"
+
+    Tableau cannot ask whether **the respondent** belongs to a group, so council
+    membership has to be approximated from the title. If the council includes heads
+    of schools or managing directors, and it plausibly does, their responses stay
+    visible to fellow council members: **720 rows from 23 people** hold a senior
+    title that is not chief level (`Executive Director`, `Head of Schools`,
+    `Head of Schools in Residence`, and five `Managing Director` variants).
+
+    Widening the shield is one clause —
+    `OR [RLS - ITR Respondent Is Regional Leadership]` — but it costs regional
+    oversight nothing and council visibility a great deal, so it should be a
+    decision rather than a default. Settle it by reading the council roster against
+    that list of eight titles.
+
+### What the extract looks like
+
+63,648 Intent to Return rows across 2023–2025, roughly 1,250 respondents a year.
+
+| Respondent level                  | Rows   | People | At a Room         |
+| --------------------------------- | ------ | ------ | ----------------- |
+| Regional leadership               | 784    | 27     | 784 — all of them |
+| School leadership                 | 2,003  | 62     | 96                |
+| Assistant school leaders          | 4,568  | 130    | 16                |
+| Teachers and learning specialists | 34,928 | 1,049  | 497               |
+| Everyone else                     | 21,365 | 598    | 3,156             |
+
+Every regional-leadership response sits at a Room, and Rooms are absent from the
+location gate, so branches 4 and 5 cannot reach them regardless. The composed
+`OR [RLS - ITR Respondent Is Regional Leadership]` inside the school helper is
+insurance against a leader later being assigned a school location, not a live
+fix.
+
+The extract also carries `respondent_name`, `race_ethnicity`, and `gender`. With
+~1,250 respondents across 22 school locations, a single-school view plus a
+demographic breakdown re-identifies people whether or not the name field is on
+the sheet.
+
+Two unresolved title cases, both from the 2026-08-05 audit:
+
+- `Fellow` unqualified — 4 people, 81 rows, rank unresolvable from title.
+- `Director` bare — 33 people, most in Special Education, Student Support, KIPP
+  Forward and Teaching and Learning, who are not anyone's regional peer.
+
+Both are why #4631 matters: it collapses every title test to
+`job_function_code`.
+
+Also worth confirming rather than assuming: `Chief of Staff` sits in the TEAM
+entity (1 person, 16 rows), the only chief-level row inside a region's entity
+gate. That may be roster drift rather than a real assignment.
+
+### Re-audit after each survey wave
+
+Both peer helpers fail silently in the unsafe direction — an uncaught peer title
+is visible to that person's peers until someone notices. The school list goes
+stale when a title is added; the regional patterns go stale if a peer title
+arrives using none of their five markers. This returns every leadership-looking
+title that **neither** helper catches:
+
+```sql
+select job_title, count(*) as rows_
+from `teamster-332318.kipptaf_tableau.rpt_tableau__survey_responses`
+where survey_title = 'Intent to Return Survey'
+  and upper(job_title) != 'HEAD OF SCHOOLS'
+  and not contains_substr(upper(job_title), 'MANAGING DIRECTOR')
+  and not contains_substr(upper(job_title), 'CHIEF')
+  and not contains_substr(upper(job_title), 'PRESIDENT')
+  and not contains_substr(upper(job_title), 'EXECUTIVE DIRECTOR')
+  and upper(job_title) not in (
+    'SCHOOL LEADER',
+    'DIRECTOR SCHOOL OPERATIONS',
+    'DIRECTOR CAMPUS OPERATIONS',
+    'DIRECTOR OF CAMPUS OPERATIONS'
+  )
+  and regexp_contains(
+    upper(job_title), r'DIRECTOR|LEADER|HEAD|PRINCIPAL|SUPERINTENDENT'
+  )
+group by job_title
+order by rows_ desc
+```
+
+Today every row it returns is a rank that should be visible. Anything in the
+output that is a **full peer** is a live gap.
 
 ## Risks
 
