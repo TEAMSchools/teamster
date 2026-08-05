@@ -1027,9 +1027,21 @@ Not part of the PR, but the plan is incomplete without it.
 
 1. Confirm the `kippmiami` code location has LOADED the merge commit
    (`mcp__dagster__get_location_load_history`).
-1. Confirm no Focus dbt build is imminent — the migration drops each table
-   before reloading it, and Focus staging models fail if they build in that
-   window.
+1. **Pick the window deliberately — this is the riskiest step in the plan.**
+   Focus dlt runs at 04:00, 12:00, and 14:00 ET, feeding the midday import chain
+   documented in `code_locations/kippmiami/CLAUDE.md`. Two hazards while a table
+   is dropped or mid-reload:
+   - Focus dbt staging models fail outright if they build in that window.
+   - Worse, and silent: `rpt_focus__*` import-once is an **anti-join against the
+     dlt snapshot of Focus**. A snapshot reading empty makes the 12:45 delivery
+     treat already-imported records as new and re-send them, duplicating them in
+     Focus once ops runs the import by hand. That delivery is a plain cron —
+     nothing gates it on the upstreams, so it fires mid-migration regardless.
+
+   Run the migration **after the 14:00 ET pull finishes and well before 04:00**
+   — never inside 11:00-15:00 ET — and confirm every table is repopulated before
+   the next 12:45 delivery.
+
 1. Launch the Focus asset job with run config:
 
    ```yaml
