@@ -47,8 +47,8 @@ Three constraints to preserve when touching any of these times:
 
 - **The 12:30 delivery is a plain cron — nothing gates it on the upstreams.**
   The gaps are a time budget, not a dependency. Measured need is 4-7 min from a
-  schedule firing to the dependent staging table being rebuilt, or ~16 min worst
-  case from a manual SFTP push (10 min sensor poll + 2 min ingest + 3.5 min dbt)
+  schedule firing to the dependent staging table being rebuilt, or ~8 min worst
+  case from a manual SFTP push (2 min sensor poll + 2m13s ingest + 3m34s dbt)
   plus up to 9 min of top-of-hour pod-scheduling queue, against 45 min of
   budget. Spending that margin ships a delivery built on incomplete inputs with
   no error raised anywhere.

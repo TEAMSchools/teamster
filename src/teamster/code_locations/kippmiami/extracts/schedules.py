@@ -17,10 +17,10 @@ focus_extract_assets_schedule = ScheduleDefinition(
     #
     # NOTHING GATES THIS ON THOSE UPSTREAMS -- it is a plain cron, so the gap is a
     # time budget, not a dependency. The binding term is the manual SFTP push, not
-    # any ordering between Finalsite and Focus: worst case ~16 min from push to
-    # rebuilt (10 min couchdrop sensor poll + 2 min ingest + 3.5 min dbt). The
+    # any ordering between Finalsite and Focus: worst case ~8 min from push to
+    # rebuilt (2 min couchdrop sensor poll + 2m13s ingest + 3m34s dbt). The
     # scheduled pulls need only 4-7 min. So the push deadline is always this time
-    # minus ~16 min, which gives ops a 12:00-12:15 push window. Pushing EARLY is
+    # minus ~8 min, which gives ops a 12:00-12:15 push window with margin. Pushing EARLY is
     # not a safe fallback: it misses anything entered between the push and the noon
     # cutoff. Moving this delivery LATER is the only lever that widens that window,
     # and there is ~90 min of slack before 2pm to spend on it if ops needs it.

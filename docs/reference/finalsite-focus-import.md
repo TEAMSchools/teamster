@@ -39,10 +39,9 @@ both:
    **The window is 12:00 to 12:15 — push at noon or just after, not before.** An
    early push misses anything entered between it and the 12:00 cutoff, and those
    students then wait for tomorrow. The late bound is **12:15**: past that, the
-   file may not be ingested and rebuilt in time for the 12:30 delivery. Most of
-   that 15 minutes is not the pipeline being slow — the sensor watching the SFTP
-   folder polls every 10 minutes, so in the worst case your file sits unnoticed
-   for 10 minutes after you drop it.
+   file may not be ingested and rebuilt in time for the 12:30 delivery. From a
+   12:15 push the pipeline needs about 8 minutes to have everything rebuilt, so
+   the delivery still clears it.
 
    Nothing breaks if a push lands outside the window. A student whose record is
    only half-captured is skipped for that day, not half-imported — there is no
