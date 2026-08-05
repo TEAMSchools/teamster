@@ -1,5 +1,8 @@
 models:
   - name: rpt_parentsquare__students
+    config:
+      meta:
+        contains_pii: true
     columns:
       - name: student_id
         data_type: string
