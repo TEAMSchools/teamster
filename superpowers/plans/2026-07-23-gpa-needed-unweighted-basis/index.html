@@ -1,0 +1,1990 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Needed-Y1 GPA and Attainability on an Unweighted Basis — Implementation Plan - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#needed-y1-gpa-and-attainability-on-an-unweighted-basis-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Needed-Y1 GPA and Attainability on an Unweighted Basis — Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pr-1-correct-the-powerschool-model-executable-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 1 — correct the powerschool model (executable now)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PR 1 — correct the powerschool model (executable now)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-repoint-neededattainability-to-unweighted-basis-model-unit-test-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Repoint needed/attainability to unweighted basis (model + unit test + descriptions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-real-data-smoke-validation-no-code-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Real-data smoke validation (no code change)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-push-and-open-pr-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Push and open PR 1
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pr-2-extract-display-columns-gated-do-not-start-until-pr-1-is-merged-and-the-district-int_powerschool__gpa_cumulative-tables-have-rebuilt-in-prod" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PR 2 — extract display columns (GATED: do not start until PR 1 is merged and the district int_powerschool__gpa_cumulative tables have rebuilt in prod)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PR 2 — extract display columns (GATED: do not start until PR 1 is merged and the district int_powerschool__gpa_cumulative tables have rebuilt in prod)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-4-add-gpa_y1_weighted_target-and-is_on_pace_cumulative_3_0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Add gpa_y1_weighted_target and is_on_pace_cumulative_3_0
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/plans/2026-07-23-gpa-needed-unweighted-basis.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="needed-y1-gpa-and-attainability-on-an-unweighted-basis-implementation-plan">Needed-Y1 GPA and Attainability on an Unweighted Basis — Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use
+superpowers:subagent-driven-development (recommended) or
+superpowers:executing-plans to implement this plan task-by-task. Steps use
+checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Correct <code>gpa_needed_for_cumulative_3_0</code> and
+<code>is_cumulative_3_0_attainable</code> in <code>int_powerschool__gpa_cumulative</code> from a
+weighted to an unweighted basis, then surface a per-student weighted display
+target and an on-pace flag in <code>rpt_tableau__student_course_grades</code>.</p>
+<p><strong>Architecture:</strong> The needed/attainability chain in
+<code>int_powerschool__gpa_cumulative</code> is repointed from weighted inputs
+(<code>weighted_points_prior</code>, the weighted gradescale ceiling) to unweighted inputs
+(<code>unweighted_points</code>, the unweighted gradescale ceiling via
+<code>courses_gradescaleid_unweighted</code>). Column names and types are unchanged, so
+this is a value-only package change. The extract then derives
+<code>gpa_y1_weighted_target = needed + (gpa_y1 - gpa_y1_unweighted)</code> and
+<code>is_on_pace_cumulative_3_0 = gpa_y1_unweighted &gt;= needed</code> from the corrected
+column plus existing spread fields.</p>
+<p><strong>Tech Stack:</strong> dbt (BigQuery dialect), dbt unit tests, powerschool source
+package consumed by district projects and kipptaf via <code>source()</code>.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><code>int_powerschool__gpa_cumulative</code> lives in the powerschool <strong>package</strong>; build
+  and test it through a consuming district project-dir (<code>kippnewark</code>) — never
+  standalone. Reference: <code>src/dbt/CLAUDE.md</code> → "Building a source-system package
+  model locally".</li>
+<li>Worktree:
+  <code>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis</code>.
+  Every <code>git</code> uses <code>git -C &lt;worktree&gt;</code>; every <code>dbt</code> uses
+  <code>--project-dir &lt;worktree&gt;/src/dbt/&lt;project&gt;</code>. <code>--state</code> must be the
+  <strong>absolute</strong> main-repo prod manifest path.</li>
+<li>Fresh worktree has no <code>dbt_packages/</code> — run <code>dbt deps</code> once per project-dir
+  before any build/test.</li>
+<li>dbt unit-test fixtures: dict scalars UNQUOTED; leading-zero strings QUOTED;
+  every <code>expect</code> row lists the SAME columns. yamllint (88-char) fires at CI, not
+  the pre-commit fmt hook — match the existing one-key-per-line brace layout.</li>
+<li>SQL guide (<code>src/dbt/CLAUDE.md</code>): max 1 level of function nesting; no
+  <code>ORDER BY</code> / <code>QUALIFY</code> / <code>SELECT *</code> in <code>rpt_</code>; ST06 column ordering;
+  sqlfluff/sqlfmt via trunk. <code>trunk check --force</code> the changed <code>.sql</code>/<code>.yml</code>
+  from inside the worktree before pushing (binary
+  <code>/workspaces/teamster/.trunk/tools/trunk</code>).</li>
+<li><code>--target prod</code> dbt runs and <code>git push origin main</code> are user-only.
+  Feature-branch pushes are fine.</li>
+<li>Spec:
+  <code>docs/superpowers/specs/2026-07-23-gpa-needed-unweighted-basis-design.md</code>.
+  Issue: #4528.</li>
+</ul>
+<hr />
+<h2 id="pr-1-correct-the-powerschool-model-executable-now">PR 1 — correct the powerschool model (executable now)</h2>
+<h3 id="task-1-repoint-neededattainability-to-unweighted-basis-model-unit-test-descriptions">Task 1: Repoint needed/attainability to unweighted basis (model + unit test + descriptions)</h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative.sql</code></li>
+<li>Modify:
+  <code>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_cumulative.yml</code>
+  (unit test + descriptions)</li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes: <code>stg_powerschool__storedgrades</code>,
+  <code>int_powerschool__gradescaleitem_lookup</code>, <code>base_powerschool__final_grades</code>
+  (already exposes <code>courses_gradescaleid_unweighted</code>),
+  <code>base_powerschool__student_enrollments</code>.</li>
+<li>
+<p>Produces: unchanged output columns <code>gpa_needed_for_cumulative_3_0</code> (float64)
+  and <code>is_cumulative_3_0_attainable</code> (boolean), now on an unweighted basis.</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Rewrite the unit test to the unweighted basis (the failing
+      test)</strong></p>
+</li>
+</ul>
+<p>Replace the entire <code>unit_tests:</code> block in
+<code>.../properties/int_powerschool__gpa_cumulative.yml</code> with the block below. Keep
+the existing one-key-per-line brace layout the file already uses (shown compact
+here for readability — expand each row so yamllint's 88-char limit passes; run
+trunk to confirm). Values are final.</p>
+<p>Fixtures (<code>given</code>):</p>
+<div class="highlight"><pre><span></span><code>stg_powerschool__storedgrades (all prior years; percent drives the unweighted grade):
+  S1  ay2022  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 35.0  gpa_points 4.5  percent 95  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+  S1  ay2023  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 35.0  gpa_points 4.5  percent 95  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+  S1  ay2024  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 0.0   gpa_points 0.0  percent 50  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+  S3  ay2021  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 35.0  gpa_points 4.5  percent 95  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+  S3  ay2022  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 35.0  gpa_points 4.5  percent 95  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+  S3  ay2023  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 35.0  gpa_points 4.5  percent 95  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+  S3  ay2024  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 35.0  gpa_points 4.5  percent 95  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+  S4  ay2024  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 0.0   gpa_points 0.0  percent 50  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+  S5  ay2024  C1  Y1  potentialcrhrs 35.0  earnedcrhrs 35.0  gpa_points 3.0  percent 85  gradescale_name_unweighted &quot;UT Unweighted&quot;  excludefromgpa 0  excludefromgraduation 0  schoolid 101
+
+int_powerschool__gradescaleitem_lookup (unchanged from current fixture):
+  gsid 10 &quot;UT Weighted&quot;   A 4.5  min 90 max 100
+  gsid 10 &quot;UT Weighted&quot;   B 3.0  min 80 max 89.9
+  gsid 10 &quot;UT Weighted&quot;   F 0.0  min 0  max 79.9
+  gsid 20 &quot;UT Unweighted&quot; A 4.0  min 90 max 100
+  gsid 20 &quot;UT Unweighted&quot; B 3.0  min 80 max 89.9
+  gsid 20 &quot;UT Unweighted&quot; F 0.0  min 0  max 79.9
+
+base_powerschool__final_grades (current in-progress; NOTE courses_gradescaleid_unweighted):
+  S1  yearid 35  C1  Q4  potential_credit_hours 35.0  y1_letter_grade B  y1_grade_points 3.0  y1_grade_points_unweighted 3.0  courses_gradescaleid 10  courses_gradescaleid_unweighted 20  exclude_from_gpa 0  termbin_start_date 2000-01-01  termbin_end_date 9999-12-31
+  S2  yearid 35  C1  Q4  potential_credit_hours 35.0  y1_letter_grade B  y1_grade_points 3.0  y1_grade_points_unweighted 3.0  courses_gradescaleid 10  courses_gradescaleid_unweighted 20  exclude_from_gpa 0  termbin_start_date 2000-01-01  termbin_end_date 9999-12-31
+  S3  yearid 35  C1  Q4  potential_credit_hours 35.0  y1_letter_grade B  y1_grade_points 3.0  y1_grade_points_unweighted 3.0  courses_gradescaleid 10  courses_gradescaleid_unweighted 20  exclude_from_gpa 0  termbin_start_date 2000-01-01  termbin_end_date 9999-12-31
+  S4  yearid 35  C1  Q4  potential_credit_hours 35.0  y1_letter_grade B  y1_grade_points 3.0  y1_grade_points_unweighted 3.0  courses_gradescaleid 10  courses_gradescaleid_unweighted 20  exclude_from_gpa 0  termbin_start_date 2000-01-01  termbin_end_date 9999-12-31
+  S6  yearid 35  C1  Q4  potential_credit_hours 35.0  y1_letter_grade B  y1_grade_points 3.0  y1_grade_points_unweighted 3.0  courses_gradescaleid 10  courses_gradescaleid_unweighted 20  exclude_from_gpa 0  termbin_start_date 2000-01-01  termbin_end_date 9999-12-31
+  S6  yearid 35  C2  Q4  potential_credit_hours 35.0  y1_letter_grade B  y1_grade_points 3.0  y1_grade_points_unweighted 3.0  courses_gradescaleid 10  courses_gradescaleid_unweighted 99  exclude_from_gpa 0  termbin_start_date 2000-01-01  termbin_end_date 9999-12-31
+
+base_powerschool__student_enrollments (rn_year 1, ay2025, schoolid 101):
+  S1, S2, S3, S4, S6   (S5 intentionally absent — no current enrollment)
+</code></pre></div>
+<p>Expected (<code>expect</code>, every row lists the same three asserted columns):</p>
+<div class="highlight"><pre><span></span><code>  S1  potential_gpa_credits_current_year 35.0  gpa_needed_for_cumulative_3_0  4.0  is_cumulative_3_0_attainable true
+  S2  potential_gpa_credits_current_year 35.0  gpa_needed_for_cumulative_3_0  3.0  is_cumulative_3_0_attainable true
+  S3  potential_gpa_credits_current_year 35.0  gpa_needed_for_cumulative_3_0 -1.0  is_cumulative_3_0_attainable true
+  S4  potential_gpa_credits_current_year 35.0  gpa_needed_for_cumulative_3_0  6.0  is_cumulative_3_0_attainable false
+  S5  potential_gpa_credits_current_year null  gpa_needed_for_cumulative_3_0 null  is_cumulative_3_0_attainable null
+  S6  potential_gpa_credits_current_year 70.0  gpa_needed_for_cumulative_3_0  3.0  is_cumulative_3_0_attainable null
+</code></pre></div>
+<p>Replace the unit-test <code>description</code> with:</p>
+<div class="highlight"><pre><span></span><code>Needed-GPA algebra and attainability flag on an unweighted basis. Student 1
+(junior, prior two A-years and one F-year over 105 credits, 35 current credits)
+needs a 4.0 this year — exactly the unweighted scale max, so attainable. Student
+2 (freshman, no prior years) needs exactly 3.0. Student 3 (prior four A-years
+over 140 credits) needs -1.0 — already guaranteed, still attainable. Student 4
+(prior one F-year over 35 credits) needs 6.0 — above the 4.0 unweighted scale
+max, not attainable. Student 5 has no current-year enrollment — needed and flag
+are NULL. Student 6 has one current course on an unresolvable unweighted grade
+scale (orphaned gradescaleid) — needed is still computed but the flag is NULL
+because the max attainable unweighted GPA is unknowable.
+</code></pre></div>
+<p>The math each row verifies (needed = (3.0 x (cr_prior + cr_current) − unweighted
+prior points) / cr_current; ceiling = credit-weighted max unweighted grade
+points across current courses):</p>
+<div class="highlight"><pre><span></span><code>S1: (3.0*(105+35) - (140+140+0)) / 35 = 140/35 = 4.0 ; ceiling 4.0 -&gt; attainable
+S2: (3.0*(0+35)   - 0)          / 35 = 105/35 = 3.0 ; ceiling 4.0 -&gt; attainable
+S3: (3.0*(140+35) - 560)        / 35 = -35/35 = -1.0; ceiling 4.0 -&gt; attainable
+S4: (3.0*(35+35)  - 0)          / 35 = 210/35 = 6.0 ; ceiling 4.0 -&gt; NOT attainable
+S6: (3.0*(0+70)   - 0)          / 70 = 210/70 = 3.0 ; C2 unweighted scale unresolvable -&gt; flag NULL
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Run the unit test — confirm it FAILS</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>deps<span class="w"> </span>--project-dir<span class="w"> </span>src/dbt/kippnewark
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>unit_gpa_cumulative_needed_gpa<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--favor-state<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: FAIL — the model still computes the weighted basis, so S1/S3/S4/S6
+expects don't match. (If the selector matches nothing, fall back to
+<code>dbt build --select int_powerschool__gpa_cumulative ...</code> with the same flags.)</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Apply the six model edits</strong></li>
+</ul>
+<p>In <code>int_powerschool__gpa_cumulative.sql</code>:</p>
+<p>Edit 1 — <code>grades_union</code> branch 1 (the <code>where sg.storecode = 'Y1'</code> branch), the
+<code>gpa_points_projected_max</code> line:</p>
+<div class="highlight"><pre><span></span><code>-- before
+if(sg.excludefromgpa = 0, sg.gpa_points, null) as gpa_points_projected_max,
+-- after
+if(sg.excludefromgpa = 0, su.grade_points, null) as gpa_points_projected_max_unweighted,
+</code></pre></div>
+<p>Edit 2 — <code>grades_union</code> branch 2 (the <code>base_powerschool__final_grades</code> branch):
+the max-points expression and its join.</p>
+<div class="highlight"><pre><span></span><code>-- before (expression)
+if(
+    fg.y1_letter_grade is null, null, gsm.max_grade_points
+) as gpa_points_projected_max,
+-- after
+if(
+    fg.y1_letter_grade is null, null, gsm_u.max_grade_points
+) as gpa_points_projected_max_unweighted,
+
+-- before (join)
+left join gradescale_max as gsm on fg.courses_gradescaleid = gsm.gradescaleid
+-- after
+left join gradescale_max as gsm_u
+    on fg.courses_gradescaleid_unweighted = gsm_u.gradescaleid
+</code></pre></div>
+<p>Edit 3 — <code>grades_union</code> branch 3 (the <code>storecode = 'Q2'</code> semester-1 branch):</p>
+<div class="highlight"><pre><span></span><code>-- before
+null as gpa_points_projected_max,
+-- after
+null as gpa_points_projected_max_unweighted,
+</code></pre></div>
+<p>Edit 4 — <code>with_weighted_points</code>:</p>
+<div class="highlight"><pre><span></span><code>-- before
+(
+    potentialcrhrs_projected * gpa_points_projected_max
+) as weighted_points_projected_max,
+-- after
+(
+    potentialcrhrs_projected * gpa_points_projected_max_unweighted
+) as unweighted_points_projected_max,
+</code></pre></div>
+<p>Edit 5 — <code>points_rollup</code>: replace the <code>weighted_points_prior</code>,
+<code>weighted_points_projected_max_current</code>, and <code>potentialcrhrs_current_max_known</code>
+sums with unweighted equivalents (leave the all-years
+<code>sum(unweighted_points) as unweighted_points</code> untouched — it feeds
+<code>cumulative_y1_gpa_unweighted</code>):</p>
+<div class="highlight"><pre><span></span><code>-- weighted_points_prior  -&gt;  unweighted_points_prior
+sum(
+    if(
+        academic_year &lt; {{ var(&quot;current_academic_year&quot;) }},
+        unweighted_points,
+        null
+    )
+) as unweighted_points_prior,
+
+-- weighted_points_projected_max_current  -&gt;  unweighted_points_projected_max_current
+sum(
+    if(
+        academic_year = {{ var(&quot;current_academic_year&quot;) }},
+        unweighted_points_projected_max,
+        null
+    )
+) as unweighted_points_projected_max_current,
+
+-- potentialcrhrs_current_max_known  -&gt;  potentialcrhrs_current_max_known_unweighted
+sum(
+    if(
+        academic_year = {{ var(&quot;current_academic_year&quot;) }}
+        and unweighted_points_projected_max is not null,
+        potentialcrhrs_projected,
+        null
+    )
+) as potentialcrhrs_current_max_known_unweighted,
+</code></pre></div>
+<p>Edit 6 — <code>needed_gpa</code>: repoint both derivations.</p>
+<div class="highlight"><pre><span></span><code>safe_divide(
+    (3.0 * (coalesce(potentialcrhrs_prior, 0) + potentialcrhrs_current))
+    - coalesce(unweighted_points_prior, 0),
+    potentialcrhrs_current
+) as gpa_needed_raw,
+
+if(
+    coalesce(potentialcrhrs_current_max_known_unweighted, 0)
+    = coalesce(potentialcrhrs_current, 0),
+    safe_divide(
+        unweighted_points_projected_max_current, potentialcrhrs_current
+    ),
+    null
+) as gpa_max_current_raw,
+</code></pre></div>
+<p>After these edits, <code>weighted_points_prior</code>, <code>gpa_points_projected_max</code>,
+<code>weighted_points_projected_max</code>, <code>weighted_points_projected_max_current</code>, and
+<code>potentialcrhrs_current_max_known</code> should have zero remaining references.
+Verify:</p>
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-nE<span class="w"> </span><span class="s1">&#39;\bweighted_points_(prior|projected_max)|\bgpa_points_projected_max\b|\bpotentialcrhrs_current_max_known\b&#39;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative.sql
+</code></pre></div>
+<p>Expected: no matches. Boundary rules differ per name: the leading <code>\b</code> on
+<code>weighted_points_*</code> blocks matching inside <code>unweighted_points_*</code> (the <code>un</code>
+prefix is a word char, so no boundary), and the group has no trailing anchor so
+it still catches <code>weighted_points_projected_max_current</code>; the trailing <code>\b</code> on
+the other two blocks matching their new <code>..._unweighted</code> suffixed names.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Update the two column descriptions + the model description</strong></li>
+</ul>
+<p>In <code>.../properties/int_powerschool__gpa_cumulative.yml</code>:</p>
+<p><code>gpa_needed_for_cumulative_3_0</code> description:</p>
+<div class="highlight"><pre><span></span><code>Unweighted Y1 GPA the student must average across all current-year GPA credits
+to finish with a projected cumulative Y1 GPA (unweighted) of exactly 3.00.
+Computed as (3.0 x (prior credits + current credits) - prior unweighted points)
+/ current credits. Assumes the current credit denominator stays fixed — course
+adds/drops move the target. Negative values mean 3.00 is already guaranteed;
+values above the student&#39;s unweighted scale maximum are not attainable this year.
+NULL when the student has no current-year GPA credits.
+</code></pre></div>
+<p><code>is_cumulative_3_0_attainable</code> description:</p>
+<div class="highlight"><pre><span></span><code>True when `gpa_needed_for_cumulative_3_0` is less than or equal to the
+credit-weighted maximum unweighted GPA achievable across the student&#39;s
+current-year courses (each in-progress course capped at the max grade points of
+its unweighted grade scale; already-stored current-year grades locked at their
+actual unweighted points). NULL when the needed value is NULL, or when any
+in-progress course&#39;s unweighted grade scale cannot be resolved — the max is then
+unknowable, so the flag reads unknown rather than a misstated false.
+</code></pre></div>
+<p>Model-level description: change the closing clause "the needed-GPA /
+attainability pair for finishing with a 3.00 cumulative" to "the needed-GPA /
+attainability pair for finishing with a 3.00 unweighted cumulative."</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 5: Run the unit test — confirm it PASSES</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span><span class="nb">test</span><span class="w"> </span>--select<span class="w"> </span>unit_gpa_cumulative_needed_gpa<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--favor-state<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: PASS (1 of 1). If a row mismatches, re-check the arithmetic block in
+Step 1 against the model output before touching expects.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 6: Build the model + run its data tests on real data</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gpa_cumulative<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--favor-state<span class="w"> </span>--target<span class="w"> </span>dev
+</code></pre></div>
+<p>Expected: model builds; <code>dbt_utils.unique_combination_of_columns</code> (studentid,
+schoolid) and the <code>not_null</code> (where <code>gpa_needed_for_cumulative_3_0 is not null</code>)
+on <code>is_cumulative_3_0_attainable</code> pass.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 7: Lint the changed files</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis
+/workspaces/teamster/.trunk/tools/trunk<span class="w"> </span>check<span class="w"> </span>--force<span class="w"> </span>--no-fix<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_cumulative.yml<span class="w"> </span>&lt;/dev/null
+</code></pre></div>
+<p>Expected: no issues (or only auto-fixable fmt, which the pre-commit hook
+applies).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 8: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>add<span class="w"> </span>src/dbt/powerschool/models/sis/intermediate/int_powerschool__gpa_cumulative.sql<span class="w"> </span><span class="se">\</span>
+<span class="w">      </span>src/dbt/powerschool/models/sis/intermediate/properties/int_powerschool__gpa_cumulative.yml
+git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;feat(powerschool): unweighted basis for needed-Y1 GPA and attainability</span>
+
+<span class="s2">Refs #4528&quot;</span>
+</code></pre></div>
+<h3 id="task-2-real-data-smoke-validation-no-code-change">Task 2: Real-data smoke validation (no code change)</h3>
+<p><strong>Files:</strong> none (validation only).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Build a backtest against completed AY2025</strong></li>
+</ul>
+<p><code>current_academic_year</code> defaults to 2026 (no data yet), so exercise the logic
+against the completed year with a var override:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis
+uv<span class="w"> </span>run<span class="w"> </span>dbt<span class="w"> </span>build<span class="w"> </span>--select<span class="w"> </span>int_powerschool__gpa_cumulative<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--project-dir<span class="w"> </span>src/dbt/kippnewark<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--defer<span class="w"> </span>--state<span class="w"> </span>/workspaces/teamster/src/dbt/kippnewark/target/prod<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--favor-state<span class="w"> </span>--target<span class="w"> </span>dev<span class="w"> </span>--vars<span class="w"> </span><span class="s1">&#39;{current_academic_year: 2025}&#39;</span>
+</code></pre></div>
+<p>Note: for a completed year the in-progress branch (branch 2) is empty, so
+current-year credits come from stored 2025 Y1 grades (branch 1, ceiling locked
+at actual). The unit test covers the in-progress ceiling path; this covers the
+real-data stored path.</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Sanity-check the distribution</strong></li>
+</ul>
+<p>Query the dev table (find schema via
+<code>INFORMATION_SCHEMA.SCHEMATA like '%kippnewark%'</code>; build lands in
+<code>zz_&lt;user&gt;_kippnewark</code>). Confirm: <code>gpa_needed_for_cumulative_3_0</code> is populated
+and mostly in a plausible range; <code>is_cumulative_3_0_attainable</code> is a sensible
+mix of true/false/null; every row with <code>is_cumulative_3_0_attainable = false</code>
+has <code>gpa_needed_for_cumulative_3_0</code> above the unweighted scale max (~4.0+).
+Record the counts in the task report — do not paste student-level PII.</p>
+<h3 id="task-3-push-and-open-pr-1">Task 3: Push and open PR 1</h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Lint-gate and push the branch</strong></li>
+</ul>
+<p>Confirm dbt Cloud CI is not mid-run for this branch, then:</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/workspaces/teamster/.worktrees/anthonygwalters-feat-claude-gpa-needed-unweighted-basis<span class="w"> </span>push<span class="w"> </span>-u<span class="w"> </span>origin<span class="w"> </span>anthonygwalters/feat/claude-gpa-needed-unweighted-basis
+</code></pre></div>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Open the PR</strong></li>
+</ul>
+<p>Use <code>.github/pull_request_template.md</code> as the body; reference the spec and
+<code>Refs #4528</code>. Note in the body: value-only package change (kipptaf dbt Cloud CI
+is a trivial no-op; the correction is exercised by Dagster's district prod
+rebuild), and that PR 2 (the extract columns) follows once this rebuilds in
+prod.</p>
+<hr />
+<h2 id="pr-2-extract-display-columns-gated-do-not-start-until-pr-1-is-merged-and-the-district-int_powerschool__gpa_cumulative-tables-have-rebuilt-in-prod">PR 2 — extract display columns (GATED: do not start until PR 1 is merged and the district <code>int_powerschool__gpa_cumulative</code> tables have rebuilt in prod)</h2>
+<p>PR 2 reads the corrected <code>gpa_needed_for_cumulative_3_0</code> from prod, so it cannot
+be validated until PR 1's values land. When starting PR 2, first
+<code>git fetch origin main &amp;&amp; git merge origin/main</code> in a fresh worktree, then
+<strong>re-read the current <code>rpt_tableau__student_course_grades.sql</code></strong> — line numbers
+below are from the pre-PR-1 state and may drift.</p>
+<h3 id="task-4-add-gpa_y1_weighted_target-and-is_on_pace_cumulative_3_0">Task 4: Add <code>gpa_y1_weighted_target</code> and <code>is_on_pace_cumulative_3_0</code></h3>
+<p><strong>Files:</strong></p>
+<ul>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/rpt_tableau__student_course_grades.sql</code></li>
+<li>Modify:
+  <code>src/dbt/kipptaf/models/extracts/tableau/properties/rpt_tableau__student_course_grades.yml</code></li>
+</ul>
+<p><strong>Interfaces:</strong></p>
+<ul class="task-list">
+<li>Consumes (already in the model): <code>s.gpa_needed_for_cumulative_3_0</code> (from the
+  <code>gc</code> join, now unweighted), <code>s.gpa_y1</code>, <code>s.gpa_y1_unweighted</code>.</li>
+<li>
+<p>Produces: <code>gpa_y1_weighted_target</code> (float64), <code>is_on_pace_cumulative_3_0</code>
+  (boolean).</p>
+</li>
+<li class="task-list-item">
+<p><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 1: Derive both columns in the CTE that already computes <code>gpa_y1</code> /
+      <code>gpa_y1_unweighted</code></strong></p>
+</li>
+</ul>
+<p>Per the SQL guide (derive in a CTE, reference plain downstream; max 1 level
+nesting), compute in the CTE where <code>gpa_y1</code> and <code>gpa_y1_unweighted</code> are named:</p>
+<div class="highlight"><pre><span></span><code>gpa_needed_for_cumulative_3_0 + (gpa_y1 - gpa_y1_unweighted) as gpa_y1_weighted_target,
+gpa_y1_unweighted &gt;= gpa_needed_for_cumulative_3_0 as is_on_pace_cumulative_3_0,
+</code></pre></div>
+<p>Then project both in the final <code>SELECT</code>, honoring ST06 ordering
+(<code>gpa_y1_weighted_target</code> in the nested-function/arithmetic group,
+<code>is_on_pace_cumulative_3_0</code> in the logicals group).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 2: Add both to the contract/properties with descriptions</strong></li>
+</ul>
+<p><code>gpa_y1_weighted_target</code> (float64): "Weighted Y1 GPA to show the student as this
+year's target — the unweighted Y1 they need (<code>gpa_needed_for_cumulative_3_0</code>)
+plus their realized weighting spread (<code>gpa_y1 - gpa_y1_unweighted</code>). Meeting it
+in weighted terms is equivalent to reaching the unweighted cumulative 3.0.
+Undefined until current-year grades exist."</p>
+<p><code>is_on_pace_cumulative_3_0</code> (boolean): "True when the student's unweighted Y1
+(<code>gpa_y1_unweighted</code>) is at or above the unweighted Y1 they need
+(<code>gpa_needed_for_cumulative_3_0</code>) — i.e., on pace for an unweighted cumulative
+3.0. Aggregates to the cohort on-pace rate."</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 3: Update any extract unit test</strong></li>
+</ul>
+<p>If <code>rpt_tableau__student_course_grades</code> has a unit test, add both columns to its
+<code>expect</code> rows (every row must list the same columns). Run the directory's unit
+tests (<code>--select "test_type:unit,extracts.tableau"</code>).</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>Step 4: Build, tie out, lint, commit, push, open PR 2</strong></li>
+</ul>
+<p>Build the extract
+(<code>dbt build --select rpt_tableau__student_course_grades --project-dir src/dbt/kipptaf --defer --state &lt;abs prod manifest&gt; --favor-state --target dev</code>).
+Tie-out on real data: for populated rows, <code>is_on_pace_cumulative_3_0</code> equals
+<code>gpa_y1 &gt;= gpa_y1_weighted_target</code> (spread cancels) and equals
+<code>gpa_y1_unweighted &gt;= gpa_needed_for_cumulative_3_0</code>. Lint, commit
+(<code>Refs #4528</code>), push, open PR 2.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

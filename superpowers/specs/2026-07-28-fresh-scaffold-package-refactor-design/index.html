@@ -1,0 +1,1772 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data engineering platform for KIPP TEAM & Family Schools">
+      
+      
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../images/truck.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>FRESH scaffold package refactor — design - teamster</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fresh-scaffold-package-refactor-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="teamster" class="md-header__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            teamster
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              FRESH scaffold package refactor — design
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../troubleshooting/dagster/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../reference/architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../models/fresh-dashboard-data-model/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Models
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../reference/automations/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Automations
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="teamster" class="md-nav__button md-logo" aria-label="teamster" data-md-component="logo">
+      
+  <img src="../../../images/truck.svg" alt="logo">
+
+    </a>
+    teamster
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/TEAMSchools/teamster" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    TEAMSchools/teamster
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/codespaces/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Codespaces
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/local-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Local Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/google-sheets/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Google Sheets & Forms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/adp-location-renames/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADP Location Renames
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/dbt-development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Development
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/sftp-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SFTP Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/superpowers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude Code & Superpowers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/cube/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guides/claude-cube-connector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claude + Cube Connector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dagster/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dagster
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/dbt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../troubleshooting/vscode/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VS Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/adding-an-integration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Adding an Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io-managers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IO Managers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/fiscal-year-partitioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fiscal Year & Partitioning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/dbt-conventions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dbt Conventions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/finalsite-focus-import/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Finalsite to Focus Import
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/marts-data-models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Marts Data Models
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automation-conditions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation Conditions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Models
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Models
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/fresh-dashboard-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FRESH Dashboard Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../models/gradebook-audit-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradebook Audit Data Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/automations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Problems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Design
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Design">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-scaffold-collapse-kipptaf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Scaffold collapse (kipptaf)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-finalsite-package-promotion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Finalsite package promotion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-focus-package-extension" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Focus package extension
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-grade-level-sentinel-scheme" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Grade-level sentinel scheme
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-review-fixes-and-minors-folded-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Review fixes and minors folded in
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Tests
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-landing-mechanics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Landing mechanics
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#out-of-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Out of scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/TEAMSchools/teamster/edit/main/docs/superpowers/specs/2026-07-28-fresh-scaffold-package-refactor-design.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="fresh-scaffold-package-refactor-design">FRESH scaffold package refactor — design</h1>
+<p>Refactor of PR #4488 (<code>grangel/feat/claude-fresh-scaffold-swap</code>), stacked as a
+single follow-up PR on that branch. Three structural problems and three
+code-review findings, resolved together.</p>
+<h2 id="problems">Problems</h2>
+<ol>
+<li><strong>Package misplacement.</strong> PR #4488 put shared Finalsite/Focus transformation
+   logic at the kipptaf level; the <code>finalsite</code> and <code>focus</code> source-system
+   packages were untouched. Source cleaning (grade decode, <code>enrollment_type</code>
+   defaulting) landed in kipptaf's <code>stg_finalsite__status_report</code> union wrapper,
+   and a full Focus enrollment derivation (<code>int_focus__student_enrollments</code>)
+   landed under <code>kipptaf/models/focus/</code>.</li>
+<li><strong>Novel mode-switch pattern.</strong> <code>int_finalsite__enrollment_scaffold</code> is the
+   repo's first <code>exceptions.raise_compiler_error</code> in a model and its first
+   var-driven compile-time mode switch (three SQL programs in one file). The
+   <code>gsheet</code> and <code>powerschool</code> branches are dead code in every real build.</li>
+<li><strong>Unjustified project var.</strong> <code>finalsite_scaffold_source</code> is read by exactly
+   one model, never overridden, and defaults to <code>blend</code> in both the model and
+   <code>dbt_project.yml</code>. Project vars are for cross-project contract values.</li>
+<li><strong>Code-review findings</strong> (from the #4488 review): the blend anti-join lacks
+   <code>region</code> in its key; the reference doc contradicts the shipped
+   recruitment-year var; <code>grade_level = -1</code> carries two colliding meanings (PK
+   and whole-school total).</li>
+</ol>
+<h2 id="design">Design</h2>
+<h3 id="1-scaffold-collapse-kipptaf">1. Scaffold collapse (kipptaf)</h3>
+<p><code>int_finalsite__enrollment_scaffold.sql</code> loses the <code>finalsite_scaffold_source</code>
+var read, the <code>raise_compiler_error</code> guard, and all Jinja branches. The model
+becomes the blend pipeline as plain SQL: PowerSchool-derived grade membership
+<code>UNION ALL</code> sheet rows PowerSchool doesn't have, via anti-join keyed on
+<code>(region, schoolid, grade_level)</code> — the <code>region</code> key is the review fix.</p>
+<ul>
+<li><code>finalsite_scaffold_source</code> is removed from <code>kipptaf/dbt_project.yml</code>.</li>
+<li><code>finalsite_recruitment_year</code> stays — it is read at multiple sites and mirrors
+  the <code>current_academic_year</code> pattern.</li>
+<li>The <code>scaffold_source</code> provenance column stays (<code>powerschool</code> / <code>gsheet</code> — it
+  describes rows, not a build mode).</li>
+<li>The model yml drops the mode-switch description.</li>
+</ul>
+<h3 id="2-finalsite-package-promotion">2. Finalsite package promotion</h3>
+<p>Move from kipptaf's <code>stg_finalsite__status_report</code> wrapper into the package
+model <code>src/dbt/finalsite/models/sftp/staging/stg_finalsite__status_report.sql</code>:</p>
+<ul>
+<li>the <code>application_grade</code> → <code>grade_level</code> decode (see sentinel scheme below),</li>
+<li><code>enrollment_type</code> initcap + <code>'New'</code> default,</li>
+<li><code>first_name</code> initcap,</li>
+<li><code>active_school_year_display</code>.</li>
+</ul>
+<p>The kipptaf wrapper shrinks to <code>union_relations</code> + region extraction +
+<code>_dbt_source_project</code> + the <code>exclude_ids</code> filter (all inherently cross-district
+or kipptaf-only). New package columns are declared in the package properties yml
+(staging is contract-enforced).</p>
+<h3 id="3-focus-package-extension">3. Focus package extension</h3>
+<p>The existing zero-consumer package model
+<code>src/dbt/focus/models/intermediate/int_focus__student_enrollment.sql</code> absorbs
+the Focus-native derivation from PR #4488's kipptaf model:</p>
+<ul>
+<li>students join (name, email, FTEID, dob),</li>
+<li>grade decode (<code>KG</code> → 0, <code>PK</code> → -1, digits parsed; <code>short_name = '30'</code>
+  excluded),</li>
+<li>entry/drop code decode and <code>enroll_status</code>,</li>
+<li>exit-date default (<code>June 30</code> of <code>syear + 1</code>),</li>
+<li>school-level decode via <code>custom_field_select_options</code>,</li>
+<li>first-day and point-in-time flags (<code>is_enrolled_fdos</code>, <code>is_enrolled_oct01</code>,
+  <code>is_enrolled_oct15</code>, <code>is_enrolled_mar15</code>, <code>is_pre_year_withdrawal</code>),</li>
+<li><code>rn_year</code>, <code>year_in_school</code>, <code>year_in_network</code>.</li>
+</ul>
+<p>kipptaf's <code>int_focus__student_enrollments</code> becomes a thin wrapper:
+<code>union_relations</code> over a new <code>kippmiami_focus</code> source table for the package
+intermediate, plus the joins that cannot live in the package —
+<code>int_finalsite__contact_id_attributes</code> (Finalsite-ID crosswalk) and
+<code>stg_google_sheets__people__locations</code> (location enrichment) — plus
+region/<code>'KTAF'</code> constants.</p>
+<p>The three kipptaf <code>stg_focus__*</code> passthroughs added by #4488
+(<code>school_gradelevels</code>, <code>student_enrollment_codes</code>,
+<code>custom_field_select_options</code>) are deleted along with their
+<code>sources-kippmiami.yml</code> entries; they existed only to feed the misplaced
+intermediate. <code>sources-kippmiami.yml</code> instead gains
+<code>int_focus__student_enrollment</code>.</p>
+<p>Naming note: package singular <code>int_focus__student_enrollment</code> vs kipptaf plural
+<code>int_focus__student_enrollments</code> is awkward but matches the
+<code>int_extracts__student_enrollments</code> shape the wrapper mirrors and avoids
+churning downstream refs in #4488.</p>
+<h3 id="4-grade-level-sentinel-scheme">4. Grade-level sentinel scheme</h3>
+<p>Empirical domains: PowerSchool students carry 0–12 plus 99 (graduated, never
+active); Focus grade codes are <code>PK</code>/<code>KG</code>/01–12 (zero PK enrollments to date);
+Finalsite <code>application_grade</code> has only K/1st–12th (PK has never appeared); the
+scaffold sheet carries -1 (whole-school total) and 0–12.</p>
+<p>New scheme:</p>
+<ul>
+<li><strong>PK → <code>-1</code></strong> at both decode sites (finalsite package staging, focus package
+  intermediate). Natural ordering: -1 PK, 0 K, 1–12.</li>
+<li><strong>Whole-school total → <code>-9</code></strong>, recoded where the sheet enters the model graph
+  so the sheet keeps its <code>-1</code> entry convention and Ops changes nothing. Every
+  <code>-1</code> filter/emission site in the FRESH models moves to <code>-9</code>:
+  <code>rpt_tableau__fresh_dashboard_progress_to_goals</code> (<code>where grade_level = -1</code> /
+  <code>!= -1</code> filters and the two <code>-1 as grade_level</code> emissions), the
+  enrollment/goals scaffold comments and tests, and any goals-sheet model
+  carrying <code>-1</code> rows (verify during implementation).</li>
+<li><code>accepted_values</code> on finalsite <code>grade_level</code> becomes <code>[-1, 0, 1, …, 12]</code> at
+  <code>severity: error</code>, <strong>plus <code>not_null</code></strong> — an unrecognized grade string parses
+  to null, and <code>accepted_values</code> ignores nulls, so <code>not_null</code> is what makes it
+  fail loudly. The yml description drops the "mirroring PowerSchool's Pre-K
+  convention" claim (PowerSchool has no negative grades in data).</li>
+<li>The equality joins in <code>rpt_tableau__fresh_dashboard_aggregated</code> stay correct:
+  applicants are 0–12 (future PK: -1), school-total rows are -9 and match
+  nothing, as before.</li>
+</ul>
+<p><strong>External coordination:</strong> the Tableau workbook references <code>-1</code> for school-total
+rows (filters or calculated fields). SRE/Gaby must update the workbook to <code>-9</code>
+in sync with the merge. Flag on the PR.</p>
+<h3 id="5-review-fixes-and-minors-folded-in">5. Review fixes and minors folded in</h3>
+<ul>
+<li>Region-keyed anti-join (§1).</li>
+<li><code>docs/reference/fresh-dashboard-data-model.md</code>: rewrite the recruitment-year
+  section around the <code>finalsite_recruitment_year</code> var (the shipped design),
+  update lineage for the package moves, delete mode-switch documentation. Same
+  treatment for <code>.claude/skills/fresh-dashboard/SKILL.md</code>.</li>
+<li>Sentinel collision (§4).</li>
+<li>Drop the redundant <code>severity: warn</code> on
+  <code>test_int_finalsite__goals_scaffold_region_matches_scaffold</code> (project default
+  is already <code>warn</code>).</li>
+<li>Document the cross-source (frozen PowerSchool vs Focus) dedup precedence in
+  <code>int_tableau__finalsite_student_scaffold</code>'s <code>deduplicate_enrollments</code>, and fix
+  the <code>ps_*</code> column descriptions that say "PowerSchool" but carry Focus values
+  for Miami.</li>
+<li>TODO comment on the syear-only <code>int_focus__school_year_first_day</code> join
+  (per-school first-day variance flattened; single-region today).</li>
+<li><code>rpt_tableau__fresh_dashboard_qc</code> (disabled, non-compiling): out of scope.</li>
+<li>Gaby's spec/plan docs under <code>docs/superpowers/</code> stay untouched (historical
+  artifacts of #4488).</li>
+</ul>
+<h3 id="6-tests">6. Tests</h3>
+<ul>
+<li>The three singular tests from #4488 survive; the region-mismatch test's
+  redundant severity override is dropped.</li>
+<li>The extended package <code>int_focus__student_enrollment</code> keeps a uniqueness test
+  in the package properties yml (intermediate-model requirement).</li>
+<li>The kipptaf wrapper keeps #4488's error-severity <code>unique</code> on
+  <code>student_enrollment_id</code> (guards the Finalsite-ID join fan-out).</li>
+<li>Sentinel scheme covered by the updated <code>accepted_values</code> (§4).</li>
+</ul>
+<h3 id="7-landing-mechanics">7. Landing mechanics</h3>
+<p>Single stacked PR on <code>grangel/feat/claude-fresh-scaffold-swap</code> (branch
+<code>cbini/refactor/claude-fresh-scaffold-packages</code>). Because base ≠ main,
+<code>claude-review</code> will not run; dbt Cloud CI still does.</p>
+<p>Cross-project CI (single-PR workflow per <code>src/dbt/CLAUDE.md</code>):</p>
+<ol>
+<li>Package column adds (<code>stg_finalsite__status_report</code>) and the new package
+   intermediate columns don't exist in the districts' <code>zz_stg_*</code> staging copies
+   that kipptaf CI defers to. Force the kipptaf wrappers <code>state:modified</code> (SQL
+   edit — true here, the wrappers change) AND build the changed package models
+   into staging
+   (<code>dbt build --select &lt;models&gt; --project-dir src/dbt/&lt;district&gt; --target staging</code>)
+   so CI's wrapper rebuild sees the new columns. The staging builds recreate
+   shared <code>zz_stg</code> tables and need direct user authorization at that step.</li>
+<li>The new <code>kippmiami_focus</code> source table (<code>int_focus__student_enrollment</code>) must
+   exist in staging before kipptaf CI can read it — same staging build covers
+   it.</li>
+<li>Merge sequence: #4488 first, then this PR. Dagster materializes package
+   models in each district on deploy.</li>
+</ol>
+<h2 id="error-handling">Error handling</h2>
+<p>Nothing silent: staging contracts catch column drift; the <code>unique</code> test on
+<code>student_enrollment_id</code> guards Finalsite-ID fan-out; <code>accepted_values</code> +
+<code>not_null</code> behavior on <code>grade_level</code> surfaces any unexpected grade string
+(no-digit values parse to null and fail loudly rather than mapping to a
+sentinel); the compile-time mode machinery is gone, so there is no dead branch
+to rot.</p>
+<h2 id="out-of-scope">Out of scope</h2>
+<ul>
+<li>Wiring Miami into the blend scaffold (removing the 100%-sheet carve-out) —
+  #4488's stated follow-up.</li>
+<li><code>rpt_tableau__fresh_dashboard_qc</code> repair.</li>
+<li>Changing sheet entry conventions (Ops keeps entering <code>-1</code> school-total rows).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; KIPP TEAM & Family Schools
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.copy", "navigation.instant", "navigation.indexes", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "search.highlight", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
