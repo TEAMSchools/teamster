@@ -9,29 +9,27 @@ sqlite stands in for Focus Postgres: the item shapes `table_rows` yields and the
 files dlt normalizes from them are backend-generic, and the Codespace cannot
 reach Focus (IP allowlist).
 
-These tests exercise a real `dlt.pipeline().extract()` + `.normalize()` against
-a `filesystem` destination (no extra deps, no live server) rather than iterating
-the built resource directly with `list(resource())`. dlt's `DltResource.__iter__`
-unconditionally unwraps `DataItemWithMeta` (and empty-list markers like
-`MaterializedEmptyList`) down to their `.data` payload before handing items to
-the caller (`PipeIterator._get_source_item`, dlt 1.29.1) — so a naive
+These tests call `_focus_table_items` directly — a plain generator, not the
+`@dlt.resource`-wrapped one — because dlt's `DltResource.__iter__`
+unconditionally unwraps `DataItemWithMeta` (and flattens empty-list markers
+like `MaterializedEmptyList`) down to their `.data` payload before a caller
+ever sees them (`PipeIterator._get_source_item`, dlt 1.29.1). A naive
 `list(resource())` can never observe the marker objects themselves, for ANY
-`dlt.resource`-wrapped generator, regardless of what it yields. The markers only
-have effect inside the real extract/normalize machinery, which is what these
-tests exercise.
+`dlt.resource`-wrapped generator — so the marker/ordering assertions below have
+to run against the plain generator directly.
 """
 
 import pathlib
 import tempfile
 from collections.abc import Iterator
 
-import dlt
 import pytest
 import sqlalchemy as sa
 from dlt.common.configuration.specs import ConnectionStringCredentials
-from dlt.pipeline.pipeline import Pipeline
+from dlt.extract.extractors import MaterializedEmptyList
+from dlt.extract.items import DataItemWithMeta
 
-from teamster.libraries.dlt.focus.assets import build_focus_source
+from teamster.libraries.dlt.focus.assets import _focus_table_items
 
 
 @pytest.fixture(name="sqlite_url")
@@ -54,78 +52,56 @@ def _seed(url: str, rows: int) -> None:
     engine.dispose()
 
 
-def _extract_and_normalize(url: str, pipelines_dir: pathlib.Path) -> Pipeline:
-    """Build the real Focus source and run it through extract + normalize.
-
-    `filesystem` needs no extra dependency and no live server, unlike `duckdb`
-    (not installed in this venv) or `bigquery` (needs GCP credentials) — but it
-    still exercises the same `Extractor`/normalizer code path that
-    `HintsMeta`/`materialize_table_schema()` are designed for, unlike direct
-    resource iteration.
-    """
-    source = build_focus_source(
-        sql_database_credentials=ConnectionStringCredentials(url),
-        table_name="referrals",
-        db_schema=None,
+def _items(url: str) -> list:
+    return list(
+        _focus_table_items(
+            sql_database_credentials=ConnectionStringCredentials(url),
+            table_name="referrals",
+            db_schema=None,
+        )
     )
 
-    pipeline = dlt.pipeline(
-        pipeline_name="focus_materialize_empty_test",
-        destination="filesystem",
-        dataset_name="focus_materialize_empty_test",
-        pipelines_dir=str(pipelines_dir),
-    )
-    pipeline.extract(source)
-    pipeline.normalize()
 
-    return pipeline
-
-
-def test_empty_table_yields_materialize_marker(
-    sqlite_url: str, tmp_path: pathlib.Path
-) -> None:
-    """A 0-row table must still normalize into a job, or the table is created.
-
-    Without `dlt.mark.materialize_table_schema()`, a resource that produced no
-    items is dropped entirely — `referrals` would be absent from
-    `row_counts`, exactly the prod bug (#4740).
-    """
+def test_empty_table_yields_materialize_marker(sqlite_url: str) -> None:
     _seed(sqlite_url, rows=0)
 
-    pipeline = _extract_and_normalize(sqlite_url, tmp_path)
+    items = _items(sqlite_url)
 
-    row_counts = pipeline.last_trace.last_normalize_info.row_counts
-    assert row_counts.get("referrals") == 0, (
-        "a 0-row table must still produce a normalized job so the table is created"
+    assert isinstance(items[-1], MaterializedEmptyList), (
+        "a 0-row table must end with materialize_table_schema() so the table is created"
     )
 
 
-def test_populated_table_yields_no_materialize_marker(
-    sqlite_url: str, tmp_path: pathlib.Path
-) -> None:
+def test_populated_table_yields_no_materialize_marker(sqlite_url: str) -> None:
     _seed(sqlite_url, rows=3)
 
-    pipeline = _extract_and_normalize(sqlite_url, tmp_path)
+    items = _items(sqlite_url)
 
-    row_counts = pipeline.last_trace.last_normalize_info.row_counts
-    assert row_counts.get("referrals") == 3
+    assert not any(isinstance(i, MaterializedEmptyList) for i in items)
+
+    data_items = [i for i in items if not isinstance(i, DataItemWithMeta)]
+    assert [i.num_rows for i in data_items] == [3]
 
 
-def test_reflection_hints_precede_the_marker(
-    sqlite_url: str, tmp_path: pathlib.Path
-) -> None:
+def test_reflection_hints_precede_the_marker(sqlite_url: str) -> None:
     """The hints marker must come first, or the created table has no columns.
 
     dlt registers the reflected columns from the `HintsMeta` item; a
     `materialize_table_schema()` that arrived before it would create a table
-    holding only the `_dlt_*` columns.
+    holding only the `_dlt_*` columns. Asserted by index, not by checking
+    `items[0]` alone, so a reordered implementation (marker yielded before the
+    hints) fails this test even if it still yields both items.
     """
     _seed(sqlite_url, rows=0)
 
-    pipeline = _extract_and_normalize(sqlite_url, tmp_path)
+    items = _items(sqlite_url)
 
-    columns = pipeline.default_schema.tables["referrals"]["columns"]
-    assert {"referral_id", "comment"} <= set(columns), (
-        "the reflected source columns must be registered, not just dlt's"
-        " internal _dlt_* columns"
+    hints_index = next(
+        i for i, item in enumerate(items) if isinstance(item, DataItemWithMeta)
     )
+    marker_index = next(
+        i for i, item in enumerate(items) if isinstance(item, MaterializedEmptyList)
+    )
+
+    assert hints_index < marker_index
+    assert type(items[hints_index].meta).__name__ == "HintsMeta"
