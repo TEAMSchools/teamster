@@ -1,14 +1,17 @@
 models:
   - name: rpt_parentsquare__students
     description:
-      ParentSquare `students.csv` for KIPP Newark — one row per student enrolled
-      in the current academic year, including pre-registered students, who
-      ParentSquare represents as incoming. Delivered as a full snapshot each
-      run. Every value is emitted as a string because ParentSquare ingests all
-      fields as text. Two optional spec fields are deliberately absent — student
-      email, because populating it makes ParentSquare mail an account-creation
-      invitation to every student in the file and student logins are out of
-      scope, and the state student id, which has no ParentSquare consumer.
+      ParentSquare `students.csv` for the KIPP NJ regions — one row per student
+      enrolled in the current academic year, including pre-registered students,
+      who ParentSquare represents as incoming. Each district's thin
+      `extracts/parentsquare` wrapper slices this to its own `code_location`,
+      and that wrapper is what ParentSquare receives. Delivered as a full
+      snapshot each run. Every value is emitted as a string because ParentSquare
+      ingests all fields as text. Two optional spec fields are deliberately
+      absent — student email, because populating it makes ParentSquare mail an
+      account-creation invitation to every student in the file and student
+      logins are out of scope, and the state student id, which has no
+      ParentSquare consumer.
     columns:
       - name: student_id
         data_type: string
@@ -47,8 +50,8 @@ models:
         data_type: string
         description:
           The student's grade level as a string. ParentSquare's scale runs -4 to
-          12 with kindergarten as 0, which the Newark grade domain of 0 through
-          12 already satisfies, so no remapping is applied.
+          12 with kindergarten as 0, which the NJ grade domain of 0 through 12
+          already satisfies, so no remapping is applied.
         data_tests:
           - not_null:
               config:
@@ -80,6 +83,17 @@ models:
                   - "10"
                   - "11"
                   - "12"
+              config:
+                severity: error
+      - name: code_location
+        data_type: string
+        description:
+          Dagster code location of the region this row belongs to. Present so
+          each district's thin `extracts/parentsquare` wrapper can slice the
+          feed to its own region; it is not part of the ParentSquare file and no
+          wrapper projects it.
+        data_tests:
+          - not_null:
               config:
                 severity: error
       - name: first_name

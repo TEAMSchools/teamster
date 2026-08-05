@@ -134,7 +134,6 @@ defs = Definitions(
         "ssh_illuminate": resources.SSH_RESOURCE_ILLUMINATE,
         "ssh_lattice": resources.SSH_RESOURCE_LATTICE,
         "ssh_littlesis": resources.SSH_RESOURCE_LITTLESIS,
-        "ssh_parentsquare": resources.SSH_RESOURCE_PARENTSQUARE,
         "tableau": resources.TABLEAU_SERVER_RESOURCE,
         "zendesk": ZENDESK_RESOURCE,
     },
