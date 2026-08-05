@@ -47,8 +47,10 @@ both:
    half-imported.
 
 1. **Run the four Focus imports.** The pipeline only delivers files to Focus's
-   `incoming/` folder; nothing imports them for you. The 12:30 delivery leaves a
-   90-minute window before 2 p.m.
+   `incoming/` folder; nothing imports them for you. The imports themselves are
+   quick, so the 90 minutes between the 12:30 delivery and 2 p.m. is slack, not
+   time you need — a student is usable in Focus within minutes of you running
+   them, typically well before 1 p.m.
 
 > **Do not re-run the delivery after you have imported.** The pipeline decides
 > what Focus already has by reading a copy of Focus taken at 12:00 p.m., not
