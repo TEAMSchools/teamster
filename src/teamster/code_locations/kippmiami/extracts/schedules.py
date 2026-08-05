@@ -8,20 +8,21 @@ focus_extract_assets_schedule = ScheduleDefinition(
     # Delivers the four Focus import CSVs to the Focus SFTP `incoming/` folder.
     # Enrollment ops run the Focus imports BY HAND, and leadership commits to
     # stakeholders that a student entered in Finalsite by 12:00pm ET is usable in
-    # Focus by 2:00pm ET -- so this lands at 12:45pm, leaving ops a 75-minute
-    # window. Upstreams, all of which run concurrently at 12:00: the manual
-    # Finalsite SFTP push (ingested within 10 min by the couchdrop sensor), the
-    # Finalsite contacts pull, the Focus dlt pull, and the dbt rebuild the
-    # automation-condition sensor fires off each of those (~3.5 min).
+    # Focus by 2:00pm ET -- so this lands at 12:30pm, leaving ops 90 minutes.
+    # Upstreams all run concurrently at 12:00 (nothing about them is sequential):
+    # the manual Finalsite SFTP push, the Finalsite contacts pull, the Focus dlt
+    # pull, and the dbt rebuild the automation-condition sensor fires off each.
     #
     # NOTHING GATES THIS ON THOSE UPSTREAMS -- it is a plain cron, so the gap is a
-    # time budget, not a dependency. Measured need is 4-7 min after a schedule
-    # fires, or ~16 min from a manual SFTP push in the worst case (10 min sensor
-    # poll + 2 min ingest + 3.5 min dbt), plus up to 9 min of top-of-hour GKE
-    # step-pod scheduling wait, which queues rather than fails. The budget is 45
-    # min. Moving this earlier, or an upstream later, spends that margin; a push
-    # after ~12:29 is not guaranteed to make this delivery.
-    cron_schedule="45 12 * * *",
+    # time budget, not a dependency. The binding term is the manual SFTP push, not
+    # any ordering between Finalsite and Focus: worst case ~16 min from push to
+    # rebuilt (10 min couchdrop sensor poll + 2 min ingest + 3.5 min dbt). The
+    # scheduled pulls need only 4-7 min. So the push deadline is always this time
+    # minus ~16 min -- currently ~12:14. Moving this earlier tightens that
+    # deadline on ops; moving it later cuts their import window. Anything before
+    # ~12:16 makes the push deadline land before noon, which contradicts the
+    # "entered by 12:00" promise outright.
+    cron_schedule="30 12 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 

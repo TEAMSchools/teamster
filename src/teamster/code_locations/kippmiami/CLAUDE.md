@@ -19,7 +19,7 @@ GCS bucket: `teamster-kippmiami`
 | `fldoe`     | SFTP assets   | `AutomationConditionSensor`                             |
 | `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                     |
 | `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                   |
-| `extracts`  | BigQuery→SFTP | schedule (Focus delivery 12:45 ET)                      |
+| `extracts`  | BigQuery→SFTP | schedule (Focus delivery 12:30 ET)                      |
 | `couchdrop` | sensor only   | sensor (Google Drive watcher)                           |
 | `dlt/focus` | dlt assets    | schedule (04:00, 12:00, 14:45 ET)                       |
 
@@ -31,7 +31,7 @@ exists to keep a promise to stakeholders: a student entered in Finalsite by
 Finalsite SFTP export at 12:00 (Finalsite's own export is overnight and not ours
 to reschedule) → couchdrop sensor ingests within 10 min → contacts pull and
 Focus dlt pull both at 12:00 → dbt rebuild ~3.5 min → four CSVs delivered to the
-Focus SFTP `incoming/` folder at 12:45 → **ops runs the Focus imports by hand**
+Focus SFTP `incoming/` folder at 12:30 → **ops runs the Focus imports by hand**
 → dlt pull again at 14:45.
 
 **The three midday inputs run concurrently on purpose.** They share no pool and
@@ -39,13 +39,13 @@ none gates another: the contacts API pull and the manually-pushed SFTP drop feed
 opposite sides of `int_finalsite__enrollment_lifecycle`, and the dlt pull feeds
 the import-once anti-join. Don't re-stagger them looking for an ordering that
 isn't there. Top-of-hour GKE Autopilot fan-out can add 3-9 min of step-pod
-scheduling wait, which only queues the run — against 45 min before the delivery
+scheduling wait, which only queues the run — against 30 min before the delivery
 that is noise, so these deliberately sit at `12:00` rather than an offset
 minute.
 
 Three constraints to preserve when touching any of these times:
 
-- **The 12:45 delivery is a plain cron — nothing gates it on the upstreams.**
+- **The 12:30 delivery is a plain cron — nothing gates it on the upstreams.**
   The gaps are a time budget, not a dependency. Measured need is 4-7 min from a
   schedule firing to the dependent staging table being rebuilt, or ~16 min worst
   case from a manual SFTP push (10 min sensor poll + 2 min ingest + 3.5 min dbt)

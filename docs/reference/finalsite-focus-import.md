@@ -11,7 +11,7 @@ and is validated by automated tests.
 ## What the pipeline does
 
 Each **midday** run builds four files from current Finalsite data and delivers
-them to Focus over SFTP at **12:45 p.m. ET**, matching Focus's import templates:
+them to Focus over SFTP at **12:30 p.m. ET**, matching Focus's import templates:
 
 | File               | Focus template       | Status |
 | ------------------ | -------------------- | ------ |
@@ -32,7 +32,7 @@ both:
 
 1. **Push the Finalsite SFTP export at 12:00 p.m.** Finalsite's own export runs
    overnight on a schedule that is not ours to change. Without a manual push,
-   the 12:45 delivery carries Finalsite data as of roughly 2:50 a.m. — silently,
+   the 12:30 delivery carries Finalsite data as of roughly 2:50 a.m. — silently,
    with no error and nothing on screen to notice. Push it after the noon cutoff,
    every day. **This is Miami only** — no other region needs it.
 
@@ -42,13 +42,13 @@ both:
    Earlier than that is still safe; it only moves the cutoff earlier, and a
    student entered after it waits for tomorrow. The hard deadline is roughly
    **12:29**: past that, the file may not be ingested and rebuilt in time for
-   the 12:45 delivery. A push at an odd time never sends wrong or duplicate data
+   the 12:30 delivery. A push at an odd time never sends wrong or duplicate data
    — a student whose two halves straddle the cutoff is skipped for the day, not
    half-imported.
 
 1. **Run the four Focus imports.** The pipeline only delivers files to Focus's
-   `incoming/` folder; nothing imports them for you. The 12:45 delivery leaves a
-   75-minute window before 2 p.m.
+   `incoming/` folder; nothing imports them for you. The 12:30 delivery leaves a
+   90-minute window before 2 p.m.
 
 > **Do not re-run the delivery after you have imported.** The pipeline decides
 > what Focus already has by reading a copy of Focus taken at 12:00 p.m., not
