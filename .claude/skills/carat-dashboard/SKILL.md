@@ -244,19 +244,42 @@ PSAT 8/9 and PSAT 10 do not follow the practice-SAT path above. They use College
 Board's **official** raw-score conversion tables, which differ in three ways
 that break assumptions elsewhere in this skill.
 
-**1. The source is a PDF, not an Excel paste.** In practice it arrives as a
-screenshot of the PDF. That is the weakest input in this whole workflow: a
-screenshot must be read by eye, so the transcription cannot be verified the way
-an Excel paste can. Mitigations, in order of preference:
+**1. The source is a PDF, not an Excel paste. Ask for the PDF link.**
 
-- Ask for the **PDF itself** and extract the table programmatically. A parsed
-  table is checkable; a transcribed one is a claim.
-- If only a screenshot exists, transcribe it twice **independently** — a second
-  reader (subagent) working blind from the same image — and diff the two. A
-  silent single-digit misread is otherwise undetectable, and every downstream
-  check will pass on wrong data.
-- Never present transcribed-from-image numbers as verified. Say they are
-  transcribed and unconfirmed until something independent corroborates them.
+> Send the link to College Board's scoring guide PDF for the practice test in
+> question. Don't send a screenshot — I can only read that by eye, and there's
+> no way to check the numbers afterward.
+
+The guides are public and predictably named:
+
+```text
+https://satsuite.collegeboard.org/media/pdf/psat-8-9-practice-test-1-scoring-guide.pdf
+```
+
+Download it and extract the table programmatically. The conversion table is on
+**page 5** (index 4); page 3 carries the scale definitions:
+
+```bash
+curl -sSL -o guide.pdf "<url>"
+uv run --with pypdf python -c "
+from pypdf import PdfReader
+print(PdfReader('guide.pdf').pages[4].extract_text())
+"
+```
+
+Extracted rows read `raw rw_lower rw_upper math_lower math_upper` for raws 0-54,
+then `raw rw_lower rw_upper` for raws 55-66 where Math has ended. Parse by
+keeping lines whose tokens are all digits, then branching on token count — 5
+tokens carry both sections, 3 tokens carry Reading and Writing only.
+
+**If a screenshot is all that exists**, transcribe it twice independently — a
+second reader working blind from the same image — and diff the two. A
+single-digit misread is otherwise undetectable, because every downstream check
+tests internal consistency rather than fidelity to the source. Never present
+transcribed-from-image numbers as verified; say they are transcribed and
+unconfirmed until something independent corroborates them. Precedent: one
+screenshot transcription of 122 values came back exact when later diffed against
+the PDF, which proves the method can work and not that it can be trusted.
 
 **2. Use the `LOWER` column only.** The PDF presents each section as a
 `LOWER`/`UPPER` pair per raw score. Take `LOWER`, and derive
@@ -288,12 +311,39 @@ A PSAT row with `Subject = 'Reading and Writing'` does not match the subject
 list, so it does not fire today — but any future change to that predicate must
 not widen it to catch these.
 
-**Known unresolved anomaly in the PSAT 8/9 Reading and Writing table**: raw 65
-maps to 710 while raw 66 — a perfect raw score — maps to 700. A student
-answering everything correctly would score 10 points _below_ one who missed a
-question. This is either a typo in College Board's published table or a
-transcription error from the screenshot. Resolve against the PDF before entering
-these rows. Math has no such anomaly.
+**Verified against PSAT 8/9 Practice Test 1** (`2324-P89-773`): sections are on
+a 120-720 scale, total 240-1440, Reading and Writing raw 0-66, Math raw 0-54.
+Those raw maxima match Illuminate's question counts, so the usual coverage check
+still applies.
+
+**The conversion table is per practice test.** Practice Test 1 and Practice Test
+2 have different tables. Establish which practice test each Illuminate
+assessment corresponds to and fetch that test's PDF — the same PT1/PT2 mapping
+the practice SAT needs. Never reuse one test's table for another.
+
+**A real typo in Practice Test 1's Reading and Writing table.** Raw 65 maps to
+710 and raw 66 — a perfect raw score — maps to 700, so a student answering
+everything correctly reads 10 points below one who missed a question. Confirmed
+against the PDF, so it is College Board's error, not a transcription slip. Treat
+it as a typo: the expected correction is **720** for raw 66, which is both the
+section maximum and that row's own `UPPER` value. Not yet formally decided —
+confirm before entry, and record the deviation wherever the rows are documented,
+since a corrected value diverges from the published table and no automated check
+can detect that.
+
+There is a second inversion in `UPPER` at raw 56-57 that does not affect us.
+Both exist because, per page 3, the paper scoring method is "a simplified (and
+therefore slightly less precise) version of the one used in the actual test."
+Math has no inversion.
+
+**Consequence of `LOWER` specific to PSAT**: these bands are far wider than the
+practice SAT's — mean width 54 points for Reading and Writing and 51 for Math,
+against roughly 20 for the SAT tables, reaching 100 points at the low end.
+Taking `LOWER` therefore flattens the floor hard: Reading and Writing raws 0
+through 6 all map to 120, so a student improving from 0 to 6 correct shows no
+movement. This is consistent with the shipped SAT rows, which flatten raws 0-8
+to 200, so `LOWER` remains the convention — but expect the question and have
+this answer ready.
 
 ## Procedure: Audit sheet rows after an update
 
