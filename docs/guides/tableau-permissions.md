@@ -670,13 +670,60 @@ OR (
     AND [RLS - Entity Gate]
     AND NOT [RLS - ITR Respondent Is a Department Director]
 )
+
+// 7. TEAM Council: everyone, except other chief-level respondents.
+//    Network-wide - no entity, location or department gate.
+OR (
+    ISMEMBEROF('Group Staff TEAM Council')
+    AND NOT [RLS - ITR Respondent Is Chief Level]
+)
 ```
 
-Note what is **absent** from Tier 2: `All Data`, `TEAM Council`, and
-`All Parliament` hold network-wide access on the other Survey Dashboard fields
-and are deliberately excluded here. Those groups contain peers and subordinates
-of the people answering. `Leadership Development` carries no `KNJ-SG-Tableau`
+Note what is **absent** from branch 2: `All Data` and `All Parliament` hold
+network-wide access on the other Survey Dashboard fields and are deliberately
+excluded here, because those groups contain peers and subordinates of the people
+answering. `TEAM Council` also holds network-wide access and appears in branch 7
+instead, carrying a shield. `Leadership Development` carries no `KNJ-SG-Tableau`
 prefix — that is the real group name, not a typo.
+
+#### Branch 7 — TEAM Council
+
+The council sees every response network-wide except other chief-level
+respondents. No entity, location or department gate applies; the shield is the
+only restriction, which matches how the council is treated on Manager Survey
+Reports, Manager Survey Rollup and Leadership Development.
+
+**It does not reuse `RLS - Subject Is Senior Leader`**, the shield those three
+workbooks use, for two independent reasons. That field keys on
+`job_function = 'Chief Level'`, which is unpopulated on this extract, and its
+`ISNULL` fallback matches the bare string `Executive` — which catches an
+executive assistant. On an extract where the fallback fires on essentially every
+row, that false positive would be the rule rather than the exception.
+
+`RLS - ITR Respondent Is Chief Level` covers 64 rows from 4 people:
+`Chief Academic Officer`, `Chief of Staff` and `Deputy Chief`. The `PRESIDENT`
+clause matches nothing in the current ITR waves and is there for the
+`Co-President` title, which exists on the roster.
+
+`Deputy Chief` is included even though its `job_function` is `EDs, HOSs, MDOs`
+rather than `Chief Level`, so this test is marginally broader than the canonical
+shield. That is the safe direction for a confidential survey.
+
+!!! warning "The shield hides chief-level titles, not council membership"
+
+    Tableau cannot ask whether **the respondent** belongs to a group —
+    `ISMEMBEROF` only ever answers for the viewer — so council membership has to
+    be approximated from the title. If the council includes heads of schools or
+    managing directors, and it plausibly does, their responses stay visible to
+    fellow council members: **720 rows from 23 people** hold a senior title that
+    is not chief level (`Executive Director`, `Head of Schools`,
+    `Head of Schools in Residence`, and five `Managing Director` variants).
+
+    Widening the shield to cover them is one clause —
+    `OR [RLS - ITR Respondent Is Regional Leadership]` — but it costs regional
+    oversight nothing and council visibility a great deal, so it should be a
+    decision rather than a default. Settle it by reading the council roster
+    against that list of eight titles.
 
 #### Branch 6 — the two departmental director groups
 
@@ -812,6 +859,15 @@ OR [RLS - ITR Respondent Is Regional Leadership]
 // visible, the same as associate and fellow ranks elsewhere in this field.
 CONTAINS(UPPER([job_title]), 'DIRECTOR')
 AND NOT CONTAINS(UPPER([job_title]), 'ASSOCIATE')
+```
+
+```text
+// RLS - ITR Respondent Is Chief Level
+// Council peers. Deliberately NOT the shared RLS - Subject Is Senior Leader:
+// that keys on job_function, which is unpopulated here, and its title fallback
+// matches 'Executive' and so catches an executive assistant.
+CONTAINS(UPPER([job_title]), 'CHIEF')
+OR CONTAINS(UPPER([job_title]), 'PRESIDENT')
 ```
 
 The Survey Dashboard displays this field with the caption `[Job Title]`. Use
