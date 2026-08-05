@@ -1,0 +1,139 @@
+models:
+  - name: stg_focus__co_teachers
+    description: >-
+      Focus co-teacher assignments — one row per staff member co-assigned to a
+      course period for a school year. Unlike most Focus tables this one has no
+      surrogate id; the grain is the school year, school, course, course period
+      and staff id together. Companion to stg_focus__co_teacher_days, which
+      carries the per-rotation-day flags for the same assignment.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - syear
+              - school_id
+              - course_id
+              - course_period_id
+              - staff_id
+          config:
+            severity: error
+    columns:
+      - name: syear
+        description: >-
+          Focus school year start year (e.g. 2025 = 2025-26). Part of the
+          composite primary key.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: school_id
+        description: >-
+          Focus school id the assignment belongs to. Part of the composite
+          primary key.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: course_id
+        description: >-
+          Focus course id the co-taught section belongs to. Part of the
+          composite primary key.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__courses')
+                field: course_id
+              config:
+                severity: error
+      - name: course_period_id
+        description: >-
+          Focus course-period (section) id the co-teacher serves. Part of the
+          composite primary key.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__course_periods')
+                field: course_period_id
+              config:
+                severity: error
+      - name: staff_id
+        description: >-
+          Focus staff id of the co-teacher. Part of the composite primary key.
+        data_type: int
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+          - relationships:
+              arguments:
+                to: ref('stg_focus__users')
+                field: staff_id
+              config:
+                severity: error
+      - name: inclusion
+        description: >-
+          Whether the co-teaching arrangement is an inclusion (co-taught
+          special-education) model.
+        data_type: string
+      - name: permissions
+        description: >-
+          Gradebook and roster permission level Focus grants the co-teacher on
+          the section.
+        data_type: string
+      - name: out_reason
+        description: >-
+          Reason recorded when the co-teacher is out of the section, used by
+          Focus coverage reporting.
+        data_type: string
+      - name: report_doe
+        description: >-
+          Whether the assignment is reported to the Florida Department of
+          Education staff-course survey.
+        data_type: string
+      - name: checkbox1
+        description: Unlabeled Focus checkbox slot on the co-teacher assignment.
+        data_type: string
+      - name: start_date
+        description: >-
+          First date the co-teacher serves the section. Unpopulated in Miami
+          while co-teaching is scheduled for the full section term.
+        data_type: date
+      - name: start_time
+        description: Daily start time of the co-teacher's coverage window.
+        data_type: string
+      - name: end_date
+        description: >-
+          Last date the co-teacher serves the section. Unpopulated in Miami
+          while co-teaching is scheduled for the full section term.
+        data_type: date
+      - name: end_time
+        description: Daily end time of the co-teacher's coverage window.
+        data_type: string
+      - name: custom1
+        description: >-
+          Unlabeled Focus custom slot. The custom_fields catalog has no entry
+          for the co_teachers table, so the stored value is carried through
+          undecoded.
+        data_type: string
+      - name: custom2
+        description: >-
+          Unlabeled Focus custom slot — see custom1 for why it is not decoded.
+        data_type: string
+      - name: custom3
+        description: >-
+          Unlabeled Focus custom slot — see custom1 for why it is not decoded.
+        data_type: string
+      - name: custom4
+        description: >-
+          Unlabeled Focus custom slot — see custom1 for why it is not decoded.
+        data_type: string

@@ -1,10 +1,12 @@
 models:
   - name: rpt_parentsquare__sections
     description:
-      ParentSquare `sections.csv` for KIPP Newark — one synthetic section per
-      (school, grade). The Integration Planner sets granularity at school and
-      grade level only and excludes teacher-classroom rostering, so these stand
-      in for real course sections — they give ParentSquare the grade-level
+      ParentSquare `sections.csv` for the KIPP NJ regions — one synthetic
+      section per (school, grade). Each district's thin `extracts/parentsquare`
+      wrapper slices this to its own `code_location`, and that wrapper is what
+      ParentSquare receives. The Integration Planner sets granularity at school
+      and grade level only and excludes teacher-classroom rostering, so these
+      stand in for real course sections — they give ParentSquare the grade-level
       grouping that `sections.csv` and `rosters.csv` require without importing a
       single teacher. Sections are derived from the (school, grade) pairs
       students are actually enrolled in, so none is empty. `term_id` is omitted
@@ -45,18 +47,21 @@ models:
         description:
           The Operations leader who owns the section. Which one owns it is a
           formality — their access comes from their staff rows, not from section
-          membership — so one is picked deterministically from the staff feed,
-          which also guarantees the value resolves in `staff.csv`.
+          membership — so one is picked deterministically from the staff feed of
+          the section's own region, which guarantees the value resolves in that
+          region's `staff.csv` and at that section's own school.
         data_tests:
           # `severity: error` matters more here than it looks. The owner comes
-          # from `min(staff_id)` over the staff feed, and an ungrouped aggregate
-          # over an empty input returns one row holding NULL rather than no rows
-          # — so if the Ops group is ever renamed or emptied, staff.csv goes to
-          # zero rows (which the extract factory skips, leaving ParentSquare on a
-          # stale file) while sections.csv still ships every section with a null
-          # owner. The relationships test below cannot catch that: dbt's
-          # relationships test filters nulls out of the child side, so it passes
-          # vacuously. This is the guard that fires.
+          # from `min(staff_id)` grouped by region over the staff feed, joined
+          # back with a LEFT join. A region whose Ops group is renamed or emptied
+          # contributes no owner row, so its staff.csv goes to zero rows (which
+          # the extract factory skips, leaving ParentSquare on a stale file) while
+          # sections.csv still ships every section — with a null owner. The LEFT
+          # join is deliberate for exactly that reason: an inner join would drop
+          # the sections instead and nothing would fail. The relationships test
+          # below cannot catch it either, because dbt's relationships test filters
+          # nulls out of the child side, so it passes vacuously. This is the guard
+          # that fires.
           - not_null:
               config:
                 severity: error
@@ -64,6 +69,18 @@ models:
               arguments:
                 to: ref('rpt_parentsquare__staff')
                 field: staff_id
+              config:
+                severity: error
+      - name: code_location
+        data_type: string
+        description:
+          Dagster code location of the region this row belongs to. Present so
+          each district's thin `extracts/parentsquare` wrapper can slice the
+          feed to its own region, and it is also the key the section owner is
+          picked per; it is not part of the ParentSquare file and no wrapper
+          projects it.
+        data_tests:
+          - not_null:
               config:
                 severity: error
       - name: section_number
