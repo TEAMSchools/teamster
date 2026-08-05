@@ -97,7 +97,9 @@ def main() -> int:
         shape = classify_reply_shape(
             reply["plain_body"],
             reply["attachment_count"],
-            reply.get("has_url", False),
+            # has_content_url, not has_url: the raw flag counts email signature
+            # and footer boilerplate, which is most of the URLs in the corpus.
+            reply.get("has_content_url", False),
         )
         shapes[shape] += 1
         rows.append((ticket, reply, shape))

@@ -52,6 +52,26 @@ FIRST_INSTRUCTIONAL_DAY = {
     2025: datetime.date(2025, 8, 25),
 }
 
+# Hosts that appear in email signatures, footers, and Zendesk's own ticket
+# chrome rather than in the substance of a reply. Measured from the corpus:
+# teamschools.zendesk.com 11,084 URL occurrences, www.kippnj.org 2,228,
+# facebook 839, calendly 821, instagram 819 — against tableau.kipp.org 675 and
+# docs.google.com 760 for real content. Without this denylist a "here is your
+# number" reply with a standard signature scores as a link delivery.
+#
+# teamschools.zendesk.com is denied as a HOST but Help Center article paths on
+# it are carved back in by the /hc/ check, since those are genuine deflections.
+SIGNATURE_HOSTS = (
+    r"^https?://(www\.)?("
+    r"teamschools\.zendesk\.com"
+    r"|kippnj\.org|kippmiami\.org|kippteamandfamily\.org|kippteamschools\.org"
+    r"|facebook\.com|instagram\.com|twitter\.com|x\.com|linkedin\.com"
+    r"|vimeo\.com|youtube\.com|youtu\.be"
+    r"|calendly\.com|aka\.ms|urldefense\.com"
+    r"|[a-z0-9-]*\.?googleusercontent\.com"
+    r")"
+)
+
 # Verified during design against the same scope filter.
 EXPECTED = {
     "n_tickets": 4608,
@@ -101,6 +121,25 @@ select
     coalesce(
         regexp_contains(json_value(e, '$.html_body'), r'https?://'), false
     ) as has_url,
+    -- ...but raw html_body URLs are dominated by email signature and footer
+    -- boilerplate (social icons, calendly, the org marketing site, Zendesk's
+    -- own ticket chrome). Content links are what a reply actually delivers, so
+    -- deny the signature hosts and carve Help Center articles back in.
+    coalesce(
+        (
+            select count(*) > 0
+            from
+                unnest(
+                    regexp_extract_all(
+                        json_value(e, '$.html_body'), r'https?://[^\\s"<>]+'
+                    )
+                ) as u
+            where
+                regexp_contains(u, r'/hc/[a-z-]+/articles/\\d+')
+                or not regexp_contains(u, r'{SIGNATURE_HOSTS}')
+        ),
+        false
+    ) as has_content_url,
 from `{PROJECT}.kipptaf_zendesk.ticket_audits` as ta
 inner join scoped as s on ta.ticket_id = s.id
 cross join unnest(json_extract_array(ta.events)) as e
@@ -158,6 +197,7 @@ def build_corpus(tickets: list[dict], comments: list[dict]) -> list[dict]:
                         "plain_body": c["plain_body"] or "",
                         "attachment_count": c["attachment_count"],
                         "has_url": c["has_url"],
+                        "has_content_url": c["has_content_url"],
                     }
                     for i, c in enumerate(thread, start=1)
                 ],
