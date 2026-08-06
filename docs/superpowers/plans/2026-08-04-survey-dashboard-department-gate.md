@@ -559,16 +559,21 @@ null, which the gate routes to its most restricted audience.
 
 **Owner:** the user, in Tableau Desktop. Independent of Tasks 1 through 6 and
 shippable before them. Every item narrows access or deletes dead code.
-Authoritative calc text: `docs/guides/tableau-permissions.md`.
+Authoritative calc text:
+`docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md` (the guide
+no longer carries calc text).
+
+An audit of the workbook on 2026-08-05 found two of these steps already done and
+two narrower than written. Struck items below are confirmed complete — do not
+redo them.
 
 **Files:** the Survey Dashboard workbook.
 
-- [ ] **Step 1: Protect `support_open_ended`**
+- [ ] **Step 1: Add small-cell suppression to `support_open_ended`** — narrowed
 
-It is the only support sheet with neither the respondent filter nor the
-small-cell suppression. Add `Permissions - Support` (set to TRUE) and
-`COUNTD(employee_number) >= 4` to its filter shelf, matching the four other
-support sheets.
+`Permissions - Support` is **already applied** to this sheet, so only the
+suppression is missing. The other four support sheets carry an `Employee Number`
+quantitative filter; this one does not. Add it to match.
 
 - [ ] **Step 2: Scope the blanket KTAF grant**
 
@@ -577,21 +582,44 @@ In `Permissions - Support`, the branch granting unconditionally to
 in the permissions guide. Central office staff keep access to their own regions,
 not to everything.
 
-- [ ] **Step 3: Delete `Permissions - Support (Preview)`**
+- [x] ~~**Step 3: Delete `Permissions - Support (Preview)`**~~ — **done**
 
-A dead four-line field holding an individual by-name grant. Confirm no sheet
-filters on it before deleting — resolve by internal name, not caption, since a
-filter's `column` attribute never updates on rename.
+Already gone. The 2026-08-05 audit enumerated every calculated field in the
+workbook and found exactly two beginning `Permissions`: `Permissions - ITR` and
+`Permissions - Support`.
 
-- [ ] **Step 4: Remove `KNJ-SG-Tableau The Syndicate`**
+- [x] ~~**Step 4: Remove `KNJ-SG-Tableau The Syndicate` from the support
+      fields**~~ — **done**
 
-Delete the branch wherever it appears in the support permissions fields.
+`Permissions - Support` carries no Syndicate branch.
 
-- [ ] **Step 5: Apply the #4656 renames**
+!!! danger "Do not extend this to `Permissions - ITR`"
 
-`legal_entity` becomes `home_business_unit_name`, `location` becomes
-`location_clean_name`, `department` becomes `home_department_name`. The workbook
-still uses the pre-#4656 names.
+    `Permissions - ITR` branch 3b grants to `KNJ-SG-Tableau The Syndicate`
+    deliberately — it is one of the three regional viewer groups, each with its own
+    peer exclusion. Removing it would silently drop the Syndicate's regional
+    visibility of Intent to Return. The network-wide retirement of this group
+    applies to the all-access tiers, not to a scoped, peer-excluded branch.
+
+- [ ] **Step 5: Apply the #4656 renames** — narrowed to one datasource
+
+`rpt_tableau__survey_responses` is **already renamed**: it carries
+`home_business_unit_name`, `location_clean_name` and `home_department_name`
+(captioned `Business Unit`, `Location`, `Department`).
+
+`rpt_tableau__survey_completion` is **not**. Its embedded extract still carried
+`business_unit`, `department` and `location` at audit time, and no identity
+columns at all — no `sam_account_name`, no `user_principal_name`, no
+`reports_to_*`. The model has only the post-#4656 names, so that extract
+predates #4656 and needs refreshing rather than renaming.
+
+!!! warning "Check this against the completion-sheet gate"
+
+    A five-tier `Permissions` was added to `rpt_tableau__survey_completion` after
+    the audit snapshot. Tier 1 needs the identity columns and Tiers 4-5 need
+    `home_business_unit_name` / `location_clean_name`, none of which were in that
+    extract — so either the extract was refreshed first, or the gate resolves
+    against different columns than intended. Confirm before closing this task.
 
 - [ ] **Step 6: Publish and spot-check**
 
