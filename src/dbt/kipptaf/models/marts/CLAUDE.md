@@ -3,7 +3,7 @@
 Dimensional marts (star schema) consumed by Cube and Tableau. Most-downstream
 layer — no `ref()` from staging, intermediate, or reporting into marts.
 Intra-mart refs are permitted (e.g. `bridge_survey_expectations → dim_surveys`,
-`fct_staff_attrition → dim_staff_status`). When renaming a mart column, grep
+`fct_staff_attrition_weekly → dim_staff`). When renaming a mart column, grep
 `ref(...)` within `marts/` too — not just outside.
 
 **Bridge models (`bridge_*`)** are factless facts that link two or more

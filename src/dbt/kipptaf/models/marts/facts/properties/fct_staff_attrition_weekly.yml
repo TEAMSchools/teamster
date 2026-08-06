@@ -1,0 +1,129 @@
+models:
+  - name: fct_staff_attrition_weekly
+    description: >-
+      Staff attrition at weekly grain. One row per cohort member (employee x
+      academic_year x attrition_type) x Monday-Sunday week within the
+      measurement window (window start through the return-check date, capped at
+      the current date for in-progress windows). is_attrition is the
+      final-outcome flag (true when the employee held a primary, non-Intern,
+      Active assignment during the year window but did not return by the
+      methodology's return-check date), identical across every week row for a
+      member. is_attritor_as_of is the cumulative flag: count_distinct of the
+      staff key over it, grouped by week_end_date, yields a cumulative attrition
+      trend; ungrouped it collapses to the final-outcome count. Source-of-truth
+      is dim_work_assignment_status (assignment-status SCD) intersected with
+      dim_work_assignment_primary and dim_work_assignment_jobs, joined to
+      dim_staff_work_assignments and dim_staff. Coverage limitation — pre-2021
+      NJ Dayforce-era staff are not included (ADP-only source dims); tracked at
+      #3744. Materialized as a table (~1.3M rows).
+    config:
+      materialized: table
+    columns:
+      - name: staff_attrition_weekly_key
+        data_type: string
+        description: >-
+          Surrogate primary key: generate_surrogate_key(["employee_number",
+          "academic_year", "attrition_type", "week_end_date"]).
+        constraints:
+          - type: primary_key
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - unique
+          - not_null
+
+      - name: staff_key
+        data_type: string
+        # No foreign_key constraint: this model is a table (constraints render
+        # to DDL) and dim_staff is a view (no DDL-level PK to reference), so a
+        # table->view FK is impossible in BigQuery. The relationships test below
+        # enforces referential integrity instead.
+        description: >-
+          Surrogate key to dim_staff and staff_work_history:
+          generate_surrogate_key(["employee_number"]). Join key for the
+          point-in-time exit-context join in the staff_attrition Cube cube, and
+          the count_distinct measure key.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_staff')
+                field: staff_key
+
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the attrition window belongs to. Derived from the fiscal
+          year starting July of that year (e.g., 2024 = July 2024 - June 2025).
+
+      - name: type
+        quote: true
+        data_type: string
+        description: >-
+          Attrition methodology — foundation (9/1-4/30 window, return check
+          9/1), nj_compliance (7/1-6/30 window, return check 7/1), or
+          recruitment (9/1-8/31 window, return check 9/1 of following year).
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [foundation, nj_compliance, recruitment]
+
+      - name: week_end_date
+        data_type: date
+        description: >-
+          Sunday end of a Monday-Sunday calendar week within the measurement
+          window. The trend axis — group by this (week or month granularity in
+          Cube) for a cumulative attrition trend; omit it for a final-outcome
+          rate.
+
+      - name: as_of_exit_date
+        data_type: date
+        description: >-
+          Date of the last active (non-Terminated) primary-assignment record
+          within the attrition window, capped at the termination effective date.
+          The point-in-time pin for the staff_work_history join in Cube to
+          resolve exit-context work attributes (title, department, location).
+          Null when no active pre-termination record exists.
+
+      - name: termination_effective_date
+        data_type: date
+        description: >-
+          Effective date of the first real termination event within the capture
+          window. Null for retained staff or attritors with no captured T-status
+          row.
+
+      - name: termination_reason
+        data_type: string
+        description: >-
+          Assignment-status reason for the first real termination within the
+          capture window (artifact reasons Import Created Action, Upgrade
+          Created Action, and Internship Ended are excluded from the pick). Null
+          for retained staff or when only artifact reasons were found.
+
+      - name: termination_type
+        data_type: string
+        description: >-
+          Leading token of termination_reason — Resignation, Termination,
+          Non-Renewal, or Other. Null when termination_reason is null.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [Resignation, Termination, Non-Renewal, Other]
+
+      - name: is_attrition
+        data_type: boolean
+        description: >-
+          TRUE if the staff member did not return by the return-check date for
+          this methodology's window. Identical across every week row for a given
+          cohort member — the final-outcome flag.
+
+      - name: is_attritor_as_of
+        data_type: boolean
+        description: >-
+          TRUE if the staff member had attrited by the end of this week —
+          is_attrition AND the termination fell on or before week_end_date (or,
+          for the ~0.5% of attritors with no captured termination date, on the
+          final week of the window). Cumulative: false in early weeks, flips
+          true the week the departure lands and stays true. count_distinct of
+          the staff key over this flag grouped by week_end_date is the
+          cumulative trend.

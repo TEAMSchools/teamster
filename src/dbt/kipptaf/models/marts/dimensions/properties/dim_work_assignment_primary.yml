@@ -5,9 +5,10 @@ models:
       x is_primary_position version. Hash-based change detection over
       int_adp_workforce_now__workers__work_assignments collapses adjacent SCD
       rows whose primary_indicator value is unchanged. Used as a date-correct
-      lookup by fct_staff_attrition and bridge_survey_expectations to determine
-      which work assignment was primary at a point in time; primary_indicator
-      changes within an item_id over time on roughly 4% of work assignments.
+      lookup by fct_staff_attrition_weekly and bridge_survey_expectations to
+      determine which work assignment was primary at a point in time;
+      primary_indicator changes within an item_id over time on roughly 4% of
+      work assignments.
     data_tests:
       - dbt_utils.expression_is_true:
           arguments:
