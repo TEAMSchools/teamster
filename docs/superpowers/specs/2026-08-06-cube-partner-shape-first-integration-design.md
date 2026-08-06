@@ -114,26 +114,27 @@ deferred decision, and it is the one thing that can make the repoint fail.
 
 ## Decisions
 
-| Decision                   | Choice                                                             |
-| -------------------------- | ------------------------------------------------------------------ |
-| Framing                    | Shape-first: catalog and sandbox, then repoint                     |
-| Production caller identity | **Not scoped yet** — deferred, designed toward pass-through        |
-| Developer data posture     | Synthetic only; no real records leave KTAF in v1                   |
-| Sandbox runtime            | Second Cube Cloud deployment (Enterprise: unlimited)               |
-| New views and metrics      | Partner requests, KTAF analytics engineers implement               |
-| Audit                      | KTAF-owned sink; Cube Cloud's audit log does not cover data access |
+| Decision                   | Choice                                                                       |
+| -------------------------- | ---------------------------------------------------------------------------- |
+| Framing                    | Shape-first: catalog and sandbox, then repoint                               |
+| Production caller identity | **Always a KTAF staff member** — HR-derived pass-through, no new scope model |
+| Developer data posture     | Synthetic only; no real records leave KTAF in v1                             |
+| Sandbox runtime            | Second Cube Cloud deployment (Enterprise: unlimited)                         |
+| Synthetic data             | Parameterized generator with a seeded RNG, not hand-authored seeds           |
+| New views and metrics      | Partner requests, KTAF analytics engineers implement                         |
+| Audit                      | KTAF-owned sink; Cube Cloud's audit log does not cover data access           |
 
 ## Scope of the implementation plan
 
 **In scope for the plan this spec feeds:** the catalog bundle, the sandbox
 deployment and its synthetic dataset, the `cube-sandbox` Cloud Run service and
 deployment-scoped console access, the audit emit path with its BigQuery sink,
-and the intake issue template.
+the production identity pass-through, and the intake issue template.
 
-**Out of scope, each needing its own spec:** the production identity
-pass-through (blocked on the partner's answer), the de-identified mirror and its
-re-identification-risk threshold, and small-cell suppression
-([#4237](https://github.com/TEAMSchools/teamster/issues/4237)).
+**Out of scope:** small-cell suppression
+([#4237](https://github.com/TEAMSchools/teamster/issues/4237)). A de-identified
+mirror is **not planned** — see
+[Why no de-identified mirror](#why-no-de-identified-mirror).
 
 ## Deliverable 1 — the catalog bundle
 
@@ -292,6 +293,58 @@ parts of a de-identified mirror — FERPA re-identification analysis,
 distributional realism, referential fidelity against live marts — are all absent
 when the rows are invented.
 
+### Generated, not hand-authored
+
+Build the dataset with a **parameterized generator using a seeded RNG**, not
+hand-authored dbt seeds. Seeds are faster to write and trivially reviewable, but
+they cannot do volume — and volume is the one realism gap worth closing.
+
+What the generator buys, all of which a de-identified mirror was previously
+carrying:
+
+- **Production-scale volume on demand.** Nothing about synthetic data forces it
+  to be small. Ten thousand synthetic students across 180 school days is roughly
+  1.8M attendance rows — a loop, not a privacy question. That surfaces
+  pagination, query timeouts, and pre-aggregation routing before cutover instead
+  of after.
+- **Approximate real distributions** by sampling from published aggregate
+  statistics, which are not PII.
+- **Named edge-case fixtures** — "student who transferred mid-year", "staff
+  member with no reportees", "enrollment spanning two schools" — that a test can
+  reference by name.
+
+Seed the RNG so the dataset is reproducible. A sandbox that changes shape
+between rebuilds is worse than a small one.
+
+Pre-aggregations are a separate choice. Production has partitioned pre-aggs, and
+matching them here costs Cube Store build time for latency fidelity v1 probably
+does not need. Leave them off until the partner reports a latency surprise.
+
+### Why no de-identified mirror
+
+An earlier draft of this design planned a parallel de-identified dataset. It is
+**not planned**, because the staff-identity answer removed its only unique job
+and the generator absorbs the rest:
+
+- Its **privacy** job is gone. Production callers are staff members seeing data
+  they are already entitled to, so no tier needs realistic-but-not-real data.
+- **Volume** was never its advantage, per the generator above.
+- **Semantic traps** are not a data problem. Pooling `avg_scale_score` across
+  incompatible assessment sources produces a plausible wrong number on real data
+  too, so a mirror would not reveal it. The catalog gotchas note is the control.
+- **Distribution** drift is cosmetic and an afternoon to retune at cutover.
+
+The one thing a mirror would genuinely add is **edge cases nobody thought to
+fabricate**. Missing those costs bugs found at cutover rather than during
+development — schedule risk, not a correctness or privacy failure — and the dbt
+marts already absorb most raw-source messiness before the views read it.
+
+**Fallback, if the generator proves insufficient in practice:** a de-identified
+mirror needs its own spec plus a stated re-identification-risk threshold, which
+is the same governance decision blocking
+[#4237](https://github.com/TEAMSchools/teamster/issues/4237). Do not start one
+without that threshold settled.
+
 ### The fidelity rule
 
 **Make the sandbox narrower and messier than production. Never wider or
@@ -360,18 +413,21 @@ grant _them_ production access — it grants the **product's end users** access.
 Two different populations, and the repoint swaps which one is served. Their
 engineers keep using the sandbox after cutover.
 
-**Whether there is an identity to resolve at all.** If the product's end users
-are students, families, or community members, they have no HR row and no
-Workspace account, and the repoint **fails** rather than degrading. This is the
-deferred question, and it is a hard dependency, not a refinement.
+**Tier diversity.** In the sandbox the partner chooses which persona to test
+against. In production the product must serve every tier at once — a
+school-based AP and a network-office director on the same screen, with different
+row and member access. That is the Tableau publisher-versus-viewer problem
+reappearing inside their product, and it is why the fidelity rule's narrow
+personas are load-bearing rather than cautious.
 
 **Field-level denials.** `access_policy` blocks the whole query rather than
 stripping the member. A permissive sandbox persona hides this entirely.
 Mitigated by the fidelity rule above, not by anything at repoint time.
 
 **Volume behavior.** Pagination, query timeouts, and pre-aggregation routing are
-all invisible at a few hundred synthetic rows and load-bearing at ten thousand
-students. Client code that never had to paginate will not start on its own.
+invisible at a few hundred rows and load-bearing at ten thousand students.
+Mitigated by generating the sandbox at production scale, not by anything done at
+repoint time — client code that never had to paginate will not start on its own.
 
 **Number plausibility.** Anything tuned by eye against fabricated values gets
 retuned against real ones. Scope-bound measures are the sharp edge here:
@@ -381,14 +437,52 @@ will not reveal a wrong pooling.
 
 ### The repoint checklist
 
-1. Confirm the production identity model (the deferred question) is answered and
-   built.
+1. Confirm the production identity pass-through is built and verified against a
+   real staff identity.
 1. Confirm the audit sink is live and receiving records.
 1. Point the partner's production integration at the production Cloud Run
    exchange service, not the sandbox one.
 1. Re-run their integration test suite and expect failures only in the five
    categories above.
 1. Load-test at production volume before any end user sees it.
+
+## What the staff-identity answer settles, and what it introduces
+
+The product's end users are **always KTAF staff**. That resolves the previously
+deferred question and simplifies the privacy story substantially:
+
+- **No new scope model.** Every end user already has a `dim_staff_cube_access`
+  row, so the existing HR-derived derivation covers production completely.
+- **No new egress.** The product shows a staff member data they can already
+  reach through Cube today. It changes the interface, not the entitlement.
+- **The de-identified mirror is no longer needed at all.** It was hedging
+  against non-staff end users who could not be shown PII. With that gone, a
+  synthetic generator covers the remaining realism gap, so no parallel
+  de-identified dataset is planned.
+- **Audit becomes a complete trail.** The accountable party is a staff member
+  KTAF already knows, and the `surface` field distinguishes a query made through
+  the partner's product from one made through Tableau, Superset, or `claude.ai`.
+
+It also moves three risks from KTAF's side of the boundary to the partner's.
+**None of them are enforceable by our access policies**, so each needs to be a
+written contract term rather than a technical control.
+
+**Offline and background queries.** If any feature queries while the user is not
+present — a scheduled digest, a nightly export, a warmed cache — there is no
+live identity to pass. That feature needs either a stored long-lived credential
+or a service identity, which reintroduces exactly the scope model this design
+avoids. Ask the partner which features, if any, require this before either side
+builds.
+
+**Result caching across users.** Our policies filter per identity, and we never
+see a request the partner serves from their own cache. A screen cached for a
+network-scoped director and re-served to a school-scoped principal leaks data we
+cannot detect, let alone prevent.
+
+**Token handling in their application.** Identity pass-through means their
+product holds KTAF staff session tokens. Token lifetime, storage at rest, and
+revocation on logout are now part of the security review; they were not when the
+design assumed a single vendor credential.
 
 ## Access for the partner's engineers
 
@@ -509,10 +603,10 @@ catalog is regenerated and committed, which surfaces the change as a diff.
 - The queue doubles as the written record of what the product needs — the exact
   input the deferred identity decision requires.
 
-## Deferred — production identity pass-through
+## Production identity pass-through
 
-Gated on the product being scoped. Prove the chain end to end from outside KTAF
-infrastructure with a real staff identity.
+Now in scope, since the end users are known to be KTAF staff. Prove the chain
+end to end from outside KTAF infrastructure with a real staff identity.
 
 - Register the partner's application in WorkOS AuthKit. DCR/CIMD is a
   tenant-wide toggle under Connect → Configuration → MCP Auth.
@@ -524,23 +618,6 @@ infrastructure with a real staff identity.
   calls.
 - **The load-bearing test is the negative one:** a non-staff identity must
   default-deny.
-
-## Deferred — de-identified mirror
-
-A dbt-built `kipptaf_marts_deid` dataset with identical table and column shapes,
-on its own deployment, closing the realism gap listed under
-[What does not port](#what-does-not-port).
-
-**De-identification requires its own spec.** Direct identifiers are the easy
-half. FERPA's "linked or linkable" standard is the hard half: a row carrying
-school, grade level, race, and IEP status is re-identifiable in a small school
-with no name present. That forces a stated re-identification-risk threshold —
-**the same governance decision blocking
-[#4237](https://github.com/TEAMSchools/teamster/issues/4237) small-cell
-suppression, so settle both together.**
-
-Scope the mirror to the views the product actually uses, from the intake record.
-Do not mirror all of `kipptaf_marts` speculatively.
 
 ## Constraints this design must respect
 
@@ -582,6 +659,8 @@ partner's engineers a day.
 - Self-serve credential management or a partner portal.
 - Per-key rate limiting inside Cube — the Cloud Run service is the right layer.
 - Adding `act_as` to the production `cube-mcp` service.
+- A parallel de-identified dataset — see
+  [Why no de-identified mirror](#why-no-de-identified-mirror).
 
 ## Testing strategy
 
@@ -608,21 +687,21 @@ partner's engineers a day.
 
 ## Open questions
 
-- **Who are the product's end users?** Gates the repoint. The partner's to
-  answer, and the one question that can invalidate the design.
+- **Which features, if any, query when the user is not signed in?** Any such
+  feature needs a service identity and reopens the scope-model question for that
+  path alone.
+- **Will the partner commit in writing that query results are never cached
+  across users?** Our policies cannot enforce it.
 - How are external users provisioned in the KTAF Cube Cloud SAML tenant?
 - Does the partner's product want REST or MCP as its query surface?
-- Synthetic generation approach: hand-authored dbt seeds, or a generator script?
-  Seeds are simpler to review; a generator scales to realistic volume later.
 - Do they want generated TypeScript types, or is the raw snapshot enough?
-- Re-identification-risk threshold for the de-identified mirror, jointly with
-  #4237.
 
 ## Related
 
 - [#4455](https://github.com/TEAMSchools/teamster/issues/4455) — this work.
 - [#4237](https://github.com/TEAMSchools/teamster/issues/4237) — small-cell
-  suppression; shares the de-identification threshold decision.
+  suppression; would share the threshold decision if a de-identified mirror is
+  ever needed.
 - [#4268](https://github.com/TEAMSchools/teamster/issues/4268) — `queryRewrite`
   member-strip.
 - [#4526](https://github.com/TEAMSchools/teamster/issues/4526) — Cube Cloud
@@ -659,10 +738,10 @@ them. You never compute or assert permissions, and you never hold a credential
 that could broaden them. When someone changes roles or leaves, their access
 changes with no deploy and no action on your side.
 
-One constraint worth knowing now: this derivation only covers people our HR data
-knows. If your product's end users are staff, it works exactly as described. If
-they are students, families, or community members, we need a different
-permission model — which is why the question at the bottom of this note matters.
+You have confirmed your end users are always KTAF staff, which makes this
+straightforward: every one of them already has a record on our side, so the
+permissions derivation covers your product completely with nothing new to build
+on the authorization model.
 
 **How do we ensure safe access for developers testing in non-production,
 externally?**
@@ -689,9 +768,10 @@ Three things that matter for your engineers:
   works on real data. The reverse is not true, which is why we are biasing this
   way.
 
-Later, once we know which parts of the model your product uses, we can add an
-environment with de-identified data at realistic volume. We are deliberately not
-building that first, because we would be guessing at what to include.
+We are generating that sandbox at realistic volume rather than as a token
+sample, so pagination and response times behave the way they will in production.
+If you hit a case where fabricated data is not realistic enough, tell us and we
+will fix the generator.
 
 **What is the process for adding or exposing additional views or metrics?**
 
@@ -733,19 +813,21 @@ the sandbox rather than after it.
 1. **Sandbox with synthetic data and your access** — one to two weeks. A real
    endpoint, real auth, test personas, no real records.
 1. **Audit trail** — built alongside the sandbox.
-1. **Repoint at production data** — weeks, and **blocked on one question from
-   you** (below).
-1. **De-identified environment at realistic volume** — later, scoped to what
-   your product actually uses.
+1. **Repoint at production data** — weeks. Unblocked now that we know your end
+   users are staff.
 
-Steps 1 through 3 do not depend on that open question, so we can start now.
+Steps 1 through 3 need nothing further from you, so we can start now.
 
-Two things we need back from you:
+Three things we need back from you:
 
-- **Who are your product's end users, and does a query carry a signed-in
-  person's identity or your application's own?** This is the single biggest
-  driver, and it is the one thing that could change the approach rather than
-  just the timeline.
 - **When do your engineers need something to call?** If that is sooner than our
-  sandbox timeline, say so and we will get you the catalog and sample responses
+  sandbox timeline, say so and we will send the catalog and sample responses
   first so you can mock against them while we build.
+- **Does any feature need to query when the user is not signed in** — a
+  scheduled digest, a nightly export, a pre-warmed cache? Anything in that
+  category cannot carry a live user identity, so it needs a different and more
+  restricted mechanism. Better to know now than to design around it later.
+- **Can you confirm that query results will never be cached or reused across
+  users?** Our permissions are applied per person at query time, so a result
+  cached for one user and served to another would bypass them in a way we cannot
+  see. We would like this as an explicit term rather than an assumption.
