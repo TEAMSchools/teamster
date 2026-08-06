@@ -402,10 +402,15 @@ data_tests:
       student_id in enrollments must exist in students. students is scoped to
       the current academic year and enrollments is not, so a region whose SIS is
       frozen at a prior year keeps shipping course enrollments for students that
-      no longer appear in the student feed. Errors rather than warns for the
-      same reason as the school_id check.
+      no longer appear in the student feed. Warns rather than errors, unlike the
+      school_id check, because the two feeds rebuild asymmetrically under
+      state:modified+ -- students descends from
+      int_extracts__student_enrollments while enrollments descends only from the
+      powerschool staging models, so a PR touching the enrollment chain rebuilds
+      one side and reads the other frozen from the staging defer copies. That
+      vintage gap alone produces orphans and blocks CI on changes that cannot
+      affect feed membership.
     config:
-      severity: error
       meta:
         dagster:
           ref:

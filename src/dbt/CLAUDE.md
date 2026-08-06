@@ -264,6 +264,20 @@ conversions with either an explicit
 `DROP TABLE IF EXISTS <project>.<dataset>.<model>` at deploy time, or run
 `dbt build --select <model> --full-refresh` once after merge.
 
+## Snapshot meta-column config changes need a manual DDL migration
+
+Adding `hard_deletes: new_record` (or renaming meta columns via
+`snapshot_meta_column_names`) to an EXISTING snapshot fails EVERY run with
+`Snapshot target is missing configured columns` — dbt validates the target's
+columns and raises before any merge; it never adds them
+(`dbt/adapters/base/impl.py::assert_valid_snapshot_target_given_strategy`). Ship
+the one-time DDL with the config change, handed to the user (BQ MCP is
+SELECT-only): `alter table <snapshot> add column dbt_is_deleted string`, then
+`update <snapshot> set dbt_is_deleted = 'False' where true` — dbt writes the
+literal strings `'True'`/`'False'`, and the merge inserts by column name, so
+append-at-end is fine. Never `--full-refresh` a snapshot to clear the error;
+that destroys its SCD history.
+
 ## `WITH RECURSIVE` needs `contract: enforced: false`
 
 BigQuery allows `WITH RECURSIVE` only at the top level of a statement, but dbt's

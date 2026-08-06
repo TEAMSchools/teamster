@@ -7,20 +7,26 @@ models:
       primary, falling back to financial; `contact_2`, the second parent from
       the student's household 1) plus emergency contacts (`emergency_1` through
       `emergency_4`). `ContactType` distinguishes `Parent1` / `Parent2` /
-      `Emergency` so DeansList can scope automated guardian messaging; emergency
-      contacts additionally carry a numbered `Emergency N` relationship, while
-      parents keep their real Finalsite relationship. Column names match the
-      DeansList import template headers exactly. Delivered by the Dagster asset
-      `kipptaf/extracts/deanslist/contacts_txt`.
+      `Emergency` so DeansList can scope automated guardian messaging, and every
+      contact carries its real Finalsite relationship to the student. Column
+      names match the DeansList import template headers exactly. Delivered by
+      the Dagster asset `kipptaf/extracts/deanslist/contacts_txt`.
     data_tests:
+      # The source grain is (student, contact_slot), but the DeansList template
+      # fixes the header set so the slot cannot be projected — name plus
+      # relationship is the closest key the output can carry. warn, not error:
+      # two emergency slots can legitimately hold the same person for one
+      # student, a Finalsite data-entry gap rather than an extract defect.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - StudentID
               - ContactType
+              - ParentFirstName
+              - ParentLastName
               - Relationship
           config:
-            severity: error
+            severity: warn
     columns:
       - name: StudentID
         data_type: int64
@@ -50,11 +56,13 @@ models:
       - name: Relationship
         data_type: string
         description:
-          Relationship of the contact to the student. For parents (`contact_1`
-          and `contact_2`) this is the Finalsite `rel_type` (`parent`,
-          `stepparent`, `guardian`, `grandparent`, etc.). For emergency contacts
-          this is `Emergency N`, numbered by the Finalsite emergency slot
-          (`emergency_1` through `emergency_4`).
+          Relationship of the contact to the student, for every slot. Parents
+          (`contact_1` and `contact_2`) carry the Finalsite `rel_type`
+          (`parent`, `stepparent`, `guardian`, `grandparent`, etc.); emergency
+          contacts carry the relationship recorded on their emergency
+          custom-field set (`Mother`, `Grandmother`, `Aunt`, `Neighbor`, etc.),
+          which is populated on nearly every emergency row. Null where Finalsite
+          holds an emergency contact with no relationship recorded.
         data_tests:
           - not_null
       - name: ContactType
@@ -104,13 +112,13 @@ models:
           send.
 
 unit_tests:
-  - name: test_family_contacts_emergency_numbering
+  - name: test_family_contacts_slot_contact_types
     description:
       One enrolled student with two parents plus all four emergency slots.
-      Asserts the parents keep their Finalsite relationship and get
-      Parent1/Parent2 contact types, and each emergency slot is relabeled
-      Emergency N by slot number with an Emergency contact type (exercising
-      every case branch).
+      Asserts contact_1 and contact_2 map to Parent1/Parent2 and every emergency
+      slot maps to Emergency (exercising each case branch), and that all six
+      rows pass their Finalsite relationship through unchanged rather than
+      having the emergency ones overwritten with a slot ordinal.
     model: rpt_deanslist__family_contacts
     given:
       - input: ref('int_finalsite__student_contacts')
@@ -200,7 +208,7 @@ unit_tests:
             WorkPhone: null,
             CellPhone: "13055550200",
             Email: null,
-            Relationship: Emergency 1,
+            Relationship: grandparent,
             ContactType: Emergency,
             Language: null,
           }
@@ -212,7 +220,7 @@ unit_tests:
             WorkPhone: null,
             CellPhone: null,
             Email: null,
-            Relationship: Emergency 2,
+            Relationship: aunt,
             ContactType: Emergency,
             Language: null,
           }
@@ -224,7 +232,7 @@ unit_tests:
             WorkPhone: null,
             CellPhone: null,
             Email: null,
-            Relationship: Emergency 3,
+            Relationship: uncle,
             ContactType: Emergency,
             Language: null,
           }
@@ -236,7 +244,7 @@ unit_tests:
             WorkPhone: null,
             CellPhone: null,
             Email: null,
-            Relationship: Emergency 4,
+            Relationship: neighbor,
             ContactType: Emergency,
             Language: null,
           }
