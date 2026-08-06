@@ -23,6 +23,7 @@ with
             schoolstate as school_state,
             schoolzip as school_zip,
             principalemail as principal_email,
+            _dbt_source_project as code_location,
 
             cast(school_number as string) as school_id,
             lower(principalemail) as principal_email_match,
@@ -31,7 +32,11 @@ with
             -- dash-separated); ParentSquare wants 10 digits.
             regexp_replace(schoolphone, r'[^0-9]', '') as school_phone,
         from {{ ref("stg_powerschool__schools") }}
-        where _dbt_source_project = 'kippnewark' and state_excludefromreporting = 0
+        -- Every NJ region is in scope and each district wrapper filters this view
+        -- down to its own `code_location`. Miami is excluded because it rosters
+        -- from Focus rather than PowerSchool — the same carve-out the six
+        -- rpt_clever__* feeds make.
+        where _dbt_source_project != 'kippmiami' and state_excludefromreporting = 0
     )
 
 select
@@ -43,6 +48,7 @@ select
     s.school_state,
     s.principal_email,
     s.school_phone,
+    s.code_location,
 
     p.principal_first_name,
     p.principal_last_name,

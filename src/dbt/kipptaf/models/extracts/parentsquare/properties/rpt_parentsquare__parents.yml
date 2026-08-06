@@ -1,14 +1,16 @@
 models:
   - name: rpt_parentsquare__parents
     description:
-      ParentSquare `parents.csv` for KIPP Newark — one row per household parent
-      of a currently-enrolled student, drawn from the Finalsite Household 1
-      Parent 1 and Parent 2 slots. Delivered as a full snapshot each run. Rows
-      carrying neither an email nor a mobile number are dropped, since
-      ParentSquare cannot create a contactable account without one. `parent_id`
-      is deliberately not emitted — ParentSquare then matches a parent across
-      their children by email and phone, which keeps one account per person
-      instead of one per child.
+      ParentSquare `parents.csv` for the KIPP NJ regions — one row per household
+      parent of a currently-enrolled student, drawn from the Finalsite Household
+      1 Parent 1 and Parent 2 slots. Each district's thin
+      `extracts/parentsquare` wrapper slices this to its own `code_location`,
+      and that wrapper is what ParentSquare receives. Delivered as a full
+      snapshot each run. Rows carrying neither an email nor a mobile number are
+      dropped, since ParentSquare cannot create a contactable account without
+      one. `parent_id` is deliberately not emitted — ParentSquare then matches a
+      parent across their children by email and phone, which keeps one account
+      per person instead of one per child.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -33,6 +35,17 @@ models:
         description:
           PowerSchool `school_number` of the child's school, as a string.
           Matches a `rpt_parentsquare__schools` row.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: code_location
+        data_type: string
+        description:
+          Dagster code location of the region this row belongs to. Present so
+          each district's thin `extracts/parentsquare` wrapper can slice the
+          feed to its own region; it is not part of the ParentSquare file and no
+          wrapper projects it.
         data_tests:
           - not_null:
               config:
