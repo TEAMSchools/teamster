@@ -209,12 +209,59 @@ literal reading — all KIPP NJ grades 9-12 for academic years 2025 and 2026.
 Narrowing to Newark only is a one-line change if Mathematica confirms the study
 population excludes Camden.
 
+### Academic year convention
+
+Warehouse `academic_year_int` is the **start** year of a school year, so
+`academic_year_int = 2025` corresponds to `academic_year = '2025-2026'`.
+Mathematica defines `school_year` as the four-digit year at the **end** of the
+school year. Every outbound `school_year` is therefore `academic_year_int` plus
+one:
+
+| Mathematica `school_year` | Warehouse `academic_year` | `academic_year_int` |
+| ------------------------- | ------------------------- | ------------------- |
+| 2025                      | 2024-2025                 | 2024                |
+| 2026                      | 2025-2026                 | 2025                |
+
+Getting this wrong shifts every row by a year with no error surfacing, so the
+mapping is asserted by a test rather than left to convention.
+
+### iReady interim coverage is partial
+
+Verified 2026-08-06 against `kipptaf_iready.int_iready__diagnostic_results`,
+distinct students in grades 9-12:
+
+| Mathematica `school_year` | Grade 9 BOY / EOY | Grade 10 BOY / EOY | Grades 11-12 |
+| ------------------------- | ----------------- | ------------------ | ------------ |
+| 2025 (SY 2024-2025)       | 1 / 9             | 0 / 14             | negligible   |
+| 2026 (SY 2025-2026)       | 541 / 495         | 464 / 338          | negligible   |
+
+Two consequences:
+
+- **`school_year` 2025 interim data is unusable.** Forty-six high school
+  students in total, with beginning-of-year present for exactly one. iReady
+  appears to have reached these grades only in 2025-2026.
+- **Even in 2026, usable coverage is grades 9 and 10 only.** Grades 11 and 12
+  carry roughly a dozen and under ten students respectively.
+
+Interim columns are populated where data exists and left null elsewhere.
+Mathematica should be told which cells are structurally empty rather than left
+to infer it from blanks.
+
+### The iReady source duplicates a school year across partitions
+
+`int_iready__diagnostic_results` carries school year 2025-2026 under **both**
+`_dagster_partition_academic_year = 2025` and `= 2026`, with matching distinct
+student counts under each. An unconstrained read double-counts, and filtering
+`rn_subj_round = 1` does not resolve it. `int_ignite__interim_assessment` must
+constrain the partition explicitly. This looks like an upstream defect and
+warrants its own issue.
+
 ### Column mapping — student level
 
 | Mathematica field                                                          | Source                                            |
 | -------------------------------------------------------------------------- | ------------------------------------------------- |
 | `stu_id`                                                                   | `int_ignite__student_id_crosswalk`                |
-| `school_year`                                                              | `academic_year`                                   |
+| `school_year`                                                              | `academic_year_int` plus 1 — see year convention  |
 | `school_id`                                                                | `seed_ignite__school_nces_ids`                    |
 | `school_name`                                                              | `school_name`                                     |
 | `treatment_cp`, `treatment_rdc`, `treatment_rr`                            | `int_ignite__treatment_assignment`, default `0`   |
@@ -233,7 +280,7 @@ population excludes Camden.
 | Mathematica field                                  | Source                                           |
 | -------------------------------------------------- | ------------------------------------------------ |
 | `stu_id`                                           | `int_ignite__student_id_crosswalk`               |
-| `school_year`, `school_id`                         | `academic_year`, NCES seed                       |
+| `school_year`, `school_id`                         | `academic_year_int` plus 1, NCES seed            |
 | `course_number`, `section_number`, `course_period` | `int_extracts__course_enrollments_by_term`       |
 | `subject`                                          | SCED crosswalk on `credit_type` or course number |
 | `grade_level`, `semester`, `course_name`           | `int_extracts__course_enrollments_by_term`       |
@@ -298,12 +345,13 @@ Confirm access before a file is ready rather than after.
 
 ## Open questions
 
-1. **Does iReady cover grades 9-12 in Newark?** iReady is wired for Newark and
-   the template carries only iReady interim columns, which is suggestive. But
-   iReady is typically a K-8 screener. If 9-12 is empty, those columns have no
-   source and the question becomes which instrument Mathematica expects for a
-   high school population — the memo also offers MAP, aimsWeb, and FastBridge
-   column families. Verify before building `int_ignite__interim_assessment`.
+1. **What does Mathematica expect for 2024-2025 interim data, given it was not
+   collected?** Resolved by query that iReady reached grades 9-10 only in
+   2025-2026 (see coverage above); school year 2025 has 46 high school students
+   and one beginning-of-year record. The columns cannot be populated. Confirm
+   whether Mathematica wants them left null, wants grades 11-12 excluded from
+   the interim analysis, or expects a different instrument for high school — the
+   memo also offers MAP, aimsWeb, and FastBridge column families.
 2. **Does the population include Camden?** The agreement names "KIPP NJ" and the
    memo says "all students within the CMO," but both treatment schools are
    Newark and all coordination has been Newark-titled. Parameterized either way;
