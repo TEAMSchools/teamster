@@ -514,17 +514,35 @@ landed yet. Wait for the next tick rather than launching a run.
 
 - [ ] **Step 3: Confirm the drift cleared in BigQuery**
 
+Check the invariant rather than a hardcoded row list: no active Paterson staff
+member should have a warehouse `homeschoolid` that disagrees with their ADP home
+school.
+
 ```sql
-select count(*) as still_drifted
-from `teamster-332318.dagster_kipppaterson_dlt_powerschool.users`
-where dcid in (205, 555, 652, 901, 905, 1751, 1764, 1951, 2051, 2257)
-  and homeschoolid = 0
+with sr as (
+  select
+    powerschool_teacher_number,
+    home_work_location_powerschool_school_id as adp_school
+  from `teamster-332318.kipptaf_people.int_people__staff_roster`
+  where assignment_status = 'Active'
+    and home_work_location_dagster_code_location = 'kipppaterson'
+    and (home_department_name != 'Data' or home_department_name is null)
+)
+select count(*) as still_mismatched
+from sr
+inner join `teamster-332318.kipptaf_powerschool.stg_powerschool__users` as u
+  on sr.powerschool_teacher_number = u.teachernumber
+  and u._dbt_source_project = 'kipppaterson'
+where u.homeschoolid != sr.adp_school
 ```
 
-Expected: a low count. Eight of the ten rows read `homeschoolid = 0` before the
-fix and should now carry a real school id. Two rows (dcid 555 and 2257) were
-already non-zero but wrong, so confirm those individually against the live
-values recorded in the spec's evidence section.
+Before the fix this returned 10. Expected after: 0, or 1 if the one ADP-side
+case has not been corrected in Workday — that row's ADP school is itself wrong,
+so it is a People Ops fix, not a pipeline one.
+
+This query names no individual identifiers. The ten specific rows are recorded
+in the investigation artifacts under `.claude/scratch/` and the SDD workspace,
+both git-ignored; do not copy them into this file, the issue, or the PR.
 
 - [ ] **Step 4: Confirm the affected staff returned to the extract**
 
@@ -566,7 +584,35 @@ order by sr.loc
 Post the before and after counts as a comment on #4754. Report counts only —
 never `teachernumber` or `dcid` values, which are employee identifiers.
 
-- [ ] **Step 6: Clean up the throwaway artifacts**
+- [ ] **Step 6: Confirm the steady-state reload cadence is sane**
+
+Raised in review on PR #4757. `transaction_date` moved on 105 of 219 Paterson
+`users` rows between the stored baseline and the live probe, which would be a
+problem if it advanced on most 15-minute ticks: these tables load
+`write_disposition="replace"` behind a per-district pool at limit 1, so constant
+reloading would compete with the large `transaction_date` tables.
+
+Measurement during the investigation says it does not. Live
+`MAX(transaction_date)` read `2026-08-06T07:17:33` at both 16:12Z and 17:11Z —
+unchanged across roughly 40 consecutive ticks. The column advances in discrete
+batches, not continuously, so the signature is stable between batches.
+
+Confirm that holds in production over a longer window than the first tick:
+
+```text
+mcp__dagster__get_tick_history(
+  name="kipppaterson__powerschool__dlt__intraday_sensor",
+  repository_location_name="kipppaterson",
+  limit=100,
+)
+```
+
+Count how many ticks selected any of the three tables. Expected: a small
+fraction, clustered around the batch stamping. If instead they are selected on
+most ticks, that is a real regression — open a follow-up issue rather than
+reverting, since the correctness fix still stands.
+
+- [ ] **Step 7: Clean up the throwaway artifacts**
 
 ```bash
 rm -f /workspaces/teamster/tests/assets/test_zz_ps_users_probe.py \
@@ -577,7 +623,7 @@ rm -f /workspaces/teamster/tests/assets/test_zz_ps_users_probe.py \
 These are untracked in the main checkout and were only diagnostic. Confirm with
 `git -C /workspaces/teamster status --short` that nothing remains.
 
-- [ ] **Step 7: Remove the worktree**
+- [ ] **Step 8: Remove the worktree**
 
 ```bash
 git -C /workspaces/teamster worktree remove \
