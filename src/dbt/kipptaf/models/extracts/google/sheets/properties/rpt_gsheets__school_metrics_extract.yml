@@ -5,8 +5,8 @@ models:
       Google Sheet. Each row is one metric value at a specific grain and time
       scale. Covers attendance (ADA, chronic absence), internal assessment
       proficiency, DeansList referrals by tier, academic course failure rates,
-      and weighted Y1 GPA. All values are PII-free aggregates — no student-level
-      data is exposed.
+      weighted Y1 GPA, and i-Ready lesson completion rates. All values are
+      PII-free aggregates — no student-level data is exposed.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -28,11 +28,11 @@ models:
       - name: domain
         description: >
           High-level category for the metric. One of: Assessment, Attendance,
-          Culture, Grades, Academics.
+          Culture, Grades, Academics, i-Ready.
         data_type: string
       - name: discipline
         description: >
-          Subject discipline applicable to assessment proficiency metrics only.
+          Subject discipline. Populated for Assessment and i-Ready domains.
           Values: ELA, Math. Null for all other domains.
         data_type: string
       - name: course_name
@@ -55,7 +55,7 @@ models:
           category name prefixed with "Referrals - " (e.g., "Referrals -
           Disrespect to Staff"). Other examples: Weekly ADA, % Chronically
           Absent (ADA <= 90%), Proficiency (Mastery Rate), Failure Rate (Y1),
-          Avg Y1 GPA (Weighted).
+          Avg Y1 GPA (Weighted), % Students Passing 2+ Lessons.
         data_type: string
       - name: time_scale
         description: >
