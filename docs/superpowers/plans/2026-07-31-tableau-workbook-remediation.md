@@ -881,6 +881,25 @@ design doc's earlier estimate.
 - **Fields on `operations_ekg`:** `[region]` → `[home_business_unit_name]`,
   `[respondent_location]` → `[location_clean_name]`, `[respondent_job_title]` →
   `[job_title]`
+- **Location-gate variant on `operations_ekg`:** the Tier 5 location gate reads
+  `[school_clean_name]`, not `[location_clean_name]`. Those are two different
+  schools on this extract — `location_clean_name` comes from the roster join on
+  the respondent, so gating on it shows a school leader the walkthroughs they
+  **performed**, not the ones **of their school**. `school_clean_name` is the
+  walked school, added in PR #4746; it must be merged and materialized before
+  this workbook's Tier 5 edit.
+- **Entity-gate variant on `operations_ekg`:** the Tier 5 entity gate reads
+  `[school_business_unit_name]`, not `[home_business_unit_name]`, for the same
+  reason — it is the entity of the walked school. Central-office staff walk
+  schools in every region and would otherwise only ever match the unconditional
+  KTAF branch, and no respondent on this form is based in KIPP Paterson, so the
+  Paterson branch matches zero of the 25 Paterson Prep walkthroughs. **Drop the
+  KTAF branch from this workbook's entity gate** — no school is owned by
+  `KIPP TEAM and Family Schools Inc.`, so that branch can never match; central
+  office reaches this data through Tiers 2 and 4. Column added in PR #4749.
+- **Field the workbook loses:** `[School]` is removed from `operations_ekg` in
+  PR #4749. Swap any use of it to `[school_clean_name]` in the same window, or
+  the sheets referencing it break when the view rematerializes.
 - **Role variant:** omit the AP branch entirely
 - **Note:** `operations_pm` keeps `[respondent_job_title]` and
   `[respondent_name]` — that model has two people per row and the respondent is

@@ -118,6 +118,21 @@ a property of the location, not the viewer: Room 9's region is
 office. Using `location_region` for entity gating would hand central-office
 staff a region's access.
 
+This governs **person-grain** extracts, where the gated row describes a member
+of staff. On an **event-grain** extract the row describes something that
+happened at a place, and both gates come from that place, not from whoever
+recorded it. `rpt_tableau__operations_ekg` is the case: a row is a walkthrough
+of a school, so it gates on `school_clean_name` and `school_business_unit_name`,
+both resolved from the walked school through `int_people__location_crosswalk`.
+Gating it on the respondent instead shows a school leader the walkthroughs they
+performed rather than the ones of their school, and no respondent on that form
+is based in KIPP Paterson, so a Paterson leader sees nothing at all. The Room 9
+failure above cannot reach an event-grain extract whose place is always a real
+school — the walkthrough form's dropdown lists no Rooms — and the gate still
+requires group membership, so sourcing entity from the place widens nothing.
+Before applying this carve-out to another extract, confirm its place column
+cannot resolve to a Room.
+
 **Location and department stay separate columns.** This is the structural idea
 borrowed from `dim_staff_cube_access` (#4269), and it is what stops Rooms from
 granting location-wide visibility.
