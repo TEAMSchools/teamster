@@ -169,30 +169,57 @@ ships a new question cannot expose it by default.
 
 ### Tableau layer
 
-A new field, `RLS - Department Gate`, kept separate from `Permissions - Support`
-and placed beside it on the filter shelf. Two filters both set to `TRUE` is an
-AND, and separate fields let either be dropped onto a sheet alone to debug a
-persona — the same rationale as the five split RLS fields in the permissions
-guide.
+A new field, `RLS - Department Gate`, referenced from **inside**
+`Permissions - Support` as its own tier — not placed beside it on the filter
+shelf.
+
+Two filters both set to `TRUE` is an AND, which applies the department gate to
+every viewer including the all-access and cross-department-leadership tiers.
+Those viewers belong to no department group, so an AND-ed gate drops them to
+zero rows. The gate has to be a disjunct inside the existing calc, so that
+department-scoped access is _added_ for department members rather than
+_subtracted_ from everyone else:
 
 ```text
-// all-access
-ISMEMBEROF('KNJ-SG-Tableau All Data')
-OR ISMEMBEROF('KNJ-SG-Tableau TC')
-
-// cross-department leadership; entity scoping comes from Permissions - Support
-OR ISMEMBEROF('KNJ-SG-Tableau All MDSO')
-OR ISMEMBEROF('KNJ-SG-Tableau All HOS')
-
-// department-scoped: one branch per group, an IN list per group
-OR (ISMEMBEROF('KNJ-SG-Tableau Special Education Directors')
-    AND [rated_department_code] IN ('special_education', ...))
-OR (ISMEMBEROF('KNJ-SG-Tableau School Support Directors')
-    AND [rated_department_code] IN (...))
-OR (ISMEMBEROF('KNJ-SG-Tableau All HR')
-    AND [rated_department_code] IN ('human_resources', 'cmo_hroperations'))
-// one branch per department that has a group
+//Tier 4b — department-scoped: own department's questions, own region
+OR ([RLS - Entity Gate] AND [RLS - Department Gate])
 ```
+
+Department groups move out of the all-access and region-scoped tiers into this
+one. A group left in the all-access tier keeps seeing every department's
+feedback, which is the condition this design exists to end.
+
+`RLS - Department Gate` itself is a `CASE` over the code, one branch per
+department, rather than one branch per group with an `IN` list. The codes are
+the stable side of the mapping and the sheet guarantees one code per
+abbreviation, so keying on the code reads directly against the pinned
+`accepted_values` list:
+
+```text
+IFNULL(
+  CASE [rated_department_code]
+    WHEN 'data'                        THEN ISMEMBEROF('KNJ-SG-Tableau All Data')
+    WHEN 'human_resources_operations'  THEN ISMEMBEROF('KNJ-SG-Tableau All HR')
+    WHEN 'special_education'           THEN ISMEMBEROF('KNJ-SG-Tableau Special Education Directors')
+    WHEN 'technology'                  THEN ISMEMBEROF('TS-SG-R9 Technology')
+    //one branch per code in the pinned 14
+  END,
+  FALSE
+)
+```
+
+Three mechanics that are easy to get wrong:
+
+- **`ISMEMBEROF()` returns NULL when the viewer is not signed in**, not `FALSE`.
+  Hence the `IFNULL(..., FALSE)` wrapper, and never `NOT ISMEMBEROF(...)` — a
+  negated NULL stops behaving like a gate.
+- **Group names containing non-alphanumeric characters need HTML URL encoding**
+  inside `ISMEMBEROF()`. `KNJ-SG-Tableau All T&L` must be written
+  `KNJ-SG-Tableau All T%26L`; written literally the branch silently never
+  matches.
+- **Every failure mode is fail-closed.** A misspelled group, a group not yet
+  created, a viewer not signed in, or a new code absent from the `CASE` all
+  yield no rows rather than extra rows.
 
 **No `ELSE TRUE`.** A row whose code is blank, null, or names a department with
 no group matches no branch, so it is reachable only through the all-access and
@@ -239,26 +266,44 @@ them.
 
 ### Group coverage
 
-Departments with a group referenced in the workbook today:
+Verified against `stg_ldap__group` across all four naming schemes
+(`KNJ-SG-Tableau`, `TS-SG-`, `TS-DL-`, `Group Staff`), with member counts
+compared to ADP `home_department_name` headcount.
 
-| Department code          | Group                                                                  |
-| ------------------------ | ---------------------------------------------------------------------- |
-| `data`                   | `KNJ-SG-Tableau All Data`                                              |
-| `human_resources`        | `KNJ-SG-Tableau All HR`                                                |
-| `leadership_development` | `Leadership Development`                                               |
-| `teaching_learning`      | `TS-DL-Teaching And Learning`                                          |
-| `technology`             | `TS-SG-R9 Technology`                                                  |
-| `talent_acquisition`     | `KNJ-SG-Tableau All Recruiting` (confirm)                              |
-| `teacher_development`    | `KNJ-SG-Tableau All New Teacher Development` (confirm)                 |
-| `special_education`      | `KNJ-SG-Tableau Special Education Directors` (directors, not the team) |
+Ten of the fourteen codes already have a usable group:
 
-No group is referenced for `compliance`, `finance`, `marketing`, `purchasing`,
-`real_estate`, `student_recruitment`, or `advocacy`, nor for the SUP-side
-`regional_facilities` and `regional_operations`. Those fall to the restricted
-default until groups exist.
+| Department code              | Group                                        | Members | ADP |
+| ---------------------------- | -------------------------------------------- | ------- | --- |
+| `data`                       | `KNJ-SG-Tableau All Data`                    | 10      | 10  |
+| `human_resources_operations` | `KNJ-SG-Tableau All HR`                      | 14      | 14  |
+| `teacher_development`        | `KNJ-SG-Tableau All New Teacher Development` | 7       | 7   |
+| `talent_acquisition`         | `KNJ-SG-Tableau All Recruiting`              | 16      | 15  |
+| `special_education`          | `KNJ-SG-Tableau Special Education Directors` | 9       | 325 |
+| `teaching_learning`          | `TS-DL-Teaching And Learning`                | n/a     | 25  |
+| `technology`                 | `TS-SG-R9 Technology`                        | 22      | 34  |
+| `finance`                    | `TS-SG-R9 Finance` + `TS-SG-R9 Purchasing`   | 13 + 3  | 15  |
+| `development`                | `TS-SG-R9 Development`                       | 3       | 5   |
+| `real_estate_facilities`     | `TS-SG-R9 Facilities`                        | 2       | 3   |
 
-A blank cell above means "not referenced in this workbook", not "does not
-exist". Server groups cannot be enumerated from here.
+`special_education` is deliberately the directors group rather than the
+325-person department. `TS-SG-R9 Technology`, `Development`, and `Facilities`
+are each short of their ADP headcount and need a membership reconciliation
+before they are relied on — an under-populated group means real staff silently
+see nothing.
+
+Four codes have no group and need one created: `compliance`,
+`leadership_development`, `marketing_comms_enrollment`, and `operations`.
+Proposed convention for new groups is `KNJ-SG-Tableau Dept {Department}`, the
+`Dept` infix separating them from the location and role groups. `operations` may
+instead reuse `KNJ-SG-Tableau All DSO` + `All MDSO` rather than create a
+172-person group.
+
+Two caveats on this inventory. `stg_ldap__group` is on-prem AD, so an
+Entra-native group would not appear in it — absence is not proof. And
+`TS-DL-Teaching And Learning`, referenced by the workbook today, was not found
+under that exact CN; the near matches are `TS-DL-TeachingAndLearning` (27) and
+`Group Staff Teaching and Learning` (27). Confirm against the Tableau site's own
+group list, which cannot be enumerated from here.
 
 Group naming is already three-way inconsistent — `KNJ-SG-Tableau *`, `TS-DL-*`,
 `TS-SG-*`, and a bare `Leadership Development`. New departmental groups should
@@ -297,9 +342,11 @@ Data layer:
   in display name would survive it and fan the join out — a display-text tweak
   or re-casing applied to one occurrence breaks the projection exactly as a
   wrong code does.
-- `accepted_values` on `rated_department_code` against the department list, with
-  the blank included as a valid value. Blocked on the taxonomy decision in open
-  question 1 — the list cannot be written before the codes are agreed.
+- `accepted_values` on `rated_department_code` against the agreed 14 codes.
+  Shipped and passing. The blank case needs **no** entry in the list —
+  `accepted_values` compiles to `where value not in (...)`, which NULL never
+  satisfies, so nulls pass regardless. Adding an empty-string entry would only
+  mask a genuinely empty-string value.
 - Confirm the join adds no rows: `count(*)` on `rpt_tableau__survey_responses`
   before and after must match.
 
@@ -320,15 +367,24 @@ less is a broken gate.
 
 ## Open questions
 
-1. **The department taxonomy needs cleanup before the sheet can be filled in.**
-   Merged departments must resolve to one current code, and the SUP-side scopes
-   (`cmo_*`, `regional_*`) need deciding: one code per department, or separate
-   codes per scope.
-1. **The `IN` list for each group.** `Special Education Directors` and
-   `School Support Directors` get their own department plus a few others; which
-   others is not yet decided.
-1. **Which of the seven uncovered departments get groups**, and under which
-   naming convention.
+1. **Which groups stay all-access.** `KNJ-SG-Tableau All Staff KTAF` (171
+   members) sees every department's feedback while it remains in the all-access
+   tier, which would leave this work with no practical effect. `All Data` may
+   legitimately need everything to build and debug the dashboard.
+   `KNJ-SG-Tableau AcOps` (1 member) needs a tier.
+1. **Membership reconciliation** for `TS-SG-R9 Technology` (22 of 34),
+   `TS-SG-R9 Development` (3 of 5), and `TS-SG-R9 Facilities` (2 of 3), plus
+   confirmation of the real `TS-DL-Teaching And Learning` CN.
+1. **Whether `operations` gets its own 172-person group** or reuses `All DSO` +
+   `All MDSO`.
 
 Resolved 2026-08-04: whether the rated department sees its own respondents'
 names. It does not — see _Respondent identity_.
+
+Resolved 2026-08-05: the department taxonomy. One code per function, with
+`regional_*` and `cmo_*` question families folded into the unprefixed function —
+fourteen codes, pinned by `accepted_values`. `purchasing_*` carries `finance`,
+`student_recruitment_*` and `sre_oe` carry `marketing_comms_enrollment`,
+`real_estate_*` and `regional_facilities_*` both carry `real_estate_facilities`,
+and the retired `advocacy_*` questions carry `development`. The full list is in
+the plan's _Department taxonomy, as shipped_ section.
