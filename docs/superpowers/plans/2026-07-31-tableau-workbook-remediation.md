@@ -1068,6 +1068,34 @@ five; the Survey Dashboard has two.
     one of them 112 lines carrying two unconditional KTAF branches and three
     by-name grants. Delete dead permission fields; do not leave them for later.
 
+### Rule out a non-permission datasource filter before blaming the gate
+
+A datasource filter that has nothing to do with permissions can hide data
+exactly like a broken gate, and it appears on **no** sheet's filter shelf. Check
+for one before touching a calculation.
+
+This cost real time on Operations Systems. Two schools looked ungated after the
+new school-scoped gate went in; the actual cause was a datasource filter keeping
+`Walkthrough Round = 'Pulse Check Walkthrough'`, and those schools had only ever
+had `Strong Start Walkthrough` rounds. The gate was correct. Eleven of 21
+schools and 60 walkthroughs were hidden — the two that got noticed were simply
+the two someone knew to look for.
+
+How to check quickly, in order:
+
+1. **Query the model, not the extract.** Group the rows by the column you are
+   gating on and confirm the values you expect are present and non-null. If they
+   are missing upstream, no gate change will help.
+1. **Open Edit Data Source Filters** on every datasource in the workbook. Read
+   each one; a hardcoded round, term, or year is a common leftover.
+1. **Only then read the calculation.** If the data has the rows and no
+   datasource filter drops them, the gate is the suspect.
+
+The same trap applies to the `.twbx`: a filter with `user:ui-enumeration='all'`
+is a keep-everything no-op, while one with an explicit
+`<groupfilter function='member'>` list is actively selecting. Do not treat the
+mere presence of a filter as the finding.
+
 ### Confirm the individual grants are actually gone
 
 Search every calculation in the workbook — not just `Permissions` — for each of
@@ -1108,7 +1136,7 @@ uncommitted because it names staff usernames.
 | 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` were on the `Home` dashboard and **ungated** — full roster names, employee numbers, job titles, and completion status | **Fixed** — five-tier gate built on `rpt_tableau__survey_completion`                                                                                         |
 | 2   | Miami Instructional Rubrics       | a correct five-tier `Permissions` existed and was **applied at no scope**, so both data sheets were ungated                                                           | **Fixed** — field attached datasource-wide                                                                                                                   |
 | 3   | Survey Dashboard                  | `Permissions - Support` carries the unconditional `All Staff KTAF` branch, still grants `AcOps`, and is the only gate on five sheets                                  | **Accepted for now** — replaced by department scoping in [#4728](https://github.com/TEAMSchools/teamster/pull/4728), Tasks 7-10                              |
-| 4   | Operations Systems                | `rpt_tableau__operations_ekg`'s `Permissions` is 8 lines of group tests with no self clause and no location gate — applied datasource-wide over 10 sheets             | **dbt side shipped**, Tableau side open — see below                                                                                                          |
+| 4   | Operations Systems                | `rpt_tableau__operations_ekg`'s `Permissions` was 8 lines of group tests with no self clause and no location gate — applied datasource-wide over 10 sheets            | **Fixed** — school-scoped gate built on `school_clean_name`; confirm it is published                                                                         |
 | 5   | Federal Grants Timesheet Approval | no permission fields at all, 7 ungated data sheets                                                                                                                    | **Not a gap** — the workbook reads a live Google Sheet, not a gated extract. Leaving the model in [#4726](https://github.com/TEAMSchools/teamster/pull/4726) |
 | 6   | Leadership Development            | `RLS - Entity Gate` has no Paterson branch, so Paterson rows are invisible to Paterson's own leadership                                                               | **Not worth fixing** — archived for the Lattice migration in [#4629](https://github.com/TEAMSchools/teamster/pull/4629)                                      |
 
@@ -1145,39 +1173,43 @@ audit found no `Permissions - Support (Preview)` field and no `The Syndicate`
 reference in `Permissions - Support`. What remains is the department gate, the
 KTAF scoping, and the renames.
 
-### Gap 4 — Operations Systems
+### Gap 4 — Operations Systems, as fixed
 
 The broad groups (`All Data`, `TEAM Council`, `All MDSO`, `All MDO`,
-`The Syndicate`) are intentionally cross-regional and stay. `All DSO` and
-`All SL` come out of the flat list and get scoped to their own school.
+`The Syndicate`) stay cross-regional, deliberately. `All DSO` and `All SL` came
+out of the flat list and are now scoped to the school **walked**:
 
-**The dbt side has shipped.** `school_clean_name` landed in
-[#4746](https://github.com/TEAMSchools/teamster/pull/4746) and
-`school_business_unit_name` in
-[#4749](https://github.com/TEAMSchools/teamster/pull/4749), which also dropped
-the raw `school` column from the projection. The exact gate variants are in
-_Per-workbook sections → Operations Systems_; do not re-derive them here.
+```text
+//Admin and all access - deliberately cross-regional, no school scoping
+ISMEMBEROF('KNJ-SG-Tableau All Data')
+OR ISMEMBEROF('Group Staff TEAM Council')
+OR ISMEMBEROF('KNJ-SG-Tableau All MDSO')
+OR ISMEMBEROF('KNJ-SG-Tableau All MDO')
+OR ISMEMBEROF('KNJ-SG-Tableau The Syndicate')
 
-What remains is Tableau-side, in this order:
+//School leaders and DSOs - their own school, on the school WALKED
+OR (
+    (ISMEMBEROF('KNJ-SG-Tableau All DSO') OR ISMEMBEROF('KNJ-SG-Tableau All SL'))
+    AND [RLS - Location Gate]
+)
+```
 
-1. **Refresh the workbook's embedded extract.** This is the step that was
-   blocking everything: the extract predates PR #4656, so it carries none of the
-   roster contract columns — 23 columns, no `location_clean_name`, no
-   `home_business_unit_name`, no identity columns. That is the only reason its
-   gate could ever have been a flat group list. A `Region (copy)` field whose
-   formula is just `[home_business_unit_name]` is left over from someone
-   discovering this the hard way.
-1. **Swap `[School]` to `[school_clean_name]`** on every sheet that used it —
-   #4749 removed the raw column, so those sheets break when the view
-   rematerializes.
-1. **Build the gate** using the two variants in the per-workbook section: the
-   location gate on `[school_clean_name]`, the entity gate on
-   `[school_business_unit_name]` with the KTAF branch dropped.
+`RLS - Location Gate` on this datasource is the canonical 26-branch block with
+`[school_clean_name]` substituted for `[location_clean_name]`, bridges
+unchanged. No entity gate on the second clause: the location gate already
+requires membership of that school's staff group, and every school belongs to
+exactly one entity, so an entity test adds nothing but a second place to be
+wrong.
 
-Verify on `detail_scores`, an ekg-only sheet — one school for a school leader,
-every school for an MDSO. Check a Hatch or Sumner leader specifically: those
-schools each arrive under two raw form labels, and `school_clean_name` collapses
-both, so all of their rows should now appear.
+Refreshing the extract first is what made any of this possible — before that it
+carried none of the contract columns. In the refreshed extract
+`school_clean_name` is captioned **`School`** and `school_business_unit_name` is
+captioned `Business Unit`.
+
+Two things left open by choice rather than settled: `All HOS` and `AcOps` are
+**not** granted here though canonical Tier 4 includes them, and there is no Tier
+1 self clause, so an ops teammate does not see walkthroughs they performed at
+schools they do not lead.
 
 !!! note "This is the generalisable lesson"
 

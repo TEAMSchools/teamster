@@ -7,9 +7,8 @@ This page has two halves. **Part 1** is for anyone who wants to understand or
 question what they can see, and needs no Tableau knowledge. **Part 2** describes
 the field structure and points at the build reference.
 
-**Status: live** on nine workbooks, listed in Part 2. Two caveats are called out
-inline where they apply: the support surveys are not yet scoped by department,
-and the Operations Systems walkthrough sheets are not yet scoped by school.
+**Status: live** on nine workbooks, listed in Part 2. One caveat is called out
+inline where it applies: the support surveys are not yet scoped by department.
 
 ---
 
@@ -185,27 +184,24 @@ school, and **not** by the department being rated. Two consequences today:
     as a prefix across three inconsistent naming schemes, and departments have
     merged over time. It has to come from data.
 
-### The walkthrough sheets are not school-scoped yet
+### The walkthrough sheets scope by the school walked
 
-On Operations Systems, the sheets built from the Operations EKG walkthrough form
-are gated by group membership alone. Anyone in the data, TEAM Council, managing
-director, Syndicate, school leader or DSO groups sees **every** school's
-walkthroughs, not just their own.
+On Operations Systems, a row from the Operations EKG walkthrough form is about
+**the school that was walked**, not about the person who filled the form in. So
+school leaders and DSOs see their own school's walkthroughs regardless of who
+carried them out — and they do not see walkthroughs they carried out at other
+schools.
 
-The sibling half of the same dashboard, built from the ops PM form, is scoped
-normally — so the two halves of one dashboard currently answer to different
-rules.
+The broader operations groups — the data team, TEAM Council, managing directors
+and the Syndicate — see every region here on purpose, because walkthroughs are a
+cross-regional practice.
 
-!!! note "Planned: school scoping"
+!!! note "If a school looks like it has no walkthroughs"
 
-    School leaders and DSOs will be scoped to their own school; the broader groups
-    stay cross-regional on purpose. The data this needs has shipped, so what is
-    left is a workbook edit. Details are in the playbook.
-
-    The subtlety that made this slower than it looks: a walkthrough row has two
-    schools on it — the school walked, and the school the person who filled in the
-    form works at. Scoping by the second would show a school leader the
-    walkthroughs they carried out rather than the ones about their school.
+    Check the round before assuming this is a permissions problem. The dashboard can
+    be filtered to a single walkthrough round for everyone at once, and a school that
+    has only ever had a different round then shows nothing at all. That filter sits on
+    the data source, so it appears on no sheet's filter shelf.
 
 ### Rooms do not grant access
 
