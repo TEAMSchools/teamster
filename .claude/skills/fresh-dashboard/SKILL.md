@@ -346,9 +346,61 @@ Noise on this tab: **row 67** (column totals), **the entire block from row 68
 down** (the region-grain rollup, plus its own `Total` at r82), and the loose
 cells at r84 and r89-93.
 
+#### `Miami` — fully mapped
+
+**The main table is TWO segments**, both valid, with identical column layouts —
+rows **2-13** (header r1: Royalty K-5, Courage 6-8, Miami Tech 9) and rows
+**19-29** (header r18: Legacy ES K-5, Legacy MS 6-8). Legacy sits in its own
+segment because it is a new school, not because it is secondary.
+
+| col | header (verbatim)       | maps to                |
+| --- | ----------------------- | ---------------------- |
+| `H` | `26-27`                 | `Seat Target`          |
+| `K` | `FDOS Target`           | `FDOS Target`          |
+| `N` | `Projected Returners`   | `Re-Enroll Projection` |
+| `O` | `New Students Needed`   | `New Student Target`   |
+| `R` | `Number of Apps Needed` | `App Target`           |
+
+Segment 2 also has `P` `Total Apps`, which is **not** a goal — ignore it. Column
+letters are otherwise identical across both segments, so one map serves both.
+
+Three traps:
+
+- **Two different `Total` rows are both labelled `KRA`.** Row 8 is Royalty's
+  total; **row 25 is Legacy ES's** (its `H=196, K=229, N=25, O=171, R=461` match
+  prod's Legacy ES `School` row exactly). Row 29's total has **no school name at
+  all**. Keying `School` granularity off these rows would write Legacy ES's
+  numbers onto Royalty — so take Miami's `School` values from the **cover
+  sheet**, which has clean `KRA` / `KCA` / `KMT` / `KLE` / `KLM` rows.
+- **Exclude rows 27-28.** Legacy MS grades 7-8 carry no real goal values (r28
+  has a stray `0.9` in the seat column, which rounds to a phantom
+  `Seat Target = 1`) and prod has no rows for either grade.
+- **Noise:** r14-16, r30-31, r33, the r34-46 block (full of `#REF!`), the r51-66
+  side table plus its overlapping Legacy / North Campus trackers, r68, r72-83,
+  r89-102, r110.
+
+#### Miami Tech is a matriculation school
+
+`MTH` opened for **KIPP's own 8th graders moving up to grade 9**, not for
+external recruitment. Everything that looks broken about its goals is therefore
+correct:
+
+- **`Projected Returners` = 90 is right.** Those students persist in the network
+  even though the school is new — `Re-Enroll Projection` measures persistence,
+  not same-school retention. Do not "fix" this by moving the 90 into
+  `New Student Target`.
+- **`New Student Target`, `App Target` and `Offers Target` are legitimately
+  NULL**, and the tab's `Conversion Rate` / `Number of Apps Needed` columns are
+  legitimately empty. There is no lottery and no application funnel.
+- This is **why** MTH lacks the `Accepted` / `Offers` / `Pending Offers`
+  categories at `School` granularity. It is not an unexplained quirk.
+
+The one real consequence: `Region/Grade Level` `Re-Enroll Projection` for Miami
+grade 9 should pick up MTH's 90 (prod has NULL), while grade 9
+`New Student Target` correctly stays NULL because there is nothing to sum.
+
 #### Not yet walked
 
-`Miami` (3 blocks, one of them a decoy — see the pinned-row-range section),
 `KPAT` (Paterson; different column layout, and the only tab with an
 `Offer Target` column), `attrition`, and `enrollment snapshot offer management`.
 
@@ -554,7 +606,8 @@ skipping it.
   this set is uniform across almost every school, with one real exception
   (Miami's MTH lacks the lottery-based categories — Accepted / Offers / Pending
   Offers — at `School` granularity) that a per-school copy-forward rule handles
-  correctly without special-casing.
+  correctly without special-casing. See _Miami Tech is a matriculation school_
+  below for why that exception exists and is correct.
 - **`School/Grade Level` rows** — keyed by `(schoolid, grade_level)`, same
   copy-forward rule applied per grade in the new scaffold.
 - **`Region/Grade Level` rows** (Inquiries, Applications, Deferred, Waitlisted,

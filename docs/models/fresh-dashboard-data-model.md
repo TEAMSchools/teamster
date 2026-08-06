@@ -414,6 +414,30 @@ Two consequences worth planning around:
   ARE real staleness — Miami's `Re-Enroll Projection` runs 23-31 low across
   grades 1-6, where the region row predates Royalty's current numbers entirely.
 
+### A new school is not necessarily recruiting: Miami Tech
+
+`Re-Enroll Projection` measures **persistence in the network**, not retention at
+one school, so a student can be a "returner" at a school that did not exist last
+year. Miami Tech (`MTH`) is the worked example: it opened to take KIPP's own
+grade-8 students up into grade 9, with no external recruitment. Its goals look
+broken and are correct.
+
+| goal                   | MTH value | why                                     |
+| ---------------------- | --------- | --------------------------------------- |
+| `Re-Enroll Projection` | 90        | the incoming cohort persists internally |
+| `New Student Target`   | NULL      | not recruiting externally               |
+| `App Target`           | NULL      | no application funnel                   |
+| `Offers Target`        | NULL      | no lottery, so no offers                |
+
+This is also **why** MTH is the one school missing the lottery-based categories
+(`Accepted`, `Offers`, `Pending Offers`) at `School` granularity — a fact
+previously recorded as an unexplained exception. Do not "correct" the 90 into
+`New Student Target`, and do not treat the NULLs as gaps to fill.
+
+The trap to watch for: the intuition "a brand-new school cannot have returners"
+is wrong here, and acting on it would move a correct value into the wrong goal
+at three granularities at once.
+
 ### Full `grouped_status` → `goal_type` / `goal_name` crosswalk
 
 `grouped_status` (the crosswalk sheet's `status_group_value`) is the thing
