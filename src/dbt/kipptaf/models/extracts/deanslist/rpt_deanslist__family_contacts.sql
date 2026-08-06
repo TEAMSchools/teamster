@@ -4,6 +4,7 @@ with
             sc.contact_first_name,
             sc.contact_last_name,
             sc.email,
+            sc.relationship,
             sc._dbt_source_project,
 
             safe_cast(xw.powerschool_student_number as int64) as student_number,
@@ -14,21 +15,14 @@ with
             regexp_replace(lower(sc.phone_work), r'[^0-9x]', '') as phone_work,
             regexp_replace(lower(sc.phone_mobile), r'[^0-9x]', '') as phone_mobile,
 
-            case
-                sc.contact_slot
-                when 'emergency_1'
-                then 'Emergency 1'
-                when 'emergency_2'
-                then 'Emergency 2'
-                when 'emergency_3'
-                then 'Emergency 3'
-                when 'emergency_4'
-                then 'Emergency 4'
-                else sc.relationship
-            end as relationship,
-
             -- DeansList routes guardian-only automated messaging (reports,
-            -- texts, emails) by ContactType; Relationship stays informational.
+            -- texts, emails) by ContactType, so the slot ordinal need not be
+            -- encoded anywhere else; Relationship carries the contact's actual
+            -- relationship to the student for every slot, emergency contacts
+            -- included. Overwriting it with a literal `Emergency N` (the prior
+            -- behavior) discarded a label Finalsite populates on essentially
+            -- every emergency row and left school staff unable to tell a parent
+            -- from a neighbor.
             case
                 sc.contact_slot
                 when 'contact_1'
