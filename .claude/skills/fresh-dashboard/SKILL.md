@@ -306,11 +306,15 @@ documented per-grade banding divergence, not an error.
 
 ### Sourced vs derived: check before reconciling
 
-**If a populated goal is not stated anywhere on SRE's sheet, it is derived —
-recompute it, don't reconcile it.** See the reference doc's _Sourced vs derived
-goals_ for the current split. At `Region/Grade Level`, `App Target` is sourced
-(cover sheet) while `New Student Target` and `Re-Enroll Projection` are sums of
-the school rows.
+**Match what the workbook states; derive only what it doesn't.** In that order —
+never compute a value the workbook already states, even when computing gives a
+tidier or more testable answer. See the reference doc's _Sourced vs derived
+goals_ for the current split.
+
+**Search every tab before concluding "derived."** A goal can be stated on one
+region's tab and absent from another's, so this is a whole-workbook conclusion,
+not a per-tab one. Classifying off a single region is how you end up recomputing
+something SRE already told you.
 
 Two operational consequences:
 

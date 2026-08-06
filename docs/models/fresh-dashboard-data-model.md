@@ -352,20 +352,42 @@ from "new students needed", not the source of these goals.
 
 ### Sourced vs derived goals
 
-Not every populated goal comes from SRE's workbook. **The rule: if a goal is not
-stated anywhere on SRE's sheet but is populated in the staging table, it is
-derived from other goals and must be recomputed, not reconciled.** Reconciling a
-derived goal against the workbook reports a discrepancy that has no source to
-fix.
+Not every populated goal comes from SRE's workbook. Two rules, in this order:
+
+1. **If the workbook states a value, match it.** Never compute a value the
+   workbook already states, even when computing would give a tidier answer.
+2. **Only where nothing states it, derive** — and say so, because a derived goal
+   reconciled against the workbook reports a discrepancy with no source to fix.
+
+The precedence matters more than it looks. A tempting invariant like "a region
+row equals the sum of its school rows" is only testable if rule 1 finds nothing;
+where the workbook states region values, that invariant is simply false, and
+enforcing it would push wrong data into the sheet.
+
+**Classify by searching every tab first, not from one region.** A goal can be
+stated on one region's tab and absent from another's, so "derived" is a
+conclusion about the whole workbook, not about the tab in front of you.
 
 At `Region/Grade Level` the three populated Enrollment/Applications goals split
-across both categories:
+as follows — the two marked provisional are pending the `Newark`, `Miami` and
+`KPAT` walkthroughs, since Newark's lower block carries literal
+`Re-Enroll Projection` and `New Students` headers at region grain:
 
-| `goal_name`            | source                                                 |
-| ---------------------- | ------------------------------------------------------ |
-| `App Target`           | **sourced** — the cover sheet's `A26:D37` grid         |
-| `New Student Target`   | **derived** — sum of that region's `School/Grade` rows |
-| `Re-Enroll Projection` | **derived** — sum of that region's `School/Grade` rows |
+| `goal_name`            | source                                                     |
+| ---------------------- | ---------------------------------------------------------- |
+| `App Target`           | **sourced** — the cover sheet's `A26:D37` grid             |
+| `New Student Target`   | _provisional_ — derived (sum of `School/Grade`) for Camden |
+| `Re-Enroll Projection` | _provisional_ — derived (sum of `School/Grade`) for Camden |
+
+Where a goal genuinely must be derived, **round the sum once
+(`round(SUM of unrounded)`) rather than summing already-rounded values** — one
+rounding instead of N, and it matches how SRE's own totals behave.
+
+A workbook tab may also state a region-level value for a goal that stg does
+**not** model at that granularity — Newark's lower block has region
+`Seat Target` and `FDOS Target` columns, and neither exists at
+`Region/Grade Level` in the staging table. Those are non-sources, like the cover
+sheet's region totals. Don't go looking for a home for them.
 
 `App Target` is emphatically **not** the sum of its school rows. Verified for
 AY2026: Camden grade 5 reads 69 on the cover sheet while the three Camden
