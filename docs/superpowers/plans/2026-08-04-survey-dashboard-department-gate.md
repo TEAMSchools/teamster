@@ -601,25 +601,24 @@ workbook and found exactly two beginning `Permissions`: `Permissions - ITR` and
     visibility of Intent to Return. The network-wide retirement of this group
     applies to the all-access tiers, not to a scoped, peer-excluded branch.
 
-- [ ] **Step 5: Apply the #4656 renames** — narrowed to one datasource
+- [x] ~~**Step 5: Apply the #4656 renames**~~ — **done**
 
-`rpt_tableau__survey_responses` is **already renamed**: it carries
-`home_business_unit_name`, `location_clean_name` and `home_department_name`
-(captioned `Business Unit`, `Location`, `Department`).
+Resolved by refreshing the workbook's datasources rather than by renaming
+fields.
 
-`rpt_tableau__survey_completion` is **not**. Its embedded extract still carried
-`business_unit`, `department` and `location` at audit time, and no identity
-columns at all — no `sam_account_name`, no `user_principal_name`, no
-`reports_to_*`. The model has only the post-#4656 names, so that extract
-predates #4656 and needs refreshing rather than renaming.
+`rpt_tableau__survey_responses` already carried the post-#4656 names. The
+`rpt_tableau__survey_completion` extract did not — at audit time it still held
+`business_unit`, `department` and `location`, and no identity columns at all —
+but every gated workbook has since been refreshed onto the current datasources,
+so the pre-#4656 names are gone and the Tier 1 identity columns are present.
 
-!!! warning "Check this against the completion-sheet gate"
+!!! warning "Re-read the captions on any calc you carry across"
 
-    A five-tier `Permissions` was added to `rpt_tableau__survey_completion` after
-    the audit snapshot. Tier 1 needs the identity columns and Tiers 4-5 need
-    `home_business_unit_name` / `location_clean_name`, none of which were in that
-    extract — so either the extract was refreshed first, or the gate resolves
-    against different columns than intended. Confirm before closing this task.
+    A refresh brings new columns in unnamed and can leave an old caption on a
+    different column, so a caption list from before the refresh is not reliable.
+    Resolve by underlying column — see step 1 of
+    `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`, which has a
+    live example of one caption meaning two different things in one workbook.
 
 - [ ] **Step 6: Publish and spot-check**
 
