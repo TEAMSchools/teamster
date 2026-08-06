@@ -59,31 +59,49 @@ cause silent failure.
 
 ### Step 1 — resolve the field names in this workbook
 
-**Do this before pasting anything.** Every formula in this file is written
-against the dbt column names. Most workbooks rename those columns via the field
-caption, and Tableau's calculation editor resolves the **caption**, not the
-underlying column — so a pasted formula referencing `[home_business_unit_name]`
-does not validate in a workbook where that field is captioned `Business Unit`.
+**Do this before pasting anything, and resolve by underlying column rather than
+by caption.** Every formula in this file is written against the dbt column
+names. Workbooks rename those columns via the field caption, and Tableau's
+calculation editor resolves the **caption** — so a pasted formula referencing
+`[home_business_unit_name]` does not validate where that field is captioned
+`Business Unit`.
 
-Open the Data pane and write down what these four are actually called:
+Captions are per-datasource and are **not stable across an extract refresh**. A
+refresh brings new columns in unnamed and can leave an old caption sitting on a
+different column, so do not carry a caption list forward from a previous edit or
+from another workbook. Read the Data pane each time.
 
-| Formula text                | Seen in the wild as                                                                         |
-| --------------------------- | ------------------------------------------------------------------------------------------- |
-| `[home_business_unit_name]` | `Business Unit` (7 workbooks), `Home Business Unit Name` (2), not renamed (SchoolMint Grow) |
-| `[location_clean_name]`     | `Location` (7), `Location Clean Name` (2), not renamed (SchoolMint Grow)                    |
-| `[home_department_name]`    | `Department` (5), `Home Department Name` (2), not renamed (SchoolMint Grow)                 |
-| `[job_title]`               | `Job Title` almost everywhere                                                               |
+These are the columns to resolve before pasting:
 
-The identity columns — `sam_account_name`, `user_principal_name`, `mail`,
-`reports_to_sam_account_name`, `reports_to_mail` — are usually **not** renamed,
-so Tier 1 pastes as written. Check anyway, because the exceptions are not
-symmetric: on `rpt_tableau__survey_responses`, `mail` is captioned `Mail` while
-`reports_to_mail` is left raw, so one Tier 1 line needs translating and the line
-below it does not.
+| Formula text                                                                                                  | What it means                                   |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `[home_business_unit_name]`                                                                                   | the entity of the **person** the row is about   |
+| `[location_clean_name]`                                                                                       | the location of the **person** the row is about |
+| `[home_department_name]`                                                                                      | that person's department                        |
+| `[job_title]`                                                                                                 | that person's title                             |
+| `[sam_account_name]`, `[user_principal_name]`, `[mail]`, `[reports_to_sam_account_name]`, `[reports_to_mail]` | Tier 1 identity                                 |
 
-`rpt_tableau__survey_completion` is the exception that breaks the pattern
-outright: its identity columns are `[username]` and `[samaccountname]` — no
-underscores — not `[user_principal_name]` and `[sam_account_name]`.
+!!! danger "The same caption can mean two different things in one workbook"
+
+    Operations Systems is the live example. After its refresh:
+
+    | Datasource | `Business Unit` resolves to | Meaning |
+    | --- | --- | --- |
+    | `rpt_tableau__operations_pm` | `home_business_unit_name` | the respondent's own entity |
+    | `rpt_tableau__operations_ekg` | `school_business_unit_name` | the entity of the school **walked** |
+
+    On the ekg datasource `home_business_unit_name` also exists, unnamed. So pasting
+    the canonical entity gate there validates silently and gates on the wrong
+    entity — the respondent's, which on that form is never `KIPP Paterson`. That is
+    the exact defect #4749 fixed, and the caption layout makes it easy to
+    reintroduce.
+
+    Confirm what a caption points at before trusting it: click the field in the
+    Data pane and read the underlying column, or check the datasource's column list.
+
+`rpt_tableau__survey_completion` breaks the identity pattern outright: its
+columns are `[username]` and `[samaccountname]` — no underscores — not
+`[user_principal_name]` and `[sam_account_name]`.
 
 ### Step 2 — decide the apply scope, and prefer datasource-wide
 
@@ -1216,6 +1234,11 @@ schools they do not lead.
     A gate that looks unexplainably crude is often a stale extract rather than a
     lazy author. Before rewriting one, check whether the columns it would need are
     actually in the workbook's extract.
+
+    Every gated workbook has since been refreshed onto the current datasources, so
+    this is a check for the next new workbook rather than an outstanding condition
+    — and the refresh is what invalidated the caption lists this file used to
+    carry. See step 1.
 
 ---
 
