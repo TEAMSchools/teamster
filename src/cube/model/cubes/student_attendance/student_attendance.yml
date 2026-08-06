@@ -218,31 +218,52 @@ cubes:
         filters:
           - sql: "{CUBE}.membership_value > 0"
 
+      # Numerator and denominator must span the SAME set of days, or days
+      # present in one and absent from the other silently become absences.
+      # attendance_value IS NULL means attendance was never recorded, not that
+      # the student was absent — those days carry membership_value = 1, so
+      # leaving them in the denominator alone counted them as absences (#4744).
+      # membership_value = 1 matches rpt_tableau__attendance_dashboard and drops
+      # the pre-AY2021 membership_value = 0 rows that carry a real
+      # attendance_value and would otherwise inflate the numerator only.
       - name: _sum_attendance_value
         sql: attendance_value
         type: sum
         public: false
+        filters:
+          - sql: "{CUBE}.membership_value = 1"
 
       - name: _sum_membership_value
         sql: membership_value
         type: sum
         public: false
+        filters:
+          - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.attendance_value IS NOT NULL"
 
       - name: avg_daily_attendance
-        description:
-          Average Daily Attendance (ADA) — SUM(attendance_value) /
-          SUM(membership_value)
+        description: >-
+          Average Daily Attendance (ADA) — attendance value summed over full
+          membership days, divided by the count of those days. Days with no
+          recorded attendance value are excluded from both numerator and
+          denominator, matching the attendance dashboard; counting them in the
+          denominator alone would report them as absences.
         sql: "{_sum_attendance_value} / NULLIF({_sum_membership_value}, 0)"
         type: number
         format: percent
         public: true
 
+      # Same numerator/denominator symmetry as ADA: a tardy code recorded on a
+      # day with no attendance value is excluded here, because
+      # _count_present_days already excludes it (is_absent is NULL whenever
+      # attendance_value is, so `is_absent = 0` never matches).
       - name: _sum_tardy
         sql: is_tardy
         type: sum
         public: false
         filters:
           - sql: "{CUBE}.membership_value = 1"
+          - sql: "{CUBE}.attendance_value IS NOT NULL"
 
       - name: _count_present_days
         sql: "1"
@@ -255,8 +276,8 @@ cubes:
       - name: pct_tardy
         description: >-
           Percentage of present days where the student was tardy (tardy days /
-          present days). Absent days are excluded from both numerator and
-          denominator.
+          present days). Absent days and days with no recorded attendance value
+          are excluded from both numerator and denominator.
 
           Date filter behavior: filtering to a single date returns that day's
           tardy rate only. For a cumulative YTD rate as of a given date, use a
@@ -270,8 +291,9 @@ cubes:
       - name: pct_ontime
         description: >-
           Percentage of present days where the student arrived on time (on-time
-          days / present days). Complement of pct_tardy. Absent days are
-          excluded from both numerator and denominator.
+          days / present days). Complement of pct_tardy. Absent days and days
+          with no recorded attendance value are excluded from both numerator and
+          denominator.
 
           Date filter behavior: filtering to a single date returns that day's
           on-time rate only. For a cumulative YTD rate as of a given date, use a
