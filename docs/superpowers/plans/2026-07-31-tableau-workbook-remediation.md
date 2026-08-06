@@ -316,6 +316,13 @@ design doc's earlier estimate.
 - **Fields on `operations_ekg`:** `[region]` → `[home_business_unit_name]`,
   `[respondent_location]` → `[location_clean_name]`, `[respondent_job_title]` →
   `[job_title]`
+- **Location-gate variant on `operations_ekg`:** the Tier 5 location gate reads
+  `[school_clean_name]`, not `[location_clean_name]`. Those are two different
+  schools on this extract — `location_clean_name` comes from the roster join on
+  the respondent, so gating on it shows a school leader the walkthroughs they
+  **performed**, not the ones **of their school**. `school_clean_name` is the
+  walked school, added in PR #4746; it must be merged and materialized before
+  this workbook's Tier 5 edit.
 - **Role variant:** omit the AP branch entirely
 - **Note:** `operations_pm` keeps `[respondent_job_title]` and
   `[respondent_name]` — that model has two people per row and the respondent is

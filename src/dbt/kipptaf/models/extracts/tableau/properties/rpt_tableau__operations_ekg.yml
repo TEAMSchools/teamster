@@ -16,9 +16,12 @@ models:
       - name: location_clean_name
         data_type: string
         description: >-
-          Canonical location from int_people__location_crosswalk. Drives the
-          Tableau location gate; retired name aliases collapse onto their
-          canonical clean name here.
+          The respondent's own canonical location from
+          int_people__location_crosswalk, resolved through the roster join on
+          respondent_email. This is where the walkthrough's author works, NOT
+          the school they walked — use school_clean_name to scope a row to the
+          observed school. Retired name aliases collapse onto their canonical
+          clean name here.
         data_tests:
           - not_null
       - name: home_business_unit_name
@@ -36,6 +39,19 @@ models:
                   - KIPP Miami
                   - KIPP Paterson
                   - KIPP TEAM and Family Schools Inc.
+      - name: school_clean_name
+        data_type: string
+        description: >-
+          The walked school resolved to its canonical name via
+          int_people__location_crosswalk, so every alias of one school collapses
+          to a single value. This is the column a Tableau location gate scopes
+          on. Null when the form label is absent from the crosswalk, which is
+          also when grade_band is null.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                where: school is not null
       - name: respondent
         data_type: string
       - name: google_email
@@ -90,5 +106,13 @@ models:
         data_type: string
       - name: school
         data_type: string
+        description: >-
+          The school walked, as the form's dropdown recorded it. Raw form text —
+          several values are retired or abbreviated aliases, and the same school
+          can arrive under more than one label across waves, so never gate or
+          group on this column. Use school_clean_name.
       - name: grade_band
         data_type: string
+        description: >-
+          Grade band of the walked school, from int_people__location_crosswalk.
+          Null when the form's school label is absent from the crosswalk.
