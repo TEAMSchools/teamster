@@ -239,6 +239,13 @@ The workbook has 7 tabs (AY2026): `cover sheet`, `KCNA`, `Newark`, `Miami`,
 granularity table in the reference doc first, so you know which goals a tab
 could possibly source.
 
+**Numbers quoted anywhere in these tab maps are AY2026 verification evidence,
+not current values.** They are here to make a structural claim checkable
+("column F holds the seat target, and here is how we knew"), never as a lookup.
+Read current values from the workbook and the staging table. Column letters,
+cell ranges and row numbers ARE durable — those are the layout, and SRE reuses
+it across cycles.
+
 **The governing rule, per SRE: only the MAIN table on each tab is a source.
 Everything else on the tab is noise.** Every tab holds several secondary tables
 — region-grain rollups, column-total rows, side trackers, loose cells — and they
@@ -399,10 +406,52 @@ The one real consequence: `Region/Grade Level` `Re-Enroll Projection` for Miami
 grade 9 should pick up MTH's 90 (prod has NULL), while grade 9
 `New Student Target` correctly stays NULL because there is nothing to sum.
 
+#### `KPAT` — fully mapped
+
+Paterson. Main table is **rows 2-12, header row 1** — everything from r14 down
+is noise, including another pair of horizontally-overlapping tables at r20-31.
+
+**A third distinct column layout** — not the NJ tabs' `J/L/O/P/R`, not Miami's
+`H/K/N/O/R`:
+
+| col | header (verbatim)       | maps to                              |
+| --- | ----------------------- | ------------------------------------ |
+| `A` | `Type`                  | `school_level` — **and the row key** |
+| `B` | `School`                | `school`                             |
+| `C` | `Grade`                 | `grade_level`                        |
+| `G` | `Seat Capacity`         | `Seat Target` (non-standard header)  |
+| `H` | `Budget Target`         | `Budget Target` — **School only**    |
+| `M` | `FDOS Target`           | `FDOS Target`                        |
+| `P` | `Projected Returners`   | `Re-Enroll Projection`               |
+| `Q` | `New Students Needed`   | `New Student Target`                 |
+| `S` | `Number of Apps Needed` | `App Target`                         |
+
+`D`/`E`/`F` are prior-year actuals, `I`/`N`/`O` and `R` are calculation inputs,
+`U` is sections. **`W` `Offer Target` is ignored per SRE** — it is the only such
+column in the workbook, and using it would make Paterson the only region with a
+reconcilable `Offers Target`.
+
+Rows: Paterson ES K-4 then its `Total`; Paterson MS 5-8 then its `Total`.
+
+Three Paterson-specific rules:
+
+- **Both `Total` rows are labelled `KPES`.** Key `School` granularity off column
+  `A` (`ES` → PPES, `MS` → PPMS), never the school name — the same trap as
+  Miami's two `KRA` totals.
+- **`H` `Budget Target` is per-grade here, but stg models `Budget Target` at
+  `School` only. Do not add a granularity for it** — load only the `Total` row
+  value. (The per-grade values sum to the `Total`, so either reading agrees;
+  take the stated `Total`.) This is the mirror image of Miami, where KMT/KLE/KLM
+  have no derivable Budget Target because no Miami block carries the column.
+- **Paterson is absent from the cover sheet**, including its `App Target` grid,
+  so Paterson's `Region/Grade Level` `App Target` is **derived** where the other
+  three regions' is sourced. With one school per grade the "sum" is that
+  school's own value.
+
 #### Not yet walked
 
-`KPAT` (Paterson; different column layout, and the only tab with an
-`Offer Target` column), `attrition`, and `enrollment snapshot offer management`.
+`attrition` and `enrollment snapshot offer management` — believed not to be goal
+sources, but not confirmed with SRE.
 
 ### Sourced vs derived: check before reconciling
 

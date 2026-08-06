@@ -336,17 +336,26 @@ or "nobody filled these in." Ask rather than infer.
 ### `Conversion` goals are a flat per-grade lookup
 
 The three `Conversion` goals are supplied by SRE as expected rates **by grade
-level**, identical across every school — verified for AY2026, where each grade
-has exactly one distinct value per metric:
+level, identical across every school**. Verified for AY2026: each grade has
+exactly one distinct value per metric, and those collapse to **two tiers** —
+Kindergarten, and grades 1-12.
 
-| `grade_level` | `Offers to Accepted` | `Offers to Enrolled` | `Accepted to Enrolled` |
-| ------------- | -------------------- | -------------------- | ---------------------- |
-| 0 (K)         | 0.85                 | 0.65                 | 0.85                   |
-| 1-12          | 0.78                 | 0.51                 | 0.80                   |
+So this is not ~100 independent values but two, per metric. A rate change from
+SRE is a small uniform edit, and a reconciliation should check the _shape_ (one
+value per grade, no per-school variation) rather than diffing every row. Confirm
+the shape with:
 
-So they are two tiers, not 102 independent values, and a rate change from SRE is
-a small uniform edit rather than a per-school reconciliation. The
-`Conversion Rate` column on each per-region tab of SRE's workbook is a
+```sql
+select grade_level, goal_name, count(distinct goal_value) as distinct_values
+from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__goals
+where enrollment_academic_year = <year> and goal_type = 'Conversion'
+group by 1, 2
+```
+
+Anything other than `1` in `distinct_values` means a school has drifted off the
+common rate.
+
+The `Conversion Rate` column on each per-region tab of SRE's workbook is a
 **separate thing** — a calculation input used to derive that tab's "apps needed"
 from "new students needed", not the source of these goals.
 
@@ -422,17 +431,17 @@ year. Miami Tech (`MTH`) is the worked example: it opened to take KIPP's own
 grade-8 students up into grade 9, with no external recruitment. Its goals look
 broken and are correct.
 
-| goal                   | MTH value | why                                     |
-| ---------------------- | --------- | --------------------------------------- |
-| `Re-Enroll Projection` | 90        | the incoming cohort persists internally |
-| `New Student Target`   | NULL      | not recruiting externally               |
-| `App Target`           | NULL      | no application funnel                   |
-| `Offers Target`        | NULL      | no lottery, so no offers                |
+| goal                   | expected      | why                                     |
+| ---------------------- | ------------- | --------------------------------------- |
+| `Re-Enroll Projection` | a real figure | the incoming cohort persists internally |
+| `New Student Target`   | NULL          | not recruiting externally               |
+| `App Target`           | NULL          | no application funnel                   |
+| `Offers Target`        | NULL          | no lottery, so no offers                |
 
 This is also **why** MTH is the one school missing the lottery-based categories
 (`Accepted`, `Offers`, `Pending Offers`) at `School` granularity — a fact
-previously recorded as an unexplained exception. Do not "correct" the 90 into
-`New Student Target`, and do not treat the NULLs as gaps to fill.
+previously recorded as an unexplained exception. Do not "correct" the returners
+figure into `New Student Target`, and do not treat the NULLs as gaps to fill.
 
 The trap to watch for: the intuition "a brand-new school cannot have returners"
 is wrong here, and acting on it would move a correct value into the wrong goal
