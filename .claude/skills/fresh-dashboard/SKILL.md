@@ -165,21 +165,37 @@ rows are not.** The per-region tabs have merged cells and shifting column
 layouts, so the flat blob cannot be parsed into a diff worth staking numbers on.
 Two ways out:
 
-1. **Ask the user for a CSV per tab — the zero-permission option, and the
-   default.** Sheets `File > Download > CSV` exports the ACTIVE tab only, and
-   the filename carries the tab name, so provenance comes free. Have them drop
-   the files in `.claude/scratch/` and Read them. Three downloads covers Newark
-   / KCNA / Miami.
-2. **Optional automation: get the workbook shared with
-   `codespaces@teamster-332318.iam.gserviceaccount.com` as Viewer** (owner is
-   mventresca@; currently NOT shared — the Sheets API returns
-   `403 The caller does not have permission`). This does not fix the connector;
-   it grants a DIFFERENT API — Sheets v4 `spreadsheets.get` for tab names and
-   `values.get` with `range="'Tab Name'!A1:Z"` — which does have tab addressing.
-   The signed-in user's Drive grant cannot substitute: the connector holds that
-   OAuth token internally and never exposes it, so the Sheets API can only run
-   as ADC. Worth requesting only if the reconciliation should be hands-off every
-   cycle; it is a standing grant on someone else's file, so let the user decide.
+1. **Get the workbook shared with
+   `codespaces@teamster-332318.iam.gserviceaccount.com` as Viewer — the standing
+   recommendation** (owner is mventresca@; as of Aug 2026 NOT shared, so the
+   Sheets API returns `403 The caller does not have permission`). This does not
+   fix the connector; it grants a DIFFERENT API — Sheets v4 `spreadsheets.get`
+   for tab names and `values.get` with `range="'Tab Name'!A1:Z"` — which does
+   have tab addressing. The signed-in user's Drive grant cannot substitute: the
+   connector holds that OAuth token internally and never exposes it, so the
+   Sheets API can only run as ADC.
+
+   **Why this is worth a standing grant on someone else's file:** goals change
+   often and, as this file says below, **SRE does not always flag the changes.**
+   A reconciliation that requires a human to fetch tabs only runs when someone
+   thinks to run it, so drift is discovered from a wrong dashboard number rather
+   than when it happens. The service account is what makes a SCHEDULED drift
+   check possible; the interactive connector cannot carry that job, since it is
+   not reliably present in headless/cron runs.
+
+1. **CSV per tab — the stopgap while sharing is pending, not the steady state.**
+   Sheets `File > Download > CSV` exports the ACTIVE tab only, and the filename
+   carries the tab name. Have the user drop the files in `.claude/scratch/` and
+   Read them; three downloads covers Newark / KCNA / Miami. Two failure modes to
+   guard against, both silent:
+   - **A CSV carries no timestamp.** Once it is a file on disk there is no way
+     to tell whether it predates SRE's latest edit, so you can diff against a
+     snapshot of unknown age and report it as current — the same stale-input
+     trap as the frozen goals table. Re-check the workbook's Drive
+     `modifiedTime` at read time and say which files you used.
+   - **A partial set reads as "no changes."** Two of three tabs exported looks
+     identical to a region with no edits. Confirm the tab list before concluding
+     a region is clean, and name any tab you did not receive.
 
 Not screenshots — a region tab holds 100+ numbers and transcription is
 error-prone. Not per-tab `#gid=` URLs either; the connector takes a file id and
