@@ -124,6 +124,10 @@ with types and descriptions. No data in it.
 - **Machine-readable, parse this one:**
   `https://teamschools.github.io/teamster/reference/cube-catalog-meta.json`
 
+Both links publish when this change merges to our main branch. If you are
+reading this before then, say so and we will send you the two files directly
+rather than have you wait.
+
 The readable page also carries a ten-item gotchas list. Two of those will cost
 you a day each if you find them the hard way:
 
