@@ -7,11 +7,13 @@ This page has two halves. **Part 1** is for anyone who wants to understand or
 question what they can see, and needs no Tableau knowledge. **Part 2** describes
 the field structure and points at the build reference.
 
-**Status: live, with six known gaps.** Eleven workbooks were remediated during
-the Entra ID identity migration and carry the model described here. An audit on
-2026-08-05 read the shipped calculations for the first time and found six places
-where a workbook does not match this description — see _Known gaps_ in Part 2
-before relying on a specific workbook.
+**Status: live.** Eleven workbooks were remediated during the Entra ID identity
+migration; two of those are now retiring, leaving nine gated workbooks. An audit
+on 2026-08-05 read the shipped calculations for the first time and found six
+places where a workbook did not match this description — two are fixed, two
+close with the retirements, one is deferred to a planned department gate, and
+one is awaiting a workbook edit. See _Known gaps_ in Part 2 before relying on a
+specific workbook.
 
 ---
 
@@ -84,7 +86,10 @@ though they were executives.
 
 Intent to Return answers reach fewer people than anything else on Tableau, and
 who they reach depends on your own level. **Nobody at your own level ever sees
-them.**
+them.** This is the most complicated gate in the network, so it is worth reading
+from both sides.
+
+#### If you answered, who sees it
 
 | If you are                                       | Your answers reach                                                                                                                                                                        |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -95,8 +100,28 @@ them.**
 | Regional leadership                              | Your manager and those three teams — **not** other regional leaders                                                                                                                       |
 | Central office staff                             | Your manager and those three teams. No regional leader sees central office answers                                                                                                        |
 
-The TEAM Council sees every response network-wide except other chief-level
-respondents.
+#### If you are a viewer, what you see
+
+Seven routes, and the peer exclusion differs on each because "your own level"
+means something different depending on where you sit.
+
+| Route | Who                                                                                                                                                                   | Reaches                                          | Minus                                                                                                                  |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| 1     | You, and the manager recorded on the response                                                                                                                         | that response                                    | nothing — a manager sees their report even when both are director-rank                                                 |
+| 2     | The administrators of the process — the data, HR, and Recruiting teams, and the Leadership Development team (the group of that name, not the workbook being archived) | everything, network-wide                         | nothing                                                                                                                |
+| 3a    | Managing directors of school operations, heads of schools, managing directors of operations                                                                           | your region                                      | regional-leadership respondents. Directors stay visible — you sit above them                                           |
+| 3b    | The Syndicate                                                                                                                                                         | your region                                      | regional leadership, and director-rank peers — **except** school operations directors, who are your own line of report |
+| 3c    | School Support Directors                                                                                                                                              | your region                                      | regional leadership, and every director rank                                                                           |
+| 4     | School leaders and directors of school operations                                                                                                                     | your school                                      | each other                                                                                                             |
+| 5     | Assistant principals                                                                                                                                                  | teachers and learning specialists at your school | everyone else at that school                                                                                           |
+| 6     | Special Education Directors, KIPP Forward Directors                                                                                                                   | your own department, in your own region          | director-rank peers. Associate directors stay visible                                                                  |
+| 7     | TEAM Council                                                                                                                                                          | everyone, network-wide                           | chief-level respondents                                                                                                |
+
+Routes 3a, 3b and 3c look redundant and are not. They are three groups sitting
+at three different heights, so one shared exclusion would hide the wrong people:
+a managing director should still see their directors, while a Syndicate member
+should not see director-rank peers — but should still see the school operations
+directors who report to them.
 
 Roles in training are treated as the level they are developing into, not the
 level above: a school leader in residence, a school operations fellow and an
@@ -115,6 +140,54 @@ restriction as the rest — there is no wider audience for comments.
     sees three years of their school's answers, including their predecessor's
     staff — and someone who changes schools leaves their old answers with the old
     school's leadership.
+
+#### Three limits worth knowing
+
+These are accepted, not undiscovered. Each is a place the gate is approximate.
+
+- **The council shield hides chief-level titles, not council membership.**
+  Tableau can only ask which groups the _viewer_ belongs to, never the
+  respondent, so route 7's exclusion has to be inferred from job title. If the
+  council includes heads of schools or managing directors — and it plausibly
+  does — their answers stay visible to fellow council members: 720 rows from 23
+  people hold a senior title that is not chief level.
+- **Miami's KIPP Forward staff have no departmental viewer.** Route 6 is scoped
+  by region, and Miami has KIPP Forward respondents but no KIPP Forward director
+  of its own, so those answers reach only their manager and the route-2 teams.
+- **Two titles cannot be ranked from text.** Bare `Fellow` and bare `Director`
+  say nothing about seniority on their own, so the peer exclusions cannot place
+  them. [#4631](https://github.com/TEAMSchools/teamster/issues/4631) replaces
+  every title test with a job-function code and removes this whole class of
+  guesswork.
+
+### The support surveys are not department-scoped yet
+
+The Survey Dashboard's KTAF support sheets — the ones asking staff to rate how
+well a central office department supports them — are gated by entity, region and
+school, and **not** by the department being rated. Two consequences today:
+
+- Every member of the central office staff group sees **every** row, including
+  feedback about departments other than their own.
+- A viewer who reaches the sheets by any other route sees every department's
+  feedback for the rows they can reach, not just their own department's.
+
+!!! note "Planned: department scoping"
+
+    The fix is to carry the department each question rates through to the extract
+    and add a department gate, so a viewer sees feedback about their own
+    department and the blanket central-office grant can be removed.
+    [#4721](https://github.com/TEAMSchools/teamster/issues/4721) is the issue and
+    [#4728](https://github.com/TEAMSchools/teamster/pull/4728) the open PR.
+
+    **This has not shipped.** The PR carries only the data layer and is blocked on
+    two things outside the repo — Ops adding the department columns to the
+    form-items sheet, and a decision on how merged departments resolve to a single
+    code. Until both land and the workbook is edited, the behaviour above is what
+    is live. Treat department scoping as future state.
+
+    The rated department cannot be parsed out of the question name: it exists only
+    as a prefix across three inconsistent naming schemes, and departments have
+    merged over time. It has to come from data.
 
 ### Rooms do not grant access
 
@@ -245,24 +318,34 @@ Two mechanics make these hard to find, and both are why the audit needed the
 
 ### The gated workbooks
 
-Eleven workbooks carry a `Permissions` field. All sit in the `Production`
-project and all are tagged `entra-ready` on Tableau Server. **That tag is the
+Nine workbooks carry a `Permissions` field. All sit in the `Production` project
+and all are tagged `entra-ready` on Tableau Server. **That tag is the
 inventory** — a gated workbook without it is either unfinished or was built
 without following the playbook.
 
-| Workbook                          | Datasource                                                                                                                    |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Manager Survey Reports            | `rpt_tableau__manager_survey_details`                                                                                         |
-| Manager Survey Rollup             | `rpt_tableau__manager_survey_details`                                                                                         |
-| Leadership Development            | `rpt_tableau__leadership_development`                                                                                         |
-| Coaching Conversation Tool        | `rpt_tableau__schoolmint_grow_observation_details`                                                                            |
-| SchoolMint Grow Dashboard         | `rpt_tableau__schoolmint_grow_observation_details`, `rpt_tableau__schoolmint_grow_goals`, `rpt_tableau__teacher_observations` |
-| Survey Dashboard                  | `rpt_tableau__survey_responses`, `rpt_tableau__survey_completion`                                                             |
-| Miami Instructional Rubrics       | `rpt_tableau__content_team`                                                                                                   |
-| Operations Systems                | `rpt_tableau__operations_pm`, `rpt_tableau__operations_ekg`                                                                   |
-| Stipend and Bonus Dashboard       | `rpt_tableau__stipend_and_bonus_app`                                                                                          |
-| Personalized Survey Links         | `rpt_tableau__survey_completion`                                                                                              |
-| Federal Grants Timesheet Approval | `docusign_status_feed`                                                                                                        |
+| Workbook                    | Datasource                                                                                                                    |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Manager Survey Reports      | `rpt_tableau__manager_survey_details`                                                                                         |
+| Manager Survey Rollup       | `rpt_tableau__manager_survey_details`                                                                                         |
+| Coaching Conversation Tool  | `rpt_tableau__schoolmint_grow_observation_details`                                                                            |
+| SchoolMint Grow Dashboard   | `rpt_tableau__schoolmint_grow_observation_details`, `rpt_tableau__schoolmint_grow_goals`, `rpt_tableau__teacher_observations` |
+| Survey Dashboard            | `rpt_tableau__survey_responses`, `rpt_tableau__survey_completion`                                                             |
+| Miami Instructional Rubrics | `rpt_tableau__content_team`                                                                                                   |
+| Operations Systems          | `rpt_tableau__operations_pm`, `rpt_tableau__operations_ekg`                                                                   |
+| Stipend and Bonus Dashboard | `rpt_tableau__stipend_and_bonus_app`                                                                                          |
+| Personalized Survey Links   | `rpt_tableau__survey_completion`                                                                                              |
+
+Two more were remediated during the migration and are now leaving the model,
+each with a PR awaiting approval. Neither is a gap:
+
+| Workbook                          | Leaving because                                                                                                                                                           |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Federal Grants Timesheet Approval | the workbook reads a live Google Sheet rather than a dbt extract, so there is no gated datasource to protect ([#4726](https://github.com/TEAMSchools/teamster/pull/4726)) |
+| Leadership Development            | leader performance management is moving to Lattice; the dashboard and its models become archive-only ([#4629](https://github.com/TEAMSchools/teamster/pull/4629))         |
+
+Leadership Development was one of three workbooks that shield senior leaders
+from each other, so that set becomes Manager Survey Reports and Manager Survey
+Rollup.
 
 Nothing on Tableau Server links a workbook to its table — each of these uses an
 **embedded** extract — so this table is the mapping, and it has to be maintained
@@ -279,37 +362,38 @@ playbook.
 
 ### Known gaps
 
-From the 2026-08-05 audit, reviewed the same day. Two are fixed, three are
-accepted, one is open. The working checklist is in `.claude/scratch/`,
-uncommitted because it names staff usernames.
+From the 2026-08-05 audit, reviewed the same day. Two are fixed, two are closing
+by retirement, one is deferred to the department gate, one has its data-layer
+work merged and its Tableau edit outstanding. The working checklist is in
+`.claude/scratch/`, uncommitted because it names staff usernames.
 
-| #   | Workbook                          | Gap                                                                                                                                                              | Status                                                                                                                             |
-| --- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` were on the `Home` dashboard and ungated — full roster names, employee numbers, job titles and completion status | **Fixed** — five-tier gate built on `rpt_tableau__survey_completion`                                                               |
-| 2   | Miami Instructional Rubrics       | a correct `Permissions` field existed but was applied at no scope, so both data sheets were ungated                                                              | **Fixed** — field attached datasource-wide                                                                                         |
-| 3   | Survey Dashboard                  | `Permissions - Support` grants every central office staff member every row, and is the only gate on five sheets                                                  | **Accepted for now** — replaced by department scoping in [#4728](https://github.com/TEAMSchools/teamster/pull/4728)                |
-| 4   | Operations Systems                | `rpt_tableau__operations_ekg` has a group-only gate with no location check                                                                                       | **Open** — the broad groups are intentionally cross-regional; school leaders and DSOs need school scoping. Blocked upstream, below |
-| 5   | Federal Grants Timesheet Approval | no permission fields at all                                                                                                                                      | **Accepted** — intentional                                                                                                         |
-| 6   | Leadership Development            | the entity gate has no Paterson branch, so Paterson rows are invisible to Paterson's leadership                                                                  | **Accepted** — intentional                                                                                                         |
+| #   | Workbook                          | Gap                                                                                                                                                              | Status                                                                                                                                          |
+| --- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` were on the `Home` dashboard and ungated — full roster names, employee numbers, job titles and completion status | **Fixed** — five-tier gate built on `rpt_tableau__survey_completion`                                                                            |
+| 2   | Miami Instructional Rubrics       | a correct `Permissions` field existed but was applied at no scope, so both data sheets were ungated                                                              | **Fixed** — field attached datasource-wide                                                                                                      |
+| 3   | Survey Dashboard                  | `Permissions - Support` grants every central office staff member every row, and is the only gate on five sheets                                                  | **Deferred** to department scoping — see _The support surveys are not department-scoped yet_. Not shipped                                       |
+| 4   | Operations Systems                | `rpt_tableau__operations_ekg` has a group-only gate with no location or entity check                                                                             | **dbt side merged**, Tableau edit outstanding                                                                                                   |
+| 5   | Federal Grants Timesheet Approval | no permission fields at all                                                                                                                                      | **Not a gap** — reads a live Google Sheet, not a gated extract. Leaving the model in [#4726](https://github.com/TEAMSchools/teamster/pull/4726) |
+| 6   | Leadership Development            | the entity gate has no Paterson branch, so Paterson rows are invisible to Paterson's leadership                                                                  | **Not worth fixing** — archived for Lattice in [#4629](https://github.com/TEAMSchools/teamster/pull/4629)                                       |
 
-Gap 4 is blocked on data, not on a calculation. Two of its details generalise
-beyond this workbook:
+Gap 4 was the instructive one, and two of its lessons generalise:
 
 - **A stale embedded extract makes a correct gate impossible to write.** The
-  model gained the full access contract in PR #4656 and prod carries all ten
-  roster columns, but the workbook's extract predates that and has none of them
-  — which is why its gate could only ever have been a flat group list. An
-  extract refresh is the first step of the fix, and worth checking on any
-  workbook whose gate looks unexpectedly crude.
+  model gained the full access contract in PR #4656, but the workbook's extract
+  predates it and carries none of the roster columns — which is why its gate
+  could only ever have been a flat list of group memberships. Refreshing the
+  extract is the first step of any such fix, and worth checking on any workbook
+  whose gate looks unexpectedly crude.
 - **On a walkthrough or observation model there are two schools per row**: the
   respondent's own location, and the location being observed. Scoping a school
   leader by the respondent's location gives them "walkthroughs I performed", not
-  "walkthroughs of my school". The observed school is the one to gate on — and
-  here it arrives as a form dropdown value that does not always match the
-  canonical location names the Tableau groups are built from, so it needs
-  resolving through the location crosswalk before a gate can use it.
+  "walkthroughs of my school". `school_clean_name` and
+  `school_business_unit_name` were added for this in
+  [#4746](https://github.com/TEAMSchools/teamster/pull/4746) and
+  [#4749](https://github.com/TEAMSchools/teamster/pull/4749); both are merged,
+  so only the workbook edit remains.
 
-The audit also found three dead permission fields, three legacy fields on
+The audit also found two dead permission fields, three legacy fields on
 SchoolMint Grow that are contained today only because a datasource-wide gate
 ANDs over them, and 16 by-name grants. None of those is a live leak. All are in
 the playbook's _Known gaps_.
@@ -325,6 +409,10 @@ the playbook's _Known gaps_.
   fallbacks throughout
 - [#4663](https://github.com/TEAMSchools/teamster/issues/4663) —
   `rpt_tableau__pm_outlier_detection`, deferred out of the migration
-- [#4721](https://github.com/TEAMSchools/teamster/issues/4721) — the Survey
-  Dashboard department gate, which is expected to take the same peer-exclusion
-  shape as Intent to Return
+- [#4721](https://github.com/TEAMSchools/teamster/issues/4721) and
+  [#4728](https://github.com/TEAMSchools/teamster/pull/4728) — the Survey
+  Dashboard support-survey department gate. Planned, not shipped
+- [#4726](https://github.com/TEAMSchools/teamster/pull/4726) — retires Federal
+  Grants Timesheet Approval from the model
+- [#4629](https://github.com/TEAMSchools/teamster/pull/4629) — archives
+  Leadership Development for the Lattice migration
