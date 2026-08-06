@@ -448,10 +448,11 @@ Three Paterson-specific rules:
   three regions' is sourced. With one school per grade the "sum" is that
   school's own value.
 
-#### Not yet walked
+#### `attrition` and `enrollment snapshot offer management` — noise
 
-`attrition` and `enrollment snapshot offer management` — believed not to be goal
-sources, but not confirmed with SRE.
+Confirmed not goal sources. The five source tabs are `cover sheet`, `KCNA`,
+`Newark`, `Miami` and `KPAT`; nothing else in the workbook feeds the goals
+sheet.
 
 ### Sourced vs derived: check before reconciling
 
