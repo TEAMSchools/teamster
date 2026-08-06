@@ -989,6 +989,26 @@ under _Known data model caveats_ above.
 
 ## Open questions
 
+- **Is KIPP Purpose's new student target 69 or 74?** SRE's 26-27 workbook
+  contradicts itself: `cover sheet` **H11** says 69, while `Newark` **P51** (the
+  Purpose `Total` row) says 73.97, which rounds to 74. Prod currently holds 74.
+  Excluded from the AY2026 goals change set until SRE rules. Raised with SRE Aug
+  2026; pending their response.
+- **Do Miami Tech, Legacy ES and Legacy MS have a `Budget Target`?** On the
+  `cover sheet` the Budget Target column is populated for these three (**F22** =
+  90, **F23** = 196, **F24** = 56) while the Seat Target column immediately left
+  of it is blank (**E22:E24**). But the same three numbers appear on the `Miami`
+  tab as the SY26-27 **seat** target (**H13**, **H25**, **H29**), and prod
+  records them that way with `Budget Target` NULL. So either these three
+  genuinely have no budget target, or `F22:F24` landed one column right of where
+  they belong. No Miami block carries a Budget Target column, so the value
+  cannot be derived — only SRE can settle it. Excluded from the AY2026 change
+  set. Raised with SRE Aug 2026; pending their response.
+
+  Related and worth fixing regardless: `Miami` **H29** reads 56.9 rather than
+  56, because **H28** holds a stray `0.9` in the seat-target column for Legacy
+  MS grade 8 — which inflates SRE's own Legacy MS total.
+
 - **`stg_finalsite__status_report.active_school_year` could give the scaffold a
   finer per-record rollover signal.** Format is `YYYY-YYYY` (e.g. `2026-2027`)
   -- it's the school year a given student's Finalsite record is currently active
