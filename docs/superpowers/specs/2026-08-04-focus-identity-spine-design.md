@@ -142,62 +142,76 @@ retirement in [#3999](https://github.com/TEAMSchools/teamster/issues/3999) and
 into the existing names keeps this change to zero column churn for the marts
 being repointed.
 
-Value translations, all available on `int_focus__students`:
+Value translations, sourced from `int_focus__students` except where noted:
 
-| Network column                                                  | Focus column                                                 | Work                                    |
-| --------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------- |
-| `student_number`                                                | `student_id`                                                 | strip the `8400` prefix                 |
-| `lep_status`                                                    | `english_language_learner_pk_12`                             | code to boolean                         |
-| `spedlep`                                                       | no adequate Focus source — see below                         | archive carry-forward; null for new     |
-| `lunchstatus`                                                   | `free_reduced_meals_program`                                 | FL program code to the archive's values |
-| race and ethnicity                                              | `race_*`, `ethnicity_hispanic_or_latino`, `single_ethnicity` | direct, already decoded                 |
-| `entrydate`, `exitdate`                                         | `startdate`, `exitdate`                                      | rename                                  |
-| `cohort`                                                        | `year_entered_ninth_grade`                                   | derive; null for K-8                    |
-| `rn_year`, `year_in_school`, `year_in_network`, `is_enrolled_*` | same names                                                   | already computed                        |
-| `students_dcid`, NJ state fields                                | none                                                         | null for Miami, by design               |
+| Network column                                                  | Focus column                                                 | Work                                |
+| --------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------- |
+| `student_number`                                                | `student_id`                                                 | strip the `8400` prefix             |
+| `lep_status`, `spedlep`, `lunchstatus`                          | no usable Focus source — see below                           | archive carry-forward; null for new |
+| race and ethnicity                                              | `race_*`, `ethnicity_hispanic_or_latino`, `single_ethnicity` | direct, already decoded             |
+| `entrydate`, `exitdate`                                         | `startdate`, `exitdate`                                      | rename                              |
+| `cohort`                                                        | `year_entered_ninth_grade`                                   | derive; null for K-8                |
+| `rn_year`, `year_in_school`, `year_in_network`, `is_enrolled_*` | same names                                                   | already computed                    |
+| `students_dcid`, NJ state fields                                | none                                                         | null for Miami, by design           |
 
 **The governing rule for every translation is to reproduce the values Miami's
 PowerSchool archive carried.** Every consumer was written against those, and
 `base_powerschool__student_enrollments` already branches on `region = 'Miami'`
 to pass Miami's own domain through for `spedlep`, `lunchstatus`, and
-`lep_status`. Because Focus covers AY2018 through AY2026, each translation is
-testable against the archive across eight overlapping years.
+`lep_status`. Because Focus covers AY2018 through AY2026, the structural
+translations are testable against the archive across eight overlapping years.
 
-### `spedlep` has no adequate Focus source
+### The three status fields have no usable Focus source
 
-Verified, and this is a source-data gap rather than a modeling choice:
+Each of `spedlep`, `lunchstatus`, and `lep_status` was checked against the
+archive independently. All three collapse, for the same root cause as attendance
+and gradebook: AY2026-27 is Miami's first Focus year and this data has not been
+entered or migrated.
 
-| Source                                   | Miami students marked SPED |
-| ---------------------------------------- | -------------------------- |
-| Archive `spedlep = 'SPED'`               | 419                        |
-| Focus `ese_fefp_code`                    | 162                        |
-| Focus `ESE Exceptionalities` log entries | 10                         |
+| Network column | Focus field                      | What Focus holds                                        | Archive AY2025    |
+| -------------- | -------------------------------- | ------------------------------------------------------- | ----------------- |
+| `spedlep`      | `ese_fefp_code`                  | 162 students; ESE log covers 10                         | 419 SPED          |
+| `lunchstatus`  | `free_reduced_meals_program`     | one constant, `CEP NOT Direct Cert [N]`, 3,874 students | `F` 1,422, `P` 92 |
+| `lep_status`   | `english_language_learner_pk_12` | 3,844 at `Not applicable [ZZ]`; 5 `LY`, 5 `LF`, 5 `LZ`  | 153 ELL           |
 
-`ese_fefp_code` is a Florida Education Finance Program **funding** code,
-populated only for specific ESE service levels — not a general IEP flag. Using
-it would under-report Miami SPED by roughly 60%, silently, which is worse than
-reporting nothing.
+Why each is unusable, and not merely sparse:
 
-Focus does define richer fields (`ESE Exceptionalities` /
-`primary_exceptionality`, `ESE`, `ESE Primary Computed`, `IEP`,
-`504 Indicator Computed`, `Gifted (Computed)`), but they are log-based custom
-fields that are almost entirely unpopulated — the exceptionalities log covers 10
-students. Same root cause as attendance and gradebook: AY2026-27 is Miami's
-first Focus year and ESE data has not been entered or migrated.
+- `ese_fefp_code` is a Florida Education Finance Program **funding** code,
+  populated only for specific ESE service levels — not a general IEP flag. Focus
+  does define richer ESE fields (`primary_exceptionality`, `ESE`,
+  `ESE Primary Computed`, `IEP`, `504 Indicator Computed`), but they are
+  log-based custom fields covering 10 students.
+- `free_reduced_meals_program` records **school-wide** CEP eligibility, not
+  per-student status — under CEP the district collects no individual meal
+  applications, so there is no per-student signal to read.
+- `english_language_learner_pk_12` puts 98% of students at `ZZ`. The 5/5/5 split
+  across the three real codes reads as placeholder data, not a population.
 
-Handling for this phase:
+Taking any of them would under-report by 60% to 97% silently, which is worse
+than reporting nothing.
 
-- **Returning students** carry `spedlep` forward from the frozen archive. The
-  value is student-level and the archive is static, so it is stable.
-- **New students** get `null`, not `'No IEP'`. A false negative on IEP status is
-  a compliance-adjacent error; unknown must read as unknown.
-- Add a warn-severity test on the count of Miami students with null `spedlep`,
-  so the gap stays visible and closes when Focus ESE is populated.
-- Track ESE population as a data-availability item alongside #4220 rather than
-  as modeling work here.
+Handling for all three:
+
+- **Returning students** carry the value forward from the frozen archive. It is
+  student-level and the archive is static, so it is stable.
+- **New students** get `null` — not `'No IEP'`, not `'F'`, not `false`. A false
+  negative on IEP status is compliance-adjacent, and a fabricated FRL or ELL
+  value feeds an economic-disadvantage or service-eligibility proxy. Unknown
+  must read as unknown. Null `lunchstatus` is already ~23% of Miami archive
+  rows, so consumers already tolerate it.
+- Add a warn-severity test on the null count for each, so the gaps stay visible
+  and close when Focus is populated.
+- Track population as a data-availability item alongside #4220, not as modeling
+  work here.
 
 Do not use `ese_fefp_code` for `spedlep`. It is the right source for a future
 FEFP-funding measure and nothing else.
+
+**Consequence for scope.** `dim_student_iep_status`,
+`dim_student_meal_eligibility_status`, and `dim_student_ell_status` are three of
+the eight fully-restored marts. They restore rows, but AY2026 status values for
+new Miami students are null until Focus is populated. Returning students are
+exact. This belongs in the PR description and in the stakeholder note.
 
 ## Enrollment: history and alumni placeholders
 
@@ -243,7 +257,9 @@ appendix and belongs in the PR description too.
 2. **Miami historical reconciliation.** For AY2018 through AY2025, compare each
    conform model's output against the archive on
    `(student_number, academic_year, entrydate)`, then on each translated value.
-   This is the only real test of the ESE, ELL, and meal translations.
+   This is the only real test of the race, ethnicity, and cohort translations,
+   and it proves the three status carry-forwards reproduce the archive exactly
+   for returning students.
 3. **`student_key` stability.** Assert that every Miami `student_number` present
    in prod `dim_students` today still hashes to the same key. This is the
    no-churn guarantee and must be proven, not assumed.
@@ -270,12 +286,9 @@ appendix and belongs in the PR description too.
   (`int_tableau__fresh_enrollment_scaffold`, `rpt_focus__student_enrollment`)
   need checking for that assumption. Rename is out of scope here but should be
   filed.
-- Confirm the `lunchstatus` translation the same way `spedlep` was checked.
-  `free_reduced_meals_program` has not been reconciled against the archive's
-  `lunchstatus` domain, and it may turn out to be as thin as `ese_fefp_code`
-  was.
-- Decide who owns getting Focus ESE fields populated, since `spedlep` stays null
-  for new Miami students until that happens.
+- Decide who owns getting Focus ESE and meal-eligibility fields populated, since
+  `spedlep` and `lunchstatus` stay null for new Miami students until that
+  happens.
 - The one AY2026 student whose Focus id lacks the `8400` prefix needs an Ops
   correction.
 
