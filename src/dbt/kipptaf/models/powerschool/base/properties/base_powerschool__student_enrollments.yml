@@ -408,12 +408,16 @@ models:
             source_column: student_web_id
       - name: student_web_password
         data_type: string
-        description: The password for Student_Web_ID.
+        description:
+          The generated default password for the student, derived from their
+          last name and birth year. Serves as the password for Student_Web_ID
+          and as the initial Google Workspace password. Populated for every
+          region.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_web_password
+            source_model: stg_people__student_logins
+            source_column: default_password
             contains_pii: true
       - name: student_email_google
         data_type: string

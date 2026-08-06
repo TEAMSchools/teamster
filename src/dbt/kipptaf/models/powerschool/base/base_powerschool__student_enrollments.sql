@@ -114,8 +114,17 @@ select
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
 
     sl.google_email as student_email_google,
+
+    /* The Paterson carve-out here went stale in 4e11acd72, which retired the
+    PowerSchool student_email path this column was withheld for -- Paterson's
+    Google address is now the login generator's google_email like every other
+    region, so the matching password has to come from the same place. Leaving it
+    null failed every Paterson row of the Google Directory user sync (#4756).
+    student_web_id below keeps its carve-out: nothing established that Paterson
+    needs a PowerSchool Parent username, so it is left as-is pending #4756. */
+    sl.default_password as student_web_password,
+
     if(ar.region = 'Paterson', null, sl.username) as student_web_id,
-    if(ar.region = 'Paterson', null, sl.default_password) as student_web_password,
 
     if(ar.region = 'Miami' and fte.survey_2 is not null, true, false) as is_fldoe_fte_2,
     if(ar.region = 'Miami' and fte.survey_3 is not null, true, false) as is_fldoe_fte_3,
