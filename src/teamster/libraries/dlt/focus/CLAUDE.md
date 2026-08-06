@@ -61,22 +61,40 @@ columns.
 
 ## Empty source tables
 
-A 0-row source extract behaves differently before and after the table's first
-successful load, because dlt's empty-table handling keys off
-`seen_data_only=True`:
+A configured table with 0 rows in Focus is **created empty** in BigQuery: the
+resource in `assets.py` appends `dlt.mark.materialize_table_schema()` when
+`table_rows` yielded no data, so the table exists from the reflected schema and
+a staging model can be written before any data arrives (#4740).
 
-- **Never loaded data**: the PyArrow backend writes NO BigQuery table and no
-  load jobs (the asset SUCCEEDS — no `rows_loaded`, `jobs: []`). A configured
-  Focus table absent from `dagster_<district>_dlt_focus` is therefore **empty in
-  the source** (Focus is mid-rollout in Miami), not an extraction failure —
-  confirm via the asset materialization metadata before investigating.
-- **Has loaded data before**: dlt emits an empty file so the `replace` root is
-  truncated. That file must be parquet or BigQuery autodetection fails the load
-  — hence `loader_file_format="parquet"` in `assets.py`. See _`replace`
-  write-disposition_ in `../CLAUDE.md` (#4733).
+Consequences to know:
 
-So a Focus asset going quiet is not evidence the table is new, and a table
-emptying out is not a data loss — the truncate is the intended outcome.
+- **Every Focus table carries `_dlt_id` and `_dlt_load_id`.** The materialize
+  marker travels dlt's object path, which injects both as REQUIRED, so the arrow
+  data path must supply them too — hence the two
+  `normalize.parquet_normalizer.add_dlt_*` knobs set in the op body. Turning
+  either off breaks the first real load into an empty-created table with
+  `Field _dlt_load_id is missing in new schema`.
+- **Adding those columns to an existing table is impossible** (BigQuery:
+  `Cannot add required fields to an existing schema`), so every table that was
+  already populated has to be recreated once, by launching the Focus asset job
+  with run config `refresh: drop_resources`. Any table that predates that
+  migration, or is created outside this path, needs the same treatment.
+- **Until that migration runs, every already-populated table FAILS to load.**
+  The knobs are pipeline-wide: the arrow normalizer stamps both columns
+  non-nullable into every load file, and dlt's BigQuery load job sets
+  `ALLOW_FIELD_ADDITION` without `ALLOW_FIELD_RELAXATION`, so BigQuery rejects
+  each one. Deploying this code and deferring the migration is a prod outage,
+  not a no-op — sequence the two together.
+- A table absent from `dagster_<district>_dlt_focus` now means a **config or
+  load problem**, not an empty source. That is the diagnostic this change buys.
+- A table that empties out AFTER loading is truncated, not dropped — see
+  `replace` write-disposition in `../CLAUDE.md` (#4733).
+
+The resource yields hints defensively before the marker so reflection items
+reach dlt in a single batch — that ordering simplifies the architecture but the
+columns survive either way (dlt absorbs hints that arrive later too). Columns
+are lost only when `table_rows` never yields any items at all, so no reflection
+reaches dlt.
 
 ## Testing Constraints
 
