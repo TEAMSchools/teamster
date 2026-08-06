@@ -27,8 +27,11 @@ models:
       - name: home_business_unit_name
         data_type: string
         description: >-
-          Legal entity. Drives the Tableau entity gate. Never location_region,
-          which is a property of the location rather than the person.
+          The respondent's own legal entity, from the roster join. This does NOT
+          drive the Tableau entity gate on this model — use
+          school_business_unit_name, the entity of the school that was walked.
+          Central-office respondents walk schools in every region, and no
+          respondent on this form is based in KIPP Paterson.
         data_tests:
           - not_null
           - accepted_values:
@@ -46,12 +49,30 @@ models:
           int_people__location_crosswalk, so every alias of one school collapses
           to a single value. This is the column a Tableau location gate scopes
           on. Null when the form label is absent from the crosswalk, which is
-          also when grade_band is null.
+          also when school_business_unit_name and grade_band are null.
         data_tests:
           - not_null:
               config:
                 severity: warn
-                where: school is not null
+      - name: school_business_unit_name
+        data_type: string
+        description: >-
+          Legal entity that owns the walked school, from
+          int_people__location_crosswalk. This is the column a Tableau entity
+          gate scopes on, NOT home_business_unit_name — that one is the
+          respondent's own entity, and central-office staff walk schools in
+          every region. Null when the form label is absent from the crosswalk.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+          - accepted_values:
+              arguments:
+                values:
+                  - TEAM Academy Charter School
+                  - KIPP Cooper Norcross Academy
+                  - KIPP Miami
+                  - KIPP Paterson
       - name: respondent
         data_type: string
       - name: google_email
@@ -104,13 +125,6 @@ models:
         data_type: int64
       - name: walkthrough_round
         data_type: string
-      - name: school
-        data_type: string
-        description: >-
-          The school walked, as the form's dropdown recorded it. Raw form text —
-          several values are retired or abbreviated aliases, and the same school
-          can arrive under more than one label across waves, so never gate or
-          group on this column. Use school_clean_name.
       - name: grade_band
         data_type: string
         description: >-
