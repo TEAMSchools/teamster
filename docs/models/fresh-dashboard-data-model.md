@@ -350,6 +350,43 @@ a small uniform edit rather than a per-school reconciliation. The
 **separate thing** — a calculation input used to derive that tab's "apps needed"
 from "new students needed", not the source of these goals.
 
+### Sourced vs derived goals
+
+Not every populated goal comes from SRE's workbook. **The rule: if a goal is not
+stated anywhere on SRE's sheet but is populated in the staging table, it is
+derived from other goals and must be recomputed, not reconciled.** Reconciling a
+derived goal against the workbook reports a discrepancy that has no source to
+fix.
+
+At `Region/Grade Level` the three populated Enrollment/Applications goals split
+across both categories:
+
+| `goal_name`            | source                                                 |
+| ---------------------- | ------------------------------------------------------ |
+| `App Target`           | **sourced** — the cover sheet's `A26:D37` grid         |
+| `New Student Target`   | **derived** — sum of that region's `School/Grade` rows |
+| `Re-Enroll Projection` | **derived** — sum of that region's `School/Grade` rows |
+
+`App Target` is emphatically **not** the sum of its school rows. Verified for
+AY2026: Camden grade 5 reads 69 on the cover sheet while the three Camden
+grade-5 school rows sum to 101 (LSM 21 + Hatch 48 + Sumner 32) — the cover sheet
+excludes Sumner's grade 5, which is a new grade mid-expansion. Do not "fix" that
+by summing.
+
+Two consequences worth planning around:
+
+- **Edit order matters.** The derived region rows are a function of the school
+  rows, so a reconciliation must apply `School/Grade Level` corrections FIRST
+  and recompute the region rows afterwards. Doing it the other way round leaves
+  the region rows keyed to superseded school values.
+- **A ±1 gap between a region row and the sum of its school rows is a
+  rounding-order artifact, not drift.** SRE's tabs hold unrounded formula
+  output; rounding the sum gives a different answer than summing the rounded
+  values. Verified on Camden: where the two methods diverge, `round(SUM)`
+  matches what is in prod and `SUM(round)` never does. Larger systematic gaps
+  ARE real staleness — Miami's `Re-Enroll Projection` runs 23-31 low across
+  grades 1-6, where the region row predates Royalty's current numbers entirely.
+
 ### Full `grouped_status` → `goal_type` / `goal_name` crosswalk
 
 `grouped_status` (the crosswalk sheet's `status_group_value`) is the thing

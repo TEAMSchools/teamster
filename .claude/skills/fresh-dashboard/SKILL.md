@@ -268,6 +268,63 @@ Two traps in this tab:
   Budget Target column at all, so these three cannot be derived; they stay NULL
   until SRE fills them.
 
+#### `KCNA` — fully mapped
+
+**Only block 1 (rows 3-31, header row 2) is a source.** It carries two
+granularities at once:
+
+| granularity          | rows                               | goals                                                            |
+| -------------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| `School/Grade Level` | the per-grade rows                 | Seat `J`, FDOS `L`, Re-Enroll `O`, New Student `P`, App `R`      |
+| `School`             | the 5 `Total` rows (8,16,21,26,31) | same five — **no `Budget Target`**, which stays cover-sheet-only |
+
+Full column read: `A` attrition-by-formula (ignore), `B` type, `C` school, `D`
+grade, `E` sections, `F` **SY25-26** seat target (prior year — not a goal), `G`
+10.15 enrollment (actual), `H` over/under, `I` backfill, **`J` SY26-27 seat
+target**, `K` no-show %, **`L` FDOS Target**, `M` yearlong attrition, `N`
+historic retention, **`O` Projected Returners**, **`P` New Students Needed**,
+`Q` conversion rate (a calc input, NOT the `Conversion` goals), **`R` # of apps
+needed**.
+
+Confirmed not sources, per SRE: **columns `S`/`T`**, **row 32** (an unlabeled
+region summary), and **the entire table from row 33 down** (the `City` /
+`Campus` / `Grade Level` block). That last one is a trap worth knowing:
+
+- It looks authoritative — it has a `New Students Needed` and an `App Goal`
+  column at school × grade grain, and an unlabeled column `K` that is a perfect
+  per-grade sum of its campuses. None of it is a source.
+- It uses **different school abbreviations** (`KSE` for Sumner, `KHM` for Hatch
+  Middle) that appear nowhere else in the workbook, so a school-name map will
+  silently match `KHS` from its `Campus` column and read the wrong columns.
+- Its column `K` disagrees with the cover sheet's Camden App Target at grade 5
+  (99 vs 69). The cover sheet wins; prod's 69 is correct.
+
+The `School` totals overlap the cover sheet on all five goals, so they are a
+free cross-check rather than a competing source. Note Sumner's rows split `ES`
+(K-4) and `MS` (5-6) in the `Type` column while its `Total` row reads `ES` — the
+documented per-grade banding divergence, not an error.
+
+### Sourced vs derived: check before reconciling
+
+**If a populated goal is not stated anywhere on SRE's sheet, it is derived —
+recompute it, don't reconcile it.** See the reference doc's _Sourced vs derived
+goals_ for the current split. At `Region/Grade Level`, `App Target` is sourced
+(cover sheet) while `New Student Target` and `Re-Enroll Projection` are sums of
+the school rows.
+
+Two operational consequences:
+
+- **Apply `School/Grade Level` edits first, then recompute the region rows.**
+  They are a function of the school rows, so the reverse order keys the region
+  rows to superseded values.
+- **When choosing how to round a derived aggregate, decide explicitly between
+  `round(SUM of unrounded)` and `SUM of rounded`, and say which you used.** They
+  differ by ±1. The historical method is `round(SUM)` (verified on Camden, where
+  `SUM(round)` never matches prod), but it needs the tabs' unrounded values and
+  leaves a region row that a reader cannot reproduce by adding up the school
+  rows they can see. Summing the rounded staging values is self-consistent and
+  verifiable in one query, at the cost of moving a couple of rows by 1.
+
 ### Rounding: half-up, and NOT Python's `round()`
 
 SRE's sheets store **unrounded formula output** while the goals sheet holds
