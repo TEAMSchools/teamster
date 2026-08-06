@@ -225,7 +225,11 @@ cubes:
       # leaving them in the denominator alone counted them as absences (#4744).
       # membership_value = 1 matches rpt_tableau__attendance_dashboard and drops
       # the pre-AY2021 membership_value = 0 rows that carry a real
-      # attendance_value and would otherwise inflate the numerator only.
+      # attendance_value and would otherwise inflate the numerator only. It
+      # would also drop fractional dual-enrollment days, which count_absent_days
+      # keeps via membership_value > 0 — no such row exists today (zero rows
+      # outside {0, 1} across all 12.8M), but if dual enrollment ever produces
+      # one, ADA and count_absent_days will span different day sets.
       - name: _sum_attendance_value
         sql: attendance_value
         type: sum
