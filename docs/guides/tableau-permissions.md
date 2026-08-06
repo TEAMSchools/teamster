@@ -1,7 +1,12 @@
-# Tableau Permissions
+# Tableau Permissions — People Data Dashboards
 
-How row-level security works on our Tableau workbooks — who can see whose data,
-and how it is implemented.
+How row-level security works on the Tableau dashboards built from **people
+data** — staff surveys, observations, coaching, compensation, and operations
+walkthroughs. Who can see whose data, and how it is implemented.
+
+Student-data dashboards are **not** governed by this page. The nine workbooks
+listed in Part 2 are the full scope: every row in each of them is about a member
+of staff.
 
 This page has two halves. **Part 1** is for anyone who wants to understand or
 question what they can see, and needs no Tableau knowledge. **Part 2** is for

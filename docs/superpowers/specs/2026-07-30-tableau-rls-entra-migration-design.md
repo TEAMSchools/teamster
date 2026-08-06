@@ -5,9 +5,9 @@ Refs #4638
 > **Authoritative reference for calc text:** the playbook,
 > `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`. This spec
 > is the design reasoning behind those fields;
-> [the Tableau permissions guide](../../guides/tableau-permissions.md) describes
-> the resulting behaviour for a non-technical reader. Where this spec and the
-> playbook disagree about the text of a field, the playbook wins.
+> [the Tableau people-data permissions guide](../../guides/tableau-permissions.md)
+> describes the resulting behaviour for a non-technical reader. Where this spec
+> and the playbook disagree about the text of a field, the playbook wins.
 >
 > Two parts of the design landed after this spec was first written and are
 > documented in the playbook: the **Tier 2 senior-leader shield** (the fifth

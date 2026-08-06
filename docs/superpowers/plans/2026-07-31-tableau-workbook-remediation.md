@@ -14,10 +14,10 @@ when you are:
 - restoring an archived workbook — its section still describes its pre-migration
   calculation, so redo that section before republishing.
 
-[The Tableau permissions guide](../../guides/tableau-permissions.md) is the
-companion page and describes **who can see what and why**. It no longer carries
-calc text. Where the two disagree about behaviour the guide wins; where they
-disagree about the text of a field, **this file wins**.
+[The Tableau people-data permissions guide](../../guides/tableau-permissions.md)
+is the companion page and describes **who can see what and why**. It no longer
+carries calc text. Where the two disagree about behaviour the guide wins; where
+they disagree about the text of a field, **this file wins**.
 
 `docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md` holds
 the design reasoning behind each tier and each peer-exclusion helper.
