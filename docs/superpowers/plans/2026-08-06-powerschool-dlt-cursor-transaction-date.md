@@ -167,44 +167,44 @@ the match is unique.
 
 Edit 1:
 
-```yaml
-- table_name: schoolstaff
-  cursor_column: whenmodified
+```text
+  - table_name: schoolstaff
+    cursor_column: whenmodified
 ```
 
 becomes:
 
-```yaml
-- table_name: schoolstaff
-  cursor_column: transaction_date
+```text
+  - table_name: schoolstaff
+    cursor_column: transaction_date
 ```
 
 Edit 2:
 
-```yaml
-- table_name: sectionteacher
-  cursor_column: whenmodified
+```text
+  - table_name: sectionteacher
+    cursor_column: whenmodified
 ```
 
 becomes:
 
-```yaml
-- table_name: sectionteacher
-  cursor_column: transaction_date
+```text
+  - table_name: sectionteacher
+    cursor_column: transaction_date
 ```
 
 Edit 3:
 
-```yaml
-- table_name: users
-  cursor_column: whenmodified
+```text
+  - table_name: users
+    cursor_column: whenmodified
 ```
 
 becomes:
 
-```yaml
-- table_name: users
-  cursor_column: transaction_date
+```text
+  - table_name: users
+    cursor_column: transaction_date
 ```
 
 - [ ] **Step 4: Repeat the same three edits in the Newark config**
