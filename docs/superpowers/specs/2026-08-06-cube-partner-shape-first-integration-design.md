@@ -21,27 +21,6 @@ deferred, because it turns on a question only the partner can answer.
 
 The partner is **MasterBorn**, a custom software-development agency.
 
-## The conceit that was wrong
-
-The superseded spec framed this as **external API access**: a hashed-key
-registry granting an outside party row-level student records, scoped to schools
-named in a data-sharing agreement, gated behind legal sign-off.
-
-That is the right design for a data recipient and the wrong design for a
-development agency. It answers "how does an outside party read our warehouse"
-when the actual question is "how does a team build software against our semantic
-layer."
-
-Three consequences follow from the correction:
-
-- **The primary deliverable is a catalog, not a credential.** What unblocks an
-  engineer on day one is knowing what they can ask for and what comes back.
-- **Real data is not required, and not wanted.** A credential carrying
-  production PII creates an egress problem that the work does not need to have.
-- **The migration event is a repoint, not a promotion.** Their integration is
-  written once, against a stable contract, and swapped to production data by
-  configuration.
-
 ## What "the shape" means concretely
 
 Building an integration splits into three kinds of work, and each needs
@@ -134,7 +113,7 @@ the production identity pass-through, and the intake issue template.
 **Out of scope:** small-cell suppression
 ([#4237](https://github.com/TEAMSchools/teamster/issues/4237)). A de-identified
 mirror is **not planned** — see
-[Why no de-identified mirror](#why-no-de-identified-mirror).
+[No de-identified mirror](#no-de-identified-mirror).
 
 ## Deliverable 1 — the catalog bundle
 
@@ -214,7 +193,7 @@ The natural inference — "a branch has its own variables, so a branch is an
 isolated environment, so it is safe to expose" — is true for the data connection
 and false for the credential. Getting it backwards hands out a production key.
 
-Three secondary reasons, all still true:
+Three secondary reasons:
 
 - Branch staging suspends after 10 minutes idle unless toggled always-active.
 - The branch name is embedded in the endpoint path, so renaming or deleting the
@@ -244,9 +223,6 @@ So the recipe is:
 **No changes to any cube YAML, any view, or `cube.js`.** Identity resolution
 comes along for free, because `dim_staff_cube_access`, `dim_locations`, and
 `dim_staff_reporting_chain` are read the same project-unqualified way.
-
-An earlier draft proposed templatizing `sql_table` with Jinja. That is
-unnecessary and should not be built.
 
 ### Blast-radius isolation
 
@@ -295,12 +271,10 @@ when the rows are invented.
 
 ### Generated, not hand-authored
 
-Build the dataset with a **parameterized generator using a seeded RNG**, not
-hand-authored dbt seeds. Seeds are faster to write and trivially reviewable, but
-they cannot do volume — and volume is the one realism gap worth closing.
+Build the dataset with a **parameterized generator using a seeded RNG**. Volume
+is the one realism gap worth closing, and hand-authored seeds cannot produce it.
 
-What the generator buys, all of which a de-identified mirror was previously
-carrying:
+What the generator buys:
 
 - **Production-scale volume on demand.** Nothing about synthetic data forces it
   to be small. Ten thousand synthetic students across 180 school days is roughly
@@ -320,30 +294,18 @@ Pre-aggregations are a separate choice. Production has partitioned pre-aggs, and
 matching them here costs Cube Store build time for latency fidelity v1 probably
 does not need. Leave them off until the partner reports a latency surprise.
 
-### Why no de-identified mirror
+### No de-identified mirror
 
-An earlier draft of this design planned a parallel de-identified dataset. It is
-**not planned**, because the staff-identity answer removed its only unique job
-and the generator absorbs the rest:
+A parallel de-identified dataset is **not planned**. Production callers are
+staff members seeing data they are already entitled to, so no tier needs
+realistic-but-not-real data. The generator above covers volume, and
+pooled-measure traps are a documentation problem rather than a data one — the
+catalog gotchas note is that control.
 
-- Its **privacy** job is gone. Production callers are staff members seeing data
-  they are already entitled to, so no tier needs realistic-but-not-real data.
-- **Volume** was never its advantage, per the generator above.
-- **Semantic traps** are not a data problem. Pooling `avg_scale_score` across
-  incompatible assessment sources produces a plausible wrong number on real data
-  too, so a mirror would not reveal it. The catalog gotchas note is the control.
-- **Distribution** drift is cosmetic and an afternoon to retune at cutover.
-
-The one thing a mirror would genuinely add is **edge cases nobody thought to
-fabricate**. Missing those costs bugs found at cutover rather than during
-development — schedule risk, not a correctness or privacy failure — and the dbt
-marts already absorb most raw-source messiness before the views read it.
-
-**Fallback, if the generator proves insufficient in practice:** a de-identified
-mirror needs its own spec plus a stated re-identification-risk threshold, which
-is the same governance decision blocking
-[#4237](https://github.com/TEAMSchools/teamster/issues/4237). Do not start one
-without that threshold settled.
+If the generator proves insufficient in practice, a mirror needs its own spec
+plus a stated re-identification-risk threshold, the same governance decision
+blocking [#4237](https://github.com/TEAMSchools/teamster/issues/4237). Do not
+start one without that settled.
 
 ### The fidelity rule
 
@@ -389,9 +351,8 @@ be passed in at runtime.
 
 ## The repoint
 
-The migration event, and the **last** step — not the third thing built. It is
-gated on the deferred identity question below. Their integration is written once
-and swapped to production data by configuration.
+The migration event, and the last step. Their integration is written once and
+swapped to production data by configuration.
 
 ### What ports unchanged
 
@@ -446,26 +407,11 @@ will not reveal a wrong pooling.
    categories above.
 1. Load-test at production volume before any end user sees it.
 
-## What the staff-identity answer settles, and what it introduces
+## Obligations that fall on the partner
 
-The product's end users are **always KTAF staff**. That resolves the previously
-deferred question and simplifies the privacy story substantially:
-
-- **No new scope model.** Every end user already has a `dim_staff_cube_access`
-  row, so the existing HR-derived derivation covers production completely.
-- **No new egress.** The product shows a staff member data they can already
-  reach through Cube today. It changes the interface, not the entitlement.
-- **The de-identified mirror is no longer needed at all.** It was hedging
-  against non-staff end users who could not be shown PII. With that gone, a
-  synthetic generator covers the remaining realism gap, so no parallel
-  de-identified dataset is planned.
-- **Audit becomes a complete trail.** The accountable party is a staff member
-  KTAF already knows, and the `surface` field distinguishes a query made through
-  the partner's product from one made through Tableau, Superset, or `claude.ai`.
-
-It also moves three risks from KTAF's side of the boundary to the partner's.
-**None of them are enforceable by our access policies**, so each needs to be a
-written contract term rather than a technical control.
+Because every end user is a KTAF staff member, three risks sit on the partner's
+side of the boundary. **None are enforceable by our access policies**, so each
+has to be a written contract term rather than a technical control.
 
 **Offline and background queries.** If any feature queries while the user is not
 present — a scheduled digest, a nightly export, a warmed cache — there is no
@@ -559,15 +505,12 @@ production service simply never sets it.
 
 Do **not** add it to the production `cube-mcp` service as part of this work.
 
-### The shortcut to refuse
+### Do not share the sandbox signing credential
 
-Because the sandbox holds no real data, KTAF could hand the partner the sandbox
-`CUBEJS_API_SECRET` and let them mint their own tokens. The blast radius is
-genuinely fabricated rows, so it is not a data risk.
-
-Refuse it anyway. It trains the partner on the exact pattern production forbids,
-their auth code is discarded at cutover — destroying the repoint property this
-whole design is built around — and it invites a later request to point the same
+The sandbox holds no real data, so handing the partner its `CUBEJS_API_SECRET`
+would not risk records. Do it anyway and their auth code becomes throwaway — it
+would exercise a pattern production forbids, destroying the repoint property
+this design is built on, and it invites a later request to point the same
 approach at production.
 
 ## Audit
@@ -660,7 +603,7 @@ partner's engineers a day.
 - Per-key rate limiting inside Cube — the Cloud Run service is the right layer.
 - Adding `act_as` to the production `cube-mcp` service.
 - A parallel de-identified dataset — see
-  [Why no de-identified mirror](#why-no-de-identified-mirror).
+  [No de-identified mirror](#no-de-identified-mirror).
 
 ## Testing strategy
 
@@ -708,126 +651,3 @@ partner's engineers a day.
   context enrichment and the pasted-context fix.
 - [#4614](https://github.com/TEAMSchools/teamster/pull/4614) — internal
   emulation, which shipped the superseded spec's Part 2.
-
-## Appendix — draft response to the partner
-
-Held here so the outbound message is reviewable alongside the design. Send after
-review; adjust timeline language to whatever the team commits to.
-
----
-
-Thanks — these are the right questions, and two of them changed our plan, so
-this was useful.
-
-First, a reframe on our side. We had been thinking about this as giving you API
-access to our data. That is the wrong shape. What you need in order to build is
-**the shape of our data**, not the data itself. So that is what we are going to
-give you, and when the product is built we repoint it at production and it
-works.
-
-**Is the authorization logic a callable service? What would need to be passed?**
-
-Yes, and it already exists. We run a small token-exchange service that verifies
-an OIDC identity token and returns a short-lived token for our semantic layer.
-Our signing secret never leaves our infrastructure.
-
-What you would pass is **an end-user identity, not a scope**. We derive
-permissions server-side from HR data at query time — which schools or region
-someone covers, whether they can see sensitive staff fields, who reports to
-them. You never compute or assert permissions, and you never hold a credential
-that could broaden them. When someone changes roles or leaves, their access
-changes with no deploy and no action on your side.
-
-You have confirmed your end users are always KTAF staff, which makes this
-straightforward: every one of them already has a record on our side, so the
-permissions derivation covers your product completely with nothing new to build
-on the authorization model.
-
-**How do we ensure safe access for developers testing in non-production,
-externally?**
-
-We agree with your de-identified default, and for the first phase we are going
-further: **no real records at all.**
-
-We will stand up a separate sandbox with the same schema, the same semantic
-model, and the same authentication path as production, reading a **synthetic
-dataset** — fabricated rows, no student or staff data. Its service account will
-have no access whatsoever to our production warehouse, so the isolation does not
-depend on our permission rules being correct.
-
-Three things that matter for your engineers:
-
-- **The auth path is identical to production**, so the integration code you
-  write against the sandbox is the code that ships. The cutover is a
-  configuration change, not a rewrite.
-- **We can give you test personas with different permission scopes**, so you can
-  see how the product behaves for a school-level user versus a network-level
-  one. Those are just rows in the sandbox, so we can add or change them quickly.
-- **We will deliberately make the sandbox stricter and messier than production**
-  — narrower permissions, nulls, mid-year transfers. Anything that works there
-  works on real data. The reverse is not true, which is why we are biasing this
-  way.
-
-We are generating that sandbox at realistic volume rather than as a token
-sample, so pagination and response times behave the way they will in production.
-If you hit a case where fabricated data is not realistic enough, tell us and we
-will fix the generator.
-
-**What is the process for adding or exposing additional views or metrics?**
-
-You send us a request naming the grain, the dimensions and measures, and the
-screen it feeds. Our analytics engineers implement it in the warehouse and the
-semantic layer, and we regenerate the catalog.
-
-We are keeping authorship on our side because that is where data-classification
-and grain decisions live. We will give you a request template so nothing is lost
-in translation, and the catalog is version-controlled, so every change shows up
-as a diff you can see.
-
-**What you get first, for getting this into code.**
-
-- A machine-readable catalog of the semantic layer: every view, its dimensions
-  and measures, types, grains, and descriptions. No data in it.
-- Sample request and response pairs, so you can mock locally and start writing
-  parsing code before the sandbox exists.
-- A readable version of the same catalog for design and scoping conversations.
-- A short gotchas list. The most important one: **if a query asks for a field
-  the caller's permissions exclude, we reject the whole query rather than
-  dropping that field.** Worth handling early — it is the most common surprise
-  for teams integrating with us.
-- If it helps, we can generate TypeScript types from the catalog so view and
-  field names are compile-time checked. Tell us if you want that.
-
-**Audit logs.**
-
-Agreed, and we checked: our platform's built-in audit log covers administrative
-events, not data access. So we are building the data-access trail ourselves —
-one record per query with the identity, the view, and a timestamp, never row
-values — into our own warehouse with retention we control. That lands alongside
-the sandbox rather than after it.
-
-**Rough phasing — please react with your timeline and what you actually need.**
-
-1. **Catalog and samples** — days. Enough to start writing code and scoping
-   screens.
-1. **Sandbox with synthetic data and your access** — one to two weeks. A real
-   endpoint, real auth, test personas, no real records.
-1. **Audit trail** — built alongside the sandbox.
-1. **Repoint at production data** — weeks. Unblocked now that we know your end
-   users are staff.
-
-Steps 1 through 3 need nothing further from you, so we can start now.
-
-Three things we need back from you:
-
-- **When do your engineers need something to call?** If that is sooner than our
-  sandbox timeline, say so and we will send the catalog and sample responses
-  first so you can mock against them while we build.
-- **Does any feature need to query when the user is not signed in** — a
-  scheduled digest, a nightly export, a pre-warmed cache? Anything in that
-  category cannot carry a live user identity, so it needs a different and more
-  restricted mechanism. Better to know now than to design around it later.
-- **Can you confirm that query results will never be cached or reused across
-  users?** Our permissions are applied per person at query time, so a result
-  cached for one user and served to another would bypass them in a way we cannot
-  see. We would like this as an explicit term rather than an assumption.
