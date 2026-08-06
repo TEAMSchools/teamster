@@ -78,9 +78,9 @@ Start here if you're on the school/enrollment team, not an engineer.
      (`stg_google_sheets__finalsite__exclude_ids`).
    - A cleanup you did late in your day isn't showing → ingestion has a lag (see
      the reference doc); it may show up the next day.
-   - A number doesn't match what you just typed into a sheet → the sheet is read
-     live, so give it a moment and re-check; if it's still wrong, ask an
-     engineer to rematerialize the affected models and confirm.
+   - A number doesn't match what you just typed into a sheet → expected. Sheet
+     edits don't reach the dashboard until the goals models rebuild, and waiting
+     a few minutes won't do it. Ask the data team to refresh them.
 
 2. **Adding a new grade or school?** Nothing gets hand-entered into a scaffold
    sheet any more — the school × grade spine builds itself from PowerSchool and
