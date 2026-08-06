@@ -39,6 +39,19 @@ models:
                   - KIPP Miami
                   - KIPP Paterson
                   - KIPP TEAM and Family Schools Inc.
+      - name: school_clean_name
+        data_type: string
+        description: >-
+          The walked school resolved to its canonical name via
+          int_people__location_crosswalk, so every alias of one school collapses
+          to a single value. This is the column a Tableau location gate scopes
+          on. Null when the form label is absent from the crosswalk, which is
+          also when grade_band is null.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                where: school is not null
       - name: respondent
         data_type: string
       - name: google_email
@@ -98,14 +111,6 @@ models:
           several values are retired or abbreviated aliases, and the same school
           can arrive under more than one label across waves, so never gate or
           group on this column. Use school_clean_name.
-      - name: school_clean_name
-        data_type: string
-        description: >-
-          The walked school resolved to its canonical name via
-          int_people__location_crosswalk, so every alias of one school collapses
-          to a single value. This is the column a Tableau location gate scopes
-          on. Null when the form label is absent from the crosswalk, which is
-          also when grade_band is null.
       - name: grade_band
         data_type: string
         description: >-
