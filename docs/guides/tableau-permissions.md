@@ -4,8 +4,9 @@ How row-level security works on our Tableau workbooks — who can see whose data
 and how it is implemented.
 
 This page has two halves. **Part 1** is for anyone who wants to understand or
-question what they can see, and needs no Tableau knowledge. **Part 2** describes
-the field structure and points at the build reference.
+question what they can see, and needs no Tableau knowledge. **Part 2** is for
+Tableau developers and describes the field structure and points at the build
+reference.
 
 **Status: live** on nine workbooks, listed in Part 2. One caveat is called out
 inline where it applies: the support surveys are not yet scoped by department.
@@ -100,17 +101,17 @@ from both sides.
 Seven routes, and the peer exclusion differs on each because "your own level"
 means something different depending on where you sit.
 
-| Route | Who                                                                                                                                                                   | Reaches                                          | Minus                                                                                                                  |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| 1     | You, and the manager recorded on the response                                                                                                                         | that response                                    | nothing — a manager sees their report even when both are director-rank                                                 |
-| 2     | The administrators of the process — the data, HR, and Recruiting teams, and the Leadership Development team (the group of that name, not the workbook being archived) | everything, network-wide                         | nothing                                                                                                                |
-| 3a    | Managing directors of school operations, heads of schools, managing directors of operations                                                                           | your region                                      | regional-leadership respondents. Directors stay visible — you sit above them                                           |
-| 3b    | The Syndicate                                                                                                                                                         | your region                                      | regional leadership, and director-rank peers — **except** school operations directors, who are your own line of report |
-| 3c    | School Support Directors                                                                                                                                              | your region                                      | regional leadership, and every director rank                                                                           |
-| 4     | School leaders and directors of school operations                                                                                                                     | your school                                      | each other                                                                                                             |
-| 5     | Assistant principals                                                                                                                                                  | teachers and learning specialists at your school | everyone else at that school                                                                                           |
-| 6     | Special Education Directors, KIPP Forward Directors                                                                                                                   | your own department, in your own region          | director-rank peers. Associate directors stay visible                                                                  |
-| 7     | TEAM Council                                                                                                                                                          | everyone, network-wide                           | chief-level respondents                                                                                                |
+| Route | Who                                                                                            | Reaches                                          | Minus                                                                                                                  |
+| ----- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| 1     | You, and the manager recorded on the response                                                  | that response                                    | nothing — a manager sees their report even when both are director-rank                                                 |
+| 2     | The administrators of the process — the Data, HR, Recruiting, and Leadership Development teams | everything, network-wide                         | nothing                                                                                                                |
+| 3a    | Managing directors of school operations, heads of schools, managing directors of operations    | your region                                      | regional-leadership respondents. Directors stay visible — you sit above them                                           |
+| 3b    | The Syndicate                                                                                  | your region                                      | regional leadership, and director-rank peers — **except** school operations directors, who are your own line of report |
+| 3c    | School Support Directors                                                                       | your region                                      | regional leadership, and every director rank                                                                           |
+| 4     | School leaders and directors of school operations                                              | your school                                      | each other                                                                                                             |
+| 5     | Assistant principals                                                                           | teachers and learning specialists at your school | everyone else at that school                                                                                           |
+| 6     | Special Education Directors, KIPP Forward Directors                                            | your own department, in your own region          | director-rank peers. Associate directors stay visible                                                                  |
+| 7     | TEAM Council                                                                                   | everyone, network-wide                           | chief-level respondents                                                                                                |
 
 Routes 3a, 3b and 3c look redundant and are not. They are three groups sitting
 at three different heights, so one shared exclusion would hide the wrong people:
@@ -140,12 +141,11 @@ restriction as the rest — there is no wider audience for comments.
 
 These are accepted, not undiscovered. Each is a place the gate is approximate.
 
-- **The council shield hides chief-level titles, not council membership.**
+- **The TEAM Council shield hides chief-level titles, not council membership.**
   Tableau can only ask which groups the _viewer_ belongs to, never the
-  respondent, so route 7's exclusion has to be inferred from job title. If the
-  council includes heads of schools or managing directors — and it plausibly
-  does — their answers stay visible to fellow council members: 720 rows from 23
-  people hold a senior title that is not chief level.
+  respondent, so route 7's exclusion has to be inferred from job title. A
+  council member whose title is senior but not chief level therefore stays
+  visible to fellow members.
 - **Miami's KIPP Forward staff have no departmental viewer.** Route 6 is scoped
   by region, and Miami has KIPP Forward respondents but no KIPP Forward director
   of its own, so those answers reach only their manager and the route-2 teams.
@@ -195,13 +195,6 @@ schools.
 The broader operations groups — the data team, TEAM Council, managing directors
 and the Syndicate — see every region here on purpose, because walkthroughs are a
 cross-regional practice.
-
-!!! note "If a school looks like it has no walkthroughs"
-
-    Check the round before assuming this is a permissions problem. The dashboard can
-    be filtered to a single walkthrough round for everyone at once, and a school that
-    has only ever had a different round then shows nothing at all. That filter sits on
-    the data source, so it appears on no sheet's filter shelf.
 
 ### Rooms do not grant access
 
