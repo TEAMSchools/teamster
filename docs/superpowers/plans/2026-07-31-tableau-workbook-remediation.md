@@ -1,12 +1,13 @@
-# Tableau Permissions Playbook
+# Tableau Permissions Playbook — People Data Dashboards
 
 > **For the human executing this:** every step happens in Tableau Desktop or on
 > Tableau Server. Work one workbook at a time; each section is self-contained
 > and ends with its own verification.
 
-This file is the **build reference**. It carries the paste-ready text of every
-calculated field, the order to create them in, and how to attach them. Use it
-when you are:
+This file is the **build reference** for the people-data dashboards — staff
+surveys, observations, coaching, compensation, and operations walkthroughs. It
+carries the paste-ready text of every calculated field, the order to create them
+in, and how to attach them. Use it when you are:
 
 - building a new gated workbook from scratch — start at _Build a gated
   workbook_;
@@ -171,10 +172,18 @@ finding; seeing **less** is a broken gate. Both matter. Then tag the workbook
 
 Do not start until all four hold.
 
-1. **PR #4656 is merged and Dagster has materialized the extracts.** The renamed
-   columns do not exist until then, so every field fix below fails against the
-   old views. Confirm one model in BigQuery — `rpt_tableau__content_team` should
-   have `location_clean_name` and no `location`.
+1. **The workbook's extract is current.** Every gate below reads columns from
+   the access contract, and an extract built before those columns existed simply
+   does not have them — so the gate you want cannot be written and the one you
+   can write is wrong. Open the Data pane and confirm the columns are there
+   before editing a calculation; refresh the extract if they are not.
+
+   This is the single most common cause of a gate that looks lazily written. It
+   is what left Operations Systems on a flat list of group memberships for
+   months. The dbt side (PR #4656) landed long ago and every gated workbook has
+   since been refreshed, so this bites a **new** workbook or a restored archive
+   rather than the current nine.
+
 1. **The location groups exist.** See _Groups_ below. A missing group does not
    error; it silently denies, which is the failure this rebuild exists to
    eliminate.
@@ -191,10 +200,15 @@ Do not start until all four hold.
    therefore 26 explicit `ISMEMBEROF` branches, one per school location, Rooms
    excluded. See _Tier 5_ below.
 
-1. **You know which Tier 2 groups each workbook currently grants.** Tier 2 is
-   the only tier that legitimately differs across the 13, and this runbook
-   cannot tell you a workbook's membership — read it out of the existing calc
-   before you replace it. The HPT audit HTML is the other source.
+1. **You know which Tier 2 groups this workbook currently grants.** Tier 2 is
+   the only tier that legitimately differs between workbooks, and this file
+   cannot tell you a given workbook's membership — read it out of the existing
+   calculation before you replace it.
+
+   The reliable way to read it is the `.twbx`: it is a zip, so extract the
+   `.twb` and search the calculated fields. The Tableau UI hides a dead field
+   and shows a filter's caption rather than the field it actually resolves to,
+   which is how the 2026-08-05 audit found gaps that persona testing had missed.
 
 ---
 
@@ -1247,8 +1261,9 @@ schools they do not lead.
 1. Tag each finished workbook `entra-ready` on Server.
 1. The 8 TEMP and Archive copies already tagged `entra-broken-accepted` need no
    work — confirm none is still published to a Production project.
-1. Note in #4638 which of the 13 are done, so the remaining set is visible
-   without opening Desktop.
+1. Update _Known gaps_ above. #4638, which tracked the original migration, is
+   closed — this file is now the record of what is outstanding, so a gap that is
+   fixed or newly found belongs in that table rather than on an issue.
 
 ## Rollback
 
@@ -1260,6 +1275,9 @@ means pointing back at `int_surveys__manager_survey_details`, which still exists
 and is unchanged — three mart models still read it — so that rollback is also
 clean.
 
-If PR #4656 itself is reverted after these edits land, every field fix here
-breaks in the opposite direction. Sequence the revert as: restore workbook
-revisions first, then revert the dbt PR.
+A workbook revision restore rolls back the calculation but **not** an extract
+refresh. If you refreshed an extract in the same sitting, the restored
+revision's calculations may reference columns the refreshed extract no longer
+carries — the raw `School` column on `rpt_tableau__operations_ekg` is the live
+example, dropped by #4749. Check the field references after a restore rather
+than assuming the revision is self-contained.
