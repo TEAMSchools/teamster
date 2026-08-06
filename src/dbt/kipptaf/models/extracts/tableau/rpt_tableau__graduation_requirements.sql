@@ -60,7 +60,7 @@ left join
     {{ ref("base_powerschool__course_enrollments") }} as s
     on e.studentid = s.cc_studentid
     and e.academic_year = s.cc_academic_year
-    and {{ union_dataset_join_clause(left_alias="e", right_alias="s") }}
+    and e._dbt_source_project = s._dbt_source_project
     and s.courses_course_name like 'College and Career%'
     and s.rn_course_number_year = 1
     and not s.is_dropped_section

@@ -226,6 +226,14 @@ spec:
 apiVersion: onepassword.com/v1
 kind: OnePasswordItem
 metadata:
+  name: op-parentsquare-sftp
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/ParentSquare SFTP
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
   name: op-schoolmint-grow-api
   namespace: dagster-cloud
 spec:

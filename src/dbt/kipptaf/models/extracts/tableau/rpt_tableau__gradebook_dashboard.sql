@@ -49,7 +49,7 @@ with
             on enr.cc_studentid = f.studentid
             and enr.cc_academic_year = f.academic_year
             and enr.courses_credittype = f.powerschool_credittype
-            and {{ union_dataset_join_clause(left_alias="enr", right_alias="f") }}
+            and enr._dbt_source_project = f._dbt_source_project
             and f.rn_year = 1
         where enr.rn_course_number_year = 1 and not enr.is_dropped_section
     )
@@ -124,19 +124,19 @@ left join
     {{ ref("base_powerschool__final_grades") }} as gr
     on co.studentid = gr.studentid
     and co.yearid = gr.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gr") }}
+    and co._dbt_source_project = gr._dbt_source_project
     and gr.termbin_start_date <= current_date('{{ var("local_timezone") }}')
 left join
     {{ ref("stg_powerschool__pgfinalgrades") }} as pgf
     on gr.studentid = pgf.studentid
     and gr.sectionid = pgf.sectionid
     and gr.storecode = pgf.finalgradename
-    and {{ union_dataset_join_clause(left_alias="gr", right_alias="pgf") }}
+    and gr._dbt_source_project = pgf._dbt_source_project
 left join
     section_teacher as st
     on co.studentid = st.studentid
     and co.yearid = st.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
+    and co._dbt_source_project = st._dbt_source_project
     and gr.course_number = st.course_number
 where co.academic_year = {{ var("current_academic_year") }}
 
@@ -212,21 +212,21 @@ left join
     {{ ref("base_powerschool__final_grades") }} as gr
     on co.studentid = gr.studentid
     and co.yearid = gr.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="gr") }}
+    and co._dbt_source_project = gr._dbt_source_project
     and gr.termbin_is_current
     and gr.termbin_start_date <= current_date('{{ var("local_timezone") }}')
 left join
     {{ ref("stg_powerschool__storedgrades") }} as y1
     on co.studentid = y1.studentid
     and co.academic_year = y1.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="y1") }}
+    and co._dbt_source_project = y1._dbt_source_project
     and gr.course_number = y1.course_number
     and y1.storecode = 'Y1'
 left join
     section_teacher as st
     on co.studentid = st.studentid
     and co.yearid = st.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
+    and co._dbt_source_project = st._dbt_source_project
     and gr.course_number = st.course_number
 where co.academic_year = {{ var("current_academic_year") }}
 
@@ -303,13 +303,13 @@ left join
     {{ ref("int_powerschool__category_grades") }} as cg
     on co.studentid = cg.studentid
     and co.yearid = cg.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="cg") }}
+    and co._dbt_source_project = cg._dbt_source_project
     and cg.storecode_type != 'Q'
 left join
     section_teacher as st
     on co.studentid = st.studentid
     and co.yearid = st.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
+    and co._dbt_source_project = st._dbt_source_project
     and cg.course_number = st.course_number
 where co.academic_year = {{ var("current_academic_year") }}
 
@@ -382,7 +382,7 @@ left join
     {{ ref("int_powerschool__category_grades") }} as cy
     on co.studentid = cy.studentid
     and co.yearid = cy.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="cy") }}
+    and co._dbt_source_project = cy._dbt_source_project
     and cy.storecode_type != 'Q'
     and current_date('{{ var("local_timezone") }}')
     between cy.termbin_start_date and cy.termbin_end_date
@@ -390,7 +390,7 @@ left join
     section_teacher as st
     on co.studentid = st.studentid
     and co.yearid = st.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
+    and co._dbt_source_project = st._dbt_source_project
     and cy.course_number = st.course_number
 where co.academic_year = {{ var("current_academic_year") }}
 
@@ -458,14 +458,14 @@ left join
     {{ ref("stg_powerschool__storedgrades") }} as sg
     on co.studentid = sg.studentid
     and co.academic_year = sg.academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="sg") }}
+    and co._dbt_source_project = sg._dbt_source_project
     and sg.storecode = 'Y1'
     and sg.course_number is not null
 left join
     section_teacher as st
     on co.studentid = st.studentid
     and co.yearid = st.yearid
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="st") }}
+    and co._dbt_source_project = st._dbt_source_project
     and sg.course_number = st.course_number
 where co.academic_year < {{ var("current_academic_year") }}
 
@@ -541,12 +541,12 @@ left join
     student_roster as co
     on tr.studentid = co.studentid
     and tr.schoolid = co.schoolid
-    and {{ union_dataset_join_clause(left_alias="tr", right_alias="co") }}
+    and tr._dbt_source_project = co._dbt_source_project
     and tr.academic_year = co.academic_year
 left join
     student_roster as e1
     on tr.studentid = e1.studentid
     and tr.schoolid = e1.schoolid
-    and {{ union_dataset_join_clause(left_alias="tr", right_alias="e1") }}
+    and tr._dbt_source_project = e1._dbt_source_project
     and e1.year_in_school = 1
 where tr.storecode = 'Y1' and tr.course_number is null

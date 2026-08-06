@@ -1,34 +1,83 @@
 with
-    contact_1_candidates as (
-        -- contact_1 is the student's ONE reportable parent contact. Finalsite
-        -- has no explicit contact rank, so we take the relationship it flags
-        -- `primary` (its parent1 designation) and fall back to the one flagged
-        -- `financial` when no primary is set — the two flags Ops maintains to
-        -- mark the responsible caregiver. A record with neither flag gets no
-        -- contact_1 (a Finalsite data-entry gap for Ops to resolve).
-        -- `primary`/`financial` are NULL (not false) when unset, so normalize
-        -- to false here to keep the downstream rank ordering deterministic. No
-        -- SIS scoping — downstream receivers filter to enrolled students by
-        -- joining on the student id.
-        select
-            finalsite_enrollment_id,
-            relationship_id,
-            rel_id,
-            rel_name,
-            rel_type,
-
-            coalesce(is_primary, false) as is_primary,
-            coalesce(is_financial, false) as is_financial,
+    contact_1_picked as (
+        -- contact_1 is the student's Parent 1: the relationship Finalsite flags
+        -- `primary`. That flag is a per-student singleton and is never `false`
+        -- — it is true or NULL — so a bare `where is_primary` selects exactly
+        -- the Parent 1 row. A student with no primary relationship gets no
+        -- contact_1, and therefore no contact_2: per Ops, a missing primary
+        -- flag is a Finalsite data-entry gap to fix at the source rather than
+        -- something to infer from `financial`. A second primary on one student
+        -- would surface as a duplicate contact_1 and fail this model's
+        -- uniqueness test, which is the intended loud failure. No SIS scoping —
+        -- downstream receivers filter to enrolled students by joining on the
+        -- student id.
+        select finalsite_enrollment_id, rel_id, rel_name, rel_type,
         from {{ ref("stg_finalsite__contact_relationships") }}
-        where is_primary or is_financial
+        where is_primary
     ),
 
-    contact_1_ranked as (
-        -- Rank primary above financial; within a tier break on relationship_id.
-        -- Ties occur only among multiple `financial` relationships (a student
-        -- never has two `primary`); relationship_id is an arbitrary but stable
-        -- tiebreak — every candidate in a tier is a valid contact, and
-        -- Finalsite exposes no field that reproduces a caregiver ordering.
+    primary_household_ids as (
+        -- The student's primary household is the household their Parent 1
+        -- belongs to. Finalsite's own household-1 designation is per-student and
+        -- set in the UI, but it is absent from every field the API exposes (the
+        -- Household object is id plus address only), and array position does not
+        -- reproduce it — `households[safe_offset(0)]` is the UI's Household 2
+        -- for confirmed students. Parent 1's membership is therefore what
+        -- defines the household both parent slots must share. Exploded to one
+        -- row per household so the contact_2 match below is a plain join.
+        select p.finalsite_enrollment_id, p.rel_id as contact_1_rel_id, household_id,
+        from contact_1_picked as p
+        inner join
+            {{ ref("stg_finalsite__contacts") }} as cp
+            on p.rel_id = cp.finalsite_enrollment_id
+        cross join unnest(cp.household_ids) as household_id
+    ),
+
+    contact_household_ids as (
+        -- One row per (contact, household) so household co-membership is a join
+        -- rather than an array containment check.
+        select finalsite_enrollment_id, household_id,
+        from {{ ref("stg_finalsite__contacts") }}
+        cross join unnest(household_ids) as household_id
+    ),
+
+    contact_2_candidates as (
+        -- contact_2 is any OTHER contact flagged `primary` or `financial` that
+        -- belongs to the primary household. `primary` is a singleton already
+        -- taken by contact_1, so in practice these are financial-only rows; the
+        -- disjunction states the rule as Ops expressed it and guards a
+        -- hypothetical second primary. The rel_id inequality skips every
+        -- relationship row pointing at the PERSON already chosen as contact_1,
+        -- so contact_2 can never duplicate contact_1. The student's own
+        -- `is_parent2` custom field is deliberately NOT part of this gate — it
+        -- is false for students who do have a co-resident second parent and true
+        -- for students who have none, so it removed real rows without excluding
+        -- any wrong ones.
+        -- grain projection: every selected column is functionally determined
+        -- by the partition key; not a mask for upstream duplicates. A candidate
+        -- sharing several households with Parent 1 would otherwise repeat.
+        select distinct
+            r.finalsite_enrollment_id,
+            r.relationship_id,
+            r.rel_id,
+            r.rel_name,
+            r.rel_type,
+        from {{ ref("stg_finalsite__contact_relationships") }} as r
+        inner join
+            primary_household_ids as h
+            on r.finalsite_enrollment_id = h.finalsite_enrollment_id
+            and r.rel_id != h.contact_1_rel_id
+        inner join
+            contact_household_ids as ch
+            on r.rel_id = ch.finalsite_enrollment_id
+            and h.household_id = ch.household_id
+        where r.is_primary or r.is_financial
+    ),
+
+    contact_2_ranked as (
+        -- Multiple qualifying second parents tie-break on relationship_id — an
+        -- arbitrary but stable pick, as Finalsite exposes no caregiver ordering
+        -- among them. Only the first fills the single contact_2 slot.
         select
             finalsite_enrollment_id,
             rel_id,
@@ -36,17 +85,40 @@ with
             rel_type,
 
             row_number() over (
-                partition by finalsite_enrollment_id
-                order by is_primary desc, is_financial desc, relationship_id asc
-            ) as rn,
-        from contact_1_candidates
+                partition by finalsite_enrollment_id order by relationship_id asc
+            ) as rn_contact_2,
+        from contact_2_candidates
     ),
 
-    contact_1_typed as (
+    parent_picks as (
         select
-            r.finalsite_enrollment_id,
-            r.rel_name,
-            r.rel_type,
+            finalsite_enrollment_id,
+            rel_id,
+            rel_name,
+            rel_type,
+
+            'contact_1' as contact_slot,
+        from contact_1_picked
+
+        union all
+
+        select
+            finalsite_enrollment_id,
+            rel_id,
+            rel_name,
+            rel_type,
+
+            'contact_2' as contact_slot,
+        from contact_2_ranked
+        where rn_contact_2 = 1
+    ),
+
+    parents_typed as (
+        select
+            p.finalsite_enrollment_id,
+            p.contact_slot,
+            p.rel_name,
+            p.rel_type,
 
             cp.finalsite_enrollment_id as finalsite_contact_id,
             cp.email,
@@ -75,16 +147,16 @@ with
                 ),
                 ''
             ) as home_address,
-        from contact_1_ranked as r
+        from parent_picks as p
         inner join
             {{ ref("stg_finalsite__contacts") }} as cp
-            on r.rel_id = cp.finalsite_enrollment_id
-        where r.rn = 1
+            on p.rel_id = cp.finalsite_enrollment_id
     ),
 
-    contact_1 as (
+    parents as (
         select
             finalsite_enrollment_id,
+            contact_slot,
             finalsite_contact_id,
             email,
             phone_mobile,
@@ -97,14 +169,13 @@ with
             rel_type as relationship,
             phone_1_number as phone_primary,
 
-            'contact_1' as contact_slot,
             false as is_emergency,
 
             cast(null as string) as phone_daytime,
             cast(null as boolean) as is_pickup,
             cast(null as boolean) as is_custodial,
             cast(null as boolean) as is_household_member,
-        from contact_1_typed
+        from parents_typed
     ),
 
     emergency_long as (
@@ -303,7 +374,7 @@ with
             is_custodial,
             is_household_member,
             is_emergency,
-        from contact_1
+        from parents
 
         union all
 
@@ -338,15 +409,14 @@ select
     contact_last_name,
     relationship,
     email,
+    phone_mobile,
+    phone_home,
+    phone_work,
     phone_daytime,
+    phone_primary,
     home_address,
     is_pickup,
     is_custodial,
     is_household_member,
     is_emergency,
-
-    {{ clean_phone("phone_mobile") }} as phone_mobile,
-    {{ clean_phone("phone_home") }} as phone_home,
-    {{ clean_phone("phone_work") }} as phone_work,
-    {{ clean_phone("phone_primary") }} as phone_primary,
 from all_contacts

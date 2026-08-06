@@ -45,7 +45,7 @@ assets:
     intraday: true
     nightly: false
   - table_name: schoolstaff
-    cursor_column: whenmodified
+    cursor_column: transaction_date
     intraday: true
     nightly: false
   - table_name: sections
@@ -53,7 +53,7 @@ assets:
     intraday: true
     nightly: false
   - table_name: sectionteacher
-    cursor_column: whenmodified
+    cursor_column: transaction_date
     intraday: true
     nightly: false
   - table_name: storedgrades
@@ -85,7 +85,7 @@ assets:
     intraday: true
     nightly: false
   - table_name: users
-    cursor_column: whenmodified
+    cursor_column: transaction_date
     intraday: true
     nightly: false
   - table_name: userscorefields

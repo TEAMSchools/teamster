@@ -36,7 +36,14 @@ Customizes asset key and automation condition generation:
   `dbt_union_relations_automation_condition()` — a third condition that adds
   recursive ancestor `code_version_changed` detection (but not
   `any_deps_updated`) to the view condition. This re-runs the view only when
-  upstream model SQL changes after a deploy, not on data-only refreshes.
+  upstream model SQL changes after a deploy, not on data-only refreshes. TABLE
+  models (not views/ephemerals) may opt into a cron cadence instead of the eager
+  condition via `meta.dagster.automation_condition.cron_schedule` in their
+  properties YAML (`dbt_cron_automation_condition()`); the timezone defaults to
+  the `local_timezone` the code location passes at translator construction (each
+  `dbt/assets.py` passes `str(LOCAL_TIMEZONE)`). Meta is resolved by
+  `_get_dbt_meta()` — `config.meta` or-shorts the WHOLE top-level `meta` dict
+  (no per-key merge), so set every dagster key on the same side.
 - **Group name**: Falls back to the dbt package name (for cross-project refs)
   then the first FQN segment after the project name.
 

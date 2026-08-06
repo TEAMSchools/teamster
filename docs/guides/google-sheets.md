@@ -52,16 +52,10 @@
    from {{ source("{SOURCE_NAME}", "{SOURCE_TABLE_NAME}") }}
    ```
 
-6. Generate the properties file scaffold:
-
-   ```bash
-   uv run dbt run-operation generate_model_yaml \
-     --args '{"model_names": ["{STAGING_MODEL_NAME}"]}'
-   ```
-
-   Save the output as `../properties/{STAGING_MODEL_NAME}.yml`. Staging models
-   inherit `contract: enforced: true` from `dbt_project.yml`, so every column
-   must have a `data_type`:
+6. Write the properties file by hand as
+   `../properties/{STAGING_MODEL_NAME}.yml`. Staging models inherit
+   `contract: enforced: true` from `dbt_project.yml`, so every column must have
+   a `data_type`:
 
    ```yaml
    models:
@@ -86,10 +80,10 @@
 
 ### Verifying changes against production
 
-Power User's `--defer` mode automatically resolves unchanged upstream models to
-production. Build your modified staging model and downstream consumers will
-reference prod data for anything you haven't changed. See the
-[dbt Development guide](dbt-development.md#power-user-defer) for details.
+The dbt Core Tools extension's `--defer` mode automatically resolves unchanged
+upstream models to production. Build your modified staging model and downstream
+consumers will reference prod data for anything you haven't changed. See the
+[dbt Development guide](dbt-development.md#defer-to-production) for details.
 
 ## Updating a Google Sheets source
 

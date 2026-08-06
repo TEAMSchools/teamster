@@ -1,3 +1,10 @@
+with
+    student_logins as (
+        select
+            google_email, cast(student_number as string) as focus_student_id_prefixed,
+        from {{ ref("stg_people__student_logins") }}
+    )
+
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus DEMOGRAPHICS contract
 select
     ida.focus_student_id_prefixed as stdt_id,
@@ -26,7 +33,7 @@ select
     -- accept the same FLDOE code as the home/native-language fields.
     lcc.focus_language_code as lang,
 
-    c.email as stdt_email,
+    sl.google_email as stdt_email,
 
     -- null (not 'N') when no custom_attributes row exists, so an unknown is not
     -- silently reported as not-Hispanic for FLDOE.
@@ -87,4 +94,6 @@ left join
 left join
     {{ ref("stg_google_sheets__focus__language_code_crosswalk") }} as lcc
     on cca.lang_parent_ss = lcc.finalsite_language
+left join
+    student_logins as sl on ida.focus_student_id_prefixed = sl.focus_student_id_prefixed
 where c.status = 'enrolled'

@@ -45,9 +45,7 @@ with
             and r.detailed_status = x.detailed_status
             and x.valid_detailed_status
             and not x.qa_flag
-        /* hardcoding year here to ensure the correct enrollment academic year from FS
-           is being used. the status_crosswalk is set to one year only */
-        where r.enrollment_academic_year = 2026
+        where r.enrollment_academic_year = {{ var("finalsite_recruitment_year") }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03)
@@ -249,25 +247,91 @@ with
         from days_in_grouped_status_calc
     ),
 
+    finalsite_contact_ids as (
+        select
+            _dbt_source_project,
+            finalsite_enrollment_id,
+
+            cast(focus_student_id_prefixed as int) as focus_student_id,
+        from {{ ref("int_finalsite__contact_id_attributes") }}
+    ),
+
+    -- The Focus vertical (int_focus__student_enrollments) carries no
+    -- Finalsite identity of its own -- this crosswalk join is what blends the
+    -- two sources, so it belongs here (the consumer), not in the Focus
+    -- wrapper. Inner join keeps only Focus enrollments that match a Finalsite
+    -- contact record.
+    focus_enrollments_with_finalsite as (
+        select
+            e.academic_year,
+            e.ps_schoolid,
+            e.school,
+            e.student_number,
+            e.grade_level,
+            e.enroll_status,
+            e.startdate as sis_entry_date,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
+            e.is_enrolled_mar15,
+
+            f.finalsite_enrollment_id,
+        from {{ ref("int_focus__student_enrollments") }} as e
+        inner join
+            finalsite_contact_ids as f
+            on e.student_number = f.focus_student_id
+            and e._dbt_source_project = f._dbt_source_project
+        where
+            e.rn_year = 1 and e.academic_year = {{ var("finalsite_recruitment_year") }}
+    ),
+
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
     enrollment_lookup as (
         select
             academic_year,
+            schoolid,
+            school,
             infosnap_id,
             student_number,
+            grade_level,
             enroll_status,
-            is_enrolled_fdos,
+            entrydate as sis_entry_date,
             is_enrolled_oct01,
             is_enrolled_oct15,
             is_enrolled_mar15,
+
         from {{ ref("int_extracts__student_enrollments") }}
-        where rn_year = 1 and infosnap_id is not null
+        where
+            rn_year = 1
+            and infosnap_id is not null
+            and academic_year = {{ var("finalsite_recruitment_year") }}
+
+        union all
+
+        select
+            academic_year,
+            ps_schoolid as schoolid,
+            school,
+            finalsite_enrollment_id as infosnap_id,
+            student_number,
+            grade_level,
+            enroll_status,
+            sis_entry_date,
+            is_enrolled_oct01,
+            is_enrolled_oct15,
+            is_enrolled_mar15,
+
+        from focus_enrollments_with_finalsite
     ),
 
     -- rn_year is computed per student, so two PowerSchool records sharing one
     -- infosnap_id both carry rn_year = 1 and fan out the enrollment joins below.
     -- Prefer the actively-enrolled record, then the newest student record.
     -- TODO: remove once the duplicate PowerSchool student records are merged (#4326)
+    -- Cross-source tiebreak: when a student appears in both the frozen
+    -- pre-migration PowerSchool snapshot and live Focus data with the same
+    -- enroll_status, student_number desc prefers the Focus record (Focus ids
+    -- are 10-digit FLDOE-prefixed, PowerSchool ids are shorter) -- intentional:
+    -- Focus is Miami's live SIS. TODO(#4326) covers duplicate PS records.
     deduplicate_enrollments as (
         {{
             dbt_utils.deduplicate(
@@ -278,7 +342,7 @@ with
         }}
     ),
 
-    final_roster as (
+    expanded_roster as (
         select
             enrollment_academic_year,
             enrollment_academic_year_display,
@@ -340,95 +404,186 @@ with
         where
             d.grouped_status_timeframe = 'Current'
             and d.grouped_status = 'Pending Offers'
+    ),
+
+    final_roster as (
+
+        -- maintain pending offers general
+        select
+            r.enrollment_academic_year,
+            r.enrollment_academic_year_display,
+            r.org,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.powerschool_student_number,
+            r.first_name,
+            r.last_name,
+            r.grade_level,
+            r.gender,
+            r.birthdate,
+            r.self_contained,
+            r.enrollment_type,
+            r.latest_status,
+            r.aligned_enrollment_type,
+            r.grouped_status_timeframe,
+            r.goal_name,
+            r.goal_type,
+
+            d.days_in_grouped_status,
+
+            e.enroll_status,
+            e.grade_level as sis_grade_level,
+            e.schoolid as sis_schoolid,
+            e.school as sis_school,
+            e.sis_entry_date,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
+            e.is_enrolled_mar15,
+
+            case
+                when r.latest_status = 'Enrolled'
+                then 0
+                when
+                    r.latest_status in (
+                        -- left
+                        'Mid Year Withdrawal',
+                        'Never Attended',
+                        'Summer Withdraw',
+                        -- pending
+                        'Accepted',
+                        'Assigned School',
+                        'Did Not Enroll',
+                        'Campus Transfer Requested',
+                        'Parent Declined',
+                        'Enrollment In Progress'
+                    )
+                then 2
+            end as finalsite_expected_enroll_status,
+
+        from expanded_roster as r
+        left join
+            filter_days_in_status as d
+            on r.enrollment_academic_year = d.enrollment_academic_year
+            and r.finalsite_id = d.finalsite_id
+            and r.enrollment_type = d.enrollment_type
+            and r.goal_type = d.goal_type
+            and r.goal_name = d.goal_name
+        left join
+            deduplicate_enrollments as e
+            on r.enrollment_academic_year = e.academic_year
+            and r.finalsite_id = e.infosnap_id
+        where r.goal_name not in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+
+        union all
+        -- ensure pending offers timeframes have day in status
+        select
+            r.enrollment_academic_year,
+            r.enrollment_academic_year_display,
+            r.org,
+            r.region,
+            r.schoolid,
+            r.school,
+            r.finalsite_id,
+            r.powerschool_student_number,
+            r.first_name,
+            r.last_name,
+            r.grade_level,
+            r.gender,
+            r.birthdate,
+            r.self_contained,
+            r.enrollment_type,
+            r.latest_status,
+            r.aligned_enrollment_type,
+            r.grouped_status_timeframe,
+            r.goal_name,
+            r.goal_type,
+
+            d.days_in_grouped_status,
+
+            e.enroll_status,
+            e.grade_level as sis_grade_level,
+            e.schoolid as sis_schoolid,
+            e.school as sis_school,
+            e.sis_entry_date,
+            e.is_enrolled_oct01,
+            e.is_enrolled_oct15,
+            e.is_enrolled_mar15,
+
+            case
+                when r.latest_status = 'Enrolled'
+                then 0
+                when
+                    r.latest_status in (
+                        -- left
+                        'Mid Year Withdrawal',
+                        'Never Attended',
+                        'Summer Withdraw',
+                        -- pending
+                        'Accepted',
+                        'Assigned School',
+                        'Did Not Enroll',
+                        'Campus Transfer Requested',
+                        'Parent Declined',
+                        'Enrollment In Progress'
+                    )
+                then 2
+            end as finalsite_expected_enroll_status,
+
+        from expanded_roster as r
+        inner join
+            filter_days_in_status as d
+            on r.enrollment_academic_year = d.enrollment_academic_year
+            and r.finalsite_id = d.finalsite_id
+            and r.enrollment_type = d.enrollment_type
+            and r.goal_type = d.goal_type
+            and r.goal_name = d.goal_name
+        left join
+            deduplicate_enrollments as e
+            on r.enrollment_academic_year = e.academic_year
+            and r.finalsite_id = e.infosnap_id
+        where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+    ),
+
+    -- Hardcoded FDOS per region; year from finalsite_recruitment_year. Own CTE
+    -- because BigQuery rejects a lateral custom_fdos_date reference. Rationale
+    -- in fresh-dashboard-data-model.md.
+    custom_fdos_dates as (
+        select
+            *,
+
+            case
+                region
+                when 'Newark'
+                then date({{ var("finalsite_recruitment_year") }}, 8, 28)
+                when 'Paterson'
+                then date({{ var("finalsite_recruitment_year") }}, 8, 28)
+                when 'Camden'
+                then date({{ var("finalsite_recruitment_year") }}, 8, 24)
+                when 'Miami'
+                then date({{ var("finalsite_recruitment_year") }}, 8, 14)
+            end as custom_fdos_date,
+
+        from final_roster
     )
 
--- maintain pending offers general
 select
-    r.enrollment_academic_year,
-    r.enrollment_academic_year_display,
-    r.org,
-    r.region,
-    r.schoolid,
-    r.school,
-    r.finalsite_id,
-    r.powerschool_student_number,
-    r.first_name,
-    r.last_name,
-    r.grade_level,
-    r.gender,
-    r.birthdate,
-    r.self_contained,
-    r.enrollment_type,
-    r.latest_status,
-    r.aligned_enrollment_type,
-    r.grouped_status_timeframe,
-    r.goal_name,
-    r.goal_type,
+    *,
 
-    d.days_in_grouped_status,
+    if(
+        (finalsite_expected_enroll_status = 0 and enroll_status in (2, 3))
+        or (finalsite_expected_enroll_status = 2 and enroll_status = 0),
+        true,
+        false
+    ) as is_enroll_status_mismatch,
 
-    e.enroll_status,
-    e.is_enrolled_fdos,
-    e.is_enrolled_oct01,
-    e.is_enrolled_oct15,
-    e.is_enrolled_mar15,
+    if(grade_level != sis_grade_level, true, false) as is_grade_level_mismatch,
 
-from final_roster as r
-left join
-    filter_days_in_status as d
-    on r.enrollment_academic_year = d.enrollment_academic_year
-    and r.finalsite_id = d.finalsite_id
-    and r.enrollment_type = d.enrollment_type
-    and r.goal_type = d.goal_type
-    and r.goal_name = d.goal_name
-left join
-    deduplicate_enrollments as e
-    on r.enrollment_academic_year = e.academic_year
-    and r.finalsite_id = e.infosnap_id
-where r.goal_name not in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+    if(schoolid != sis_schoolid, true, false) as is_school_mismatch,
 
-union all
--- ensure pending offers timeframes have day in status
-select
-    r.enrollment_academic_year,
-    r.enrollment_academic_year_display,
-    r.org,
-    r.region,
-    r.schoolid,
-    r.school,
-    r.finalsite_id,
-    r.powerschool_student_number,
-    r.first_name,
-    r.last_name,
-    r.grade_level,
-    r.gender,
-    r.birthdate,
-    r.self_contained,
-    r.enrollment_type,
-    r.latest_status,
-    r.aligned_enrollment_type,
-    r.grouped_status_timeframe,
-    r.goal_name,
-    r.goal_type,
+    -- Bare comparison, not if(..., true, false), so a student with no SIS
+    -- record stays null rather than collapsing to false.
+    sis_entry_date <= custom_fdos_date as is_enrolled_fdos,
 
-    d.days_in_grouped_status,
-
-    e.enroll_status,
-    e.is_enrolled_fdos,
-    e.is_enrolled_oct01,
-    e.is_enrolled_oct15,
-    e.is_enrolled_mar15,
-
-from final_roster as r
-inner join
-    filter_days_in_status as d
-    on r.enrollment_academic_year = d.enrollment_academic_year
-    and r.finalsite_id = d.finalsite_id
-    and r.enrollment_type = d.enrollment_type
-    and r.goal_type = d.goal_type
-    and r.goal_name = d.goal_name
-left join
-    deduplicate_enrollments as e
-    on r.enrollment_academic_year = e.academic_year
-    and r.finalsite_id = e.infosnap_id
-where r.goal_name in ('<= 4 Days', '>= 5 & <= 10 Days', '> 10 Days')
+from custom_fdos_dates

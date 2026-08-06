@@ -1,4 +1,63 @@
 data_tests:
+  - name: test_int_finalsite__status_order_matches_crosswalk_ranking
+    description: >-
+      detailed_status_ranking (stg_google_sheets__finalsite__status_crosswalk,
+      manually maintained) is hand-duplicated into a hardcoded CASE
+      (status_order, int_finalsite__status_report_unpivot.sql) rather than
+      joined live, per this repo's convention against staging-layer joins to
+      Google Sheets sources. Nothing keeps the two in sync automatically --
+      editing the sheet's ranking (reordering, or adding a new status) doesn't
+      update the hardcoded CASE, and a drift silently produces wrong
+      same-day-tie tie-breaking in int_tableau__finalsite_student_scaffold's
+      latest_status_calc with no error. This test fails loudly on any
+      fs_status_field whose ranking differs between the two, or that's present
+      in one but missing from the other, scoped to the current Finalsite
+      academic year.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__status_report_unpivot
+
+  - name: test_int_tableau__fresh_goals_scaffold_region_matches_scaffold
+    description: >-
+      int_tableau__fresh_goals_scaffold's inner join to the goals sheet keys on
+      (schoolid, grade_level, academic_year) and region -- for any
+      PowerSchool-sourced scaffold row, region comes from extract_region(), not
+      the same hand-typed sheet the goals data comes from, so the match is
+      coincidental rather than guaranteed. Scoped to real schools (schoolid !=
+      0) -- the schoolid = 0 "Region/Grade Level" sentinel is intentionally
+      shared across all four regions, so joining on schoolid alone (without
+      region) fans this test out across regions for that sentinel; the real join
+      in int_tableau__fresh_goals_scaffold already scopes on region too and
+      handles it correctly. Warns (not errors) on any goals-sheet row for a real
+      school whose typed region doesn't match the scaffold's derived region for
+      the same school/grade -- that row is being silently dropped from
+      int_tableau__fresh_goals_scaffold's inner join.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_tableau__fresh_goals_scaffold
+
+  - name: test_stg_google_sheets__finalsite__status_crosswalk_single_year
+    description: >-
+      status_crosswalk must hold config for exactly one academic year at a time
+      (a documented convention, not an enforced constraint). Several FRESH
+      dashboard models/tests hardcode "the current Finalsite cycle" as a literal
+      year (see the fresh-dashboard skill's year-toggle procedure) that must
+      match whichever year the sheet is actually configured for -- if two years'
+      config ever accumulates, joins scoped to that literal would silently miss
+      or double-count rows with no error. This test fails loudly on that
+      condition instead.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__finalsite__status_crosswalk
+
   - name: test_int_surveys__manager_survey_details__terms_coverage
     description: >-
       Warns when int_surveys__manager_survey_details has a
@@ -209,3 +268,189 @@ data_tests:
         dagster:
           ref:
             name: dim_student_section_enrollments
+
+  - name: rpt_tableau__gpa_cumulative_year__one_latest_graded_year
+    description: >-
+      Exactly one academic year may carry `is_latest_graded_year`. More than one
+      means the latest-graded-year CTE fanned out; zero means no year has posted
+      Y1 grades, which would leave the dashboard with no default year.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: rpt_tableau__gpa_cumulative_year
+
+  - name: int_google_sheets__gpa_goals__grade_coverage_consistent
+    description: >-
+      int_gpa__goal_aggregations inner-joins the student spine to the goals
+      sheet, so a grade with no goal row produces no output row at all — no
+      null, no zero, no error. That is correct (the goal row supplies the
+      metric, threshold, direction, and the aggregation_hash grain key, so a
+      goalless row could not be computed) but it means an omission in the sheet
+      is invisible downstream. This test catches the likely shape of that
+      omission — Ops enters goals per school, so a fat-fingered or skipped row
+      leaves one grain short while its siblings are complete, and only that
+      grain's grade silently disappears. Fails on any grade covered by one grain
+      but missing from another grain of the SAME org level with goals for the
+      same metric and year. Comparison is pooled within org level, never across
+      it, so a school serving a narrower grade band than the network does not
+      read as an omission. A school newer than its peers and still adding a
+      grade a year does still flag against them — the same limit as grade 12
+      below, in that intent is not recorded anywhere the test can read. Grains
+      with no goals at all for a metric are not checked, so a metric
+      intentionally scoped to fewer org levels does not fire, and coverage is
+      scoped to years the student spine covers so an in-progress rollout of a
+      future year's goals does not fire either. A grade omitted uniformly across
+      an entire org level is indistinguishable from a deliberate choice and is
+      NOT caught here — grade 12 has no Y1 GPA goal by design, and detecting
+      that case would need the intent recorded in the sheet.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__gpa_goals
+
+  - name: int_google_sheets__gpa_goals__every_goal_aggregates
+    description: >-
+      The mirror of the silent-drop problem above — a goal row that matches no
+      student also vanishes without a signal, because int_gpa__goal_aggregations
+      is built through an inner join from the student spine. A typo in schoolid,
+      a misspelled region, or a grade_low/grade_high range covering nobody all
+      produce a goal that exists in the sheet, aggregates to nothing, and
+      appears nowhere in rpt_tableau__gpa_goals. Fails on any goal row with no
+      matching aggregation. Scoped to academic years the student spine covers so
+      a goal entered ahead of its year does not fail before enrollment data
+      exists, but deliberately not scoped by region — Paterson is absent from
+      the spine and runs ES and MS only, so a Paterson-scoped GPA goal targets
+      no students and genuinely reaches no dashboard, which is worth flagging
+      rather than suppressing. Not expressible as a relationships test —
+      aggregation_hash alone is not unique across years and metrics, so the
+      check needs the full three-column key.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__gpa_goals
+
+  - name: int_people__staff_roster__locations_resolve_to_crosswalk
+    description: >-
+      Every active staff member's home_work_location_name must resolve to a
+      canonical location_clean_name in int_people__location_crosswalk. That
+      clean name is what the Tableau permissions block concatenates into a
+      KNJ-SG-Tableau All Staff group name, so an unresolved location does not
+      fail visibly -- it gates the row to nobody. A school added to ADP but not
+      to the locations sheet is the way this breaks, which makes it a launch
+      risk every time the network opens a campus.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_people__staff_roster
+
+  - name: int_people__staff_roster__tableau_location_set_expected
+    description: >-
+      The set of gated locations is a known 30, and each one needs a matching
+      Tableau group to gate against. Unlike the coverage test above, this fires
+      when a location resolves correctly but is simply new -- the crosswalk is
+      satisfied while Tableau still has no group of that name. Failing here is
+      the prompt to create the group before the extract starts emitting rows
+      nobody can see. Update the expected count in the same change that adds the
+      group.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_people__staff_roster
+
+  - name: int_people__staff_roster__mail_populated_with_sam
+    description: >-
+      Anyone holding a sam_account_name must also hold a mail value. The Tableau
+      permissions block compares USERNAME() against both, and after the Entra
+      identity cutover USERNAME() returns email rather than the AD username --
+      so a person with a sam_account_name and no mail keeps group-based access
+      but loses the self-access and manager-access tiers that match on identity.
+      Warn rather than error: the population is normally zero but a single
+      in-flight provisioning record should not block the run.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_people__staff_roster
+
+  - name: rpt_clever__school_id_resolves_to_schools_feed
+    description: >-
+      Cross-feed referential integrity for the six Clever SFTP extracts -- every
+      school_id in enrollments, sections, teachers and staff must exist in
+      schools. The six feeds each carry their own region filter, so a region
+      added to or removed from one but not the others ships rows referencing
+      schools Clever was never sent, which it silently drops or misroutes rather
+      than rejecting. Errors rather than warns: this is the gate on restarting
+      the hourly Clever schedule, and an orphan here means the roster Clever
+      receives is internally inconsistent.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__schools
+
+  - name: rpt_clever__enrollments__student_id_resolves_to_students_feed
+    description: >-
+      Cross-feed referential integrity for the six Clever SFTP extracts -- every
+      student_id in enrollments must exist in students. students is scoped to
+      the current academic year and enrollments is not, so a region whose SIS is
+      frozen at a prior year keeps shipping course enrollments for students that
+      no longer appear in the student feed. Warns rather than errors, unlike the
+      school_id check, because the two feeds rebuild asymmetrically under
+      state:modified+ -- students descends from
+      int_extracts__student_enrollments while enrollments descends only from the
+      powerschool staging models, so a PR touching the enrollment chain rebuilds
+      one side and reads the other frozen from the staging defer copies. That
+      vintage gap alone produces orphans and blocks CI on changes that cannot
+      affect feed membership.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__students
+
+  - name: rpt_parentsquare__sections__staff_id_resolves_at_its_own_school
+    description: >-
+      Every ParentSquare section's owner must hold a staff row at that section's
+      own school, not merely somewhere in staff.csv. The relationships test on
+      sections.staff_id is single-column, so an owner drawn from another region
+      satisfies it while dangling in this region's file -- and these views span
+      every NJ region, with each district wrapper slicing one region out. The
+      staff feed fans a leader across the schools of their own region only, so
+      (school_id, staff_id) is the pair that has to resolve. Errors rather than
+      warns: ParentSquare rejects a section naming a staff member it has no
+      record of at that school, which fails the whole sections import rather
+      than one row.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_parentsquare__sections
+
+  - name: rpt_parentsquare__students__every_student_has_a_roster_row
+    description: >-
+      Every student in the ParentSquare students feed must also appear in the
+      rosters feed. A student present in students.csv with no roster row is not
+      a vendor error -- ParentSquare accepts both files -- but that student sits
+      in no school-and-grade section, so they silently drop out of every
+      audience the feed exists to build. The rosters relationships tests only
+      check the child-to-parent direction, so nothing else catches this. It
+      matters because five models independently restate the same
+      enrolled-student filter (_dbt_source_project, academic_year, rn_year,
+      is_out_of_district, enroll_status) and the design's guarantee that rosters
+      covers students rests on those copies staying textually identical. This
+      test is what makes that a checked invariant rather than an assumption.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_parentsquare__students

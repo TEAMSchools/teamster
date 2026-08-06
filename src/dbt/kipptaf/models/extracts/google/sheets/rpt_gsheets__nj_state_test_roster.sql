@@ -104,7 +104,7 @@ with
         left join
             {{ ref("stg_powerschool__s_nj_stu_x") }} as nj
             on co.students_dcid = nj.studentsdcid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="nj") }}
+            and co._dbt_source_project = nj._dbt_source_project
         where
             co.academic_year = {{ var("current_academic_year") }}
             and co.rn_year = 1

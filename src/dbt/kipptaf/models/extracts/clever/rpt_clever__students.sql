@@ -50,6 +50,9 @@ select
     sr.gifted_and_talented as ext__gifted,
     sr.cumulative_y1_gpa as weighted_gpa,
     sr.cumulative_y1_gpa_unweighted as unweighted_gpa,
+    -- every region left in this feed is NJ, so the FL education id (fleid) that
+    -- Miami reported here is no longer reachable
+    sr.state_studentnumber as state_id,
 
     c.contact_name,
     c.relationship as contact_relationship,
@@ -79,7 +82,6 @@ select
 
     if(sr.lep_status, 'Y', 'N') as ell_status,
     if(sr.spedlep in ('SPED', 'SPED SPEECH'), 'Y', 'N') as iep_status,
-    if(sr.region = 'Miami', sr.fleid, sr.state_studentnumber) as state_id,
     if(sr.grade_level = 0, 'Kindergarten', cast(sr.grade_level as string)) as grade,
 from {{ ref("int_extracts__student_enrollments") }} as sr
 left join
@@ -91,4 +93,5 @@ where
     and sr.rn_year = 1
     and not sr.is_out_of_district
     and sr.enroll_status in (0, -1)
-    and sr._dbt_source_relation not like '%kipppaterson%'
+    -- Miami rosters into Clever directly from Focus; excluded from all six feeds
+    and sr._dbt_source_relation not like '%kippmiami%'

@@ -37,7 +37,6 @@ with
             *,
 
             regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as code_location,
 
             initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
         from union_relations
@@ -45,6 +44,10 @@ with
 
 select
     ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
+
+    -- same value as _dbt_source_project, named for the Dagster code location;
+    -- projected here rather than re-derived from _dbt_source_relation (#3142)
+    ar._dbt_source_project as code_location,
 
     -- Pearson reports the KIPP student_number as LocalStudentIdentifier for all
     -- NJ regions, including Paterson (#4103); no legacy district-id translation
@@ -111,8 +114,17 @@ select
     coalesce(adb.kipp_hs_class, ar.cohort) as ktc_cohort,
 
     sl.google_email as student_email_google,
-    if(ar.region = 'Paterson', null, sl.username) as student_web_id,
-    if(ar.region = 'Paterson', null, sl.default_password) as student_web_password,
+
+    /* Both Paterson carve-outs here went stale in 4e11acd72, which retired the
+    PowerSchool student_email path they were withheld for -- Paterson's Google
+    address is now the login generator's google_email like every other region,
+    so the username and password behind it come from the same place. Leaving the
+    password null failed every Paterson row of the Google Directory user sync
+    (#4756). The Miami/Paterson SPED exceptions below are NOT stale: neither
+    region has rows in the edplan njsmart union, so they must keep reading
+    ar.spedlep or their IEP data drops to null. */
+    sl.username as student_web_id,
+    sl.default_password as student_web_password,
 
     if(ar.region = 'Miami' and fte.survey_2 is not null, true, false) as is_fldoe_fte_2,
     if(ar.region = 'Miami' and fte.survey_3 is not null, true, false) as is_fldoe_fte_3,

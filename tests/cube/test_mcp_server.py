@@ -54,8 +54,6 @@ def test_run_dispatches_to_stdio_by_default(
     monkeypatch.setattr(server.mcp, "run", fake_run)
     server.main()
     assert called_with == {"args": (), "kwargs": {}}
-    assert server.mcp.settings.host == "0.0.0.0"
-    assert server.mcp.settings.port == 8080
 
 
 def test_run_dispatches_to_streamable_http_when_TRANSPORT_http(
@@ -72,9 +70,12 @@ def test_run_dispatches_to_streamable_http_when_TRANSPORT_http(
 
     monkeypatch.setattr(server.mcp, "run", fake_run)
     server.main()
-    assert called_with["kwargs"] == {"transport": "streamable-http"}
-    assert server.mcp.settings.host == "0.0.0.0"
-    assert server.mcp.settings.port == 8080
+    assert called_with["kwargs"] == {
+        "transport": "streamable-http",
+        "host": "0.0.0.0",
+        "port": 8080,
+        "stateless_http": True,
+    }
 
 
 def test_oauth_disabled_when_AUTHKIT_DOMAIN_unset(

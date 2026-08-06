@@ -15,5 +15,5 @@ with
         }}
     )
 
-select *, {{ extract_code_location("union_relations") }} as _dbt_source_project,
+select *, {{ extract_source_project("union_relations") }} as _dbt_source_project,
 from union_relations

@@ -63,12 +63,6 @@ skips anything already configured.
 configured in `devcontainer.json`; dismiss any extension install prompts VS Code
 shows.
 
-**Wait for dbt Power User to finish parsing** — the extension parses all
-projects in the background, which pegs CPU and makes the extension unresponsive
-until complete. Use `htop` to monitor; wait for CPU to settle before using the
-extension. This is also the most common cause of "extension not responding"
-errors.
-
 **Reload the window** once background processes finish (++ctrl+shift+p++ →
 **Developer: Reload Window**) for a clean editor state.
 
@@ -151,6 +145,32 @@ independent layers:
 To grant a new developer access: add them to
 `teamster-analysts@apps.teamschools.org`.
 
+#### Two independent credential stores
+
+`gcloud auth login` and `gcloud auth application-default login` write to
+different places and expire independently:
+
+| Store                                  | Written by                              | Read by                                |
+| -------------------------------------- | --------------------------------------- | -------------------------------------- |
+| `credentials.db`                       | `gcloud auth login`                     | `gcloud` CLI commands, `bq`            |
+| `application_default_credentials.json` | `gcloud auth application-default login` | client libraries, every GCP MCP server |
+
+A Workspace Cloud-session-length policy expires the **user** store roughly
+daily. ADC is unaffected. The symptom is lopsided: `bq` and bare `gcloud` start
+failing with "Reauthentication failed" while every MCP server and client-library
+script keeps working normally.
+
+The **GCloud: Application Default Login** task refreshes ADC only — there is no
+task for the user store, so re-run `gcloud auth login` yourself when you need
+`bq`.
+
+**Prefer ADC when writing tooling.** A script that shells out to `gcloud`
+inherits the daily expiry; one that calls `google.auth.default()` does not.
+`.claude/skills/dagster-day2/scripts/day2_collect.py` is the worked example — it
+authenticates every GCP call with ADC for exactly this reason. Note that ADC
+resolves to the `codespaces@` service account, whose IAM is narrower than your
+own, so a call that worked under your user credential can still 403 under ADC.
+
 ??? note "GCloud quirks"
 
     - To check if ADC is valid, use
@@ -215,14 +235,6 @@ To grant a new developer access: add them to
   mount options were not used — they are not supported on all Codespaces hosts.
 - **`--cap-add` stripped**: Codespaces silently strips `--cap-add` from
   `runArgs` — namespace-based sandboxing (bwrap, unshare) will not work.
-- **dbt Power User extension**: activates on
-  `workspaceContains:**/dbt_project.yml` and auto-runs `dbt deps` (controlled by
-  `dbt.installDepsOnProjectInitialization`, default `true`) and `dbt parse` (not
-  configurable) on startup. Risk: extension may activate before `uv sync`
-  installs dbt-core. If `dbt deps` runs in `postCreate.sh`, set
-  `dbt.installDepsOnProjectInitialization` to `false` to avoid duplicate work.
-- **dbt Power User project scanning**: `dbt.allowListFolders` restricts which
-  paths the extension scans for `dbt_project.yml` — uses `startsWith` matching.
-  The extension also has a built-in `notInDBtPackages` filter. Manifest is read
-  from `target/` via Python bridge, not VS Code file watcher, so
-  `files.watcherExclude` on `target/` doesn't break it.
+- **dbt Core Tools extension**: activates on
+  `workspaceContains:**/dbt_project.yml` and parses projects on startup. Risk:
+  extension may activate before `uv sync` installs dbt-core.

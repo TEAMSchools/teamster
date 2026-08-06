@@ -3,16 +3,19 @@ models:
     description:
       SIS-agnostic long-format contact list for Finalsite student records — one
       row per (student, contact slot), grain `(finalsite_enrollment_id,
-      contact_slot)`. `contact_slot` is `contact_1` (the student's single
-      reportable parent contact — the relationship flagged `primary` in
-      Finalsite, or the one flagged `financial` when no primary is set, resolved
-      to that person's own Finalsite contact record; absent when the student has
-      neither a primary nor a financial relationship) or `emergency_1` through
-      `emergency_4` (the `custom_attributes` `emrg_N` sets mapped positionally —
-      `emergency_N` is `emrg_N` as-is, with no priority re-sort and no
-      gap-filling). Sparse — a slot row is emitted only when that slot has data,
-      so emergency slots may have gaps. Feeds the downstream PowerSchool/Focus
-      contact receivers built on top of this model.
+      contact_slot)`. `contact_slot` is `contact_1` (the student's Parent 1 —
+      the relationship flagged `primary` in Finalsite, resolved to that person's
+      own Finalsite contact record; absent when the student has no primary
+      relationship, which Ops treats as a Finalsite data-entry gap to fix at the
+      source), `contact_2` (the student's Parent 2 — any other relationship
+      flagged `primary` or `financial` whose contact shares a household with
+      Parent 1, that shared household being the student's primary household;
+      absent otherwise), or `emergency_1` through `emergency_4` (the
+      `custom_attributes` `emrg_N` sets mapped positionally — `emergency_N` is
+      `emrg_N` as-is, with no priority re-sort and no gap-filling). Sparse — a
+      slot row is emitted only when that slot has data, so emergency slots may
+      have gaps. Feeds the downstream PowerSchool/Focus contact receivers built
+      on top of this model.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -30,16 +33,20 @@ models:
           - not_null:
               config:
                 severity: error
+        config:
+          meta:
+            contains_pii: true
       - name: contact_slot
         data_type: string
         description:
-          Which contact this row represents — `contact_1` or `emergency_1`
-          through `emergency_4`.
+          Which contact this row represents — `contact_1`, `contact_2`, or
+          `emergency_1` through `emergency_4`.
         data_tests:
           - accepted_values:
               arguments:
                 values:
                   - contact_1
+                  - contact_2
                   - emergency_1
                   - emergency_2
                   - emergency_3
@@ -51,15 +58,18 @@ models:
         description:
           The contact person's own Finalsite contact UUID (their
           `finalsite_enrollment_id`), resolved through the selected
-          relationship's `rel_id`. Populated for `contact_1`; null for
-          `emergency_*` slots, which are free-text custom-field sets with no
-          linked contact record.
+          relationship's `rel_id`. Populated for `contact_1` and `contact_2`;
+          null for `emergency_*` slots, which are free-text custom-field sets
+          with no linked contact record.
+        config:
+          meta:
+            contains_pii: true
       - name: contact_name
         data_type: string
         description:
-          Contact's name — the relationship's `rel_name` for `contact_1`, or the
-          concatenated first/last name from the matching `emrg_N_name_*` fields
-          for an emergency slot.
+          Contact's name — the relationship's `rel_name` for `contact_1` and
+          `contact_2`, or the concatenated first/last name from the matching
+          `emrg_N_name_*` fields for an emergency slot.
         config:
           meta:
             contains_pii: true
@@ -67,7 +77,8 @@ models:
         data_type: string
         description:
           Contact's first name — the related person's Finalsite `first_name` for
-          `contact_1`, or `emrg_N_name_first_name` for an emergency slot.
+          `contact_1` and `contact_2`, or `emrg_N_name_first_name` for an
+          emergency slot.
         config:
           meta:
             contains_pii: true
@@ -75,7 +86,8 @@ models:
         data_type: string
         description:
           Contact's last name — the related person's Finalsite `last_name` for
-          `contact_1`, or `emrg_N_name_last_name` for an emergency slot.
+          `contact_1` and `contact_2`, or `emrg_N_name_last_name` for an
+          emergency slot.
         config:
           meta:
             contains_pii: true
@@ -83,31 +95,40 @@ models:
         data_type: string
         description:
           Relationship to the student — the relationship's `rel_type` for
-          `contact_1`, or `emrg_N_relationship_ss` (falling back to
-          `emrg_N_relationship_txt`) for an emergency slot.
+          `contact_1` and `contact_2`, or `emrg_N_relationship_ss` (falling back
+          to `emrg_N_relationship_txt`) for an emergency slot.
       - name: email
         data_type: string
         description:
           Contact's email address, from the related person's Finalsite contact
-          record for `contact_1` or `emrg_N_email` for an emergency slot.
+          record for `contact_1` and `contact_2` or `emrg_N_email` for an
+          emergency slot.
         config:
           meta:
             contains_pii: true
       - name: phone_mobile
         data_type: string
-        description: The contact's phone number typed `Cell`, if any.
+        description:
+          The contact's phone number typed `Cell`, if any. Already normalized to
+          E.164 upstream — in `stg_finalsite__contacts` for `contact_1` and
+          `contact_2`, in `int_finalsite__contact_custom_attributes` for an
+          emergency slot.
         config:
           meta:
             contains_pii: true
       - name: phone_home
         data_type: string
-        description: The contact's phone number typed `Home`, if any.
+        description:
+          The contact's phone number typed `Home`, if any. Already normalized to
+          E.164 upstream.
         config:
           meta:
             contains_pii: true
       - name: phone_work
         data_type: string
-        description: The contact's phone number typed `Work`, if any.
+        description:
+          The contact's phone number typed `Work`, if any. Already normalized to
+          E.164 upstream.
         config:
           meta:
             contains_pii: true
@@ -123,7 +144,8 @@ models:
         data_type: string
         description:
           The contact's first phone number regardless of type — a fallback for
-          phones with a blank `_type` that the typed columns miss.
+          phones with a blank `_type` that the typed columns miss. Already
+          normalized to E.164 upstream.
         config:
           meta:
             contains_pii: true
@@ -140,26 +162,33 @@ models:
         data_type: boolean
         description:
           Whether the contact is authorized for pickup. Always null for
-          `contact_1`; `emrg_N_pickup_yn` for an emergency slot.
+          `contact_1` and `contact_2`; `emrg_N_pickup_yn` for an emergency slot.
       - name: is_custodial
         data_type: boolean
         description:
-          Whether the contact has custody. Always null for `contact_1`;
-          `emrg_N_custody_yn` for an emergency slot.
+          Whether the contact has custody. Always null for `contact_1` and
+          `contact_2`; `emrg_N_custody_yn` for an emergency slot.
       - name: is_household_member
         data_type: boolean
         description:
           Whether the contact lives with the student. Always null for
-          `contact_1`; `emrg_N_lives_with_yn` for an emergency slot.
+          `contact_1` and `contact_2` (note the `contact_2` pick already
+          requires co-membership of Parent 1's household by construction);
+          `emrg_N_lives_with_yn` for an emergency slot.
       - name: is_emergency
         data_type: boolean
-        description: False for `contact_1`; true for every `emergency_*` slot.
+        description:
+          False for `contact_1` and `contact_2`; true for every `emergency_*`
+          slot.
 
 unit_tests:
-  - name: test_student_contacts_phone_normalization
+  - name: test_student_contacts_phone_typed_slots
     description:
-      A contact_1 row with a control-char-garbled cell phone and a bare-10 home
-      phone normalizes both to E.164 (+1XXXXXXXXXX).
+      A contact_1 row routes each of the related person's phones to the slot
+      matching its type label — `Cell` to phone_mobile, `Home` to phone_home, an
+      absent type to a null slot — and carries phone_1 through as phone_primary
+      regardless of type. Phones arrive already normalized to E.164 from
+      `stg_finalsite__contacts`; this model passes them through unchanged.
     model: int_finalsite__student_contacts
     given:
       - input: ref('stg_finalsite__contact_relationships')
@@ -172,7 +201,8 @@ unit_tests:
             'Jane Doe' as rel_name,
             'parent' as rel_type,
             true as is_primary,
-            true as is_financial
+            true as is_financial,
+            cast(null as boolean) as is_parent2
       - input: ref('stg_finalsite__contacts')
         format: sql
         rows: |
@@ -181,13 +211,9 @@ unit_tests:
             'jane@example.com' as email,
             'Jane' as first_name,
             'Doe' as last_name,
-            code_points_to_string([8234])
-              || '+1 (862) 300'
-              || code_points_to_string([8209])
-              || '7240'
-              || code_points_to_string([8236]) as phone_1_number,
+            '+18623007240' as phone_1_number,
             'Cell' as phone_1_type,
-            '(929) 225-5670' as phone_2_number,
+            '+19292255670' as phone_2_number,
             'Home' as phone_2_type,
             cast(null as string) as phone_3_number,
             cast(null as string) as phone_3_type,
@@ -195,7 +221,8 @@ unit_tests:
             cast(null as string) as address_2,
             cast(null as string) as city,
             cast(null as string) as state,
-            cast(null as string) as zip
+            cast(null as string) as zip,
+            array<string>[] as household_ids
       - input: ref('int_finalsite__contact_custom_attributes')
         rows: []
     expect:
@@ -220,3 +247,204 @@ unit_tests:
           '+19292255670' as phone_home,
           cast(null as string) as phone_work,
           '+18623007240' as phone_primary
+
+  - name: test_student_contacts_parent_2
+    description:
+      Two students. stu1 has a primary relationship (Parent 1), a second
+      financial relationship to a contact sharing Parent 1's household, and a
+      third financial relationship in a different household — yields contact_1
+      plus contact_2 with the outsider excluded. Every fixture row carries
+      `is_parent2` false, so a contact_2 on stu1 also proves that flag no longer
+      gates the pick. stu2 has no primary relationship and two financial ones —
+      yields no rows at all, since Parent 1 is the primary contact and there is
+      no financial fallback.
+    model: int_finalsite__student_contacts
+    given:
+      - input: ref('stg_finalsite__contact_relationships')
+        format: sql
+        rows: |
+          select
+            'stu1' as finalsite_enrollment_id,
+            'rel1' as relationship_id,
+            'con1' as rel_id,
+            'Jane Doe' as rel_name,
+            'parent' as rel_type,
+            true as is_primary,
+            true as is_financial,
+            false as is_parent2
+          union all
+          select
+            'stu1' as finalsite_enrollment_id,
+            'rel2' as relationship_id,
+            'con2' as rel_id,
+            'John Doe' as rel_name,
+            'stepparent' as rel_type,
+            cast(null as boolean) as is_primary,
+            true as is_financial,
+            false as is_parent2
+          union all
+          select
+            'stu1' as finalsite_enrollment_id,
+            'rel3' as relationship_id,
+            'con3' as rel_id,
+            'Jim Poe' as rel_name,
+            'parent' as rel_type,
+            cast(null as boolean) as is_primary,
+            true as is_financial,
+            false as is_parent2
+          union all
+          select
+            'stu2' as finalsite_enrollment_id,
+            'rel4' as relationship_id,
+            'con4' as rel_id,
+            'Fay Ray' as rel_name,
+            'parent' as rel_type,
+            cast(null as boolean) as is_primary,
+            true as is_financial,
+            false as is_parent2
+          union all
+          select
+            'stu2' as finalsite_enrollment_id,
+            'rel5' as relationship_id,
+            'con5' as rel_id,
+            'Gus Ray' as rel_name,
+            'parent' as rel_type,
+            cast(null as boolean) as is_primary,
+            true as is_financial,
+            false as is_parent2
+      - input: ref('stg_finalsite__contacts')
+        format: sql
+        rows: |
+          select
+            'con1' as finalsite_enrollment_id,
+            'jane@example.com' as email,
+            'Jane' as first_name,
+            'Doe' as last_name,
+            cast(null as string) as phone_1_number,
+            cast(null as string) as phone_1_type,
+            cast(null as string) as phone_2_number,
+            cast(null as string) as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            ['hh1'] as household_ids
+          union all
+          select
+            'con2' as finalsite_enrollment_id,
+            'john@example.com' as email,
+            'John' as first_name,
+            'Doe' as last_name,
+            cast(null as string) as phone_1_number,
+            cast(null as string) as phone_1_type,
+            cast(null as string) as phone_2_number,
+            cast(null as string) as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            ['hh1', 'hh2'] as household_ids
+          union all
+          select
+            'con3' as finalsite_enrollment_id,
+            'jim@example.com' as email,
+            'Jim' as first_name,
+            'Poe' as last_name,
+            cast(null as string) as phone_1_number,
+            cast(null as string) as phone_1_type,
+            cast(null as string) as phone_2_number,
+            cast(null as string) as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            ['hh2'] as household_ids
+          union all
+          select
+            'con4' as finalsite_enrollment_id,
+            'fay@example.com' as email,
+            'Fay' as first_name,
+            'Ray' as last_name,
+            cast(null as string) as phone_1_number,
+            cast(null as string) as phone_1_type,
+            cast(null as string) as phone_2_number,
+            cast(null as string) as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            ['hh3'] as household_ids
+          union all
+          select
+            'con5' as finalsite_enrollment_id,
+            'gus@example.com' as email,
+            'Gus' as first_name,
+            'Ray' as last_name,
+            cast(null as string) as phone_1_number,
+            cast(null as string) as phone_1_type,
+            cast(null as string) as phone_2_number,
+            cast(null as string) as phone_2_type,
+            cast(null as string) as phone_3_number,
+            cast(null as string) as phone_3_type,
+            cast(null as string) as address_1,
+            cast(null as string) as address_2,
+            cast(null as string) as city,
+            cast(null as string) as state,
+            cast(null as string) as zip,
+            ['hh3'] as household_ids
+      - input: ref('int_finalsite__contact_custom_attributes')
+        rows: []
+    expect:
+      format: sql
+      rows: |
+        select
+          'stu1' as finalsite_enrollment_id,
+          'contact_1' as contact_slot,
+          'con1' as finalsite_contact_id,
+          'Jane Doe' as contact_name,
+          'Jane' as contact_first_name,
+          'Doe' as contact_last_name,
+          'parent' as relationship,
+          'jane@example.com' as email,
+          cast(null as string) as phone_daytime,
+          cast(null as string) as home_address,
+          cast(null as boolean) as is_pickup,
+          cast(null as boolean) as is_custodial,
+          cast(null as boolean) as is_household_member,
+          false as is_emergency,
+          cast(null as string) as phone_mobile,
+          cast(null as string) as phone_home,
+          cast(null as string) as phone_work,
+          cast(null as string) as phone_primary
+        union all
+        select
+          'stu1' as finalsite_enrollment_id,
+          'contact_2' as contact_slot,
+          'con2' as finalsite_contact_id,
+          'John Doe' as contact_name,
+          'John' as contact_first_name,
+          'Doe' as contact_last_name,
+          'stepparent' as relationship,
+          'john@example.com' as email,
+          cast(null as string) as phone_daytime,
+          cast(null as string) as home_address,
+          cast(null as boolean) as is_pickup,
+          cast(null as boolean) as is_custodial,
+          cast(null as boolean) as is_household_member,
+          false as is_emergency,
+          cast(null as string) as phone_mobile,
+          cast(null as string) as phone_home,
+          cast(null as string) as phone_work,
+          cast(null as string) as phone_primary

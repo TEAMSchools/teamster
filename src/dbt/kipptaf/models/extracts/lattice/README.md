@@ -16,10 +16,11 @@ Keep this doc in sync with the model whenever the criteria change.
 - **Miami includes additional leader roles** — gated on a title keyword match
   plus one hardcoded location ("Room 11"), rather than an explicit title or
   department list.
-- **Part-timers and temporary workers are excluded** - part-timers are excluded
-  on ADP worker type; temps are excluded by job title. We intentionally do not
-  exclude on the "Temporary" worker type right now, because full-time-temporary
-  might be mislabels in ADP — so a temp is dropped only if their title says so.
+- **Three network-wide rules apply everywhere** — Heads of School, Managing
+  Directors in School Support, and the whole Teaching and Learning department
+  are included no matter which entity they sit in.
+- **Part-time permanent and temporary workers are excluded; full-time temporary
+  staff are included.**
 
 ### Current inclusion criteria
 
@@ -32,9 +33,9 @@ who is **not** an intern, a temp, or a part-timer.
 - Their worker type is not a "Part Time" classification.
 - Anyone whose **job title** contains "Temporary," "Part Time," or "Part-Time"
   is excluded — this catches temps regardless of their worker type.
-- **Full-time temporary staff are currently kept**, pending a review of their
-  ADP records — that worker type might be a mislabel, so we don't auto-remove
-  them.
+- **Full-time temporary staff are included** — Managers confirmed they should be
+  included, so the "Temporary" worker type is not used to exclude (the job title
+  exclusion above still applies as a backstop).
 - Employees with a **blank worker type are kept** — in practice these are
   legitimate full-time staff, so we don't drop them.
 
@@ -52,8 +53,15 @@ Any one of these qualifies:
   - Director Campus Operations
   - Managing Director of School Operations
   - Managing Director of Operations
+  - Fellow School Operations Director
 - **Newark or Camden** — anyone in the **Technology** or **Marketing, Comms, and
   Enrollment** department.
+- **Any entity** — job title contains "Head of School." The ADP title is "Head
+  of Schools"; the substring also picks up variants such as "Head of Schools in
+  Residence."
+- **Any entity** — anyone in the **Teaching and Learning** department.
+- **Any entity** — job title contains "Managing Director" **and** their
+  department is **School Support**.
 
 #### 3. Currently employed, or very recently departed
 

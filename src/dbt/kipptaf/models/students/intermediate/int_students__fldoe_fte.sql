@@ -16,7 +16,7 @@ with
             and att.calendardate between fte.start_date and fte.end_date
             and fte.type = 'FTE'
         where
-            {{ extract_code_location("att") }} = 'kippmiami'
+            {{ extract_source_project("att") }} = 'kippmiami'
             and att.membershipvalue = 1
             and att.attendancevalue = 1
         group by att._dbt_source_relation, att.studentid, att.yearid, fte.name

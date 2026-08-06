@@ -574,24 +574,6 @@ sources:
                 - kippmiami
                 - powerschool
                 - int_powerschool__calendar_rollup
-      - name: int_powerschool__contacts
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__contacts
-      - name: int_powerschool__person_contacts
-        config:
-          meta:
-            dagster:
-              group: powerschool
-              asset_key:
-                - kippmiami
-                - powerschool
-                - int_powerschool__person_contacts
       - name: int_powerschool__ps_attendance_daily
         config:
           meta:

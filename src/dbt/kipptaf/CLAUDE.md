@@ -46,36 +46,66 @@ any tab change. Archive tabs must be converted to BQ-native sources.
 
 ## Key Rules
 
-### `union_dataset_join_clause` (critical)
+### Cross-region joins (critical)
 
 Union models carry `_dbt_source_relation` but values differ across models (they
 include schema + table name). **Never join on
-`a._dbt_source_relation = b._dbt_source_relation`** — use the macro:
+`a._dbt_source_relation = b._dbt_source_relation`** — join the materialized
+`_dbt_source_project` column:
 
 ```sql
 inner join {{ ref("other_union_model") }} as b
     on a.id = b.id
-    and {{ union_dataset_join_clause(left_alias="a", right_alias="b") }}
+    and a._dbt_source_project = b._dbt_source_project
 ```
 
-Macro defined in `macros/utils.sql` — extracts school prefix via
-`regexp_extract(..., r'(kipp\w+)_')`.
-
-When both joined union models materialize `_dbt_source_project`, prefer
-`a._dbt_source_project = b._dbt_source_project` over the macro — same semantics,
-no `regexp_extract` per call.
+The `union_dataset_join_clause` macro that wrapped this comparison was deleted
+in [#3142](https://github.com/TEAMSchools/teamster/issues/3142). Five stale
+calls remain in the disabled pre-AY2627 gradebook-audit cluster
+(`int_tableau__gradebook_audit_assignments_teacher` / `_categories_teacher` /
+`_assignments_student`). Disabled models are never compiled, so the calls are
+inert — but re-enabling any of those models means swapping them first.
 
 Produce `_dbt_source_project` on a union model with
-`select *, {{ extract_code_location("union_relations") }} as _dbt_source_project`
+`select *, {{ extract_source_project() }} as _dbt_source_project`
 `from union_relations` (the `union_relations` CTE wrapping
 `dbt_utils.union_relations`).
 
 Prefer inline `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` over the
-`extract_code_location` macro when the union view is `select *` with an `AM04`
+`extract_source_project` macro when the union view is `select *` with an `AM04`
 trunk-ignore, or is mocked in a dbt unit test: the macro form makes AM04 stop
 firing (`trunk/ignore-does-nothing`), and its table-name qualifier breaks unit
 tests (`Unrecognized name` after dbt renames the mocked ref). Siblings
 `stg_powerschool__courses` / `stg_powerschool__studentcorefields` use inline.
+
+### `_dbt_source_relation` does not always encode region
+
+`_dbt_source_relation` from `union_relations` encodes whatever the union is OVER
+— it is region ONLY for cross-district unions (`kipp<region>_<source>`). Unions
+over years / repository ids / sftp-vs-api method / current+archive (illuminate,
+zendesk, `stg_schoolmint_grow__generic_tags`, amplify mClass) are NOT region, so
+the region regex `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` yields
+null — keep them out of `_dbt_source_project` joins. Shared NJ schemas
+(`kippnj_iready`, `kippnj_renlearn` for STAR) prefix `kippnj` ≠ home region;
+resolve region from `int_people__location_crosswalk`, not the regex.
+
+### `_dbt_source_project` is pass-through, derived only at the union view
+
+`extract_source_project()` (the `regexp_extract`) belongs ONLY on the
+`union_relations` view that creates `_dbt_source_relation`. Every downstream
+join-target selects the materialized `_dbt_source_project` column THROUGH from
+its upstream producer — never re-derive it downstream.
+
+- **Snapshot-fed models are the exception — they derive** from
+  `_dbt_source_relation`: the snapshot doesn't carry `_dbt_source_project` (e.g.
+  `snapshot_powerschool__gpa_term`, whose source
+  `int_powerschool__gpa_term_current` re-selects columns and drops it), and
+  adding it to the snapshot's source model leaves it ~99% NULL — the `check`
+  strategy only backfills touched rows.
+- Adding the column to a (non-contracted) intermediate still needs a
+  `properties.yml` column entry
+  (`description: District code location derived from _dbt_source_relation.`) —
+  the doc convention applies regardless of contract enforcement.
 
 ### Selecting from `dbt_utils.star()` models
 
@@ -95,18 +125,42 @@ are functionally intermediates. Uniqueness tests and `materialized: table`
 belong on the per-region source-system staging models, not on the kipptaf-level
 view. Don't add either when creating a new one.
 
+Contract-enforcement here is per-model, NOT directory-wide: the `powerschool:`
+block in `dbt_project.yml` sets only `+schema:` (no `staging: +contract`), so
+powerschool `staging/` union views are contract-enforced only where a model sets
+it in its own `properties.yml` (e.g. `stg_powerschool__users`,
+`stg_powerschool__log`). Check the model's `properties.yml` before assuming a
+`select *` union view is or isn't contracted.
+
+### Exposing a package/district model as a kipptaf source
+
+Every source added to a `sources-kipp*.yml` needs a matching kipptaf
+`union_relations` passthrough model. Consumers read the wrapper, not the source.
+
+Surface DECODED views, never the lookup tables behind them. Exposing a decode
+crosswalk (e.g. focus `int_focus__custom_field_options`) relocates hand-rolled
+translation into kipptaf instead of removing it; a field a package `__pivot`
+misses gets added to that pivot, in the package.
+
+`config.meta.contains_pii` does NOT travel through `source()` — a wrapper over a
+PII-tagged package model must re-declare it. Model level suffices for a
+`select *` passthrough, whose column docs live on the source model.
+
 ### Finalsite contact unions
 
-`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` are
-kipptaf `union_relations` views over per-region finalsite sources.
+`int_finalsite__student_contacts` / `int_finalsite__contact_id_attributes` /
+`int_finalsite__student_address_of_record` /
+`int_finalsite__contact_address_of_record` are kipptaf `union_relations` views
+over per-region finalsite sources.
 
 - **Union CUTOVER regions, not merely api-enabled ones.** Miami has the
   finalsite api enabled with contacts data AND `powerschool_student_number`s, so
   unioning it into `int_finalsite__student_contacts` double-counts against the
   PowerSchool branch of `int_students__contacts` (the grain test catches it).
-  `int_finalsite__contact_id_attributes` DOES include Miami — Focus consumes it,
-  and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`, so
-  Newark rows (null prefix) never reach the Focus feeds.
+  `int_finalsite__contact_id_attributes` and
+  `int_finalsite__student_address_of_record` DO include Miami — Focus consumes
+  them, and the `rpt_focus__*` filter `focus_student_id_prefixed is not null`,
+  so Newark rows (null prefix) never reach the Focus feeds.
 - **Source schema staging branch**: all four regions' finalsite sources
   (`sources-kippmiami.yml`, `sources-kippcamden.yml`, `sources-kippnewark.yml`,
   `sources-kipppaterson.yml`) carry the `staging`→`zz_stg_` branch (single-PR
@@ -124,20 +178,36 @@ kipptaf `union_relations` views over per-region finalsite sources.
 data, and push to their own PowerSchool instance. Exposures live in regional
 projects, not kipptaf.
 
-This cross-project shape generalizes (e.g. finalsite→focus): the heavy `rpt_*`
-view lives in kipptaf sourcing district data via `source()`, and each district
-has a thin wrapper sourcing `kipptaf_extracts`. The wrapper is
-contract-columns-only — NO data tests or descriptions (those live on the kipptaf
-view). A new kipptaf region source (`sources-kipp*.yml`) needs the
-`dev`/`staging` (`zz_stg_`)/prod schema branch, or single-PR cross-project CI
-can't read it.
+This cross-project shape generalizes (e.g. finalsite→focus,
+`extracts/parentsquare/`): the heavy `rpt_*` view lives in kipptaf sourcing
+district data via `source()`, and each district has a thin wrapper sourcing
+`kipptaf_extracts`. The wrapper is contract-columns-only — NO data tests or
+descriptions (those live on the kipptaf view). A new kipptaf region source
+(`sources-kipp*.yml`) needs the `dev`/`staging` (`zz_stg_`)/prod schema branch,
+or single-PR cross-project CI can't read it.
+
+**The wrapper's region filter is a `code_location` column** the kipptaf view
+exposes (`_dbt_source_project as code_location`, or the roster's
+`home_work_location_dagster_code_location` for staff feeds) — the wrapper then
+filters `where code_location = '{{ project_name }}'` and does NOT project it.
+Don't expose `_dbt_source_project` under its own name for this; `code_location`
+is what `rpt_powerschool__autocomm_students` and `rpt_parentsquare__*` use.
+
+**Widening a Newark-only view to NJ is not just a filter swap** — a bare
+`cross join` to schools fans a region's staff across every NJ school, and an
+ungrouped `min()` pick over a sibling feed assigns one owner network-wide that
+dangles in every other region's file while a single-column `relationships` test
+still passes. Region-key both, and check school-number / `student_number`
+collisions and enum-domain tests (e.g. grade level) against prod before
+implementing, since widening changes the population every error-severity test
+runs over.
 
 **finalsite→focus exception**: the kippmiami `rpt_focus__*` are NOT thin
 pass-throughs — they are the reconciliation layer (import-once / diff against
 current Focus via the `focus` package, which only kippmiami has). kipptaf
 `rpt_focus__*` are desired-state (all rows); the **kippmiami** output is the
 actual SFTP feed. Per feed: addresses/contacts/demographics import-once
-(presence anti-join, with a null/completeness gate #4320); enrollment diffs and
+(presence anti-join, with a null/street-line gate #4320); enrollment diffs and
 additionally reads Focus in kipptaf via a BQ-native source (#4319). Spec:
 `docs/superpowers/specs/2026-06-29-finalsite-focus-idempotent-imports-design.md`.
 
@@ -164,7 +234,7 @@ Facebook, Illuminate Fivetran, Instagram.
 ## Known Upstream Issues
 
 **`int_people__location_crosswalk`** is NOT a union model — it has no
-`_dbt_source_relation`. Use `extract_code_location()` matched against
+`_dbt_source_relation`. Match the other side's `_dbt_source_project` against
 `location_dagster_code_location` for cross-region joins. Each row is one alias
 (alternate spelling of `location_name`) — consumers that join on an aliased name
 (e.g., `fct_staff_observations` on `gro.school_name`) must use this model.
@@ -320,6 +390,11 @@ config:
           cron_schedule: "0 7 * * *" # only if Dagster-managed
 ```
 
+These crons become real Dagster refresh schedules
+(`code_locations/kipptaf/tableau/schedules.py`) and set the freshness floor for
+upstream cadence decisions — check them before moving an upstream model to a
+cron automation condition (see `src/dbt/CLAUDE.md` → View→table flips).
+
 ## kipptaf-Specific Variables
 
 `bigquery_external_connection_name`:
@@ -345,6 +420,11 @@ or `dbt clone --select <upstream>` against staging. Trigger via
 `mcp__dbt__trigger_job_run` with the `Clone - Staging (On-Demand)` job ID from
 `mcp__dbt__list_jobs` (~5 min run); after success, empty-commit + push
 re-triggers Build - CI.
+
+`Clone - Staging` refreshes only kipptaf-level relations — NOT district-level
+`zz_stg_kipp<district>_*`. A CI orphan / row-count delta that reconciles exactly
+against per-district prod-vs-`zz_stg` gaps is that staleness, not your change;
+re-running Clone - Staging won't fix it.
 
 Distinct from stale staging defer — **stale per-PR shadow**: a model that was
 `state:modified` in an earlier run (e.g. before the branch merged `main`) but is

@@ -5,11 +5,11 @@ models:
       `int_students__contacts`. Preserves the legacy contact column surface
       (`contact_1`/`contact_2`, `emergency_1` through `emergency_3`, and
       `pickup_1` through `pickup_3`, each with the nine attribute suffixes) plus
-      the new additive `emergency_4` set. Under the 1+4 contact shape only
-      `contact_1` and `emergency_1` through `emergency_4` carry data;
-      `contact_2` and the `pickup` slots are retained as NULL so downstream
-      extracts keep their column lists. Grain is one row per (student, source
-      project).
+      the new additive `emergency_4` set. Under the 2+4 contact shape,
+      `contact_1`, `contact_2` (NJ Finalsite regions), and `emergency_1` through
+      `emergency_4` carry data; the `pickup` slots are retained as NULL so
+      downstream extracts keep their column lists. Grain is one row per
+      (student, source project).
     config:
       materialized: table
     data_tests:

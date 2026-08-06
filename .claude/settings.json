@@ -21,7 +21,6 @@
       "mcp__bigquery__list_table_ids",
       "mcp__bigquery__search_catalog",
       "mcp__claude_ai_Cube__meta",
-      "mcp__cloud-run__list_services",
       "mcp__context7__query-docs",
       "mcp__context7__resolve-library-id",
       "mcp__dagster__get_asset_check_executions",
@@ -51,7 +50,6 @@
       "mcp__dbt__list_job_run_artifacts",
       "mcp__dbt__list_jobs_runs",
       "mcp__dbt__list_jobs",
-      "mcp__dbt__show",
       "mcp__gcp-observability__get_trace",
       "mcp__gcp-observability__list_alert_policies",
       "mcp__gcp-observability__list_alerts",
@@ -103,9 +101,7 @@
       "Read(//workspaces/teamster/**)",
       "Skill(claude-md-management:revise-claude-md:*)",
       "Skill(commit-commands:commit:*)",
-      "Skill(dbt:using-dbt-for-analytics-engineering:*)",
-      "Write(//workspaces/teamster/.claude/scratch/**)",
-      "Write(//workspaces/teamster/.worktrees/**)"
+      "Skill(dbt:using-dbt-for-analytics-engineering:*)"
     ],
     "deny": [
       "Bash(gcloud *)",
@@ -165,6 +161,15 @@
             "command": "sed -i -E '/(_SECRET|_TOKEN|_PASSWORD|_CREDENTIAL|_API_KEY|_APP_KEY|PRIVATE_KEY|SERVICE_ACCOUNT|OP_SERVICE)/Id' /home/vscode/.claude/shell-snapshots/snapshot-bash-*.sh 2>/dev/null; true"
           }
         ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rm -f .claude/scratch/.gotchas-* 2>/dev/null; true"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -175,6 +180,16 @@
             "type": "command",
             "command": "bash .claude/hooks/check-sensitive.sh",
             "statusMessage": "Checking if path is safe to access..."
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/tool-gotchas.sh",
+            "statusMessage": "Loading tool-specific gotchas..."
           }
         ]
       }
@@ -200,7 +215,7 @@
     "dignified-python@dagster": true,
     "pyright-lsp@claude-plugins-official": true,
     "security-guidance@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true
+    "superpowers@superpowers-marketplace": true
   },
   "extraKnownMarketplaces": {
     "claude-plugins-official": {
@@ -219,6 +234,12 @@
       "source": {
         "source": "github",
         "repo": "dbt-labs/dbt-agent-skills"
+      }
+    },
+    "superpowers-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "obra/superpowers"
       }
     }
   },

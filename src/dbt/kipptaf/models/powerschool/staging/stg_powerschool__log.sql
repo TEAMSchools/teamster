@@ -6,6 +6,7 @@ with
                     source("kippnewark_powerschool", "stg_powerschool__log"),
                     source("kippcamden_powerschool", "stg_powerschool__log"),
                     source("kippmiami_powerschool", "stg_powerschool__log"),
+                    source("kipppaterson_powerschool", "stg_powerschool__log"),
                 ]
             )
         }}
@@ -13,6 +14,8 @@ with
 
 select
     *,
+
+    {{ extract_source_project() }} as _dbt_source_project,
 
     {{
         date_to_fiscal_year(

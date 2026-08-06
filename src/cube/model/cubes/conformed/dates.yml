@@ -35,9 +35,15 @@ cubes:
           querying by year — it is unambiguous regardless of SY vs. start-year
           notation. academic_year 2025 = academic_year_label "2025-2026" = SY26.
           The integer academic_year is retained for sort/group/math only.
+        # Qualify with {CUBE} so the column binds to dim_dates: a bare
+        # academic_year here is ambiguous on any view whose join graph reaches
+        # another table exposing academic_year (dim_student_enrollments,
+        # dim_student_section_enrollments) — the scalar academic_year dimension
+        # above is auto-qualified by Cube, but this CONCAT expression is not
+        # (#4546).
         sql: >-
-          CONCAT(CAST(academic_year AS STRING), '-', CAST(academic_year + 1 AS
-          STRING))
+          CONCAT(CAST({CUBE}.academic_year AS STRING), '-',
+          CAST({CUBE}.academic_year + 1 AS STRING))
         type: string
         public: true
 

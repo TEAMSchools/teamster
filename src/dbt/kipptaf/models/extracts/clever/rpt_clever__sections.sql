@@ -2,6 +2,7 @@ with
     dsos as (
         select
             sr.powerschool_teacher_number,
+            sr.home_work_location_dagster_code_location,
 
             coalesce(
                 ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
@@ -13,12 +14,33 @@ with
             and not ccw.is_pathways
         where
             sr.assignment_status != 'Terminated'
+            -- Miami rosters into Clever directly from Focus; excluded from all
+            -- six feeds
+            and sr.home_work_location_dagster_code_location != 'kippmiami'
             and sr.job_title in (
                 'Director of Campus Operations',
                 'Director Campus Operations',
                 'Director School Operations',
                 'School Leader'
             )
+    ),
+
+    schools as (
+        -- Matches rpt_clever__schools' filters so an auto-generated ENR section
+        -- can never reference a school that schools.csv omits.
+        select
+            abbreviation,
+            low_grade,
+            high_grade,
+            school_number,
+
+            regexp_extract(
+                _dbt_source_relation, r'(kipp\w+)_'
+            ) as dagster_code_location,
+        from {{ ref("stg_powerschool__schools") }}
+        where
+            state_excludefromreporting = 0
+            and _dbt_source_relation not like '%kippmiami%'
     ),
 
     teachers_long as (
@@ -77,19 +99,21 @@ with
         inner join
             {{ ref("stg_powerschool__sectionteacher") }} as st
             on sec.sections_id = st.sectionid
-            and {{ union_dataset_join_clause(left_alias="sec", right_alias="st") }}
+            and sec._dbt_source_project = st._dbt_source_project
         inner join
             {{ ref("stg_powerschool__roledef") }} as r
             on st.roleid = r.id
-            and {{ union_dataset_join_clause(left_alias="st", right_alias="r") }}
+            and st._dbt_source_project = r._dbt_source_project
         inner join
             {{ ref("int_powerschool__teachers") }} as t
             on st.teacherid = t.id
             and sec.sections_schoolid = t.schoolid
-            and {{ union_dataset_join_clause(left_alias="st", right_alias="t") }}
+            and st._dbt_source_project = t._dbt_source_project
         where
             sec.terms_yearid = ({{ var("current_academic_year") - 1990 }})
-            and sec._dbt_source_relation not like '%kipppaterson%'
+            -- Miami rosters into Clever directly from Focus; excluded from all
+            -- six feeds
+            and sec._dbt_source_relation not like '%kippmiami%'
 
         union all
 
@@ -132,8 +156,9 @@ with
             'Homeroom/advisory' as `subject`,
         from dsos
         inner join
-            {{ ref("stg_powerschool__schools") }} as s
+            schools as s
             on dsos.school_id = s.school_number
+            and dsos.home_work_location_dagster_code_location = s.dagster_code_location
         cross join unnest(generate_array(s.low_grade, s.high_grade)) as grade_level
     ),
 

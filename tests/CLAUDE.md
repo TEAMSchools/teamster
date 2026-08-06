@@ -33,6 +33,11 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   check the token file first — don't investigate individual env vars.
 - **Archived tests**: `_test_` prefix in `archive/` subdirectories — ignored by
   pytest by convention, not markers.
+- **Deleting or disabling a dbt model silently breaks
+  `tests/assets/test_assets_dbt.py`** — it selects hardcoded asset keys
+  (`kipptaf/<folder>/<model>`) and `materialize()` raises on a missing one. Not
+  run in CI, so it rots unnoticed. Grep it before removing a model, and check
+  the neighbouring keys are still enabled while you're there.
 - **`EnvVar` in integration tests**: Use `EnvVar("X")` for `str` fields and
   `EnvVar.int("X")` for `int` fields (e.g. ports) inside `build_resources()` —
   both resolve lazily at resource init and never read the environment at
@@ -58,7 +63,11 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   `<Resource>._request.retry.wait = wait_none()` (tenacity) to kill backoff,
   inject `object.__setattr__(r, "_session", SimpleNamespace(request=fake_fn))`
   with a `_FakeResponse` stub, and assert call counts for retry/no-retry paths.
-  Reference harness: `tests/resources/test_resource_adp_workforce_now.py`.
+  Reference harness: `tests/resources/test_resource_adp_workforce_now.py`. For a
+  retry-decorated METHOD (e.g. `SSHResource.get_connection`), use
+  `Cls.method.retry_with(wait=wait_none())(instance)` — it returns a copy, so no
+  class mutation to undo, and `stop=stop_after_attempt(1)` collapses it per
+  test.
 - **SSH `test`**: vestigial config. It formerly switched the sshpass tunnel's
   password source (secret file vs. the `password` field); that tunnel was
   removed in #4442, so no method on `SSHResource` reads it now.
@@ -71,6 +80,10 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   leave the changes stashed and the `stash pop` unrun. To confirm a failure is
   pre-existing, check the test is in an untouched dir and doesn't reference your
   changed symbols, rather than stash-comparing.
+- **`test_resource_ssh_dir_mtime_propagation.py` fails ~10 of 15 on `main`** —
+  it asserts LIVE SFTP servers propagate directory mtime, so failures track
+  vendor behavior, not your change, and `littlesis` flaps between runs. Baseline
+  against `main` before attributing a failure here to an SSH edit.
 - **Cross-file conftest imports fail** (`tests/` has no `__init__.py`). For
   fixture-injected param types, skip the annotation or use `TYPE_CHECKING` with
   a string forward-ref.
@@ -82,6 +95,14 @@ uv run pytest tests/assets/test_assets_dbt.py                         # requires
   (BigQuery/GCS) auth is independent of 1Password and always works (dbt CLI, BQ
   client). `dagster definitions validate` likewise relies on the conftest
   bootstrap.
+- **Mixed live + mocked test files**:
+  `tests/resources/test_resource_google_directory.py` interleaves mocked unit
+  tests with **live-API** integration tests (bare names —
+  `test_batch_insert_users`, `test_list_users`, etc.) that mutate the REAL
+  Google directory (conftest bootstraps creds). Select mocked tests with
+  positive `-k` on suffix fragments; `pytest --deselect <file>::<bare>`
+  PREFIX-matches (silently drops same-prefix unit tests too), and
+  `-k "not <bare>"` substring-matches them.
 
 ## Hook security tests (`tests/hooks/`)
 

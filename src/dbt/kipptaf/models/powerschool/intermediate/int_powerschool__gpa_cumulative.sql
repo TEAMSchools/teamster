@@ -6,6 +6,7 @@ with
                     source("kippnewark_powerschool", model.name),
                     source("kippcamden_powerschool", model.name),
                     source("kippmiami_powerschool", model.name),
+                    source("kipppaterson_powerschool", model.name),
                 ]
             )
         }}
@@ -14,7 +15,7 @@ with
 select
     ur.*,
 
-    {{ extract_code_location("ur") }} as _dbt_source_project,
+    {{ extract_source_project("ur") }} as _dbt_source_project,
 
     case
         when ur.cumulative_y1_gpa_unweighted >= 3.00

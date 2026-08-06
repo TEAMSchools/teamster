@@ -25,17 +25,17 @@ select
     prospect_entry_year.start_year as prospect_entry_year_start,
 
     phone_1.phone_type as phone_1_type,
-    phone_1.number as phone_1_number,
     phone_2.phone_type as phone_2_type,
-    phone_2.number as phone_2_number,
     phone_3.phone_type as phone_3_type,
-    phone_3.number as phone_3_number,
 
     custom_attributes,
     id_attributes,
     track_attributes,
+    households,
 
     safe_cast(birth_date as date) as birth_date,
+
+    households[safe_offset(0)].id as household_1_id,
 
     -- normalize the household address: Finalsite emits empty strings (not null)
     -- and mixed-case states, which flow unchanged into the Focus ADDRESS and
@@ -46,4 +46,17 @@ select
     nullif(upper(trim(households[safe_offset(0)].state)), '') as state,
     nullif(trim(households[safe_offset(0)].zip), '') as zip,
     households[safe_offset(0)].country as country,
+
+    array(
+        select h.id, from unnest(households) as h where h.id is not null
+    ) as household_ids,
+
+    -- normalize to E.164 here, the earliest point each phone is a scalar
+    -- column, so every consumer reads one format: the Focus CONTACTS /
+    -- ADDRESS import feeds and the SIS-agnostic contact models alike.
+    -- Finalsite emits bare 10-digit numbers almost everywhere; anything not
+    -- confidently parseable passes through de-garbled rather than nulling.
+    {{ clean_phone("phone_1.number") }} as phone_1_number,
+    {{ clean_phone("phone_2.number") }} as phone_2_number,
+    {{ clean_phone("phone_3.number") }} as phone_3_number,
 from {{ source("finalsite", "contacts") }}

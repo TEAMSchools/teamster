@@ -39,9 +39,7 @@ select
     up.relative_placement,
     up.rn_subject_test,
 
-    regexp_replace(
-        left(up.domain_name, length(up.domain_name) - 19), '_', ' '
-    ) as domain_name,
+    regexp_replace(up.domain_name, '_', ' ') as domain_name,
 from {{ ref("int_extracts__student_enrollments") }} as co
 cross join subjects as subj
 cross join unnest(['BOY', 'MOY', 'EOY']) as ar
@@ -49,7 +47,7 @@ left join
     {{ ref("base_powerschool__course_enrollments") }} as e
     on co.student_number = e.students_student_number
     and co.academic_year = e.cc_academic_year
-    and {{ union_dataset_join_clause(left_alias="co", right_alias="e") }}
+    and co._dbt_source_project = e._dbt_source_project
     and subj.ps_credittype = e.courses_credittype
     and not e.is_dropped_section
     and e.rn_credittype_year = 1

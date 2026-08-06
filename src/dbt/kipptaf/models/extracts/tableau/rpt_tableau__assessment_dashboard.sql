@@ -59,7 +59,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as enr
             on co.studentid = enr.cc_studentid
             and co.yearid = enr.cc_yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
+            and co._dbt_source_project = enr._dbt_source_project
             and asr.subject_area = enr.illuminate_subject_area
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1
@@ -131,7 +131,7 @@ with
             {{ ref("base_powerschool__course_enrollments") }} as enr
             on co.studentid = enr.cc_studentid
             and co.yearid = enr.cc_yearid
-            and {{ union_dataset_join_clause(left_alias="co", right_alias="enr") }}
+            and co._dbt_source_project = enr._dbt_source_project
             and asr.discipline = enr.discipline
             and not enr.is_dropped_section
             and enr.rn_student_year_illuminate_subject_desc = 1

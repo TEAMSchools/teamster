@@ -52,13 +52,13 @@ from {{ ref("int_extracts__student_enrollments") }} as y1
 inner join
     {{ ref("stg_powerschool__students") }} as s
     on y1.student_number = s.student_number
-    and {{ union_dataset_join_clause(left_alias="y1", right_alias="s") }}
+    and y1._dbt_source_project = s._dbt_source_project
 left join
     {{ ref("int_extracts__student_enrollments") }} as y2
     on y1.student_number = y2.student_number
     and y1.academic_year = (y2.academic_year - 1)
     and date(y2.academic_year, 10, 1) between y2.entrydate and y2.exitdate
-    and {{ union_dataset_join_clause(left_alias="y1", right_alias="y2") }}
+    and y1._dbt_source_project = y2._dbt_source_project
 inner join
     attrition_dates as d
     on y1.academic_year = d.attrition_year

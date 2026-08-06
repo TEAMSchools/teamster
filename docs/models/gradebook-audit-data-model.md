@@ -70,7 +70,7 @@ never populated there natively. `kipptaf`'s own
 `source("kippnewark_powerschool", "stg_powerschool__u_expectations")`, filtered
 to `school_level = 'MS'`, with a hardcoded
 `'kipppaterson' as _dbt_source_project` (bypassing the usual
-`extract_code_location()` regex-on-schema-name derivation, since the physical
+`extract_source_project()` regex-on-schema-name derivation, since the physical
 relation really is Newark's — deriving from it would mislabel these rows as
 `kippnewark`). This is `UNION ALL`-ed alongside the real Camden/Newark union
 (`src/dbt/kipptaf/models/powerschool/staging/stg_powerschool__u_expectations.sql`).

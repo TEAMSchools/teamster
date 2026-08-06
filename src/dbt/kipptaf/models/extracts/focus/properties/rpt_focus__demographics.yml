@@ -62,7 +62,10 @@ models:
           Null when the Finalsite value has no crosswalk entry.
       - name: stdt_email
         data_type: string
-        description: Student email address from Finalsite.
+        description:
+          Student KIPP email (Focus STDT_EMAIL) from
+          stg_people__student_logins.google_email, joined on the 8400-prefixed
+          Focus id. Null when the student has no minted login yet.
       - name: ethnic_hl
         data_type: string
         description:
@@ -204,9 +207,13 @@ models:
 unit_tests:
   - name: test_demographics_shape
     description:
-      Verifies the 42-column DEMOGRAPHICS layout — STDT_ID is sourced from
-      int_finalsite__contact_id_attributes, DT_BIRTH is formatted as YYYYMMDD,
-      GENDER is mapped to single-letter code, ETHNIC_HL derives from
+      Verifies the 42-column DEMOGRAPHICS layout — STDT_ID and STDT_EMAIL are
+      sourced from int_finalsite__contact_id_attributes and
+      stg_people__student_logins (joined on the 8400-prefixed id); the first
+      student has a login row so STDT_EMAIL is the generated google_email (not
+      the Finalsite contact email), while the second and third have no login row
+      so STDT_EMAIL is null. DT_BIRTH is formatted as YYYYMMDD, GENDER is mapped
+      to a single-letter code, ETHNIC_HL derives from
       int_finalsite__contact_custom_attributes.latino_hispanic_yn. The second
       student has no custom-attributes row, confirming ETHNIC_HL is null (not
       'N') for an unknown while PHOTO_VID_PERM defaults to 'N'. The third
@@ -298,6 +305,12 @@ unit_tests:
           select 'enr-003', '84001001003'
           union all
           select 'enr-005', '84001001005'
+      - input: ref('stg_people__student_logins')
+        format: sql
+        rows: |
+          select
+            84001001001 as student_number,
+            'jsmith@teamstudents.org' as google_email
     expect:
       rows:
         - {
@@ -310,7 +323,7 @@ unit_tests:
             dt_birth: "20120315",
             gender: F,
             lang: SP,
-            stdt_email: jane.smith@example.com,
+            stdt_email: jsmith@teamstudents.org,
             ethnic_hl: Y,
             single_ethnic: null,
             race_am_ind_ak_nat: null,

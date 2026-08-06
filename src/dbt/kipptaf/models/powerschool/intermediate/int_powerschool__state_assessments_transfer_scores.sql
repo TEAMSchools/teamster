@@ -23,13 +23,13 @@ from {{ ref("stg_powerschool__test") }} as t
 inner join
     {{ ref("stg_powerschool__studenttest") }} as st
     on t.id = st.testid
-    and {{ union_dataset_join_clause(left_alias="t", right_alias="st") }}
+    and t._dbt_source_project = st._dbt_source_project
 inner join
     {{ ref("stg_powerschool__studenttestscore") }} as sts
     on st.id = sts.studenttestid
-    and {{ union_dataset_join_clause(left_alias="st", right_alias="sts") }}
+    and st._dbt_source_project = sts._dbt_source_project
 inner join
     {{ ref("stg_powerschool__testscore") }} as ts
     on sts.testscoreid = ts.id
-    and {{ union_dataset_join_clause(left_alias="sts", right_alias="ts") }}
+    and sts._dbt_source_project = ts._dbt_source_project
 where t.name = 'NJGPA'
