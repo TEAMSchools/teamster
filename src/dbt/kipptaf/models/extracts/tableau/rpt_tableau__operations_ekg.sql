@@ -84,7 +84,14 @@ with
     ),
 
     final as (
-        select roster.*, responses_pivoted.*, sc.location_grade_band as grade_band,
+        select
+            roster.*,
+            responses_pivoted.*,
+
+            sc.location_grade_band as grade_band,
+            -- the walked school, resolved to its canonical name. distinct from
+            -- roster.location_clean_name, which is the respondent's own location
+            sc.location_clean_name as school_clean_name,
         from responses_pivoted
         left join
             roster
