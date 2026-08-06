@@ -235,10 +235,32 @@ banding the scaffold's `school_level` reproduces. Don't "fix" that split.
 ### Tab-by-tab map of SRE's workbook
 
 The workbook has 7 tabs (AY2026): `cover sheet`, `KCNA`, `Newark`, `Miami`,
-`KPAT`, `attrition`, `enrollment snapshot offer management`. **Every tab holds
-more than one table**, and the extra tables' columns overlap horizontally — see
-the decoy warning below. Read the granularity table in the reference doc first,
-so you know which goals a tab could possibly source.
+`KPAT`, `attrition`, `enrollment snapshot offer management`. Read the
+granularity table in the reference doc first, so you know which goals a tab
+could possibly source.
+
+**The governing rule, per SRE: only the MAIN table on each tab is a source.
+Everything else on the tab is noise.** Every tab holds several secondary tables
+— region-grain rollups, column-total rows, side trackers, loose cells — and they
+are all out of scope regardless of how convincing they look. Do not spend a pass
+deciding whether one might be authoritative; it isn't.
+
+Two reasons this rule is easy to talk yourself out of, both hit in practice:
+
+- **A secondary table can reproduce the right answer exactly.** Newark's lower
+  block is headed `Re-Enroll Projection` and `New Students` at region grain and
+  matches `round(SUM of unrounded)` of the main table in 24 of 24 cases. It is
+  still noise. Agreement is not authority.
+- **Secondary tables overlap the main one horizontally**, so parsing a whole tab
+  with one column map silently reads the wrong columns — see the
+  pinned-row-range section below for the 14 fabricated diffs this produced on
+  `Miami`.
+
+**Always cite a column by its full header text plus its letter**, never a
+shortened form. The workbook reuses near-identical names across blocks:
+`Projected Returners` (main table, Newark col `O`) is not `Returners` (lower
+block, col `L`), and `New Students Needed` (main, col `P`) is not `New Students`
+(lower block, col `J`). Shorthand invites reading the wrong column.
 
 #### `cover sheet` — fully mapped
 
@@ -303,6 +325,32 @@ The `School` totals overlap the cover sheet on all five goals, so they are a
 free cross-check rather than a competing source. Note Sumner's rows split `ES`
 (K-4) and `MS` (5-6) in the `Type` column while its `Total` row reads `ES` — the
 documented per-grade banding divergence, not an error.
+
+#### `Newark` — fully mapped
+
+Main table is **rows 2-66, header row 1**, and it is the only source on the tab.
+Identical column layout to `KCNA`, so the same map applies:
+
+| col | header (verbatim)          | maps to                |
+| --- | -------------------------- | ---------------------- |
+| `J` | `SY 26-27 Seat Target`     | `Seat Target`          |
+| `L` | `FDOS Target`              | `FDOS Target`          |
+| `O` | `Projected Returners`      | `Re-Enroll Projection` |
+| `P` | `New Students Needed`      | `New Student Target`   |
+| `R` | `# of applications needed` | `App Target`           |
+
+Per-grade rows → `School/Grade Level`; the `Total` rows → `School`. As on
+`KCNA`, no `Budget Target` column — that stays cover-sheet-only.
+
+Noise on this tab: **row 67** (column totals), **the entire block from row 68
+down** (the region-grain rollup, plus its own `Total` at r82), and the loose
+cells at r84 and r89-93.
+
+#### Not yet walked
+
+`Miami` (3 blocks, one of them a decoy — see the pinned-row-range section),
+`KPAT` (Paterson; different column layout, and the only tab with an
+`Offer Target` column), `attrition`, and `enrollment snapshot offer management`.
 
 ### Sourced vs derived: check before reconciling
 

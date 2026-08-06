@@ -368,26 +368,31 @@ enforcing it would push wrong data into the sheet.
 stated on one region's tab and absent from another's, so "derived" is a
 conclusion about the whole workbook, not about the tab in front of you.
 
+**Per SRE: only the MAIN table on each tab is a source.** Every tab also carries
+secondary tables below or beside it — region-grain rollups, column-total rows,
+side trackers, loose cells. All of it is noise for reconciliation purposes, no
+matter how authoritative the headers look, and `Newark`'s lower block shows why
+the "looks authoritative" caveat is needed: it is headed `Re-Enroll Projection`
+and `New Students` at region grain and reproduces `round(SUM of unrounded)` of
+the main table in **24 of 24** cases. A secondary table that agrees perfectly
+with the right answer is still not the source of it.
+
 At `Region/Grade Level` the three populated Enrollment/Applications goals split
-as follows — the two marked provisional are pending the `Newark`, `Miami` and
-`KPAT` walkthroughs, since Newark's lower block carries literal
-`Re-Enroll Projection` and `New Students` headers at region grain:
+as follows (Camden and Newark verified; `Miami` and `KPAT` expected to match but
+not yet walked):
 
-| `goal_name`            | source                                                     |
-| ---------------------- | ---------------------------------------------------------- |
-| `App Target`           | **sourced** — the cover sheet's `A26:D37` grid             |
-| `New Student Target`   | _provisional_ — derived (sum of `School/Grade`) for Camden |
-| `Re-Enroll Projection` | _provisional_ — derived (sum of `School/Grade`) for Camden |
+| `goal_name`            | source                                              |
+| ---------------------- | --------------------------------------------------- |
+| `App Target`           | **sourced** — the cover sheet's `A26:D37` grid      |
+| `New Student Target`   | **derived** — `round(SUM)` of `New Students Needed` |
+| `Re-Enroll Projection` | **derived** — `round(SUM)` of `Projected Returners` |
 
-Where a goal genuinely must be derived, **round the sum once
-(`round(SUM of unrounded)`) rather than summing already-rounded values** — one
-rounding instead of N, and it matches how SRE's own totals behave.
-
-A workbook tab may also state a region-level value for a goal that stg does
-**not** model at that granularity — Newark's lower block has region
-`Seat Target` and `FDOS Target` columns, and neither exists at
-`Region/Grade Level` in the staging table. Those are non-sources, like the cover
-sheet's region totals. Don't go looking for a home for them.
+Where a goal must be derived, **round the sum once (`round(SUM of unrounded)`),
+never sum already-rounded values.** The evidence is prod itself: across Camden
+and Newark there are five grades where the two methods disagree, and prod
+matches `round(SUM)` in every one (e.g. Newark `Re-Enroll Projection` grade 3 —
+prod 477, `round(SUM)` 477, `SUM(round)` 476). Summing rounded values diverges
+by ±1 on roughly one grade in six.
 
 `App Target` is emphatically **not** the sum of its school rows. Verified for
 AY2026: Camden grade 5 reads 69 on the cover sheet while the three Camden
