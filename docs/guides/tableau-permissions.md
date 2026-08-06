@@ -235,6 +235,104 @@ Individual, by-name grants inside a workbook are **not permitted**. They are
 invisible to anyone auditing group membership, and they survive the person
 changing roles.
 
+### The group names to ask for
+
+Give the Tech team the **exact** name from this page. A request for a group that
+does not exist cannot fail loudly — the calculation simply never matches, so you
+would keep seeing nothing with no error to chase.
+
+Most people need one entity group plus one school group, or one of the role
+groups.
+
+#### Your entity — everyone has one
+
+| Entity                        | Group                                   |
+| ----------------------------- | --------------------------------------- |
+| TEAM (Newark)                 | `KNJ-SG-Tableau All Staff TEAM Schools` |
+| KIPP Cooper Norcross (Camden) | `KNJ-SG-Tableau All Staff KCNA`         |
+| KIPP Miami                    | `KNJ-SG-Tableau All Staff MIA`          |
+| KIPP Paterson                 | `KNJ-SG-Tableau All Staff Paterson`     |
+| Central office                | `KNJ-SG-Tableau All Staff KTAF`         |
+
+#### Your school
+
+The rule is `KNJ-SG-Tableau All Staff ` followed by the school name — **with
+five exceptions where the group kept an older name**. Ask for the group in the
+right column, not the name in the left.
+
+| School                          | Group                                                     |
+| ------------------------------- | --------------------------------------------------------- |
+| KIPP BOLD Academy               | `KNJ-SG-Tableau All Staff KIPP BOLD Academy`              |
+| KIPP Cooper Norcross High       | `KNJ-SG-Tableau All Staff KIPP Cooper Norcross High`      |
+| KIPP Courage Academy            | `KNJ-SG-Tableau All Staff KIPP Courage Academy`           |
+| KIPP Hatch Middle               | `KNJ-SG-Tableau All Staff KIPP Hatch Academy`             |
+| KIPP Justice Academy            | `KNJ-SG-Tableau All Staff KIPP Justice Academy`           |
+| KIPP Lanning Square Middle      | `KNJ-SG-Tableau All Staff KIPP Lanning Square Middle`     |
+| KIPP Lanning Square Primary     | `KNJ-SG-Tableau All Staff KIPP Lanning Square Primary`    |
+| KIPP Legacy Elementary          | `KNJ-SG-Tableau All Staff KIPP Legacy Elementary`         |
+| KIPP Legacy Middle              | `KNJ-SG-Tableau All Staff KIPP Legacy Middle`             |
+| KIPP Life Academy               | `KNJ-SG-Tableau All Staff KIPP Life Academy`              |
+| KIPP Miami - North Campus       | `KNJ-SG-Tableau All Staff KIPP Miami - North Campus`      |
+| KIPP Miami - Poinciana Campus   | `KNJ-SG-Tableau All Staff Poinciana Campus`               |
+| KIPP Miami Technical High       | `KNJ-SG-Tableau All Staff KIPP Miami Technical High`      |
+| KIPP Newark Collegiate Academy  | `KNJ-SG-Tableau All Staff KIPP Newark Collegiate Academy` |
+| KIPP Newark Lab High School     | `KNJ-SG-Tableau All Staff KIPP Newark Lab High School`    |
+| KIPP Purpose Academy            | `KNJ-SG-Tableau All Staff KIPP Purpose Academy`           |
+| KIPP Rise Academy               | `KNJ-SG-Tableau All Staff KIPP Rise Academy`              |
+| KIPP Royalty Academy            | `KNJ-SG-Tableau All Staff KIPP Royalty Academy`           |
+| KIPP SPARK Academy              | `KNJ-SG-Tableau All Staff KIPP SPARK Academy`             |
+| KIPP Seek Academy               | `KNJ-SG-Tableau All Staff KIPP Seek Academy`              |
+| KIPP Sumner Elementary          | `KNJ-SG-Tableau All Staff KIPP Sumner Academy`            |
+| KIPP TEAM Academy               | `KNJ-SG-Tableau All Staff KIPP TEAM Academy`              |
+| KIPP THRIVE Academy             | `KNJ-SG-Tableau All Staff KIPP THRIVE Academy`            |
+| KIPP Upper Roseville Academy    | `KNJ-SG-Tableau All Staff KIPP Upper Roseville Academy`   |
+| Paterson Prep Elementary School | `KNJ-SG-Tableau All Staff KIPP Paterson Prep Elementary`  |
+| Paterson Prep Middle School     | `KNJ-SG-Tableau All Staff KIPP Paterson Prep Middle`      |
+
+The five where the names differ are Hatch, Poinciana, Sumner, and both Paterson
+Prep schools. They will be tidied up when the groups are renamed.
+
+Rooms are deliberately absent — see _Rooms do not grant access_.
+
+#### Your role — needed for route 5, on top of entity and school
+
+| Role                          | Group                    |
+| ----------------------------- | ------------------------ |
+| School leader                 | `KNJ-SG-Tableau All SL`  |
+| Director of school operations | `KNJ-SG-Tableau All DSO` |
+| Assistant principal           | `KNJ-SG-Tableau All AP`  |
+
+#### Regional operations and leadership
+
+| Who                                    | Group                                        |
+| -------------------------------------- | -------------------------------------------- |
+| NJ regional operations                 | `Group Staff NJ Regional`                    |
+| Miami regional operations              | `Group Staff MIA Regional`                   |
+| Managing director of school operations | `KNJ-SG-Tableau All MDSO`                    |
+| Head of schools                        | `KNJ-SG-Tableau All HOS`                     |
+| Managing director of operations        | `KNJ-SG-Tableau All MDO`                     |
+| Academic operations                    | `KNJ-SG-Tableau AcOps`                       |
+| The Syndicate                          | `KNJ-SG-Tableau The Syndicate`               |
+| School support directors               | `KNJ-SG-Tableau School Support Directors`    |
+| Special education directors            | `KNJ-SG-Tableau Special Education Directors` |
+| KIPP Forward directors                 | `KNJ-SG-Tableau KIPP Forward Directors`      |
+
+#### Network-wide functional groups
+
+These grant broadly and are not added on request from an individual — they
+follow from the function you sit in.
+
+`KNJ-SG-Tableau All Data`, `KNJ-SG-Tableau All HR`,
+`KNJ-SG-Tableau All Recruiting`, `KNJ-SG-Tableau All T&L`, `KNJ-SG-Tableau TC`,
+`KNJ-SG-Tableau All New Teacher Development`, `Leadership Development`,
+`Group Staff TEAM Council`, `TS-DL-Teaching And Learning`.
+
+!!! note "Not every workbook grants every group"
+
+    The network-wide list above is the one tier that legitimately differs per
+    workbook, so membership of one of these does not guarantee access to all nine.
+    The entity, school, and role groups behave the same way everywhere.
+
 ---
 
 ## Part 2 — What the fields are
