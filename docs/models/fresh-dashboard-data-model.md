@@ -285,6 +285,71 @@ later moved past or reversed; `Current` = point-in-time, latest status only):
 | `Pending Offers` (+ `<= 4 Days` / `>= 5 & <= 10 Days` / `> 10 Days`)                | Current   | Student has an outstanding offer awaiting a family response, bucketed by days pending — an SLA/staleness tracker for follow-up. |
 | `Conversion` — `Accepted to Enrolled` / `Offers to Accepted` / `Offers to Enrolled` | Ever      | Funnel conversion-rate metrics between two funnel stages.                                                                       |
 
+### Which goals exist at which granularity
+
+`goal_granularity` takes three values: `School` (`grade_level = -9`),
+`School/Grade Level`, and `Region/Grade Level` (`schoolid = 0`, with the region
+name repeated in `school`). **Not every goal exists at every level.** Expecting
+a value at a granularity a goal does not live at produces a phantom gap, so
+check this table before treating a missing row as a problem.
+
+| `goal_name`                | `School` | `School/Grade Level` | `Region/Grade Level` |
+| -------------------------- | :------: | :------------------: | :------------------: |
+| `Budget Target`            |    ✅    |          --          |          --          |
+| `FDOS Target`              |    ✅    |          ✅          |          --          |
+| `Seat Target`              |    ✅    |          ✅          |          --          |
+| `Conversion` (3 names)     |    --    |          ✅          |          --          |
+| `Enrollment In Progress`   |    --    |    scaffold only     |          --          |
+| `New Student Target`       |    ✅    |          ✅          |          ✅          |
+| `Re-Enroll Projection`     |    ✅    |          ✅          |          ✅          |
+| `App Target`               |    ✅    |          ✅          |          ✅          |
+| `Offers Target`            |    ✅    |          ✅          |          ✅          |
+| `Accepted`                 | scaffold |       scaffold       |       scaffold       |
+| `Pending Offers` (4 names) | scaffold |       scaffold       |       scaffold       |
+| `Inquiries`                |    --    |          --          |    scaffold only     |
+| `Deferred`                 |    --    |          --          |    scaffold only     |
+| `Waitlisted`               |    --    |          --          |    scaffold only     |
+
+Notable consequences:
+
+- `Budget Target` is **School-only**, so a change to it never fans out to grade
+  rows.
+- `FDOS Target` and `Seat Target` stop at `School/Grade Level` — there is no
+  region-level version of either.
+- `Offers Target` is the widest goal, existing at all three levels, so one
+  change can require up to three paired edits.
+
+### Rows with no value are scaffold, not goals
+
+Of the 39 `(goal_granularity, goal_type, goal_name)` combinations present for
+AY2026, **17 carry no populated `goal_value` at all** — marked `scaffold` above.
+They exist so the dashboard grid has a row per school / grade / status even
+where no target is set, and they are never expected to receive one. Only the ~20
+populated combinations are reconcilable against SRE's workbook.
+
+This rule holds at the **combination** level. A NULL _inside_ an otherwise
+populated combination is ambiguous and cannot be interpreted from the NULL alone
+— e.g. `Offers Target` at `Region/Grade Level` is populated for 31 of 45 rows,
+but all 9 Paterson rows are NULL, which may mean "Paterson has no offer goals"
+or "nobody filled these in." Ask rather than infer.
+
+### `Conversion` goals are a flat per-grade lookup
+
+The three `Conversion` goals are supplied by SRE as expected rates **by grade
+level**, identical across every school — verified for AY2026, where each grade
+has exactly one distinct value per metric:
+
+| `grade_level` | `Offers to Accepted` | `Offers to Enrolled` | `Accepted to Enrolled` |
+| ------------- | -------------------- | -------------------- | ---------------------- |
+| 0 (K)         | 0.85                 | 0.65                 | 0.85                   |
+| 1-12          | 0.78                 | 0.51                 | 0.80                   |
+
+So they are two tiers, not 102 independent values, and a rate change from SRE is
+a small uniform edit rather than a per-school reconciliation. The
+`Conversion Rate` column on each per-region tab of SRE's workbook is a
+**separate thing** — a calculation input used to derive that tab's "apps needed"
+from "new students needed", not the source of these goals.
+
 ### Full `grouped_status` → `goal_type` / `goal_name` crosswalk
 
 `grouped_status` (the crosswalk sheet's `status_group_value`) is the thing

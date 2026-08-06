@@ -232,6 +232,81 @@ Sumner under Camden **ES**. SRE themselves treat grades 5-6 as MS at the grade
 level and the school as ES at the school level — which is exactly the per-grade
 banding the scaffold's `school_level` reproduces. Don't "fix" that split.
 
+### Tab-by-tab map of SRE's workbook
+
+The workbook has 7 tabs (AY2026): `cover sheet`, `KCNA`, `Newark`, `Miami`,
+`KPAT`, `attrition`, `enrollment snapshot offer management`. **Every tab holds
+more than one table**, and the extra tables' columns overlap horizontally — see
+the decoy warning below. Read the granularity table in the reference doc first,
+so you know which goals a tab could possibly source.
+
+#### `cover sheet` — fully mapped
+
+Four blocks, only two of which are loadable:
+
+| block           | range     | feeds                                   |
+| --------------- | --------- | --------------------------------------- |
+| school targets  | `A2:I24`  | `School` granularity, 6 goal_names      |
+| region totals   | `K2:N5`   | **nothing** — Tableau computes these    |
+| App Target grid | `A26:D37` | `Region/Grade Level`, `App Target` only |
+| grid total row  | `A38:D38` | **nothing** — a `Total`, not a grade    |
+
+School-targets columns: `A` region, `B` type (→ `school_level`), `C` school, `D`
+FDOS Target, `E` Seat Target, `F` Budget Target, `G` Re-Enroll Projection, `H`
+New Student Target, `I` App Target. 22 schools (Newark 12, Camden 5, Miami 5);
+Paterson is on `KPAT`, not here.
+
+Two traps in this tab:
+
+- **The two "totals" blocks (`K2:N5` and row 38) have no home in the staging
+  table** — there is no grade-less region granularity. They are labelled and
+  numeric and look loadable; they are not. Use them as cross-checks only.
+- **`KMT` / `KLE` / `KLM` have col `F` populated with col `E` blank** (90 / 196
+  / 56). Those values are the SY26-27 **seat** targets — the `Miami` tab's
+  per-grade seat rows sum to exactly those numbers — so prod correctly stores
+  them as `Seat Target` with `Budget Target` NULL. No Miami block carries a
+  Budget Target column at all, so these three cannot be derived; they stay NULL
+  until SRE fills them.
+
+### Rounding: half-up, and NOT Python's `round()`
+
+SRE's sheets store **unrounded formula output** while the goals sheet holds
+integers, so every comparison must round before diffing. Two ways to get this
+wrong, both of which manufacture false diffs across dozens of rows:
+
+- **Not ceiling.** Verified against AY2026 prod: SPARK `415.17` → 415, Seek
+  `405.11` → 405, Rise `398.248235318` → 398, NCA `774.44107857` → 774, Life
+  `220.34` → 220, KURA `194.31` → 194, TEAM `50.08` → 50. Ceiling would have
+  been wrong on every one.
+- **Not `round()`.** Python's built-in is banker's rounding, so
+  `round(390.5) == 390` while the sheet and prod both hold **391** (THRIVE's
+  Re-Enroll Projection). Use explicit half-up:
+
+  ```python
+  from decimal import Decimal, ROUND_HALF_UP
+
+  def half_up(x):
+      return int(Decimal(str(x)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+  ```
+
+Which columns need it varies by tab — on the `cover sheet` only `G` and `H` are
+fractional; `D`, `E`, `F`, `I` are clean integers. Don't assume; check.
+
+### Read the tabs with the Sheets API, and pin row ranges
+
+`values.get` with `range="'Newark'!A1:AZ200"` and
+`valueRenderOption="UNFORMATTED_VALUE"` gives real cell addresses, which is what
+makes a discrepancy claim attributable. **But every region tab has second and
+third tables further down whose columns overlap the first**, so parsing a whole
+tab with one column map fabricates diffs. This actually happened: parsing the
+`Miami` tab unbounded produced 14 invented Legacy discrepancies (a "Seat Target
+28 → 446") by reading a North Campus progress tracker's `Application Target`
+column at rows 51-58. Pin explicit row ranges per block, and sanity-check any
+implausible magnitude before reporting it.
+
+Note also that `KCNA`'s lower block repeats `KHS` in a **Campus** column, so a
+school-name map will happily match it and read the wrong columns.
+
 ## Goals reconciliation — offer this at the start of FRESH work
 
 **SRE does not always flag goal changes.** So before doing anything substantive
