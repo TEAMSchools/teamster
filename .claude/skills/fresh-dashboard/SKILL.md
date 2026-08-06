@@ -143,29 +143,47 @@ id before trusting it.
 **How to read it:** use the Drive connector —
 `mcp__claude_ai_Google_Drive__get_file_metadata` returns a content snippet
 spanning several tabs, and `read_file_content` returns the body. The connector
-runs as the signed-in user; ADC is the service account
-`codespaces@teamster-332318.iam.gserviceaccount.com`, which is NOT shared on the
-workbook and returns `403 The caller does not have permission` (re-verified Aug
-2026).
+runs as the signed-in user, so **access is not the problem — structure is.**
 
-**The connector concatenates every tab with no tab names and no cell
-addresses**, which is disqualifying for grade-level work: the per-region tabs
-have merged cells and shifting column layouts, so a flat blob cannot be parsed
-into a diff you can stake numbers on. Cover-sheet (`School`) rows are readable
-this way; grade-level rows are not. Three ways out, best first:
+**Tab-level reads are an MCP limitation, NOT a permission gap.** Do not
+re-litigate this; all three connector paths were tested (Aug 2026) and none
+yields tab names or cell addresses:
 
-1. **Get the workbook shared with
+- `read_file_content` has no tab/range parameter — it returns a "natural
+  language representation" by design and its own tool doc says not to depend on
+  the format. Every tab arrives concatenated into one blob.
+- `download_file_content` with `exportMimeType: text/csv` returns **the FIRST
+  TAB ONLY** (Google's CSV export is first-sheet-only). It IS worth calling for
+  the `cover sheet` — CSV preserves exact column positions, so it beats
+  `read_file_content` for school-level rows — but it cannot reach tabs 2..N.
+- `download_file_content` with `xlsx` or `zip` would carry every tab, but
+  returns base64, and decoding it needs a base64-to-shell pipe, which
+  `check-sensitive.sh` blocks as an encoding bypass. Closed path.
+
+Consequence: cover-sheet (`School`) rows are reliably readable; **grade-level
+rows are not.** The per-region tabs have merged cells and shifting column
+layouts, so the flat blob cannot be parsed into a diff worth staking numbers on.
+Two ways out:
+
+1. **Ask the user for a CSV per tab — the zero-permission option, and the
+   default.** Sheets `File > Download > CSV` exports the ACTIVE tab only, and
+   the filename carries the tab name, so provenance comes free. Have them drop
+   the files in `.claude/scratch/` and Read them. Three downloads covers Newark
+   / KCNA / Miami.
+2. **Optional automation: get the workbook shared with
    `codespaces@teamster-332318.iam.gserviceaccount.com` as Viewer** (owner is
-   mventresca@). Then the Sheets API works —
-   `uv run --with google-api-python-client` with `range="'Tab Name'!A1:Z"` gives
-   real tab names and cell addresses, durably, every cycle. This is the fix; ask
-   for it rather than working around it again.
-2. **Ask the user for a CSV per tab** — Sheets `File > Download > CSV` exports
-   the ACTIVE tab only, and the filename carries the tab name, so provenance
-   comes free. Have them drop the files in `.claude/scratch/` and Read them.
-3. Not screenshots — a region tab holds 100+ numbers and transcription is
-   error-prone. Not per-tab `#gid=` URLs either; the connector takes a file id
-   and returns all tabs regardless, so a URL adds nothing.
+   mventresca@; currently NOT shared — the Sheets API returns
+   `403 The caller does not have permission`). This does not fix the connector;
+   it grants a DIFFERENT API — Sheets v4 `spreadsheets.get` for tab names and
+   `values.get` with `range="'Tab Name'!A1:Z"` — which does have tab addressing.
+   The signed-in user's Drive grant cannot substitute: the connector holds that
+   OAuth token internally and never exposes it, so the Sheets API can only run
+   as ADC. Worth requesting only if the reconciliation should be hands-off every
+   cycle; it is a standing grant on someone else's file, so let the user decide.
+
+Not screenshots — a region tab holds 100+ numbers and transcription is
+error-prone. Not per-tab `#gid=` URLs either; the connector takes a file id and
+returns all tabs regardless, so a URL adds nothing.
 
 **Two things will trip up a naive comparison:**
 
