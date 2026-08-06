@@ -28,3 +28,66 @@ sources:
                 - kipptaf
                 - extracts
                 - rpt_powerschool__autocomm_students_iep
+      - name: rpt_parentsquare__schools
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_parentsquare__schools
+      - name: rpt_parentsquare__students
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_parentsquare__students
+      - name: rpt_parentsquare__parents
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_parentsquare__parents
+      - name: rpt_parentsquare__emergency_contacts
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_parentsquare__emergency_contacts
+      - name: rpt_parentsquare__staff
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_parentsquare__staff
+      - name: rpt_parentsquare__sections
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_parentsquare__sections
+      - name: rpt_parentsquare__rosters
+        config:
+          meta:
+            dagster:
+              group: extracts
+              asset_key:
+                - kipptaf
+                - extracts
+                - rpt_parentsquare__rosters

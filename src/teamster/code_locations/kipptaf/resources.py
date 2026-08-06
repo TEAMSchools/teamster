@@ -145,18 +145,3 @@ SSH_RESOURCE_LITTLESIS = SSHResource(
     username=EnvVar("LITTLESIS_SFTP_USERNAME"),
     password=EnvVar("LITTLESIS_SFTP_PASSWORD"),
 )
-
-# ParentSquare's district-level SFTP endpoint is sftp3.parentsquare.com; the
-# username is issued when the connection is created in the ParentSquare admin UI.
-# All three variables map to the `op-parentsquare-sftp` Secret at both
-# dagster-cloud.yaml insertion points. That Secret is synced by the
-# OnePasswordItem in .k8s/1password/items.yaml, which is applied by hand — a
-# secretKeyRef whose Secret or key does not exist fails container creation for
-# the whole code server, so the apply and a key-name check both precede any
-# deploy carrying these mappings.
-SSH_RESOURCE_PARENTSQUARE = SSHResource(
-    remote_host=EnvVar("PARENTSQUARE_SFTP_HOST"),
-    remote_port=22,
-    username=EnvVar("PARENTSQUARE_SFTP_USERNAME"),
-    password=EnvVar("PARENTSQUARE_SFTP_PASSWORD"),
-)

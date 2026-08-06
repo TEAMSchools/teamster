@@ -83,6 +83,10 @@ A step failure's real exception is the **bottom of the error chain**:
 theorizing about cause (e.g. ADP "Code error" was a transient gateway 404, not
 rate-limiting).
 
+Exception — a `dbt build` step failure has an EMPTY `errorChain`; the parsed dbt
+errors (compilation error, failing model, log path) are already in the top-level
+`error.message`. Read it directly.
+
 Step pod stdout is filtered from `k8s_container` logs. For per-step execution
 logs, use Dagster's compute log manager:
 `get_run_logs(filter_types=["LogsCapturedEvent"])` →

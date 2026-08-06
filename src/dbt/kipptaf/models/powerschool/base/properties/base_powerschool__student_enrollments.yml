@@ -400,20 +400,27 @@ models:
       - name: student_web_id
         data_type: string
         description:
-          The student user ID for logging in to Power School Parent. Indexed.
+          The generated username for the student, derived from their name and
+          birth date. Serves as the student user ID for logging in to
+          PowerSchool Parent, and is the local part of their Google Workspace
+          address. Populated for every region.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_web_id
+            source_model: stg_people__student_logins
+            source_column: username
       - name: student_web_password
         data_type: string
-        description: The password for Student_Web_ID.
+        description:
+          The generated default password for the student, derived from their
+          last name and birth year. Serves as the password for Student_Web_ID
+          and as the initial Google Workspace password. Populated for every
+          region.
         config:
           meta:
             source_system: PowerSchool
-            source_model: stg_powerschool__students
-            source_column: student_web_password
+            source_model: stg_people__student_logins
+            source_column: default_password
             contains_pii: true
       - name: student_email_google
         data_type: string

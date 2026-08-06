@@ -2,9 +2,12 @@ with
     schools as (
         -- Same filter as rpt_parentsquare__schools so a staff row can never
         -- reference a school the schools feed omits.
-        select cast(school_number as string) as school_id,
+        select
+            _dbt_source_project as code_location,
+
+            cast(school_number as string) as school_id,
         from {{ ref("stg_powerschool__schools") }}
-        where _dbt_source_project = 'kippnewark' and state_excludefromreporting = 0
+        where _dbt_source_project != 'kippmiami' and state_excludefromreporting = 0
     ),
 
     ops_leaders as (
@@ -20,8 +23,9 @@ with
         -- gap that would silently add or drop them.
         --
         -- The group spans all four regions and both regional and school-based
-        -- staff, so the scoping below is what reduces it to Newark regional
-        -- Operations. LDAP join shape follows rpt_clever__staff.
+        -- staff. The scoping below reduces it to regional-office Operations, and
+        -- `code_location` carries each leader's region so the fan-out below stays
+        -- inside it. LDAP join shape follows rpt_clever__staff.
         -- `google_email` (@apps.teamschools.org), NOT the roster's `mail` /
         -- `user_principal_name`, which are the AD/Exchange addresses
         -- (@kippnj.org, @kippteamandfamily.org). The two never coincide for any
@@ -35,6 +39,7 @@ with
             r.given_name,
             r.family_name_1,
             r.google_email,
+            r.home_work_location_dagster_code_location as code_location,
         from {{ ref("stg_ldap__group") }} as g
         cross join unnest(g.member) as group_member_distinguished_name
         inner join
@@ -47,18 +52,20 @@ with
             g.cn = 'TS-DL-Regional Ops Leaders'
             and r.worker_status_code != 'Terminated'
             and not r.is_prestart
-            and r.home_work_location_dagster_code_location = 'kippnewark'
+            and r.home_work_location_dagster_code_location != 'kippmiami'
             and r.home_work_location_powerschool_school_id = 0
             and r.home_department_name = 'Operations'
     )
 
--- One row per (leader, school). ParentSquare's staff file is per-school and its
--- spec states a staff member "can be at more than one school", so fanning the
--- leaders across every Newark school is what grants them school-level access
--- everywhere — and it is what makes every rpt_parentsquare__sections.staff_id
--- resolve at its own school. No district-office row is emitted because
--- schools.csv carries only the twelve operating schools, so a school_id of 0
--- would dangle.
+-- One row per (leader, school within their own region). ParentSquare's staff file
+-- is per-school and its spec states a staff member "can be at more than one
+-- school", so fanning a leader across every school in their region is what grants
+-- them school-level access everywhere — and it is what makes every
+-- rpt_parentsquare__sections.staff_id resolve at its own school. The join is
+-- region-keyed rather than a bare cross join, which matches the "all region"
+-- assignment branch in rpt_clever__staff and keeps a leader out of another
+-- region's feed. No district-office row is emitted because schools.csv carries
+-- only operating schools, so a school_id of 0 would dangle.
 select
     o.job_title as title,
     o.given_name as first_name,
@@ -66,7 +73,8 @@ select
     o.google_email as email,
 
     s.school_id,
+    s.code_location,
 
     cast(o.employee_number as string) as staff_id,
 from ops_leaders as o
-cross join schools as s
+inner join schools as s on o.code_location = s.code_location

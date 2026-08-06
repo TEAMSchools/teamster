@@ -402,14 +402,38 @@ data_tests:
       student_id in enrollments must exist in students. students is scoped to
       the current academic year and enrollments is not, so a region whose SIS is
       frozen at a prior year keeps shipping course enrollments for students that
-      no longer appear in the student feed. Errors rather than warns for the
-      same reason as the school_id check.
+      no longer appear in the student feed. Warns rather than errors, unlike the
+      school_id check, because the two feeds rebuild asymmetrically under
+      state:modified+ -- students descends from
+      int_extracts__student_enrollments while enrollments descends only from the
+      powerschool staging models, so a PR touching the enrollment chain rebuilds
+      one side and reads the other frozen from the staging defer copies. That
+      vintage gap alone produces orphans and blocks CI on changes that cannot
+      affect feed membership.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: rpt_clever__students
+
+  - name: rpt_parentsquare__sections__staff_id_resolves_at_its_own_school
+    description: >-
+      Every ParentSquare section's owner must hold a staff row at that section's
+      own school, not merely somewhere in staff.csv. The relationships test on
+      sections.staff_id is single-column, so an owner drawn from another region
+      satisfies it while dangling in this region's file -- and these views span
+      every NJ region, with each district wrapper slicing one region out. The
+      staff feed fans a leader across the schools of their own region only, so
+      (school_id, staff_id) is the pair that has to resolve. Errors rather than
+      warns: ParentSquare rejects a section naming a staff member it has no
+      record of at that school, which fails the whole sections import rather
+      than one row.
     config:
       severity: error
       meta:
         dagster:
           ref:
-            name: rpt_clever__students
+            name: rpt_parentsquare__sections
 
   - name: rpt_parentsquare__students__every_student_has_a_roster_row
     description: >-
