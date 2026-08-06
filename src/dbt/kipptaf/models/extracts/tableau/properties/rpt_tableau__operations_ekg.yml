@@ -61,7 +61,9 @@ models:
           int_people__location_crosswalk. This is the column a Tableau entity
           gate scopes on, NOT home_business_unit_name — that one is the
           respondent's own entity, and central-office staff walk schools in
-          every region. Null when the form label is absent from the crosswalk.
+          every region. Takes four values, not the five home_business_unit_name
+          takes — KIPP TEAM and Family Schools Inc. owns no school, so it never
+          appears here. Null when the form label is absent from the crosswalk.
         data_tests:
           - not_null:
               config:
