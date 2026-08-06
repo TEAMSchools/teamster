@@ -437,12 +437,17 @@ numbers and the dashboard:
   not just at year rollover.** `stg_google_sheets__finalsite__exclude_ids` is
   enforced upstream of everything FRESH touches, but a test record created today
   isn't excluded until someone adds its id to the sheet.
-- **The goals sheet is a live-read Google Sheets external table** — every query
-  against `stg_google_sheets__finalsite__goals` reflects whatever is in the
-  sheet _at that exact moment_, with no caching. A value can change between two
-  queries run seconds apart if someone is actively editing the sheet. A
-  dashboard number that doesn't match a materialized dbt table's numbers may
-  simply mean the sheet was edited after that table's last build — not a bug.
+- **The goals sheet is read live only by the source external table, not by
+  anything downstream.** `src_google_sheets__finalsite__goals` is a
+  `GOOGLE_SHEETS` external and reads the sheet at query time, but
+  `stg_google_sheets__finalsite__goals` and
+  `int_google_sheets__finalsite__goals_pivot` are both materialized as native
+  tables, frozen at their last build. So a goal value edited in the sheet is
+  invisible everywhere downstream until those rebuild — the risk is **staleness,
+  not mid-query drift**. A dashboard number that doesn't match the sheet usually
+  means the sheet was edited after the last build; confirm by comparing the
+  sheet's Drive `modifiedTime` against `last_modified_time` for that table in
+  `kipptaf_google_sheets.__TABLES__`.
 
 ### How Finalsite's `latest_status` becomes an expected enrollment status
 
@@ -763,9 +768,12 @@ URL rather than assuming last cycle's. Then:
 - Confirm the **goal names are unchanged**. The goals sheet joins on
   `goal_name`, so a renamed goal silently stops matching.
 - Reconcile SRE's workbook against `stg_google_sheets__finalsite__goals` and
-  hand the analyst the missing rows to paste in.
-- Repeat until there are no discrepancies. The goals sheet is a live read, so
-  each round of pasting is immediately visible to the next comparison.
+  hand the analyst the missing rows to paste in. Cover the **school-level and
+  both grade-level granularities** — SRE's cover sheet only carries school
+  totals, and grade-level goals change independently of them.
+- Repeat until there are no discrepancies. Each round needs
+  `stg_google_sheets__finalsite__goals` rebuilt first — it is a frozen table, so
+  a pasted edit is not visible to the next comparison until then.
 
 **Run this reconciliation whenever goals change, not only at rollover.** SRE
 does not always flag mid-year goal changes, so it is worth offering proactively

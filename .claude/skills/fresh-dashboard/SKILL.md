@@ -42,10 +42,18 @@ description: >-
   from either SIS's per-school field. These are NJ bands, so **Miami grade 5
   reports `MS` here but `ES` on the goals sheet** — an accepted divergence, not
   a bug. Don't reconcile it.
-- The goals sheet is a **live-read** Google Sheets external table — a number can
-  change between two queries run seconds apart if someone is editing it. A
-  mismatch against a materialized table doesn't necessarily mean a bug; check
-  the sheet directly before assuming one.
+- **Only `src_google_sheets__finalsite__goals` reads the sheet live. Every goals
+  relation you can actually query is a frozen table**, so prod goes STALE
+  relative to the sheet — the opposite of a live-read hazard.
+  `stg_google_sheets__finalsite__goals` and
+  `int_google_sheets__finalsite__goals_pivot` are both `__TABLES__.type = 1`
+  (native table, frozen at last build), and the BigQuery MCP cannot read the
+  `src_` external at all — its service account has no Drive scope
+  (`Access Denied ... while getting Drive credentials`). Before trusting ANY
+  goals comparison, prove freshness: the sheet's Drive `modifiedTime` must be
+  older than `last_modified_time` for `stg_google_sheets__finalsite__goals` in
+  `kipptaf_google_sheets.__TABLES__`. If it is newer, the sheet has uningested
+  edits — rebuild into dev before comparing (see the reconciliation loop).
 
 ---
 
@@ -111,11 +119,12 @@ Standard checks, roughly in order of likelihood:
 5. **Ingestion lag**: `stg_finalsite__status_report` is sensor/file-drop
    triggered (Couchdrop SFTP), not a fixed cron — a very recent Finalsite edit
    may not have landed yet.
-6. **Live sheet edits**: for a goal-value discrepancy specifically, remember the
-   goals sheet is read live (no caching) — the number may have simply changed
-   between when a materialized table last built and now. Compare against the
-   sheet directly (or against `int_google_sheets__finalsite__goals_pivot`, also
-   a live read) before assuming a code bug.
+6. **Stale goals table**: for a goal-value discrepancy specifically, check
+   whether the sheet was edited after the last build before assuming a code bug
+   — `stg_google_sheets__finalsite__goals` is a frozen table, not a live read
+   (see _Key facts_). Compare the sheet's Drive `modifiedTime` against that
+   table's `__TABLES__.last_modified_time`; if the sheet is newer, rebuild into
+   dev and re-check before investigating anything else.
 
 ## Sanity-checking the scaffold against SRE's target sheet
 
@@ -133,17 +142,40 @@ id before trusting it.
 
 **How to read it:** use the Drive connector —
 `mcp__claude_ai_Google_Drive__get_file_metadata` returns a content snippet
-spanning several tabs, and `read_file_content` returns the body. **Do not reach
-for the Sheets API** (`uv run --with google-api-python-client`): ADC here
-authenticates as a service account that has no access to the workbook and
-returns `403 The caller does not have permission`. The connector runs as the
-signed-in user, which does.
+spanning several tabs, and `read_file_content` returns the body. The connector
+runs as the signed-in user; ADC is the service account
+`codespaces@teamster-332318.iam.gserviceaccount.com`, which is NOT shared on the
+workbook and returns `403 The caller does not have permission` (re-verified Aug
+2026).
+
+**The connector concatenates every tab with no tab names and no cell
+addresses**, which is disqualifying for grade-level work: the per-region tabs
+have merged cells and shifting column layouts, so a flat blob cannot be parsed
+into a diff you can stake numbers on. Cover-sheet (`School`) rows are readable
+this way; grade-level rows are not. Three ways out, best first:
+
+1. **Get the workbook shared with
+   `codespaces@teamster-332318.iam.gserviceaccount.com` as Viewer** (owner is
+   mventresca@). Then the Sheets API works —
+   `uv run --with google-api-python-client` with `range="'Tab Name'!A1:Z"` gives
+   real tab names and cell addresses, durably, every cycle. This is the fix; ask
+   for it rather than working around it again.
+2. **Ask the user for a CSV per tab** — Sheets `File > Download > CSV` exports
+   the ACTIVE tab only, and the filename carries the tab name, so provenance
+   comes free. Have them drop the files in `.claude/scratch/` and Read them.
+3. Not screenshots — a region tab holds 100+ numbers and transcription is
+   error-prone. Not per-tab `#gid=` URLs either; the connector takes a file id
+   and returns all tabs regardless, so a URL adds nothing.
 
 **Two things will trip up a naive comparison:**
 
-- **The workbook is KNJMIA — Newark, Camden, and Miami only. Paterson is
-  absent.** Scope Paterson out, or its two schools (PPES, PPMS) read as spurious
-  extras.
+- **Paterson is absent from the `cover sheet` but DOES have its own tab**
+  (per-grade FDOS Target / Budget Target / Seat Capacity / Offer Target for KIPP
+  Paterson ES and MS, verified AY2026). So "the workbook is KNJMIA" holds only
+  for the cover sheet. Scope Paterson out of a **cover-sheet** count check, or
+  its two schools (PPES, PPMS) read as spurious extras — but do not conclude
+  from the cover sheet that SRE has no Paterson targets. Ask whether Paterson is
+  in scope; in Aug 2026 the answer was no.
 - **Abbreviations don't match and the sheet has no `schoolid`,** so this is a
   region + level + count check or a hand-mapped name comparison, never a join:
 
@@ -184,16 +216,41 @@ discrepancies are then out of scope for whatever you find.
    so a rename silently stops matching rather than erroring. Compare SRE's goal
    labels against `distinct goal_name` in `stg_google_sheets__finalsite__goals`
    and surface any that don't appear.
-1. **Compare.** Read the workbook via the Drive connector, compare against
-   `stg_google_sheets__finalsite__goals` on
+1. **Compare all three granularities, not just the cover sheet.** Compare
+   against `stg_google_sheets__finalsite__goals` on
    `(region, schoolid, grade_level, goal_type, goal_name)`, and classify each
-   difference as missing / extra / value-mismatch.
+   difference as missing / extra / value-mismatch. **SRE's cover sheet only
+   carries `School` rows (`grade_level = -9`)** — `School/Grade Level` and
+   `Region/Grade Level` rows come from the per-region tabs, and grade-level
+   goals DO change independently of the school totals. A reconciliation that
+   stops at the cover sheet is incomplete; say so explicitly rather than
+   implying the sheet is clean.
+1. **Only six `goal_name`s are SRE-entered numeric targets** — `Seat Target`,
+   `FDOS Target`, `New Student Target`, `Budget Target`, `Re-Enroll Projection`
+   (all `goal_type` `Enrollment`) and `App Target` (`Applications`). Those are
+   the cover sheet's columns. Everything else is a funnel roll-up; don't hunt
+   for it in SRE's workbook.
+1. **Cross-check the cover sheet against the per-region tab before reporting a
+   diff.** They disagree in real cases — a value can sit in the cover sheet's
+   `Budget Target` column that the region tab identifies as the seat target.
+   When the two tabs conflict, do NOT pick one: flag it as a question for SRE
+   (see _Handing SRE a question_ below).
 1. **Hand back a paste-ready block.** Plain delimited rows in a fenced code
    block, one row per line, column order matching the sheet — not a markdown
    table, which can't be pasted into Sheets.
-1. **Re-run after they paste.** The goals sheet is a **live read**, so the next
-   comparison sees their edits immediately — no rebuild needed. Repeat until
-   there are no discrepancies.
+1. **Rebuild before re-comparing.** Their edits are NOT visible to prod —
+   `stg_google_sheets__finalsite__goals` is a frozen table and the BigQuery MCP
+   cannot read the live external. Rebuild into your dev schema, then query the
+   `zz_<user>_kipptaf_google_sheets` copy:
+
+   ```bash
+   uv run dbt build --select stg_google_sheets__finalsite__goals \
+     --project-dir src/dbt/kipptaf --target dev \
+     --defer --favor-state --state target/prod
+   ```
+
+   Skipping this makes the loop never converge — you keep re-reporting the same
+   diff against pre-edit values. Repeat until there are no discrepancies.
 
 Suggest the user drive this with `/loop` (no interval — self-paced) so each
 round re-compares automatically after they finish a batch of edits. Stop the
@@ -203,11 +260,36 @@ quiet.
 **Mid-year goal updates** can optionally be applied through the Claude Chrome
 extension instead of hand-pasting: generate a change-set prompt naming the
 workbook, the tab, each target row keyed by
-`(region, schoolid, grade_level, goal_type, goal_name)`, old value → new value,
-and an explicit instruction to change nothing else. The user drops that into the
-extension, which edits the sheet. **Then re-run the comparison** — the
-extension's write is unverified from here, so the reconciliation query is what
-confirms it landed.
+`(enrollment_academic_year, region, schoolid, grade_level, goal_type, goal_name)`,
+old value → new value, and an explicit instruction to change nothing else. The
+user drops that into the extension, which edits the sheet. **Then re-run the
+comparison** — the extension's write is unverified from here, so the
+reconciliation query is what confirms it landed.
+
+The change-set prompt MUST carry these three guardrails. Each blocks a specific
+silent failure, so don't trim them for brevity:
+
+- **"Change `goal_value` only; do not add or create rows."** A new row needs
+  `school_level`, `school` and `goal_granularity` filled correctly, and
+  `goal_granularity` is what decides which CTE in
+  `rpt_tableau__fresh_dashboard_progress_to_goals` picks the row up — a guessed
+  value produces a goal that silently never joins. Adds go back to the user as a
+  paste block instead. Tell the extension to report unmatched keys, not create
+  them.
+- **"Do not add, delete, reorder or sort rows."** The source sets
+  `skip_leading_rows: 1`, so row 1 is the header; a sort that captures it
+  corrupts the external table's column mapping.
+- **"Do not rename anything in `goal_name` or `goal_type`."** They are join keys
+  — a rename stops matching rather than erroring.
+
+### Handing SRE a question
+
+When the workbook contradicts itself or a value is ambiguous, SRE gets a
+plain-language question, not the reconciliation output. No `goal_name` /
+`goal_granularity` / `grade_level = -9` vocabulary, no schoolids — name the
+school, name the two candidate numbers, name which tab each came from, and say
+what you need back. Keep it to one or two questions; batch them into a single
+message the user can forward as-is.
 
 ## Rollover / maintenance generators
 
