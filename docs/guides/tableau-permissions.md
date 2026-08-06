@@ -7,13 +7,9 @@ This page has two halves. **Part 1** is for anyone who wants to understand or
 question what they can see, and needs no Tableau knowledge. **Part 2** describes
 the field structure and points at the build reference.
 
-**Status: live.** Eleven workbooks were remediated during the Entra ID identity
-migration; two of those are now retiring, leaving nine gated workbooks. An audit
-on 2026-08-05 read the shipped calculations for the first time and found six
-places where a workbook did not match this description — two are fixed, two
-close with the retirements, one is deferred to a planned department gate, and
-one is awaiting a workbook edit. See _Known gaps_ in Part 2 before relying on a
-specific workbook.
+**Status: live** on nine workbooks, listed in Part 2. Two caveats are called out
+inline where they apply: the support surveys are not yet scoped by department,
+and the Operations Systems walkthrough sheets are not yet scoped by school.
 
 ---
 
@@ -189,6 +185,28 @@ school, and **not** by the department being rated. Two consequences today:
     as a prefix across three inconsistent naming schemes, and departments have
     merged over time. It has to come from data.
 
+### The walkthrough sheets are not school-scoped yet
+
+On Operations Systems, the sheets built from the Operations EKG walkthrough form
+are gated by group membership alone. Anyone in the data, TEAM Council, managing
+director, Syndicate, school leader or DSO groups sees **every** school's
+walkthroughs, not just their own.
+
+The sibling half of the same dashboard, built from the ops PM form, is scoped
+normally — so the two halves of one dashboard currently answer to different
+rules.
+
+!!! note "Planned: school scoping"
+
+    School leaders and DSOs will be scoped to their own school; the broader groups
+    stay cross-regional on purpose. The data this needs has shipped, so what is
+    left is a workbook edit. Details are in the playbook.
+
+    The subtlety that made this slower than it looks: a walkthrough row has two
+    schools on it — the school walked, and the school the person who filled in the
+    form works at. Scoping by the second would show a school leader the
+    walkthroughs they carried out rather than the ones about their school.
+
 ### Rooms do not grant access
 
 Working in a Room — the office locations rather than a school — does not grant
@@ -218,25 +236,23 @@ immediate, auditable, applies consistently across all workbooks, and is
 reversible. A workbook edit is none of those things.
 
 Individual, by-name grants inside a workbook are **not permitted**. They are
-invisible to anyone auditing group membership and they survive the person
-changing roles. The Entra ID migration removed them from the main `Permissions`
-field of every workbook; the 2026-08-05 audit found 16 still present in
-secondary permission fields, which are being removed.
+invisible to anyone auditing group membership, and they survive the person
+changing roles.
 
 ---
 
 ## Part 2 — What the fields are
 
 Row-level security is implemented as Tableau calculated fields inside each
-workbook. This section describes the structure so you can read a workbook and
-know what you are looking at.
+workbook. This section is enough to read a workbook and know what you are
+looking at. It is not enough to build one.
 
-**To build or repair a workbook, use the playbook** —
+**To build, repair, or audit a workbook, use the playbook** —
 `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`. It carries
-the paste-ready text of every field, the order to create them in, the field-name
-resolution step, the apply-scope decision, and the per-workbook variants. That
-is the only place the calc text lives; this page deliberately does not duplicate
-it.
+the paste-ready text of every field, the order to create them in, how to resolve
+field names, where to attach the filter, the per-workbook variants, the
+verification personas, and the outstanding work. Calc text lives only there, so
+the two cannot drift.
 
 ### The five fields
 
@@ -251,70 +267,21 @@ shielded from each other.
 | `RLS - Subject Is Senior Leader` | Should this row be shielded from peers?                                           |
 | `Permissions`                    | The five routes from Part 1. **This is the field that gets applied as a filter.** |
 
-The split exists because the entity gate is needed by both route 4 and route 5,
-because per-workbook variants become one-line edits to a small field rather than
-surgery inside a sixty-line calculation, and because each gate can be dropped on
-a sheet by itself and compared against a row — which is how you debug a persona
-seeing the wrong thing.
+They are separate fields rather than one calculation because the entity gate is
+needed by two different routes, because a per-workbook difference becomes a
+one-line edit to a small field instead of surgery inside a long one, and because
+each gate can be put on a sheet by itself and compared against a row — which is
+how you find out why someone sees the wrong thing.
 
-Two properties of the design are worth knowing when reading any of these:
+**The gates read group membership, never the viewer's own roster row.** That is
+what makes cross-entity supervision work: someone employed by TEAM who oversees
+Paterson schools gets Paterson visibility by being added to the Paterson group,
+with no change to any workbook.
 
-- **The gates read group membership, never the viewer's own roster row.** That
-  is how cross-entity supervision works: someone employed by TEAM who oversees
-  Paterson gets Paterson visibility by being added to the Paterson group, with
-  no calculation change. Deriving entity from the viewer's own row would
-  silently revoke access from every cross-entity supervisor.
-- **`ISMEMBEROF()` takes a literal string only**, so the location gate is 26
-  explicit branches rather than one expression built from a field. A parameter
-  does not substitute: it holds one value per view, so the calculation would
-  evaluate once instead of per row and degenerate to all-rows-or-none.
-
-!!! warning "A missing group does not error — it silently denies"
-
-    Before editing a workbook, confirm every location group exists. The dbt test
-    `int_people__staff_roster__tableau_location_set_expected` asserts the data side
-    of this invariant; nothing can assert the Tableau side.
-
-### Where a permission field gets applied
-
-Tableau **ANDs** every filter that reaches a mark, so where the field is
-attached decides how much it covers:
-
-| Scope                                 | Covers                                                     |
-| ------------------------------------- | ---------------------------------------------------------- |
-| All worksheets using this data source | every sheet on that datasource, including ones added later |
-| Data source filter                    | same                                                       |
-| This worksheet only                   | that one sheet                                             |
-
-Datasource-wide is the default and what most workbooks use. Sheet-local scope is
-correct only when one datasource genuinely needs two different rules — the
-Survey Dashboard's Intent to Return sheets versus its support sheets, for
-instance.
-
-Two consequences that have both caused real problems:
-
-- A sheet-local gate has to be re-applied by hand on every new sheet. Add a
-  sheet to a dashboard, forget the filter, and it is ungated.
-- Where both scopes are attached, effective access is the intersection — so a
-  datasource-wide gate silently masks the defects of a stale sheet-local one.
-  The containment disappears the moment someone removes the wider filter or
-  copies the stale field into a new workbook.
-
-### One workbook can hold several permission fields
-
-A workbook is not finished when `Permissions` is correct. Several carry
-additional gates for particular sheets, and **each is a separate copy of the
-tier chain** maintained independently. SchoolMint Grow has five; the Survey
-Dashboard has two.
-
-Two mechanics make these hard to find, and both are why the audit needed the
-`.twbx` files rather than the Tableau UI:
-
-- A filter stores the field's **internal** name, which never updates on rename.
-  A filter reading `Permissions - ITR (copy)_155726081272713223` displays as
-  `Permissions - Support`.
-- A dead permission field passes every persona test, because nothing filters on
-  it — and it is the natural thing to copy when someone next adds a sheet.
+A workbook can hold **more than one** permission field, where particular sheets
+need a different rule — the Survey Dashboard has two, SchoolMint Grow has more.
+So "the `Permissions` field is correct" does not by itself mean a workbook is
+correctly gated, and the per-sheet answer is in the playbook rather than here.
 
 ### The gated workbooks
 
@@ -335,84 +302,26 @@ without following the playbook.
 | Stipend and Bonus Dashboard | `rpt_tableau__stipend_and_bonus_app`                                                                                          |
 | Personalized Survey Links   | `rpt_tableau__survey_completion`                                                                                              |
 
-Two more were remediated during the migration and are now leaving the model,
-each with a PR awaiting approval. Neither is a gap:
-
-| Workbook                          | Leaving because                                                                                                                                                           |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Federal Grants Timesheet Approval | the workbook reads a live Google Sheet rather than a dbt extract, so there is no gated datasource to protect ([#4726](https://github.com/TEAMSchools/teamster/pull/4726)) |
-| Leadership Development            | leader performance management is moving to Lattice; the dashboard and its models become archive-only ([#4629](https://github.com/TEAMSchools/teamster/pull/4629))         |
-
-Leadership Development was one of three workbooks that shield senior leaders
-from each other, so that set becomes Manager Survey Reports and Manager Survey
-Rollup.
+Two workbooks are leaving this list. Federal Grants Timesheet Approval now reads
+a live Google Sheet rather than a dbt extract, so it has no gated datasource;
+Leadership Development is becoming archive-only as leader performance management
+moves to Lattice. Neither is a gap. Until they are retired, Leadership
+Development is also one of three workbooks that shield senior leaders from each
+other, which then becomes two.
 
 Nothing on Tableau Server links a workbook to its table — each of these uses an
-**embedded** extract — so this table is the mapping, and it has to be maintained
-by hand when a workbook is repointed. Per-workbook variants are listed in the
-playbook.
-
-!!! warning "Two archived workbooks still hold pre-migration calculations"
-
-    `Content Team Dashboard` and `Teacher Goals` were archived rather than
-    remediated. Restoring either from its archived version brings back the old
-    calculation — individual username grants included — and its field references
-    no longer match the extracts. Work through its playbook section before
-    republishing either one.
-
-### Known gaps
-
-From the 2026-08-05 audit, reviewed the same day. Two are fixed, two are closing
-by retirement, one is deferred to the department gate, one has its data-layer
-work merged and its Tableau edit outstanding. The working checklist is in
-`.claude/scratch/`, uncommitted because it names staff usernames.
-
-| #   | Workbook                          | Gap                                                                                                                                                              | Status                                                                                                                                          |
-| --- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Survey Dashboard                  | `Completion Tracking` and `Individual Tracking` were on the `Home` dashboard and ungated — full roster names, employee numbers, job titles and completion status | **Fixed** — five-tier gate built on `rpt_tableau__survey_completion`                                                                            |
-| 2   | Miami Instructional Rubrics       | a correct `Permissions` field existed but was applied at no scope, so both data sheets were ungated                                                              | **Fixed** — field attached datasource-wide                                                                                                      |
-| 3   | Survey Dashboard                  | `Permissions - Support` grants every central office staff member every row, and is the only gate on five sheets                                                  | **Deferred** to department scoping — see _The support surveys are not department-scoped yet_. Not shipped                                       |
-| 4   | Operations Systems                | `rpt_tableau__operations_ekg` has a group-only gate with no location or entity check                                                                             | **dbt side merged**, Tableau edit outstanding                                                                                                   |
-| 5   | Federal Grants Timesheet Approval | no permission fields at all                                                                                                                                      | **Not a gap** — reads a live Google Sheet, not a gated extract. Leaving the model in [#4726](https://github.com/TEAMSchools/teamster/pull/4726) |
-| 6   | Leadership Development            | the entity gate has no Paterson branch, so Paterson rows are invisible to Paterson's leadership                                                                  | **Not worth fixing** — archived for Lattice in [#4629](https://github.com/TEAMSchools/teamster/pull/4629)                                       |
-
-Gap 4 was the instructive one, and two of its lessons generalise:
-
-- **A stale embedded extract makes a correct gate impossible to write.** The
-  model gained the full access contract in PR #4656, but the workbook's extract
-  predates it and carries none of the roster columns — which is why its gate
-  could only ever have been a flat list of group memberships. Refreshing the
-  extract is the first step of any such fix, and worth checking on any workbook
-  whose gate looks unexpectedly crude.
-- **On a walkthrough or observation model there are two schools per row**: the
-  respondent's own location, and the location being observed. Scoping a school
-  leader by the respondent's location gives them "walkthroughs I performed", not
-  "walkthroughs of my school". `school_clean_name` and
-  `school_business_unit_name` were added for this in
-  [#4746](https://github.com/TEAMSchools/teamster/pull/4746) and
-  [#4749](https://github.com/TEAMSchools/teamster/pull/4749); both are merged,
-  so only the workbook edit remains.
-
-The audit also found two dead permission fields, three legacy fields on
-SchoolMint Grow that are contained today only because a datasource-wide gate
-ANDs over them, and 16 by-name grants. None of those is a live leak. All are in
-the playbook's _Known gaps_.
+**embedded** extract — so this table is the mapping, maintained by hand when a
+workbook is repointed. Per-workbook variants, and the two archived workbooks
+that predate this model, are in the playbook.
 
 ### Related
 
-- Build and repair reference, with all calc text:
-  `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`
+- Build, repair, and audit reference, with all calc text and the outstanding
+  work: `docs/superpowers/plans/2026-07-31-tableau-workbook-remediation.md`
 - Design rationale for each tier and each peer-exclusion helper:
   `docs/superpowers/specs/2026-07-30-tableau-rls-entra-migration-design.md`
-- [#4631](https://github.com/TEAMSchools/teamster/issues/4631) — surfaces
-  `job_function_code` and fills the missing values, which removes the job-title
-  fallbacks throughout
-- [#4663](https://github.com/TEAMSchools/teamster/issues/4663) —
-  `rpt_tableau__pm_outlier_detection`, deferred out of the migration
-- [#4721](https://github.com/TEAMSchools/teamster/issues/4721) and
-  [#4728](https://github.com/TEAMSchools/teamster/pull/4728) — the Survey
-  Dashboard support-survey department gate. Planned, not shipped
-- [#4726](https://github.com/TEAMSchools/teamster/pull/4726) — retires Federal
-  Grants Timesheet Approval from the model
-- [#4629](https://github.com/TEAMSchools/teamster/pull/4629) — archives
-  Leadership Development for the Lattice migration
+- [#4631](https://github.com/TEAMSchools/teamster/issues/4631) — replaces every
+  job-title test with a job-function code, which removes the title fallbacks
+  this page describes as approximate
+- [#4721](https://github.com/TEAMSchools/teamster/issues/4721) — department
+  scoping for the support surveys
