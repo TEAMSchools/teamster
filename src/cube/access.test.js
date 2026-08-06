@@ -24,10 +24,15 @@ const SL = {
 
 test("buildGroups: SL gets the single student tier and staff directory+pii", () => {
   // SL is school-scoped with an all-department remit → a non-empty resolved
-  // remit, so the all_in_scope PII group is emitted.
-  const g = a.buildGroups(SL, ["ABC"], ["Ops"]);
-  assert.ok(g.includes("student-school"));
-  // No summary/detail/pii split — one student tier.
+  // remit, so the all_in_scope PII group is emitted. The student tier is now
+  // driven by the precomputed allowedStudentAbbreviations array (5th arg),
+  // not a row field — pass SL's own school to simulate her base scope.
+  const g = a.buildGroups(SL, ["ABC"], ["Ops"], [], ["ABC"]);
+  assert.ok(g.includes("student"));
+  // No scope-specific tiers or old summary/detail/pii split — one flat tier.
+  assert.ok(!g.includes("student-school"));
+  assert.ok(!g.includes("student-region"));
+  assert.ok(!g.includes("student-network"));
   assert.ok(!g.includes("student-detail"));
   assert.ok(!g.includes("student-summary"));
   assert.ok(!g.includes("student-pii"));
@@ -71,10 +76,21 @@ test("buildGroups: staff_pii_scope none → directory but no pii tier", () => {
   assert.ok(!g.some((x) => x.startsWith("staff-pii")));
 });
 
-test("buildGroups: student_location_scope none → no student tier", () => {
-  const g = a.buildGroups({ ...SL, student_location_scope: "none" });
+test("buildGroups: empty allowedStudentAbbreviations → no student tier", () => {
+  // Omitting the 5th arg defaults it to [] — the empty-array guard (same
+  // rationale as staff-pii-* below: Cube hard-errors on `equals []` rather
+  // than compiling to zero rows).
+  const g = a.buildGroups(SL);
   assert.ok(!g.some((x) => x.startsWith("student")));
   assert.ok(g.includes("staff-directory"));
+});
+
+test("buildGroups: a non-empty allowedStudentAbbreviations emits the student tier even when the base scope alone would deny", () => {
+  // Proves the array, not a row field, drives the tier — this is what lets an
+  // individual-exception grant add student access for a viewer whose base
+  // student_location_scope is none/absent.
+  const g = a.buildGroups({ staff_key: "s1" }, [], [], [], ["KIPP_LIFE"]);
+  assert.ok(g.includes("student"));
 });
 
 test("buildGroups: null row → no groups", () => {
@@ -91,20 +107,22 @@ test("buildGroups: an object with no staff_key gets no groups (not even staff-di
 test("buildSecurityContext flattens the access row + chain", () => {
   const row = {
     staff_key: "s1",
-    student_location_scope: "region",
     staff_pii_scope: "reporting_chain_or_below_rank",
     region_key: "R1",
     location_abbreviation: "ABC",
     department_group: "Operations",
     job_function_level: 5,
   };
-  const ctx = a.buildSecurityContext(row, ["k1", "k2"]);
+  const ctx = a.buildSecurityContext(row, ["k1", "k2"], [], [], ["A", "B"]);
   assert.strictEqual(ctx.region_key, "R1");
   assert.strictEqual(ctx.job_function_level, 5);
   assert.deepEqual(ctx.reportee_staff_keys, ["k1", "k2"]);
+  assert.deepEqual(ctx.allowed_student_abbreviations, ["A", "B"]);
   assert.ok(ctx.groups.includes("staff-directory"));
-  // Scope-specific student group (canonical group-based RLS), not "student".
-  assert.ok(ctx.groups.includes("student-region"));
+  // Single flat student group, driven by allowed_student_abbreviations —
+  // there is no student_location_scope key on the returned context anymore.
+  assert.ok(ctx.groups.includes("student"));
+  assert.strictEqual(ctx.student_location_scope, undefined);
   assert.ok(ctx.groups.includes("staff-pii-reporting_chain_or_below_rank"));
 });
 
@@ -114,10 +132,11 @@ test("buildSecurityContext is null-safe for an unresolved viewer", () => {
   assert.deepEqual(ctx.reportee_staff_keys, []);
 });
 
-test("buildSecurityContext defaults allowed_abbreviations/allowed_department_groups to [] when omitted", () => {
+test("buildSecurityContext defaults allowed_abbreviations/allowed_department_groups/allowed_student_abbreviations to [] when omitted", () => {
   const ctx = a.buildSecurityContext(null, []);
   assert.deepEqual(ctx.allowed_abbreviations, []);
   assert.deepEqual(ctx.allowed_department_groups, []);
+  assert.deepEqual(ctx.allowed_student_abbreviations, []);
 });
 
 test("buildSecurityContext passes through the precomputed allow-lists", () => {
@@ -126,9 +145,11 @@ test("buildSecurityContext passes through the precomputed allow-lists", () => {
     ["k1"],
     ["A", "B"],
     ["talent"],
+    ["C", "D"],
   );
   assert.deepEqual(ctx.allowed_abbreviations, ["A", "B"]);
   assert.deepEqual(ctx.allowed_department_groups, ["talent"]);
+  assert.deepEqual(ctx.allowed_student_abbreviations, ["C", "D"]);
 });
 
 // Empty-remit hardening: Cube (Tesseract) throws "Values required for filter" on
@@ -240,6 +261,103 @@ test("computeAllowedAbbreviations: empty/undefined universe returns []", () => {
   assert.deepEqual(
     a.computeAllowedAbbreviations("network", "R1", "A", undefined),
     [],
+  );
+});
+
+test("unionAdditionalGrants: no grants returns the base list unchanged", () => {
+  assert.deepEqual(a.unionAdditionalGrants(["A"], [], LOCATION_UNIVERSE), [
+    "A",
+  ]);
+  assert.deepEqual(
+    a.unionAdditionalGrants(["A"], undefined, LOCATION_UNIVERSE),
+    ["A"],
+  );
+});
+
+test("unionAdditionalGrants: a school grant adds exactly that one abbreviation, dedup'd against the base", () => {
+  const grants = [
+    {
+      location_scope: "school",
+      region_key: null,
+      location_abbreviation: "B",
+      includes_student_data: false,
+    },
+  ];
+  assert.deepEqual(
+    a.unionAdditionalGrants(["A"], grants, LOCATION_UNIVERSE).sort(),
+    ["A", "B"],
+  );
+  // Granting a school already in the base list doesn't duplicate it.
+  assert.deepEqual(a.unionAdditionalGrants(["B"], grants, LOCATION_UNIVERSE), [
+    "B",
+  ]);
+});
+
+test("unionAdditionalGrants: two school grants for the same person both union in (Example D)", () => {
+  const grants = [
+    {
+      location_scope: "school",
+      region_key: null,
+      location_abbreviation: "B",
+      includes_student_data: true,
+    },
+    {
+      location_scope: "school",
+      region_key: null,
+      location_abbreviation: "C",
+      includes_student_data: false,
+    },
+  ];
+  assert.deepEqual(
+    a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE).sort(),
+    ["B", "C"],
+  );
+  // studentOnly filters to only the grant with includes_student_data = true.
+  assert.deepEqual(
+    a.unionAdditionalGrants([], grants, LOCATION_UNIVERSE, {
+      studentOnly: true,
+    }),
+    ["B"],
+  );
+});
+
+test("unionAdditionalGrants: a network grant adds every abbreviation", () => {
+  assert.deepEqual(
+    a
+      .unionAdditionalGrants(
+        [],
+        [
+          {
+            location_scope: "network",
+            region_key: null,
+            location_abbreviation: null,
+            includes_student_data: true,
+          },
+        ],
+        LOCATION_UNIVERSE,
+      )
+      .sort(),
+    ["A", "B", "C"],
+  );
+});
+
+test("unionAdditionalGrants: a region grant adds that region's abbreviations only", () => {
+  assert.deepEqual(
+    a
+      .unionAdditionalGrants(
+        [],
+        [
+          {
+            location_scope: "region",
+            region_key: "R2",
+            location_abbreviation: null,
+            includes_student_data: false,
+          },
+        ],
+        LOCATION_UNIVERSE,
+      )
+      .sort(),
+    ["C"],
   );
 });
 

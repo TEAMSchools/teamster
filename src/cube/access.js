@@ -7,12 +7,22 @@
 // Row-level security lives in the view access_policy blocks (see
 // src/cube/CLAUDE.md "View access policies"), NOT here — this file only shapes
 // identity into groups + allow-list arrays. Model:
-//   - Students are location-scoped: a non-none student_location_scope emits a
-//     student-<scope> group; the matching view policy filters rows by location.
+//   - Students are location-scoped: a single `student` group is emitted
+//     whenever the viewer's allowed_student_abbreviations array is non-empty;
+//     the matching view policy filters rows with an abbreviation IN that
+//     array. The array is the viewer's base student_location_scope UNIONED
+//     with every individual-exception grant that has includes_student_data
+//     (see unionAdditionalGrants) — this is what lets an exception grant a
+//     single extra school, not just a whole network/region tier.
 //   - The staff directory is OPEN (staff-directory group, every resolved
 //     viewer); sensitive staff PII is gated in the staff_pii view per
 //     staff_pii_scope (staff-pii-<scope>), scoped by a location ∩ department
 //     remit precomputed into allowed_abbreviations / allowed_department_groups.
+//     allowed_abbreviations is likewise the base staff_location_scope UNIONED
+//     with every individual-exception grant — unconditionally, regardless of
+//     includes_student_data (a location grant always widens staff visibility;
+//     includes_student_data only decides whether it ALSO widens student
+//     visibility).
 
 // Sensitive staff leaf → the access-row scope column that gates it. The PII
 // members live in the staff_pii view; compensation is registered here
@@ -52,6 +62,7 @@ function buildGroups(
   allowedAbbreviations = [],
   allowedDepartmentGroups = [],
   reporteeStaffKeys = [],
+  allowedStudentAbbreviations = [],
 ) {
   // Gate on a real identity: a row with no staff_key (a stray {} or an
   // object-shaped lookup miss) is not a resolved viewer and must get no groups
@@ -59,12 +70,17 @@ function buildGroups(
   if (!row?.staff_key) return [];
   const groups = [];
 
-  // Student: one scope-specific group per non-none location scope
-  // (student-region / student-school / student-network). Cube's canonical
-  // group-based RLS — the group IS the row-level tier; each maps 1:1 to a view
-  // access_policy. none → no group → default-deny.
-  if (row.student_location_scope && row.student_location_scope !== "none") {
-    groups.push(`student-${row.student_location_scope}`);
+  // Student: a single `student` group, gated on the precomputed
+  // allowed_student_abbreviations array being non-empty — same empty-array
+  // guard as staff-pii-* below (Cube (Tesseract) throws "Values required for
+  // filter" on an `equals []` row_level filter rather than compiling to zero
+  // rows, #4269), not three separate tier groups. This is what lets an
+  // individual-exception grant add one specific extra school for a viewer
+  // whose base student_location_scope is narrower (or none) — a tier group
+  // could only ever express "my whole region/network," never "my region plus
+  // this one other school."
+  if (allowedStudentAbbreviations.length > 0) {
+    groups.push("student");
   }
 
   // Open staff directory for every resolved staff viewer.
@@ -141,6 +157,40 @@ function computeAllowedAbbreviations(
   }
 }
 
+// Unions a base allow-list of abbreviations with every individual-exception
+// location grant on the row (dim_staff_cube_access.additional_location_grants
+// — an array of { location_scope, region_key, location_abbreviation,
+// includes_student_data } structs, one per live grant; empty when the person
+// has none). Each grant is resolved through the same computeAllowedAbbreviations
+// used for the base scope, so a `network` grant contributes every abbreviation,
+// a `region` grant contributes that region's abbreviations, and a `school`
+// grant contributes just that one school — exactly the mechanism that lets an
+// exception add a single specific extra location rather than only widening to
+// a whole tier. Pass `studentOnly: true` to only union grants where
+// includes_student_data is true (used for the student remit); omit it (the
+// staff remit) to union every grant unconditionally — a location grant always
+// widens staff visibility regardless of includes_student_data.
+function unionAdditionalGrants(
+  baseAbbreviations,
+  grants,
+  universe,
+  { studentOnly = false } = {},
+) {
+  const result = new Set(baseAbbreviations ?? []);
+  for (const grant of grants ?? []) {
+    if (studentOnly && !grant.includes_student_data) continue;
+    for (const abbreviation of computeAllowedAbbreviations(
+      grant.location_scope,
+      grant.region_key,
+      grant.location_abbreviation,
+      universe,
+    )) {
+      result.add(abbreviation);
+    }
+  }
+  return [...result];
+}
+
 // The department groups a viewer may see, given their department scope.
 // `universe` = all distinct department_group values. all → every group;
 // own_group → just the viewer's group; none/other → [] (deny).
@@ -165,15 +215,19 @@ function computeAllowedDepartmentGroups(
 // the connecting user / email claim in cube.js; `email` is intentionally NOT
 // stored on the returned context (no access_policy interpolates it — do not add
 // a policy referencing securityContext.email without first setting it here).
-// `allowedAbbreviations` / `allowedDepartmentGroups` are precomputed by the
-// caller (resolveAccess) via computeAllowedAbbreviations /
-// computeAllowedDepartmentGroups — domain-agnostic allow-lists later
-// interpolated into access_policy row_level filters (Task 5b).
+// `allowedAbbreviations` / `allowedDepartmentGroups` / `allowedStudentAbbreviations`
+// are precomputed by the caller (resolveAccess) via computeAllowedAbbreviations /
+// computeAllowedDepartmentGroups / unionAdditionalGrants — domain-agnostic
+// allow-lists later interpolated into access_policy row_level filters (Task 5b).
+// allowedAbbreviations already has every individual-exception grant unioned in
+// (unconditionally); allowedStudentAbbreviations has only the grants where
+// includes_student_data is true unioned in — see unionAdditionalGrants.
 function buildSecurityContext(
   row,
   reporteeStaffKeys,
   allowedAbbreviations,
   allowedDepartmentGroups,
+  allowedStudentAbbreviations = [],
 ) {
   return {
     groups: buildGroups(
@@ -181,8 +235,8 @@ function buildSecurityContext(
       allowedAbbreviations,
       allowedDepartmentGroups,
       reporteeStaffKeys,
+      allowedStudentAbbreviations,
     ),
-    student_location_scope: row?.student_location_scope ?? "none",
     staff_pii_scope: row?.staff_pii_scope ?? "none",
     region_key: row?.region_key ?? null,
     location_abbreviation: row?.location_abbreviation ?? null,
@@ -191,6 +245,7 @@ function buildSecurityContext(
     reportee_staff_keys: reporteeStaffKeys ?? [],
     allowed_abbreviations: allowedAbbreviations ?? [],
     allowed_department_groups: allowedDepartmentGroups ?? [],
+    allowed_student_abbreviations: allowedStudentAbbreviations ?? [],
   };
 }
 
@@ -296,6 +351,7 @@ module.exports = {
   isImpersonator,
   parseImpersonators,
   resolveEmulationTarget,
+  unionAdditionalGrants,
   STAFF_SENSITIVE_MEMBERS,
   STAFF_SENSITIVE_SCOPE_BY_MEMBER,
 };

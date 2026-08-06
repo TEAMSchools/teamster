@@ -269,6 +269,23 @@ data_tests:
           ref:
             name: dim_student_section_enrollments
 
+  - name: test_cube_access_individual_exceptions_single_remit_row
+    description: >-
+      An employee may now have multiple live rows in
+      stg_google_sheets__people__cube_access_individual_exceptions (one per
+      additional location grant), but the five staff_*_scope remit-override
+      columns describe the person, not a location, so at most one live row per
+      employee may set any of them -- two live rows disagreeing on, say,
+      staff_pii_scope has no well-defined precedence (the scope vocabulary isn't
+      a strict permissiveness order). Fails loudly on that condition instead of
+      dim_staff_cube_access silently picking one via an aggregate.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__people__cube_access_individual_exceptions
+
   - name: rpt_tableau__gpa_cumulative_year__one_latest_graded_year
     description: >-
       Exactly one academic year may carry `is_latest_graded_year`. More than one
