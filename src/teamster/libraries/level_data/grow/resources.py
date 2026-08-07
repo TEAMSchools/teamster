@@ -1,11 +1,13 @@
 import copy
+from typing import NoReturn
 
 from dagster import ConfigurableResource, DagsterLogManager, InitResourceContext
 from dagster_shared import check
 from oauthlib.oauth2 import BackendApplicationClient
 from pydantic import PrivateAttr
 from requests import Response, Session
-from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import HTTPError, Timeout
 from requests_oauthlib import OAuth2Session
 from tenacity import (
     retry,
@@ -32,11 +34,12 @@ class GrowAPIError(Exception):
 
 
 class GrowServerError(GrowAPIError):
-    """Raised when the Grow API returns a 5xx on an idempotent request.
+    """Raised when a request to the Grow API fails transiently.
 
-    An upstream gateway flake (502/504), not an application bug. Recoverable via
-    retry. POST is excluded: a 5xx on a create may have landed server-side, so
-    retrying it risks a duplicate record.
+    Covers a 5xx response and a connection-level failure (refused, reset, DNS,
+    timeout) on an idempotent request. An upstream flake, not an application
+    bug, so it is recoverable via retry. POST is excluded: the create may have
+    landed server-side, so retrying it risks a duplicate record.
     """
 
 
@@ -89,18 +92,38 @@ class GrowResource(ConfigurableResource):
         reraise=True,
     )
     def _request(self, method: str, url: str, **kwargs) -> Response:
-        response = self._session.request(method=method, url=url, **kwargs)
+        try:
+            response = self._session.request(method=method, url=url, **kwargs)
+        except (RequestsConnectionError, Timeout) as e:
+            self._raise_request_error(
+                message=str(e), cause=e, transient=method != "POST"
+            )
 
         try:
             response.raise_for_status()
             return response
         except HTTPError as e:
-            if response.status_code >= 500 and method != "POST":
-                self._log.warning(msg=response.text)
-                raise GrowServerError(response.text) from e
+            self._raise_request_error(
+                message=response.text,
+                cause=e,
+                transient=response.status_code >= 500 and method != "POST",
+            )
 
-            self._log.error(msg=response.text)
-            raise GrowAPIError(response.text) from e
+    def _raise_request_error(
+        self, message: str, cause: Exception, *, transient: bool
+    ) -> NoReturn:
+        """Raise the retryable or terminal error for a failed request.
+
+        Keeps the severity decision in one place: a transient failure logs at
+        WARNING, since the retry above recovers it and an ERROR would file a
+        false-positive GCP Error Reporting group.
+        """
+        if transient:
+            self._log.warning(msg=message)
+            raise GrowServerError(message) from cause
+
+        self._log.error(msg=message)
+        raise GrowAPIError(message) from cause
 
     @retry(
         stop=stop_after_attempt(3),
