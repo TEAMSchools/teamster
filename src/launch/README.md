@@ -3,8 +3,8 @@
 This directory holds the source of truth for the data team's tool catalog. It
 gets rendered into role-specific articles in the Zendesk Help Center.
 
-Design:
-[2026-08-06-launch-page-zendesk-design.md](../../docs/superpowers/specs/2026-08-06-launch-page-zendesk-design.md)
+Design: `docs/superpowers/specs/2026-08-06-launch-page-zendesk-design.md` (under
+review separately).
 
 | File         | What it is                                                      |
 | ------------ | --------------------------------------------------------------- |

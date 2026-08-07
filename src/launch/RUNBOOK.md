@@ -7,6 +7,10 @@ catalog we would put in front of staff.
 means, and what "verified" requires. This file is the order to do things in and
 who owns what.
 
+The design behind all of it lives in `docs/superpowers/specs/` as
+`2026-08-06-launch-page-zendesk-design.md`, which is under review separately.
+You do not need to read it to do this work.
+
 ## The goal
 
 **All 46 entries in `links.yml` carry `status: verified`.**
@@ -28,7 +32,12 @@ Tableau access gap loses the week.
 - [ ] **Google Drive** — the GPA Rosters, the Student Contact Info Feeds, and
       the Sheets behind the AppSheet apps.
 - [ ] **AppSheet** — the three apps.
-- [ ] **A way to edit this repository.** See _Working agreement_ below.
+- [ ] **A Codespace on this repository**, and push access to open a pull
+      request.
+
+You do **not** need Zendesk agent or Guide editing rights. Being able to read
+existing help articles is enough — the only Zendesk work here is confirming that
+a `guide:` link points at a real article.
 
 ## Step 1 — Verify the catalog entries
 
@@ -119,12 +128,21 @@ they want.
 
 ## Working agreement
 
-**Editing.** Unless you already work in git day to day, use the GitHub web
-editor: open `links.yml` on the branch, edit, and commit to a branch with a
-short message. No local setup, no terminal. Someone will review and merge.
+**Editing.** Work in your Codespace. Branch off `main`, edit `links.yml`,
+commit, push, open a pull request. Branch naming follows the repo convention in
+the root `CLAUDE.md`.
 
 **Commit as you go**, not all at the end. A commit per batch of entries is easy
-to review; one commit with 46 changed entries is not.
+to review; one commit with 46 changed entries is not. Open a pull request early
+and keep pushing to it rather than saving everything for Friday.
+
+**Before pushing, check formatting.** `links.yml` is linted in CI, and the rules
+that catch YAML problems fire at push time rather than at commit time. If a push
+is rejected, the error message names the file and rule.
+
+One quoting rule worth knowing up front, because it is the one that bites:
+**quote a string only when YAML needs it.** A value containing `: ` (colon then
+space) needs quotes. Most do not, and adding them anyway fails the linter.
 
 **Ask early.** Every judgment call in this file is one somebody else can answer
 in two minutes. Guessing costs more than asking.
