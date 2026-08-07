@@ -740,9 +740,19 @@ Refs #4731"
 
 - [ ] **Step 1: Write the union model**
 
-`source_column_name=none` is load-bearing. Without it the macro emits its own
+Two things are load-bearing here.
+
+`source_column_name=none` — without it the macro emits its own
 `_dbt_source_relation` naming the kipptaf relation, which collides with the
 pass-through column and breaks `extract_region`.
+
+**Anti-join, not a blanket archive exclusion.** Verified against prod: the Miami
+archive holds 3,946 students, and 493 of them are absent from Focus. Focus was
+seeded with the active population, not the full history. Dropping the archive
+branch wholesale would silently remove those 493 from `dim_students`. They are
+all departed (zero currently enrolled, zero graduated — 453 transferred out) and
+carry no enrollment rows, so nothing breaks, but a −492-row change to a
+Cube-facing dimension is churn nobody asked for. Keep them.
 
 ```sql
 with
@@ -756,16 +766,24 @@ with
                 source_column_name=none,
             )
         }}
+    ),
+
+    focus_students as (
+        select student_number,
+        from {{ ref("int_focus__students_conformed") }}
     )
 
--- The Miami archive is frozen and Focus now carries Miami identity, so the
--- PowerSchool branch must drop it or every Miami student appears twice.
+-- Focus supersedes the frozen archive for every Miami student it carries, so an
+-- archive row for such a student would double-count. The archive still holds 493
+-- departed students Focus never received; those stay, or dim_students loses them.
 -- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
-select *,
-from union_relations
+select u.*,
+from union_relations as u
+left join focus_students as f on u.student_number = f.student_number
 where
-    _dbt_source_project != 'kippmiami'
-    or _dbt_source_relation like '%focus%'
+    u._dbt_source_project != 'kippmiami'
+    or u._dbt_source_relation like '%\_focus%'
+    or f.student_number is null
 ```
 
 - [ ] **Step 2: Prove the double-count filter works before repointing anything**
@@ -790,6 +808,59 @@ having count(*) > 1
 ```
 
 Expected: 0 rows.
+
+Then confirm the anti-join kept the archive-only students rather than dropping
+them — this is the whole point of the anti-join and a plain duplicate check will
+not catch its absence:
+
+```sql
+select
+    countif(_dbt_source_relation like '%\_focus%') as from_focus,
+    countif(_dbt_source_relation not like '%\_focus%') as from_archive,
+    count(*) as miami_total,
+from `teamster-332318.zz_cbini_kipptaf.int_students__students`
+where _dbt_source_project = 'kippmiami'
+```
+
+Expected: `from_archive` is 493, `from_focus` is the full Focus student count,
+and `miami_total` exceeds the 3,946 rows prod carries today. A `from_archive` of
+0 means the anti-join collapsed to a blanket exclusion.
+
+Add the coverage test as a singular test at
+`src/dbt/kipptaf/tests/test_miami_students_spine_covers_archive.sql`:
+
+```sql
+-- Every student the frozen archive knows must survive into the spine, via the
+-- Focus branch for those Focus carries and the archive branch for the 493 it
+-- never received. A miss means the anti-join dropped a student from
+-- dim_students; a duplicate means both branches kept the same one.
+{{ config(severity="error") }}
+
+with
+    archive as (
+        select student_number,
+        from {{ ref("stg_powerschool__students") }}
+        where _dbt_source_project = 'kippmiami'
+    ),
+
+    spine as (
+        select
+            student_number,
+
+            count(*) as spine_rows,
+        from {{ ref("int_students__students") }}
+        where _dbt_source_project = 'kippmiami'
+        group by student_number
+    )
+
+select
+    a.student_number,
+
+    coalesce(s.spine_rows, 0) as spine_rows,
+from archive as a
+left join spine as s on a.student_number = s.student_number
+where s.spine_rows is distinct from 1
+```
 
 - [ ] **Step 3: Prove NJ output is unchanged**
 
