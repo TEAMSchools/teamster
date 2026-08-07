@@ -3,8 +3,10 @@
 What the KIPP TEAM & Family semantic layer exposes, for teams building against
 it.
 
-**There is no data on this page.** It describes views, dimensions, and measures
-only.
+**This page is deliberately public and contains no data.** It describes views,
+dimensions, and measures only — names, types, and descriptions. Publishing it
+openly is a considered choice: the semantic model is a contract, and a partner
+team building against it should not need a credential to read the contract.
 
 The machine-readable form of the same content is published alongside this page
 at `cube-catalog-meta.json` — parse that, not this page. Both are generated from

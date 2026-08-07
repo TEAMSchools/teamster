@@ -521,16 +521,25 @@ Git branch management, CI/CD actions. Retention is 30 days with a 10,000-event
 cap, and export is a control-plane endpoint (`/api/v1/audit-logs/export`) with
 no documented sink connectors.
 
-So the data-access trail is KTAF-built work, not a settings toggle:
+So the data-access trail is KTAF-built work, not a settings toggle. **Its design
+is deliberately not specified here** — a divergent-design pass surfaced enough
+open questions to warrant its own spec:
 
-- Emit one structured line per resolved request — identity, surface, view,
-  timestamp. **Never row values.** `logEmulation` in `cube.js` already
-  establishes the shape.
-- Sink Cloud Logging into BigQuery for retention KTAF owns.
+- A success-only log cannot answer "show every denied attempt and why", and
+  `access_policy` denials currently leave no trace at all.
+- Logging the view but not the rows returned cannot answer a FERPA inspection
+  request about a specific student — but logging row identifiers creates a
+  second copy of sensitive data with its own breach surface.
+- The log is itself a sensitive record of staff-student interaction, and needs
+  its own access policy, retention schedule, and legal-hold posture.
+- A forged token produces records indistinguishable from legitimate access while
+  the signing credential stays deployment-wide.
+- A BigQuery sink degrades during the same incidents it exists to explain.
 
-Build the emit side **alongside the sandbox**, not after. Retrofitting an audit
-trail onto a live external integration is strictly worse, and the partner
-explicitly asked for audit to be accounted for early.
+What is settled: the emit side lands **alongside the sandbox**, not after it.
+`logEmulation` in `cube.js` already establishes the structured-line pattern.
+Retrofitting an audit trail onto a live external integration is strictly worse,
+and the partner explicitly asked for audit to be accounted for early.
 
 ## Intake for new views and metrics
 

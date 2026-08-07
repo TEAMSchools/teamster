@@ -76,10 +76,12 @@ Agreed on both. We went further on the first:
   de-identified environment is the fallback, and it needs a re-identification
   threshold we have not set.
 - **Audit:** our platform's built-in log covers administrative events, not data
-  access. So we are building the data-access trail ourselves — one record per
-  query with identity, view, and timestamp, never row values — into our own
-  warehouse with retention we control. It lands alongside the sandbox, not
-  after.
+  access. So we are building the data-access trail ourselves, into our own
+  warehouse with retention we control. We are still designing exactly what each
+  record captures — there are real tradeoffs between answering "who accessed
+  this student's data" and not creating a second copy of sensitive data — so we
+  would rather get it right than describe it now. It lands alongside the
+  sandbox, not after.
 
 ## Three things that are now yours, because your end users are staff
 
