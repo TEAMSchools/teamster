@@ -31,6 +31,15 @@ class GrowAPIError(Exception):
     """
 
 
+class GrowServerError(GrowAPIError):
+    """Raised when the Grow API returns a 5xx on an idempotent request.
+
+    An upstream gateway flake (502/504), not an application bug. Recoverable via
+    retry. POST is excluded: a 5xx on a create may have landed server-side, so
+    retrying it risks a duplicate record.
+    """
+
+
 class GrowResource(ConfigurableResource):
     client_id: str
     client_secret: str
@@ -73,6 +82,12 @@ class GrowResource(ConfigurableResource):
             "/" + "/".join(args) if args else ""
         )
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential_jitter(initial=5, max=30),
+        retry=retry_if_exception_type(GrowServerError),
+        reraise=True,
+    )
     def _request(self, method: str, url: str, **kwargs) -> Response:
         response = self._session.request(method=method, url=url, **kwargs)
 
@@ -80,6 +95,10 @@ class GrowResource(ConfigurableResource):
             response.raise_for_status()
             return response
         except HTTPError as e:
+            if response.status_code >= 500 and method != "POST":
+                self._log.warning(msg=response.text)
+                raise GrowServerError(response.text) from e
+
             self._log.error(msg=response.text)
             raise GrowAPIError(response.text) from e
 
