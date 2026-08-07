@@ -537,12 +537,24 @@ exposures:
               id: 01861d02-0674-4ddb-979e-f1e6bcbcf5c0
               cron_schedule: 0 6 * * *
   - name: leadership_development
-    label: Leadership Development
+    label: Leadership Development (archived)
+    description: >
+      Archive only. The Leadership Development workflow moved to Lattice on
+      2026-07-30 and the upstream dbt models are disabled. This workbook has
+      never had a Dagster cron_schedule, so Dagster never refreshed it; any
+      remaining extract refresh is a Tableau-side schedule and has to be removed
+      in Tableau.
     type: dashboard
     owner:
       name: Data Team
     depends_on:
-      - ref("rpt_tableau__leadership_development")
+      - source("google_appsheet_archive",
+        "stg_google_appsheet__leadership_development__output_archive")
+      - source("google_appsheet_archive",
+        "stg_google_appsheet__leadership_development__active_users_archive")
+      - source("google_sheets",
+        "stg_google_sheets__performance_management__leadership_development_metrics_archive")
+    # Refs #4627
     config:
       meta:
         dagster:
