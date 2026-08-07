@@ -13,7 +13,6 @@ with
             student_number,
             _dbt_source_relation,
             _dbt_source_project,
-            students_dcid,
             academic_year,
             entrydate,
 
