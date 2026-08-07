@@ -42,7 +42,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff')

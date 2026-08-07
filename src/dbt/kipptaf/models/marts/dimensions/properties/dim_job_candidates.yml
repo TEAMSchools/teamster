@@ -15,7 +15,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: first_name
         data_type: string

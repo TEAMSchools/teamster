@@ -41,7 +41,6 @@ models:
           - unique:
               config:
                 severity: error
-          - not_null
 
       - name: student_enrollment_key
         data_type: string

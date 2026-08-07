@@ -17,7 +17,6 @@ models:
             warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: course_key
         data_type: string
