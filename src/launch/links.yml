@@ -1,0 +1,381 @@
+# Data launch page — tool catalog
+#
+# Source of truth for the generated Zendesk catalog articles.
+# See docs/superpowers/specs/2026-08-06-launch-page-zendesk-design.md
+#
+# THIS FILE IS A STARTING POINT, NOT A FINISHED CATALOG. It was scraped from
+# the existing Google Site, so every entry carries `status: needs-review`
+# until a human has confirmed it against the live tool. See README.md in this
+# directory for what reviewing an entry means.
+#
+# `audiences` controls which role views a tool appears in. It is NOT an
+# access control — the All view always renders every entry, and access is
+# enforced by the destination system.
+
+- id: attendance_dashboard
+  name: "Attendance Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/AttendanceDashboard/Trends?:embed=y"
+  description:
+    "Monitor ADA, Chronic Absenteeism, Suspension and Daily Attendance Calls"
+  # TODO(description): source site had conflicting wording; verify
+  audiences: [leaders, ops, region]
+  system: tableau
+  status: needs-review
+
+- id: certification_dashboard
+  name: "Certification Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/NJCertificationDashboardSchoolsView/CertificationDashboard?:embed=y"
+  description:
+    "Certification status and individual teacher steps for certification, effort
+    logging, and PRAXIS intensive attendance."
+  audiences: [leaders, region]
+  system: tableau
+  status: needs-review
+
+- id: coaching_conversation_tool
+  name: "Coaching Conversation Tool"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/CoachingConversationTool/CoachingConversationTool?:embed=y"
+  description:
+    "View performance management results for yourself and those you coach from
+    2018 to present."
+  # TODO(description): source site had conflicting wording; verify
+  audiences: [leaders, teachers]
+  system: tableau
+  status: needs-review
+
+- id: college_admission_readiness_assessment_tracker
+  name: "College Admission Readiness Assessment Tracker (CARAT)"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/CollegeAdmissionReadinessAssessmentsTrackerCARAT/LandingPage?:embed=y"
+  description:
+    "Tracking of any assessment that helps our students go to and through
+    college: ACT, SAT, PSAT10, PSAT NMSQT, PSAT 8/9, and AP."
+  audiences: [region]
+  system: tableau
+  status: needs-review
+
+- id: content_team
+  name: "Content Team (MIA)"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/ContentTeamDashboard/Home?:embed=y"
+  description:
+    "Information from CTM Rubric and O3s for Instructional Leads in Miami"
+  audiences: [leaders]
+  system: tableau
+  status: needs-review
+
+- id: data_quality_dashboard
+  name: "Data Quality Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/DataQualityDashboard/Home?:embed=y"
+  description:
+    "Audits that alert on missing student info and assessment scores."
+  audiences: [ops, teachers]
+  system: tableau
+  status: needs-review
+
+- id: ddi_suite
+  name: "DDI Suite"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/DDISuite/LandingPage?:embed=y"
+  description:
+    "Data-Driven Instruction info. Week-over-week assessment, standard, and QBL
+    mastery."
+  audiences: [leaders, region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: early_literacy_tool
+  name: "Early Literacy Tool (ELIT)"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/EarlyLiteracyDashboard_16940305949500/RegionOverview-Benchmark?:embed=y"
+  description:
+    "Analyze participation rates and measure level achievement distribution for
+    DIBELS."
+  audiences: []
+  # TODO(audiences): appeared only on the All page; assign roles
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/17344531036183"
+  # TODO(verify): See note on 'Literacy Tool (ELIT)'. Different URL, near-identical name.
+  status: needs-review
+
+- id: fast_and_iready_data_tool
+  name: "FAST & iReady Data Tool (MIA)"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/KIPPMiamiFASTi-ReadyAnalysis_16759101332760/LandingPage?:embed=y&:showAppBanner=false&:display_count=n&:showVizHome=n&:origin=viz_share_link"
+  description: "View Florida Assessment of Student Thinking (FAST) results."
+  # TODO(description): source site had conflicting wording; verify
+  audiences: [leaders, region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: finance_and_accounting_tools
+  name: "Finance & Accounting Tools"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/FinanceAccountingToolsResources/TeacherSalariesbyYearDash?:embed=y"
+  description:
+    "Staff salary, benefits, and roster counts by year. Limited access."
+  audiences: [region]
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/16753644522391#h_01H2QN8AEA0WXWYWJJBTVXF78H"
+  # also listed on the source site as: Finance & Accounting Tools & Resources
+  status: needs-review
+
+- id: fresh_dashboard
+  name: "FRESH Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/FRESHDashboard/LandingPage?%3Aembed=y#1"
+  description: "Track SRE's efforts for recruitment and registration."
+  audiences: [ops]
+  system: tableau
+  status: needs-review
+
+- id: gradebook_and_gpa_dashboard
+  name: "Gradebook and GPA Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/GradebookandGPADashboard/GradebookGPADashboardLandingPage?%3Aembed=y"
+  description:
+    "GPA, Gradebook Audit, ES Teacher/Monitor Audit. GPA Roster: Camden GPA
+    Roster: Miami GPA Roster: Newark"
+  audiences: [region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: grow_dashboard
+  name: "Grow Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/SchoolMintGrowDashboard_17226096936880/Home?:embed=y"
+  description:
+    "Completion tracking, ratings and comments for teacher performance
+    management (ETR and Self & Others), Grow classroom walkthroughs, O3s,
+    Microgoals and Look fors."
+  audiences: [leaders, region]
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/360008681374-Performance-Management-Teacher-Goals-Coaching-Excellent-Teaching-Rubric-ETR-Observations-SchoolMint-Grow"
+  status: needs-review
+
+- id: high_school_early_warning
+  name: "High School Early Warning"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/HighSchoolEarlyWarningDashboard/HSEarlyWarningDashboard-LandingPage?:embed=y"
+  description: "High school at-risk data & graduation eligibility"
+  # TODO(description): source site had conflicting wording; verify
+  audiences: [leaders, teachers]
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/13464666347031--User-Guide-High-School-Early-Warning-Dashboard"
+  # also listed on the source site as: High School Early Warning & Graduation Eligibility
+  status: needs-review
+
+- id: home_instruction_tracker
+  name: "Home Instruction Tracker"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/NewarkHomeInstructionTracker/KIPPNJMiamiHomeInstructionTracker?:embed=y"
+  # TODO(url-conflict): also linked as https://tableau.kipp.org/t/KIPPNJ/views/OKRTSDashboard_17247098359700/HomeInstruction?:embed=y
+  description: "Tracking home instruction requests"
+  # TODO(description): source site had conflicting wording; verify
+  audiences: [ops]
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/360013473594-Home-Instruction-Request-Process"
+  # TODO(verify): TWO different URLs on the live site (a dedicated tracker vs an OKRTS
+  # TODO(verify): tab), and the Operations page shows the OKRTS description on this tool.
+  # TODO(verify): Decide which is canonical; the other may be a separate entry or a dead
+  # TODO(verify): link.
+  status: needs-review
+
+- id: i_ready_apm_tool
+  name: "i-Ready APM Tool"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/APMDashboard/i-Ready?%3Aembed=y&%3AshowAppBanner=false&%3Adisplay_count=n&%3AshowVizHome=n&%3Aorigin=viz_share_link"
+  description: ""
+  # TODO(description): no description found on the source site
+  audiences: [leaders, region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: kipp_forward_data_suite
+  name: "KIPP Forward Data Suite"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/KIPPForwardDataSuite_16988639234650/SplashPage?:embed=y"
+  description:
+    "Metrics on match, persistence, college success, career launch, and
+    re-enrollment"
+  audiences: [region]
+  system: tableau
+  status: needs-review
+
+- id: leader_pm_dashboard
+  name: "Leader PM Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/LeadershipDevelopment_17017220456180/CompletionTracking?:embed=y"
+  description:
+    "Completion tracking and side-by-side self and manager reflections for those
+    in Leader Performance Management"
+  audiences: [leaders, ops, region]
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/19465485148183"
+  status: needs-review
+
+- id: literacy_tool
+  name: "Literacy Tool (ELIT)"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/LiteracyDashboard/LITDashboard-LandingPage?:embed=y"
+  description:
+    "Analysis of performance, growth and fidelity monitoring for DIBELS 8."
+  audiences: [leaders, teachers]
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/17344531036183"
+  # also listed on the source site as: LIT Dashboard
+  # TODO(verify): Name collision with 'Early Literacy Tool (ELIT)', which is a DIFFERENT
+  # TODO(verify): dashboard. Confirm both are live and rename one so they are
+  # TODO(verify): distinguishable.
+  status: needs-review
+
+- id: manager_survey_report
+  name: "Manager Survey Report"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/ManagerSurveyReports/ManagerReport?:embed=y"
+  description: "View twice yearly feedback from your direct reports."
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: okrts_dashboard
+  name: "OKRTS Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/OKRTSDashboard_17247098359700/LandingPage?:embed=y"
+  description:
+    "Our Kids Run To School (OKRTS). Monitor suspensions, referrals, and
+    DeansList behavior entry, as well as Promise Team metrics."
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: operations_systems
+  name: "Operations Systems"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/OperationsSystems/Walkthroughs?:embed=y"
+  description:
+    "Operations Walkthroughs and Operations Teammate Performance Management
+    results and roll-ups."
+  audiences: [ops]
+  system: tableau
+  status: needs-review
+
+- id: ops_dashboard
+  name: "Ops Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/OpsDashboard/EnrollmentDashboard?:embed=y"
+  description: "Student enrollment, demographics, SPED, and attrition metrics."
+  audiences: [leaders, ops, region]
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/360035994714"
+  status: needs-review
+
+- id: promotional_status_dashboard
+  name: "Promotional Status Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/PromotionalStatusDashboard/Roll-Up?:embed=y"
+  description:
+    "Roll up and roster of individual student promotional status by quarter."
+  audiences: [region]
+  system: tableau
+  status: needs-review
+
+- id: recruitment_dashboard
+  name: "Recruitment Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/RecruitmentDashboard_17213358840600/Home?:embed=y"
+  description:
+    "Seat Tracker reporting view, hiring statuses over time, interview/demo
+    tracking, candidate quality, and sourcing metrics."
+  audiences: [leaders, ops, region]
+  system: tableau
+  guide: "https://teamschools.zendesk.com/hc/en-us/articles/19856763832855--User-Guide-Seat-Tracker-App-and-Reporting"
+  status: needs-review
+
+- id: staff_attrition_dashboard
+  name: "Staff Attrition Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/AttritionDashboard/AttritionDashboard?:embed=y"
+  description:
+    "Track retention rates for staff by year, location, job title, and more."
+  audiences: [region]
+  system: tableau
+  status: needs-review
+
+- id: staff_demographic_explorer
+  name: "Staff Demographic Explorer"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/StaffDemographicExplorer/StaffDemographicsExplorer?:embed=y"
+  description:
+    "View information provided by staff about race, ethnicity, and other
+    identities by job group, titles, and more."
+  audiences: [region]
+  system: tableau
+  status: needs-review
+
+- id: staff_recent_job_and_salary_changes
+  name: "Staff Recent Job & Salary Changes"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/RecentJobSalaryChanges/JobDeptLocFlags?:embed=y"
+  description: "Audit view for staff changes. Limited access."
+  audiences: [region]
+  system: tableau
+  status: needs-review
+
+- id: staff_roster
+  name: "Staff Roster"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/StaffRoster/StaffRosterdisabled?:embed=y&:showAppBanner=false&:display_count=n&:showVizHome=n&:origin=viz_share_link"
+  description:
+    "Access roster of all staff for quick lookup of info, location, job title,
+    and more."
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: state_testing_analysis_tool
+  name: "State Testing Analysis Tool"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/StateTestingAnalysisToolSTAT_17001442186870/StateTestingAnalysisToolSTAT-LandingPage?%3Aembed=y&%3AshowAppBanner=false&%3Adisplay_count=n&%3AshowVizHome=n&%3Aorigin=viz_share_link#4"
+  description: ""
+  # TODO(description): no description found on the source site
+  audiences: [leaders, region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: stipend_and_bonus_dashboard
+  name: "Stipend and Bonus Dashboard"
+  url: "https://teamschools.zendesk.com/hc/en-us/articles/18404769341463--User-Guide-Stipend-and-Bonus-App"
+  description:
+    "Live data from the Stipend and Bonus app on stipends entered by quarter and
+    approval status."
+  audiences: [ops, region]
+  system: zendesk
+  status: needs-review
+
+- id: survey_dashboard
+  name: "Survey Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/SurveyDashboard_17078426466440/Home?:embed=y"
+  description:
+    "Completion status (all) and results (ITR and Support) for KTAF-administered
+    surveys."
+  # TODO(description): source site had conflicting wording; verify
+  audiences: [leaders, ops, region]
+  system: tableau
+  status: needs-review
+
+- id: survey_hq
+  name: "Survey HQ"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/PersonalizedSurveyLinks/SurveyHQ?:embed=y"
+  description:
+    "Your personalized links for the School Community Diagnostic, Staff
+    Demographic Info, Intent to Return, Manager, and Support surveys (does not
+    include Gallup and TNTP Insight)"
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  status: needs-review
+
+- id: teacher_development_dashboard
+  name: "Teacher Development Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/TeacherDevelopmentDashboard_16994705799120/HeatMap?:embed=y"
+  description:
+    "Information on observations conducted by the Teacher Development Team for
+    TiRs and New Leads in their programs."
+  audiences: [leaders, region]
+  system: tableau
+  status: needs-review
+
+- id: testing_accommodations
+  name: "Testing Accommodations"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/StateTestingAccommodationsTracker/StateTestingAccommodationsTracker?:embed=y"
+  description: "Access accommodations requests for state testing."
+  # TODO(description): source site had conflicting wording; verify
+  audiences: [leaders, ops, region, teachers]
+  system: tableau
+  # also listed on the source site as: Accommodations Tracker (NJ)
+  # TODO(verify): Two conflicting descriptions on the live site: 'access state assessment
+  # TODO(verify): results and testing accommodations' vs 'accommodations requests'. Pick
+  # TODO(verify): one.
+  status: needs-review
+
+- id: zendesk_dashboard
+  name: "Zendesk Dashboard"
+  url: "https://tableau.kipp.org/t/KIPPNJ/views/ZendeskReporting/Launch?:embed=y"
+  description: "Support ticket metrics by department, agent, and category."
+  audiences: [ops, region]
+  system: tableau
+  status: needs-review
