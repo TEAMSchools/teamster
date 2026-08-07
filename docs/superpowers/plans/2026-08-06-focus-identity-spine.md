@@ -2079,7 +2079,28 @@ grep -rn 'dcid' src/dbt/kipptaf/models/marts/
 Expected: no hits outside `fct_grades_assignments`, which is out of scope for
 this issue and tracked for Phase 5.
 
-- [ ] **Step 5: Record the known-null status counts**
+- [ ] **Step 5: Measure the bridge-orphan improvement**
+
+Restoring Miami students to `dim_students` fixes a pre-existing FK gap nobody
+filed. `bridge_student_contacts.student_key` has a `relationships` test to
+`dim_students.student_key`; prod carries roughly 2,077 orphans, and a Task 4 dev
+build showed 23. The direction matters — adding rows to the parent dimension can
+only reduce orphans, never create them, so any residual is pre-existing and any
+drop is this branch's doing.
+
+```sql
+select count(*) as orphans
+from `teamster-332318.kipptaf_marts.bridge_student_contacts` as b
+left join `teamster-332318.kipptaf_marts.dim_students` as d
+    on b.student_key = d.student_key
+where d.student_key is null
+```
+
+Run the same against the dev-built pair and put both numbers in the PR. If the
+dev number is HIGHER than prod, something in the spine dropped students — stop
+and diagnose.
+
+- [ ] **Step 6: Record the known-null status counts**
 
 The three status dims carry null values for students new since the freeze. Count
 them so the PR states the number rather than implying full restoration:
@@ -2093,7 +2114,7 @@ select
 from `teamster-332318.zz_cbini_kipptaf.int_focus__students_conformed`
 ```
 
-- [ ] **Step 6: Refresh the staging copies so CI can read them**
+- [ ] **Step 7: Refresh the staging copies so CI can read them**
 
 kipptaf `sources-kipp*` resolve to `zz_stg_*` for `target=staging`, and a
 district prod merge does not refresh them. Without this, CI reads a stale copy
@@ -2106,7 +2127,7 @@ uv run dbt clone --target staging \
   --project-dir /workspaces/teamster/src/dbt/kippmiami
 ```
 
-- [ ] **Step 7: Full-branch lint**
+- [ ] **Step 8: Full-branch lint**
 
 A `--force` check over this many files takes more than two minutes and its
 spinner emits no result lines, so grepping interim output reads as a false
@@ -2118,7 +2139,7 @@ cd /workspaces/teamster/.worktrees/cbini/feat/claude-focus-identity-spine
   $(git -C . diff --name-only origin/main...HEAD | grep -E '\.(sql|yml|md)$' | while read f; do [ -f "$f" ] && echo "$f"; done) </dev/null
 ```
 
-- [ ] **Step 8: Open the PR**
+- [ ] **Step 9: Open the PR**
 
 Use `.github/pull_request_template.md` as the body. It must state, because none
 of it is obvious from the diff:
