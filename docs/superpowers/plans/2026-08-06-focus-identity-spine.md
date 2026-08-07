@@ -65,6 +65,23 @@ These apply to every task. They are not repeated per-task.
 - **PII stays local.** Validation queries return student-level rows. Keep values
   in `.claude/scratch/`; reference counts and column names in PRs and issues,
   never values.
+- **sqlfluff ST06 buckets `cast()` as a SIMPLE target, not a calculation.** A
+  `cast(...) as x` placed after `date(...)` / `regexp_extract(...)` in the same
+  select list fails ST06 ("Select wildcards then simple targets before
+  calculations"), even though the repo's written column-order convention reads
+  as though nested functions go last. Put every `cast()` immediately after the
+  plain column refs and before any other function call. Hit and confirmed in
+  Task 2; the rule fires only at `trunk check --force`, never at build.
+- **`--target staging` compiles empty for the new Focus models.** Confirmed in
+  Task 1: `zz_stg_kippmiami_focus` holds none of the models #4725 shipped, so a
+  `union_relations` wrapper over them expands to
+  `/* No columns from any of the relations. */` and still exits clean. To verify
+  a new wrapper actually resolves columns, compile against `--target prod`
+  instead — `dbt compile` and `dbt parse` are not warehouse writes and are not
+  classifier-blocked, unlike `dbt build --target prod`. Read the compiled SQL
+  and confirm a real `cast(...) as ...` list. The staging copies get refreshed
+  once, by the user, in Task 11 Step 6; until then treat every staging compile
+  as uninformative rather than as a pass.
 
 ## Key facts verified against prod
 
