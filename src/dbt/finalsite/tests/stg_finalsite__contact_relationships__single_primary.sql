@@ -1,5 +1,3 @@
-{{ config(severity="warn") }}
-
 -- `primary` is a per-student singleton in Finalsite. The old model surfaced a
 -- violation as a duplicate contact_1 failing the uniqueness test; dense ranking
 -- absorbs a second primary into contact_2 instead, so the condition is tested

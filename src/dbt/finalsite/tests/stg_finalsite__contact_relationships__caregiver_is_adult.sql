@@ -1,5 +1,3 @@
-{{ config(severity="warn") }}
-
 -- A relationship flagged as a caregiver whose related contact does NOT carry
 -- Finalsite's adult status. Almost always this is correct and the related
 -- person really is a student -- a sibling flagged `financial`, say -- and the

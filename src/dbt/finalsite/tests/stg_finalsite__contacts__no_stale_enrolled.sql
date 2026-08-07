@@ -1,5 +1,3 @@
-{{ config(severity="warn") }}
-
 -- Finalsite never rolls a graduated cohort off `enrolled` -- last year's
 -- seniors keep that status indefinitely -- and separately, some students who
 -- are still enrolled never get a current-year record created. Both surface as

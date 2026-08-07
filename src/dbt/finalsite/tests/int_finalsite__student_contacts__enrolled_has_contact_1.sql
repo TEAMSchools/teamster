@@ -1,5 +1,3 @@
-{{ config(severity="warn") }}
-
 -- A currently enrolled student with no parent slot at all. The model itself
 -- stays SIS-agnostic and emits rows for every student record including
 -- prospects and applicants, who legitimately have no parent on file yet -- so

@@ -1,5 +1,3 @@
-{{ config(severity="warn") }}
-
 -- A student with more parents than the two conventional slots. Anything past
 -- contact_2 is emitted here; the receivers exclude those slots themselves
 -- (the contacts pivot and ParentSquare by construction, DeansList and the
