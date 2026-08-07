@@ -103,49 +103,11 @@ setting, _and_ it reads from a backing Google Sheet with its own separate
 sharing. Both have to require sign-in. There is no API shortcut here — open the
 app, then open the Sheet behind it, and check each.
 
-### Tools that are on the site but not on any role page
+### What order to do it in, and which entries need a decision
 
-Three AppSheet apps (`Leader PM App`, `Seat Tracker`, `Stipend App`) were linked
-only from the Support page, so there is no signal about who they are for. They
-are in `links.yml` with empty `audiences` and a TODO. Assigning those is a real
-decision, not a lookup.
-
-Related question worth raising rather than answering alone: Clever, DeansList,
-Grow, and PowerSchool are named on the Support page, but all four link to the
-same Okta dashboard URL rather than to the apps themselves. Should they be
-catalog entries at all, and if so what should they point at?
-
-### Suggested order
-
-Do the straightforward ones first to build context, then bring the judgment
-calls to a person rather than guessing.
-
-1. **Start with the tools you already know.** Confirm the pattern works before
-   scaling up.
-1. **Work through the rest alphabetically.** Most will be quick.
-1. **Save the `TODO(verify)` entries for last** and discuss them. There are four
-   and each needs a real decision, not a lookup:
-   - `Home Instruction Tracker` points at **two different URLs** depending on
-     which page of the old site you came from, and one of the two descriptions
-     is plainly the wrong tool's. Somebody has to decide which is canonical.
-   - `Literacy Tool (ELIT)` and `Early Literacy Tool (ELIT)` are **different
-     dashboards with nearly identical names**. Both appear live. They probably
-     need renaming so a teacher can tell them apart.
-   - `Testing Accommodations` has two contradictory descriptions on the old site
-     — results versus requests. These are not the same thing.
-
-### Things worth flagging as you go
-
-You are the first person to look at all of these at once, which makes you the
-most likely person to notice:
-
-- A tool that appears twice under different names
-- A tool nobody has used in years
-- A tool that is missing from the list entirely
-- A description that would confuse somebody who did not already know the tool
-
-Open an issue or leave a note. Finding these is genuinely part of the job, not a
-distraction from it.
+See [RUNBOOK.md](RUNBOOK.md). That file owns the sequence, the entries that need
+a judgment call rather than a lookup, and what to flag as you go. This file
+stays the field reference so the two cannot drift apart.
 
 ## Out of scope
 
