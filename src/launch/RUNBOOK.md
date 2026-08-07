@@ -132,9 +132,26 @@ they want.
 commit, push, open a pull request. Branch naming follows the repo convention in
 the root `CLAUDE.md`.
 
-**Commit as you go**, not all at the end. A commit per batch of entries is easy
-to review; one commit with 46 changed entries is not. Open a pull request early
-and keep pushing to it rather than saving everything for Friday.
+**Work in batches, and merge as you go.** Not one pull request for the whole
+week — a 46-entry diff reviewed on Friday is reviewed badly, and anything still
+open when the week ends is wasted. Not one per entry either. Roughly seven:
+
+| Batch                                    | Notes                                                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Warm-up** — 5 tools you already know   | Proves the whole loop while a mistake is still cheap                                                         |
+| **Google Sheets** — 7 entries            | The sharing-check batch. Do it early: a link-shared file is something you want to find on Monday, not Friday |
+| **AppSheet + Zendesk** — 4 entries       | Small. AppSheet needs the check twice — the app and the Sheet behind it                                      |
+| **Tableau** — three chunks of roughly 12 | The homogeneous bulk. Alphabetical is fine                                                                   |
+| **Judgment calls**                       | After the batched conversation. Needs decisions baked in                                                     |
+| **Step 3**, if it happens                | The triaged sheets                                                                                           |
+
+**A blocked entry never blocks its batch.** If something needs a decision, leave
+it `status: needs-review`, note it for the batched conversation, and keep going.
+One open question should not stall twelve tools.
+
+**Findings are issues, not pull requests.** Anything from Step 2 — a duplicate,
+a dead tool, a missing tool — goes in an issue. Do not turn a discovery into a
+code change that needs reviewing.
 
 **Before pushing, check formatting.** `links.yml` is linted in CI, and the rules
 that catch YAML problems fire at push time rather than at commit time. If a push
