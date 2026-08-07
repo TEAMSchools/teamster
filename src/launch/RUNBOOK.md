@@ -11,8 +11,9 @@ who owns what.
 
 **All 46 entries in `links.yml` carry `status: verified`.**
 
-That is the whole deliverable. Everything else here is in service of it or
-explicitly someone else's job.
+That is the deliverable. Steps 0 through 2 get there. Step 3 is a contingent
+stretch that only exists if the exposures triage lands in time, and the week is
+a success without it.
 
 ---
 
@@ -85,6 +86,35 @@ Open an issue or leave a note. This is part of the job, not a distraction from
 it — the duplicates and contradictions already found came from exactly this kind
 of looking.
 
+## Step 3 — Describe the Google Sheets that survive triage
+
+**Contingent. Only happens if the exposures triage below finishes in time, and
+it is explicitly the last thing.** If it does not happen, the week still
+succeeded — Step 1 is the deliverable.
+
+Anthony decides which of the 63 exposures are canonical for staff access and
+appends them to `links.yml` with an `id`, `name`, `url`, and `system` filled in.
+Everything else is left blank.
+
+Your job is the part you will have spent the week getting good at:
+
+- **Write the description.** One sentence, what it is for rather than how it
+  works. These will mostly arrive with no description at all, or with a raw
+  model name where a human name should be — nine of the exposures are called
+  things like `rpt_gsheets__athletic_eligibility`.
+- **Set `audiences`.** Same judgment as Step 1.
+- **Run the Drive sharing check.** Every one of these is a Google Sheet, so
+  every one needs it. No exceptions.
+- **Flip `status` to `verified`.**
+
+How many entries this is depends entirely on the triage — could be eight, could
+be twenty-five. Do not plan around a number.
+
+If a sheet arrives without enough context to write an honest description, say so
+rather than guessing. A vague description is worse than no entry: it puts
+something in front of 1,800 people that does not tell them whether it is what
+they want.
+
 ---
 
 ## Working agreement
@@ -136,10 +166,18 @@ Two further reasons not to scrape the file:
   catalog records _"a staff member might need to find this"_, an audience fact.
   The second is not derivable from the first.
 
-**Sequencing note.** Triage output adds new entries to `links.yml`. If that
-happens while the intern is working through the existing 46, both are editing
-one file all week. Cleanest is for triage to produce a list that gets appended
-and verified after the intern's pass, rather than direct concurrent edits.
+**Sequencing.** Triage output feeds
+[Step 3](#step-3--describe-the-google-sheets-that-survive-triage). Append the
+surviving sheets to `links.yml` with `id`, `name`, `url`, and `system` filled in
+and the rest blank; descriptions, audiences, and the sharing check are then the
+intern's last task.
+
+Doing it in that order matters for a practical reason: it keeps two people from
+editing one YAML file all week. Append after their pass through the existing 46,
+not during it.
+
+If triage does not finish in time, nothing is lost — Step 3 simply does not
+happen, and the surviving sheets get described whenever the triage does land.
 
 ### Findings to handle separately
 
