@@ -6,11 +6,12 @@ gets rendered into role-specific articles in the Zendesk Help Center.
 Design:
 [2026-08-06-launch-page-zendesk-design.md](../../docs/superpowers/specs/2026-08-06-launch-page-zendesk-design.md)
 
-| File        | What it is                                            |
-| ----------- | ----------------------------------------------------- |
-| `links.yml` | Every tool: name, URL, description, who it is for     |
-| `views.yml` | The six views and their intro copy. Presentation only |
-| `README.md` | This file                                             |
+| File         | What it is                                                      |
+| ------------ | --------------------------------------------------------------- |
+| `links.yml`  | Every tool: name, URL, description, who it is for               |
+| `views.yml`  | The six views and their intro copy. Presentation only           |
+| `RUNBOOK.md` | The task sequence — start there if you are picking up this work |
+| `README.md`  | This file: what the directory is and what "reviewed" means      |
 
 The renderer and publishing pipeline do not exist yet. This is the data they
 will consume.
