@@ -75,6 +75,7 @@ exposures:
     depends_on:
       - ref("rpt_tableau__grants_timesheets")
     config:
+      enabled: false
       meta:
         dagster:
           kinds:
