@@ -13,10 +13,10 @@ identity.
 `dbt_utils.union_relations` wrapper over per-district sources. Miami's branch
 currently points at the frozen `kippmiami_powerschool` archive. This plan adds a
 conforming `int_focus__*_conformed` model per spine model — holding the unprefix
-rule, the synthetic DCID, and the value translations — and unions it in.
-Intermediate-layer models take the Focus branch in place; staging-layer models
-get a new SIS-agnostic `int_students__*` sibling whose mart consumers are
-repointed.
+rule and the value translations — and unions it in. Intermediate-layer models
+take the Focus branch in place; staging-layer models get a new SIS-agnostic
+`int_students__*` sibling whose mart consumers are repointed onto
+`student_number`, retiring the PowerSchool DCID joins those marts inherited.
 
 **Tech Stack:** dbt 1.11 on BigQuery, `dbt_utils.union_relations`, `uv` for all
 Python/dbt invocation, trunk for lint.
@@ -79,26 +79,56 @@ Do not re-derive these; they are settled.
 | Collisions between new Miami numbers and NJ numbers                         | 0                                        |
 | `union_relations` builds a column **superset**, null-filling absent columns | `dbt_utils/macros/sql/union.sql:113`     |
 
-## Two spec gaps this plan closes
+## The DCID problem, and why the fix is to remove it
 
 The spec says PowerSchool-only columns "resolve to null for Miami with no
-special handling." That is wrong for one column, and the failure is silent.
-
-**`students_dcid` / `dcid` must be minted, not nulled.** Three marts join on it:
+special handling." For `dcid` that is currently false, and the failure is
+silent. Four mart joins depend on it:
 
 ```text
-dim_students.sql:73          on s.dcid = suf.studentsdcid
-dim_students.sql:77          on s.dcid = njs.studentsdcid
+dim_students.sql:73              on s.dcid = suf.studentsdcid
+dim_students.sql:77              on s.dcid = njs.studentsdcid
 dim_student_ell_status.sql:108   on e.students_dcid = scf.studentsdcid
 dim_student_iep_status.sql:156   on e.students_dcid = scf.studentsdcid
 ```
 
-`null = null` is false in SQL, so a null DCID produces **zero** Miami rows in
-`dim_student_ell_status` and `dim_student_iep_status`, and null `fleid` /
-`gifted_and_talented` in `dim_students` — with no error. Every conform model in
-this plan therefore sets `students_dcid = student_number` (the unprefixed id).
-Each of those joins is already scoped by `_dbt_source_project`, so the synthetic
-value only needs to be unique within `kippmiami`, which `student_number` is.
+`null = null` is false in SQL, so a null DCID yields **zero** Miami rows in
+`dim_student_ell_status` and `dim_student_iep_status`, and null `fleid` in
+`dim_students` — with no error raised.
+
+**Minting a synthetic DCID for Miami would be the wrong fix.** `dcid` is a
+PowerSchool-internal surrogate that the marts rubric already prohibits:
+
+- **R2** lists `dcid` among the source-system terms marts must not use.
+- **R7** says source-system acronyms like `dcid` are spelled out or removed.
+- The plumbing definition names "PowerSchool `dcid`" as an internal row ID used
+  only for upstream joins, and rules that plumbing stays in `staging/` and
+  `intermediate/`.
+
+Inventing a Focus DCID would spread a prohibited identifier into a second SIS to
+satisfy a join that should not exist. The join is the defect.
+
+**The fix: resolve `studentsdcid` to `student_number` in the intermediate layer,
+and join the marts on `student_number`.** The two staging models carry only
+`studentsdcid` — verified, neither has a `student_number` column — so the new
+`int_students__student_core_fields` and `int_students__student_user_fields` do
+that translation once, at exactly the layer the rubric says plumbing belongs in,
+and expose `student_number` as the join key.
+
+Three consequences:
+
+- **Focus needs no synthetic key.** Its rows carry their real `student_number`,
+  and `dcid` stays null for Miami exactly as the spec said.
+- **The one remaining `dcid` join is correct as-is.** `dim_students.sql:77`
+  joins `stg_powerschool__s_nj_stu_x`, an NJ-only table. Miami legitimately
+  matches nothing there, so a null Miami `dcid` is the right answer. Leave that
+  join alone — changing it risks NJ parity for no Miami benefit.
+- **`int_students__students` still carries `dcid`** for that NJ join. It is an
+  intermediate, which is where plumbing is allowed to live.
+
+This removes a live rubric violation rather than working around it, and it
+shrinks the change: the conform models become passthroughs on the canonical
+identifier.
 
 **`powerschool_id` is a free invariant check.** Focus carries the archive
 `student_number` directly on returning students. Task 2 adds a warn test
@@ -329,11 +359,11 @@ The core of the plan. Every other conform model reuses its identity rule.
 - Consumes: `ref("int_focus__students")` (existing wrapper),
   `ref("stg_powerschool__students")` (archive carry-forward).
 - Produces: a relation with PowerSchool column names — `student_number INT64`,
-  `students_dcid INT64`, `dcid INT64`, `first_name`, `middle_name`, `last_name`,
-  `dob DATE`, `gender STRING`, `ethnicity STRING`, `enroll_status INT64`,
-  `lep_status BOOL`, `spedlep STRING`, `lunchstatus STRING`, `cohort INT64`,
-  plus `_dbt_source_relation` and `_dbt_source_project` passed through. Tasks 3,
-  5, and 6 consume it.
+  `first_name`, `middle_name`, `last_name`, `dob DATE`, `gender STRING`,
+  `ethnicity STRING`, `enroll_status INT64`, `lep_status BOOL`,
+  `spedlep STRING`, `lunchstatus STRING`, `cohort INT64`, plus
+  `_dbt_source_relation` and `_dbt_source_project` passed through. Tasks 3, 5,
+  and 6 consume it.
 
 - [ ] **Step 1: Confirm the archive's ethnicity domain before writing the
       mapping**
@@ -449,15 +479,10 @@ with
             a.lunchstatus,
             a.lep_status,
 
-            -- Focus has no DCID. Three marts join students to core/user fields
-            -- on it, and null = null is false, so nulling it silently empties
-            -- dim_student_ell_status and dim_student_iep_status for Miami.
-            -- Mint it from student_number: every one of those joins is already
-            -- scoped by _dbt_source_project, so it need only be unique within
-            -- kippmiami.
-            i.student_number as students_dcid,
-            i.student_number as dcid,
-
+            -- No dcid is projected. It is a PowerSchool-internal surrogate the
+            -- marts rubric prohibits (R2, R7, plumbing), and the joins that
+            -- needed it are moved to student_number in Tasks 4 and 5. It
+            -- null-fills for Miami, which is correct.
             date(i.birthdate) as dob,
 
             i.sex_label as gender_label,
@@ -477,8 +502,6 @@ select
     _dbt_source_relation,
     _dbt_source_project,
     student_number,
-    students_dcid,
-    dcid,
     first_name,
     middle_name,
     last_name,
@@ -543,10 +566,9 @@ models:
     description: >-
       Miami student identity from Focus, conformed to PowerSchool column names
       and value domains so it can union into the network student spine. Holds
-      the unprefix rule, the synthetic DCID, and the value translations.
-      Statuses with no usable Focus source carry forward from the frozen
-      PowerSchool archive for returning students and are null for students new
-      since the freeze.
+      the unprefix rule and the value translations. Statuses with no usable
+      Focus source carry forward from the frozen PowerSchool archive for
+      returning students and are null for students new since the freeze.
     config:
       meta:
         contains_pii: true
@@ -559,14 +581,6 @@ models:
           - unique:
               config:
                 severity: error
-          - not_null:
-              config:
-                severity: error
-      - name: students_dcid
-        description: >-
-          Synthetic DCID minted from student_number. Focus has no DCID, and the
-          student core-field and user-field joins in the marts are keyed on it.
-        data_tests:
           - not_null:
               config:
                 severity: error
@@ -603,8 +617,6 @@ models:
           PowerSchool archive carried, derived from the Focus race flags.
           Hispanic takes precedence, then multiracial, then the single flagged
           race.
-      - name: dcid
-        description: Alias of students_dcid, for consumers that join on dcid.
       - name: first_name
         description: Student's legal first name as recorded in Focus.
       - name: middle_name
@@ -897,8 +909,9 @@ investigation found effectively unpopulated.
 **Interfaces:**
 
 - Consumes: `ref("int_focus__students_conformed")` from Task 2.
-- Produces: `int_students__student_user_fields`, carrying `studentsdcid`,
+- Produces: `int_students__student_user_fields`, carrying `student_number`,
   `fleid`, `gifted_and_talented`, `_dbt_source_relation`, `_dbt_source_project`.
+  No DCID.
 
 - [ ] **Step 1: Confirm the archive's `gifted_and_talented` domain**
 
@@ -915,17 +928,19 @@ is the archive's own default rather than a fabricated negative.
 
 - [ ] **Step 2: Write the conform model**
 
-`studentsdcid` must use the same synthetic value Task 2 minted, or the
-`dim_students` join silently drops every Miami row. `gifted_and_talented` gets
-the same archive carry-forward treatment as the three status fields: Focus's
+Keyed on `student_number`, not a DCID. `gifted_and_talented` gets the same
+archive carry-forward treatment as the three status fields: Focus's
 `Gifted (Computed)` custom field is log-based and effectively unpopulated.
 
 ```sql
 with
+    -- The archive's user fields are keyed on studentsdcid, so resolve to
+    -- student_number here. dcid is PowerSchool plumbing and stops at this
+    -- layer; the mart joins on student_number.
     archive as (
         select
-            student_number,
-            gifted_and_talented,
+            s.student_number,
+            suf.gifted_and_talented,
         from {{ ref("stg_powerschool__students") }} as s
         inner join
             {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
@@ -937,25 +952,42 @@ with
 select
     c._dbt_source_relation,
     c._dbt_source_project,
-
-    c.students_dcid as studentsdcid,
-
-    c.florida_education_identifier as fleid,
+    c.student_number,
 
     a.gifted_and_talented,
+
+    c.florida_education_identifier as fleid,
 from {{ ref("int_focus__students_conformed") }} as c
 left join archive as a on c.student_number = a.student_number
 ```
 
-- [ ] **Step 3: Write the union model**
+- [ ] **Step 3: Write the union model, resolving the PowerSchool branch to
+      `student_number`**
+
+The PowerSchool staging model carries only `studentsdcid`, so the union cannot
+be a bare passthrough — the branch resolves to `student_number` first. This is
+the translation that lets the mart stop joining on `dcid`.
 
 ```sql
 with
+    powerschool as (
+        select
+            suf.* except (studentsdcid),
+
+            s.student_number,
+        from {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
+        inner join
+            {{ ref("stg_powerschool__students") }} as s
+            on suf.studentsdcid = s.dcid
+            and suf._dbt_source_project = s._dbt_source_project
+        -- Miami's archive is superseded by the Focus branch below.
+        where s._dbt_source_project != 'kippmiami'
+    ),
+
     union_relations as (
         {{
             dbt_utils.union_relations(
                 relations=[
-                    ref("stg_powerschool__u_studentsuserfields"),
                     ref("int_focus__student_user_fields_conformed"),
                 ],
                 source_column_name=none,
@@ -965,22 +997,34 @@ with
 
 -- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
 select *,
+from powerschool
+
+union all
+
+-- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+select *,
 from union_relations
-where
-    _dbt_source_project != 'kippmiami'
-    or _dbt_source_relation like '%focus%'
 ```
 
-- [ ] **Step 4: Repoint `dim_students`**
+If the two branches' column sets differ, replace the hand-written `UNION ALL`
+with a single `union_relations` over both a materialized `powerschool` CTE and
+the conform model, which restores the automatic null-fill. Prefer that if there
+is any doubt.
 
-At `dim_students.sql:72-74`, change the ref only — the join keys are unchanged:
+- [ ] **Step 4: Repoint `dim_students` and change its join key**
+
+At `dim_students.sql:72-74`, both the ref and the join key change. This is the
+edit that removes `dcid` from the mart:
 
 ```sql
 left join
     {{ ref("int_students__student_user_fields") }} as suf
-    on s.dcid = suf.studentsdcid
+    on s.student_number = suf.student_number
     and s._dbt_source_project = suf._dbt_source_project
 ```
+
+Leave the `stg_powerschool__s_nj_stu_x` join at `dim_students.sql:76-78`
+untouched. It is NJ-only, so a null Miami `dcid` correctly matches nothing.
 
 - [ ] **Step 5: Build and prove Miami students now resolve their FLEID**
 
@@ -1003,13 +1047,34 @@ where _dbt_source_project = 'kippmiami'
 ```
 
 Expected: `with_fleid` is a large majority of `miami_students`. A `with_fleid`
-of 0 means the synthetic DCID diverged between Task 2 and this task — the exact
-silent failure this design guards against.
+of 0 means the `student_number` join is not resolving.
+
+Also confirm NJ did not regress. The PowerSchool branch gained an inner join to
+`stg_powerschool__students` to resolve `studentsdcid`, which silently drops any
+user-field row whose DCID has no matching student:
+
+```sql
+select
+    (
+        select count(*)
+        from `teamster-332318.kipptaf_powerschool.stg_powerschool__u_studentsuserfields`
+        where _dbt_source_project != 'kippmiami'
+    ) as staging_nj_rows,
+    (
+        select count(*)
+        from `teamster-332318.zz_cbini_kipptaf.int_students__student_user_fields`
+        where _dbt_source_project != 'kippmiami'
+    ) as spine_nj_rows
+```
+
+Expected: equal. A shortfall means orphaned `studentsdcid` values — switch the
+inner join to a left join so the row survives with a null `student_number`,
+rather than silently dropping NJ data to satisfy a Miami change.
 
 - [ ] **Step 6: Write both properties files, lint, and commit**
 
 Both need a model `description:`, per-column `description:`, and a uniqueness
-test on `studentsdcid` plus `_dbt_source_project`. Set
+test on `student_number` plus `_dbt_source_project`. Set
 `config: meta: contains_pii: true` on both — FLEID is a state student
 identifier.
 
@@ -1028,8 +1093,8 @@ Refs #4731"
 
 `dim_student_ell_status` and `dim_student_iep_status` both read
 `stg_powerschool__studentcorefields`, joined on `students_dcid`. This is the
-task where the synthetic DCID pays off, and where the status carry-forward
-becomes visible in a mart.
+task that retires that join, and where the status carry-forward becomes visible
+in a mart.
 
 **Files:**
 
@@ -1049,9 +1114,9 @@ becomes visible in a mart.
 **Interfaces:**
 
 - Consumes: `ref("int_focus__students_conformed")` from Task 2.
-- Produces: `int_students__student_core_fields`, carrying `studentsdcid`,
+- Produces: `int_students__student_core_fields`, carrying `student_number`,
   `lep_status BOOL`, `spedlep STRING`, `_dbt_source_relation`,
-  `_dbt_source_project`.
+  `_dbt_source_project`. No DCID.
 
 - [ ] **Step 1: Write the conform model**
 
@@ -1059,10 +1124,7 @@ becomes visible in a mart.
 select
     _dbt_source_relation,
     _dbt_source_project,
-
-    -- Same synthetic DCID Task 2 minted. dim_student_ell_status and
-    -- dim_student_iep_status join enrollment to core fields on it.
-    students_dcid as studentsdcid,
+    student_number,
 
     -- Both carried forward from the frozen archive on the student spine; null
     -- for students new since the freeze. See the spec's status-fields section.
@@ -1071,15 +1133,32 @@ select
 from {{ ref("int_focus__students_conformed") }}
 ```
 
-- [ ] **Step 2: Write the union model**
+- [ ] **Step 2: Write the union model, resolving the PowerSchool branch to
+      `student_number`**
+
+Same shape as Task 4 — the staging model carries only `studentsdcid`, so the
+PowerSchool branch resolves it here rather than pushing `dcid` into the marts.
 
 ```sql
 with
+    powerschool as (
+        select
+            scf.* except (studentsdcid),
+
+            s.student_number,
+        from {{ ref("stg_powerschool__studentcorefields") }} as scf
+        inner join
+            {{ ref("stg_powerschool__students") }} as s
+            on scf.studentsdcid = s.dcid
+            and scf._dbt_source_project = s._dbt_source_project
+        -- Miami's archive is superseded by the Focus branch below.
+        where s._dbt_source_project != 'kippmiami'
+    ),
+
     union_relations as (
         {{
             dbt_utils.union_relations(
                 relations=[
-                    ref("stg_powerschool__studentcorefields"),
                     ref("int_focus__student_core_fields_conformed"),
                 ],
                 source_column_name=none,
@@ -1089,20 +1168,48 @@ with
 
 -- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
 select *,
+from powerschool
+
+union all
+
+-- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+select *,
 from union_relations
-where
-    _dbt_source_project != 'kippmiami'
-    or _dbt_source_relation like '%focus%'
 ```
 
-- [ ] **Step 3: Repoint both marts**
+- [ ] **Step 3: Repoint both marts and change their join keys**
 
-`dim_student_ell_status.sql:107` and `dim_student_iep_status.sql:155` each
-change one ref. Join keys are unchanged in both:
+Both `pm_leg` CTEs join enrollment to core fields on `students_dcid`. Change the
+ref and the key together — this is what removes `dcid` from these two marts.
+
+`dim_student_ell_status.sql:106-109`:
 
 ```sql
+        inner join
             {{ ref("int_students__student_core_fields") }} as scf
+            on e.student_number = scf.student_number
+            and e._dbt_source_project = scf._dbt_source_project
 ```
+
+`dim_student_iep_status.sql:154-157`:
+
+```sql
+        left join
+            {{ ref("int_students__student_core_fields") }} as scf
+            on e.student_number = scf.student_number
+            and e._dbt_source_project = scf._dbt_source_project
+```
+
+Keep each join's existing type — `inner` for ELL, `left` for IEP. Swapping one
+changes which students appear in the dim.
+
+Leave the two `stg_powerschool__s_nj_stu_x` joins in
+`dim_student_ell_status.sql` (`nj_primary`, `nj_secondary`) on `students_dcid`.
+They are NJ-only, and Miami correctly matches nothing there.
+
+**Paterson is in scope for this change.** The IEP `pm_leg` filters
+`_dbt_source_project in ('kipppaterson', 'kippmiami')`, so the join-key swap
+affects Paterson too. Step 4 must check Paterson parity, not just NJ as a whole.
 
 - [ ] **Step 4: Build and confirm Miami rows appear where they were zero**
 
@@ -1118,7 +1225,9 @@ uv run dbt build \
 ```
 
 Miami rows in these two dims depend on Task 8's enrollment branch, so at this
-point confirm only that the NJ regions are unchanged and the join resolves:
+point confirm only that the existing regions are unchanged and the join
+resolves. Paterson is the one to watch — its IEP rows flow through the same
+`pm_leg` whose join key just changed:
 
 ```sql
 select _dbt_source_project, count(*) as n
@@ -1126,13 +1235,19 @@ from `teamster-332318.zz_cbini_kipptaf_marts.dim_student_iep_status`
 group by _dbt_source_project
 ```
 
-Expected: NJ counts match prod. Miami may still be 0 until Task 8 lands; that is
-correct at this point and is re-checked in Task 11.
+Expected: every non-Miami count, **including `kipppaterson`**, matches the same
+query against `teamster-332318.kipptaf_marts.dim_student_iep_status`. A Paterson
+delta means the `studentsdcid`-to-`student_number` resolution lost or fanned out
+rows — fix it before proceeding, because that is a regression in a region this
+issue was not meant to touch.
+
+Miami may still be 0 until Task 8 lands; that is correct at this point and is
+re-checked in Task 11.
 
 - [ ] **Step 5: Write both properties files, lint, and commit**
 
-Both get a uniqueness test on `studentsdcid` plus `_dbt_source_project`, a model
-`description:`, and per-column descriptions naming the carry-forward.
+Both get a uniqueness test on `student_number` plus `_dbt_source_project`, a
+model `description:`, and per-column descriptions naming the carry-forward.
 
 ```bash
 cd /workspaces/teamster
@@ -1285,9 +1400,9 @@ The single highest-leverage model. Its consumer serves 13 marts.
   kipptaf model is plural while the underlying source is singular
   `int_focus__student_enrollment`), `ref("int_focus__students_conformed")`.
 - Produces: a relation matching the `int_powerschool__student_enrollment_union`
-  column vocabulary: `student_number`, `students_dcid`, `academic_year`,
-  `entrydate`, `exitdate`, `enroll_status`, `grade_level`, `schoolid`,
-  `rn_year`, `year_in_school`, `year_in_network`. Task 8 consumes it.
+  column vocabulary: `student_number`, `academic_year`, `entrydate`, `exitdate`,
+  `enroll_status`, `grade_level`, `schoolid`, `rn_year`, `year_in_school`,
+  `year_in_network`. No DCID. Task 8 consumes it.
 
 - [ ] **Step 1: Read both column sets side by side**
 
@@ -1344,10 +1459,10 @@ select
 
     i.ps_schoolid as schoolid,
 
-    -- Same synthetic DCID as the student spine, so the enrollment-to-core-field
-    -- joins in dim_student_ell_status and dim_student_iep_status resolve.
-    i.network_student_number as students_dcid,
-
+    -- No students_dcid. Task 5 moved the enrollment-to-core-field joins in
+    -- dim_student_ell_status and dim_student_iep_status onto student_number,
+    -- so it null-fills for Miami and the NJ-only s_nj_stu_x joins that still
+    -- use it correctly match nothing.
 from identified as i
 ```
 
@@ -1821,8 +1936,19 @@ Expected: 0.
 `dim_student_ell_status`, `dim_student_iep_status`,
 `dim_student_meal_eligibility_status`, `fct_behavioral_consequences`,
 `fct_family_communications`. Build each and count Miami AY2026 rows. Expected:
-non-zero for all eight. A zero in one of the three status dims points at the
-synthetic DCID — that is the failure mode this plan was written around.
+non-zero for all eight. A zero in one of the three status dims means a
+`student_number` join is not resolving — that is the failure mode this plan was
+written around, and it is silent.
+
+Also confirm no `dcid` survived into a mart SELECT, which the rubric forbids:
+
+```bash
+cd /workspaces/teamster/.worktrees/cbini/feat/claude-focus-identity-spine
+grep -rn 'dcid' src/dbt/kipptaf/models/marts/
+```
+
+Expected: no hits outside `fct_grades_assignments`, which is out of scope for
+this issue and tracked for Phase 5.
 
 - [ ] **Step 5: Record the known-null status counts**
 
@@ -1901,3 +2027,9 @@ Then create the PR with `mcp__github__create_pull_request`, body referencing
   the null-filling design in this plan look impossible.
 - Ownership for populating Focus ESE, meal, and ELL fields, which is what closes
   the three status gaps.
+- `fct_grades_assignments` still selects and joins on `students_dcid`
+  (`fct_grades_assignments.sql:12`, `:51`, `:98`), including it in a surrogate
+  key. That is the same R2 and plumbing violation this plan removes from the
+  four student dimensions, but it sits in the gradebook vertical, which Phase 3
+  covers. Fixing it here would widen the blast radius for no Miami benefit,
+  since Miami gradebook data does not exist yet.
