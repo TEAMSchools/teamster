@@ -83,6 +83,49 @@ These apply to every task. They are not repeated per-task.
   once, by the user, in Task 11 Step 6; until then treat every staging compile
   as uninformative rather than as a pass.
 
+## Traps hit during implementation
+
+Every one of these produced a silent wrong answer or a build failure in Tasks
+1-8. Assume they apply to the remaining tasks.
+
+- **Focus's `schoolid` is its own internal id** (14, 15, 58...), not the network
+  school number. The network id is `ps_schoolid`, which the upstream already
+  resolves through the locations crosswalk. Task 6 nearly shipped the Focus code
+  as `school_number`, which would have null-filled every Miami school join with
+  no error.
+- **Same column name, different concept.** Focus `fteid` holds a Florida
+  education identifier string (`FL000007024992`); the network `fteid` is a
+  PowerSchool numeric id. The cast fails outright, and `safe_cast` would null
+  real data under a misleading heading. Drop such columns and let the union
+  null-fill them rather than forcing a conversion.
+- **A view build does not evaluate the data.** A bad `cast` in a
+  view-materialized conform model passes `dbt build` and only fails when a
+  downstream TABLE materializes it. Do not read a green view build as validation
+  of values.
+- **`_dbt_source_project` must coalesce through from a kipptaf-level Focus
+  branch.** The conform models are kipptaf relations, so the usual
+  `regexp_extract(_dbt_source_relation, r'(kipp\w+)_')` reads `kipptaf` from
+  them. Project `_dbt_source_project` on the conform model and
+  `coalesce(_dbt_source_project, <regex>)` at the union.
+- **BigQuery rejects `\_` in a string literal** (`Illegal escape sequence`). The
+  branch discriminator is `like '%\\_focus%'`.
+- **sqlfluff ST06 buckets `cast()` as a SIMPLE target** — casts go after plain
+  column refs but BEFORE any other function call in the same select list.
+- **Put the `AM04` trunk-ignore on the CTE that actually stars**, not the final
+  select. A misplaced ignore fails twice: AM04 still fires, and
+  `trunk/ignore-does-nothing` flags the stray directive.
+- **Dev-target `sources-kipp*` resolve to `zz_<user>_*`, your personal copies.**
+  `--favor-state` governs refs, not sources, so a stale personal copy silently
+  produces a fake dev-vs-prod delta. Task 8's NJ counts looked like a 7,000-row
+  regression that was entirely stale dev sources. Validate a filter change by
+  comparing built rows against the SOURCE rows the build actually read, not
+  against prod.
+- **The hand-written `UNION ALL` from the plan's drafts needs EXPLICIT matching
+  column lists** in both branches. Branch column counts differ, `UNION ALL` is
+  positional, and repo sqlfluff CV03 forbids `select *` inside a UNION branch.
+  Prefer adding the conform model as another relation in `union_relations`,
+  which null-fills the superset automatically.
+
 ## Key facts verified against prod
 
 Do not re-derive these; they are settled.
