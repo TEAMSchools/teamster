@@ -215,9 +215,52 @@ exact. This belongs in the PR description and in the stakeholder note.
 
 ## Enrollment: history and alumni placeholders
 
+> **CORRECTED DURING IMPLEMENTATION.** This section originally concluded that no
+> cutover date was needed. That was wrong, and the paragraph below is superseded
+> by _The AY2026 cutover_ that follows it. Focus does carry the history, but it
+> dates a stint differently, and `entrydate` feeds the enrollment key hash.
+
 No cutover date is needed. Focus carries Miami's real enrollment stints for
 AY2018 through AY2026, matching the archive once alumni placeholders are
 excluded.
+
+### The AY2026 cutover
+
+Reconciling the conformed Focus output against the archive for AY2018 through
+AY2025 returned identical stint counts — 8,315 on both sides — but 954
+single-stint AY2025 students differ by exactly 42 days:
+
+| Source              | AY2025 entry date for a returning student |
+| ------------------- | ----------------------------------------- |
+| PowerSchool archive | `2025-07-01` (administrative rollover)    |
+| Focus               | `2025-08-12` (actual first day of school) |
+
+July 1 is the network PowerSchool convention, not a Miami quirk — Camden dates
+2,118 AY2025 stints there and Newark 6,472. Paterson already diverges.
+
+This matters because `entrydate` is an input to the `student_enrollment_key`
+hash:
+
+```text
+surrogate_key(student_number, _dbt_source_project, academic_year, entrydate)
+```
+
+Adopting Focus dates for closed years would therefore recompose 954 historical
+Miami enrollment keys. Those keys are load-bearing: `fct_family_communications`
+alone holds **114,038 rows** keyed to Miami's 8,315 historical enrollments, and
+re-keying orphans every fact attached to a changed stint — silently, since a
+surrogate key that no longer matches produces no error.
+
+So the Miami branch cuts over by academic year rather than replacing history:
+
+- **Archive** supplies AY2025 and earlier, plus its alumni graduate placeholders
+  in any year.
+- **Focus** supplies AY2026 forward.
+
+Neither system is wrong about the date; they answer different questions. Focus's
+answer is the more accurate one, and it is what Miami gets from AY2026 on.
+Aligning the historical record to it is a separate migration with its own
+key-churn budget, not a side effect of restoring the current year.
 
 The archive contributes exactly one thing: **1,002 alumni graduate-placeholder
 rows** (`enroll_status = 3` with null `entrydate` and `exitdate`, one row per
