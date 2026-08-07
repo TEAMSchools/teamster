@@ -6,8 +6,9 @@
 -- the enrolled scope lives here, in the test, rather than in the model.
 -- Every row is a Finalsite data-entry gap: no relationship on the record
 -- carries a `primary` or `financial` flag. A parent miskeyed with a student
--- status does NOT surface here -- dense ranking backfills the slot from the
--- next candidate -- so that case is reported by
+-- status does not surface here when another eligible candidate exists --
+-- dense ranking backfills the slot from the next candidate -- so that case
+-- is reported by
 -- stg_finalsite__contact_relationships__caregiver_is_adult instead.
 select s.finalsite_enrollment_id, s.grade_name, s.school_year_start,
 from {{ ref("stg_finalsite__contacts") }} as s

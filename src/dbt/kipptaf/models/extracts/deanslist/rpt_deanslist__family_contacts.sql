@@ -22,7 +22,10 @@ with
             -- included. Overwriting it with a literal `Emergency N` (the prior
             -- behavior) discarded a label Finalsite populates on essentially
             -- every emergency row and left school staff unable to tell a parent
-            -- from a neighbor.
+            -- from a neighbor. Parent slots past contact_2 are excluded by the
+            -- `where` below, upstream of this `case`, so they can never fall
+            -- into the `else` branch and be mislabelled `Emergency`. Carrying a
+            -- third parent into DeansList is deliberately out of scope for now.
             case
                 sc.contact_slot
                 when 'contact_1'
@@ -39,6 +42,10 @@ with
         where
             sc._dbt_source_project in ('kippnewark', 'kippcamden', 'kipppaterson')
             and xw.powerschool_student_number is not null
+            and (
+                sc.contact_slot in ('contact_1', 'contact_2')
+                or sc.contact_slot like 'emergency\\_%'
+            )
     )
 
 select

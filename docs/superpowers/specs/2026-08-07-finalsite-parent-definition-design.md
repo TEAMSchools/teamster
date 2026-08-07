@@ -230,11 +230,17 @@ fixture omits, since co-membership is now computed against the student.
 
 ## Out of scope
 
-- **Extending the wide receivers.** `int_students__contacts_pivot`,
-  `rpt_parentsquare__parents`, `rpt_deanslist__family_contacts`, and
-  `bridge_student_contacts` all hardcode a two-slot surface and will drop
-  `contact_3`. No receiver needs a third contact today and it affects 32
-  students; extending them is a separate change.
+- **Extending the wide receivers.** `int_students__contacts` has six real
+  consumers. `int_students__contacts_pivot` and `rpt_parentsquare__parents` drop
+  `contact_3` and later by construction (a fixed `PIVOT ... in (...)` list; an
+  explicit `contact_slot in ('contact_1', 'contact_2')` filter).
+  `rpt_deanslist__family_contacts`, `bridge_student_contacts`, and
+  `dim_student_contact_persons` now exclude those slots explicitly, added in
+  this branch. `rpt_clever__students` is a per-contact feed rather than a
+  two-slot one, and carries a third parent through as a primary contact — a
+  deliberate, accepted behaviour change affecting about 32 students. No receiver
+  needs a third contact column added today; extending one to expose it is a
+  separate change.
 - **Emergency-slot duplication.** The `emrg_N` custom fields are a positional
   passthrough with no dedup against the parent slots or against each other. At
   least one student emits four contact rows for two people, with the primary
