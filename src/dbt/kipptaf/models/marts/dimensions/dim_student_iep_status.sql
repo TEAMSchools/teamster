@@ -152,8 +152,8 @@ with
             coalesce(scf.spedlep, 'No IEP') as iep_classification,
         from enrollments as e
         left join
-            {{ ref("stg_powerschool__studentcorefields") }} as scf
-            on e.students_dcid = scf.studentsdcid
+            {{ ref("int_students__student_core_fields") }} as scf
+            on e.student_number = scf.student_number
             and e._dbt_source_project = scf._dbt_source_project
         where e._dbt_source_project in ('kipppaterson', 'kippmiami')
     ),
