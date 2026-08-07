@@ -1,7 +1,7 @@
 with
     students_with_region as (
         select s.*, {{ extract_region("s") }} as region,
-        from {{ ref("stg_powerschool__students") }} as s
+        from {{ ref("int_students__students") }} as s
     )
 
 select

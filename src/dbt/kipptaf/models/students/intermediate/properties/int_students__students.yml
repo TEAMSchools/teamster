@@ -1,0 +1,27 @@
+models:
+  - name: int_students__students
+    description: >-
+      SIS-agnostic student spine. Unions the PowerSchool student staging view
+      for the three New Jersey regions with the conformed Focus branch for
+      Miami. The Miami PowerSchool archive is excluded for every student Focus
+      carries, because Focus now carries Miami identity and including both
+      double-counts every returning student; the 493 Miami students the Focus
+      seed never received stay on the archive branch so they are not lost from
+      dim_students.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+    columns:
+      - name: student_number
+        description: Canonical network student number.
+      - name: _dbt_source_project
+        description:
+          District code location, passed through from the source union view.
+      - name: _dbt_source_relation
+        description: Source relation, passed through from the source union view.
