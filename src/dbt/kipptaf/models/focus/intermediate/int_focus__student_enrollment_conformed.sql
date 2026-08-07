@@ -31,11 +31,15 @@ with
             -- upstream already resolved through the locations crosswalk.
             ps_schoolid as schoolid,
 
+            -- fteid is deliberately not projected. The network column is a
+            -- PowerSchool numeric full-time-equivalency id, while the Focus
+            -- column of the same name holds a Florida education identifier
+            -- string (FL000007024992). Same name, different concept -- casting
+            -- it fails outright, and safe_cast would null real data under a
+            -- misleading heading. The union null-fills it for Miami instead.
             startdate as entrydate,
             student_first_name as first_name,
             student_last_name as last_name,
-
-            cast(fteid as int64) as fteid,
 
             cast(
                 regexp_replace(cast(student_number as string), r'^8400', '') as int64

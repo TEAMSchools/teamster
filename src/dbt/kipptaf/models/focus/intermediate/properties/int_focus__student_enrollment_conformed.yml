@@ -79,10 +79,6 @@ models:
         description: Student's date of birth.
       - name: state
         description: State code for the enrollment record.
-      - name: fteid
-        description: >-
-          Full-time-equivalent identifier, cast to an integer to match the
-          network column type. Focus stores it as a string.
       - name: first_name
         description: Student's first name as recorded in Focus.
       - name: last_name
