@@ -1,0 +1,94 @@
+models:
+  - name: int_focus__student_enrollment_conformed
+    description: >-
+      Miami enrollment stints from Focus, conformed to the PowerSchool column
+      names the network enrollment union expects. Recovers the canonical student
+      number from the prefixed Focus id and resolves the Focus internal school
+      id to the network school number. Consumed only for AY2026 forward — the
+      network union keeps the frozen PowerSchool archive for AY2025 and earlier,
+      because the two systems date a stint differently and re-dating closed
+      years would recompose every historical enrollment key.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - academic_year
+              - entrydate
+    columns:
+      - name: student_number
+        description: >-
+          Canonical network student number, recovered by stripping the leading
+          8400 Miami-Dade district prefix from the Focus id. The upstream column
+          of the same name holds the prefixed form, so joining on that column by
+          name returns zero matches with no error.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: entrydate
+        description: >-
+          First day of the enrollment stint, from the Focus startdate. Focus
+          records the actual first day of attendance while PowerSchool recorded
+          a July 1 administrative rollover for returning students, so the same
+          stint carries different dates in the two systems. This is why the
+          network union cuts over at AY2026 rather than re-dating history.
+      - name: exitdate
+        description:
+          Last day of the enrollment stint, or null while the stint is open.
+      - name: schoolid
+        description: >-
+          Network school number, resolved from the Focus internal school id
+          through the locations crosswalk. Focus's own schoolid is a small
+          internal integer and is not the network identifier.
+      - name: academic_year
+        description:
+          Academic year the stint falls in, by its starting calendar year.
+      - name: enroll_status
+        description: >-
+          Enrollment standing for this stint. Unlike the PowerSchool convention,
+          Focus varies this per stint rather than repeating a single
+          student-level value.
+      - name: entrycode
+        description: Code describing how the student entered this stint.
+      - name: exitcode
+        description: Code describing how the student left this stint.
+      - name: grade_level
+        description: Numeric grade level for the stint.
+      - name: rn_year
+        description: >-
+          Sequence of this stint within the student's academic year, already
+          computed upstream.
+      - name: year_in_school
+        description: Count of years the student has attended this school.
+      - name: year_in_network
+        description: Count of years the student has attended any network school.
+      - name: is_enrolled_oct01
+        description:
+          Whether the student was enrolled on the October 1 count date.
+      - name: is_enrolled_oct15
+        description:
+          Whether the student was enrolled on the October 15 count date.
+      - name: is_enrolled_mar15
+        description:
+          Whether the student was enrolled on the March 15 count date.
+      - name: dob
+        description: Student's date of birth.
+      - name: state
+        description: State code for the enrollment record.
+      - name: fteid
+        description: >-
+          Full-time-equivalent identifier, cast to an integer to match the
+          network column type. Focus stores it as a string.
+      - name: first_name
+        description: Student's first name as recorded in Focus.
+      - name: last_name
+        description: Student's last name as recorded in Focus.
+      - name: _dbt_source_project
+        description: >-
+          District code location, passed through so the consuming union can
+          coalesce it rather than re-deriving kipptaf from this model's own
+          relation name.
