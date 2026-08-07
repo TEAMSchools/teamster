@@ -233,6 +233,39 @@ These are decidable and near-zero-false-positive **on this corpus
 specifically**. They are not a general content-safety mechanism, and they are
 not what keeps sensitive prose out of git — the content split does that.
 
+### Google-hosted tools need a sharing check
+
+_The content split_ argues the catalog is safe to publish because its URLs
+require sign-in. **That reasoning holds for Tableau but not automatically for
+Google Drive.** A Tableau URL is gated by SSO no matter who holds it. A Drive
+URL is gated by that file's sharing setting — and if a file is shared "anyone
+with the link," the URL _is_ the access control. Publishing it in a public
+repository hands it out.
+
+This is not hypothetical: the catalog includes three GPA Roster spreadsheets,
+which carry student-level academic data.
+
+So any entry whose `system` is `google-*` carries an additional invariant: **the
+underlying file must have no `anyone`-type permission.** Verified via the Drive
+API, asserting every entry in `permissions.list` is `type: user` or
+`type: group`.
+
+The three GPA Rosters currently in `links.yml` were checked during design and
+are group-shared to Workspace groups with no link sharing.
+
+Where this runs matters. A pull-request check cannot be relied on — fork pull
+requests receive no credentials, the same constraint that limits the dry-run.
+And the risk is not mainly "someone adds a link-shared file today," which review
+catches; it is "someone flips a file's sharing eighteen months from now," which
+nothing catches. So the sharing assertion belongs in the **scheduled link-health
+job** alongside liveness checking, where it runs with credentials on a cadence
+and alerts on drift. Merge-time coverage is the reviewer checklist in
+`src/launch/README.md`, which is best-effort by design.
+
+That scheduled job is the one piece of this design that genuinely fits Dagster
+rather than Actions: it is periodic, it alerts, and its results are worth
+landing in the warehouse.
+
 Validation will not block merge until `launch-validate` is added to the
 `required_status_checks` ruleset, which currently lists only `dbt Cloud` and
 `Trunk Check Runner`. That requires repo-admin rights and has lead time.

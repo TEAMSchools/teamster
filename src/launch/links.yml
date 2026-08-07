@@ -121,12 +121,46 @@
   system: tableau
   status: needs-review
 
+- id: gpa_roster_camden
+  name: "GPA Roster: Camden"
+  url: https://docs.google.com/spreadsheets/d/1qM6DQk_mqh4x_rI5YVQyZdYbfDxzOaLGyrqjySlVv2Y/edit?gid=0#gid=0
+  description: ""
+  # TODO(description): no description found on the source site
+  audiences: [region, teachers]
+  system: google-sheet
+  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
+  # TODO(verify): with no description of its own. Confirm it is still the live roster and
+  # TODO(verify): write one.
+  status: needs-review
+
+- id: gpa_roster_miami
+  name: "GPA Roster: Miami"
+  url: https://docs.google.com/spreadsheets/d/1HsxearGC74LDySGx0QOZFkkH_HbsxmwzZ57Wi4vaZLg/edit?gid=0#gid=0
+  description: ""
+  # TODO(description): no description found on the source site
+  audiences: [region, teachers]
+  system: google-sheet
+  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
+  # TODO(verify): with no description of its own. Confirm it is still the live roster and
+  # TODO(verify): write one.
+  status: needs-review
+
+- id: gpa_roster_newark
+  name: "GPA Roster: Newark"
+  url: https://docs.google.com/spreadsheets/d/12RHEUde41uR91Fp1aNrpImxhg72kOjPAQu7xLJ90evc/edit?gid=0#gid=0
+  description: ""
+  # TODO(description): no description found on the source site
+  audiences: [region, teachers]
+  system: google-sheet
+  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
+  # TODO(verify): with no description of its own. Confirm it is still the live roster and
+  # TODO(verify): write one.
+  status: needs-review
+
 - id: gradebook_and_gpa_dashboard
   name: Gradebook and GPA Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/GradebookandGPADashboard/GradebookGPADashboardLandingPage?%3Aembed=y
-  description:
-    "GPA, Gradebook Audit, ES Teacher/Monitor Audit. GPA Roster: Camden GPA
-    Roster: Miami GPA Roster: Newark"
+  description: GPA, Gradebook Audit, ES Teacher/Monitor Audit.
   audiences: [region, teachers]
   system: tableau
   status: needs-review
@@ -197,6 +231,18 @@
   audiences: [leaders, ops, region]
   system: tableau
   guide: https://teamschools.zendesk.com/hc/en-us/articles/19465485148183
+  status: needs-review
+
+- id: leader_pm_app
+  name: Leader PM App
+  description: Enter self and manager reflections and goals.
+  url: https://www.appsheet.com/start/861f035c-b076-4d1e-9a68-e36fcafe8184
+  audiences: []
+  # TODO(audiences): listed on the Support page, not on any role page, so there
+  # TODO(audiences): is no signal about who this is for. Assign roles.
+  # TODO(verify): AppSheet app. Confirm its access setting requires sign-in AND
+  # TODO(verify): check the sharing on the Sheet backing it. See README.
+  system: appsheet
   status: needs-review
 
 - id: literacy_tool
@@ -270,6 +316,18 @@
   guide: https://teamschools.zendesk.com/hc/en-us/articles/19856763832855--User-Guide-Seat-Tracker-App-and-Reporting
   status: needs-review
 
+- id: seat_tracker
+  name: Seat Tracker
+  description: Work with the recruitment team on staffing.
+  url: https://www.appsheet.com/start/da7c51f8-1985-4c8d-b786-2aaf816ae1d2
+  audiences: []
+  # TODO(audiences): listed on the Support page, not on any role page, so there
+  # TODO(audiences): is no signal about who this is for. Assign roles.
+  # TODO(verify): AppSheet app. Confirm its access setting requires sign-in AND
+  # TODO(verify): check the sharing on the Sheet backing it. See README.
+  system: appsheet
+  status: needs-review
+
 - id: staff_attrition_dashboard
   name: Staff Attrition Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/AttritionDashboard/AttritionDashboard?:embed=y
@@ -324,6 +382,21 @@
     approval status.
   audiences: [ops, region]
   system: zendesk
+  # TODO(verify): the description says this is a live dashboard, but the URL
+  # TODO(verify): points at a help article, not the dashboard. Find the real
+  # TODO(verify): dashboard URL and move this one to the `guide` field.
+  status: needs-review
+
+- id: stipend_app
+  name: Stipend App
+  description: Submit stipends and bonuses for staff.
+  url: https://www.appsheet.com/start/f396eae8-7840-4648-b77e-1179506dae89
+  audiences: []
+  # TODO(audiences): listed on the Support page, not on any role page, so there
+  # TODO(audiences): is no signal about who this is for. Assign roles.
+  # TODO(verify): AppSheet app. Confirm its access setting requires sign-in AND
+  # TODO(verify): check the sharing on the Sheet backing it. See README.
+  system: appsheet
   status: needs-review
 
 - id: survey_dashboard

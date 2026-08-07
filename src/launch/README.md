@@ -44,11 +44,48 @@ when all five of these are true:
    `views.yml` for what each role means. A tool can be in several. A tool in
    none still appears in the All view, so an empty list is a real answer — but
    it should be a decision, not an accident.
-1. **`system` is right** — `tableau`, `zendesk`, `google-sheet`, `apps-script`,
-   or `other`.
+1. **`system` is right** — `tableau`, `appsheet`, `zendesk`, `google-sheet`,
+   `google-slides`, `google-form`, `google-doc`, `apps-script`, or `other`.
+1. **For anything Google-hosted, the sharing is group-based.** See below. This
+   one is not optional.
 
 Add `guide:` with the Zendesk article URL if the tool has a help article and the
 entry is missing it.
+
+### Google-hosted tools need one extra check
+
+A Tableau link is safe to publish because Tableau requires sign-in — the URL is
+useless to anyone outside. **A Google Drive link is not automatically safe.** If
+a Sheet is shared "anyone with the link," then the URL _is_ the access control,
+and publishing it here — in a public repository — hands it to the internet.
+
+So for every entry with a `google-*` system, open the file, click **Share**, and
+confirm **General access is _not_** "Anyone with the link." It should be
+restricted to named people or Workspace groups.
+
+If you find one that is link-shared: **do not add it to this file.** Flag it
+instead. That is a live exposure to fix at the source, not something to
+document.
+
+The three GPA Rosters currently in `links.yml` were checked and are group-shared
+correctly. Anything you add is on you to check.
+
+**AppSheet apps need this twice over.** An AppSheet app has its own access
+setting, _and_ it reads from a backing Google Sheet with its own separate
+sharing. Both have to require sign-in. There is no API shortcut here — open the
+app, then open the Sheet behind it, and check each.
+
+### Tools that are on the site but not on any role page
+
+Three AppSheet apps (`Leader PM App`, `Seat Tracker`, `Stipend App`) were linked
+only from the Support page, so there is no signal about who they are for. They
+are in `links.yml` with empty `audiences` and a TODO. Assigning those is a real
+decision, not a lookup.
+
+Related question worth raising rather than answering alone: Clever, DeansList,
+Grow, and PowerSchool are named on the Support page, but all four link to the
+same Okta dashboard URL rather than to the apps themselves. Should they be
+catalog entries at all, and if so what should they point at?
 
 ### Suggested order
 
