@@ -7,9 +7,9 @@ catalog we would put in front of staff.
 means, and what "verified" requires. This file is the order to do things in and
 who owns what.
 
-The design behind all of it lives in `docs/superpowers/specs/` as
-`2026-08-06-launch-page-zendesk-design.md`, which is under review separately.
-You do not need to read it to do this work.
+The design for how this catalog eventually gets served is under review
+separately in #4762. You do not need to read it to do this work, and the catalog
+does not depend on it landing.
 
 ## The goal
 

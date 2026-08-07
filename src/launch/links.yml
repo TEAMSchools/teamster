@@ -1,7 +1,8 @@
 # Data launch page — tool catalog
 #
-# Source of truth for the generated Zendesk catalog articles.
-# See docs/superpowers/specs/2026-08-06-launch-page-zendesk-design.md
+# Source of truth for the generated staff-facing catalog articles. Where those
+# get served is a separate decision; the current design candidate is the Zendesk
+# Help Center, tracked in GitHub #4762.
 #
 # THIS FILE IS A STARTING POINT, NOT A FINISHED CATALOG. It was scraped from
 # the existing Google Site, so every entry carries `status: needs-review`

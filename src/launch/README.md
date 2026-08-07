@@ -1,15 +1,18 @@
 # Data launch page — tool catalog
 
-This directory holds the source of truth for the data team's tool catalog. It
-gets rendered into role-specific articles in the Zendesk Help Center.
+This directory holds the source of truth for the data team's tool catalog — what
+tools exist, what each is for, and who needs it.
 
-Design: `docs/superpowers/specs/2026-08-06-launch-page-zendesk-design.md` (under
-review separately).
+**Where it gets served is a separate decision.** The catalog renders into
+role-specific staff-facing articles; the current design candidate is the Zendesk
+Help Center (see #4762), and follow-on work may render the same source into Okta
+bookmark tiles or a discovery skill. Nothing in this directory depends on that
+choice being settled.
 
 | File         | What it is                                                      |
 | ------------ | --------------------------------------------------------------- |
 | `links.yml`  | Every tool: name, URL, description, who it is for               |
-| `views.yml`  | The six views and their intro copy. Presentation only           |
+| `views.yml`  | The five views and their intro copy. Presentation only          |
 | `RUNBOOK.md` | The task sequence — start there if you are picking up this work |
 | `README.md`  | This file: what the directory is and what "reviewed" means      |
 
@@ -50,6 +53,18 @@ when all five of these are true:
    `google-slides`, `google-form`, `google-doc`, `apps-script`, or `other`.
 1. **For anything Google-hosted, the sharing is group-based.** See below. This
    one is not optional.
+
+### The other fields
+
+- **`guide:`** — optional. The Zendesk help article for this tool, if one
+  exists.
+- **`access: limited`** — optional badge for tools most staff cannot open.
+- **`regions:`** — optional, and **not the same thing as `audiences`**. This is
+  geography: which of `newark`, `camden`, `miami`, `paterson` a tool covers, or
+  `[all]`. Use it when a tool exists once per region, like the Student Contact
+  Info Feeds. `audiences: [region]` means something entirely different — it is
+  the _Regional and CMO_ role view. A tool can be `audiences: [region]` with no
+  `regions:` at all, or scoped to one region and used by teachers.
 
 Add `guide:` with the Zendesk article URL if the tool has a help article and the
 entry is missing it.
