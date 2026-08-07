@@ -1,5 +1,17 @@
 models:
   - name: int_surveys__manager_survey_details
+    config:
+      materialized: table
+      # 175k rows re-derived from 7 base tables on each read — 0.35 GiB per
+      # expansion vs 0.03 GiB stored, the worst recompute-to-size ratio in the
+      # survey chain.
+      meta:
+        dagster:
+          # nightly instead of eager: the only consumers are the survey marts
+          # (read by Cube, whose pre-aggregation refreshes daily) and two
+          # Tableau exposures with no Dagster-managed cron. Refs #4559
+          automation_condition:
+            cron_schedule: 0 0 * * *
     columns:
       - name: effective_survey_response_id
         data_type: string
