@@ -21,13 +21,14 @@ will consume.
 starting point, not a finished catalog. Every entry carries
 `status: needs-review`.
 
-- **36 tools**, merged down from 42 raw entries
-- **22 `TODO` markers** flagging specific things a human needs to resolve
+- **42 tools** — 35 Tableau, 3 Google Sheets, 3 AppSheet apps, 1 Zendesk
+- **49 `TODO` lines** flagging specific things a human needs to resolve
 - **9 tools** have a linked user guide; the rest may or may not have one
+- **4 tools** have no `audiences` at all and need roles assigned
 
-The scrape found four kinds of problem, which is a good sign — these are exactly
-the failures that come from maintaining the same list on five separate pages by
-hand.
+The scrape found several kinds of problem, which is a good sign — these are
+exactly the failures that come from maintaining the same list on five separate
+pages by hand.
 
 ## The work
 
