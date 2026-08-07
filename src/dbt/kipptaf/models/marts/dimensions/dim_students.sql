@@ -69,8 +69,8 @@ left join
     {{ ref("stg_kippadb__contact") }} as adb
     on s.student_number = adb.school_specific_id
 left join
-    {{ ref("stg_powerschool__u_studentsuserfields") }} as suf
-    on s.dcid = suf.studentsdcid
+    {{ ref("int_students__student_user_fields") }} as suf
+    on s.student_number = suf.student_number
     and s._dbt_source_project = suf._dbt_source_project
 left join
     {{ ref("stg_powerschool__s_nj_stu_x") }} as njs
