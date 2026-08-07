@@ -1219,18 +1219,50 @@ in a mart.
 
 - [ ] **Step 1: Write the conform model**
 
-```sql
-select
-    _dbt_source_relation,
-    _dbt_source_project,
-    student_number,
+The carry-forward happens HERE, not on the student spine. Task 2 established
+that the archive keeps `spedlep` and `lep_status` on `studentcorefields`, not on
+its students table, so each conform model carries forward from its own archive
+counterpart. `int_focus__students_conformed` does NOT project these two columns
+— do not try to read them from it.
 
-    -- Both carried forward from the frozen archive on the student spine; null
-    -- for students new since the freeze. See the spec's status-fields section.
-    lep_status,
-    spedlep,
-from {{ ref("int_focus__students_conformed") }}
+```sql
+with
+    -- Neither field has a usable Focus source. Focus ese_fefp_code is an FEFP
+    -- funding code covering 162 of 419 archive SPED students, and
+    -- english_language_learner_pk_12 puts 98% of students at the
+    -- not-applicable code. Carry the archive value forward for returning
+    -- students; new students get null, because a false negative on IEP status
+    -- is compliance-adjacent and unknown must read as unknown.
+    --
+    -- The archive keys these on studentsdcid, so resolve to student_number
+    -- here. dcid is PowerSchool plumbing and stops at this layer.
+    archive as (
+        select
+            s.student_number,
+
+            scf.spedlep,
+            scf.lep_status,
+        from {{ ref("stg_powerschool__students") }} as s
+        inner join
+            {{ ref("stg_powerschool__studentcorefields") }} as scf
+            on s.dcid = scf.studentsdcid
+            and s._dbt_source_project = scf._dbt_source_project
+        where s._dbt_source_project = 'kippmiami'
+    )
+
+select
+    c._dbt_source_relation,
+    c._dbt_source_project,
+    c.student_number,
+
+    a.spedlep,
+    a.lep_status,
+from {{ ref("int_focus__students_conformed") }} as c
+left join archive as a on c.student_number = a.student_number
 ```
+
+Both columns get a warn-severity `not_null` test in the properties file, so the
+gap stays visible and closes when Focus is populated.
 
 - [ ] **Step 2: Write the union model, resolving the PowerSchool branch to
       `student_number`**
