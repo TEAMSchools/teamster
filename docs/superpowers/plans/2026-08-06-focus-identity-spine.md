@@ -1211,6 +1211,18 @@ They are NJ-only, and Miami correctly matches nothing there.
 `_dbt_source_project in ('kipppaterson', 'kippmiami')`, so the join-key swap
 affects Paterson too. Step 4 must check Paterson parity, not just NJ as a whole.
 
+Paterson is expected to move onto the NJ edplan path (`nj_leg`) like Newark and
+Camden, which would take it off `pm_leg` entirely. That cannot happen yet —
+`int_edplan__njsmart_powerschool_union` carries zero Paterson rows and no
+`kipppaterson_edplan` source exists — so leave the filter as it is. This task's
+change is a join-key swap that keeps Paterson correct in the meantime and does
+not entrench its PowerSchool path; when the edplan migration lands, Paterson
+drops out of `pm_leg` and the swap becomes Miami-only for free.
+
+Note the asymmetry so it does not read as an oversight: the ELL `pm_leg` is
+already Miami-only, because `stg_powerschool__s_nj_stu_x` carries Paterson and
+`nj_leg` covers it. Only IEP still routes Paterson through PowerSchool.
+
 - [ ] **Step 4: Build and confirm Miami rows appear where they were zero**
 
 ```bash
