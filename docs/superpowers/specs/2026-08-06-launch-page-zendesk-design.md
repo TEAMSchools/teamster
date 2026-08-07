@@ -65,7 +65,7 @@ Two consequences worth naming:
 
 ## Approach
 
-Author the catalog in git, generate six articles, publish them to Zendesk on
+Author the catalog in git, generate five articles, publish them to Zendesk on
 merge. Prose articles already in `Data | Launch` are left where they are.
 
 Zendesk Help Center is the serving surface because every staff member can
@@ -101,7 +101,7 @@ the more recent pattern, not a continuation of it. See Open dependency 2.
 src/launch/
 ├── CLAUDE.md          # domain conventions, including the public-content rule
 ├── links.yml          # tool catalog, one entry per tool
-├── views.yml          # presentation for the six catalog views
+├── views.yml          # presentation for the five catalog views
 ├── manifest.yml       # hand-authored: view -> Zendesk article id and settings
 └── publish/           # render and push
     ├── render.py
@@ -143,7 +143,7 @@ order. Membership is derived from tags.
 
 ## Rendering
 
-Six catalog articles are generated: `All` plus five role views.
+Five catalog articles are generated: `All` plus four role views.
 
 - A role view lists every tool whose `audiences` contains that view's id.
 - The `All` view renders every entry, unfiltered, always.
@@ -155,12 +155,12 @@ Six catalog articles are generated: `All` plus five role views.
 Triggered on merge to `main`, path-filtered to `src/launch/**`. Never on
 `pull_request_target`; fork pull requests do not receive secrets.
 
-**The managed set is exactly six articles, and CI only ever updates them.**
+**The managed set is exactly five articles, and CI only ever updates them.**
 Creation is a one-time, deliberate act performed by a human (or a setup script)
 outside the publish pipeline, because creation is where the irreversible
 decisions live. This removes the entire create path from CI.
 
-For each of the six views:
+For each of the five views:
 
 1. Read its `article_id` and `locale` from `manifest.yml`. A missing or null id
    fails the run loudly; CI never creates.
@@ -326,7 +326,7 @@ worth avoiding, unlike the docs and Cube deploys which cancel freely.
    wide is undecided and involves other departments. The pipeline treats
    visibility as configuration, never as an architectural assumption.
 1. **Section placement and initial creation.** `Data | Launch` has five existing
-   sections. Which section the six generated articles land in, and their
+   sections. Which section the five generated articles land in, and their
    `position` within it, needs deciding before the one-time creation step.
 
 ## Implementation sequencing
