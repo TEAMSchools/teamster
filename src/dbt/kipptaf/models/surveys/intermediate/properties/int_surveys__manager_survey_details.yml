@@ -7,11 +7,23 @@ models:
       # survey chain.
       meta:
         dagster:
-          # nightly instead of eager: the only consumers are the survey marts
-          # (read by Cube, whose pre-aggregation refreshes daily) and two
-          # Tableau exposures with no Dagster-managed cron. Refs #4559
+          # nightly instead of eager: no consumer needs sub-daily freshness.
+          # The survey marts are its only dbt consumers, and its two Tableau
+          # exposures (manager_survey_reports, manager_survey_rollup) carry no
+          # Dagster-managed cron. Refs #4559
           automation_condition:
             cron_schedule: 0 0 * * *
+    data_tests:
+      # grain matches the hash inputs fct_survey_responses uses for its PK. It
+      # never re-ran under automation while this model was a view — the
+      # data-change condition only re-materializes tables — so the nightly tick
+      # above is what turns it into a recurring check.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - survey_id
+              - effective_survey_response_id
+              - survey_question_id
     columns:
       - name: effective_survey_response_id
         data_type: string
