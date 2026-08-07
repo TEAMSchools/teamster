@@ -147,13 +147,25 @@ inner join to `stg_finalsite__contacts` already drops them.
 The guard currently excludes exactly one real parent network-wide — a contact
 whose own record carries `status = 'inquiry'` and a grade, i.e. an adult
 miskeyed as a student — out of 6,771 Newark primary relationships. This is
-deliberately **not** carved out. The affected student then has no `contact_1`,
-the 0-contact test fires, and Ops corrects the miskeyed record at source. A
-carve-out would trade that signal for a permanent exception to reason about.
+deliberately **not** carved out: a carve-out would be a permanent exception to
+reason about, and the guard's whole value is that it has no exceptions.
+
+The exclusion is **silent**, and an earlier draft of this spec was wrong about
+why that is acceptable. It claimed the affected student would be left with no
+`contact_1`, firing the zero-contact test. Dense ranking makes that false — the
+student's other `financial` parent backfills `contact_1`, so no downstream
+symptom appears at all. The student keeps a reachable parent, but the miskeyed
+record goes unreported and their listed first contact is not their designated
+primary.
+
+Because the symptom is invisible, the condition is tested at the source instead
+— see the fifth test in section 5, which reports any caregiver-flagged
+relationship whose related contact lacks the adult status. That surfaces the
+miskeyed record directly rather than hoping a downstream slot goes empty.
 
 ### 5. Tests
 
-Four additions, all `warn` severity:
+Five additions, all `warn` severity:
 
 1. **Zero contacts** — a singular test listing students with
    `status = 'enrolled'` and `school_year_start = var('current_academic_year')`
@@ -165,6 +177,11 @@ Four additions, all `warn` severity:
 1. **Stale enrolled** — section 2 above, on `stg_finalsite__contacts`.
 1. **Multiple primary relationships** — asserts no student record holds more
    than one relationship flagged `is_primary`.
+1. **Caregiver is an adult** — reports any relationship flagged `primary` or
+   `financial` whose related contact does not carry `not_in_workflow`. Most rows
+   are correct exclusions (a sibling flagged `financial`); the actionable ones
+   are adults miskeyed with a student status, whose relationship the guard
+   discards with no downstream symptom. 1 row for Newark on the current load.
 
 The `accepted_values` enumeration on `contact_slot` is **removed**, not
 extended. Dense ranking produces as many parent slots as a student has

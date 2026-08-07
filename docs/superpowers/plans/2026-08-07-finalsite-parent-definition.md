@@ -576,11 +576,13 @@ Refs #4768"
   `src/dbt/finalsite/tests/int_finalsite__student_contacts__enrolled_has_contact_1.sql`
 - Create:
   `src/dbt/finalsite/tests/int_finalsite__student_contacts__no_extra_contacts.sql`
+- Create:
+  `src/dbt/finalsite/tests/stg_finalsite__contact_relationships__caregiver_is_adult.sql`
 
 **Interfaces:**
 
-- Consumes: `var("current_academic_year")` from Task 1; `contact_slot` values
-  `contact_1`..`contact_3` from Task 2.
+- Consumes: `var("current_academic_year")` from Task 1; densely-numbered
+  `contact_slot` values from Task 2.
 - Produces: nothing later tasks rely on.
 
 - [ ] **Step 1: Write the zero-contact test**
@@ -647,21 +649,80 @@ uv run dbt test \
            int_finalsite__student_contacts__no_extra_contacts
 ```
 
-Expected: `enrolled_has_contact_1` **WARN** with 1 row — the single student
-whose parent's contact record carries `status = 'inquiry'` and therefore fails
-the adult guard. This is the deliberate no-carve-out case from the spec.
-`no_extra_contacts` **WARN** with 25 rows for Newark.
+Expected, corrected mid-execution against the built model: both tests PASS with
+0 rows for `enrolled_has_contact_1` and WARN with 49 rows for
+`no_extra_contacts`.
 
-If `enrolled_has_contact_1` returns 0 rows, the guard is not being applied. If
-it returns hundreds, the dense ranking is not working and slots are still
-anchored on `primary`.
+The original plan predicted 1 row for `enrolled_has_contact_1` — the student
+whose parent's contact record carries `status = 'inquiry'` and so fails the
+adult guard. Dense ranking makes that prediction wrong: that student's other
+`financial` parent backfills `contact_1`, so the zero-contact test cannot see
+the guard exclusion at all. Step 4 below adds a test that surfaces it directly.
 
-- [ ] **Step 4: Commit**
+The original 25 for `no_extra_contacts` counted currently-enrolled students; the
+model is unscoped and the test counts rows, giving 49.
+
+If `enrolled_has_contact_1` returns hundreds, the dense ranking is not working
+and slots are still anchored on `primary`.
+
+- [ ] **Step 4: Write the guard-exclusion test**
+
+Added mid-execution. The adult guard drops any relationship whose related
+contact carries a student status — normally correct, since a student is never a
+parent. But a parent record miskeyed with a student status is dropped too, and
+dense ranking then backfills the slot from another candidate, so the exclusion
+is invisible. This test surfaces the miskeyed record directly instead of relying
+on the zero-contact test as a proxy.
+
+Create
+`src/dbt/finalsite/tests/stg_finalsite__contact_relationships__caregiver_is_adult.sql`:
+
+```sql
+{{ config(severity="warn") }}
+
+-- A relationship flagged as a caregiver whose related contact does NOT carry
+-- Finalsite's adult status. Almost always this is correct and the related
+-- person really is a student -- a sibling flagged `financial`, say -- and the
+-- model's adult guard drops it as intended. The rows worth acting on are the
+-- inverse: an adult whose own contact record was miskeyed with a student
+-- status, whose relationship the guard then discards silently, because dense
+-- ranking backfills the slot from another candidate and nothing else reports
+-- the loss. Warn: each row is a Finalsite record to inspect, not a build
+-- failure.
+select
+    r.finalsite_enrollment_id,
+    r.rel_id,
+    r.rel_type,
+    c.status as related_contact_status,
+    c.grade_name as related_contact_grade,
+from {{ ref("stg_finalsite__contact_relationships") }} as r
+inner join
+    {{ ref("stg_finalsite__contacts") }} as c
+    on r.rel_id = c.finalsite_enrollment_id
+where
+    (coalesce(r.is_primary, false) or coalesce(r.is_financial, false))
+    and c.status != 'not_in_workflow'
+```
+
+Run it:
+
+```bash
+wt=/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-parent-definition
+uv run dbt test \
+  --project-dir "$wt/src/dbt/kippnewark" \
+  --select stg_finalsite__contact_relationships__caregiver_is_adult
+```
+
+Expected: **WARN** with a small number of rows — 1 for Newark on the current
+load. A large count means the guard is excluding far more than intended and the
+`not_in_workflow` assumption needs re-examining before merge.
+
+- [ ] **Step 5: Commit**
 
 ```bash
 wt=/workspaces/teamster/.worktrees/cbini/feat/claude-finalsite-parent-definition
 git -C "$wt" add src/dbt/finalsite/tests
-git -C "$wt" commit -m "test(finalsite): warn on students with no parent slot or more than two
+git -C "$wt" commit -m "test(finalsite): warn on missing, excess, and discarded parent contacts
 
 Refs #4768"
 ```
