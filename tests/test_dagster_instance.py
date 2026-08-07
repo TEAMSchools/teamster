@@ -25,9 +25,3 @@ def _delete_dynamic_partitions(partitions_def_name: str, pattern: str):
             instance.delete_dynamic_partition(
                 partitions_def_name=partitions_def_name, partition_key=partition_key
             )
-
-
-def _test_delete_dynamic_partitions_alchemer():
-    _delete_dynamic_partitions(
-        partitions_def_name="kipptaf_alchemer_survey_response", pattern=r"\d+_\d{2,}\.0"
-    )

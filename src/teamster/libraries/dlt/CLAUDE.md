@@ -33,11 +33,6 @@ backend.
 - Factory:
   `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
 
-### `salesforce/`
-
-Loads Salesforce objects to BigQuery. Pipeline and helpers are adapted from the
-`dlt` Salesforce source. Currently commented out / inactive in `kipptaf`.
-
 ### `zendesk/`
 
 Loads Zendesk Support data (tickets, users, organizations, etc.) to BigQuery
