@@ -782,7 +782,7 @@ from union_relations as u
 left join focus_students as f on u.student_number = f.student_number
 where
     u._dbt_source_project != 'kippmiami'
-    or u._dbt_source_relation like '%\_focus%'
+    or u._dbt_source_relation like '%\\_focus%'
     or f.student_number is null
 ```
 
@@ -815,16 +815,27 @@ not catch its absence:
 
 ```sql
 select
-    countif(_dbt_source_relation like '%\_focus%') as from_focus,
-    countif(_dbt_source_relation not like '%\_focus%') as from_archive,
+    countif(_dbt_source_relation like '%\\_focus%') as from_focus,
+    countif(_dbt_source_relation not like '%\\_focus%') as from_archive,
     count(*) as miami_total,
 from `teamster-332318.zz_cbini_kipptaf.int_students__students`
 where _dbt_source_project = 'kippmiami'
 ```
 
-Expected: `from_archive` is 493, `from_focus` is the full Focus student count,
-and `miami_total` exceeds the 3,946 rows prod carries today. A `from_archive` of
-0 means the anti-join collapsed to a blanket exclusion.
+Expected (measured in Task 3): `from_focus` 3,955, `from_archive` **492**,
+`miami_total` 4,447 — against the 3,945 Miami rows prod carries today. A
+`from_archive` of 0 means the anti-join collapsed to a blanket exclusion.
+
+The 492 here versus 493 archive-only students is not drift. The district table
+`kippmiami_powerschool.stg_powerschool__students` holds 3,946 rows; the kipptaf
+view filters `where dcid >= 1`, dropping the one documented
+`dcid = -100, student_number = 0` phantom placeholder. Everything downstream
+reads the kipptaf view, so 492 is the number to expect.
+
+Note the doubled backslash in the `LIKE` patterns above. BigQuery rejects `\_`
+in a string literal outright (`Illegal escape sequence: \_`), so escaping the
+underscore needs `\\_`. This bit Task 3 and applies to every reuse of this
+pattern in Tasks 4, 5, and 6.
 
 Add the coverage test as a singular test at
 `src/dbt/kipptaf/tests/test_miami_students_spine_covers_archive.sql`:
@@ -1444,8 +1455,26 @@ select *,
 from union_relations
 where
     _dbt_source_project != 'kippmiami'
-    or _dbt_source_relation like '%focus%'
+    or _dbt_source_relation like '%\\_focus%'
 ```
+
+**First check whether schools need the anti-join too.** Task 3 found the student
+archive holds 492 students Focus never received. Schools can have the same shape
+— a closed or renamed Miami school the archive knows and Focus does not. A
+missing school row null-fills school attributes on every historical enrollment
+that references it. Measure before choosing:
+
+```sql
+select count(*) as archive_only_schools
+from `teamster-332318.kipptaf_powerschool.stg_powerschool__schools` as a
+left join `teamster-332318.kipptaf_focus.int_focus__schools` as f
+    on a.school_number = f.school_number
+where a._dbt_source_project = 'kippmiami' and f.school_number is null
+```
+
+If that returns 0, the blanket filter above is correct as written. If it returns
+more than 0, switch to the anti-join shape from Task 3 Step 1 so those schools
+survive, and say which you did in the commit message.
 
 - [ ] **Step 4: Repoint the five marts**
 
