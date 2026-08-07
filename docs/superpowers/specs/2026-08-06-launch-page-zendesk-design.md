@@ -246,12 +246,25 @@ This is not hypothetical: the catalog includes three GPA Roster spreadsheets,
 which carry student-level academic data.
 
 So any entry whose `system` is `google-*` carries an additional invariant: **the
-underlying file must have no `anyone`-type permission.** Verified via the Drive
-API, asserting every entry in `permissions.list` is `type: user` or
-`type: group`.
+underlying file must have no `anyone`-type permission.**
 
-The three GPA Rosters currently in `links.yml` were checked during design and
-are group-shared to Workspace groups with no link sharing.
+**The obvious implementation of that check does not work.** Drive's
+`permissions.list` returns the full permission set only to a caller that
+administers the file. For any other caller it returns just the owner — so a
+naive assertion reads "no groups, no `anyone`" and passes, on a file it in fact
+knows nothing about. That is a check that fails open, which is worse than no
+check. This was hit during design: all four Student Contact Info Feeds returned
+owner-only, while the data team confirms each is region-group shared with CMO
+access and none is link-shared.
+
+The check is therefore only meaningful when run as an identity that administers
+the files — a Workspace admin credential or domain-wide delegation — and it must
+**fail loudly on an owner-only result** rather than treating it as a pass.
+Provisioning that identity is a prerequisite, not an implementation detail.
+
+The three GPA Rosters were verified during design and are group-shared with no
+link sharing. Their permission lists returned in full, which is itself the
+signal that the reading identity administered them.
 
 Where this runs matters. A pull-request check cannot be relied on — fork pull
 requests receive no credentials, the same constraint that limits the dry-run.

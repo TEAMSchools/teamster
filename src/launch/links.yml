@@ -399,6 +399,64 @@
   system: appsheet
   status: needs-review
 
+# Student Contact Info Feeds — one per region. NOT linked from the Google Site;
+# added directly. These carry student and guardian contact information, making
+# them the most sensitive entries in this catalog.
+#
+# Sharing confirmed by the data team: each feed is shared to its region's
+# group, with CMO staff holding access to all four. No link sharing. Note that
+# an automated permissions read returns only the file owner here — the Drive
+# API does not enumerate full permissions for a caller who does not administer
+# the file, so an empty group list from tooling is inconclusive, not a finding.
+
+- id: student_contact_info_feed_camden
+  name: Student Contact Info Feed - KIPP Camden
+  description: Student and guardian contact information for KIPP Camden.
+  url: https://docs.google.com/spreadsheets/d/1uHO67F5VNQltCTt3J1bB1ze6Hfp1QiE2O5HzJeQI97Y
+  audiences: [region]
+  # TODO(audiences): region is certain (CMO staff hold access to all four).
+  # TODO(audiences): decide whether ops and leaders should see their own region's
+  # TODO(audiences): feed too — the Drive sharing suggests they can already open it.
+  system: google-sheet
+  regions: [camden]
+  status: needs-review
+
+- id: student_contact_info_feed_miami
+  name: Student Contact Info Feed - KIPP Miami
+  description: Student and guardian contact information for KIPP Miami.
+  url: https://docs.google.com/spreadsheets/d/1bhSA4rG1zgg6PBxlBaje0COyU4L5lvozXMvpGjw0Mlw
+  audiences: [region]
+  # TODO(audiences): region is certain (CMO staff hold access to all four).
+  # TODO(audiences): decide whether ops and leaders should see their own region's
+  # TODO(audiences): feed too — the Drive sharing suggests they can already open it.
+  system: google-sheet
+  regions: [miami]
+  status: needs-review
+
+- id: student_contact_info_feed_newark
+  name: Student Contact Info Feed - KIPP Newark
+  description: Student and guardian contact information for KIPP Newark.
+  url: https://docs.google.com/spreadsheets/d/18X4M7nQ25xRy_8ieZryrsaaljsWG3Es1jY8yzzmBPDQ
+  audiences: [region]
+  # TODO(audiences): region is certain (CMO staff hold access to all four).
+  # TODO(audiences): decide whether ops and leaders should see their own region's
+  # TODO(audiences): feed too — the Drive sharing suggests they can already open it.
+  system: google-sheet
+  regions: [newark]
+  status: needs-review
+
+- id: student_contact_info_feed_paterson
+  name: Student Contact Info Feed - KIPP Paterson
+  description: Student and guardian contact information for KIPP Paterson.
+  url: https://docs.google.com/spreadsheets/d/13ld6WVnOoFLxYXN_HQ837j_ha8Hgr14AtWNZmhjCno0
+  audiences: [region]
+  # TODO(audiences): region is certain (CMO staff hold access to all four).
+  # TODO(audiences): decide whether ops and leaders should see their own region's
+  # TODO(audiences): feed too — the Drive sharing suggests they can already open it.
+  system: google-sheet
+  regions: [paterson]
+  status: needs-review
+
 - id: survey_dashboard
   name: Survey Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/SurveyDashboard_17078426466440/Home?:embed=y

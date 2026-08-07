@@ -21,8 +21,8 @@ will consume.
 starting point, not a finished catalog. Every entry carries
 `status: needs-review`.
 
-- **42 tools** — 35 Tableau, 3 Google Sheets, 3 AppSheet apps, 1 Zendesk
-- **49 `TODO` lines** flagging specific things a human needs to resolve
+- **46 tools** — 35 Tableau, 7 Google Sheets, 3 AppSheet apps, 1 Zendesk
+- **61 `TODO` lines** flagging specific things a human needs to resolve
 - **9 tools** have a linked user guide; the rest may or may not have one
 - **4 tools** have no `audiences` at all and need roles assigned
 
@@ -70,6 +70,17 @@ document.
 
 The three GPA Rosters currently in `links.yml` were checked and are group-shared
 correctly. Anything you add is on you to check.
+
+**A tooling caveat you will hit.** For a file you do not administer, the Drive
+API returns only the owner — not the groups it is actually shared with. An empty
+group list from a script is therefore inconclusive, not evidence of a problem.
+Check the Share dialog in the UI, which shows the real picture.
+
+The four Student Contact Info Feeds are the case in point: automated reads show
+only an owner, but the data team confirmed each is shared to its region's group
+with CMO staff holding access to all four, and none is link-shared. They carry
+student and guardian contact information, so treat them as the most sensitive
+entries here and re-confirm rather than assume if anything about them changes.
 
 **AppSheet apps need this twice over.** An AppSheet app has its own access
 setting, _and_ it reads from a backing Google Sheet with its own separate
