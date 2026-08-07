@@ -20,7 +20,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: location_key
         data_type: string
