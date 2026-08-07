@@ -103,3 +103,56 @@ models:
           meta:
             source_column: address_home
             contains_pii: true
+
+unit_tests:
+  - name: test_dim_student_contact_persons_excludes_third_parent_slot
+    description:
+      Locks the exclusion of parent slots past contact_2. Before the slot filter
+      was added, a contact_3 row fell into the emergency branch and was treated
+      as an emergency contact rather than a parent. Feeds one contact_1, one
+      contact_2, one contact_3, and one emergency_1 row for the same student;
+      asserts contact_3 produces no person row while contact_1, contact_2, and
+      emergency_1 all still appear -- the emergency row keyed by student and
+      slot rather than dropped by the new filter.
+    model: dim_student_contact_persons
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            500001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'con1' as finalsite_contact_id,
+            cast(null as string) as personid,
+            'Jane Doe1' as contact_name,
+            'jane1@example.com' as email_current,
+            cast(null as string) as phone_mobile,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_daytime,
+            cast(null as string) as phone_work,
+            '+19170000001' as phone_primary,
+            '1 Main St' as address_home
+          union all
+          select
+            500001, 'kippnewark', 'contact_2', 'con2', cast(null as string),
+            'Jane Doe2', 'jane2@example.com', cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            '+19170000002', '1 Main St'
+          union all
+          select
+            500001, 'kippnewark', 'contact_3', 'con3', cast(null as string),
+            'Jane Doe3', 'jane3@example.com', cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            '+19170000003', '1 Main St'
+          union all
+          select
+            500001, 'kippnewark', 'emergency_1', cast(null as string),
+            cast(null as string), 'Jane Doe4', cast(null as string),
+            cast(null as string), cast(null as string), cast(null as string),
+            cast(null as string), '+19170000004', cast(null as string)
+    expect:
+      rows:
+        - { full_name: Jane Doe1, email: jane1@example.com }
+        - { full_name: Jane Doe2, email: jane2@example.com }
+        - { full_name: Jane Doe4, email: null }

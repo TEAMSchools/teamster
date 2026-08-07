@@ -324,3 +324,97 @@ unit_tests:
             ContactType: Parent1,
             Language: null,
           }
+
+  - name: test_family_contacts_excludes_third_parent_slot
+    description:
+      Locks the exclusion of parent slots past contact_2. Before the slot filter
+      was added, a contact_3 row fell into the `else` branch of the ContactType
+      case and was mislabeled Emergency -- a real parent exported to DeansList
+      under a label that routes guardian-only automated messaging. Feeds one
+      contact_1, one contact_2, one contact_3, and one emergency_1 row for the
+      same student; asserts contact_3 produces no output row at all (not even as
+      a mislabeled Emergency row) while contact_1, contact_2, and emergency_1
+      all still appear under their correct ContactType.
+    model: rpt_deanslist__family_contacts
+    given:
+      - input: ref('int_finalsite__student_contacts')
+        format: sql
+        rows: |
+          select
+            'enr-301' as finalsite_enrollment_id,
+            'kippnewark' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'parent' as relationship,
+            'Jane' as contact_first_name,
+            'One' as contact_last_name,
+            'jane1@example.com' as email,
+            cast(null as string) as phone_home,
+            cast(null as string) as phone_work,
+            cast(null as string) as phone_mobile
+          union all
+          select
+            'enr-301', 'kippnewark', 'contact_2', 'parent',
+            'Jane', 'Two', 'jane2@example.com', cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select
+            'enr-301', 'kippnewark', 'contact_3', 'parent',
+            'Jane', 'Three', 'jane3@example.com', cast(null as string),
+            cast(null as string), cast(null as string)
+          union all
+          select
+            'enr-301', 'kippnewark', 'emergency_1', 'neighbor',
+            'Jane', 'Four', cast(null as string), cast(null as string),
+            cast(null as string), cast(null as string)
+      - input: ref('int_finalsite__contact_id_attributes')
+        format: sql
+        rows: |
+          select
+            'enr-301' as finalsite_enrollment_id,
+            'kippnewark' as _dbt_source_project,
+            '300001' as powerschool_student_number
+      - input: ref('stg_powerschool__students')
+        format: sql
+        rows: |
+          select
+            300001 as student_number,
+            0 as enroll_status,
+            'kippnewark' as _dbt_source_project
+    expect:
+      rows:
+        - {
+            StudentID: 300001,
+            ParentFirstName: Jane,
+            ParentLastName: One,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: jane1@example.com,
+            Relationship: parent,
+            ContactType: Parent1,
+            Language: null,
+          }
+        - {
+            StudentID: 300001,
+            ParentFirstName: Jane,
+            ParentLastName: Two,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: jane2@example.com,
+            Relationship: parent,
+            ContactType: Parent2,
+            Language: null,
+          }
+        - {
+            StudentID: 300001,
+            ParentFirstName: Jane,
+            ParentLastName: Four,
+            HomePhone: null,
+            WorkPhone: null,
+            CellPhone: null,
+            Email: null,
+            Relationship: neighbor,
+            ContactType: Emergency,
+            Language: null,
+          }
