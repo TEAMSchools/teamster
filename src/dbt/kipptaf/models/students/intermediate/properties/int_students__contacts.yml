@@ -26,6 +26,13 @@ models:
               - contact_slot
           config:
             severity: error
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression:
+              "regexp_contains(contact_slot,
+              r'^(contact_[0-9]+|emergency_[1-4])$')"
+          config:
+            severity: error
     columns:
       - name: student_number
         data_type: integer
@@ -37,21 +44,13 @@ models:
       - name: contact_slot
         data_type: string
         description:
-          Which contact this row represents — `contact_1`, `contact_2`, or
-          `emergency_1` through `emergency_4`.
+          Which contact this row represents. Parent slots are numbered densely
+          from `contact_1` with no fixed upper bound — families with more
+          recorded parent-type relationships get more slots. `emergency_1`
+          through `emergency_4` are the four fixed `custom_attributes` `emrg_N`
+          sets mapped positionally.
         data_tests:
           - not_null:
-              config:
-                severity: error
-          - accepted_values:
-              arguments:
-                values:
-                  - contact_1
-                  - contact_2
-                  - emergency_1
-                  - emergency_2
-                  - emergency_3
-                  - emergency_4
               config:
                 severity: error
       - name: _dbt_source_project

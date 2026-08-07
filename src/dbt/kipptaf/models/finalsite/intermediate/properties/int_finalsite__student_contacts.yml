@@ -15,6 +15,13 @@ models:
             combination_of_columns:
               - finalsite_enrollment_id
               - contact_slot
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression:
+              "regexp_contains(contact_slot,
+              r'^(contact_[0-9]+|emergency_[1-4])$')"
+          config:
+            severity: error
     columns:
       - name: finalsite_enrollment_id
         data_type: string
@@ -25,17 +32,8 @@ models:
       - name: contact_slot
         data_type: string
         description:
-          Which contact this row represents — `contact_1`, `contact_2`, or
-          `emergency_1` through `emergency_4`.
-        data_tests:
-          - accepted_values:
-              arguments:
-                values:
-                  - contact_1
-                  - contact_2
-                  - emergency_1
-                  - emergency_2
-                  - emergency_3
-                  - emergency_4
-              config:
-                severity: error
+          Which contact this row represents. Parent slots are numbered densely
+          from `contact_1` with no fixed upper bound — families with more
+          recorded parent-type relationships get more slots. `emergency_1`
+          through `emergency_4` are the four fixed `custom_attributes` `emrg_N`
+          sets mapped positionally.
