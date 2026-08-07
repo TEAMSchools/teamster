@@ -33,8 +33,13 @@ Qualifying parents per student under the proposed definition:
 | Camden   | 2,163    | 52  | 1,264 | 840   | 7   | 3   |
 | Paterson | 879      | 43  | 539   | 297   | 0   | 2   |
 
-No student anywhere has more than three. 32 students network-wide have three,
-and today the third is discarded.
+32 of these students have three, and today the third is discarded.
+
+That table is scoped to currently enrolled students. **The model is not** — it
+stays SIS-agnostic and emits a row for every student record, including withdrawn
+students and prospects. Across that full population the cutover regions hold 72
+students with three parent slots and 8 with four. Dense ranking has no upper
+bound, so no fixed maximum can be asserted about `contact_slot`; see section 5.
 
 Two failure modes the household filter causes, both observed:
 
@@ -100,12 +105,11 @@ Slot assignment is **dense** — candidates are ranked, then numbered `contact_1
 1. `relationship_id` ascending
 
 Dense numbering matters. If `contact_1` were reserved for the `primary`
-relationship and left empty when none exists, a student with three
-`financial`-only candidates would emit `contact_2` through `contact_4` — which
-contradicts both the observed maximum of three and the `accepted_values` list.
-It would also make the zero-contact test misreport: a student holding
-`contact_2` and `contact_3` but no `contact_1` would be counted as having no
-contacts.
+relationship and left empty when none exists, the zero-contact test would
+misreport: a student holding `contact_2` and `contact_3` but no `contact_1`
+would be counted as having no contacts at all. Every slot number would also
+shift by one for exactly the students whose data is already weakest, making the
+`contact_2` column mean different things for different students.
 
 The cost is that `contact_1` no longer means "the `primary` relationship"; it
 means "the top-ranked parent". Of the 9,733 current students across the cutover
@@ -162,7 +166,18 @@ Four additions, all `warn` severity:
 1. **Multiple primary relationships** — asserts no student record holds more
    than one relationship flagged `is_primary`.
 
-The `accepted_values` test on `contact_slot` is extended to include `contact_3`.
+The `accepted_values` enumeration on `contact_slot` is **removed**, not
+extended. Dense ranking produces as many parent slots as a student has
+qualifying adults — 8 students already have four — so an enumerated list is the
+wrong shape and would fail again at five. It is replaced by a
+`dbt_utils.expression_is_true` assertion at `severity: error`:
+
+```text
+regexp_contains(contact_slot, r'^(contact_[0-9]+|emergency_[1-4])$')
+```
+
+Parent slots stay unbounded; emergency slots stay bounded at four, because they
+are a positional passthrough of four fixed `emrg_N` custom-field sets.
 
 The fourth test replaces a signal the redesign removes. Today a second `primary`
 on one student produces two `contact_1` rows and fails the model's

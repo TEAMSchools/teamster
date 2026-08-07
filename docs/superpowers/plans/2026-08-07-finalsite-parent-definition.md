@@ -52,16 +52,16 @@ prettier via trunk, dbt unit tests and singular tests.
 
 ## File Structure
 
-| Path                                                                                  | Responsibility                                     |
-| ------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `src/dbt/finalsite/dbt_project.yml`                                                   | Declare `current_academic_year` var (default `0`)  |
-| `src/dbt/finalsite/tests/stg_finalsite__contacts__no_stale_enrolled.sql`              | Warn: `enrolled` record stamped with a prior year  |
-| `src/dbt/finalsite/tests/stg_finalsite__contact_relationships__single_primary.sql`    | Warn: a student holds more than one `primary`      |
-| `src/dbt/finalsite/models/api/intermediate/int_finalsite__student_contacts.sql`       | Parent candidate set, dense ranking, adult guard   |
-| `.../properties/int_finalsite__student_contacts.yml`                                  | `accepted_values`, description, unit-test fixtures |
-| `src/dbt/finalsite/tests/int_finalsite__student_contacts__enrolled_has_contact_1.sql` | Warn: current enrolled student with no `contact_1` |
-| `src/dbt/finalsite/tests/int_finalsite__student_contacts__no_extra_contacts.sql`      | Warn: any slot past `contact_2`                    |
-| `src/dbt/kipptaf/models/marts/dimensions/dim_student_contact_persons.sql`             | Stop misfiling an unknown parent slot as emergency |
+| Path                                                                                  | Responsibility                                      |
+| ------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `src/dbt/finalsite/dbt_project.yml`                                                   | Declare `current_academic_year` var (default `0`)   |
+| `src/dbt/finalsite/tests/stg_finalsite__contacts__no_stale_enrolled.sql`              | Warn: `enrolled` record stamped with a prior year   |
+| `src/dbt/finalsite/tests/stg_finalsite__contact_relationships__single_primary.sql`    | Warn: a student holds more than one `primary`       |
+| `src/dbt/finalsite/models/api/intermediate/int_finalsite__student_contacts.sql`       | Parent candidate set, dense ranking, adult guard    |
+| `.../properties/int_finalsite__student_contacts.yml`                                  | Slot-pattern test, descriptions, unit-test fixtures |
+| `src/dbt/finalsite/tests/int_finalsite__student_contacts__enrolled_has_contact_1.sql` | Warn: current enrolled student with no `contact_1`  |
+| `src/dbt/finalsite/tests/int_finalsite__student_contacts__no_extra_contacts.sql`      | Warn: any slot past `contact_2`                     |
+| `src/dbt/kipptaf/models/marts/dimensions/dim_student_contact_persons.sql`             | Stop misfiling an unknown parent slot as emergency  |
 
 ---
 
@@ -485,19 +485,36 @@ uv run dbt test \
 
 Expected: PASS for both unit tests.
 
-- [ ] **Step 6: Update `accepted_values` and the model description**
+- [ ] **Step 6: Replace `accepted_values` and update the descriptions**
 
-In `int_finalsite__student_contacts.yml`, add `- contact_3` to the
-`accepted_values` list for `contact_slot`, immediately after `- contact_2`.
+Corrected mid-execution. The original plan said to add `- contact_3` to the
+`accepted_values` list. That was wrong: it was based on a maximum of three
+measured against currently enrolled students, but this model emits every student
+record. 8 students across Camden and Newark have four parent slots, and dense
+ranking has no upper bound at all.
+
+In `int_finalsite__student_contacts.yml`, DELETE the whole `accepted_values`
+data test on `contact_slot` and replace it with a `dbt_utils.expression_is_true`
+test at `severity: error` asserting:
+
+```text
+regexp_contains(contact_slot, r'^(contact_[0-9]+|emergency_[1-4])$')
+```
+
+Parent slots stay unbounded; emergency slots stay bounded at four because they
+are a positional passthrough of four fixed `emrg_N` custom-field sets. Follow
+the argument syntax already used at
+`src/dbt/finalsite/models/api/intermediate/properties/int_finalsite__contacts__households.yml:22-30`.
 
 Replace the `contact_slot` column description with:
 
 ```yaml
 description:
-  Which contact this row represents — `contact_1` through `contact_3`, or
-  `emergency_1` through `emergency_4`. Parent slots are numbered densely by
-  rank, so `contact_1` is the top-ranked parent rather than strictly the
-  `primary` relationship.
+  Which contact this row represents. Parent slots are numbered densely from
+  `contact_1` with no fixed upper bound — as many as the student has qualifying
+  adults — so `contact_1` is the top-ranked parent rather than strictly the
+  `primary` relationship. `emergency_1` through `emergency_4` are the positional
+  `emrg_N` custom-field sets.
 ```
 
 Replace the model-level description's first sentence about `contact_1` and
@@ -535,9 +552,9 @@ uv run dbt build \
 ```
 
 Expected: build succeeds; the `unique_combination_of_columns` and
-`accepted_values` tests pass. If `accepted_values` fails on a `contact_4`, stop
-— the observed maximum is three and a fourth slot means the guard or the
-candidate filter is wrong.
+`expression_is_true` tests pass, including for the 8 students who have four
+parent slots. If `expression_is_true` fails, the slot label is malformed —
+inspect the failing values rather than widening the pattern.
 
 - [ ] **Step 8: Commit**
 
@@ -798,8 +815,8 @@ enrolled scope appears only inside the Task 3 test. Section 2 → Task 1 Step 2.
 Section 3 → Task 2 Step 4. Section 4 → the
 `inner join ... and rc.status = 'not_in_workflow'` in Task 2 Step 4, with the
 no-carve-out consequence asserted in Task 3 Step 3. Section 5 → Tasks 1 and 3,
-plus the `accepted_values` change in Task 2 Step 6. Section 6 → Task 4. Section
-7 → Task 2 Steps 1 and 2.
+plus the slot-pattern test in Task 2 Step 6. Section 6 → Task 4. Section 7 →
+Task 2 Steps 1 and 2.
 
 **One deviation from the spec, deliberate.** Section 4 says the guard "folds
 into the join the model already performs in `parents_typed`". It cannot: the
