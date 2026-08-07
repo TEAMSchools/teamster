@@ -17,7 +17,8 @@
   name: Attendance Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/AttendanceDashboard/Trends?:embed=y
   description:
-    Monitor ADA, Chronic Absenteeism, Suspension and Daily Attendance Calls
+    Monitor ADA, Chronic Absenteeism, Completion Status of Chronic Absenteeism
+    and interventions and Daily Attendance Calls
   # TODO(description): source site had conflicting wording; verify
   audiences: [leaders, ops, region]
   system: tableau
