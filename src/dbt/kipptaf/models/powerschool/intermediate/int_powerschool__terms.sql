@@ -28,28 +28,19 @@ with
                 _dbt_source_project, regexp_extract(_dbt_source_relation, r'(kipp\w+)_')
             ) as _dbt_source_project,
         from union_relations
-    ),
-
-    -- Any (schoolid, academic_year) Focus carries a quarter for supersedes the
-    -- archive's rows for that school-year. The archive still holds the
-    -- district-level schoolid = 0 year record (Focus has no per-quarter
-    -- equivalent for it) and two schools (Sunrise, Liberty) for the years
-    -- before their PowerSchool-to-Focus cutover -- kept via the anti-join
-    -- below.
-    focus_terms as (
-        select distinct schoolid, academic_year,
-        from {{ ref("int_focus__terms_conformed") }}
-        where term is not null
     )
 
--- int_powerschool__terms is quarter-grain only. The Focus branch also carries
--- year and semester rows (needed by stg_powerschool__terms); term is null on
--- those, so this filter drops them here without a second conform model.
-select p.* except (is_focus),
-from with_project as p
-left join
-    focus_terms as f on p.schoolid = f.schoolid and p.academic_year = f.academic_year
+-- Miami cuts over to Focus at AY2026, matching the enrollment union. Focus
+-- marking periods carry template rows back to syear 1980, decades before any
+-- KIPP Miami school existed, so admitting every Focus year would fabricate
+-- history. The archive already covers Miami's real closed years.
+--
+-- This model is quarter-grain only. The Focus branch also carries year and
+-- semester rows, which stg_powerschool__terms needs; term is null on those, so
+-- the same filter drops them here without a second conform model.
+select * except (is_focus),
+from with_project
 where
-    p._dbt_source_project != 'kippmiami'
-    or (p.is_focus and p.term is not null)
-    or (not p.is_focus and f.schoolid is null)
+    _dbt_source_project != 'kippmiami'
+    or (is_focus and academic_year >= 2026 and term is not null)
+    or (not is_focus and academic_year <= 2025)
