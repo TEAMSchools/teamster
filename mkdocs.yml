@@ -57,6 +57,7 @@ nav:
       - dbt Conventions: reference/dbt-conventions.md
       - Finalsite to Focus Import: reference/finalsite-focus-import.md
       - Marts Data Models: reference/marts-data-models.md
+      - Cube Semantic Catalog: reference/cube-semantic-catalog.md
       - Automation Conditions: reference/automation-conditions.md
   - Models:
       - FRESH Dashboard Data Model: models/fresh-dashboard-data-model.md
