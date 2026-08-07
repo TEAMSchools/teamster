@@ -277,7 +277,7 @@ unit_tests:
             cast(null as boolean), true, false
           union all
           select
-            'stu1', 'rel3', 'con3', 'Jim Poe', 'parent',
+            'stu1', 'rel0', 'con3', 'Jim Poe', 'parent',
             cast(null as boolean), true, false
           union all
           select

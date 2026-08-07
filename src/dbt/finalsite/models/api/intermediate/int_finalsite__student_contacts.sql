@@ -38,36 +38,39 @@ with
             and sh.household_id = ch.household_id
     ),
 
-    parent_picks as (
-        -- Dense slot numbering: the `primary` relationship sorts first when one
-        -- exists, then co-residents with the student, then an arbitrary but
-        -- stable relationship_id. Household co-membership ORDERS candidates; it
-        -- does not exclude them, so a non-resident parent still fills a slot.
-        -- Numbering has no gaps, so a student with no `primary` still gets a
-        -- populated contact_1 rather than starting at contact_2.
+    parent_ranked as (
+        -- The `primary` relationship sorts first when one exists, then
+        -- co-residents with the student, then an arbitrary but stable
+        -- relationship_id. Household co-membership ORDERS candidates; it does
+        -- not exclude them, so a non-resident parent still fills a slot.
         select
             c.finalsite_enrollment_id,
             c.rel_id,
             c.rel_name,
             c.rel_type,
 
-            concat(
-                'contact_',
-                cast(
-                    row_number() over (
-                        partition by c.finalsite_enrollment_id
-                        order by
-                            c.is_primary desc,
-                            (s.rel_id is not null) desc,
-                            c.relationship_id asc
-                    ) as string
-                )
-            ) as contact_slot,
+            row_number() over (
+                partition by c.finalsite_enrollment_id
+                order by
+                    c.is_primary desc,
+                    (s.rel_id is not null) desc,
+                    c.relationship_id asc
+            ) as contact_rank,
         from parent_candidates as c
         left join
             candidates_sharing_student_household as s
             on c.finalsite_enrollment_id = s.finalsite_enrollment_id
             and c.rel_id = s.rel_id
+    ),
+
+    parent_picks as (
+        -- Dense slot numbering has no gaps, so a student with no `primary`
+        -- still gets a populated contact_1 rather than starting at contact_2.
+        select
+            * except (contact_rank),
+
+            concat('contact_', cast(contact_rank as string)) as contact_slot,
+        from parent_ranked
     ),
 
     parents_typed as (
