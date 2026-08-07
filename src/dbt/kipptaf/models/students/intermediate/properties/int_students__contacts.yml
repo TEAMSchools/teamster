@@ -28,9 +28,8 @@ models:
             severity: error
       - dbt_utils.expression_is_true:
           arguments:
-            expression:
-              "regexp_contains(contact_slot,
-              r'^(contact_[0-9]+|emergency_[1-4])$')"
+            expression: |
+              regexp_contains(contact_slot, r'^(contact_[0-9]+|emergency_[1-4])$')
           config:
             severity: error
     columns:
