@@ -454,3 +454,27 @@ data_tests:
         dagster:
           ref:
             name: rpt_parentsquare__students
+
+  - name: stg_google_sheets__kippfwd__act_scale_score_key__metadata_constant_per_assessment
+    description: >-
+      Enforces the invariant the practice-assessment designation join depends
+      on. int_assessments__college_assessment_practice designates an assessment
+      by inner-joining a distinct list of assessment_id plus academic_year,
+      test_type, administration_round, subject, and grade_level from this sheet.
+      That distinct collapses to one row per assessment only while those five
+      attributes never vary within an assessment_id, which is true of the sheet
+      today but is a data-entry convention rather than anything enforced. A typo
+      that varies any of them yields two designation rows for that assessment
+      and fans every one of its response rows out, doubling section scores and
+      the composites built from them. The fan-out is silent — row counts rise
+      and nothing errors — which is the failure mode the designation redesign
+      exists to remove, so it needs a loud check rather than a comment. Not
+      expressible as unique_combination_of_columns, which asserts row-level
+      uniqueness; this asserts that a set of columns is functionally determined
+      by another.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__act_scale_score_key
