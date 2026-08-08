@@ -11,4 +11,4 @@ select
 from {{ ref("int_extracts__student_enrollments") }}
 -- Miami left Illuminate ahead of AY2026-27; its PowerSchool records still read
 -- enroll_status = 0 post-Focus-cutover, so the region filter is load-bearing
-where rn_all = 1 and enroll_status = 0 and region is distinct from 'Miami'
+where rn_all = 1 and enroll_status = 0 and region != 'Miami'

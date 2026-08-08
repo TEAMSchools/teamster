@@ -39,5 +39,4 @@ select
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("stg_powerschool__schools") }}
 -- Miami left Illuminate ahead of AY2026-27
-where
-    state_excludefromreporting = 0 and _dbt_source_project is distinct from 'kippmiami'
+where state_excludefromreporting = 0 and _dbt_source_project != 'kippmiami'
