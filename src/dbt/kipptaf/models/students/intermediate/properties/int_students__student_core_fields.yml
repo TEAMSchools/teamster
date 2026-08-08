@@ -1,0 +1,46 @@
+models:
+  - name: int_students__student_core_fields
+    description: >-
+      SIS-agnostic student core fields spine, carrying IEP and English learner
+      status keyed on student_number. Resolves the PowerSchool branch's
+      studentsdcid to student_number so mart consumers join on the network
+      student number instead of the PowerSchool-internal dcid; the Miami branch
+      already carries student_number natively via the Focus conform model.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+    columns:
+      - name: spedlep
+        description: >-
+          IEP classification. For Miami, carried forward from the frozen
+          PowerSchool archive because Focus ESE fields are not yet populated;
+          null for Miami students new since the freeze.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: lep_status
+        description: >-
+          English learner status. For Miami, carried forward from the frozen
+          PowerSchool archive because the Focus ELL field is effectively
+          unpopulated; null for Miami students new since the freeze.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: student_number
+        description: Canonical network student number.
+      - name: _dbt_source_relation
+        description: >-
+          Source relation, passed through from the PowerSchool staging model or
+          the Focus conform model.
+      - name: _dbt_source_project
+        description: >-
+          District code location, passed through from the PowerSchool staging
+          model or the Focus conform model.

@@ -1,0 +1,37 @@
+models:
+  - name: int_focus__student_user_fields_conformed
+    description: >-
+      Miami student FLEID and gifted status, conformed to the network spine and
+      keyed on student_number instead of the PowerSchool-internal dcid the
+      archive's user fields table used. Gifted status carries forward from the
+      frozen PowerSchool archive for returning students, because the Focus
+      Gifted (Computed) custom field is effectively unpopulated.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - _dbt_source_project
+    columns:
+      - name: student_number
+        description: Canonical network student number.
+      - name: fleid
+        description: >-
+          FLEID, the Florida statewide education identifier, as recorded in
+          Focus.
+      - name: gifted_and_talented
+        description: >-
+          Gifted classification carried forward from the frozen PowerSchool
+          archive. Null for students new since the freeze, because the Focus
+          Gifted (Computed) field is effectively unpopulated.
+      - name: _dbt_source_relation
+        description: >-
+          Source relation, passed through from the Focus student identity
+          conform model.
+      - name: _dbt_source_project
+        description: >-
+          District code location, passed through from the Focus student identity
+          conform model.

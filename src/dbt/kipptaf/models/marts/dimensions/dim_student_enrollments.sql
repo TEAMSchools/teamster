@@ -25,6 +25,6 @@ select
 
 from {{ ref("int_powerschool__student_enrollment_union") }} as enr
 left join
-    {{ ref("stg_powerschool__schools") }} as sch
+    {{ ref("int_students__schools") }} as sch
     on enr.schoolid = sch.school_number
     and enr._dbt_source_project = sch._dbt_source_project

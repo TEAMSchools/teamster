@@ -1,0 +1,64 @@
+models:
+  - name: int_focus__teacher_grade_levels_conformed
+    description: >-
+      Miami teacher grade-level distribution from Focus, conformed to the
+      PowerSchool teacher_grade_levels vocabulary so it can union into
+      int_powerschool__teacher_grade_levels. One row per teacher (lead or
+      co-teacher) per academic year per grade level taught, with the share and
+      rank of that teacher's total student load falling in each grade. yearid
+      has no Focus source and is omitted; the network union null-fills it.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - teachernumber
+              - academic_year
+              - grade_level
+    columns:
+      - name: teachernumber
+        description: >-
+          Network teacher/employee number, resolved from the Focus staff id via
+          int_focus__users.staff_number_identifier_local. Rows whose Focus user
+          has no populated value for that field are dropped rather than given an
+          invented identifier.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
+        description: Focus school year the schedule and roster rows belong to.
+      - name: _dbt_source_project
+        description: >-
+          District code location, passed through so the consuming union can
+          coalesce it rather than re-deriving kipptaf from this model's own
+          relation name.
+      - name: grade_level
+        description: >-
+          Numeric grade level of the students this teacher taught in this
+          academic year, resolved from each student's own enrollment stint (not
+          the schedule's course-level grade, which is effectively unpopulated in
+          Focus).
+      - name: section_count_distinct
+        description: >-
+          Count of distinct course periods (sections) this teacher taught
+          students in this grade level in.
+      - name: student_count
+        description: >-
+          Count of scheduled-student rows this teacher taught in this grade
+          level in this academic year.
+      - name: student_total_all_grades
+        description: >-
+          Total scheduled-student rows this teacher taught across all grade
+          levels in this academic year.
+      - name: grade_level_ratio
+        description: >-
+          Share of this teacher's total student load in this academic year that
+          falls in this grade level.
+      - name: grade_level_rank
+        description: >-
+          Rank of this grade level among all grades this teacher taught in this
+          academic year, ordered by grade_level_ratio descending. 1 is the
+          teacher's primary grade level for the year.

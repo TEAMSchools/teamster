@@ -1,0 +1,46 @@
+models:
+  - name: stg_focus__students_join_users
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      stg_focus__students_join_users, exposing Miami's student-to-staff links at
+      network level — one row per association between a student and a Focus user
+      account, the table behind a staff member's student caseload or advisory
+      list.
+    config:
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - id
+    columns:
+      - name: id
+        description: Primary key — Focus students_join_users id.
+      - name: student_id
+        description: Focus student id on the link.
+      - name: staff_id
+        description: Focus staff id of the linked user account.
+      - name: person_id
+        description: >-
+          Focus person id of the linked user, when the account is backed by a
+          people record. Unpopulated for staff accounts created directly in
+          Focus rather than from a person import.
+      - name: enabled
+        description: Whether the student-to-staff link is currently active.
+      - name: request_date
+        description: >-
+          Date the link was requested, used where Focus routes caseload
+          assignment through an approval step.
+      - name: imported
+        description: Y/N — whether the row originated from an import.
+      - name: uuid
+        description: Focus-assigned universally unique identifier for the row.
+      - name: created_at
+        description: Row creation timestamp in Focus.
+      - name: updated_at
+        description: Row last-update timestamp in Focus.
+      - name: _dbt_source_relation
+        description: Source relation this row was unioned from.
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.

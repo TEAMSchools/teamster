@@ -1,0 +1,78 @@
+models:
+  - name: int_focus__terms_conformed
+    description: >-
+      Miami school-year, semester, and quarter definitions from Focus, conformed
+      to the PowerSchool terms vocabulary so they can union into the network
+      stg_powerschool__terms and int_powerschool__terms models. Progress periods
+      have no PowerSchool equivalent and are dropped. yearid and fiscal_year
+      have no Focus source and are derived from the verified network-wide
+      formulas (yearid = academic_year - 1990, fiscal_year = academic_year + 1).
+      term, term_start_date, term_end_date, semester, and is_current_term are
+      populated only for quarter rows, matching the quarter-only grain
+      int_powerschool__terms expects; the network union filters non-quarter
+      Focus rows out of that consumer while keeping them for
+      stg_powerschool__terms.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - academic_year
+              - abbreviation
+    columns:
+      - name: schoolid
+        description: >-
+          Network school number, resolved from the Focus internal school id
+          through the focus package's own school_number (a Florida school code)
+          and the locations crosswalk. Focus's own school_id is a small internal
+          integer and is not the network identifier.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: academic_year
+        description:
+          Academic year the marking period falls in, from Focus syear.
+      - name: name
+        description: Full display name of the marking period, from Focus title.
+      - name: abbreviation
+        description: >-
+          Short code for the marking period (FY, S1, S2, Q1-Q4), from Focus
+          short_name.
+      - name: firstday
+        description: First calendar date of the marking period.
+      - name: lastday
+        description: Last calendar date of the marking period.
+      - name: yearid
+        description: >-
+          PowerSchool-style sequential year id. No Focus source; derived as
+          academic_year - 1990, the formula verified against every PowerSchool
+          district and year in prod.
+      - name: fiscal_year
+        description: >-
+          Fiscal year the marking period falls in. No Focus source; derived as
+          academic_year + 1, matching the archive's own convention.
+      - name: term
+        description: >-
+          Quarter code (Q1-Q4). Null for the year and semester rows a school
+          year also carries — int_powerschool__terms expects only the quarter
+          grain.
+      - name: term_start_date
+        description:
+          First calendar date of the quarter. Null outside the quarter rows.
+      - name: term_end_date
+        description:
+          Last calendar date of the quarter. Null outside the quarter rows.
+      - name: semester
+        description: >-
+          Semester the quarter falls in (S1 for Q1/Q2, S2 for Q3/Q4). Null
+          outside the quarter rows.
+      - name: is_current_term
+        description: >-
+          Whether today falls within the quarter's dates. Null outside the
+          quarter rows.
+      - name: _dbt_source_project
+        description: >-
+          District code location, passed through so the consuming union can
+          coalesce it rather than re-deriving kipptaf from this model's own
+          relation name.

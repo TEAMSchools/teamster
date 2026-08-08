@@ -1,0 +1,87 @@
+models:
+  - name: int_focus__students_conformed
+    description: >-
+      Miami student identity from Focus, conformed to the PowerSchool column
+      names and value domains the network student spine expects. Holds the
+      unprefix rule that recovers the canonical student number, the race code
+      derivation, and the archive carry-forwards for the fields the archive
+      keeps on its own students table. Values with no usable Focus source carry
+      forward from the frozen PowerSchool archive for returning students and are
+      null for students new since the freeze. spedlep and lep_status get the
+      same treatment in int_focus__student_core_fields_conformed, matching where
+      the archive stores them.
+    config:
+      meta:
+        contains_pii: true
+    columns:
+      - name: student_number
+        description: >-
+          Canonical network student number, the Focus student id with its
+          leading 8400 Miami-Dade district prefix removed. One AY2026 student
+          carries a 10-digit id with no such prefix and passes through unchanged
+          so the anomaly stays visible for Ops correction.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: lunchstatus
+        description: >-
+          Meal eligibility carried forward from the frozen PowerSchool archive.
+          Null for students new since the freeze, because Focus records
+          school-wide Community Eligibility Provision status rather than
+          per-student eligibility.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: ethnicity
+        description: >-
+          Single-character race code matching the domain the PowerSchool archive
+          carried. Carried forward from the archive for returning students,
+          because the archive's own values are not a function of the Focus race
+          flags. Derived from those flags for new students — multiple races
+          yield T, a single race yields its code, and no recorded race yields
+          null rather than a fabricated category.
+      - name: enroll_status
+        description: >-
+          Enrollment standing from the student's most recent Focus stint. Focus
+          records this per stint while the network treats it as a single current
+          value per student, so the latest academic year and entry date wins.
+      - name: first_name
+        description: Student's legal first name as recorded in Focus.
+      - name: middle_name
+        description: Student's legal middle name as recorded in Focus.
+      - name: last_name
+        description: Student's legal last name as recorded in Focus.
+      - name: dob
+        description: >-
+          Date of birth, cast from the Focus birthdate timestamp. Focus wins
+          over the archive here because it is the live system and the two
+          disagree on only a handful of returning students, all post-freeze
+          corrections.
+      - name: gender
+        description: >-
+          Single-character gender code extracted from the bracketed code in the
+          Focus sex label, matching the archive domain.
+      - name: powerschool_id
+        description: >-
+          Pre-migration student number as Focus recorded it. Populated only for
+          students who predate the SIS migration. Used to verify the unprefix
+          rule, never as a join key.
+      - name: florida_student_number
+        description: Florida state student number as recorded in Focus.
+      - name: florida_education_identifier
+        description: >-
+          FLEID, the Florida statewide education identifier. Consumed by the
+          student user fields conform model as the network fleid.
+      - name: _dbt_source_relation
+        description: >-
+          Source relation, passed through from the Focus wrapper so the network
+          union can tell the Focus branch from the PowerSchool archive.
+      - name: _dbt_source_project
+        description: >-
+          District code location, passed through from the Focus wrapper. Never
+          re-derived here.

@@ -1,0 +1,171 @@
+models:
+  - name: int_focus__schedule
+    description: >-
+      Kipptaf-level union_relations passthrough of kippmiami's
+      int_focus__schedule, exposing Miami's student schedules at network level —
+      one row per student per scheduled course period, with section, course, and
+      marking-period context resolved.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_schedule_id
+    columns:
+      - name: student_schedule_id
+        description: >-
+          Primary key — Focus schedule id; one row per student per scheduled
+          course period.
+      - name: academic_year
+        description: Focus school year start year (e.g. 2025 = 2025-26).
+      - name: schoolid
+        description: Focus school id the scheduled section is taught at.
+      - name: student_id
+        description: Focus student id scheduled into the section.
+      - name: course_id
+        description: Focus course id the scheduled section belongs to.
+      - name: course_period_id
+        description:
+          Focus course-period (section) id the student is scheduled into.
+      - name: marking_period_id
+        description: >-
+          Focus marking-period id the schedule row covers, with the full-year
+          sentinel 0 normalized to null.
+      - name: mp
+        description: >-
+          Term the schedule row covers as a code — FY full year, SEM semester,
+          QTR quarter. FY rows are the ones with a null marking_period_id.
+      - name: course_weight
+        description: >-
+          Weighting applied to the course when computing GPA for this scheduled
+          section.
+      - name: days
+        description: >-
+          Days of the week the section meets, as concatenated weekday initials
+          (M, T, W, H for Thursday, F, S, U).
+      - name: rotation_days
+        description: >-
+          Rotation-day pattern the section meets on, for schools running a
+          rotating rather than fixed weekly timetable.
+      - name: start_date
+        description: First date the student is scheduled into the section.
+      - name: end_date
+        description: >-
+          Last date the student is scheduled into the section; null while the
+          schedule row is open.
+      - name: fefp_number
+        description: >-
+          Florida Education Finance Program funding category code for the
+          section, from the schedule row's FEFP Number custom field.
+      - name: dual_enrollment_indicator
+        description: >-
+          Dual-enrollment type code for the section, from the schedule row's
+          Dual Enrollment Indicator custom field.
+      - name: class_minutes_weekly
+        description: >-
+          Scheduled instructional minutes per week for the section, stored as
+          text by Focus.
+      - name: reading_intervention_component
+        description: >-
+          Reading-intervention tier code for the section, from the schedule
+          row's Reading Intervention Component custom field.
+      - name: basic_skills_exam
+        description: >-
+          Basic-skills requirement or exemption code, from the schedule row's
+          Basic Skills Exam custom field.
+      - name: location_of_student
+        description: >-
+          Code for where the student sits for a virtual course, from the
+          schedule row's Location of Student custom field.
+      - name: eoc_exam_term
+        description: >-
+          Term the end-of-course exam falls in, from the schedule row's EOC Exam
+          Term custom field.
+      - name: exempt_from_total_clock_hours
+        description: >-
+          Checkbox excluding the section from clock-hour totals; carried through
+          undecoded because the field has no option list.
+      - name: exclude_from_fte
+        description: >-
+          Checkbox excluding the section from full-time-equivalent funding
+          counts; carried through undecoded because the field has no option
+          list.
+      - name: pmrn
+        description: >-
+          Checkbox marking the section for the Progress Monitoring and Reporting
+          Network; carried through undecoded because the field has no option
+          list.
+      - name: course_period_title
+        description: Section name from stg_focus__course_periods.
+      - name: course_period_short_name
+        description: Abbreviated section name from stg_focus__course_periods.
+      - name: course_period_custom_title
+        description: >-
+          Locally-overridden section name, set where a school renames the
+          section from the course default.
+      - name: teacher_id
+        description: >-
+          Focus staff id of the section's teacher of record. Co-teachers live in
+          stg_focus__co_teachers.
+      - name: room
+        description: Room the section meets in.
+      - name: period_id
+        description:
+          Focus period id of the bell-schedule slot the section meets in.
+      - name: calendar_id
+        description: >-
+          Focus attendance-calendar id the section follows, which determines
+          which days it meets.
+      - name: team_id
+        description: >-
+          Focus team id the section belongs to, where a school groups sections
+          into teams or houses.
+      - name: grade_scale_id
+        description:
+          Focus grade-scale id the section's grades are posted against.
+      - name: credits
+        description: Credits the section is worth.
+      - name: does_attendance
+        description: Whether attendance is taken in the section.
+      - name: does_grades
+        description: Whether grades are posted for the section.
+      - name: does_gpa
+        description: Whether the section's grades count toward GPA.
+      - name: course_title
+        description: Course name from stg_focus__courses.
+      - name: course_short_name
+        description: Abbreviated course name from stg_focus__courses.
+      - name: subject_id
+        description: Focus subject id the course belongs to.
+      - name: grad_subject_id
+        description: Focus graduation-subject id the course counts toward.
+      - name: course_grade_level
+        description: >-
+          Grade level the course is intended for, from stg_focus__courses — not
+          the student's own grade level.
+      - name: credit_hours
+        description: Credit hours the course carries.
+      - name: course_hours
+        description: Clock hours of instruction the course carries.
+      - name: homeroom
+        description: Whether the course is a homeroom rather than instructional.
+      - name: marking_period_title
+        description: >-
+          Marking-period name from stg_focus__marking_periods; null for
+          full-year schedules.
+      - name: marking_period_short_name
+        description: >-
+          Abbreviated marking-period name; null for full-year schedules.
+      - name: marking_period_type
+        description: >-
+          Marking-period granularity (year, semester, quarter, progress period);
+          null for full-year schedules.
+      - name: marking_period_start_date
+        description:
+          First date of the marking period; null for full-year schedules.
+      - name: marking_period_end_date
+        description:
+          Last date of the marking period; null for full-year schedules.
+      - name: _dbt_source_relation
+        description: Source relation this row was unioned from.
+      - name: _dbt_source_project
+        description: District code location derived from _dbt_source_relation.
