@@ -11,6 +11,11 @@ with
             home_business_unit_name,
             job_title,
         from {{ ref("int_people__staff_roster") }}
+        -- Miami left Illuminate ahead of AY2026-27. The inequality also excludes
+        -- rows with a NULL code location, which is intended, not an oversight: a
+        -- staff row with no work location does not belong in the feed. Do not
+        -- "fix" this to is distinct from.
+        where home_work_location_dagster_code_location != 'kippmiami'
 
         union all
 
@@ -28,6 +33,8 @@ with
             company as home_business_unit_name,
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
+        -- Miami left Illuminate ahead of AY2026-27
+        where dagster_code_location != 'kippmiami'
     )
 
 -- trunk-ignore(sqlfluff/ST06)
