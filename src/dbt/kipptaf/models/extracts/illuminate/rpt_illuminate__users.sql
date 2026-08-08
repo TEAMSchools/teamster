@@ -11,6 +11,8 @@ with
             home_business_unit_name,
             job_title,
         from {{ ref("int_people__staff_roster") }}
+        -- Miami left Illuminate ahead of AY2026-27
+        where home_work_location_dagster_code_location is distinct from 'kippmiami'
 
         union all
 
@@ -28,6 +30,8 @@ with
             company as home_business_unit_name,
             title as job_title,
         from {{ ref("int_people__temp_staff") }}
+        -- Miami left Illuminate ahead of AY2026-27
+        where dagster_code_location is distinct from 'kippmiami'
     )
 
 -- trunk-ignore(sqlfluff/ST06)

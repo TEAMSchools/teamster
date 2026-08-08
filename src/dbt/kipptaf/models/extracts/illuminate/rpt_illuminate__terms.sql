@@ -15,3 +15,5 @@ select
     dcid as `09 Local Term ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("stg_powerschool__terms") }}
+-- Miami left Illuminate ahead of AY2026-27
+where _dbt_source_project is distinct from 'kippmiami'
