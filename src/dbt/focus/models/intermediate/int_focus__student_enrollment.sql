@@ -7,6 +7,14 @@ with
             s.student_e_mail_address as student_email,
             s.student_id as student_number,
 
+            -- The canonical network student number. student_number above is
+            -- the PREFIXED Focus id despite its name, and account
+            -- provisioning joins on that form, so both are exposed rather
+            -- than one being renamed.
+            cast(
+                regexp_replace(cast(s.student_id as string), r'^8400', '') as int64
+            ) as network_student_number,
+
             e.id as student_enrollment_id,
             e.syear as academic_year,
             e.school_id as schoolid,

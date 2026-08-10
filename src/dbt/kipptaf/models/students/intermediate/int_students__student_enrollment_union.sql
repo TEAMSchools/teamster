@@ -39,9 +39,7 @@ with
             student_first_name as first_name,
             student_last_name as last_name,
 
-            cast(
-                regexp_replace(cast(student_number as string), r'^8400', '') as int64
-            ) as student_number,
+            network_student_number as student_number,
         from {{ ref("int_focus__student_enrollments") }}
     ),
 

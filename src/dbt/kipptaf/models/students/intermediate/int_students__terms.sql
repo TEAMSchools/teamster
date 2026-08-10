@@ -12,9 +12,9 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    -- int_focus__marking_periods drops progress periods, floors the history at
-    -- 2018, and derives quarter_semester and is_within_dates. All that is left
-    -- here is resolving Focus's internal school id to the network one.
+    -- quarter_semester and is_within_dates are derived in
+    -- stg_focus__marking_periods; this model only resolves Focus's internal
+    -- school id to the network one and applies the filters below.
     focus_marking_periods as (
         select
             mp._dbt_source_relation,
@@ -24,13 +24,22 @@ with
             mp.short_name,
             mp.start_date,
             mp.end_date,
-            mp.academic_year,
             mp.quarter_semester,
             mp.is_within_dates,
 
+            mp.syear as academic_year,
+
             fs.schoolid,
-        from {{ ref("int_focus__marking_periods") }} as mp
+        from {{ ref("stg_focus__marking_periods") }} as mp
         inner join focus_schools as fs on mp.school_id = fs.focus_school_id
+        -- Progress periods have no PowerSchool terms equivalent. The 2018
+        -- floor is Miami's first school year: Focus carries a full
+        -- year/semester/quarter set for two schools in every syear back to
+        -- 1980, which would fabricate history here. Both filters stay in this
+        -- model rather than in staging -- 321 report card grade rows point at
+        -- pre-2018 marking periods, so flooring the staging model orphans
+        -- them.
+        where mp.type in ('year', 'semester', 'quarter') and mp.syear >= 2018
     ),
 
     -- Miami school-year, semester, and quarter definitions from Focus,

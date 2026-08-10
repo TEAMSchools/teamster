@@ -64,6 +64,15 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: network_student_number
+        description: >-
+          Canonical network student number — student_number with the leading
+          8400 Miami-Dade district prefix stripped. Both forms are exposed
+          because student_number holds the prefixed id and account provisioning
+          (stg_people__student_logins) joins on that form.
+        config:
+          meta:
+            contains_pii: true
       - name: student_first_name
         description: Student first name.
         config:

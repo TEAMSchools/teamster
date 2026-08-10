@@ -3,7 +3,7 @@ with
     -- student's current standing copied onto every row, so the most recent
     -- stint wins. rn_all is computed in int_focus__student_enrollment.
     current_stint as (
-        select student_number, enroll_status,
+        select enroll_status, network_student_number as student_number,
         from {{ ref("int_focus__student_enrollments") }}
         where rn_all = 1
     ),
