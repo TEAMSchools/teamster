@@ -28,7 +28,7 @@ models:
           - not_null:
               config:
                 severity: warn
-                where: "_dbt_source_project = 'kippmiami'"
+                where: _dbt_source_project = 'kippmiami'
       - name: lep_status
         description: >-
           English learner status. For Miami, carried forward from the frozen
@@ -38,7 +38,7 @@ models:
           - not_null:
               config:
                 severity: warn
-                where: "_dbt_source_project = 'kippmiami'"
+                where: _dbt_source_project = 'kippmiami'
       - name: student_number
         description: Canonical network student number.
       - name: _dbt_source_relation
