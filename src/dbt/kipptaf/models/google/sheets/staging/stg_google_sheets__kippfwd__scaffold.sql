@@ -1,0 +1,18 @@
+select
+    academic_year,
+    expected_aligned_test_type,
+    expected_test_type,
+    expected_grade_level,
+    expected_scope,
+    expected_aligned_scope,
+    expected_subject_area,
+    expected_aligned_subject_area,
+    expected_grouping,
+    expected_score_category,
+    expected_score_type,
+    a1_attempt_min_score,
+    a2_plus_attempts_min_score,
+    hs_ready_min_score,
+    college_ready_min_score,
+
+from {{ source("google_sheets", "src_google_sheets__kippfwd__scaffold") }}

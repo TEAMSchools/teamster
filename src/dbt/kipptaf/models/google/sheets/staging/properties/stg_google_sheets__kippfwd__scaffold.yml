@@ -1,0 +1,141 @@
+models:
+  - name: stg_google_sheets__kippfwd__scaffold
+    description: >-
+      The reportable assessment vocabulary for CARAT: every valid combination of
+      academic year, test type, scope, and score type, with its subject
+      alignments and cut scores. Independent of the goals sheet by design --
+      goals say what the target is, this says what combinations exist and where
+      the cut scores sit. Replaces alignment CASE statements previously repeated
+      across stg_google_sheets__kippfwd__goals, __expected_assessments,
+      int_assessments__college_assessment, and
+      rpt_tableau__college_assessment_dashboard_benchmark_calcs. Cut scores are
+      null where they do not apply: growth score types measure a change rather
+      than a level, and ACT is retired so it has no attempt thresholds and no
+      Practice rows. See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - expected_test_type
+              - expected_scope
+              - expected_score_type
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Start year of the school year the goals apply to. SY26-27 is 2026,
+          matching academic_year_clean rather than Illuminate's raw spring year.
+        data_tests:
+          - not_null
+      - name: expected_aligned_test_type
+        data_type: string
+        description: >-
+          Test types this row applies to when Official and Practice share a
+          value. `All` means it applies to both.
+        data_tests:
+          - not_null
+      - name: expected_test_type
+        data_type: string
+        description: Official or Practice.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Official, Practice]
+      - name: expected_grade_level
+        data_type: string
+        description: >-
+          Grade levels this row applies to, comma-separated where one row covers
+          more than one ("11,12"). String rather than int64 for that reason.
+          Split with cross join unnest(split(expected_grade_level, ',')) when a
+          per-grade grain is needed.
+        data_tests:
+          - not_null
+      - name: expected_scope
+        data_type: string
+        description:
+          The assessment as administered - SAT, ACT, PSAT 8/9, PSAT10, PSAT
+          NMSQT.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [SAT, ACT, PSAT 8/9, PSAT10, PSAT NMSQT]
+      - name: expected_aligned_scope
+        data_type: string
+        description: >-
+          Scope collapsed for cross-test comparison. ACT and SAT fold into
+          ACT/SAT; PSAT10 and PSAT NMSQT fold into PSAT10/NMSQT because they
+          share a scale and a threshold set. PSAT 8/9 stands alone.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [ACT/SAT, PSAT10/NMSQT, PSAT 8/9]
+      - name: expected_subject_area
+        data_type: string
+        description: >-
+          The subject as the source reports it - EBRW, Math, Reading, Combined
+          (digital SAT and PSAT totals), or Composite (ACT totals).
+        data_tests:
+          - not_null
+      - name: expected_aligned_subject_area
+        data_type: string
+        description: >-
+          Subject collapsed so totals compare across tests - Combined and
+          Composite both become Total, and ACT Reading joins EBRW under
+          EBRW/Reading.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Total, Math, EBRW/Reading]
+      - name: expected_grouping
+        data_type: string
+        description: >-
+          The reporting bucket. Unlike expected_aligned_subject_area it keeps
+          ACT Reading separate from EBRW, and separates Growth from Total.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Total, Math, EBRW, Reading, Growth]
+      - name: expected_score_category
+        data_type: string
+        description: >-
+          Whether the measure is a level or a change - Scale Score for every
+          score type except growth, which is Score Change.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [Scale Score, Score Change]
+      - name: expected_score_type
+        data_type: string
+        description: >-
+          The score identifier, matching score_type in
+          int_assessments__college_assessment.
+        data_tests:
+          - not_null
+      - name: a1_attempt_min_score
+        data_type: int64
+        description: >-
+          Minimum attempts for the one-attempt participation goal. Named with a
+          leading `a` because a column cannot start with a digit. Null where the
+          goal does not apply - growth score types and retired ACT.
+      - name: a2_plus_attempts_min_score
+        data_type: int64
+        description: >-
+          Minimum attempts for the two-or-more-attempts participation goal. Null
+          where the goal does not apply - growth score types and retired ACT.
+      - name: hs_ready_min_score
+        data_type: int64
+        description: >-
+          Minimum scale score meeting the high-school-ready bar. Null on growth
+          score types, which measure a change and have no cut score.
+      - name: college_ready_min_score
+        data_type: int64
+        description: >-
+          Minimum scale score meeting the college-ready bar. Null on growth
+          score types, which measure a change and have no cut score.

@@ -107,6 +107,73 @@ shifting a reported average.
 out of any grad-year-grouped view silently rather than appearing in an unknown
 bucket.
 
+## `stg_google_sheets__kippfwd__scaffold`
+
+The assessment vocabulary — every valid combination of academic year, test type,
+scope, and score type, with its subject alignments and cut scores. 29 rows: 16
+Official, 13 Practice (Practice has no ACT).
+
+Grain is (`academic_year`, `expected_test_type`, `expected_scope`,
+`expected_score_type`), enforced by a composite uniqueness test.
+
+### Why it exists
+
+Four models were each hand-deriving the same mappings from scope and score type,
+because they were never stored as data:
+
+| Model                                                       | Derived                                                                               |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `stg_google_sheets__kippfwd__goals`                         | `expected_aligned_scope`, `expected_aligned_subject_area`, `expected_aligned_subject` |
+| `stg_google_sheets__kippfwd__expected_assessments`          | `expected_grouping`, `expected_score_category`                                        |
+| `int_assessments__college_assessment`                       | `aligned_subject_area`, `aligned_subject`                                             |
+| `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | 15 hardcoded thresholds, a 15-string `unnest`, three `regexp_extract` parses          |
+
+`_benchmark_calcs` is the clearest case: it concatenates `benchmark_group`
+strings, then immediately re-parses them with three regexes to recover the
+scope, subject, and tier it just encoded. This model stores those as columns, so
+the CASE, the list, and all three regexes go away together. It also closes a gap
+— `_benchmark_calcs` carries only the College-Ready threshold for its six
+subject-level groups, while this carries both tiers for all of them.
+
+Separating it from the goals sheet is also what makes the empty-goal-rows
+problem solvable. See _Goal type — Attempts_ below: the goals sheet is currently
+doubling as this list, which is why rows with no target cannot be deleted.
+
+### The alignment columns are not interchangeable
+
+Three columns collapse the same fields differently, and picking the wrong one
+silently changes what a view reports:
+
+| Column                          | ACT Reading vs EBRW | Growth vs Total |
+| ------------------------------- | ------------------- | --------------- |
+| `expected_subject_area`         | separate            | merged          |
+| `expected_aligned_subject_area` | **merged**          | merged          |
+| `expected_grouping`             | separate            | **separate**    |
+
+### Gotchas
+
+**`expected_grade_level` is a string holding a comma-separated list.** One row
+covers `11,12` where SAT and ACT share a target across both grades. Split with
+`cross join unnest(split(expected_grade_level, ','))` — the same pattern
+`int_collegeboard__ap_unpivot` uses for AP course codes — and use
+`left join unnest` if the column can ever be blank, because `cross join` to an
+empty array deletes the row silently.
+
+**The source schema is pinned explicitly, and has to be.** Autodetect samples
+the single-grade rows first, types `expected_grade_level` as `int64`, and then
+fails to parse `11,12`. The `columns:` block in `sources-external.yml` forces
+`string`.
+
+**`stage_external_sources` skips a table that already exists.** A schema change
+needs `--vars "ext_full_refresh: true"` or the old autodetected schema persists
+and the model fails its contract check.
+
+**The named range is `src_google_sheets__kippfwd__scaffold`** — two underscores
+before `scaffold`, where every sibling range uses one.
+
+**`a1_attempt_min_score` / `a2_plus_attempts_min_score`** lead with `a` because
+a column name cannot start with a digit.
+
 ## Goal type — Attempts
 
 Attempt goals answer "what share of students sat this test at least once, and at
