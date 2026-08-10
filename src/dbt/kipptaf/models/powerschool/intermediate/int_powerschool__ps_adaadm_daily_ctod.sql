@@ -87,11 +87,12 @@ with
 
         from memberships as mem
         inner join
-            {{ ref("int_powerschool__terms") }} as t
+            {{ ref("int_students__terms") }} as t
             on mem.yearid = t.yearid
             and mem.schoolid = t.schoolid
             and mem.calendardate between t.term_start_date and t.term_end_date
             and mem._dbt_source_project = t._dbt_source_project
+            and t.term is not null
         inner join
             {{ ref("int_powerschool__calendar_week") }} as cw
             on mem.yearid = cw.yearid

@@ -8,7 +8,7 @@ with
             student_number,
             entrydate,
             exitdate,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
     ),
 
     reporting_terms as (

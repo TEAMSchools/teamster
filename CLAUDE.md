@@ -153,6 +153,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   partway through. Scope dispatches to one file / one commit; inspect the file
   diff and `git log` before marking complete — don't trust the self-report.
 
+- **Tell subagents to run builds in the FOREGROUND.** A subagent that
+  backgrounds a long `dbt build` strands itself waiting on the notification and
+  returns having written nothing. Also never run two dbt subagents concurrently
+  against one worktree — they share `target/` and corrupt the partial-parse
+  manifest.
+
 - **A subagent's "pre-existing failure" baseline is the working tree AS
   DISPATCHED**, including your own uncommitted edits. "Already failing before I
   touched anything" can mean "failing because of the coordinator's change."
@@ -275,7 +281,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   findings are advisory, and `git grep` settles it faster than complying.
   **Always invoke `superpowers:receiving-code-review` BEFORE processing
   `claude-review` findings** — verify each claim (including its file:line
-  citations) against the code before relaying or replying, not after.
+  citations) against the code before relaying or replying, not after. Fixing a
+  finding in code is not a reply — post a per-finding verdict as a PR comment
+  (declines included, with reasons). A silent fix reads to a human reviewer as
+  an unaddressed review.
 
 - **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
   authoritative** — one over-read the `unnest` scalar-aggregate carve-out to
@@ -309,7 +318,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   toggle draft state — that re-fires `ready_for_review`. REST
   `gh api -X PATCH .../pulls/<n> -f draft=true` silently no-ops (returns
   `draft: false`, no error); use GraphQL `convertPullRequestToDraft` then
-  `markPullRequestReadyForReview`.
+  `markPullRequestReadyForReview`. It posts as **`github-actions[bot]`**, not a
+  `claude`-named user — filtering comments by a "claude" login returns nothing.
+  Its in-progress stub carries a todo checklist that can exceed 1,200 chars, so
+  gate a findings-poll on the body no longer matching "in progress", not on a
+  length threshold.
 
 - **A merged PR's CI status is not evidence the change was validated** — a PR
   merged mid-CI leaves a permanent `dbt Cloud: failure` that is a cancellation,
@@ -331,6 +344,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **IDE selection arrives only via `<ide_selection>` tags**, not
   `<ide_opened_file>` (which only names the open path). When the user references
   "this" without an `<ide_selection>`, ask for the snippet — don't guess.
+
+- **Before claiming a harness artifact (rewritten output, phantom rendering,
+  truncated literal), verify with a DERIVED value** — line length, `grep -c`, a
+  checksum. A misread is far likelier than a rewriting pipeline, and a plausible
+  substitute string survives eyeballing where a length does not. This session an
+  asserted "tool output renders X as Y" artifact was a plain misread, and it
+  produced a false correction to the user before it was tested.
 
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
@@ -371,6 +391,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `git diff --name-only origin/main...HEAD` hard-errors with
   `'<path>' does not exist` when the PR deletes files — filter to existing paths
   first.
+
+- **A merge commit skips the pre-commit trunk hook** ("Merge detected. Skipping
+  trunk"), so lint introduced while resolving conflicts goes straight to a red
+  CI check. `trunk check --force` the conflicted files before committing a
+  merge.
 
 - **`.trunk/tools/` is gitignored and lazily populated** — the `trunk` symlink
   there does not exist until trunk has run once, so on a cold Codespace the

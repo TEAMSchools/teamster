@@ -1,7 +1,7 @@
 with
     student_enrollments as (
         select studentid, schoolid, yearid, entrydate, exitdate, _dbt_source_project,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
         where entrydate is not null and exitdate is not null
     )
 

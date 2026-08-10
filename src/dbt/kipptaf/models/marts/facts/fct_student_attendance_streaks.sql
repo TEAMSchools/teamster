@@ -8,7 +8,7 @@ with
             exitdate,
             _dbt_source_relation,
             _dbt_source_project,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
     )
 
 select

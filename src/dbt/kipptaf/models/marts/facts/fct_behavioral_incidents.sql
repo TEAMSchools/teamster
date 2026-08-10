@@ -12,7 +12,7 @@ with
                 partition by student_number, academic_year, _dbt_source_relation
                 order by entrydate desc
             ) as rn,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
     ),
 
     -- trunk-ignore(sqlfluff/ST03): referenced by string in dbt_utils.deduplicate
