@@ -251,11 +251,26 @@ Marts inherit `contract: enforced: true` and `materialized: view` from
 explicit uniqueness test on its PK (`unique` on a single column, or
 `dbt_utils.unique_combination_of_columns` for composite).
 
-Exception: the assessment-scores star (`fct_assessment_scores_enrollment_scoped`
-plus its FK-closure dims) and the three assessment intermediates are
-`materialized: table` for Cube query performance
-([#4464](https://github.com/TEAMSchools/teamster/issues/4464)) — don't revert to
-view without re-profiling Cube's BigQuery spend.
+Exception: `dim_assessments`, `dim_courses`, `dim_dates`, `dim_regions`,
+`dim_staff`, `dim_students`, and the four assessment intermediates are
+`materialized: table`. `dim_assessments` also carries a nightly
+`automation_condition.cron_schedule` — Cube is its only consumer and Cube's
+pre-aggregation refreshes daily, so intraday rebuilds are invisible
+([#4559](https://github.com/TEAMSchools/teamster/issues/4559)).
+
+**Never materialize an FK-carrying mart as a table.** A table child emits a
+`references` clause into its CTAS DDL, and BigQuery aborts the build when a
+concurrent `create or replace table` on the FK parent changes the parent's PK
+identity ("Referenced primary key in table ... has been updated"). The
+automation condition's `~any_deps_in_progress` guard is upward-facing only, so
+nothing serializes a parent against an in-flight child.
+[#4464](https://github.com/TEAMSchools/teamster/issues/4464) moved the whole
+assessment-scores star to tables for Cube query performance;
+[#4587](https://github.com/TEAMSchools/teamster/issues/4587) reverted the seven
+FK-carrying models to views eight days later, after four such build failures in
+30 days. Per-read recomputation was accepted deliberately to remove the failure
+class — restoring the performance means solving the collision, not re-flipping
+the config.
 
 Drop model-level `dbt_utils.unique_combination_of_columns` when its column set
 equals the surrogate-key hash inputs — `unique` on the PK detects the same
@@ -276,6 +291,9 @@ A `config.materialized: table` mart renders `constraints:` into CREATE TABLE DDL
 foreign_key both render into DDL and warn otherwise.
 
 ## Converting a view mart to a table
+
+Only a mart with NO outgoing `foreign_key` constraints is eligible — see the
+FK-carrying prohibition above.
 
 - BigQuery FK DDL requires every referenced relation to be a TABLE with a PK
   constraint. Convert the full FK closure (walk `to: ref(...)` edges) in one PR
