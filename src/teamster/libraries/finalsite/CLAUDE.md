@@ -7,18 +7,22 @@ Two ingestion paths for **Finalsite** (school website/communications platform):
 
 ## `api/`
 
-**`assets.py`** (`build_finalsite_asset()`): Non-partitioned GCS Avro asset.
-Calls `finalsite.list(path=asset_name)` to fetch all records.
+**`assets.py`** (`build_finalsite_asset()`): Partitioned GCS Avro asset
+(`DailyPartitionsDefinition`, `start_date="2026-08-11"`) — derives the API
+`since` parameter from the partition key, so each tick pulls only records
+changed since the prior partition rather than the full `finalsite.list`
+response.
 
 **Concurrency (do NOT parallelize).** All districts' `contacts` schedules fire
-at `0 4 * * *` ET simultaneously. The Finalsite gateway throttles by shared
-egress IP and returns a bare nginx `403` (not `429`) under concurrent pulls,
-despite separate subdomains/credentials — so `build_finalsite_asset` puts every
-district's op in one shared `finalsite_api` pool (limit **1**, set in Dagster+
-Deployment then Concurrency; the `pool=` kwarg alone does nothing until the
-limit is configured). `_request` also retries `403` and transient network
-faults. Pagination is sequential cursor-only (~1 req/s, 25/page); kippnewark
-(~24k contacts) is ~20 min.
+at `00:15` and `12:00` ET simultaneously. The Finalsite gateway throttles by
+shared egress IP and returns a bare nginx `403` (not `429`) under concurrent
+pulls, despite separate subdomains/credentials — so `build_finalsite_asset` puts
+every district's op in one shared `finalsite_api` pool (limit **1**, set in
+Dagster+ Deployment then Concurrency; the `pool=` kwarg alone does nothing until
+the limit is configured). `_request` also retries `403` and transient network
+faults. Pagination is sequential cursor-only (~1 req/s, 25/page): a full/seed
+pull for kippnewark (~24k contacts) is ~20 min, but an incremental tick is ~81
+pages (~1-2 min).
 
 **`resources.py`** (`FinalsiteResource`): REST client with pagination support.
 

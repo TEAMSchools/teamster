@@ -17,7 +17,7 @@ GCS bucket: `teamster-kippcamden`
 | `powerschool` | dlt assets        | sensor (intraday probe, 15-min) + schedule (nightly 2am full-refresh) |
 | `deanslist`   | API assets        | schedule (nightly)                                                    |
 | `edplan`      | SFTP asset        | sensor (`build_edplan_sftp_sensor`)                                   |
-| `finalsite`   | API + SFTP assets | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
+| `finalsite`   | API + SFTP assets | schedule (`contacts`, 00:15 + 12:00 ET) + sensor (`status_report`)    |
 | `overgrad`    | API assets        | schedule                                                              |
 | `pearson`     | SFTP assets       | `AutomationConditionSensor`                                           |
 | `titan`       | SFTP assets       | sensor (`build_titan_sftp_sensor`)                                    |

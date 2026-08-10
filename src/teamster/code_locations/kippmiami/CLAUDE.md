@@ -15,7 +15,7 @@ GCS bucket: `teamster-kippmiami`
 | ----------- | ------------- | ------------------------------------------------------- |
 | `dbt`       | dbt assets    | `AutomationConditionSensor`                             |
 | `deanslist` | API assets    | schedule (nightly)                                      |
-| `finalsite` | API + SFTP    | schedule (contacts 04:00 + 12:00 ET) + couchdrop sensor |
+| `finalsite` | API + SFTP    | schedule (contacts 00:15 + 12:00 ET) + couchdrop sensor |
 | `fldoe`     | SFTP assets   | `AutomationConditionSensor`                             |
 | `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                     |
 | `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                   |
@@ -64,9 +64,13 @@ Three constraints to preserve when touching any of these times:
   14:00 sits ON the 2pm commitment rather than after it, so a late import lands
   after that snapshot — the safe rule is a dependency ("a sync has run since the
   last import"), never a clock time, and 04:00 is what makes the next day safe.
-- **Keep the 04:00 runs.** Miami is Focus-sourced network-wide, and FRESH's
-  Tableau extract refreshes at 05:00 — moving the only pull to midday leaves
-  every morning dashboard on day-old Miami data.
+- **Keep the dlt Focus 04:00 snapshot.** It is the overnight backstop for the
+  `rpt_focus__*` import-once anti-join described above — the `contacts` API pull
+  moving off 04:00 doesn't change that. The `contacts` pull itself now runs at
+  00:15, not 04:00: that still lands before FRESH's 05:00 Tableau extract, so
+  Miami's morning dashboard reads same-day data, and it additionally puts
+  `contacts` ahead of the NJ consumers of `stg_finalsite__contacts` at 01:00
+  (Google Directory user sync) and 01:25 (DeansList). See #4715.
 
 `kippmiami__extracts__focus__asset_job_schedule` also has to be STARTED in the
 Dagster+ UI; its `defaultStatus` is STOPPED and it had never run in prod as of
