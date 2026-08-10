@@ -76,7 +76,9 @@ select
         3
     ) as ada_year_running,
 
-    round(sum_attendance_value_weighted_term, 3) as ada_weighted_term,
+    round(
+        safe_divide(sum_attendance_value_weighted_term, count_attendance_value_term), 3
+    ) as ada_weighted_term,
 
     round(
         safe_divide(
