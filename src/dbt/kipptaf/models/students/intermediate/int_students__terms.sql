@@ -78,54 +78,14 @@ with
         where academic_year >= 2026
     ),
 
-    -- Full raw grain: one row per school and per term record -- year,
-    -- semester, and quarter -- carrying PowerSchool's own dcid, id, and
-    -- portion, which full-grain consumers need (rpt_illuminate__terms's
-    -- extract columns, and the schoolid = 0 district-level rows
-    -- int_extracts__student_enrollments_subjects joins on).
-    powerschool_raw as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source("kippnewark_powerschool", "stg_powerschool__terms"),
-                    source("kippcamden_powerschool", "stg_powerschool__terms"),
-                    source("kippmiami_powerschool", "stg_powerschool__terms"),
-                    source("kipppaterson_powerschool", "stg_powerschool__terms"),
-                ]
-            )
-        }}
-    ),
-
-    -- int_powerschool__terms per district resolves quarter dates and codes
-    -- through termbins rather than the terms table's own quarter rows -- the
-    -- two disagree on dates for some schools (termbins carries the actual
-    -- in-session start date; the raw quarter row often defaults to a
-    -- placeholder). termbins is what every existing quarter-grain consumer
-    -- already reads, so its columns are attached to the matching raw quarter
-    -- row below rather than recomputed from firstday / lastday.
+    -- int_powerschool__terms resolves quarter dates and codes through termbins
+    -- rather than the terms table's own quarter rows -- the two disagree on
+    -- dates for some schools (termbins carries the actual in-session start
+    -- date; the raw quarter row often defaults to a placeholder). termbins is
+    -- what every existing quarter-grain consumer already reads, so its columns
+    -- are attached to the matching raw terms row below rather than recomputed
+    -- from firstday / lastday.
     powerschool_quarters as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source("kippnewark_powerschool", "int_powerschool__terms"),
-                    source("kippcamden_powerschool", "int_powerschool__terms"),
-                    source("kippmiami_powerschool", "int_powerschool__terms"),
-                    source("kipppaterson_powerschool", "int_powerschool__terms"),
-                ]
-            )
-        }}
-    ),
-
-    powerschool_raw_with_project as (
-        -- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
-        select
-            *,
-
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-        from powerschool_raw
-    ),
-
-    powerschool_quarters_with_project as (
         select
             schoolid,
             yearid,
@@ -134,18 +94,22 @@ with
             term_end_date,
             semester,
             is_current_term,
-
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-        from powerschool_quarters
+            _dbt_source_project,
+        from {{ ref("int_powerschool__terms") }}
     ),
 
-    -- A handful of schools carry duplicate raw quarter records for the same
-    -- school/year/quarter in years before 2010 -- a pre-existing PowerSchool
-    -- data artifact. row_number picks one to receive the termbins-sourced
-    -- columns below, so quarter-only consumers still see exactly one row per
-    -- school/year/quarter, matching int_powerschool__terms today; the other
-    -- copy keeps its own raw row with null quarter columns, so the full-grain
-    -- row count is unchanged.
+    -- Full raw grain: one row per school and per term record -- year,
+    -- semester, and quarter -- carrying PowerSchool's own dcid, id, and
+    -- portion, which full-grain consumers need (rpt_illuminate__terms's
+    -- extract columns, and the schoolid = 0 district-level rows
+    -- int_extracts__student_enrollments_subjects joins on).
+    --
+    -- rn guards the quarter join below against a duplicate raw record for the
+    -- same school/year/term: without it both copies would take the
+    -- termbins-sourced columns and quarter-only consumers would see two rows
+    -- where int_powerschool__terms gives one. No such duplicate exists today
+    -- (all 2,139 keys across the four districts are singletons in prod), so
+    -- this is defensive only.
     powerschool_raw_ranked as (
         select
             *,
@@ -154,7 +118,7 @@ with
                 partition by schoolid, yearid, abbreviation, _dbt_source_project
                 order by id
             ) as rn,
-        from powerschool_raw_with_project
+        from {{ ref("stg_powerschool__terms") }}
     ),
 
     -- A small number of historical quarters (a handful of non-instructional
@@ -185,7 +149,7 @@ with
             coalesce(p.academic_year, q.yearid + 1990) as academic_year,
         from powerschool_raw_ranked as p
         full join
-            powerschool_quarters_with_project as q
+            powerschool_quarters as q
             on p.schoolid = q.schoolid
             and p.yearid = q.yearid
             and p.abbreviation = q.term
