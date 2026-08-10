@@ -1,4 +1,10 @@
-from teamster.code_locations.kipppaterson import CODE_LOCATION, CURRENT_FISCAL_YEAR
+from dagster import DailyPartitionsDefinition
+
+from teamster.code_locations.kipppaterson import (
+    CODE_LOCATION,
+    CURRENT_FISCAL_YEAR,
+    LOCAL_TIMEZONE,
+)
 from teamster.code_locations.kipppaterson.finalsite.schema import (
     CONTACTS_SCHEMA,
     STATUS_REPORT_SCHEMA,
@@ -29,6 +35,9 @@ contacts = build_finalsite_asset(
     asset_name="contacts",
     schema=CONTACTS_SCHEMA,
     params={"includes": "contacts.relationships"},
+    partitions_def=DailyPartitionsDefinition(
+        start_date="2026-08-11", timezone=str(LOCAL_TIMEZONE)
+    ),
 )
 
 assets = [
