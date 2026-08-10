@@ -5,7 +5,8 @@ models:
       stg_focus__students column plus the int_focus__students__pivot labels.
       This is the model to consume; the pivot is a decode companion that drops
       entities whose custom fields are all null, so it is not a complete spine
-      on its own. Column docs live on the two upstream models.
+      on its own. Column docs live on the two upstream models, except for the
+      conformed columns below, which this model derives.
     config:
       meta:
         contains_pii: true
@@ -19,3 +20,50 @@ models:
           - not_null:
               config:
                 severity: error
+      - name: student_number
+        description: >-
+          Canonical network student number — student_id with the leading 8400
+          Miami-Dade district prefix stripped. An id not carrying that prefix
+          passes through unchanged rather than being guessed at.
+        config:
+          meta:
+            contains_pii: true
+      - name: dob
+        description: Date of birth, cast from the birthdate timestamp.
+        config:
+          meta:
+            contains_pii: true
+      - name: gender
+        description: >-
+          Single-character gender code, extracted from the bracketed code in the
+          Focus sex label.
+      - name: state_studentnumber
+        description: >-
+          MDCPS student id, from disis_id, left-padded to the 7 digits MDCPS
+          issues — Focus stores it as NUMERIC, which drops the leading zero most
+          of them carry. Populated only for students the PowerSchool migration
+          brought over.
+        config:
+          meta:
+            contains_pii: true
+      - name: spedlep
+        description: >-
+          IEP classification in the network domain. 'SPED' where an ESE FEFP
+          code is present, else null — a missing funding code does not assert
+          that the student has no IEP.
+      - name: gifted_and_talented
+        description: >-
+          Y where Gifted Eligibility names a qualifying FLDOE criteria
+          paragraph, N where it records not-eligible, null where unset.
+      - name: lep_status
+        description: >-
+          English learner status. True for LY, false for the followup, exited
+          and not-applicable codes, and null for the tested-or-pending codes,
+          which are unknown rather than negative.
+      - name: race_count
+        description: Number of race flags set on the student.
+      - name: ethnicity
+        description: >-
+          Single-character race code in the network domain. Multiple races yield
+          T, a single race yields its code, and no recorded race yields null
+          rather than a fabricated category.

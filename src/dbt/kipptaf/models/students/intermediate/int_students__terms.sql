@@ -12,14 +12,9 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    focus_first_year as (
-        select min(academic_year) as academic_year,
-        from {{ ref("int_focus__student_enrollments") }}
-    ),
-
-    -- Progress periods have no PowerSchool terms equivalent and are dropped.
-    -- The remaining year, semester, and quarter rows match the archive's own
-    -- 1 year + 2 semester + 4 quarter rows per school per year.
+    -- int_focus__marking_periods drops progress periods, floors the history at
+    -- 2018, and derives quarter_semester and is_within_dates. All that is left
+    -- here is resolving Focus's internal school id to the network one.
     focus_marking_periods as (
         select
             mp._dbt_source_relation,
@@ -29,17 +24,13 @@ with
             mp.short_name,
             mp.start_date,
             mp.end_date,
-            mp.syear as academic_year,
+            mp.academic_year,
+            mp.quarter_semester,
+            mp.is_within_dates,
 
             fs.schoolid,
-
-            if(mp.short_name in ('Q1', 'Q2'), 'S1', 'S2') as quarter_semester,
-
-            current_date('{{ var("local_timezone") }}')
-            between mp.start_date and mp.end_date as is_within_dates,
-        from {{ ref("stg_focus__marking_periods") }} as mp
+        from {{ ref("int_focus__marking_periods") }} as mp
         inner join focus_schools as fs on mp.school_id = fs.focus_school_id
-        where mp.type in ('year', 'semester', 'quarter')
     ),
 
     -- Miami school-year, semester, and quarter definitions from Focus,
@@ -75,12 +66,6 @@ with
             if(`type` = 'quarter', quarter_semester, null) as semester,
             if(`type` = 'quarter', is_within_dates, null) as is_current_term,
         from focus_marking_periods
-        -- Focus carries a full year/semester/quarter set for two schools in
-        -- every syear back to 1980, decades before any KIPP Miami school
-        -- existed -- roughly 760 template rows that would fabricate history.
-        -- Floor the branch at Miami's first real year, taken from the
-        -- enrollment history rather than hardcoded so it follows a backfill.
-        where academic_year >= (select ffy.academic_year, from focus_first_year as ffy)
     ),
 
     -- int_powerschool__terms resolves quarter dates and codes through termbins
@@ -94,6 +79,7 @@ with
         select
             schoolid,
             yearid,
+            academic_year,
             term,
             term_start_date,
             term_end_date,
@@ -101,29 +87,6 @@ with
             is_current_term,
             _dbt_source_project,
         from {{ ref("int_powerschool__terms") }}
-    ),
-
-    -- Full raw grain: one row per school and per term record -- year,
-    -- semester, and quarter -- carrying PowerSchool's own dcid, id, and
-    -- portion, which full-grain consumers need (rpt_illuminate__terms's
-    -- extract columns, and the schoolid = 0 district-level rows
-    -- int_extracts__student_enrollments_subjects joins on).
-    --
-    -- rn guards the quarter join below against a duplicate raw record for the
-    -- same school/year/term: without it both copies would take the
-    -- termbins-sourced columns and quarter-only consumers would see two rows
-    -- where int_powerschool__terms gives one. No such duplicate exists today
-    -- (all 2,139 keys across the four districts are singletons in prod), so
-    -- this is defensive only.
-    powerschool_raw_ranked as (
-        select
-            *,
-
-            row_number() over (
-                partition by schoolid, yearid, abbreviation, _dbt_source_project
-                order by id
-            ) as rn,
-        from {{ ref("stg_powerschool__terms") }}
     ),
 
     -- A small number of historical quarters (a handful of non-instructional
@@ -151,8 +114,8 @@ with
             coalesce(
                 p._dbt_source_project, q._dbt_source_project
             ) as _dbt_source_project,
-            coalesce(p.academic_year, q.yearid + 1990) as academic_year,
-        from powerschool_raw_ranked as p
+            coalesce(p.academic_year, q.academic_year) as academic_year,
+        from {{ ref("stg_powerschool__terms") }} as p
         full join
             powerschool_quarters as q
             on p.schoolid = q.schoolid

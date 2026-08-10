@@ -16,6 +16,7 @@ with
             sch.state_school_id as school_state_school_id,
             sch.school_number,
             sch.state,
+            sch.school_level,
 
             ep.prior_district_label,
             ep.prior_state_label,
@@ -58,22 +59,11 @@ with
                 else 0
             end as enroll_status,
 
-            case
-                sch.school_level_label
-                when 'E - Elementary'
-                then 'ES'
-                when 'M - Middle'
-                then 'MS'
-                when 'H - High'
-                then 'HS'
-            end as school_level,
-
         from {{ ref("stg_focus__students") }} as s
         inner join
             {{ ref("stg_focus__student_enrollment") }} as e
             on s.student_id = e.student_id
-        -- int_focus__schools carries the decoded custom-field labels alongside
-        -- the staging columns; map its level label to the ES/MS/HS abbreviation
+        -- int_focus__schools decodes the level to the ES/MS/HS abbreviation
         -- the network contract uses
         left join {{ ref("int_focus__schools") }} as sch on e.school_id = sch.id
         left join
@@ -122,6 +112,15 @@ with
                 partition by student_number, academic_year
                 order by academic_year desc, exitdate desc
             ) as rn_year,
+
+            -- Most recent stint per student across all years. Focus records
+            -- enroll_status per stint while the network treats it as the
+            -- student's current standing, so consumers resolving a
+            -- student-level value take rn_all = 1.
+            row_number() over (
+                partition by student_number
+                order by academic_year desc, exitdate desc, startdate desc
+            ) as rn_all,
         from enrollment
     ),
 

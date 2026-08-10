@@ -19,25 +19,17 @@ with
         where s._dbt_source_project != 'kippmiami'
     ),
 
-    -- Gifted reads from Focus's Gifted Eligibility field, the only one it
-    -- stores -- "Gifted (Computed)" is a computed-type field Focus never
-    -- persists. Eligibility is recorded as the FLDOE criteria paragraph the
-    -- student qualified under, so any A or B is gifted and Z is not. It names
-    -- 15 students against the archive's 34, which is the gap for Ops to close.
+    -- fleid and gifted_and_talented are both conformed in
+    -- int_focus__students; Focus's Gifted Eligibility names 15 students
+    -- against the frozen archive's 34, a gap for Ops to close.
     focus_conformed as (
         select
             _dbt_source_relation,
             _dbt_source_project,
+            student_number,
+            gifted_and_talented,
+
             florida_education_identifier as fleid,
-
-            {{ unprefix_focus_student_id("student_id") }} as student_number,
-
-            case
-                when gifted_eligibility_label like 'Student was determined eligible%'
-                then 'Y'
-                when gifted_eligibility_label is not null
-                then 'N'
-            end as gifted_and_talented,
         from {{ ref("int_focus__students") }}
     )
 

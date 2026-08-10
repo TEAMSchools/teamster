@@ -144,6 +144,13 @@ models:
           Row number of the enrollment stint within student plus academic year,
           ordered by latest exit date first; 1 marks the canonical stint counted
           for that year.
+      - name: rn_all
+        description: >-
+          Row number of the enrollment stint within student across all years,
+          ordered by latest academic year then latest exit and start date; 1
+          marks the student's most recent stint. Consumers resolving a
+          student-level value from Focus's per-stint columns filter on this
+          rather than repeating the window.
       - name: year_in_school
         description: >-
           Sequential count of academic years the student has been enrolled at
