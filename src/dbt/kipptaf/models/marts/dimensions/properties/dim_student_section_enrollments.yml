@@ -74,8 +74,6 @@ models:
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_course_sections')

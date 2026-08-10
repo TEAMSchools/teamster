@@ -759,9 +759,25 @@ legitimately-superseded inactive rows that repeat the key.
 - Unscoped `+config` applies to tests from all installed packages, not just the
   current project
 - **`accepted_values` passes NULLs** — it compiles to
-  `where value not in (...)`, which NULL never satisfies. Pair it with
-  `not_null` on any enum column that must be non-null, including one a
-  `coalesce` makes non-null by construction.
+  `where value not in (...)`, which NULL never satisfies. Every enum column that
+  must be non-null carries `not_null` too, including one a `coalesce` makes
+  non-null by construction. **Never delete a `not_null` from a column that
+  carries `accepted_values`.** It is not vacuous, whatever the SQL looks like —
+  the pairing is the only thing making the enum test reject NULL.
+- **Never add `not_null` to a column that cannot be NULL by construction.** It
+  can never fail, and it still costs a full BigQuery scan per CI run — on a view
+  mart that scan re-expands the entire upstream chain. Non-nullable by
+  construction means every definition site is one of: an unwrapped
+  `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
+  literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
+  above overrides this rule; nothing else does.
+
+### Verifying a test-removal PR
+
+Never report a count from the YAML diff — it does not say which dbt nodes
+actually disappeared. `dbt parse` on main and on the branch, then diff the
+`resource_type == 'test'` node names. That fixes the delta and proves nothing
+unintended was dropped.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 
@@ -892,8 +908,8 @@ if(
 Without this, relationship tests check the placeholder hash against the parent
 dimension and fail.
 
-Corollary: never add `not_null` tests on `generate_surrogate_key` output — it
-never returns NULL.
+**Never add a `not_null` test to `generate_surrogate_key` output** — it never
+returns NULL, so the test cannot fail. This holds for FK columns as much as PKs.
 
 #### Nullable PK inputs need a fallback, not a null-wrap
 
@@ -1152,8 +1168,11 @@ alias.
 - All new or modified models require `description:` on the model and every
   column. Profile staging data via BigQuery MCP; infer downstream from parents.
   Describe calculated fields by logic. Use qualitative language — no stats.
-- Columns with **per-column** `data_tests:` should be sorted to the top of the
-  `columns:` list for visibility. Model-level composite tests
+- Columns with **per-column** `data_tests:` must be sorted to the top of the
+  `columns:` list for visibility — including after a change that strips a
+  column's last test. Reorder freely under `contract: enforced`: BigQuery
+  matches contract columns by name, not position (`fct_survey_responses` already
+  differs from its `select` order and builds clean). Model-level composite tests
   (`dbt_utils.unique_combination_of_columns`, etc.) do not trigger this rule —
   they go in the model-level `data_tests:` block ABOVE `columns:`, and their
   referenced columns can stay in their natural / contract order.
