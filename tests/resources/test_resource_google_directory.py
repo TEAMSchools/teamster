@@ -466,6 +466,17 @@ def test_list_role_assignments_uses_max_results_200_and_items_key():
     assert call_kwargs["maxResults"] == 200
 
 
+def test_list_groups_uses_max_results_200():
+    resource, mock_api = _make_resource()
+    mock_api.groups.return_value.list.return_value.execute.return_value = {
+        "groups": [{"email": "g@x.org"}]
+    }
+    data = resource.list_groups()
+    assert data == [{"email": "g@x.org"}]
+    _, call_kwargs = mock_api.groups.return_value.list.call_args
+    assert call_kwargs["maxResults"] == 200
+
+
 # ── members_for_created_users ─────────────────────────────────────────────────
 
 

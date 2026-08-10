@@ -9,8 +9,10 @@ models:
       - name: email
         data_type: string
         description: >
-          Primary address of the group. Join key for validating a constructed
-          student group address against the groups Google actually has.
+          Primary address of the group, lowercased. Join key for validating a
+          constructed student group address against the groups Google actually
+          has. Google preserves the case supplied at creation, so it is
+          normalized here because an address is a case-insensitive identifier.
         data_tests:
           - unique:
               config:

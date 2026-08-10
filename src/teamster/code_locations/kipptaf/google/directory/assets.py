@@ -232,7 +232,9 @@ def google_directory_user_create(
                 valid_users, create_errors
             )
 
-            errors.extend(unresolved_group_errors)
+            for ue in unresolved_group_errors:
+                context.log.error(msg=ue)
+                errors.append(ue)
 
             if members_data:
                 members_errors = google_directory.batch_insert_members(members_data)
