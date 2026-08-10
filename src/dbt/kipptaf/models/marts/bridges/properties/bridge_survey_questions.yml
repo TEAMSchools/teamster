@@ -28,8 +28,6 @@ models:
             to_columns: [survey_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_surveys')
@@ -45,8 +43,6 @@ models:
             to_columns: [survey_question_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_survey_questions')

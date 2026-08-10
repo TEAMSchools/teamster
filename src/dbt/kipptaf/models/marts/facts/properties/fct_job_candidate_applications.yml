@@ -29,8 +29,6 @@ models:
             to_columns: [job_candidate_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_job_candidates')

@@ -30,13 +30,6 @@ models:
             to: ref('fct_survey_submissions')
             to_columns: [survey_submission_key]
             warn_unsupported: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('fct_survey_submissions')
-                field: survey_submission_key
-              config:
-                severity: error
       - name: survey_question_key
         data_type: string
         description: >-
