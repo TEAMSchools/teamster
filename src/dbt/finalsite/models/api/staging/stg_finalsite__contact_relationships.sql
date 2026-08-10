@@ -1,5 +1,5 @@
 select
-    c.id as finalsite_enrollment_id,
+    finalsite_enrollment_id,
 
     r.id as relationship_id,
     r.rel_id,
@@ -9,7 +9,7 @@ select
     r.financial as is_financial,
     r.portal_access as has_portal_access,
 
-    c.households[safe_offset(0)].id as household_1_id,
+    household_1_id,
 
     -- record-owner fields carried onto the relationship grain so consumers
     -- gating on them (e.g. the contact_2 pick) need no extra joins. These
@@ -17,8 +17,8 @@ select
     -- related person (`rel_id`).
     (
         select logical_or(ca.value.boolean_value),
-        from unnest(c.custom_attributes) as ca
+        from unnest(custom_attributes) as ca
         where ca.field_name = 'is_parent2'
     ) as is_parent2,
-from {{ source("finalsite", "contacts") }} as c
-cross join unnest(c.relationships) as r
+from {{ ref("stg_finalsite__contacts") }}
+cross join unnest(relationships) as r
