@@ -111,8 +111,10 @@ models:
         description: >-
           -1 for a future-dated enrollment, 3 for graduated, 0 for currently
           enrolled, 2 for withdrawn. Derived locally from Focus enrollment dates
-          and exit codes rather than read from the upstream enroll_status column
-          - see the inline SQL comment for why.
+          and exit codes, except the graduated branch, which reads the upstream
+          enroll_status column directly since it keys on grad_type and is
+          correct — see the inline SQL comment for why the rest is derived
+          locally.
         data_type: int64
       - name: gpa_cumulative
         description: Not sourced - Miami middle school no longer produces a GPA.

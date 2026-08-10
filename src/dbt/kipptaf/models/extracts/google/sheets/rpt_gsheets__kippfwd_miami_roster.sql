@@ -55,9 +55,18 @@ with
         select student_id, contact_name, email, phone_home, phone_mobile,
         from {{ ref("int_focus__student_contacts") }}
         where sort_order = 2
+    ),
+
+    students as (
+        select
+            student_id,
+            powerschool_id,
+            sex_label,
+            ese_fefp_code,
+            cast(disis_id as string) as mdcps_id_raw,
+        from {{ ref("int_focus__students") }}
     )
 
--- trunk-ignore(sqlfluff/ST06): select order is the Google Sheet column order
 select
     e.academic_year,
     e.student_name as lastfirst,
@@ -67,7 +76,7 @@ select
 
     cast(s.powerschool_id as int64) as ps_id,
 
-    lpad(cast(s.disis_id as string), 7, '0') as mdcps_id,
+    lpad(s.mdcps_id_raw, 7, '0') as mdcps_id,
 
     regexp_extract(s.sex_label, r'\[(\w)\]') as gender,
 
@@ -116,7 +125,7 @@ select
     fp_prev.ela_pm3 as ela_pm3_prev,
     fp_prev.math_pm3 as math_pm3_prev,
 from {{ ref("int_focus__student_enrollments") }} as e
-left join {{ ref("int_focus__students") }} as s on e.student_number = s.student_id
+left join students as s on e.student_number = s.student_id
 left join open_enrollment as oe on e.student_number = oe.student_number
 left join contact_1 as c1 on e.student_number = c1.student_id
 left join contact_2 as c2 on e.student_number = c2.student_id
