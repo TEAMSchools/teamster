@@ -1,5 +1,21 @@
 models:
   - name: rpt_gsheets__student_contact_info
+    data_tests:
+      # Pin the prior-level banding so it stays a standing invariant rather than
+      # a point-in-time check. Bands are grades K-4 elementary, 5-8 middle, 9-12
+      # high; a student is blank on every band at or below the one they are
+      # currently in. Both tests are scoped by grade, so a grade_level outside
+      # the K-12 domain is skipped rather than flagged.
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: es_attended is null
+          config:
+            where: grade_level in ('K', '1', '2', '3', '4')
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: ms_attended is null
+          config:
+            where: grade_level in ('K', '1', '2', '3', '4', '5', '6', '7', '8')
     columns:
       - name: student_number
         data_type: int64
