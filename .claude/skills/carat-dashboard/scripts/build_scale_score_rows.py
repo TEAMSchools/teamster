@@ -29,20 +29,47 @@ SUBJECT = {
     "math section": "Mathematics",
 }
 
-# (assessment_id, Administration_Round, Subject, source "Test" label in the paste)
-# BOY -> SAT1, MOY -> SAT2. The two rounds MUST differ: the composite branch
+# Valid Scale_Score range per Test_Type, used as a sanity guard. SAT sections run
+# 200-800; PSAT 8/9 sections run 120-720; PSAT 10 and PSAT/NMSQT sections run
+# 160-760 (a DIFFERENT scale from PSAT 8/9 -- do not share one bound across the
+# two PSATs); ACT sections run 1-36. A single hardcoded range silently rejects
+# every PSAT row.
+SCALE_RANGE = {
+    "SAT": (200, 800),
+    "PSAT 8/9": (120, 720),
+    "PSAT10": (160, 760),
+    "ACT": (1, 36),
+}
+
+# (assessment_id, Subject) pairs whose published conversion table is genuinely
+# non-monotonic. The monotonic check is a real guard against column misalignment
+# during parsing, so it stays fatal by default -- but College Board does publish
+# tables that dip, and those must be acknowledged here rather than bypassed.
+#
+# 226308: PSAT 8/9 practice test #1 Reading and Writing, raw 65 -> 710 but
+# raw 66 -> 700 (verified against the rendered PDF, not just extracted text).
+ACKNOWLEDGED_NON_MONOTONIC = {
+    (226308, "Reading and Writing"),
+}
+
+# One entry per assessment:
+#   (assessment_id, Test_Type, Administration_Round, Subject, Grade_Level,
+#    source "Test" label as it appears in the paste)
+#
+# Test_Type and Grade_Level are per-assessment, not global -- a single run can
+# mix PSAT 8/9 (grade 9) and PSAT 10 (grade 10).
+#
+# Rounds within one Test_Type and academic year MUST differ. The composite branch
 # partitions sum(scale_score) by scope_round + administration_round, so a shared
-# value sums both rounds' sections into one bogus total.
+# value sums two administrations into one bogus total.
 TARGETS = [
-    (226182, "SAT1", "Reading and Writing", "SAT Practice Test 1"),
-    (226183, "SAT1", "Mathematics", "SAT Practice Test 1"),
-    (226184, "SAT2", "Reading and Writing", "SAT Practice Test 2"),
-    (226185, "SAT2", "Mathematics", "SAT Practice Test 2"),
+    (226308, "PSAT 8/9", "PSAT891", "Reading and Writing", 9, "PSAT 8/9 Practice"),
+    (226309, "PSAT 8/9", "PSAT891", "Mathematics", 9, "PSAT 8/9 Practice"),
+    (226310, "PSAT10", "PSAT101", "Reading and Writing", 10, "PSAT 10 Practice"),
+    (226311, "PSAT10", "PSAT101", "Mathematics", 10, "PSAT 10 Practice"),
 ]
 
 ACADEMIC_YEAR = 2026  # academic_year_clean, NOT Illuminate's raw academic_year
-TEST_TYPE = "SAT"  # stays SAT even though Illuminate scope reads Benchmark
-GRADE = 11  # illuminate grade_level_id - 1
 
 # Column positions assumed for data rows appearing before any header.
 DEFAULT_COLS = {"test": 0, "section": 1, "raw": 2, "lower": 3}
@@ -144,7 +171,7 @@ def main() -> None:
             print(f"{subj}: {have[0]} vs {have[1]} -> {verdict}")
 
     lines, notes, failed = [], [], False
-    for aid, rnd, subject, test in TARGETS:
+    for aid, test_type, rnd, subject, grade, test in TARGETS:
         key = (test, subject)
         if key not in rows:
             notes.append(f"{aid} {rnd} {subject}: NO DATA in paste — skipped")
@@ -155,27 +182,39 @@ def main() -> None:
         scales = [s for _, _, s in collapsed]
         raws = sorted(rows[key])
 
+        if test_type not in SCALE_RANGE:
+            sys.exit(f"{aid}: no SCALE_RANGE entry for Test_Type {test_type!r}")
+        lo_bound, hi_bound = SCALE_RANGE[test_type]
+
         problems = []
         if raws[0] != 0:
             problems.append(f"starts at raw {raws[0]}, not 0")
         if [r for r in range(raws[0], raws[-1] + 1) if r not in rows[key]]:
             problems.append("GAPS in raw coverage")
         if scales != sorted(scales):
-            problems.append("scale not monotonic non-decreasing")
-        if min(scales) < 200 or max(scales) > 800:
-            problems.append(f"scale outside 200-800 ({min(scales)}-{max(scales)})")
+            if (aid, subject) in ACKNOWLEDGED_NON_MONOTONIC:
+                notes.append(
+                    f"{aid} {subject}: non-monotonic scale, ACKNOWLEDGED as a "
+                    "published-source anomaly (see ACKNOWLEDGED_NON_MONOTONIC)"
+                )
+            else:
+                problems.append("scale not monotonic non-decreasing")
+        if min(scales) < lo_bound or max(scales) > hi_bound:
+            problems.append(
+                f"scale outside {lo_bound}-{hi_bound} ({min(scales)}-{max(scales)})"
+            )
 
         failed = failed or bool(problems)
         notes.append(
-            f"{aid} {rnd} {subject}: {len(collapsed)} rows, raw 0-{raws[-1]}, "
-            f"scale {min(scales)}-{max(scales)}  "
+            f"{aid} {test_type} {rnd} {subject} g{grade}: {len(collapsed)} rows, "
+            f"raw 0-{raws[-1]}, scale {min(scales)}-{max(scales)}  "
             + ("!! " + "; ".join(problems) if problems else "OK")
         )
 
         for lo, hi, scale in collapsed:
             lines.append(
-                f"{aid}\t{ACADEMIC_YEAR}\t{TEST_TYPE}\t{rnd}\t{subject}\t"
-                f"{GRADE}\t{lo}\t{hi}\t{scale}"
+                f"{aid}\t{ACADEMIC_YEAR}\t{test_type}\t{rnd}\t{subject}\t"
+                f"{grade}\t{lo}\t{hi}\t{scale}"
             )
 
     out = Path(sys.argv[1])
