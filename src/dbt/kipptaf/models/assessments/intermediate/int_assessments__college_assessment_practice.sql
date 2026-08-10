@@ -19,8 +19,9 @@ with
             a.assessment_id,
             a.title as assessment_title,
             a.date_taken as test_date,
-            a.response_type,
-            a.response_type_description,
+            a.response_type,  -- Group or overall
+            a.response_type_description,  -- Group name
+            /* Points earned... looks to be # of questions correct on Illuminate */
             a.points,
 
             sa.administration_round as scope_round,
@@ -282,4 +283,5 @@ select
     total_subjects_tested,
     points as raw_score,
     scale_score,
+
 from two_section_totals
