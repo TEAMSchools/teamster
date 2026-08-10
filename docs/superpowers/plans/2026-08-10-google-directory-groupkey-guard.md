@@ -955,7 +955,35 @@ against `INFORMATION_SCHEMA.COLUMNS` on the staged table rather than guessing;
 (`bool` / `boolean`, `int64` / `integer`) may differ between the yml and
 `INFORMATION_SCHEMA` without being real drift.
 
-- [ ] **Step 6: Confirm CI is green on both surfaces**
+- [ ] **Step 6: Verify the three working regions resolve — added by the final
+      review**
+
+The join compares the constructed address to
+`stg_google_directory__groups.email` only. The code it replaces passed that
+address to `members.insert`, which also resolves aliases and unique ids. So if
+`newark`, `camden`, or `miami`'s address is an **alias** of a group whose
+primary address differs, this change turns a working region's `groupKey` null
+and silently stops its membership adds — the regression class this branch exists
+to prevent, inverted.
+
+This is the first point where it can be checked, because the staged table now
+holds real group data:
+
+```sql
+select email
+from `teamster-332318.zz_stg_kipptaf_google_directory.stg_google_directory__groups`
+where email like 'group-students-%'
+```
+
+Expect `camden`, `miami`, and `newark` — and NOT `paterson`, whose absence is
+the bug this branch guards. If any of the three is missing, its address is an
+alias: add `or w.group_key_target in unnest(g.aliases)` to the join in
+`rpt_google_directory__users_import.sql`. The staging model already carries
+`aliases`, so no schema change is needed. Do not add that arm speculatively —
+verify first, because an unnecessary alias arm widens the match and can resolve
+a group address that Google would have rejected.
+
+- [ ] **Step 7: Confirm CI is green on both surfaces**
 
 dbt Cloud is a commit status; Trunk, CodeQL, and `claude` are check runs. Check
 both:
@@ -975,7 +1003,7 @@ verify each claim against the code before replying. It runs only on `opened` /
 `ready_for_review`, never on a push, so do not wait for a re-review after
 pushing a fix.
 
-- [ ] **Step 7: Record the two post-merge actions in the PR body**
+- [ ] **Step 8: Record the two post-merge actions in the PR body**
 
 Neither is a code change, and both need an owner:
 
