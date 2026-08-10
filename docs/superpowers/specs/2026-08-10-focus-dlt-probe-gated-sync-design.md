@@ -321,10 +321,14 @@ redirect — so the sequence is ordered to minimize prod writes.
 ## Cutover
 
 1. Merge.
-1. Let one `0 4 * * *` full refresh seed every table's baseline.
+1. Seed every table's baseline with a one-off **manual launch of the Focus asset
+   job over all 77 tables**. The `0 4 * * *` tier cannot do this — per the
+   amendment above it targets only the count-only tables. Seeding deliberately
+   rather than on an unattended tick keeps the one unavoidable full load
+   supervised.
 1. Enable the sensor by hand. It ships `defaultStatus` STOPPED deliberately —
    enabling it before a seeded baseline makes the first tick select all 77
-   tables at once.
+   tables at once (correct, but unsupervised).
 
 Rollback is a plain revert. Asset keys, dataset, and destination schema are all
 unchanged, so no data repair is needed; the abandoned `signature` keys in dlt

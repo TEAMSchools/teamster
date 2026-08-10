@@ -73,11 +73,12 @@ Constraints to preserve when touching any of these:
   run SINCE the last import.
 - **First diagnostic when midday Focus data looks stale: check whether the
   intraday sensor is running.** It ships with `defaultStatus` STOPPED and must
-  be enabled by hand after the 04:00 schedule seeds baselines (see
-  `libraries/dlt/focus/CLAUDE.md`). A stopped sensor now silently freezes every
-  `updated_at`-tracked table — the 04:00 tier no longer reloads them as a daily
-  fallback, only the two count-only tables — so this is the first thing to
-  check, where "did the 12:00 cron fire?" used to be.
+  be enabled by hand after a one-off manual load of all 77 tables has seeded
+  their baselines — the 04:00 tier cannot seed them, since it now targets only
+  the count-only tables (see `libraries/dlt/focus/CLAUDE.md`). A stopped sensor
+  now silently freezes every `updated_at`-tracked table — the 04:00 tier no
+  longer reloads them as a daily fallback, only the two count-only tables — so
+  this is the first thing to check, where "did the 12:00 cron fire?" used to be.
 - **Keep the 04:00 runs**, but note what they cover changed: the tier now
   reloads only the count-only tables (`co_teachers`, `login_history`), not a
   full refresh. FRESH's Miami enrollment/attendance rows and the rest of
