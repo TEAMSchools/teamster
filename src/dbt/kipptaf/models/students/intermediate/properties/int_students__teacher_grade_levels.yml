@@ -1,0 +1,82 @@
+models:
+  - name: int_students__teacher_grade_levels
+    description: >-
+      SIS-agnostic teacher grade-level distribution. One row per teacher (lead
+      or co-teacher) per academic year per grade level taught, with the share
+      and rank of that teacher's total student load falling in each grade.
+      Unions the four PowerSchool district
+      `int_powerschool__teacher_grade_levels` sources with Miami's Focus
+      schedule and co-teacher assignments, conformed inline to the PowerSchool
+      vocabulary, for AY2026 forward. Miami's pre-AY2026 distribution stays on
+      the PowerSchool archive branch, matching the cutover in
+      int_students__students, int_students__terms, and
+      int_students__student_enrollment_union. Replaces
+      `int_powerschool__teacher_grade_levels` as the canonical source for
+      `grade_level_rank = 1` teacher-grade joins across the network.
+    config:
+      materialized: table
+      meta:
+        contains_pii: true
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - teachernumber
+              - academic_year
+              - grade_level
+    columns:
+      - name: teachernumber
+        description: >-
+          Network teacher/employee number. For Miami AY2026 forward, resolved
+          from the Focus staff id via
+          int_focus__users.staff_number_identifier_local; rows whose Focus user
+          has no populated value for that field are dropped rather than given an
+          invented identifier.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: yearid
+        description: >-
+          A number representing which year the term belongs to (e.g. 13 for
+          2003-2004). Null for Miami AY2026 forward -- no Focus source.
+      - name: academic_year
+        description: >-
+          Academic year the schedule and roster rows belong to. For Miami AY2026
+          forward, from Focus syear.
+      - name: grade_level
+        description: >-
+          Numeric grade level of the students this teacher taught in this
+          academic year. For Miami AY2026 forward, resolved from each student's
+          own enrollment stint rather than the schedule's course-level grade,
+          which is effectively unpopulated in Focus.
+      - name: section_count_distinct
+        description: >-
+          Count of distinct course periods (sections) this teacher taught
+          students in this grade level in.
+      - name: student_count
+        description: >-
+          Count of scheduled-student rows this teacher taught in this grade
+          level in this academic year.
+      - name: student_total_all_grades
+        description: >-
+          Total scheduled-student rows this teacher taught across all grade
+          levels in this academic year.
+      - name: grade_level_ratio
+        description: >-
+          Share of this teacher's total student load in this academic year that
+          falls in this grade level.
+      - name: grade_level_rank
+        description: >-
+          Rank of this grade level among all grades this teacher taught in this
+          academic year, ordered by grade_level_ratio descending. 1 is the
+          teacher's primary grade level for the year.
+      - name: _dbt_source_relation
+        description: >-
+          Source relation, passed through from the PowerSchool union view. Null
+          for Miami AY2026 forward -- Focus has no equivalent internal relation
+          exposed here.
+      - name: _dbt_source_project
+        description: >-
+          District code location. Resolved from _dbt_source_relation for the
+          PowerSchool branch and passed through directly for the Focus branch.

@@ -54,10 +54,16 @@ with
     -- not the student's, and is 99.8% null in Focus. Resolve the student's own
     -- grade level from their enrollment stint instead, matching how the
     -- PowerSchool model derives it from base_powerschool__student_enrollments.
+    -- Only AY2026-forward stints are admitted, matching the cutover in
+    -- int_students__students, int_students__terms, and
+    -- int_students__student_enrollment_union -- the PowerSchool archive branch
+    -- below covers every closed year, and the inner join to this CTE in
+    -- grade_level_counts drops any earlier Focus schedule rows for lack of a
+    -- match.
     grade_level_lookup as (
         select student_number, academic_year, grade_level,
         from {{ ref("int_focus__student_enrollments") }}
-        where rn_year = 1
+        where rn_year = 1 and academic_year >= 2026
     ),
 
     grade_level_counts as (
@@ -105,19 +111,77 @@ with
 
             student_count / student_total_all_grades as grade_level_ratio,
         from grade_level_counts_window
+    ),
+
+    -- Miami teacher grade-level distribution from Focus, conformed to the
+    -- PowerSchool teacher_grade_levels vocabulary so it merges into the network
+    -- spine below by column name (full union all corresponding). yearid and
+    -- _dbt_source_relation have no Focus source and are omitted; the union
+    -- null-fills them.
+    focus_conformed as (
+        select
+            teachernumber,
+            academic_year,
+            _dbt_source_project,
+            grade_level,
+            section_count_distinct,
+            student_count,
+            student_total_all_grades,
+            grade_level_ratio,
+
+            row_number() over (
+                partition by teachernumber, academic_year
+                order by grade_level_ratio desc
+            ) as grade_level_rank,
+        from percentages
+    ),
+
+    powerschool_unioned as (
+        {{
+            dbt_utils.union_relations(
+                relations=[
+                    source(
+                        "kippnewark_powerschool",
+                        "int_powerschool__teacher_grade_levels",
+                    ),
+                    source(
+                        "kippcamden_powerschool",
+                        "int_powerschool__teacher_grade_levels",
+                    ),
+                    source(
+                        "kippmiami_powerschool",
+                        "int_powerschool__teacher_grade_levels",
+                    ),
+                    source(
+                        "kipppaterson_powerschool",
+                        "int_powerschool__teacher_grade_levels",
+                    ),
+                ]
+            )
+        }}
+    ),
+
+    powerschool_with_project as (
+        -- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
+        select
+            *,
+
+            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
+        from powerschool_unioned
+    ),
+
+    -- Miami cuts over to Focus at AY2026, matching the enrollment and terms
+    -- unions. The frozen archive keeps every closed year.
+    powerschool_conformed as (
+        select *,
+        from powerschool_with_project
+        where _dbt_source_project != 'kippmiami' or academic_year <= 2025
     )
 
-select
-    teachernumber,
-    academic_year,
-    _dbt_source_project,
-    grade_level,
-    section_count_distinct,
-    student_count,
-    student_total_all_grades,
-    grade_level_ratio,
+select *,
+from powerschool_conformed
 
-    row_number() over (
-        partition by teachernumber, academic_year order by grade_level_ratio desc
-    ) as grade_level_rank,
-from percentages
+full union all corresponding
+
+select *,
+from focus_conformed
