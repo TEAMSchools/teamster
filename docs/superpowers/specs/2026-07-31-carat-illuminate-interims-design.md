@@ -45,6 +45,44 @@ being named `Imported ...` — we should not expect KTAF's own field conventions
 to hold on them, which is why the design reads subject, grade, and round from
 the sheet instead.
 
+### Amendment 2026-08-10 — four PSAT assessments, same mechanism
+
+Four more SY26-27 practice assessments arrived after this spec was written, and
+they go through the design below unchanged — sheet membership designates them,
+the sheet supplies subject and round, and the two-section total branch produces
+their composite. Their rows are entered and audited.
+
+| `assessment_id` | `Test_Type` | `Administration_Round` | `Subject`           | `Grade_Level` |
+| --------------- | ----------- | ---------------------- | ------------------- | ------------- |
+| 226308          | `PSAT 8/9`  | `PSAT891`              | Reading and Writing | 9             |
+| 226309          | `PSAT 8/9`  | `PSAT891`              | Mathematics         | 9             |
+| 226310          | `PSAT10`    | `PSAT101`              | Reading and Writing | 10            |
+| 226311          | `PSAT10`    | `PSAT101`              | Mathematics         | 10            |
+
+Three ways they differ from the practice SAT, all handled in the sheet and the
+generator rather than in the model:
+
+- **Different scales, and the two PSATs do not share one.** SAT sections run
+  200-800, PSAT 8/9 runs 120-720, PSAT 10 and PSAT/NMSQT run 160-760. Totals are
+  400-1600, 240-1440, and 320-1520 respectively.
+- **The conversion source is College Board's published scoring-guide PDF**, not
+  a Foundation spreadsheet. PSAT 10 has no guide of its own — College Board
+  publishes one practice form for PSAT/NMSQT and PSAT 10, so the PSAT/NMSQT
+  guide is the source for PSAT 10 rows.
+- **One sanctioned deviation from a published table.** PSAT 8/9 Practice Test
+  1's Reading and Writing conversion is non-monotonic at the top — raw 65 gives
+  710, raw 66 gives 700 — so 226308 raw 66 is entered as 720 instead. Recorded
+  in the reference doc and in the generator's `SCALE_CORRECTIONS`.
+
+The `× 10` rescale guard is worth re-reading in this light. It fires on
+`scope = 'SAT' and subject_area in ('Reading', 'Writing') and grade_level in (9, 10)`,
+and these PSAT rows are the first to populate grade 9 and 10. They do not match
+the subject list, so it does not fire — but any future widening of that
+predicate must not catch them.
+
+Procedures live in the `carat-dashboard` skill; this amendment records only what
+changes about the design's scope.
+
 ## Findings that drive the design
 
 ### The historical designation mechanism cannot select the new assessments
@@ -453,8 +491,11 @@ documents are available:
 
 - Unifying the three goal mechanisms and moving the hardcoded `_benchmark_calcs`
   thresholds into a maintainable source.
-- Whether `ReadingWriting` and `Math` rows combine into a 400-1600 SAT total,
-  and the rule for a student who sits one section but not the other.
+- ~~Whether `ReadingWriting` and `Math` rows combine into a 400-1600 SAT total,
+  and the rule for a student who sits one section but not the other.~~ **Now in
+  scope and built** — conversions exist, so the two-section total branch is part
+  of this work. A student who sits one section gets no total, because
+  `scale_score` is null unless both sections converted.
 - Goal thresholds for practice assessments.
 
 Also out of scope:
@@ -486,12 +527,17 @@ Also out of scope:
 
 ## Prerequisites
 
-- The data team enters the four assessment ids in the `act_scale_score_key`
-  spreadsheet. Foundation's scale-score conversions are in hand and are being
-  entered alongside them, so these rows should carry complete conversion ranges
-  rather than blanks. This is owned by us, not a wait on another team. Column
-  values, following the 12 existing rows and the grade-11 precedent (138849 /
-  138850):
+- ~~The data team enters the four assessment ids in the `act_scale_score_key`
+  spreadsheet.~~ **Done 2026-08-10**, for all eight assessments — the four
+  practice SAT below plus the four PSAT in the amendment above. Every assessment
+  audits clean: one metadata combination each, contiguous raw coverage from 0,
+  no null cells, no monotonicity violations, and every content digest matching
+  its source. Original requirement retained for the column-value reference:
+
+  Foundation's scale-score conversions are in hand and are being entered
+  alongside them, so these rows should carry complete conversion ranges rather
+  than blanks. This is owned by us, not a wait on another team. Column values,
+  following the 12 existing rows and the grade-11 precedent (138849 / 138850):
 
   | column                 | 226182                | 226183        | 226184                | 226185        |
   | ---------------------- | --------------------- | ------------- | --------------------- | ------------- |
@@ -532,8 +578,8 @@ Also out of scope:
   clean 2023). `stg_illuminate__public__sessions` currently tops out at raw
   2026, so `int_illuminate__student_session_aff` has no 2027 rows at all.
 
-  Until Illuminate has SY26-27 sessions with students affiliated to them, the
-  four assessments produce **zero rows through the entire chain** — scaffold,
+  Until Illuminate has SY26-27 sessions with students affiliated to them, all
+  eight assessments produce **zero rows through the entire chain** — scaffold,
   `response_rollup`, and `_practice` — no matter how correct the model changes
   and the sheet entry are. This is the single most likely reason for BOY scores
   to appear to go missing, and it is exactly the silent-zero failure mode this
