@@ -6,6 +6,16 @@ models:
       column is a rate in the range 0 to 1. Weighted variants divide the summed
       weighted present-day value by the same in-session day count the unweighted
       variants use; starting SY26, high schools report on the weighted measure.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - _dbt_source_project
+              - studentid
+              - academic_year
+              - term
+          config:
+            severity: error
     columns:
       - name: _dbt_source_project
         data_type: string

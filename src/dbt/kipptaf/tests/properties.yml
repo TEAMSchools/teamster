@@ -454,3 +454,27 @@ data_tests:
         dagster:
           ref:
             name: rpt_parentsquare__students
+
+  - name: int_powerschool__ada_term_pivot__weighted_year_matches_source
+    description: >-
+      int_powerschool__ada_term computes ada_weighted_year correctly as a rate,
+      and the pivot then re-derives it from its own quarter columns instead of
+      passing that value through. For a year the re-derivation coalesced the
+      UNWEIGHTED ada_year_q* columns (#4783), which produced a number that was
+      still a valid rate between 0 and 1 and therefore invisible to a range
+      test. Because ada_weighted_year is a year-grain window value it is
+      constant across a student's terms, so the pivot's coalesce must reproduce
+      the source value. This test fails on any student-year where the two
+      disagree, which is what a repeat of the wrong-column coalesce looks like.
+      It compares with a 0.0015 tolerance rather than exact equality because
+      both sides round to 3 decimals and a distributed float sum has no
+      guaranteed association order, so a rate on a rounding midpoint can differ
+      by one unit in the 3rd decimal between evaluations. That artifact tops out
+      at 0.001 across roughly 74k student-years, while the defect it guards
+      against produced differences up to 0.33.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_powerschool__ada_term_pivot
