@@ -40,10 +40,18 @@ sqlfluff and markdownlint via trunk.
   `GROUP BY ALL`, no self-aliases (AL09).
 - **ST09 join order:** ON-clause predicates put the earlier-referenced table on
   the left.
-- **Do not run `trunk fmt`.** Run
-  `/workspaces/teamster/.trunk/tools/trunk check --force <files>` with cwd set
-  to the worktree — the binary lives only in the main repo, and relative paths
-  run from the main repo check the wrong copies.
+- **Do not run `trunk fmt`.** The pre-commit hook formats at commit time. Run
+  `trunk check --force --no-fix </dev/null <files>` with cwd set to the
+  worktree. `--force` is required (a committed file is otherwise diff-skipped
+  and markdownlint under-reports a false "No issues"); `--no-fix </dev/null`
+  avoids the interactive "Apply formatting?" hang. The binary lives only in the
+  main repo at `/workspaces/teamster/.trunk/tools/trunk` — relative paths run
+  from the main repo check the wrong copies. If that path is missing on a cold
+  Codespace, fall back to `~/.cache/trunk/launcher/trunk`.
+- **Expect `unformatted files` findings on first check.** The pre-commit `fmt`
+  hook fixes prettier alignment and markdownlint MD060 table-column-style at
+  commit time. Do not hand-align tables. Only `file:line` findings naming a rule
+  are real.
 - **`current_academic_year` is 2025 and is stale** (it rolls each July; today is
   2026-08-10). Do not anchor the `enroll_status` derivation on that var — use
   the max `syear` present in Focus, per Task 3.
@@ -181,7 +189,7 @@ Expected: `Found N models, ... N sources ...` with no `Compilation Error`.
 
 ```bash
 cd /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster
-/workspaces/teamster/.trunk/tools/trunk check --force \
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix </dev/null \
   src/dbt/kipptaf/models/focus/sources-bigquery.yml
 git -C /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster add \
   src/dbt/kipptaf/models/focus/sources-bigquery.yml
@@ -225,7 +233,7 @@ Expected: a `docs:` commit naming both files, and no unstaged changes under
 
 ```bash
 cd /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster
-/workspaces/teamster/.trunk/tools/trunk check --force \
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix </dev/null \
   docs/superpowers/specs/2026-08-10-focus-miami-kippfwd-roster-design.md \
   docs/superpowers/plans/2026-08-10-focus-miami-kippfwd-roster.md
 ```
@@ -483,7 +491,7 @@ Expected: roughly 222 rows at `enroll_status = 0` and 143 at `2`. If nearly all
 
 ```bash
 cd /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster
-/workspaces/teamster/.trunk/tools/trunk check --force \
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix </dev/null \
   src/dbt/kipptaf/models/focus/intermediate/int_focus__student_roster.sql \
   src/dbt/kipptaf/models/focus/intermediate/properties/int_focus__student_roster.yml
 git -C /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster add \
@@ -658,7 +666,7 @@ Expected: `PASS` on the model and on its uniqueness test.
 
 ```bash
 cd /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster
-/workspaces/teamster/.trunk/tools/trunk check --force \
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix </dev/null \
   src/dbt/kipptaf/models/finalsite/intermediate/int_finalsite__student_guardians.sql \
   src/dbt/kipptaf/models/finalsite/intermediate/properties/int_finalsite__student_guardians.yml
 git -C /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster add \
@@ -898,7 +906,7 @@ must change, not the contract.
 
 ```bash
 cd /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster
-/workspaces/teamster/.trunk/tools/trunk check --force \
+/workspaces/teamster/.trunk/tools/trunk check --force --no-fix </dev/null \
   src/dbt/kipptaf/models/extracts/google/sheets/rpt_gsheets__kippfwd_miami_roster.sql \
   src/dbt/kipptaf/models/extracts/google/sheets/properties/rpt_gsheets__kippfwd_miami_roster.yml
 git -C /workspaces/teamster/.worktrees/focus-miami-kippfwd-roster add \
