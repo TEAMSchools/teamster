@@ -299,7 +299,7 @@ class GoogleDirectoryResource(ConfigurableResource):
 
         Args:
             **kwargs: Forwarded to ``_list``. ``customer`` defaults to
-                ``self.customer_id``.
+                ``self.customer_id``. Page size defaults to 200 (API maximum).
 
         Returns:
             List of group resource dicts.
@@ -308,7 +308,13 @@ class GoogleDirectoryResource(ConfigurableResource):
             HttpError: If all retry attempts are exhausted.
         """
         customer = kwargs.pop("customer", self.customer_id)
-        return self._list(api_name="groups", customer=customer, **kwargs)
+        max_results = kwargs.pop("max_results", 200)
+        return self._list(
+            api_name="groups",
+            customer=customer,
+            max_results=max_results,
+            **kwargs,
+        )
 
     def list_members(self, group_key: str, **kwargs) -> list[dict]:
         """Retrieves a paginated list of all members in a group.
@@ -742,13 +748,15 @@ def members_for_created_users(
     if not unresolved:
         return members, []
 
+    count = len(unresolved)
     return members, [
         {
             "error": (
-                f"{len(unresolved)} created users have no resolvable students"
+                f"{count} created {'user' if count == 1 else 'users'} "
+                f"{'has' if count == 1 else 'have'} no resolvable students"
                 " group; membership skipped"
             ),
-            "count": len(unresolved),
+            "count": count,
             "orgUnitPaths": sorted({u["orgUnitPath"] for u in unresolved}),
         }
     ]

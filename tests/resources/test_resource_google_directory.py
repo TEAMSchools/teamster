@@ -535,6 +535,24 @@ def test_members_for_created_users_reports_null_group_key_once():
     ]
 
 
+def test_members_for_created_users_reports_null_group_key_singular():
+    users = [
+        _created_user("a@x.org", group_key=None, org_unit_path="/Students/School A")
+    ]
+
+    _, unresolved = members_for_created_users(users, [])
+
+    assert unresolved == [
+        {
+            "error": (
+                "1 created user has no resolvable students group; membership skipped"
+            ),
+            "count": 1,
+            "orgUnitPaths": ["/Students/School A"],
+        }
+    ]
+
+
 def test_members_for_created_users_does_not_report_null_group_key_for_failed_create():
     users = [_created_user("a@x.org", group_key=None)]
     create_errors = [{"primaryEmail": "a@x.org", "error": "boom"}]
