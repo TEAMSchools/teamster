@@ -96,7 +96,7 @@ a student entered in Finalsite by 12:00 ET is usable in Focus by 14:00 ET, via a
 | Storage shape             | Option 2a: Hive-partitioned Avro accumulate by pull date, plus dedupe in staging. Keeps the Avro asset factory and `check_avro_schema_valid`. |
 | Watermark                 | The partition key itself. No stored cursor.                                                                                                   |
 | Safety day                | Always. `since = partition_date - 1`.                                                                                                         |
-| `since_includes_expanded` | Dropped. Measured no-op.                                                                                                                      |
+| `since_includes_expanded` | Not adopted. Measured no-op, and it was never sent today — all four code locations only ever pass `includes`.                                 |
 | Full refresh              | None. Hard deletes are accepted as a known limitation, revisited only if they become a problem.                                               |
 | Dedupe location           | `stg_finalsite__contacts`.                                                                                                                    |
 | Relationships             | `stg_finalsite__contacts` carries the `relationships` array; `stg_finalsite__contact_relationships` refs it instead of the source.            |
