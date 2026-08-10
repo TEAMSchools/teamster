@@ -34,6 +34,7 @@ with
             middle_name,
             last_name,
             powerschool_id,
+            disis_id,
             florida_student_number,
             florida_education_identifier,
             race_white_label,
@@ -68,24 +69,6 @@ with
         from identified
     ),
 
-    -- lunchstatus has no usable Focus source: free_reduced_meals_program is a
-    -- single school-wide Community Eligibility Provision constant, so it carries
-    -- no per-student signal. Carry the archive value forward for returning
-    -- students; new students get null, because a fabricated FRL value feeds an
-    -- economic-disadvantage proxy. spedlep and lep_status get the same treatment
-    -- in int_students__student_core_fields, which is where the archive keeps
-    -- them.
-    --
-    -- ethnicity carries forward too, for a different reason: the archive is
-    -- internally inconsistent (Hispanic with no race flag maps to 'T' for 36
-    -- students and 'H' for 8), so no derivation can reproduce it. Carrying it
-    -- forward keeps dim_students.race byte-identical for returning students.
-    archive as (
-        select student_number, lunchstatus, ethnicity, state_studentnumber,
-        from {{ ref("stg_powerschool__students") }}
-        where _dbt_source_project = 'kippmiami'
-    ),
-
     -- Miami student identity from Focus, conformed to the PowerSchool column
     -- names and value domains so it merges into the network student spine below
     -- by column name (full union all corresponding).
@@ -107,41 +90,39 @@ with
             r.dob,
             r.gender,
 
-            a.lunchstatus,
-
             e.enroll_status,
 
-            -- dim_students publishes this as district_student_identifier for
-            -- Miami, so it has to survive the cutover or every Focus-sourced
-            -- student loses their MDCPS id. Carried forward from the archive,
-            -- like lunchstatus above, because Focus has no live source for it:
-            -- disis_id holds the same value but only for students the
-            -- PowerSchool migration brought over (3,304 of 3,453 returning,
-            -- 0 of 506 enrolled since), and florida_student_number is a
-            -- different 10-digit FLDOE identifier that matches the MDCPS id on
-            -- no student at all. New students get null rather than a
-            -- confidently wrong district id.
-            a.state_studentnumber,
+            -- Focus's free_reduced_meals_program is a CEP direct-certification
+            -- flag, not an eligibility status -- every Miami student carries
+            -- the same "CEP NOT Direct Cert" value, and Focus stores nothing
+            -- resembling the archive's F/R/P domain. Null until Ops surfaces a
+            -- real per-student eligibility field; a school-wide constant would
+            -- feed an economic-disadvantage proxy with no signal in it.
+            cast(null as string) as lunchstatus,
 
-            coalesce(
-                a.ethnicity,
-                case
-                    when r.race_count > 1
-                    then 'T'
-                    when r.race_black_or_african_american_label = 'Yes'
-                    then 'B'
-                    when r.race_white_label = 'Yes'
-                    then 'W'
-                    when r.race_asian_label = 'Yes'
-                    then 'A'
-                    when r.race_american_indian_or_alaska_native_label = 'Yes'
-                    then 'I'
-                    when r.race_native_hawaiian_or_other_pacific_islander_label = 'Yes'
-                    then 'P'
-                end
-            ) as ethnicity,
+            -- dim_students publishes this as district_student_identifier for
+            -- Miami. disis_id is the MDCPS id, stored as NUMERIC, which drops
+            -- the leading zero most of them carry -- pad back to the 7 digits
+            -- MDCPS issues. Populated only for students the PowerSchool
+            -- migration brought over, so it is null for anyone enrolled since,
+            -- until Ops fills it.
+            lpad(cast(r.disis_id as string), 7, '0') as state_studentnumber,
+
+            case
+                when r.race_count > 1
+                then 'T'
+                when r.race_black_or_african_american_label = 'Yes'
+                then 'B'
+                when r.race_white_label = 'Yes'
+                then 'W'
+                when r.race_asian_label = 'Yes'
+                then 'A'
+                when r.race_american_indian_or_alaska_native_label = 'Yes'
+                then 'I'
+                when r.race_native_hawaiian_or_other_pacific_islander_label = 'Yes'
+                then 'P'
+            end as ethnicity,
         from raced as r
-        left join archive as a on r.student_number = a.student_number
         left join current_stint as e on r.student_number = e.student_number
     ),
 

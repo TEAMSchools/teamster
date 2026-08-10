@@ -13,5 +13,8 @@ select
     p.race_native_hawaiian_or_other_pacific_islander_label,
     p.residence_county_label,
     p.language_label,
+    p.ese_fefp_code_label,
+    p.english_language_learner_pk_12_label,
+    p.gifted_eligibility_label,
 from {{ ref("stg_focus__students") }} as s
 left join {{ ref("int_focus__students__pivot") }} as p on s.student_id = p.student_id

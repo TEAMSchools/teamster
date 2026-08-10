@@ -25,10 +25,11 @@ models:
     columns:
       - name: lunchstatus
         description: >-
-          Meal eligibility. For Miami, carried forward from the frozen
-          PowerSchool archive because Focus records school-wide Community
-          Eligibility Provision status rather than per-student eligibility; null
-          for Miami students new since the freeze.
+          Meal eligibility. Null for every Miami student: Focus's
+          free_reduced_meals_program is a CEP direct-certification flag that
+          holds one value network-wide, and Focus stores nothing resembling the
+          F/R/P eligibility domain. Populated once Ops surfaces a real
+          per-student eligibility field.
         data_tests:
           - not_null:
               config:
@@ -38,11 +39,12 @@ models:
         description: Canonical network student number.
       - name: ethnicity
         description: >-
-          Single-character race code. For Miami, carried forward from the
-          archive for returning students, because the archive's own values are
-          not a function of the Focus race flags; derived from those flags for
-          new students -- multiple races yield T, a single race yields its code,
-          and no recorded race yields null rather than a fabricated category.
+          Single-character race code. For Miami, derived from the Focus race
+          flags for every student -- multiple races yield T, a single race
+          yields its code, and no recorded race yields null rather than a
+          fabricated category. This moves 100 of 3,453 returning students off
+          their archive value, 77 of them to null, because the archive's own
+          codes were not a function of the race flags.
       - name: enroll_status
         description: >-
           Enrollment standing. For Miami, taken from the student's most recent
@@ -73,9 +75,10 @@ models:
         description: >-
           Host public school district's identifier for the student, published by
           dim_students as district_student_identifier. For Miami this is the
-          MDCPS student id, carried forward from the frozen PowerSchool archive
-          because Focus has no live source for it; null for Miami students new
-          since the freeze.
+          MDCPS student id, read from Focus's disis_id and left-padded to the 7
+          digits MDCPS issues (Focus stores it as NUMERIC, dropping the leading
+          zero most carry). Populated only for students the PowerSchool
+          migration brought over, so null for anyone enrolled since.
       - name: florida_student_number
         description: >-
           Florida state student number as recorded in Focus. A 10-digit FLDOE

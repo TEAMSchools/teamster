@@ -24,11 +24,11 @@ models:
           FLEID, the Florida statewide education identifier.
       - name: gifted_and_talented
         description: >-
-          Gifted classification. For Miami, carried forward from the frozen
-          PowerSchool archive; null for Miami students new since the freeze.
-          Focus's "Gifted (Computed)" field is computed-type and never stored,
-          and its "Gifted Eligibility" code names only 15 eligible students
-          against the archive's 34.
+          Gifted classification. For Miami, read from Focus's Gifted Eligibility
+          code -- the FLDOE criteria paragraph a student qualified under, so any
+          A or B is Y and Z is N. Focus's other gifted field, "Gifted
+          (Computed)", is computed-type and never stored. Names 15 students
+          against the frozen archive's 34, a gap for Ops to close.
       - name: _dbt_source_relation
         description: >-
           Source relation, passed through from the PowerSchool staging model or

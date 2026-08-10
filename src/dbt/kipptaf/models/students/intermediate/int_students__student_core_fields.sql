@@ -19,62 +19,50 @@ with
         where s._dbt_source_project != 'kippmiami'
     ),
 
-    -- Neither field has a usable Focus source, for different reasons.
+    -- Both fields read straight from Focus. Neither is fully populated there
+    -- today, and that is deliberate: an unpopulated Focus field reads as
+    -- unknown, which is a visible prompt for Ops to fill it in, where carrying
+    -- the frozen archive forward silently froze Miami's IEP and ELL status at
+    -- its 2025 values and would have drifted further every year.
     --
-    -- spedlep: ese_fefp_code is an FEFP funding-matrix code, not an IEP flag,
-    -- and only applies to higher-cost placements -- it covers 149 of the 419
-    -- archive SPED students. The fields that would be right (ESE, IEP,
-    -- Disability, ESE Exceptionalities, Frontline IEP) are defined in the
-    -- Focus catalog but carry no data: the column-backed ones are 0% populated
-    -- and the log-backed ones have zero rows in custom_field_log_entries,
-    -- which holds 27k rows for other fields.
+    -- ese_fefp_code is the only ESE field Focus stores -- ESE, IEP,
+    -- Disability, ESE Exceptionalities and Frontline IEP are all defined in
+    -- the catalog but hold no data. It is an FEFP funding-matrix code, so it
+    -- names 162 students against the archive's 419. Any code means the
+    -- student receives ESE services; its absence does not mean the student
+    -- has no IEP, so it maps to null, not 'No IEP'.
     --
-    -- lep_status: english_language_learner_pk_12 IS populated (3,837 of 3,964)
-    -- with the right FLDOE code set, but 3,819 of those sit at the default
-    -- "Not applicable [ZZ]" option, including 211 students the archive flags
-    -- as LEP. Only 18 carry a real code. Reading it would overwrite real LEP
-    -- status with a default, so it is an Ops data-entry gap rather than a
-    -- missing source -- see TODO below.
-    --
-    -- Both are worth revisiting once Ops populates them in Focus. Carry the
-    -- archive value forward meanwhile; new students get null, because a false
-    -- negative on IEP status is compliance-adjacent and unknown must read as
-    -- unknown.
-    --
-    -- The archive keys these on studentsdcid, so resolve to student_number
-    -- here. dcid is PowerSchool plumbing and stops at this layer.
-    archive as (
-        select s.student_number, scf.spedlep, scf.lep_status,
-        from {{ ref("stg_powerschool__students") }} as s
-        inner join
-            {{ ref("stg_powerschool__studentcorefields") }} as scf
-            on s.dcid = scf.studentsdcid
-            and s._dbt_source_project = scf._dbt_source_project
-        where s._dbt_source_project = 'kippmiami'
-    ),
-
-    -- The unprefixed Focus student id is the canonical network student number.
-    -- Same unprefix rule int_students__students applies to the Focus branch of
-    -- the student spine.
-    focus_identified as (
+    -- english_language_learner_pk_12 carries the FLDOE code set. LY is
+    -- currently LEP; LF, LA, LZ and the ZZ variants are not. LP and TT mean
+    -- tested-or-pending, which is genuinely unknown rather than false. 3,819
+    -- of 3,964 students currently sit at the "Not applicable" default,
+    -- including 211 the archive flagged as LEP -- Ops closing that gap is the
+    -- point of reading the field rather than the archive.
+    focus_conformed as (
         select
             _dbt_source_relation,
             _dbt_source_project,
 
             {{ unprefix_focus_student_id("student_id") }} as student_number,
+
+            if(ese_fefp_code_label is not null, 'SPED', null) as spedlep,
+
+            case
+                regexp_extract(english_language_learner_pk_12_label, r'\[(\w+)\]')
+                when 'LY'
+                then true
+                when 'LF'
+                then false
+                when 'LA'
+                then false
+                when 'LZ'
+                then false
+                when 'TZ'
+                then false
+                when 'ZZ'
+                then false
+            end as lep_status,
         from {{ ref("int_focus__students") }}
-    ),
-
-    focus_conformed as (
-        select
-            i._dbt_source_relation,
-            i._dbt_source_project,
-            i.student_number,
-
-            a.spedlep,
-            a.lep_status,
-        from focus_identified as i
-        left join archive as a on i.student_number = a.student_number
     )
 
 select _dbt_source_relation, _dbt_source_project, student_number, spedlep, lep_status,
