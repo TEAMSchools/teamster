@@ -504,3 +504,7 @@ snapshot — before removing it.
   `models/marts/`. Actively being developed; see
   `src/dbt/kipptaf/models/marts/CLAUDE.md` for column-naming rubric, hash-change
   discipline, and strict-chain rules.
+
+New KIPP Forward Google Sheets extracts take the `rpt_gsheets__kfwd_` prefix.
+Existing models use both `kfwd_` and `kippfwd_`; `kfwd_` is the going-forward
+choice, and the older ones are not being renamed.
