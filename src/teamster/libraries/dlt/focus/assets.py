@@ -13,12 +13,17 @@ from dlt.common.typing import TRefreshMode
 from dlt.destinations import bigquery
 from dlt.extract.items import DataItemWithMeta
 from dlt.extract.resource import DltResource
-from dlt.extract.source import DltSource
 from dlt.sources.sql_database import remove_nullability_adapter
 from dlt.sources.sql_database.helpers import table_rows
 from sqlalchemy import BigInteger
 from sqlalchemy.sql.sqltypes import _AbstractInterval
 from sqlalchemy.types import TypeEngine
+
+from teamster.libraries.dlt.probe import (
+    ProbeSignatureConfig,
+    ProbeTable,
+    probe_signature,
+)
 
 FOCUS_SOURCE_NAME = "focus"
 FOCUS_DB_SCHEMA = "public"
@@ -37,8 +42,41 @@ every table in the run.
 """
 
 
+def _asset_key(code_location: str, table_name: str) -> AssetKey:
+    """The asset key for one Focus table (single source of truth).
+
+    The translator, the sensor's asset selection, and the sensor's RunRequest all
+    route through this. The dbt `focus_dlt` source's `asset_key` meta must match
+    this shape or the dbt-source -> dlt-asset lineage breaks.
+    """
+    return AssetKey([code_location, "dlt", FOCUS_SOURCE_NAME, table_name])
+
+
+def build_focus_dlt_pipeline(code_location: str) -> Any:
+    """The shared BigQuery pipeline for one district's Focus source.
+
+    Used by the assets factory (loads) and by the intraday sensor (baseline
+    reads via sync_destination + resource state).
+
+    `autodetect_schema=True` is load-bearing: paired with
+    `loader_file_format="parquet"` it is what lets a `replace` table whose source
+    went to 0 rows truncate successfully (#4733).
+    """
+    return pipeline(
+        pipeline_name=FOCUS_SOURCE_NAME,
+        destination=bigquery(autodetect_schema=True),
+        dataset_name=f"dagster_{code_location}_dlt_{FOCUS_SOURCE_NAME}",
+        progress=LogCollector(dump_system_stats=False),
+    )
+
+
 class FocusDltConfig(Config):
     """Run config for the Focus dlt op.
+
+    `probe` present (intraday sensor): the sensor already probed and gated —
+    load exactly the run's asset selection, persisting the passed signatures.
+    `probe` absent (04:00 schedule / manual launch): full refresh — probe the
+    selection once, then load it all unconditionally with fresh baselines.
 
     `refresh` is unset on every scheduled run. It exists for the one-time
     migration that recreates already-populated tables so they gain the
@@ -47,6 +85,7 @@ class FocusDltConfig(Config):
     (`drop_resources`, #4740).
     """
 
+    probe: dict[str, ProbeSignatureConfig] | None = None
     refresh: str | None = None
 
 
@@ -59,20 +98,11 @@ class FocusDagsterDltTranslator(DagsterDltTranslator):
         asset_spec = super().get_asset_spec(data)
 
         asset_spec = asset_spec.replace_attributes(
-            key=AssetKey(
-                [
-                    self.code_location,
-                    "dlt",
-                    "focus",
-                    data.resource.name,
-                ]
-            ),
+            key=_asset_key(self.code_location, data.resource.name),
             deps=[],
         )
 
-        asset_spec = asset_spec.merge_attributes(kinds={"postgresql"})
-
-        return asset_spec
+        return asset_spec.merge_attributes(kinds={"postgresql"})
 
 
 def interval_to_microseconds_adapter(col_type: TypeEngine) -> TypeEngine | None:
@@ -158,6 +188,7 @@ def _build_focus_resource(
     sql_database_credentials: ConnectionStringCredentials,
     table_name: str,
     db_schema: str | None = FOCUS_DB_SCHEMA,
+    signature: dict | None = None,
 ) -> DltResource:
     """Build one full-replace dlt resource for a Focus table.
 
@@ -168,10 +199,21 @@ def _build_focus_resource(
     the package, and BigQuery never gets a table — leaving no target for a dbt
     staging model (#4740). Same ``table_rows`` pattern as
     ``libraries/dlt/powerschool/``.
+
+    When `signature` is given it is written to the resource's dlt state WITH the
+    load, becoming the baseline the next sensor tick compares against. It is
+    written here, inside the extracted resource, because dlt commits state only
+    from resources that reached the load package — a write from the source body
+    or after the load never round-trips. `parallelized=True` is compatible with
+    `resource_state` writes; what breaks is nesting a DltResource inside a
+    parallelized resource, which this does not do.
     """
 
     @dlt.resource(name=table_name, write_disposition="replace", parallelized=True)
     def _focus_table() -> Iterator:
+        if signature is not None:
+            dlt.current.resource_state()["signature"] = signature
+
         yield from _focus_table_items(
             sql_database_credentials=sql_database_credentials,
             table_name=table_name,
@@ -184,45 +226,58 @@ def _build_focus_resource(
 @dlt.source(name=FOCUS_SOURCE_NAME)
 def build_focus_source(
     sql_database_credentials: ConnectionStringCredentials,
-    table_name: str,
+    tables: list[ProbeTable],
+    signatures: dict[str, dict] | None = None,
     db_schema: str | None = FOCUS_DB_SCHEMA,
 ) -> Iterator:
-    """One-resource source. The name must stay `focus` — it is the dlt schema
-    name the destination's stored schema and state are keyed on."""
-    yield _build_focus_resource(
-        sql_database_credentials=sql_database_credentials,
-        table_name=table_name,
-        db_schema=db_schema,
-    )
+    """One resource per table. The source name must stay `focus` — it is the dlt
+    schema name the destination's stored schema and state are keyed on."""
+    signatures = signatures or {}
+
+    for table in tables:
+        yield _build_focus_resource(
+            sql_database_credentials=sql_database_credentials,
+            table_name=table.name,
+            db_schema=db_schema,
+            signature=signatures.get(table.name),
+        )
 
 
 def build_focus_dlt_assets(
     sql_database_credentials: ConnectionStringCredentials,
     code_location: str,
-    table_name: str,
+    tables: list[ProbeTable],
     op_tags: dict[str, object] | None = None,
 ):
+    """Build ONE two-mode @dlt_assets over all Focus tables.
+
+    The selection decision belongs to the caller: the intraday sensor probes,
+    gates, and passes per-table signatures via run config (`probe`); the 04:00
+    schedule and manual launches pass no config and get an unconditional full
+    refresh. In both modes the op runs the pipeline over a source narrowed to the
+    run's asset selection — a full `replace` per table — persisting each table's
+    signature to dlt resource_state WITH the load, so failures self-heal: the old
+    baseline survives and the table re-selects next tick. See
+    docs/superpowers/specs/2026-08-10-focus-dlt-probe-gated-sync-design.md.
+    """
     if op_tags is None:
         op_tags = {}
 
-    dlt_source: DltSource = build_focus_source(
-        sql_database_credentials=sql_database_credentials, table_name=table_name
-    )
-
-    dlt_pipeline = pipeline(
-        pipeline_name="focus",
-        destination=bigquery(autodetect_schema=True),
-        dataset_name=f"dagster_{code_location}_dlt_focus",
-        progress=LogCollector(dump_system_stats=False),
-    )
+    dlt_pipeline = build_focus_dlt_pipeline(code_location)
+    translator = FocusDagsterDltTranslator(code_location)
+    tables_by_key = {_asset_key(code_location, t.name): t for t in tables}
 
     @dlt_assets(
-        dlt_source=dlt_source,
+        # The full source only defines the asset specs; the op runs a narrowed
+        # one.
+        dlt_source=build_focus_source(
+            sql_database_credentials=sql_database_credentials, tables=tables
+        ),
         dlt_pipeline=dlt_pipeline,
-        name=f"{code_location}__dlt__focus__{table_name}",
-        dagster_dlt_translator=FocusDagsterDltTranslator(code_location),
-        group_name="focus",
-        pool=f"dlt_focus_{code_location}",
+        name=f"{code_location}__dlt__{FOCUS_SOURCE_NAME}",
+        dagster_dlt_translator=translator,
+        group_name=FOCUS_SOURCE_NAME,
+        pool=f"dlt_{FOCUS_SOURCE_NAME}_{code_location}",
         op_tags=op_tags,
     )
     def _assets(
@@ -239,6 +294,49 @@ def build_focus_dlt_assets(
         # pipeline. NOT `dlt.config` — `dlt` is the resource parameter here.
         dlt_config["normalize.parquet_normalizer.add_dlt_id"] = True
         dlt_config["normalize.parquet_normalizer.add_dlt_load_id"] = True
+
+        selected = [
+            tables_by_key[key]
+            for key in context.selected_asset_keys
+            if key in tables_by_key
+        ]
+
+        if config.probe is not None:
+            # Sensor mode: the sensor probed and gated already — persist its
+            # signatures with the load, no re-probe.
+            signatures: dict[str, dict] = {
+                name: {"count": sig.count, "max_cursor": sig.max_cursor}
+                for name, sig in config.probe.items()
+            }
+            context.log.info(f"focus sensor-selected load: {sorted(signatures)}")
+        else:
+            # Full-refresh mode (04:00 schedule / manual launch): load the whole
+            # selection unconditionally. Probe FIRST so fresh baseline signatures
+            # persist WITH the load — dlt commits state only from extracted
+            # resources, so a post-load write would not round-trip.
+            engine = sa.create_engine(
+                sql_database_credentials.to_native_representation()
+            )
+            try:
+                with engine.connect() as connection:
+                    signatures = {
+                        table.name: probe_signature(
+                            connection, table.name, table.cursor_column
+                        )
+                        for table in selected
+                    }
+            finally:
+                engine.dispose()
+
+            context.log.info(f"focus full-refresh load: {sorted(signatures)}")
+
+        # Stream dlt's periodic extract/normalize/load progress into the Dagster
+        # event log. The factory-built collector defaults to logger="stdout"
+        # (step-pod compute logs only), which went dark for one table at a time
+        # before and would now go dark for the whole multi-table load.
+        dlt_pipeline.collector = LogCollector(
+            logger=context.log, log_period=30.0, dump_system_stats=False
+        )
 
         # loader_file_format="parquet": BigQuery schema autodetection rejects the
         # empty jsonl file dlt writes to truncate a `replace` table whose source
@@ -259,6 +357,16 @@ def build_focus_dlt_assets(
             context.log.info(f"dlt refresh mode: {config.refresh}")
             run_kwargs["refresh"] = config.refresh
 
-        yield from dlt.run(context=context, **run_kwargs)
+        yield from dlt.run(
+            context=context,
+            dlt_source=build_focus_source(
+                sql_database_credentials=sql_database_credentials,
+                tables=selected,
+                signatures=signatures,
+            ),
+            dlt_pipeline=dlt_pipeline,
+            dagster_dlt_translator=translator,
+            **run_kwargs,
+        )
 
     return _assets
