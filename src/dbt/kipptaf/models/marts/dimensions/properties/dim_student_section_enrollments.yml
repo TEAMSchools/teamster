@@ -5,9 +5,11 @@ models:
       enrollment of a student into a section. Multiple rows per student x
       section are possible when a student drops and re-enrolls in the same
       section within a year. FK to dim_student_enrollments via
-      student_enrollment_key, dim_course_sections via course_section_key,
-      dim_terms via term_key (nullable when CC term does not map to a reporting
-      term), and dim_staff via lead_teacher_staff_key.
+      student_enrollment_key, dim_course_sections via course_section_key, and
+      dim_staff via lead_teacher_staff_key. Carries no term FK — a section
+      enrollment spans several reporting quarters, so
+      bridge_course_section_terms is the grain-correct link from a section to
+      its quarters.
     columns:
       - name: lead_teacher_staff_key
         data_type: string
@@ -78,25 +80,6 @@ models:
               arguments:
                 to: ref('dim_course_sections')
                 field: course_section_key
-      - name: term_key
-        data_type: string
-        description: >-
-          Surrogate key derived from type, code, name, start_date, region, and
-          school_id of the matching reporting term. FK to dim_terms. Null when
-          the course-enrollment's term ID does not match any reporting term for
-          the section's school and region.
-
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
-            warn_unenforced: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_terms')
-                field: term_key
       - name: academic_year
         data_type: int64
         description: >-

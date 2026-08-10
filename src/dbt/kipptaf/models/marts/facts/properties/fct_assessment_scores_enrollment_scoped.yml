@@ -71,6 +71,27 @@ models:
                 to: ref('dim_student_section_enrollments')
                 field: student_section_enrollment_key
 
+      - name: term_key
+        data_type: string
+        description: >-
+          FK to dim_terms. The reporting quarter containing the date this score
+          was administered or taken, at the school of the section enrollment
+          int_assessments__resolved_section_enrollments resolved. Matched by
+          date rather than through the section enrollment itself, whose term id
+          is not quarter-specific. Null when no reporting quarter is defined for
+          that school and date.
+        constraints:
+          - type: foreign_key
+            to: ref('dim_terms')
+            to_columns: [term_key]
+            warn_unsupported: false
+            warn_unenforced: false
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_terms')
+                field: term_key
+
       - name: test_date_key
         data_type: date
         description: >-
