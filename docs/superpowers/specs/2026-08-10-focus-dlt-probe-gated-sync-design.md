@@ -190,6 +190,11 @@ Two small additions mirroring powerschool:
   sensor's `RunRequest`.
 - `build_focus_dlt_pipeline(code_location)` is extracted so the sensor can read
   pipeline state without duplicating destination config.
+- The op repoints the pipeline's collector at `context.log`
+  (`LogCollector(logger=context.log, log_period=30.0, dump_system_stats=False)`).
+  Today's 77 short ops each log progress to stdout, which is tolerable; one op
+  loading up to 77 tables would go dark in the Dagster UI for the whole load, so
+  stdout-only progress becomes a real regression at this granularity.
 
 No `max_extract_workers` parameter. PowerSchool caps extract workers to avoid
 saturating a single SSH tunnel (DPY-4011); Focus connects directly, and dlt's
