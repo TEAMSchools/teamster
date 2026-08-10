@@ -2,12 +2,19 @@ models:
   - name: int_students__students
     description: >-
       SIS-agnostic student spine. Unions the PowerSchool student staging view
-      for the three New Jersey regions with the conformed Focus branch for
-      Miami. The Miami PowerSchool archive is excluded for every student Focus
-      carries, because Focus now carries Miami identity and including both
-      double-counts every returning student; the 493 Miami students the Focus
-      seed never received stay on the archive branch so they are not lost from
-      dim_students.
+      for the three New Jersey regions with Miami student identity conformed
+      from Focus to PowerSchool column names and value domains, holding the
+      unprefix rule that recovers the canonical student number, the race code
+      derivation, and the archive carry-forwards for the fields the archive
+      keeps on its own students table. The Miami PowerSchool archive is excluded
+      for every student Focus carries, because Focus now carries Miami identity
+      and including both double-counts every returning student; the 493 Miami
+      students the Focus seed never received stay on the archive branch so they
+      are not lost from dim_students. Values with no usable Focus source carry
+      forward from the frozen PowerSchool archive for returning students and are
+      null for students new since the freeze. spedlep and lep_status get the
+      same treatment in int_students__student_core_fields, matching where the
+      archive stores them.
     config:
       meta:
         contains_pii: true
@@ -18,8 +25,58 @@ models:
               - student_number
               - _dbt_source_project
     columns:
+      - name: lunchstatus
+        description: >-
+          Meal eligibility. For Miami, carried forward from the frozen
+          PowerSchool archive because Focus records school-wide Community
+          Eligibility Provision status rather than per-student eligibility; null
+          for Miami students new since the freeze.
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+                where: _dbt_source_project = 'kippmiami'
       - name: student_number
         description: Canonical network student number.
+      - name: ethnicity
+        description: >-
+          Single-character race code. For Miami, carried forward from the
+          archive for returning students, because the archive's own values are
+          not a function of the Focus race flags; derived from those flags for
+          new students -- multiple races yield T, a single race yields its code,
+          and no recorded race yields null rather than a fabricated category.
+      - name: enroll_status
+        description: >-
+          Enrollment standing. For Miami, taken from the student's most recent
+          Focus stint -- Focus records this per stint while the network treats
+          it as a single current value per student, so the latest academic year
+          and entry date wins.
+      - name: first_name
+        description: Student's legal first name.
+      - name: middle_name
+        description: Student's legal middle name.
+      - name: last_name
+        description: Student's legal last name.
+      - name: dob
+        description: >-
+          Date of birth. For Miami, taken from Focus rather than the archive --
+          Focus is the live system and the two disagree on only a handful of
+          returning students, all post-freeze corrections.
+      - name: gender
+        description: >-
+          Single-character gender code. For Miami, extracted from the bracketed
+          code in the Focus sex label, matching the archive domain.
+      - name: powerschool_id
+        description: >-
+          Pre-migration student number as Focus recorded it. Populated only for
+          Miami students who predate the SIS migration. Used to verify the
+          unprefix rule, never as a join key.
+      - name: florida_student_number
+        description: Florida state student number as recorded in Focus.
+      - name: florida_education_identifier
+        description: >-
+          FLEID, the Florida statewide education identifier. Consumed by
+          int_students__student_user_fields as the network fleid.
       - name: _dbt_source_project
         description:
           District code location, passed through from the source union view.

@@ -5,7 +5,10 @@ models:
       status keyed on student_number. Resolves the PowerSchool branch's
       studentsdcid to student_number so mart consumers join on the network
       student number instead of the PowerSchool-internal dcid; the Miami branch
-      already carries student_number natively via the Focus conform model.
+      resolves student_number natively from Focus with the same unprefix rule
+      int_students__students applies. Neither field has a usable Focus source,
+      so both carry forward from the frozen PowerSchool archive for returning
+      Miami students.
     config:
       meta:
         contains_pii: true
@@ -39,8 +42,8 @@ models:
       - name: _dbt_source_relation
         description: >-
           Source relation, passed through from the PowerSchool staging model or
-          the Focus conform model.
+          the Focus wrapper.
       - name: _dbt_source_project
         description: >-
           District code location, passed through from the PowerSchool staging
-          model or the Focus conform model.
+          model or the Focus wrapper.

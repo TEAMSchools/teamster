@@ -2,7 +2,7 @@ with
     -- The upstream student_number column is misnamed: it holds the PREFIXED
     -- Focus id, not the network student number, so anyone joining on the column
     -- name gets zero matches with no error. Unprefix it with the same rule
-    -- int_focus__students_conformed applies to the student spine.
+    -- the Focus branch of int_students__students applies to the student spine.
     --
     -- _dbt_source_relation is deliberately NOT projected. The consuming union
     -- generates its own, and carrying both would collide on the column name.

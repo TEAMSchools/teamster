@@ -2,7 +2,7 @@ with
     -- Focus's own school_id is its internal id (14, 15, 58...), not the network
     -- school number, and it is a different value from the "school_number" the
     -- focus package itself exposes (a Florida school code like 2008A). Resolve
-    -- through both hops, matching int_focus__schools_conformed.
+    -- through both hops, matching the Focus branch of int_students__schools.
     schools as (
         select s.id as focus_school_id, loc.powerschool_school_id as schoolid,
         from {{ ref("int_focus__schools") }} as s
