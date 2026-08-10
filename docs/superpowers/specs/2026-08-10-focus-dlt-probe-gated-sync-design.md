@@ -232,17 +232,24 @@ value, matching how the Focus code location already resolves them at import.
 tables, `null` for `co_teachers` and `login_history`. New tables added during
 the Miami rollout declare a cursor as they are added.
 
-## Open risk: `resource_state` on a 0-row table
+## Partially resolved risk: `resource_state` on a 0-row table
 
-**Unknown.** A 0-row Focus table yields only reflection hints plus
-`dlt.mark.materialize_table_schema()` — no data items. Whether dlt commits that
-resource's `resource_state` is not answerable from the codespace, because Focus
-sits behind an IP allowlist.
+**Mechanics verified via a unit test; the real BigQuery round-trip is still
+open.**
+`tests/libraries/test_dlt_focus_signature_state.py::test_empty_table_persists_its_signature`
+proves that dlt commits `resource_state` for a resource that yields only
+reflection hints plus `dlt.mark.materialize_table_schema()` — it seeds a sqlite
+source (standing in for Focus Postgres, which sits behind an IP allowlist
+unreachable from the codespace) and calls only `pipeline.extract()`. That
+exercises dlt's in-memory state-commit code path but not a load through the real
+BigQuery `_dlt_loads` / `_dlt_pipeline_state` tables. Whether the same mechanics
+holds end-to-end through the actual destination is not answerable from the
+codespace.
 
-- If it commits: the table's signature is `{count: 0, max_cursor: null}`, it
-  gates out from the second tick onward, and the acceptance criteria hold as
-  written.
-- If it does not commit: the table has no stored signature, so `compute_changed`
+- If it round-trips through BigQuery as it does over sqlite: the table's
+  signature is `{count: 0, max_cursor: null}`, it gates out from the second tick
+  onward, and the acceptance criteria hold as written.
+- If it does not: the table has no stored signature, so `compute_changed`
   re-selects it every tick and it re-extracts nothing every 15 minutes. Not
   harmful — the table stays correct — but noisy.
 
@@ -285,7 +292,7 @@ redirect — so the sequence is ordered to minimize prod writes.
    confirm the probe reaches all 77 tables and reads the baseline. Zero writes.
 1. Manual run over roughly three tables including one 0-row table, then
    re-evaluate the tick and confirm they gate out. **This is the step that
-   answers the open risk above.**
+   confirms the destination round-trip described above.**
 1. Confirm a changed table still produces output identical to today's
    full-replace load.
 1. Full 77-table refresh to seed baselines.
@@ -312,7 +319,7 @@ state are inert.
   models build without source edits.
 - The 04:00 schedule keeps its existing Dagster+ identity (same name), so its
   status and tick history survive.
-- A 0-row table is handled per _Open risk_ above.
+- A 0-row table is handled per _Partially resolved risk_ above.
 
 ## Related
 

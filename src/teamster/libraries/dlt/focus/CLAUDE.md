@@ -116,7 +116,12 @@ wrote to dlt `resource_state`.
   Verified: dlt does commit resource_state for a table that yields only
   reflection hints plus the materialize marker — pinned by
   `tests/libraries/test_dlt_focus_signature_state.py::test_empty_table_persists_its_signature`,
-  so a dlt upgrade that changes it fails CI.
+  so a dlt upgrade that changes it fails CI. That test seeds a sqlite source
+  (Focus sits behind an IP allowlist unreachable from the codespace) and calls
+  only `pipeline.extract()` — it verifies dlt's state-commit mechanics, not the
+  real BigQuery `_dlt_loads` / `_dlt_pipeline_state` round-trip through a full
+  load. That end-to-end path is still an open branch-deployment validation item
+  (see the design spec's _Partially resolved risk_ section).
 - **Enable order matters.** The sensor selects any table with no stored
   signature, so enabling it before an 04:00 full refresh has seeded baselines
   makes the first tick select all 77 tables at once. Seed first, then enable.
