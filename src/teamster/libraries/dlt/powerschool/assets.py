@@ -4,6 +4,7 @@ import dlt
 import sqlalchemy as sa
 from dagster import AssetExecutionContext, AssetKey, AssetSpec, Config
 from dagster_dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dlt import config as dlt_config
 from dlt.common.runtime.collector import LogCollector
 from dlt.destinations import bigquery
 from dlt.sources.sql_database import remove_nullability_adapter
@@ -227,11 +228,13 @@ def build_powerschool_dlt_assets(
             context.run.tags.get("dlt_extract_workers"), max_extract_workers
         )
         if workers is not None:
-            # Set via dlt's config accessor (an in-memory provider that
-            # pipeline.extract() resolves `workers=ConfigValue` from) rather than
-            # os.environ — keeps the override inside dlt's config channel instead
-            # of mutating the process environment.
-            dlt.config["extract.workers"] = workers
+            # Uses `dlt_config` (the module-level accessor imported above), NOT
+            # `dlt.config` — `dlt` is the resource parameter here, so `.config`
+            # resolves to `DagsterDltResource`, which has no `config` attribute
+            # (AttributeError). `dlt_config` is an in-memory provider that
+            # pipeline.extract() resolves `workers=ConfigValue` from — preferred
+            # over os.environ so the op doesn't mutate the process environment.
+            dlt_config["extract.workers"] = workers
             context.log.info(f"dlt extract workers capped at {workers}")
 
         # Diagnostic knob: Oracle cursor fetch size (rows/round-trip).
