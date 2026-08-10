@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 from dagster import AssetKey
 from dlt import config as dlt_config
+from dlt.common.configuration.exceptions import ConfigFieldMissingException
 from dlt.common.configuration.specs import ConnectionStringCredentials
 
 from teamster.libraries.dlt.focus.assets import (
@@ -24,6 +25,7 @@ CREDENTIALS = ConnectionStringCredentials("postgresql+psycopg://localhost:5432/d
 
 ADD_DLT_ID = "normalize.parquet_normalizer.add_dlt_id"
 ADD_DLT_LOAD_ID = "normalize.parquet_normalizer.add_dlt_load_id"
+EXTRACT_WORKERS = "extract.workers"
 
 
 class _RecordingDltResource:
@@ -43,16 +45,23 @@ class _StubLog:
         self.messages.append(message)
 
 
+class _StubRun:
+    def __init__(self, tags: dict[str, str] | None = None) -> None:
+        self.tags = tags or {}
+
+
 class _StubContext:
-    """The op logs its mode and reads the run's asset selection.
+    """The op logs its mode and reads the run's asset selection and run tags.
 
     `selected_asset_keys` drives which tables the narrowed source carries, and
     every test here runs in sensor mode (`probe` set) so the op never opens a
-    connection to probe.
+    connection to probe. `run.tags` backs the `dlt_extract_workers` diagnostic
+    knob.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, tags: dict[str, str] | None = None) -> None:
         self.log = _StubLog()
+        self.run = _StubRun(tags)
         self.selected_asset_keys = {
             AssetKey(["kippmiami", "dlt", "focus", "discipline_referrals"])
         }
@@ -73,6 +82,7 @@ def reset_knobs() -> Iterator[None]:
     yield
     dlt_config[ADD_DLT_ID] = False
     dlt_config[ADD_DLT_LOAD_ID] = False
+    dlt_config[EXTRACT_WORKERS] = None
 
 
 PROBE = {"discipline_referrals": ProbeSignatureConfig(count=1, max_cursor=None)}
@@ -119,6 +129,28 @@ def test_refresh_is_forwarded_when_set(focus_assets: Any) -> None:
     kwargs = _run(focus_assets, _config(refresh="drop_resources"))
 
     assert kwargs["refresh"] == "drop_resources"
+
+
+def test_op_sets_extract_workers_from_tag(focus_assets: Any) -> None:
+    dlt_config[EXTRACT_WORKERS] = None
+
+    _run(
+        focus_assets,
+        _config(),
+        context=_StubContext(tags={"dlt_extract_workers": "3"}),
+    )
+
+    assert dlt_config[EXTRACT_WORKERS] == 3
+
+
+def test_op_leaves_extract_workers_unset_without_tag(focus_assets: Any) -> None:
+    dlt_config[EXTRACT_WORKERS] = None
+
+    _run(focus_assets, _config(), context=_StubContext())
+
+    # dlt_config[...] raises when a field is unset -- that IS "unset" here.
+    with pytest.raises(ConfigFieldMissingException):
+        dlt_config[EXTRACT_WORKERS]
 
 
 def test_unrecognized_refresh_raises(focus_assets: Any) -> None:

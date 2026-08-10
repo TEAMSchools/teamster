@@ -295,6 +295,18 @@ def build_focus_dlt_assets(
         dlt_config["normalize.parquet_normalizer.add_dlt_id"] = True
         dlt_config["normalize.parquet_normalizer.add_dlt_load_id"] = True
 
+        # Diagnostic knob, same as PowerSchool's: a `dlt_extract_workers` run tag
+        # caps dlt's extract concurrency. Absent tag -> leave dlt's default (5).
+        # Uses `dlt_config` (the module-level accessor imported above), NOT
+        # `dlt.config` — `dlt` is the resource parameter here, so `.config` would
+        # resolve to `DagsterDltResource`, which has no `config` attribute
+        # (AttributeError). See libraries/dlt/CLAUDE.md.
+        extract_workers_tag = context.run.tags.get("dlt_extract_workers")
+        if extract_workers_tag is not None:
+            workers = int(extract_workers_tag)
+            dlt_config["extract.workers"] = workers
+            context.log.info(f"dlt extract workers capped at {workers}")
+
         selected = [
             tables_by_key[key]
             for key in context.selected_asset_keys

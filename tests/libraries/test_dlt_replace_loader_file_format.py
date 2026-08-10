@@ -44,9 +44,15 @@ class _StubLog:
         pass
 
 
+class _StubRun:
+    def __init__(self) -> None:
+        self.tags: dict[str, str] = {}
+
+
 class _StubContext:
     def __init__(self, keys: set[Any]) -> None:
         self.log = _StubLog()
+        self.run = _StubRun()
         self.selected_asset_keys = keys
 
 

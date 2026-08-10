@@ -33,7 +33,10 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
   sensor) → load exactly the run's asset selection with the passed signatures.
   `probe` absent (04:00 schedule / manual launch) → probe the selection once
   BEFORE the load, then load it all unconditionally. `refresh` is the separate
-  #4740 migration knob and is orthogonal to gating.
+  #4740 migration knob and is orthogonal to gating. A `dlt_extract_workers` run
+  tag caps dlt's extract concurrency, same diagnostic knob as `powerschool/`
+  (see its section below) — absent tag leaves dlt's default (5). No factory
+  param for it: no caller passes one, so there is no precedence to resolve.
 - Tiering: `0 4 * * *` targets only the count-only tables (`co_teachers`,
   `login_history` — derived from `cursor_column: null` in `config/focus.yaml`,
   not hardcoded) and is their unconditional daily reload, because a count-only
@@ -111,10 +114,16 @@ and
   per-transport and auto-rekey disabled. **No windowing/partitioning needed** —
   naive full-replace works at any table size; `assignmentscore` (19M) completes
   as one query. Set dlt extract concurrency from the op via
-  `dlt.config["extract.workers"] = N` (a writable in-memory provider that
+  `dlt_config["extract.workers"] = N` (`dlt_config` =
+  `from dlt import config as dlt_config`, a writable in-memory provider that
   `pipeline.extract()` resolves `workers=ConfigValue` from) — preferred over the
   `EXTRACT__WORKERS` env var so the op doesn't mutate the process environment.
-  `pipeline.run()` accepts no `workers` arg.
+  **Do NOT write `dlt.config`** — the op's resource parameter is named `dlt`,
+  which shadows the top-level `dlt` module inside the function body, so
+  `dlt.config` resolves to `DagsterDltResource` (no `config` attribute) and
+  raises `AttributeError`. Both `powerschool/` and `focus/` (below) read a
+  `dlt_extract_workers` run tag and apply it via `dlt_config`. `pipeline.run()`
+  accepts no `workers` arg.
 
 ## Notes
 
