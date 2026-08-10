@@ -228,6 +228,7 @@ def test_in_flight_run_returns_sensor_run_and_checks_status_set():
     rec = _fake_record("sensor-run")
     instance = _FakeInstance({"the_sensor": [rec]})
 
+    # trunk-ignore(pyright/reportArgumentType): duck-typed fake; only get_run_records is called
     result = in_flight_run(instance, "the_sensor", "the_nightly_schedule")
 
     assert result is rec
@@ -240,6 +241,7 @@ def test_in_flight_run_returns_schedule_run_when_only_schedule_live():
     rec = _fake_record("nightly-run")
     instance = _FakeInstance({"the_nightly_schedule": [rec]})
 
+    # trunk-ignore(pyright/reportArgumentType): duck-typed fake; only get_run_records is called
     result = in_flight_run(instance, "the_sensor", "the_nightly_schedule")
 
     assert result is rec
@@ -250,6 +252,7 @@ def test_in_flight_run_returns_schedule_run_when_only_schedule_live():
 def test_in_flight_run_none_when_neither_live():
     instance = _FakeInstance({})
 
+    # trunk-ignore(pyright/reportArgumentType): duck-typed fake; only get_run_records is called
     result = in_flight_run(instance, "the_sensor", "the_nightly_schedule")
 
     assert result is None
