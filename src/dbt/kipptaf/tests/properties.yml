@@ -225,6 +225,20 @@ data_tests:
           ref:
             name: int_assessments__resolved_section_enrollments
 
+  - name: fct_assessment_scores_enrollment_scoped__term_covers_assessment_date
+    description: >-
+      Asserts that each score's resolved reporting quarter contains the date the
+      score was administered or taken. Any resolution grain coarser than the
+      score row — through the section enrollment, or through the per-score-grain
+      anchor date in int_assessments__resolved_section_enrollments — assigns
+      quarters that do not cover the row's own date, which is the #4484 defect.
+      Failure rows name the score, its date, and the quarter it landed in.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: fct_assessment_scores_enrollment_scoped
+
   - name: int_collegeboard__ap_unpivot__crosswalk_resolves
     description: >-
       Returns one row per `stg_collegeboard__ap.ap_number_ap_id` that has no
