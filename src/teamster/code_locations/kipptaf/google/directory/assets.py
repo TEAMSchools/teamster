@@ -208,7 +208,13 @@ def google_directory_user_create(
             # Only add users whose creation succeeded — a failed create leaves
             # no account, so its member insert would fail with "resource not
             # found" and double-count the same student in the error check.
-            members_data = members_for_created_users(valid_users, create_errors)
+            # Users whose groupKey did not resolve are skipped and reported
+            # once, rather than once per user.
+            members_data, unresolved_group_errors = members_for_created_users(
+                valid_users, create_errors
+            )
+
+            errors.extend(unresolved_group_errors)
 
             if members_data:
                 members_errors = google_directory.batch_insert_members(members_data)
