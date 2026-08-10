@@ -123,8 +123,12 @@ wrote to dlt `resource_state`.
   load. That end-to-end path is still an open branch-deployment validation item
   (see the design spec's _Partially resolved risk_ section).
 - **Enable order matters.** The sensor selects any table with no stored
-  signature, so enabling it before an 04:00 full refresh has seeded baselines
-  makes the first tick select all 77 tables at once. Seed first, then enable.
+  signature, so enabling it before every table has a seeded baseline makes the
+  first tick select all 77 tables at once. The `0 4 * * *` schedule now only
+  seeds the two count-only tables (`co_teachers`, `login_history`) — it is no
+  longer a full-77-table refresh, so it cannot be relied on to seed the other 75
+  by itself. Seed all 77 with a manual launch of the Focus asset job first, then
+  enable the sensor.
 
 ## Testing Constraints
 

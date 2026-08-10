@@ -34,9 +34,15 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
   `probe` absent (04:00 schedule / manual launch) → probe the selection once
   BEFORE the load, then load it all unconditionally. `refresh` is the separate
   #4740 migration knob and is orthogonal to gating.
-- Tiering: `0 4 * * *` is the unconditional full refresh — the backstop for a
-  table whose `updated_at` the Focus app does not bump on an in-place edit. The
-  sensor covers everything between.
+- Tiering: `0 4 * * *` targets only the count-only tables (`co_teachers`,
+  `login_history` — derived from `cursor_column: null` in `config/focus.yaml`,
+  not hardcoded) and is their unconditional daily reload, because a count-only
+  probe can't see an in-place edit that leaves row count unchanged. The other 75
+  tables' `updated_at` cursor is verified reliable (99.9%+ of rows on core
+  tables show `updated_at != created_at` with a current max, measured
+  2026-08-10), so the intraday sensor's probe alone gates them — they get no
+  separate unconditional reload. The sensor still probes all 77 tables every 15
+  minutes regardless of tier.
 - `cursor_column` is `updated_at` for every Focus table except `co_teachers` and
   `login_history`, which are count-only. A new table must declare one in
   `config/focus.yaml`; the code location reads `a["cursor_column"]`, so omitting

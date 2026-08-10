@@ -11,17 +11,17 @@ GCS bucket: `teamster-kippmiami`
 
 ## Active Integrations
 
-| Module      | Type          | Trigger                                                     |
-| ----------- | ------------- | ----------------------------------------------------------- |
-| `dbt`       | dbt assets    | `AutomationConditionSensor`                                 |
-| `deanslist` | API assets    | schedule (nightly)                                          |
-| `finalsite` | API + SFTP    | schedule (contacts 04:00 + 12:00 ET) + couchdrop sensor     |
-| `fldoe`     | SFTP assets   | `AutomationConditionSensor`                                 |
-| `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                         |
-| `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                       |
-| `extracts`  | BigQuery→SFTP | schedule (Focus delivery 12:45 ET)                          |
-| `couchdrop` | sensor only   | sensor (Google Drive watcher)                               |
-| `dlt/focus` | dlt assets    | schedule (04:00 ET full refresh) + intraday sensor (15 min) |
+| Module      | Type          | Trigger                                                                |
+| ----------- | ------------- | ---------------------------------------------------------------------- |
+| `dbt`       | dbt assets    | `AutomationConditionSensor`                                            |
+| `deanslist` | API assets    | schedule (nightly)                                                     |
+| `finalsite` | API + SFTP    | schedule (contacts 04:00 + 12:00 ET) + couchdrop sensor                |
+| `fldoe`     | SFTP assets   | `AutomationConditionSensor`                                            |
+| `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                    |
+| `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                                  |
+| `extracts`  | BigQuery→SFTP | schedule (Focus delivery 12:45 ET)                                     |
+| `couchdrop` | sensor only   | sensor (Google Drive watcher)                                          |
+| `dlt/focus` | dlt assets    | schedule (04:00 ET, count-only tables only) + intraday sensor (15 min) |
 
 ## Midday Focus import cycle
 
@@ -61,19 +61,30 @@ Constraints to preserve when touching any of these:
   minutes and loads only what changed, so that snapshot is now refreshed within
   ~15 minutes of any change instead of at fixed clock times — this makes the
   dependency **easier** to satisfy than the old three-cron setup, not harder.
-  The `0 4 * * *` schedule is the unconditional overnight backstop (catches
-  anything the sensor's cursor-column probe can't see). The safe rule for ops is
-  unchanged and was never a clock time: do not re-run the delivery unless a
-  Focus sync has run SINCE the last import.
+  The `0 4 * * *` schedule is the unconditional overnight backstop for only the
+  count-only tables (`cursor_column: null` in `config/focus.yaml` —
+  `co_teachers` and `login_history` as of writing), which is the set the
+  sensor's count-only probe can't fully see an in-place edit on. The other 75
+  `updated_at`-tracked tables have NO unconditional reload anymore — if one of
+  them is ever suspected of drifting (a stuck signature, a bad cursor), fix it
+  with a manual launch of the Focus asset job for that table, not by waiting for
+  a nightly pass that no longer touches it. The safe rule for ops is unchanged
+  and was never a clock time: do not re-run the delivery unless a Focus sync has
+  run SINCE the last import.
 - **First diagnostic when midday Focus data looks stale: check whether the
   intraday sensor is running.** It ships with `defaultStatus` STOPPED and must
   be enabled by hand after the 04:00 schedule seeds baselines (see
-  `libraries/dlt/focus/CLAUDE.md`). A stopped sensor silently reverts Focus
-  freshness to once a day — this is now the first thing to check, where "did the
-  12:00 cron fire?" used to be.
-- **Keep the 04:00 runs.** Miami is Focus-sourced network-wide, and FRESH's
-  Tableau extract refreshes at 05:00 — losing the overnight pull leaves every
-  morning dashboard on day-old Miami data.
+  `libraries/dlt/focus/CLAUDE.md`). A stopped sensor now silently freezes every
+  `updated_at`-tracked table — the 04:00 tier no longer reloads them as a daily
+  fallback, only the two count-only tables — so this is the first thing to
+  check, where "did the 12:00 cron fire?" used to be.
+- **Keep the 04:00 runs**, but note what they cover changed: the tier now
+  reloads only the count-only tables (`co_teachers`, `login_history`), not a
+  full refresh. FRESH's Miami enrollment/attendance rows and the rest of
+  Focus-sourced Miami data come from `updated_at`-tracked tables the intraday
+  sensor keeps fresh continuously — losing the 04:00 tier would not put those on
+  day-old data. It would delay picking up an in-place edit to a count-only table
+  by up to a day.
 
 `kippmiami__extracts__focus__asset_job_schedule` also has to be STARTED in the
 Dagster+ UI; its `defaultStatus` is STOPPED and it had never run in prod as of

@@ -72,12 +72,33 @@ schema archaeology.
 
 ## Decisions
 
-| Decision            | Choice                                                                                             | Why                                                                                                                                                                                |
-| ------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Intraday trigger    | Sensor at 900s replaces the 12:00 and 14:00 crons; `0 4 * * *` stays an unconditional full refresh | PowerSchool parity. The 04:00 tier is the backstop for any table whose `updated_at` the Focus app does not reliably bump.                                                          |
-| Asset granularity   | One multi-asset over all 77 tables                                                                 | Template parity, and it removes a latent state race (below).                                                                                                                       |
-| `autodetect_schema` | Leave `True`                                                                                       | Load-bearing with `loader_file_format="parquet"` for the 0-row truncate path (#4733); flipping it against 77 populated tables invites schema-migration failures. Out of scope.     |
-| Shared module scope | Pure helpers only                                                                                  | PowerSchool needs an SSH tunnel plus an Oracle resource; Focus needs a plain Postgres URL. Two consumers with different connection lifecycles do not justify an indirection layer. |
+| Decision            | Choice                                                                                                                                                              | Why                                                                                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Intraday trigger    | Sensor at 900s replaces the 12:00 and 14:00 crons; `0 4 * * *` narrowed to an unconditional reload of only the count-only tables (see _2026-08-10 amendment_ below) | PowerSchool parity. The 04:00 tier is the backstop for any table whose `updated_at` the Focus app does not reliably bump.                                                          |
+| Asset granularity   | One multi-asset over all 77 tables                                                                                                                                  | Template parity, and it removes a latent state race (below).                                                                                                                       |
+| `autodetect_schema` | Leave `True`                                                                                                                                                        | Load-bearing with `loader_file_format="parquet"` for the 0-row truncate path (#4733); flipping it against 77 populated tables invites schema-migration failures. Out of scope.     |
+| Shared module scope | Pure helpers only                                                                                                                                                   | PowerSchool needs an SSH tunnel plus an Oracle resource; Focus needs a plain Postgres URL. Two consumers with different connection lifecycles do not justify an indirection layer. |
+
+### 2026-08-10 amendment: narrow the 04:00 tier to the count-only tables
+
+This design was reviewed and approved with the "Intraday trigger" row above
+reading `0 4 * * *` stays an unconditional full refresh of all 77 tables. After
+approval, on the same day, that row was narrowed: the 04:00 schedule now targets
+only the two `cursor_column: null` tables (`co_teachers`, `login_history`),
+derived from `config/focus.yaml` rather than hardcoded.
+
+Motivation: gathered evidence that Focus genuinely maintains `updated_at` —
+99.9% of `students` rows and 99.5% of `student_enrollment` rows have
+`updated_at != created_at`, with a current max (measured 2026-08-10). The cursor
+probe is therefore reliable for the 75 `updated_at`-tracked tables, so a daily
+full reload of all 77 was mostly redundant; a genuine gap remains only for the 2
+count-only tables, whose count-only signature can't see an in-place edit that
+leaves row count unchanged.
+
+The sensor's coverage is unchanged by this amendment: it still probes all 77
+tables every 15 minutes and still gates adds/removes on the count-only tables
+just as reliably as before — the narrowing only removes the now-redundant daily
+full reload for the 75 cursor-tracked tables.
 
 ### Freshness effect on the 12:45 delivery
 
