@@ -100,16 +100,22 @@ models:
       - name: es_attended
         data_type: string
         description: >-
-          Most recent KIPP elementary school the student attended before their
-          current school. Blank while the student is enrolled at an elementary
-          school. Narrower than the identically named column on
-          int_extracts__student_enrollments, which also picks up the student's
-          current school.
+          Most recent KIPP school the student attended while in grades K through
+          4. Blank while the student is currently in grades K through 4, so the
+          column reads as prior history rather than the current placement.
+          Banded by the grade the student was enrolled in rather than by the
+          school's designated level, so a school serving grades outside its
+          designation is attributed to the right band. Distinct from the
+          identically named column on int_extracts__student_enrollments, which
+          bands by school level and includes the student's current school.
       - name: ms_attended
         data_type: string
         description: >-
-          Most recent KIPP middle school the student attended before their
-          current school. Blank while the student is enrolled at an elementary
-          or middle school. Narrower than the identically named column on
-          int_extracts__student_enrollments, which also picks up the student's
-          current school.
+          Most recent KIPP school the student attended while in grades 5 through
+          8. Blank while the student is currently in grade 8 or below, so the
+          column reads as prior history rather than the current placement.
+          Banded by the grade the student was enrolled in rather than by the
+          school's designated level, so a school serving grades outside its
+          designation is attributed to the right band. Distinct from the
+          identically named column on int_extracts__student_enrollments, which
+          bands by school level and includes the student's current school.
