@@ -3,7 +3,7 @@ with
     -- student's current standing copied onto every row, so the most recent
     -- stint wins. rn_all is computed in int_focus__student_enrollment.
     current_stint as (
-        select enroll_status, network_student_number as student_number,
+        select student_number, enroll_status,
         from {{ ref("int_focus__student_enrollments") }}
         where rn_all = 1
     ),
@@ -39,7 +39,11 @@ with
             -- an economic-disadvantage proxy with no signal in it.
             cast(null as string) as lunchstatus,
         from {{ ref("int_focus__students") }} as s
-        left join current_stint as e on s.student_number = e.student_number
+        -- Joined on Focus's own prefixed id. Both sides are Focus-native, so
+        -- stripping the 8400 prefix on each just to match them back up is a
+        -- round trip -- and it made the join depend on the unprefix rule
+        -- holding, which is not a property this join needs.
+        left join current_stint as e on s.student_id = e.student_number
     ),
 
     -- Focus is Miami's system of record for student identity, so the frozen
