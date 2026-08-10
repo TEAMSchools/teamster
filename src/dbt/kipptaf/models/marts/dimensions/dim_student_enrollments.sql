@@ -23,7 +23,7 @@ select
     enr.is_retained_year,
     enr.year_in_network,
 
-from {{ ref("int_powerschool__student_enrollment_union") }} as enr
+from {{ ref("int_students__student_enrollment_union") }} as enr
 left join
     {{ ref("int_students__schools") }} as sch
     on enr.schoolid = sch.school_number

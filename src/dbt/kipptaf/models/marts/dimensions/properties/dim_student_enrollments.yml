@@ -12,7 +12,7 @@ models:
         description: >-
           Surrogate key derived from student_number, _dbt_source_project,
           academic_year, and entrydate. Primary key for this dimension — matches
-          the uniqueness grain on int_powerschool__student_enrollment_union.
+          the uniqueness grain on int_students__student_enrollment_union.
         constraints:
           - type: primary_key
             warn_unsupported: false

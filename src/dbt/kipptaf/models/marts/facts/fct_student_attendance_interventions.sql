@@ -67,7 +67,7 @@ select
     ai.is_ca_exception as is_chronic_absence_exception,
 from {{ ref("int_students__attendance_interventions") }} as ai
 inner join
-    {{ ref("int_powerschool__student_enrollment_union") }} as enr
+    {{ ref("int_students__student_enrollment_union") }} as enr
     on ai.student_number = enr.student_number
     and ai.academic_year = enr.academic_year
     and ai._dbt_source_project = enr._dbt_source_project
