@@ -33,6 +33,9 @@ contacts = build_finalsite_asset(
     asset_name="contacts",
     schema=CONTACTS_SCHEMA,
     params={"includes": "contacts.relationships"},
+    # One partition per pull date. The partition key is the incremental
+    # watermark (see get_finalsite_since); start_date is the cutover date, so
+    # Dagster shows no backlog of partitions that predate the migration.
     partitions_def=DailyPartitionsDefinition(
         start_date="2026-08-11", timezone=str(LOCAL_TIMEZONE)
     ),
