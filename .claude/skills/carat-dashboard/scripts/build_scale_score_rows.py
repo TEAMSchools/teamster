@@ -41,15 +41,22 @@ SCALE_RANGE = {
     "ACT": (1, 36),
 }
 
-# (assessment_id, Subject) pairs whose published conversion table is genuinely
-# non-monotonic. The monotonic check is a real guard against column misalignment
-# during parsing, so it stays fatal by default -- but College Board does publish
-# tables that dip, and those must be acknowledged here rather than bypassed.
+# Corrections to a published conversion table, as
+# (assessment_id, Subject) -> {raw_score: corrected_scale_score}.
 #
-# 226308: PSAT 8/9 practice test #1 Reading and Writing, raw 65 -> 710 but
-# raw 66 -> 700 (verified against the rendered PDF, not just extracted text).
-ACKNOWLEDGED_NON_MONOTONIC = {
-    (226308, "Reading and Writing"),
+# College Board does publish tables that dip. The monotonic check below is a real
+# guard against column misalignment during parsing, so it stays fatal -- a source
+# anomaly gets a correction here, where it is visible and reviewable, rather than
+# an exemption that lets the guard go quiet. Corrections are reported on stdout.
+#
+# 226308: PSAT 8/9 practice test #1 Reading and Writing dips at the top -- raw 65
+# converts to 710 but raw 66 to 700, so a perfect section would score ten points
+# below missing one. Verified against the rendered PDF, not just extracted text.
+# Corrected to 720, which is both that row's own UPPER value and the section
+# maximum. This deviates from the published table, and no downstream check can
+# detect that -- it is recorded in SKILL.md and the CARAT reference doc.
+SCALE_CORRECTIONS = {
+    (226308, "Reading and Writing"): {66: 720},
 }
 
 # One entry per assessment:
@@ -178,9 +185,27 @@ def main() -> None:
             failed = True
             continue
 
-        collapsed = collapse(rows[key])
+        mapping = dict(rows[key])
+        for raw, corrected in SCALE_CORRECTIONS.get((aid, subject), {}).items():
+            if raw not in mapping:
+                sys.exit(
+                    f"{aid} {subject}: SCALE_CORRECTIONS names raw {raw}, which "
+                    "is not in the parsed table -- stale correction or wrong paste"
+                )
+            if mapping[raw] == corrected:
+                sys.exit(
+                    f"{aid} {subject}: SCALE_CORRECTIONS sets raw {raw} to "
+                    f"{corrected}, which the source already says -- stale entry"
+                )
+            notes.append(
+                f"{aid} {subject}: CORRECTED raw {raw} from {mapping[raw]} to "
+                f"{corrected} (published-source anomaly, see SCALE_CORRECTIONS)"
+            )
+            mapping[raw] = corrected
+
+        collapsed = collapse(mapping)
         scales = [s for _, _, s in collapsed]
-        raws = sorted(rows[key])
+        raws = sorted(mapping)
 
         if test_type not in SCALE_RANGE:
             sys.exit(f"{aid}: no SCALE_RANGE entry for Test_Type {test_type!r}")
@@ -189,16 +214,12 @@ def main() -> None:
         problems = []
         if raws[0] != 0:
             problems.append(f"starts at raw {raws[0]}, not 0")
-        if [r for r in range(raws[0], raws[-1] + 1) if r not in rows[key]]:
+        if [r for r in range(raws[0], raws[-1] + 1) if r not in mapping]:
             problems.append("GAPS in raw coverage")
+        # Stays fatal. A dip that is genuinely in the source belongs in
+        # SCALE_CORRECTIONS, which resolves it before this check runs.
         if scales != sorted(scales):
-            if (aid, subject) in ACKNOWLEDGED_NON_MONOTONIC:
-                notes.append(
-                    f"{aid} {subject}: non-monotonic scale, ACKNOWLEDGED as a "
-                    "published-source anomaly (see ACKNOWLEDGED_NON_MONOTONIC)"
-                )
-            else:
-                problems.append("scale not monotonic non-decreasing")
+            problems.append("scale not monotonic non-decreasing")
         if min(scales) < lo_bound or max(scales) > hi_bound:
             problems.append(
                 f"scale outside {lo_bound}-{hi_bound} ({min(scales)}-{max(scales)})"

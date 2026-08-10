@@ -236,13 +236,32 @@ Run _Procedure: Audit sheet rows_, below. Report the results to the user.
 
 ## Exception: PSAT 8/9 and PSAT 10 use official College Board tables
 
-**Status: partially specified.** The conversion tables are understood; the
-`Assessment_ID` values do not exist yet, so no rows can be finalized. Finish
-this section when the assessments are created in Illuminate.
+**Status: shipped for SY26-27.** 181 rows entered and audited clean (every
+digest matches source). Use these as the format precedent:
+
+| `Assessment_ID` | `Test_Type` | `Administration_Round` | `Subject`           | `Grade_Level` | Rows | Raw  | Scale   |
+| --------------- | ----------- | ---------------------- | ------------------- | ------------- | ---- | ---- | ------- |
+| 226308          | `PSAT 8/9`  | `PSAT891`              | Reading and Writing | 9             | 50   | 0-66 | 120-720 |
+| 226309          | `PSAT 8/9`  | `PSAT891`              | Mathematics         | 9             | 42   | 0-54 | 120-690 |
+| 226310          | `PSAT10`    | `PSAT101`              | Reading and Writing | 10            | 49   | 0-66 | 160-760 |
+| 226311          | `PSAT10`    | `PSAT101`              | Mathematics         | 10            | 40   | 0-54 | 160-760 |
+
+`Administration_Round` has no underscore and keeps a trailing `1` — user's call,
+so do not "normalize" it. The `1` leaves room for a second practice
+administration in the same grade and year, which would otherwise sum into one
+bogus total (see the BOY/MOY warning above).
+
+**Outstanding verification on 226310 / 226311.** Illuminate syncs once nightly,
+and these two were created after that run, so at entry time they were absent
+from the warehouse — the question-count coverage check in Step 3 could not run,
+and which ID holds which subject came from the user rather than from `title`.
+226308 / 226309 did check out (66 and 54, matching the guide exactly). Confirm
+226310 has 66 questions and 226311 has 54 once they land; a mismatch means the
+wrong practice form or swapped subjects, and no other check will catch it.
 
 PSAT 8/9 and PSAT 10 do not follow the practice-SAT path above. They use College
-Board's **official** raw-score conversion tables, which differ in three ways
-that break assumptions elsewhere in this skill.
+Board's **official** raw-score conversion tables, which differ in four ways that
+break assumptions elsewhere in this skill.
 
 **1. The source is a PDF, not an Excel paste. Ask for the PDF link.**
 
@@ -256,21 +275,39 @@ The guides are public and predictably named:
 https://satsuite.collegeboard.org/media/pdf/psat-8-9-practice-test-1-scoring-guide.pdf
 ```
 
-Download it and extract the table programmatically. The conversion table is on
-**page 5** (index 4); page 3 carries the scale definitions:
+Download it and extract the table programmatically. **The page index differs per
+guide** — PSAT 8/9 puts the conversion table on page 5 (index 4), PSAT/NMSQT on
+page 6 (index 5). Locate it rather than assuming; the page carrying the scale
+definitions is two before it.
+
+**Extract by word COORDINATES, not `extract_text()`.** The table is laid out as
+two side-by-side column-blocks (raws 0-33 left, 34-66 right). Flat text
+extraction interleaves them, which produced a table that looked plausible and
+was wrong — it manufactured phantom non-monotonic rows around raw 56 that do not
+exist in the PDF. Group words into visual rows by `top`, split each row on an
+x-coordinate threshold (~300 on a 612pt-wide page), then read each block
+separately:
 
 ```bash
 curl -sSL -o guide.pdf "<url>"
-uv run --with pypdf python -c "
-from pypdf import PdfReader
-print(PdfReader('guide.pdf').pages[4].extract_text())
+uv run --with pdfplumber python -c "
+import pdfplumber
+with pdfplumber.open('guide.pdf') as pdf:
+    for w in pdf.pages[4].extract_words():
+        if w['text'].strip().isdigit():
+            print(w['text'], round(w['x0']), round(w['top']))
 "
 ```
 
-Extracted rows read `raw rw_lower rw_upper math_lower math_upper` for raws 0-54,
-then `raw rw_lower rw_upper` for raws 55-66 where Math has ended. Parse by
-keeping lines whose tokens are all digits, then branching on token count — 5
-tokens carry both sections, 3 tokens carry Reading and Writing only.
+Within a block, rows read `raw rw_lower rw_upper math_lower math_upper` while
+both sections are live, then `raw rw_lower rw_upper` past Math's maximum. Branch
+on token count — 5 tokens carry both sections, 3 tokens carry Reading and
+Writing only.
+
+**Confirm anything surprising by rendering the region as an image** and reading
+it. `page.crop(box).to_image(resolution=300).save(...)` settles a
+source-anomaly-versus-parser-bug question in one step, and two text parses
+agreeing is not proof — they can share the same layout misreading.
 
 **If a screenshot is all that exists**, transcribe it twice independently — a
 second reader working blind from the same image — and diff the two. A
@@ -287,14 +324,24 @@ the PDF, which proves the method can work and not that it can be trusted.
 that share the same `LOWER` value — the same collapse rule as the practice SAT.
 Ignore `UPPER` entirely.
 
-**3. The scale range is 120-720 per section, not 200-800.** This is the change
-with teeth. Both the audit's expectations and
-`scripts/build_scale_score_rows.py`'s guard
-(`min(scales) < 200 or max(scales) > 800`) are hard-coded to the SAT range and
-will reject valid PSAT rows. **Pending code change:** parameterize the range by
-test type before running the generator for PSAT. The failure is loud rather than
-silent, so it will not corrupt data — it will just block confusingly until
-fixed.
+**3. The two PSATs are on DIFFERENT scales.** This is the one with teeth:
+
+| Test                | Section scale | Total    |
+| ------------------- | ------------- | -------- |
+| SAT                 | 200-800       | 400-1600 |
+| PSAT 8/9            | 120-720       | 240-1440 |
+| PSAT 10, PSAT/NMSQT | 160-760       | 320-1520 |
+
+Do not carry one PSAT bound across both — a PSAT 10 row checked against 120-720
+is 40 points out of range at each end and still passes. `SCALE_RANGE` in
+`scripts/build_scale_score_rows.py` is keyed by `Test_Type` for exactly this;
+add an entry rather than widening one.
+
+**PSAT 10 has no separate scoring guide.** College Board publishes one practice
+form for PSAT/NMSQT and PSAT 10 (same 160-760 scale), so the PSAT/NMSQT guide is
+the source for PSAT 10 rows. Nothing in the document says "PSAT 10" — say so
+plainly when reporting, and confirm the Illuminate assessment was built from
+that same form before trusting the conversion.
 
 **`Test_Type` values**: use `PSAT 8/9` and `PSAT10`. These match the `scope`
 values already in `int_assessments__college_assessment` (verified: `PSAT 8/9`,
@@ -321,20 +368,36 @@ still applies.
 assessment corresponds to and fetch that test's PDF — the same PT1/PT2 mapping
 the practice SAT needs. Never reuse one test's table for another.
 
-**A real typo in Practice Test 1's Reading and Writing table.** Raw 65 maps to
-710 and raw 66 — a perfect raw score — maps to 700, so a student answering
-everything correctly reads 10 points below one who missed a question. Confirmed
-against the PDF, so it is College Board's error, not a transcription slip. Treat
-it as a typo: the expected correction is **720** for raw 66, which is both the
-section maximum and that row's own `UPPER` value. Not yet formally decided —
-confirm before entry, and record the deviation wherever the rows are documented,
-since a corrected value diverges from the published table and no automated check
-can detect that.
+**4. A real typo in PSAT 8/9 Practice Test 1's Reading and Writing table, and
+the one sanctioned deviation from a published table.** Raw 65 maps to 710 and
+raw 66 — a perfect raw score — maps to 700, so a student answering everything
+correctly would read 10 points below one who missed a question. Confirmed
+against the rendered PDF, so it is College Board's error, not a transcription
+slip.
+
+**Decided and shipped: raw 66 is entered as 720** for assessment 226308, which
+is both the section maximum and that row's own `UPPER` value. This is the only
+place the sheet knowingly diverges from a published table.
+
+The correction lives in `SCALE_CORRECTIONS` in the generator, not as an
+exemption from the monotonic check — the check stays fatal, because its real job
+is catching column misalignment during parsing, and a quiet exemption would
+retire a working guard to accommodate one bad cell. The generator prints every
+correction it applies and aborts on a stale entry (one naming a raw score that
+is absent, or one the source now already agrees with).
+
+**No downstream check can detect a corrected value**, which is why it is
+recorded here, in the reference doc, and in the generator's comments.
 
 There is a second inversion in `UPPER` at raw 56-57 that does not affect us.
-Both exist because, per page 3, the paper scoring method is "a simplified (and
-therefore slightly less precise) version of the one used in the actual test."
-Math has no inversion.
+Both exist because, per the guide's own scale-definition page, the paper scoring
+method is "a simplified (and therefore slightly less precise) version of the one
+used in the actual test." Math has no inversion.
+
+**PSAT 8/9 cannot reach its scale maximum**, typo aside: Reading and Writing
+tops out at 710 and Math at 690, so a perfect raw score converts to 1400 (1410
+with the correction), not 1440. Published behavior, not an entry error. Both
+PSAT 10 sections do reach 760, so PSAT 10 does reach 1520.
 
 **Consequence of `LOWER` specific to PSAT**: these bands are far wider than the
 practice SAT's — mean width 54 points for Reading and Writing and 51 for Math,

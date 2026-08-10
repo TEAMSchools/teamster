@@ -107,6 +107,35 @@ shifting a reported average.
 out of any grad-year-grouped view silently rather than appearing in an unknown
 bucket.
 
+## Recorded deviation — one corrected scale score
+
+**The practice scale-score sheet knowingly diverges from its published source in
+exactly one cell**, and no automated check can detect it, so it is recorded
+here.
+
+College Board's PSAT 8/9 Practice Test 1 scoring guide is non-monotonic at the
+top of the Reading and Writing table: raw 65 converts to 710, but raw 66 — a
+perfect section — converts to 700. A student answering every question correctly
+would score ten points below one who missed a question. Verified against the
+rendered PDF, so it is an error in the published table rather than a
+transcription slip.
+
+For assessment 226308 (SY26-27 PSAT 8/9 Reading and Writing), **raw 66 is
+entered as 720**, which is both that row's own `UPPER` value and the section
+maximum.
+
+Two consequences worth knowing when reconciling a score against the guide:
+
+- A PSAT 8/9 Reading and Writing score of 720 is ours; the guide says 700.
+- Setting that cell aside, PSAT 8/9 cannot reach its scale maximum anyway —
+  Reading and Writing tops out at 710 and Math at 690, so a perfect raw score
+  converts to 1410 rather than 1440. That is published behavior, not an entry
+  error. PSAT 10 does reach 1520.
+
+Scale scores throughout the sheet come from the guides' `LOWER` column, the
+established convention, so reported scores sit at the bottom of College Board's
+published range rather than mid-range.
+
 ## Known issue — duplicate kippadb test records
 
 **A long-standing source problem, not a modeling bug.** It is recorded here so
