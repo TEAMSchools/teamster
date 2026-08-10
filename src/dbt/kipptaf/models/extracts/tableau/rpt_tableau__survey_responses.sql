@@ -14,6 +14,8 @@ select
     sr.answer_value,
     sr.is_open_ended,
     sr.round_rn,
+    sr.rated_department_code,
+    sr.rated_department_name,
 
     eh.employee_number,
     eh.formatted_name as respondent_name,

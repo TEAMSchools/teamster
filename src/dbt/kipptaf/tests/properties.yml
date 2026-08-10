@@ -454,3 +454,24 @@ data_tests:
         dagster:
           ref:
             name: rpt_parentsquare__students
+
+  - name: stg_google_sheets__google_forms__form_items_extension__one_department_per_abbreviation
+    description: >-
+      The sheet's grain is (form_id, item_id), so the same question abbreviation
+      recurs across survey forms and years -- dozens of abbreviations sit on
+      more than one row. int_surveys__survey_responses projects the mapping to
+      one row per abbreviation with distinct before joining it to response rows,
+      which is a grain projection only while every row sharing an abbreviation
+      carries the same (rated_department_code, rated_department_name) pair. The
+      pair is what distinct keys on, so drift in EITHER column breaks the
+      projection -- a display-text tweak or re-casing applied to one occurrence
+      of an abbreviation does it just as surely as a wrong code. Distinct then
+      duplicates instead of deduplicating, fanning out survey responses and
+      breaking the response-grain uniqueness test downstream. This test fails
+      loudly on any abbreviation carrying more than one distinct pair.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__google_forms__form_items_extension
