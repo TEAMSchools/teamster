@@ -14,10 +14,6 @@ cubes:
         sql: "{course_sections.course_section_key} = {CUBE}.course_section_key"
         relationship: many_to_one
 
-      - name: terms
-        sql: "{terms.term_key} = {CUBE}.term_key"
-        relationship: many_to_one
-
       # Lead teacher name/attributes. many_to_one — one lead per enrollment
       # after dbt resolution — so no fan-out. Joins the staff_lead_teacher
       # role-play cube (extends staff) so the lead-teacher members can't collide
@@ -47,11 +43,6 @@ cubes:
       - name: course_section_key
         description: FK to course_sections.
         sql: course_section_key
-        type: string
-
-      - name: term_key
-        description: FK to terms.
-        sql: term_key
         type: string
 
       - name: academic_year
