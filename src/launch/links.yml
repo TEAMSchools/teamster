@@ -18,11 +18,10 @@
   url: https://tableau.kipp.org/t/KIPPNJ/views/AttendanceDashboard/Trends?:embed=y
   description:
     Monitor ADA, Chronic Absenteeism, Completion Status of Chronic Absenteeism
-    and interventions and Daily Attendance Calls
-  # TODO(description): source site had conflicting wording; verify
+    and interventions, and Daily Attendance Calls
   audiences: [leaders, ops, region]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: certification_dashboard
   name: Certification Dashboard
@@ -32,7 +31,7 @@
     logging, and PRAXIS intensive attendance.
   audiences: [leaders, region]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: coaching_conversation_tool
   name: Coaching Conversation Tool
@@ -40,20 +39,19 @@
   description:
     View performance management results for yourself and those you coach from
     2018 to present.
-  # TODO(description): source site had conflicting wording; verify
   audiences: [leaders, teachers]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: college_admission_readiness_assessment_tracker
   name: College Admission Readiness Assessment Tracker (CARAT)
   url: https://tableau.kipp.org/t/KIPPNJ/views/CollegeAdmissionReadinessAssessmentsTrackerCARAT/LandingPage?:embed=y
   description:
     "Tracking of any assessment that helps our students go to and through
-    college: ACT, SAT, PSAT10, PSAT NMSQT, PSAT 8/9, and AP."
-  audiences: [region]
+    college: ACT, SAT, PSAT10, PSAT NMSQT, PSAT 8/9, Dual Enrollment and AP."
+  audiences: [region, leaders, teacher]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: content_team
   name: Content Team (MIA)
@@ -70,7 +68,7 @@
   description: Audits that alert on missing student info and assessment scores.
   audiences: [ops, teachers]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: ddi_suite
   name: DDI Suite
@@ -80,7 +78,7 @@
     mastery.
   audiences: [leaders, region, teachers]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: early_literacy_tool
   name: Early Literacy Tool (ELIT)
@@ -112,7 +110,6 @@
   audiences: [region]
   system: tableau
   guide: https://teamschools.zendesk.com/hc/en-us/articles/16753644522391#h_01H2QN8AEA0WXWYWJJBTVXF78H
-  # also listed on the source site as: Finance & Accounting Tools & Resources
   status: needs-review
 
 - id: fresh_dashboard
@@ -121,12 +118,14 @@
   description: Track SRE's efforts for recruitment and registration.
   audiences: [ops]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: gpa_roster_camden
   name: "GPA Roster: Camden"
   url: https://docs.google.com/spreadsheets/d/1qM6DQk_mqh4x_rI5YVQyZdYbfDxzOaLGyrqjySlVv2Y/edit?gid=0#gid=0
-  description: ""
+  description:
+    Provides cummulative GPA along with basic identification information for
+    students in the Camden region for grade levels 5 through 12.
   # TODO(description): no description found on the source site
   audiences: [region, teachers]
   system: google-sheet
@@ -150,7 +149,9 @@
 - id: gpa_roster_newark
   name: "GPA Roster: Newark"
   url: https://docs.google.com/spreadsheets/d/12RHEUde41uR91Fp1aNrpImxhg72kOjPAQu7xLJ90evc/edit?gid=0#gid=0
-  description: ""
+  description:
+    Provides cummulative GPA along with basic identification information for
+    students in the Newark region for grade levels 5 through 12.
   # TODO(description): no description found on the source site
   audiences: [region, teachers]
   system: google-sheet
@@ -165,7 +166,7 @@
   description: GPA, Gradebook Audit, ES Teacher/Monitor Audit.
   audiences: [region, teachers]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: grow_dashboard
   name: Grow Dashboard
@@ -177,7 +178,7 @@
   audiences: [leaders, region]
   system: tableau
   guide: https://teamschools.zendesk.com/hc/en-us/articles/360008681374-Performance-Management-Teacher-Goals-Coaching-Excellent-Teaching-Rubric-ETR-Observations-SchoolMint-Grow
-  status: needs-review
+  status: verified
 
 - id: high_school_early_warning
   name: High School Early Warning
@@ -208,7 +209,9 @@
 - id: i_ready_apm_tool
   name: i-Ready APM Tool
   url: https://tableau.kipp.org/t/KIPPNJ/views/APMDashboard/i-Ready?%3Aembed=y&%3AshowAppBanner=false&%3Adisplay_count=n&%3AshowVizHome=n&%3Aorigin=viz_share_link
-  description: ""
+  description:
+    i-Ready lesson data per week by school, iReady Diagnostic Data with student
+    State Assesment scores
   # TODO(description): no description found on the source site
   audiences: [leaders, region, teachers]
   system: tableau
