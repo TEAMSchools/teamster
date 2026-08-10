@@ -5,6 +5,9 @@ from dlt.common.configuration import resolve_configuration
 from dlt.common.configuration.specs import ConnectionStringCredentials
 
 from teamster.code_locations.kippmiami import CODE_LOCATION
+from teamster.code_locations.kippmiami.dlt.focus.schedules import (
+    focus_dlt_daily_asset_job_schedule,
+)
 from teamster.libraries.dlt.focus.sensors import build_focus_dlt_intraday_sensor
 from teamster.libraries.dlt.probe import ProbeTable
 
@@ -22,10 +25,9 @@ sensors = [
             for a in yaml.safe_load(config_file.read_text())["assets"]
         ],
         sql_database_credentials=sql_database_credentials,
-        # Must match the schedule's `name` exactly — the in-flight guard reads
-        # the `dagster/schedule_name` run tag.
-        nightly_schedule_name=(
-            f"{CODE_LOCATION}__dlt__focus__daily_asset_job_schedule"
-        ),
+        # References the real schedule object rather than retyping its name --
+        # a drift between the two would make the in-flight guard (which reads
+        # the `dagster/schedule_name` run tag) stop matching and double-launch.
+        nightly_schedule_name=focus_dlt_daily_asset_job_schedule.name,
     )
 ]

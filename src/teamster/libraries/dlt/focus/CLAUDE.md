@@ -1,9 +1,10 @@
 # CLAUDE.md — `teamster/libraries/dlt/focus/`
 
-Loads tables from the **Focus SIS** PostgreSQL database directly to BigQuery
-using dlt's `sql_database` source with PyArrow backend. Factory signature and
-asset keys: see `../CLAUDE.md`. All tables come from the `public` schema (Focus
-default).
+Loads tables from the **Focus SIS** PostgreSQL database directly to BigQuery by
+driving dlt's `table_rows` generator directly (not the `sql_database` source),
+with the PyArrow backend, probe-gated same as `powerschool/`. Factory signature
+and asset keys: see `../CLAUDE.md`. All tables come from the `public` schema
+(Focus default).
 
 ## Differences from Illuminate
 
@@ -114,7 +115,7 @@ wrote to dlt `resource_state`.
   its first load, so the empty-table materialization runs once, not every tick.
   Verified: dlt does commit resource_state for a table that yields only
   reflection hints plus the materialize marker — pinned by
-  tests/libraries/test_dlt_focus_signature_state.py::test_empty_table_persists_its_signature,
+  `tests/libraries/test_dlt_focus_signature_state.py::test_empty_table_persists_its_signature`,
   so a dlt upgrade that changes it fails CI.
 - **Enable order matters.** The sensor selects any table with no stored
   signature, so enabling it before an 04:00 full refresh has seeded baselines

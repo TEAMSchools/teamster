@@ -11,9 +11,10 @@ config = yaml.safe_load(config_file.read_text())
 asset_key_prefix = f"{CODE_LOCATION}/dlt/focus"
 
 focus_dlt_daily_asset_job_schedule = ScheduleDefinition(
-    # "daily" is now three times a day. The name is kept as-is on purpose --
-    # renaming mints a NEW Dagster+ schedule object and abandons this one's
-    # status and tick history.
+    # The name says "daily" but this tier now runs once a day, at 04:00 -- the
+    # 12:00 and 14:00 crons moved to the intraday sensor below. The name is
+    # kept as-is on purpose -- renaming mints a NEW Dagster+ schedule object
+    # and abandons this one's status and tick history.
     name=f"{CODE_LOCATION}__dlt__focus__daily_asset_job_schedule",
     # 04:00 keeps the pre-dawn pull that every Focus-derived model depends on --
     # Miami enrollment, attendance, and the FRESH scaffold's Miami rows all read
@@ -33,6 +34,16 @@ focus_dlt_daily_asset_job_schedule = ScheduleDefinition(
     cron_schedule="0 4 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
     target=[f"{asset_key_prefix}/{a['table_name']}" for a in config["assets"]],
+    # The sensor's in-flight guard (probe.py::in_flight_run) skips every tick
+    # while a run launched by this schedule is non-terminal. This tier is now
+    # ONE op loading up to 77 tables, not 77 short independent ops -- a hung or
+    # long-queued run would wedge intraday syncing indefinitely, with the
+    # sensor logging SkipReason forever and Focus data going silently stale.
+    # 3600 is deliberate, not copied: the 12:00 pull today reaches stg_focus in
+    # 4-7 minutes (see the code location's CLAUDE.md), so a full 77-table load
+    # runs well under 10 minutes -- 3600s is roughly an 8x margin. Don't tune
+    # it down without re-measuring the real load time.
+    tags={"dagster/max_runtime": "3600"},
 )
 
 schedules = [focus_dlt_daily_asset_job_schedule]

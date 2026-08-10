@@ -52,7 +52,7 @@ def _asset_key(code_location: str, table_name: str) -> AssetKey:
     return AssetKey([code_location, "dlt", FOCUS_SOURCE_NAME, table_name])
 
 
-def build_focus_dlt_pipeline(code_location: str) -> Any:
+def build_focus_dlt_pipeline(code_location: str) -> dlt.Pipeline:
     """The shared BigQuery pipeline for one district's Focus source.
 
     Used by the assets factory (loads) and by the intraday sensor (baseline
