@@ -66,7 +66,7 @@ with
 
     grade_levels as (
         select *,
-        from {{ ref("int_powerschool__teacher_grade_levels") }}
+        from {{ ref("int_students__teacher_grade_levels") }}
         where grade_level_rank = 1
     ),
 

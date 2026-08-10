@@ -1,0 +1,171 @@
+models:
+  - name: int_students__terms
+    description: >-
+      SIS-agnostic school-year, semester, and quarter spine, at full grain (one
+      row per school and per term record). Unions the PowerSchool terms staging
+      view for the three New Jersey regions with Miami's Focus marking periods
+      conformed inline to the PowerSchool terms vocabulary. Focus is Miami's
+      system of record for term definitions, so the frozen archive contributes
+      no Miami rows. Focus itself carries template marking periods back to syear
+      1980, decades before any KIPP Miami school existed, so the Focus branch is
+      floored at Miami's first real enrollment year. The quarter-only columns
+      (term, term_start_date, term_end_date, semester, is_current_term) are
+      populated only on quarter rows -- for PowerSchool they are attached from
+      the per-district int_powerschool__terms source, which resolves quarter
+      dates through termbins rather than the raw terms table's own quarter row,
+      and for Focus they are derived on Focus's quarter-type marking periods.
+      Consumers that need only the quarter grain (the former
+      int_powerschool__terms consumers) filter to term is not null at the call
+      site.
+    data_tests:
+      # Two tests, because the two halves of the grain key on different
+      # columns. Quarter rows key on term, which termbins supplies; year and
+      # semester rows have no term at all and key on abbreviation, which comes
+      # straight off the raw terms row. One test over both would have to key on
+      # a column that is null for half the model.
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - yearid
+              - term
+              - _dbt_source_project
+          config:
+            where: term is not null
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - yearid
+              - abbreviation
+              - _dbt_source_project
+          config:
+            where: term is null
+    columns:
+      - name: schoolid
+        description: >-
+          The School_Number of the associated school. For Miami, resolved from
+          Focus's internal school id through the focus package's own
+          school_number and the locations crosswalk.
+        data_tests:
+          - not_null:
+              config:
+                severity: error
+      - name: yearid
+        description: >-
+          A number representing which year the term belongs to (e.g. 13 for
+          2003-2004). For Miami, no Focus source; derived as academic_year -
+          1990, the formula verified against every PowerSchool district and year
+          in prod.
+      - name: academic_year
+        description: >-
+          Academic year the term falls in. For Miami, from Focus syear.
+      - name: name
+        quote: true
+        description: The common name for this term (e.g. Semester 1, Quarter 1).
+      - name: abbreviation
+        description: >-
+          The short code for the term (e.g. S1, Q1, FY). For Miami, from Focus
+          short_name.
+      - name: firstday
+        description: The first calendar date of the term.
+      - name: lastday
+        description: The last calendar date of the term.
+      - name: isyearrec
+        description: >-
+          Flag indicating if this record is the year-long term. 1 = yes, 0 = no.
+          For Miami, derived from Focus's marking period type.
+      - name: fiscal_year
+        description: >-
+          Fiscal year the term falls in. For Miami, no Focus source; derived as
+          academic_year + 1, matching the archive's own convention.
+      - name: term
+        description: >-
+          Quarter code (Q1-Q4). Null for the year and semester rows a school
+          year also carries. For PowerSchool, taken from the matching
+          int_powerschool__terms quarter row (resolved through termbins), not
+          from this row's own abbreviation. For Miami, from Focus's quarter-type
+          marking periods only.
+      - name: term_start_date
+        description: >-
+          First calendar date of the quarter, sourced from termbins for
+          PowerSchool. Null outside the quarter rows.
+      - name: term_end_date
+        description: >-
+          Last calendar date of the quarter, sourced from termbins for
+          PowerSchool. Null outside the quarter rows.
+      - name: semester
+        description: >-
+          Semester the quarter falls in (S1 for Q1/Q2, S2 for Q3/Q4). Null
+          outside the quarter rows.
+      - name: is_current_term
+        description: >-
+          Whether today falls within the quarter's dates. Null outside the
+          quarter rows.
+      - name: dcid
+        description: >-
+          Unique identifier for this term record in PowerSchool. Null for Miami
+          -- Focus has no equivalent internal surrogate exposed here.
+      - name: id
+        description: >-
+          Sequential number generated by PowerSchool; not guaranteed unique on
+          its own. Null for Miami.
+      - name: portion
+        description: >-
+          The fraction of a year the term takes, PowerSchool-internal. Null for
+          Miami.
+      - name: importmap
+        description:
+          If importing, the code that relates to this term. PowerSchool-only.
+      - name: terminfo_guid
+        description: Globally unique identifier for this row, PowerSchool-only.
+      - name: psguid
+        description: >-
+          Unique identifier for the row where applicable (multi-tenant,
+          Schoolnet, Pearson), PowerSchool-only.
+      - name: ip_address
+        description: >-
+          IP address of the client that initiated the PowerSchool transaction.
+          PowerSchool-only.
+      - name: whomodifiedtype
+        description: >-
+          Type of user account that last modified the PowerSchool record.
+          PowerSchool-only.
+      - name: transaction_date
+        description: Date and time of the PowerSchool database transaction.
+      - name: noofdays
+        description: >-
+          Calculated number of in-session days between the term's dates,
+          PowerSchool-only.
+      - name: yearlycredithrs
+        description: No longer used by PowerSchool; may still appear on reports.
+      - name: termsinyear
+        description: >-
+          The number of scheduling terms this term takes up given the school's
+          LCM of term lengths, PowerSchool-only.
+      - name: autobuildbin
+        description: Used when copying the PowerSchool master schedule.
+      - name: periods_per_day
+        description: Number of periods in a school day for this term.
+      - name: days_per_cycle
+        description: Number of days for a cycle for this term, PowerSchool-only.
+      - name: attendance_calculation_code
+        description: >-
+          Whether positive or negative attendance is used in this term (1 =
+          negative, 2 = positive), PowerSchool-only.
+      - name: sterms
+        description:
+          Number of scheduling terms in a school year, PowerSchool-only.
+      - name: suppresspublicview
+        description: >-
+          Whether sections meeting for this term are hidden from the Public
+          Portal and Mobile App, PowerSchool-only.
+      - name: whomodifiedid
+        description:
+          Internal id of the PowerSchool user who last modified the record.
+      - name: _dbt_source_relation
+        description: Source relation, passed through from the source union view.
+      - name: _dbt_source_project
+        description:
+          District code location, resolved from _dbt_source_relation for the
+          PowerSchool branch and passed through directly for the Focus branch.

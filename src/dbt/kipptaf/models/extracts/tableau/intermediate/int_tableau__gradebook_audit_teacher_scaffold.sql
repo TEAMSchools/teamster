@@ -95,7 +95,7 @@ with
                 partition by t._dbt_source_relation, t.schoolid, t.yearid, t.term
             ) as quarter_end_date_insession,
 
-        from {{ ref("int_powerschool__terms") }} as t
+        from {{ ref("int_students__terms") }} as t
         inner join
             {{ ref("stg_powerschool__schools") }} as sch
             on t.schoolid = sch.school_number
@@ -110,7 +110,8 @@ with
             {{ ref("int_people__leadership_crosswalk") }} as l
             on t.schoolid = l.home_work_location_powerschool_school_id
         where
-            t.academic_year = {{ var("current_academic_year") }}
+            t.term is not null
+            and t.academic_year = {{ var("current_academic_year") }}
             and t.term_start_date <= current_date('{{ var("local_timezone") }}')
             and t.schoolid not in (0, 999999)
             and t.term not in ('Q1', 'Q2')

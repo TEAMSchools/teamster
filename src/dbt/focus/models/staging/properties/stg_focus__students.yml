@@ -252,6 +252,14 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: gifted_eligibility
+        description: >-
+          Gifted Eligibility — the FLDOE criteria paragraph a student was
+          determined gifted-eligible under, or Z for not eligible.
+        data_type: int
+        config:
+          meta:
+            contains_pii: true
       - name: prekindergarten_program_participation
         description: Prekindergarten Program Participation
         data_type: int
