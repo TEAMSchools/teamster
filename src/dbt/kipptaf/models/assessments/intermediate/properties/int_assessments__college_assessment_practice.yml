@@ -11,6 +11,25 @@ models:
       authoritative for assessment identity and student responses. Section rows
       carry response_type group; composite and combined rows are appended as
       separate union branches carrying response_type NA.
+
+
+      The sheet is joined twice for different purposes. Designation reads a
+      distinct one-row-per-assessment list, because the sheet holds 45-54
+      conversion rows per assessment and joining on assessment_id alone fans
+      every response row out roughly fiftyfold; a singular test guards the
+      constancy that collapse depends on. Conversion is a separate left join on
+      the raw-score range, so an uncovered raw score reports a null scale score
+      instead of dropping the row.
+
+
+      assessment_id is canonical_assessment_id, since response_rollup is
+      canonical-grain. Every sheet id currently equals its canonical id because
+      practice assessments have not been grouped into multi-member canonicals.
+      If a multipart practice administration is ever created, the sheet must
+      reference the canonical (lowest) id.
+
+
+      See docs/models/carat-dashboard-data-model.md.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -123,6 +142,13 @@ models:
           Distinct sections the student sat in this administration. Gates which
           composite branch applies — 4 for the ACT composite, 3 for the legacy
           three-section SAT, and 2 for the two-section digital SAT.
+
+
+          The two-section branch additionally requires that the administration
+          carry a Reading and Writing section. A partial sitting of the legacy
+          three-section form also reports two subjects, so the count alone would
+          manufacture a full digital-SAT total out of two of three legacy
+          sections — 129 legacy SAT student-rounds and 22 ACT ones are affected.
       - name: raw_score
         data_type: numeric
         description: >-
@@ -138,3 +164,11 @@ models:
           combined branches sum theirs. The two-section branch reports null
           unless both sections converted, so a partial conversion never presents
           as a complete total.
+
+
+          Legacy grade 9 and 10 SAT Reading and Writing rows are multiplied by
+          ten, because the sheet stores those on a 20-80 section scale rather
+          than 200-800. The guard is narrow on purpose - scope SAT, subject
+          Reading or Writing, grade 9 or 10 - and PSAT rows are the first to
+          populate those grades, so widening that predicate would wrongly catch
+          them.
