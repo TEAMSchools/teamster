@@ -19,12 +19,27 @@ with
         where s._dbt_source_project != 'kippmiami'
     ),
 
-    -- Neither field has a usable Focus source. Focus ese_fefp_code is an FEFP
-    -- funding code covering 162 of 419 archive SPED students, and
-    -- english_language_learner_pk_12 puts 98% of students at the
-    -- not-applicable code. Carry the archive value forward for returning
-    -- students; new students get null, because a false negative on IEP status
-    -- is compliance-adjacent and unknown must read as unknown.
+    -- Neither field has a usable Focus source, for different reasons.
+    --
+    -- spedlep: ese_fefp_code is an FEFP funding-matrix code, not an IEP flag,
+    -- and only applies to higher-cost placements -- it covers 149 of the 419
+    -- archive SPED students. The fields that would be right (ESE, IEP,
+    -- Disability, ESE Exceptionalities, Frontline IEP) are defined in the
+    -- Focus catalog but carry no data: the column-backed ones are 0% populated
+    -- and the log-backed ones have zero rows in custom_field_log_entries,
+    -- which holds 27k rows for other fields.
+    --
+    -- lep_status: english_language_learner_pk_12 IS populated (3,837 of 3,964)
+    -- with the right FLDOE code set, but 3,819 of those sit at the default
+    -- "Not applicable [ZZ]" option, including 211 students the archive flags
+    -- as LEP. Only 18 carry a real code. Reading it would overwrite real LEP
+    -- status with a default, so it is an Ops data-entry gap rather than a
+    -- missing source -- see TODO below.
+    --
+    -- Both are worth revisiting once Ops populates them in Focus. Carry the
+    -- archive value forward meanwhile; new students get null, because a false
+    -- negative on IEP status is compliance-adjacent and unknown must read as
+    -- unknown.
     --
     -- The archive keys these on studentsdcid, so resolve to student_number
     -- here. dcid is PowerSchool plumbing and stops at this layer.

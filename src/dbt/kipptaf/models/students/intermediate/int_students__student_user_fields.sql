@@ -46,8 +46,11 @@ with
     ),
 
     -- Gifted status carries forward from the frozen PowerSchool archive for
-    -- returning students, because the Focus Gifted (Computed) custom field is
-    -- effectively unpopulated.
+    -- returning students. Focus has two gifted fields and neither substitutes:
+    -- "Gifted (Computed)" is a computed-type field, which Focus never stores,
+    -- and "Gifted Eligibility" is an FLDOE eligibility-criteria code that
+    -- names only 15 eligible students (3 under 2(a), 12 under 2(b)) against
+    -- the archive's 34, the rest sitting at a bare Z sentinel.
     focus_conformed as (
         select
             i._dbt_source_relation,

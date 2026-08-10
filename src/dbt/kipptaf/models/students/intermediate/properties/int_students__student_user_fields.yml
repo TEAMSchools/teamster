@@ -25,8 +25,10 @@ models:
       - name: gifted_and_talented
         description: >-
           Gifted classification. For Miami, carried forward from the frozen
-          PowerSchool archive because Focus's Gifted (Computed) field is
-          effectively unpopulated; null for Miami students new since the freeze.
+          PowerSchool archive; null for Miami students new since the freeze.
+          Focus's "Gifted (Computed)" field is computed-type and never stored,
+          and its "Gifted Eligibility" code names only 15 eligible students
+          against the archive's 34.
       - name: _dbt_source_relation
         description: >-
           Source relation, passed through from the PowerSchool staging model or
