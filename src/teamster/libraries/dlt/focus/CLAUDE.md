@@ -96,6 +96,30 @@ columns survive either way (dlt absorbs hints that arrive later too). Columns
 are lost only when `table_rows` never yields any items at all, so no reflection
 reaches dlt.
 
+## Probe gating
+
+One `@dlt_assets` op covers every Focus table; the intraday sensor decides which
+of them a run carries. A table is loaded only when its probed signature
+(`COUNT(*)` + `MAX(updated_at)`) differs from the one the last successful load
+wrote to dlt `resource_state`.
+
+- **Gating cannot move into the op.** A `replace` resource that yields zero rows
+  truncates its table, so a skip has to be an exclusion from the run. Probing in
+  the op would also plan all 77 assets every tick and emit
+  `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones.
+- **The signature is written inside the extracted resource.** dlt commits state
+  only from resources that reached the load package, so a failed load keeps the
+  old baseline and the table re-selects on the next tick — failures self-heal.
+- **A 0-row table** carries `{count: 0, max_cursor: null}` and gates out after
+  its first load, so the empty-table materialization runs once, not every tick.
+  Verified: dlt does commit resource_state for a table that yields only
+  reflection hints plus the materialize marker — pinned by
+  tests/libraries/test_dlt_focus_signature_state.py::test_empty_table_persists_its_signature,
+  so a dlt upgrade that changes it fails CI.
+- **Enable order matters.** The sensor selects any table with no stored
+  signature, so enabling it before an 04:00 full refresh has seeded baselines
+  makes the first tick select all 77 tables at once. Seed first, then enable.
+
 ## Testing Constraints
 
 Focus uses an IP allowlist. Codespace cannot reach the database. Connection

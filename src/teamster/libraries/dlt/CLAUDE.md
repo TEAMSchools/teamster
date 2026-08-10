@@ -20,18 +20,33 @@ directly to BigQuery using `dlt`'s `sql_database` source with PyArrow backend.
 ### `focus/`
 
 Loads tables from the **Focus SIS** (student information system) PostgreSQL
-database directly to BigQuery using `dlt`'s `sql_database` source with PyArrow
-backend.
+database directly to BigQuery using `dlt`'s `table_rows` generator with the
+PyArrow backend. Probe-gated, same style as `powerschool/`.
 
 - Asset keys: `[code_location, "dlt", "focus", table_name]`
+- Factories:
+  `build_focus_dlt_assets(sql_database_credentials, code_location, tables, op_tags=None)`
+  and
+  `build_focus_dlt_intraday_sensor(code_location, tables, sql_database_credentials, nightly_schedule_name, minimum_interval_seconds=900)`
+  (`sensors.py`)
+- **Op run-config contract** (`FocusDltConfig`): `probe` present (intraday
+  sensor) → load exactly the run's asset selection with the passed signatures.
+  `probe` absent (04:00 schedule / manual launch) → probe the selection once
+  BEFORE the load, then load it all unconditionally. `refresh` is the separate
+  #4740 migration knob and is orthogonal to gating.
+- Tiering: `0 4 * * *` is the unconditional full refresh — the backstop for a
+  table whose `updated_at` the Focus app does not bump on an in-place edit. The
+  sensor covers everything between.
+- `cursor_column` is `updated_at` for every Focus table except `co_teachers` and
+  `login_history`, which are count-only. A new table must declare one in
+  `config/focus.yaml`; the code location reads `a["cursor_column"]`, so omitting
+  it fails at module load.
 - Uses `reflection_level="full_with_precision"` + `remove_nullability_adapter`
   (forces all columns `NULLABLE` so upstream `NOT NULL` changes don't break the
   `replace` load — see `focus/CLAUDE.md`)
 - `interval_to_microseconds_adapter` maps Postgres `interval` to INT64
   microseconds; without it dlt rejects the inferred `duration[us]` (see
   `focus/CLAUDE.md`)
-- Factory:
-  `build_focus_dlt_assets(sql_database_credentials, code_location, table_name)`
 
 ### `salesforce/`
 
@@ -73,10 +88,10 @@ and
   None) and no-cursor tables would reload every tick.
 - **Sensor tick**: skip if a sensor-launched or nightly-schedule run is in
   flight (via `dagster/sensor_name` / `dagster/schedule_name` run tags); probe
-  every intraday table over one engine; compare to the dlt-state baseline
-  (`sync_destination()` + `_stored_signatures`); request only changed tables
-  with the probe payload in run config. Idle ticks launch nothing, so unchanged
-  tables are never planned (no `ASSET_FAILED_TO_MATERIALIZE`).
+  every intraday table over one engine; compare to the dlt-state baseline (via
+  `sync_destination()` + probe.py's `stored_signatures`); request only changed
+  tables with the probe payload in run config. Idle ticks launch nothing, so
+  unchanged tables are never planned (no `ASSET_FAILED_TO_MATERIALIZE`).
 - **`DPY-4011` at ~512 MiB was a paramiko rekey bug, now fixed (not a volume
   cap)**: a large pull (`assignmentscore` ~19M) died with `oracledb DPY-4011`
   (connection closed) at a consistent **~8.6M rows** regardless of throughput
@@ -99,6 +114,16 @@ and
 
 All DLT assets use `DagsterDltResource` (from `dagster-dlt`) and write directly
 to BigQuery — they do not go through the GCS IO managers.
+
+### Shared probe helpers (`probe.py`)
+
+`ProbeTable`, `ProbeSignatureConfig`, `probe_signature`, `compute_changed`,
+`stored_signatures`, `IN_FLIGHT_STATUSES`, and `in_flight_run` live in
+`libraries/dlt/probe.py` and are shared by `powerschool/` and `focus/`. Each
+library keeps its OWN sensor — powerschool needs an SSH tunnel plus an Oracle
+resource, focus a plain Postgres URL. Do not merge them into a generic sensor
+factory; `illuminate/` (#4446) is the third intended consumer of the helpers,
+not of a shared sensor.
 
 ### Illuminate: unbounded Postgres `numeric`
 
