@@ -63,6 +63,19 @@ path) to suppress inter-batch delays.
 `{"users": []}` for pages with no items. Use `response.get(key, [])`, not
 `response[key]`.
 
+**`groups.list` and `members.list` cap `maxResults` at 200, but their discovery
+entries carry no `maximum` key** — `googleapiclient` does not validate, so the
+resource-wide default of 500 reaches the server. Both need an explicit
+`max_results` pop (`roles`=100 and `roleAssignments`=200 already have one).
+`list_groups` is now capped; `list_members` is NOT — cap it when the `members`
+asset is revived.
+
+**Directory resolves a `groupKey` by alias and case-insensitively.** Validating
+a constructed address against a staged mirror instead (the `groupKey` guard in
+`rpt_google_directory__users_import`) narrows that, so the staging model
+lowercases `email`; an alias-only address still resolves to null. Verified once:
+camden/miami/newark are primary addresses with no aliases.
+
 **`schema.py`**: Pydantic models (`User`, `OrgUnits`, `Role`, `RoleAssignment`,
 `Group`, `Member`) mirroring the Google Directory API response shapes. Code
 locations consume these via `py_avro_schema.generate()` to produce Avro schemas
