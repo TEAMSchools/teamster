@@ -1,0 +1,56 @@
+models:
+  - name: stg_google_directory__groups
+    description: >
+      Google Workspace groups as returned by the Directory API groups list
+      endpoint. Consumed by rpt_google_directory__users_import to confirm that a
+      region's student group exists before a membership add is attempted against
+      it.
+    columns:
+      - name: email
+        data_type: string
+        description: >
+          Primary address of the group. Join key for validating a constructed
+          student group address against the groups Google actually has.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
+      - name: id
+        data_type: string
+        description: Immutable Google-assigned identifier for the group.
+      - name: name
+        data_type: string
+        description: Display name of the group, as set in the admin console.
+      - name: description
+        data_type: string
+        description: >
+          Free-text purpose of the group, as set in the admin console. Often
+          empty.
+      - name: direct_members_count
+        data_type: string
+        description: >
+          Number of members that belong to the group directly rather than
+          through a nested group. Carried as a string by the Directory API.
+      - name: admin_created
+        data_type: boolean
+        description: >
+          True when an administrator created the group, false when it was
+          created by a user.
+      - name: etag
+        data_type: string
+        description: Entity tag of the resource, reported by the API.
+      - name: kind
+        data_type: string
+        description: >
+          Resource type reported by the API, always admin#directory#group.
+      - name: aliases
+        data_type: array<string>
+        description: Alternate addresses that deliver to this group.
+      - name: non_editable_aliases
+        data_type: array<string>
+        description: >
+          Domain-derived alternate addresses for the group that cannot be
+          edited.
