@@ -14,4 +14,9 @@ select
 
     dcid as `09 Local Term ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("stg_powerschool__terms") }}
+from {{ ref("int_students__terms") }}
+-- Excludes the synthetic quarter rows int_students__terms adds for a handful
+-- of historical schoolids whose termbins quarter has no matching row in the
+-- raw terms table (see int_students__terms.sql) -- those carry no term name
+-- or PowerSchool identifiers and are not real Illuminate-importable terms.
+where `name` is not null
