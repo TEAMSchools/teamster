@@ -63,6 +63,16 @@ Consuming district projects override these in their own `dbt_project.yml`.
 When a PR adds or modifies an external source, flag that the developer must
 stage it with `--target staging` before the dbt Cloud CI job will pass.
 
+**A brand-new external source cannot be staged until its asset has materialized
+once** — Avro autodetect needs >=1 file. Pre-merge, open the PR non-draft so the
+branch deployment builds, materialize the asset there, then stage with the
+`gs://teamster-test/...` `--vars` override below. Post-merge, launch that asset
+in prod IMMEDIATELY: external sources are excluded from the deps gate
+(`any_deps_missing().ignore(_EXTERNAL_SOURCE_SELECTION)` in
+`core/automation_conditions.py`), so the first post-deploy tick requests the new
+staging model and its `stage_external_sources` fails on the still-empty prod
+prefix.
+
 **AVRO external tables autodetect schema from the LAST ALPHABETICAL file.** To
 evolve an Avro source's schema, the new-schema file must sort last — materialize
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files

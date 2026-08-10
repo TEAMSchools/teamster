@@ -275,7 +275,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   findings are advisory, and `git grep` settles it faster than complying.
   **Always invoke `superpowers:receiving-code-review` BEFORE processing
   `claude-review` findings** — verify each claim (including its file:line
-  citations) against the code before relaying or replying, not after.
+  citations) against the code before relaying or replying, not after. Fixing a
+  finding in code is not a reply — post a per-finding verdict as a PR comment
+  (declines included, with reasons). A silent fix reads to a human reviewer as
+  an unaddressed review.
 
 - **A dispatched code-review subagent's "confirmed non-issue" dismissals aren't
   authoritative** — one over-read the `unnest` scalar-aggregate carve-out to
@@ -331,6 +334,13 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **IDE selection arrives only via `<ide_selection>` tags**, not
   `<ide_opened_file>` (which only names the open path). When the user references
   "this" without an `<ide_selection>`, ask for the snippet — don't guess.
+
+- **Before claiming a harness artifact (rewritten output, phantom rendering,
+  truncated literal), verify with a DERIVED value** — line length, `grep -c`, a
+  checksum. A misread is far likelier than a rewriting pipeline, and a plausible
+  substitute string survives eyeballing where a length does not. This session an
+  asserted "tool output renders X as Y" artifact was a plain misread, and it
+  produced a false correction to the user before it was tested.
 
 - **Built-in tools over Bash**: Use dedicated tools for file I/O (Read, Grep,
   Glob, Edit, Write). Bash is only for commands with no dedicated tool (`git`,
