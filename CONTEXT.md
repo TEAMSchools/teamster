@@ -47,15 +47,16 @@ urgent, unplanned need of a single student.
 
 _Avoid_: emergency aid, hardship grant, micro-grant
 
-**Disbursement**: One payment of Maher Fund money made to or on behalf of one
-student.
+**Cohort**: The year-group a student enters 9th grade with. Fixed at entry, so a
+retention or a skipped grade does not change it.
 
-_Avoid_: award, grant, aid payment
+_Avoid_: class, graduating class, graduation year
 
-**Cohort**: The year-group a student is associated with for KIPP high school
-graduation.
+**Graduation year**: The calendar year a student graduates high school, or is
+projected to. Reflects retentions and skipped grades, so it can differ from the
+student's cohort.
 
-_Avoid_: class, graduating class, grad year
+_Avoid_: cohort, grad year
 
 **Region**: One of the four cities whose schools the network operates — Newark,
 Camden, Miami, and Paterson.

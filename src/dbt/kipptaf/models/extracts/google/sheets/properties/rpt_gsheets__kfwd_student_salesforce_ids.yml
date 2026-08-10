@@ -9,8 +9,9 @@ models:
       int_kippadb__roster because no aid request originates from one; the roster
       itself only covers students with a KIPP secondary enrollment, so a
       Salesforce contact without one does not appear here. The remaining columns
-      exist to tell same-name students apart — graduation cohort separates most
-      pairs, region and birth date separate the rest.
+      exist to tell same-name students apart — cohort separates most pairs,
+      region and birth date separate the rest, which is why all three carry a
+      null check.
     config:
       meta:
         contains_pii: true
@@ -27,6 +28,34 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: birthdate
+        data_type: date
+        data_tests:
+          - not_null
+        description:
+          Student date of birth from Salesforce. Carried only as the final
+          tiebreaker for students who share a name, a cohort, and a region.
+        config:
+          meta:
+            contains_pii: true
+      - name: cohort
+        data_type: int64
+        data_tests:
+          - not_null
+        description:
+          Year-group the student entered 9th grade with, taken from the
+          Salesforce KIPP high school class and falling back to the PowerSchool
+          cohort. Fixed at entry, so it does not move for a retention or a
+          skipped grade and can differ from the year the student is projected to
+          graduate. The strongest single disambiguator between students who
+          share a name.
+      - name: region
+        data_type: string
+        data_tests:
+          - not_null
+        description:
+          Region whose schools the student attended — Newark, Camden, Miami, or
+          Paterson.
       - name: student_name
         data_type: string
         description:
@@ -52,26 +81,6 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: birthdate
-        data_type: date
-        description:
-          Student date of birth from Salesforce. Included only as the final
-          tiebreaker for students who share a name, a graduation cohort, and a
-          region.
-        config:
-          meta:
-            contains_pii: true
-      - name: hs_class
-        data_type: int64
-        description:
-          Graduation cohort the student belongs to, taken from the Salesforce
-          KIPP high school class and falling back to the PowerSchool cohort. The
-          strongest single disambiguator between students who share a name.
-      - name: region
-        data_type: string
-        description:
-          Region whose schools the student attended — Newark, Camden, Miami, or
-          Paterson.
       - name: student_number
         data_type: int64
         description:

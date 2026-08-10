@@ -3,7 +3,7 @@ select
     last_name,
     first_name,
     contact_birthdate as birthdate,
-    ktc_cohort as hs_class,
+    ktc_cohort as cohort,
     region,
     contact_id as salesforce_contact_id,
     student_number,
