@@ -107,6 +107,203 @@ shifting a reported average.
 out of any grad-year-grouped view silently rather than appearing in an unknown
 bucket.
 
+## Goal type — Attempts
+
+Attempt goals answer "what share of students sat this test at least once, and at
+least twice." They are the simplest of the goal types and the clearest example
+of a structural problem that affects all of them, so they are documented first.
+
+### The goals sheet does two jobs, and that is why empty rows cannot be deleted
+
+`stg_google_sheets__kippfwd__goals` simultaneously declares **which score types
+exist** and **which score types have targets**. The scaffold role is not
+documented anywhere in the sheet — it is a side effect of how
+`rpt_tableau__college_assessment_dashboard_current` reads it:
+
+```sql
+from int_assessments__college_assessment as s
+inner join stg_google_sheets__kippfwd__goals as g
+    on s.score_type = g.expected_score_type
+    and g.expected_goal_type != 'Board'
+```
+
+The join is `inner` and keyed on `score_type` alone, so a score type with no
+goals row disappears from the dashboard entirely.
+
+The consequence is counterintuitive: **rows with no goal value are
+load-bearing.** Deleting rows where `pct_goal is null` would drop 11 of 15 score
+types from `_current` — every section-level type (`sat_ebrw`, `sat_math`,
+`psat10_math_section`, `psat89_ebrw`, …) and all of ACT, because their Benchmark
+rows carry null `pct_goal` too. Only the four `*_total` types would survive.
+
+Until the two roles are separated — scaffold from
+`stg_google_sheets__kippfwd__expected_assessments` or from
+`int_assessments__college_assessment` directly, targets from goals — empty rows
+stay, and `pct_goal is not null` is the de facto "this goal is tracked" flag.
+
+### What is tracked
+
+A populated `pct_goal` means the goal is actually tracked; a null means the row
+exists only as scaffold. Reading the sheet that way:
+
+| Year | Tracked for attempts                                                         |
+| ---- | ---------------------------------------------------------------------------- |
+| 2025 | SAT only — 1 attempt 95%, 2+ attempts 80%                                    |
+| 2026 | SAT, PSAT 8/9, PSAT 10, PSAT NMSQT at 95% for 1 attempt; SAT also 80% for 2+ |
+
+The PSATs have no `2+ Attempts` target because they are administered once a
+year. PSAT NMSQT is counted as PSAT 10 where needed, which is also why
+`_benchmark_calcs` folds them into a single `PSAT10/NMSQT` threshold group.
+
+### Grain
+
+Once goals stop varying by region, school, and grade level — the current
+direction, and already true of every attempts row today (all ten have `region`,
+`schoolid`, `grade_level`, and `cohort` null) — an attempts goal is uniquely
+identified by:
+
+```text
+(academic_year, expected_test_type, expected_scope, goal_category)
+```
+
+`goal_category` is the attempt tier, `1 Attempt` or `2+ Attempts`. No pivot is
+needed at this grain, which removes the 18-branch `CASE` in the staging model
+that maps `'PSAT10 1 Attempt'` to `psat10_1_attempt`, along with
+`expected_metric_name` and `expected_metric_label`.
+
+### The 12 columns in the participation roster have no consumer
+
+`int_students__college_assessment_participation_roster` unpivots and re-pivots
+the attempts goals into 12 columns (`sat_1_attempt_min_score`,
+`psat89_2_plus_attempts_min_score`, and so on) via `cross join attempt_goals`.
+All four consumers of the roster read only the `*_count_lifetime` columns and
+`rn_lifetime` — none reads a goal column.
+
+The `cross join` is safe today only because the pivot collapses all ten goal
+rows into exactly one. **It stops being safe as soon as the goals source carries
+`academic_year`**, which yields one row per year, or `expected_test_type`, which
+adds a `Practice` row — either fans the roster 2-3× silently.
+
+So the columns should be dropped rather than ported. A consumer that needs an
+attempts goal joins the long-format goals table on `academic_year` and
+`expected_scope`. The roster counts are already per scope (`psat89_count`,
+`psat10_count`, `sat_count`, …), so the shapes line up — but the roster
+currently discards `academic_year` in its `yearly_tests` pivot and would have to
+carry it through to join on.
+
+### The attempt count itself is wrong, independent of the goal
+
+`rpt_tableau__college_assessment_dashboard_over_time` computes `alt_attempts`
+with `count(*)`, so the duplicated Salesforce records described under _Known
+issue — duplicate kippadb test records_ count as separate sittings. **Four
+students currently read as meeting the "2+ Attempts" goal on the strength of a
+duplicate record.** `count(distinct test_date)` fixes it. Reformatting the goals
+sheet does not — this is a measure defect, not a goal-definition defect.
+
+### `min_score` carries two different meanings
+
+On an attempts row `min_score` is an attempt count (1 or 2). On a Benchmark row
+it is a scale score (890, 1010). A threshold comparison therefore cannot be
+written generically against the column, and for attempts it duplicates what
+`goal_category` already says. Worth resolving before Benchmark rows land in a
+reformatted sheet — either drop it from attempts rows or rename it to something
+type-neutral and document it per `goal_type`.
+
+## Goal type — Benchmark
+
+Benchmark goals answer "what share of students scored at or above a threshold."
+
+### Which models read them
+
+| Model                                                       | How                                                                   | In workbook |
+| ----------------------------------------------------------- | --------------------------------------------------------------------- | ----------- |
+| `rpt_tableau__college_assessment_dashboard_current`         | inner join on `score_type`, `goal_type != 'Board'`, all granularities | yes         |
+| `rpt_tableau__college_assessment_dashboard_over_time`       | `goal_type != 'Board'` and `region is null and schoolid is null`      | yes         |
+| `rpt_gsheets__college_assessments_long`                     | `goal_type = 'Benchmark'`, network only, `avg(min_score)`             | no          |
+| `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | **none** — thresholds hardcoded in SQL                                | yes         |
+
+`_benchmark_calcs` does not read the goals sheet despite its name, so a
+threshold can exist twice with two values. `_current` is the only consumer of
+the region/school/grade granularity; the other two discard it.
+
+### Benchmark is two different things under one `goal_type`
+
+`*_total` rows carry full granularity and a `pct_goal` — real attainment goals.
+Section-level rows (`*_ebrw`, `*_math_section`, `act_*`) are a single network
+row each with `min_score` only and no `pct_goal` — threshold definitions, not
+goals. Same `goal_type`, different shape, and the second kind is what makes
+empty rows undeletable (see the attempts section above).
+
+### `min_score` never varies within a score type and tier
+
+Verified across every group: one distinct `min_score` per
+(`expected_score_type`, `expected_goal_subtype`). The threshold is a pure
+function of those two, yet it is duplicated across all 12 rows of
+`sat_total_score`. It belongs in a lookup keyed on that pair, not repeated per
+granularity.
+
+Current values, and how they compare to the SY26-27 strategy doc:
+
+| Scope           | Score type                         | HS-Ready | College-Ready |
+| --------------- | ---------------------------------- | -------- | ------------- |
+| SAT             | `sat_total_score`                  | 890      | 1010          |
+| SAT             | `sat_ebrw`                         | 450      | 480           |
+| SAT             | `sat_math`                         | 440      | 530           |
+| PSAT 10 / NMSQT | `psat10_total` / `psatnmsqt_total` | 840      | 910           |
+| PSAT 10 / NMSQT | `*_ebrw`                           | 420      | 430           |
+| PSAT 10 / NMSQT | `*_math_section`                   | 420      | 480           |
+| PSAT 8/9        | `psat89_total`                     | **800**  | 860           |
+| PSAT 8/9        | `psat89_ebrw`                      | 400      | 410           |
+| PSAT 8/9        | `psat89_math_section`              | 400      | 450           |
+| ACT             | `act_composite`                    | 17       | 21            |
+| ACT             | `act_math` / `act_reading`         | 17       | 22            |
+
+Every total-level threshold matches the strategy doc except **PSAT 8/9 HS-Ready,
+which the sheet has at 800 and the doc at 790.**
+
+### Dropping region and school is lossless for the PSATs, not for SAT
+
+All three PSAT totals carry an identical `pct_goal` at network, region, and
+school level, so collapsing them loses nothing. SAT grade 11 genuinely varies —
+College-Ready is 0.22 at network, 0.17-0.24 by region, 0.15-0.30 by school;
+HS-Ready is 0.45 at network against 0.30-0.55 by school. SAT grade 12 is
+uniform.
+
+Grade level is also load-bearing for SAT: College-Ready is 0.22 at grade 11 and
+0.17 at grade 12. Those are two cohorts, not two grades, which is why a
+reformatted sheet needs a cohort or grade key rather than dropping the dimension
+outright.
+
+### Two cohort fields, both official, and the models disagree
+
+`int_extracts__student_enrollments` carries both `graduation_year` and
+`ktc_cohort`. **This is not a data-quality problem — KIPP Forward and KIPP
+Foundation each use one**, so a goal's denominator depends on whose goal it is.
+
+They diverge. AY2025 high school, one row per student per year:
+
+| Grade | `graduation_year` null | Differs from `ktc_cohort` | Of those, retained |
+| ----- | ---------------------- | ------------------------- | ------------------ |
+| 9     | 4                      | 1                         | 1                  |
+| 10    | 5                      | 21                        | 8                  |
+| 11    | 2                      | 18                        | 10                 |
+| 12    | 0                      | 19                        | 2                  |
+
+`ktc_cohort` has no nulls in any grade; retention explains only 21 of the 59
+differences.
+
+`_benchmark_calcs` filters `graduation_year is not null` and never references
+`ktc_cohort`, while `_current`, `_over_time`, `_scores`, and `_roster` all carry
+both. On `_benchmark_calcs`' own filter set that means, for AY2025, 6 of 594
+students dropped and **31 (~5%) attributed to a different graduating class than
+the rest of the dashboard uses**. Five points is more than the gap between two
+consecutive years of goal (22% to 28%), so it can move reported attainment more
+than a year of progress.
+
+Do not "fix" this by unifying the fields. The requirement is that a goal
+declares which basis it is measured on, so both goal sets can live in one table
+and each gets the right denominator.
+
 ## Recorded deviation — one corrected scale score
 
 **The practice scale-score sheet knowingly diverges from its published source in
