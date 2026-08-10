@@ -309,10 +309,18 @@ worth avoiding, unlike the docs and Cube deploys which cancel freely.
 
 ## Open dependencies
 
-1. **Zendesk Guide plan tier.** Both user segments and article labels require
-   Guide Professional or Enterprise. The gating story and any label-based
-   tooling depend on this. Verify first — it is cheap and it can invalidate
-   design choices.
+1. **Zendesk Guide plan tier.** Three separate things require Guide Professional
+   or Enterprise: **user segments** (the whole gating story), **article labels**
+   (the `src:` recovery path), and **custom pages plus theme code editing** —
+   which decides whether the landing page can be a designed page with its own
+   HTML, CSS, and JavaScript, or is limited to sanitized article-body markup.
+   One check settles all three. Verify first; it is cheap and it can invalidate
+   design choices in three directions at once.
+
+   Note that a customized theme stops receiving Zendesk's automatic theme
+   updates, so any custom-page work should stay contained rather than becoming a
+   help-center rebuild.
+
 1. **A Zendesk API credential, and its blast radius.** Zendesk API tokens are
    not scoped; permissions derive from the associated user's role, so a token
    minted against an admin can read and modify **tickets**, not just Guide
