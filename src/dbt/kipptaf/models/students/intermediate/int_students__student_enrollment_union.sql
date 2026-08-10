@@ -36,47 +36,9 @@ with
             student_first_name as first_name,
             student_last_name as last_name,
 
-            cast(
-                regexp_replace(cast(student_number as string), r'^8400', '') as int64
-            ) as student_number,
+            {{ unprefix_focus_student_id("student_number") }} as student_number,
         from {{ ref("int_focus__student_enrollments") }}
         where academic_year >= 2026
-    ),
-
-    powerschool_unioned as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source(
-                        "kippnewark_powerschool",
-                        "int_powerschool__student_enrollment_union",
-                    ),
-                    source(
-                        "kippcamden_powerschool",
-                        "int_powerschool__student_enrollment_union",
-                    ),
-                    source(
-                        "kippmiami_powerschool",
-                        "int_powerschool__student_enrollment_union",
-                    ),
-                    source(
-                        "kipppaterson_powerschool",
-                        "int_powerschool__student_enrollment_union",
-                    ),
-                ]
-            )
-        }}
-    ),
-
-    powerschool_with_project as (
-        -- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
-        select
-            *,
-
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-
-            initcap(regexp_extract(_dbt_source_relation, r'kipp(\w+)_')) as region,
-        from powerschool_unioned
     ),
 
     -- Miami migrated to Focus for AY2026. The archive contributes two things
@@ -86,7 +48,7 @@ with
     -- reporting needs and Focus has no equivalent for.
     powerschool_conformed as (
         select *,
-        from powerschool_with_project
+        from {{ ref("int_powerschool__student_enrollment_union") }}
         where
             _dbt_source_project != 'kippmiami'
             or academic_year <= 2025

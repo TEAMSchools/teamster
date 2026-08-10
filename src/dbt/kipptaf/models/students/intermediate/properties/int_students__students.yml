@@ -71,8 +71,19 @@ models:
           Pre-migration student number as Focus recorded it. Populated only for
           Miami students who predate the SIS migration. Used to verify the
           unprefix rule, never as a join key.
+      - name: state_studentnumber
+        description: >-
+          Host public school district's identifier for the student, published by
+          dim_students as district_student_identifier. For Miami this is the
+          MDCPS student id, carried forward from the frozen PowerSchool archive
+          because Focus has no live source for it; null for Miami students new
+          since the freeze.
       - name: florida_student_number
-        description: Florida state student number as recorded in Focus.
+        description: >-
+          Florida state student number as recorded in Focus. A 10-digit FLDOE
+          identifier, distinct from the MDCPS student id in state_studentnumber
+          and from the FLEID in florida_education_identifier. Currently unread
+          by any consumer.
       - name: florida_education_identifier
         description: >-
           FLEID, the Florida statewide education identifier. Consumed by

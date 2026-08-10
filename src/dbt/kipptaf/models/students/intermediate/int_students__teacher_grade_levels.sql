@@ -136,45 +136,11 @@ with
         from percentages
     ),
 
-    powerschool_unioned as (
-        {{
-            dbt_utils.union_relations(
-                relations=[
-                    source(
-                        "kippnewark_powerschool",
-                        "int_powerschool__teacher_grade_levels",
-                    ),
-                    source(
-                        "kippcamden_powerschool",
-                        "int_powerschool__teacher_grade_levels",
-                    ),
-                    source(
-                        "kippmiami_powerschool",
-                        "int_powerschool__teacher_grade_levels",
-                    ),
-                    source(
-                        "kipppaterson_powerschool",
-                        "int_powerschool__teacher_grade_levels",
-                    ),
-                ]
-            )
-        }}
-    ),
-
-    powerschool_with_project as (
-        -- trunk-ignore(sqlfluff/AM04): union_relations resolves columns at run time
-        select
-            *,
-
-            regexp_extract(_dbt_source_relation, r'(kipp\w+)_') as _dbt_source_project,
-        from powerschool_unioned
-    ),
-
     -- Miami cuts over to Focus at AY2026, matching the enrollment and terms
     -- unions. The frozen archive keeps every closed year.
     powerschool_conformed as (
         select *,
-        from powerschool_with_project
+        from {{ ref("int_powerschool__teacher_grade_levels") }}
         where _dbt_source_project != 'kippmiami' or academic_year <= 2025
     )
 

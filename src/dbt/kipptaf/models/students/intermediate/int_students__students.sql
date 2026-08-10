@@ -11,9 +11,7 @@ with
             startdate,
             enroll_status,
 
-            cast(
-                regexp_replace(cast(student_number as string), r'^8400', '') as int64
-            ) as student_number,
+            {{ unprefix_focus_student_id("student_number") }} as student_number,
         from {{ ref("int_focus__student_enrollments") }}
     ),
 
@@ -28,10 +26,6 @@ with
     ),
 
     -- The unprefixed Focus student id is the canonical network student number.
-    -- Strip a leading 8400 (Miami-Dade's FLDOE district number) where present;
-    -- pass any other value through unchanged rather than guessing at a different
-    -- prefix, so the one known anomalous id stays visible instead of being
-    -- silently mangled.
     identified as (
         select
             _dbt_source_relation,
@@ -48,9 +42,7 @@ with
             race_american_indian_or_alaska_native_label,
             race_native_hawaiian_or_other_pacific_islander_label,
 
-            cast(
-                regexp_replace(cast(student_id as string), r'^8400', '') as int64
-            ) as student_number,
+            {{ unprefix_focus_student_id("student_id") }} as student_number,
 
             date(birthdate) as dob,
 
@@ -89,7 +81,7 @@ with
     -- students and 'H' for 8), so no derivation can reproduce it. Carrying it
     -- forward keeps dim_students.race byte-identical for returning students.
     archive as (
-        select student_number, lunchstatus, ethnicity,
+        select student_number, lunchstatus, ethnicity, state_studentnumber,
         from {{ ref("stg_powerschool__students") }}
         where _dbt_source_project = 'kippmiami'
     ),
@@ -118,6 +110,18 @@ with
             a.lunchstatus,
 
             e.enroll_status,
+
+            -- dim_students publishes this as district_student_identifier for
+            -- Miami, so it has to survive the cutover or every Focus-sourced
+            -- student loses their MDCPS id. Carried forward from the archive,
+            -- like lunchstatus above, because Focus has no live source for it:
+            -- disis_id holds the same value but only for students the
+            -- PowerSchool migration brought over (3,304 of 3,453 returning,
+            -- 0 of 506 enrolled since), and florida_student_number is a
+            -- different 10-digit FLDOE identifier that matches the MDCPS id on
+            -- no student at all. New students get null rather than a
+            -- confidently wrong district id.
+            a.state_studentnumber,
 
             coalesce(
                 a.ethnicity,
