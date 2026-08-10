@@ -66,6 +66,16 @@ with
         group by student_number, salesforce_id, grade_level
     ),
 
+    /*
+        Inlined from the former int_google_sheets__kippfwd_goals, which had this
+        model as its only consumer. The 12 goal-threshold columns these two CTEs
+        produce (*_attempt_min_score, *_attempt_pct_goal) currently have NO
+        downstream consumer -- all four consumers of this model read only the
+        *_count_lifetime columns and rn_lifetime. They are kept deliberately
+        rather than dropped, because the goals rewrite is in flight and would
+        likely recreate them in a different shape; deleting now would be churn.
+        See #4658.
+    */
     goals_unpivot as (
         select
             expected_test_type,
