@@ -1,6 +1,6 @@
 with
     -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    source as (select * from {{ source("finalsite", "contacts") }}),
+    source as (select *, from {{ source("finalsite", "contacts") }}),
 
     -- Pulls accumulate one Hive partition per pull date, and a `since` window
     -- re-delivers a contact on every pull that covers it, so the same `id`
