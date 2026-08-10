@@ -100,6 +100,11 @@ Append these inside the existing `tables:` list in
 `src/dbt/kipptaf/models/focus/sources-bigquery.yml`, after the
 `student_enrollment` entry. Keep the existing three entries untouched.
 
+**Indentation:** the block below is shown at column zero because the markdown
+formatter normalizes it. In the real file every line needs six leading spaces so
+`- name:` aligns with the existing `student_enrollment` entry under `tables:`.
+Copying verbatim produces invalid YAML.
+
 ```yaml
 - name: students
   description:
