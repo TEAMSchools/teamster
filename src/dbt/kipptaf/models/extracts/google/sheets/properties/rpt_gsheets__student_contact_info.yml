@@ -97,3 +97,19 @@ models:
         data_type: string
       - name: home_language
         data_type: string
+      - name: es_attended
+        data_type: string
+        description: >-
+          Most recent KIPP elementary school the student attended before their
+          current school. Blank while the student is enrolled at an elementary
+          school. Narrower than the identically named column on
+          int_extracts__student_enrollments, which also picks up the student's
+          current school.
+      - name: ms_attended
+        data_type: string
+        description: >-
+          Most recent KIPP middle school the student attended before their
+          current school. Blank while the student is enrolled at an elementary
+          or middle school. Narrower than the identically named column on
+          int_extracts__student_enrollments, which also picks up the student's
+          current school.

@@ -101,5 +101,15 @@ select
     gifted_and_talented,
     salesforce_id as salesforce_contact_id,
     home_language,
+
+    -- Prior-level history only. The upstream columns of the same name pick the
+    -- most recent enrollment at each level INCLUDING the current one, so a
+    -- current MS student's ms_attended is their own school. Blanking every
+    -- level at or below the student's current level makes these read as "KIPP
+    -- schools attended before this one". At-or-below rather than the matching
+    -- level alone also suppresses a stray MS enrollment record carried by one
+    -- Camden ES student.
+    if(school_level = 'ES', null, es_attended) as es_attended,
+    if(school_level in ('ES', 'MS'), null, ms_attended) as ms_attended,
 from {{ ref("int_extracts__student_enrollments") }}
 where enroll_status in (0, -1) and rn_all = 1
