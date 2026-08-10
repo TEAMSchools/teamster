@@ -64,6 +64,7 @@ models:
           Discriminator for respondent type: staff, student, or family.
           Determines which respondent FK is populated.
         data_tests:
+          - not_null
           - accepted_values:
               arguments:
                 values:

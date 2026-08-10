@@ -57,6 +57,9 @@ models:
                   - unresolved
               config:
                 severity: error
+          - not_null:
+              config:
+                severity: error
       - name: address_source
         data_type: string
         description:
