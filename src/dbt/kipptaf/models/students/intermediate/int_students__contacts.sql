@@ -40,7 +40,12 @@ with
     -- Miami Focus branch, replacing the branch that read the frozen
     -- pre-migration kippmiami_powerschool snapshot. Focus stores the KIPP
     -- student number 8400-prefixed in local_student_id, so student_number is
-    -- derived by stripping that prefix rather than crosswalked. Deriving beats
+    -- derived by stripping that prefix rather than crosswalked -- the network
+    -- has always keyed Miami students on the unprefixed number, and
+    -- dim_students.student_key hashes it. Strip on the literal prefix rather
+    -- than positionally: one id carries no 8400 at all, and dropping its first
+    -- four characters yields a number matching no student, silently losing
+    -- that student's contacts. Deriving beats
     -- joining int_finalsite__contact_id_attributes on
     -- focus_student_id_prefixed: its powerschool_student_number agrees with the
     -- stripped value wherever it is populated, but it is null for every
@@ -68,7 +73,9 @@ with
             email as email_current,
             home_address as address_home,
 
-            safe_cast(substr(local_student_id, 5) as int64) as student_number,
+            safe_cast(
+                regexp_replace(local_student_id, r'^8400', '') as int64
+            ) as student_number,
         from {{ ref("int_focus__student_contacts") }}
     ),
 
