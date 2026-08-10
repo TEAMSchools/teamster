@@ -60,7 +60,22 @@ They serialize through the `finalsite_api` pool, so budget ~35 minutes total.
 Verify each run's `record_count` metadata matches step 1's baseline, and that
 its `since` metadata reads `FULL PULL`.
 
+The partition key `2026-08-11` must equal the asset's configured
+`DailyPartitionsDefinition(start_date=...)` in all four code locations'
+`finalsite/assets.py` — seeding the wrong partition key puts the base data on a
+partition the schedule will never revisit. If the cutover happens later than
+`2026-08-11`, bump `start_date` in all four `finalsite/assets.py` files and this
+runbook's partition key together, in the same change.
+
 ## 5. Delete the legacy root object (manual, destructive)
+
+Do not run this step until step 4's seed runs are verified to have landed
+(`record_count` matched step 1's baseline for all four locations). Deleting the
+root object before the seed is confirmed would leave the external table empty,
+and `stg_finalsite__contacts` would build to zero rows — the downstream feeds
+would then ship empty files to DeansList, ParentSquare and Focus instead of
+failing loudly. That is the reason for the step 4 → step 5 order; do not reorder
+these under time pressure.
 
 One per bucket. Check before deleting:
 
