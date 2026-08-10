@@ -75,11 +75,11 @@ models:
         data_type: string
         description: >-
           FK to dim_terms. The reporting quarter containing the date this score
-          was administered or taken, resolved at the section's school by
-          int_assessments__resolved_section_enrollments. Resolved by date rather
-          than through the section enrollment, whose term id is not
-          quarter-specific. Null when no reporting quarter is defined for that
-          school and date.
+          was administered or taken, at the school of the section enrollment
+          int_assessments__resolved_section_enrollments resolved. Matched by
+          date rather than through the section enrollment itself, whose term id
+          is not quarter-specific. Null when no reporting quarter is defined for
+          that school and date.
         constraints:
           - type: foreign_key
             to: ref('dim_terms')

@@ -6,6 +6,7 @@
 select
     f.assessment_score_key,
     f.assessment_date_key,
+
     t.term_name,
     t.`start_date`,
     t.end_date,
