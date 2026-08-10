@@ -46,9 +46,7 @@ with
             _dbt_source_relation,
             _dbt_source_project,
 
-            cast(
-                regexp_replace(cast(student_id as string), r'^8400', '') as int64
-            ) as student_number,
+            {{ unprefix_focus_student_id("student_id") }} as student_number,
         from {{ ref("int_focus__students") }}
     ),
 

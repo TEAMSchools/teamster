@@ -18,6 +18,11 @@ models:
       (the former int_powerschool__terms consumers) filter to term is not null
       at the call site.
     data_tests:
+      # Two tests, because the two halves of the grain key on different
+      # columns. Quarter rows key on term, which termbins supplies; year and
+      # semester rows have no term at all and key on abbreviation, which comes
+      # straight off the raw terms row. One test over both would have to key on
+      # a column that is null for half the model.
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
@@ -27,6 +32,15 @@ models:
               - _dbt_source_project
           config:
             where: term is not null
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - schoolid
+              - yearid
+              - abbreviation
+              - _dbt_source_project
+          config:
+            where: term is null
     columns:
       - name: schoolid
         description: >-

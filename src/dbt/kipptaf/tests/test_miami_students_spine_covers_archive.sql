@@ -2,8 +2,6 @@
 -- Focus branch for those Focus carries and the archive branch for the 493 it
 -- never received. A miss means the anti-join dropped a student from
 -- dim_students; a duplicate means both branches kept the same one.
-{{ config(severity="error") }}
-
 with
     archive as (
         select student_number,

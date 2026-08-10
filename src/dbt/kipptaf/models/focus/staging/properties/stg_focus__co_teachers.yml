@@ -5,71 +5,8 @@ models:
       stg_focus__co_teachers, exposing Miami's co-teacher assignments at network
       level. One row per staff member co-assigned to a course period for a
       school year — the source table has no surrogate id, so the grain is the
-      school year, school, course, course period, and staff id together.
-    data_tests:
-      - dbt_utils.unique_combination_of_columns:
-          arguments:
-            combination_of_columns:
-              - syear
-              - school_id
-              - course_id
-              - course_period_id
-              - staff_id
+      school year, school, course, course period, and staff id together. Column
+      docs/tests live on the kippmiami source model.
     columns:
-      - name: syear
-        description: Focus school year start year (e.g. 2025 = 2025-26).
-      - name: school_id
-        description: Focus school id the co-teaching assignment belongs to.
-      - name: course_id
-        description: Focus course id the co-taught section belongs to.
-      - name: course_period_id
-        description: Focus course-period (section) id the co-teacher serves.
-      - name: staff_id
-        description: Focus staff id of the co-teacher.
-      - name: inclusion
-        description: >-
-          Whether the co-teaching arrangement is an inclusion (co-taught
-          special-education) model.
-      - name: permissions
-        description: >-
-          Gradebook and roster permission level Focus grants the co-teacher on
-          the section.
-      - name: out_reason
-        description: >-
-          Reason recorded when the co-teacher is out of the section, used by
-          Focus coverage reporting.
-      - name: report_doe
-        description: >-
-          Whether the assignment is reported to the Florida Department of
-          Education staff-course survey.
-      - name: checkbox1
-        description: Unlabeled Focus checkbox slot on the co-teacher assignment.
-      - name: start_date
-        description: >-
-          First date the co-teacher serves the section. Unpopulated in Miami
-          while co-teaching is scheduled for the full section term.
-      - name: start_time
-        description: Daily start time of the co-teacher's coverage window.
-      - name: end_date
-        description: >-
-          Last date the co-teacher serves the section. Unpopulated in Miami
-          while co-teaching is scheduled for the full section term.
-      - name: end_time
-        description: Daily end time of the co-teacher's coverage window.
-      - name: custom1
-        description: >-
-          Unlabeled Focus custom slot on the co-teacher assignment, carried
-          through undecoded.
-      - name: custom2
-        description: >-
-          Unlabeled Focus custom slot — see custom1 for why it is not decoded.
-      - name: custom3
-        description: >-
-          Unlabeled Focus custom slot — see custom1 for why it is not decoded.
-      - name: custom4
-        description: >-
-          Unlabeled Focus custom slot — see custom1 for why it is not decoded.
-      - name: _dbt_source_relation
-        description: Source relation this row was unioned from.
       - name: _dbt_source_project
         description: District code location derived from _dbt_source_relation.
