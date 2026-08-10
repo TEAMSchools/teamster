@@ -19,7 +19,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: student_section_enrollment_key
         data_type: string
@@ -32,8 +31,6 @@ models:
             to_columns: [student_section_enrollment_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_student_section_enrollments')

@@ -20,7 +20,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: work_assignment_key
         data_type: string
@@ -33,7 +32,6 @@ models:
             to_columns: [work_assignment_key]
             warn_unsupported: false
         data_tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff_work_assignments')

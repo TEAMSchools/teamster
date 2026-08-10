@@ -17,7 +17,6 @@ models:
             warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: course_key
         data_type: string
@@ -31,8 +30,6 @@ models:
             warn_unsupported: false
             warn_unenforced: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_courses')

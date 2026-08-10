@@ -285,6 +285,168 @@ later moved past or reversed; `Current` = point-in-time, latest status only):
 | `Pending Offers` (+ `<= 4 Days` / `>= 5 & <= 10 Days` / `> 10 Days`)                | Current   | Student has an outstanding offer awaiting a family response, bucketed by days pending — an SLA/staleness tracker for follow-up. |
 | `Conversion` — `Accepted to Enrolled` / `Offers to Accepted` / `Offers to Enrolled` | Ever      | Funnel conversion-rate metrics between two funnel stages.                                                                       |
 
+### Which goals exist at which granularity
+
+`goal_granularity` takes three values: `School` (`grade_level = -9`),
+`School/Grade Level`, and `Region/Grade Level` (`schoolid = 0`, with the region
+name repeated in `school`). **Not every goal exists at every level.** Expecting
+a value at a granularity a goal does not live at produces a phantom gap, so
+check this table before treating a missing row as a problem.
+
+| `goal_name`                | `School` | `School/Grade Level` | `Region/Grade Level` |
+| -------------------------- | :------: | :------------------: | :------------------: |
+| `Budget Target`            |    ✅    |          --          |          --          |
+| `FDOS Target`              |    ✅    |          ✅          |          --          |
+| `Seat Target`              |    ✅    |          ✅          |          --          |
+| `Conversion` (3 names)     |    --    |          ✅          |          --          |
+| `Enrollment In Progress`   |    --    |    scaffold only     |          --          |
+| `New Student Target`       |    ✅    |          ✅          |          ✅          |
+| `Re-Enroll Projection`     |    ✅    |          ✅          |          ✅          |
+| `App Target`               |    ✅    |          ✅          |          ✅          |
+| `Offers Target`            |    ✅    |          ✅          |          ✅          |
+| `Accepted`                 | scaffold |       scaffold       |       scaffold       |
+| `Pending Offers` (4 names) | scaffold |       scaffold       |       scaffold       |
+| `Inquiries`                |    --    |          --          |    scaffold only     |
+| `Deferred`                 |    --    |          --          |    scaffold only     |
+| `Waitlisted`               |    --    |          --          |    scaffold only     |
+
+Notable consequences:
+
+- `Budget Target` is **School-only**, so a change to it never fans out to grade
+  rows.
+- `FDOS Target` and `Seat Target` stop at `School/Grade Level` — there is no
+  region-level version of either.
+- `Offers Target` is the widest goal, existing at all three levels, so one
+  change can require up to three paired edits.
+
+### Rows with no value are scaffold, not goals
+
+Of the 39 `(goal_granularity, goal_type, goal_name)` combinations present for
+AY2026, **17 carry no populated `goal_value` at all** — marked `scaffold` above.
+They exist so the dashboard grid has a row per school / grade / status even
+where no target is set, and they are never expected to receive one. Only the ~20
+populated combinations are reconcilable against SRE's workbook.
+
+This rule holds at the **combination** level. A NULL _inside_ an otherwise
+populated combination is ambiguous and cannot be interpreted from the NULL alone
+— e.g. `Offers Target` at `Region/Grade Level` is populated for 31 of 45 rows,
+but all 9 Paterson rows are NULL, which may mean "Paterson has no offer goals"
+or "nobody filled these in." Ask rather than infer.
+
+### `Conversion` goals are a flat per-grade lookup
+
+The three `Conversion` goals are supplied by SRE as expected rates **by grade
+level, identical across every school**. Verified for AY2026: each grade has
+exactly one distinct value per metric, and those collapse to **two tiers** —
+Kindergarten, and grades 1-12.
+
+So this is not ~100 independent values but two, per metric. A rate change from
+SRE is a small uniform edit, and a reconciliation should check the _shape_ (one
+value per grade, no per-school variation) rather than diffing every row. Confirm
+the shape with:
+
+```sql
+select grade_level, goal_name, count(distinct goal_value) as distinct_values
+from `teamster-332318`.kipptaf_google_sheets.stg_google_sheets__finalsite__goals
+where enrollment_academic_year = <year> and goal_type = 'Conversion'
+group by 1, 2
+```
+
+Anything other than `1` in `distinct_values` means a school has drifted off the
+common rate.
+
+The `Conversion Rate` column on each per-region tab of SRE's workbook is a
+**separate thing** — a calculation input used to derive that tab's "apps needed"
+from "new students needed", not the source of these goals.
+
+### Sourced vs derived goals
+
+Not every populated goal comes from SRE's workbook. Two rules, in this order:
+
+1. **If the workbook states a value, match it.** Never compute a value the
+   workbook already states, even when computing would give a tidier answer.
+2. **Only where nothing states it, derive** — and say so, because a derived goal
+   reconciled against the workbook reports a discrepancy with no source to fix.
+
+The precedence matters more than it looks. A tempting invariant like "a region
+row equals the sum of its school rows" is only testable if rule 1 finds nothing;
+where the workbook states region values, that invariant is simply false, and
+enforcing it would push wrong data into the sheet.
+
+**Classify by searching every tab first, not from one region.** A goal can be
+stated on one region's tab and absent from another's, so "derived" is a
+conclusion about the whole workbook, not about the tab in front of you.
+
+**Per SRE: only the MAIN table on each tab is a source.** Every tab also carries
+secondary tables below or beside it — region-grain rollups, column-total rows,
+side trackers, loose cells. All of it is noise for reconciliation purposes, no
+matter how authoritative the headers look, and `Newark`'s lower block shows why
+the "looks authoritative" caveat is needed: it is headed `Re-Enroll Projection`
+and `New Students` at region grain and reproduces `round(SUM of unrounded)` of
+the main table in **24 of 24** cases. A secondary table that agrees perfectly
+with the right answer is still not the source of it.
+
+At `Region/Grade Level` the three populated Enrollment/Applications goals split
+as follows (Camden and Newark verified; `Miami` and `KPAT` expected to match but
+not yet walked):
+
+| `goal_name`            | source                                              |
+| ---------------------- | --------------------------------------------------- |
+| `App Target`           | **sourced** — the cover sheet's `A26:D37` grid      |
+| `New Student Target`   | **derived** — `round(SUM)` of `New Students Needed` |
+| `Re-Enroll Projection` | **derived** — `round(SUM)` of `Projected Returners` |
+
+Where a goal must be derived, **round the sum once (`round(SUM of unrounded)`),
+never sum already-rounded values.** The evidence is prod itself: across Camden
+and Newark there are five grades where the two methods disagree, and prod
+matches `round(SUM)` in every one (e.g. Newark `Re-Enroll Projection` grade 3 —
+prod 477, `round(SUM)` 477, `SUM(round)` 476). Summing rounded values diverges
+by ±1 on roughly one grade in six.
+
+`App Target` is emphatically **not** the sum of its school rows. Verified for
+AY2026: Camden grade 5 reads 69 on the cover sheet while the three Camden
+grade-5 school rows sum to 101 (LSM 21 + Hatch 48 + Sumner 32) — the cover sheet
+excludes Sumner's grade 5, which is a new grade mid-expansion. Do not "fix" that
+by summing.
+
+Two consequences worth planning around:
+
+- **Edit order matters.** The derived region rows are a function of the school
+  rows, so a reconciliation must apply `School/Grade Level` corrections FIRST
+  and recompute the region rows afterwards. Doing it the other way round leaves
+  the region rows keyed to superseded school values.
+- **A ±1 gap between a region row and the sum of its school rows is a
+  rounding-order artifact, not drift.** SRE's tabs hold unrounded formula
+  output; rounding the sum gives a different answer than summing the rounded
+  values. Verified on Camden: where the two methods diverge, `round(SUM)`
+  matches what is in prod and `SUM(round)` never does. Larger systematic gaps
+  ARE real staleness — Miami's `Re-Enroll Projection` runs 23-31 low across
+  grades 1-6, where the region row predates Royalty's current numbers entirely.
+
+### A new school is not necessarily recruiting: Miami Tech
+
+`Re-Enroll Projection` measures **persistence in the network**, not retention at
+one school, so a student can be a "returner" at a school that did not exist last
+year. Miami Tech (`MTH`) is the worked example: it opened to take KIPP's own
+grade-8 students up into grade 9, with no external recruitment. Its goals look
+broken and are correct.
+
+| goal                   | expected      | why                                     |
+| ---------------------- | ------------- | --------------------------------------- |
+| `Re-Enroll Projection` | a real figure | the incoming cohort persists internally |
+| `New Student Target`   | NULL          | not recruiting externally               |
+| `App Target`           | NULL          | no application funnel                   |
+| `Offers Target`        | NULL          | no lottery, so no offers                |
+
+This is also **why** MTH is the one school missing the lottery-based categories
+(`Accepted`, `Offers`, `Pending Offers`) at `School` granularity — a fact
+previously recorded as an unexplained exception. Do not "correct" the returners
+figure into `New Student Target`, and do not treat the NULLs as gaps to fill.
+
+The trap to watch for: the intuition "a brand-new school cannot have returners"
+is wrong here, and acting on it would move a correct value into the wrong goal
+at three granularities at once.
+
 ### Full `grouped_status` → `goal_type` / `goal_name` crosswalk
 
 `grouped_status` (the crosswalk sheet's `status_group_value`) is the thing
@@ -437,12 +599,17 @@ numbers and the dashboard:
   not just at year rollover.** `stg_google_sheets__finalsite__exclude_ids` is
   enforced upstream of everything FRESH touches, but a test record created today
   isn't excluded until someone adds its id to the sheet.
-- **The goals sheet is a live-read Google Sheets external table** — every query
-  against `stg_google_sheets__finalsite__goals` reflects whatever is in the
-  sheet _at that exact moment_, with no caching. A value can change between two
-  queries run seconds apart if someone is actively editing the sheet. A
-  dashboard number that doesn't match a materialized dbt table's numbers may
-  simply mean the sheet was edited after that table's last build — not a bug.
+- **The goals sheet is read live only by the source external table, not by
+  anything downstream.** `src_google_sheets__finalsite__goals` is a
+  `GOOGLE_SHEETS` external and reads the sheet at query time, but
+  `stg_google_sheets__finalsite__goals` and
+  `int_google_sheets__finalsite__goals_pivot` are both materialized as native
+  tables, frozen at their last build. So a goal value edited in the sheet is
+  invisible everywhere downstream until those rebuild — the risk is **staleness,
+  not mid-query drift**. A dashboard number that doesn't match the sheet usually
+  means the sheet was edited after the last build; confirm by comparing the
+  sheet's Drive `modifiedTime` against `last_modified_time` for that table in
+  `kipptaf_google_sheets.__TABLES__`.
 
 ### How Finalsite's `latest_status` becomes an expected enrollment status
 
@@ -763,9 +930,12 @@ URL rather than assuming last cycle's. Then:
 - Confirm the **goal names are unchanged**. The goals sheet joins on
   `goal_name`, so a renamed goal silently stops matching.
 - Reconcile SRE's workbook against `stg_google_sheets__finalsite__goals` and
-  hand the analyst the missing rows to paste in.
-- Repeat until there are no discrepancies. The goals sheet is a live read, so
-  each round of pasting is immediately visible to the next comparison.
+  hand the analyst the missing rows to paste in. Cover the **school-level and
+  both grade-level granularities** — SRE's cover sheet only carries school
+  totals, and grade-level goals change independently of them.
+- Repeat until there are no discrepancies. Each round needs
+  `stg_google_sheets__finalsite__goals` rebuilt first — it is a frozen table, so
+  a pasted edit is not visible to the next comparison until then.
 
 **Run this reconciliation whenever goals change, not only at rollover.** SRE
 does not always flag mid-year goal changes, so it is worth offering proactively
@@ -818,6 +988,26 @@ mechanism as the "All regions' point-in-time enrollment flags go NULL" bullet
 under _Known data model caveats_ above.
 
 ## Open questions
+
+- **Is KIPP Purpose's new student target 69 or 74?** SRE's 26-27 workbook
+  contradicts itself: `cover sheet` **H11** says 69, while `Newark` **P51** (the
+  Purpose `Total` row) says 73.97, which rounds to 74. Prod currently holds 74.
+  Excluded from the AY2026 goals change set until SRE rules. Raised with SRE Aug
+  2026; pending their response.
+- **Do Miami Tech, Legacy ES and Legacy MS have a `Budget Target`?** On the
+  `cover sheet` the Budget Target column is populated for these three (**F22** =
+  90, **F23** = 196, **F24** = 56) while the Seat Target column immediately left
+  of it is blank (**E22:E24**). But the same three numbers appear on the `Miami`
+  tab as the SY26-27 **seat** target (**H13**, **H25**, **H29**), and prod
+  records them that way with `Budget Target` NULL. So either these three
+  genuinely have no budget target, or `F22:F24` landed one column right of where
+  they belong. No Miami block carries a Budget Target column, so the value
+  cannot be derived — only SRE can settle it. Excluded from the AY2026 change
+  set. Raised with SRE Aug 2026; pending their response.
+
+  Related and worth fixing regardless: `Miami` **H29** reads 56.9 rather than
+  56, because **H28** holds a stray `0.9` in the seat-target column for Legacy
+  MS grade 8 — which inflates SRE's own Legacy MS total.
 
 - **`stg_finalsite__status_report.active_school_year` could give the scaffold a
   finer per-record rollover signal.** Format is `YYYY-YYYY` (e.g. `2026-2027`)

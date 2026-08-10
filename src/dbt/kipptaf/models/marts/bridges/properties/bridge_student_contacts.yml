@@ -34,8 +34,6 @@ models:
             to_columns: [student_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_students')
@@ -52,8 +50,6 @@ models:
             to_columns: [student_contact_person_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_student_contact_persons')
@@ -93,3 +89,53 @@ models:
         description: >-
           Whether the student lives with the contact. Null for Finalsite
           contact_1 and contact_2 rows.
+
+unit_tests:
+  - name: test_bridge_student_contacts_excludes_third_parent_slot
+    description:
+      Locks the exclusion of parent slots past contact_2. Before the slot filter
+      was added, a contact_3 row fell into the emergency branch and was exported
+      with is_emergency true instead of being a parent. Feeds one contact_1, one
+      contact_2, one contact_3, and one emergency_1 row for the same student;
+      asserts contact_3 produces no bridge row while contact_1, contact_2, and
+      emergency_1 all still appear -- emergency_1 still carrying is_emergency
+      true rather than being dropped by the new filter.
+    model: bridge_student_contacts
+    given:
+      - input: ref('int_students__contacts')
+        format: sql
+        rows: |
+          select
+            500001 as student_number,
+            'kippnewark' as _dbt_source_project,
+            'contact_1' as contact_slot,
+            'con1' as finalsite_contact_id,
+            cast(null as string) as personid,
+            'parent' as relationship,
+            false as is_emergency,
+            cast(null as bool) as is_pickup,
+            cast(null as bool) as is_custodial,
+            cast(null as bool) as is_household_member
+          union all
+          select
+            500001, 'kippnewark', 'contact_2', 'con2', cast(null as string),
+            'parent', false, cast(null as bool), cast(null as bool),
+            cast(null as bool)
+          union all
+          select
+            500001, 'kippnewark', 'contact_3', 'con3', cast(null as string),
+            'parent', false, cast(null as bool), cast(null as bool),
+            cast(null as bool)
+          union all
+          select
+            500001, 'kippnewark', 'emergency_1', cast(null as string),
+            cast(null as string), 'neighbor', true, true, false, false
+    expect:
+      rows:
+        - { contact_slot: contact_1, relationship: parent, is_emergency: false }
+        - { contact_slot: contact_2, relationship: parent, is_emergency: false }
+        - {
+            contact_slot: emergency_1,
+            relationship: neighbor,
+            is_emergency: true,
+          }

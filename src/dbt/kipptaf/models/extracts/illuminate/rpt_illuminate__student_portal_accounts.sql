@@ -9,4 +9,6 @@ select
     student_web_password as `05 Temporary Password`,
 -- trunk-ignore-end(sqlfluff/RF05)
 from {{ ref("int_extracts__student_enrollments") }}
-where rn_all = 1 and enroll_status = 0
+-- Miami left Illuminate ahead of AY2026-27; its PowerSchool records still read
+-- enroll_status = 0 post-Focus-cutover, so the region filter is load-bearing
+where rn_all = 1 and enroll_status = 0 and region != 'Miami'

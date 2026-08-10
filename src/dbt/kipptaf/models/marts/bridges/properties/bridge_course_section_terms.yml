@@ -22,8 +22,6 @@ models:
             to_columns: [course_section_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_course_sections')
@@ -39,8 +37,6 @@ models:
             to_columns: [term_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_terms')

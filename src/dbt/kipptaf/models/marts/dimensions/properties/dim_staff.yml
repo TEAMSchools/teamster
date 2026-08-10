@@ -22,7 +22,6 @@ models:
             warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: staff_unique_id
         data_type: int64

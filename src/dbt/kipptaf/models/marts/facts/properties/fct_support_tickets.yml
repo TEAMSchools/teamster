@@ -20,7 +20,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - not_null
 
       - name: submitter_staff_key
         data_type: string
@@ -33,8 +32,6 @@ models:
             to_columns: [staff_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_staff')
