@@ -469,21 +469,3 @@ data_tests:
         dagster:
           ref:
             name: int_students__students
-
-  - name: test_miami_students_spine_covers_archive
-    description: >-
-      Every student the frozen PowerSchool archive knows must survive into the
-      student spine exactly once -- via the Focus branch for those Focus
-      carries, and via the archive branch for the 493 students Focus never
-      received. A miss means the anti-join in int_students__students dropped a
-      Miami student out of dim_students entirely; a duplicate means both
-      branches kept the same student. Pinned to int_students__students because
-      the test refs two models, and without the pin dagster-dbt logs an
-      AssetObservation across both parents instead of an AssetCheckResult on the
-      model the test is actually about.
-    config:
-      severity: error
-      meta:
-        dagster:
-          ref:
-            name: int_students__students

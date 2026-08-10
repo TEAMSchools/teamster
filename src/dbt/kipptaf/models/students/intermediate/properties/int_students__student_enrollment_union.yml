@@ -5,11 +5,10 @@ models:
       enrollment event (entry into a school for an academic year, including
       re-enrollments). Unions the four PowerSchool district
       `int_powerschool__student_enrollment_union` sources with Miami's Focus
-      enrollment stints, conformed inline to the PowerSchool column vocabulary,
-      for AY2026 forward. Miami's pre-AY2026 stints and alumni graduate
-      placeholders stay on the PowerSchool archive branch -- Focus dates a stint
-      differently than the archive's July 1 rollover, and re-dating history
-      would recompose every historical enrollment key. Replaces
+      enrollment stints, conformed inline to the PowerSchool column vocabulary.
+      Focus is Miami's system of record for enrollment and carries the full
+      history back to AY2018, so the frozen PowerSchool archive contributes no
+      Miami rows at all -- including its alumni graduate placeholders. Replaces
       `int_powerschool__student_enrollment_union` as the canonical
       enrollment-grain source for marts.
     config:
@@ -27,31 +26,30 @@ models:
     columns:
       - name: student_number
         description: >-
-          Canonical network student number. For Miami AY2026 forward, recovered
-          by stripping the leading 8400 Miami-Dade district prefix from the
-          Focus id -- the upstream Focus column of this name holds the prefixed
-          form, so joining on it by name returns zero matches with no error.
+          Canonical network student number. For Miami, recovered by stripping
+          the leading 8400 Miami-Dade district prefix from the Focus id -- the
+          upstream Focus column of this name holds the prefixed form, so joining
+          on it by name returns zero matches with no error.
       - name: entrydate
         description: >-
-          First day of the enrollment stint. For Miami AY2026 forward, taken
-          from the Focus startdate, which records the actual first day of
-          attendance rather than PowerSchool's July 1 administrative rollover
-          for returning students -- this is why the union cuts over at AY2026
-          rather than re-dating history.
+          First day of the enrollment stint. For Miami, taken from the Focus
+          startdate, which records the actual first day of attendance rather
+          than PowerSchool's July 1 administrative rollover for returning
+          students, so Miami's historical enrollment keys differ from the ones
+          the archive produced.
       - name: exitdate
         description: >-
-          Last day of the enrollment stint, or null while the stint is open (and
-          always null on the archive's alumni graduate placeholder rows).
+          Last day of the enrollment stint, or null while the stint is open.
       - name: schoolid
         description: >-
-          Network school number. For Miami AY2026 forward, resolved from Focus's
-          internal school id through the locations crosswalk -- Focus's own
-          schoolid is a small internal integer, not the network identifier.
+          Network school number. For Miami, resolved from Focus's internal
+          school id through the locations crosswalk -- Focus's own schoolid is a
+          small internal integer, not the network identifier.
       - name: enroll_status
         description: >-
-          Enrollment standing for this stint. For Miami AY2026 forward, taken
-          from Focus, which varies this per stint rather than repeating a single
-          student-level value.
+          Enrollment standing for this stint. For Miami, taken from Focus, which
+          varies this per stint rather than repeating a single student-level
+          value.
       - name: grade_level
         description: Numeric grade level for the stint.
       - name: rn_year

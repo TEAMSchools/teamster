@@ -54,16 +54,10 @@ with
     -- not the student's, and is 99.8% null in Focus. Resolve the student's own
     -- grade level from their enrollment stint instead, matching how the
     -- PowerSchool model derives it from base_powerschool__student_enrollments.
-    -- Only AY2026-forward stints are admitted, matching the cutover in
-    -- int_students__students, int_students__terms, and
-    -- int_students__student_enrollment_union -- the PowerSchool archive branch
-    -- below covers every closed year, and the inner join to this CTE in
-    -- grade_level_counts drops any earlier Focus schedule rows for lack of a
-    -- match.
     grade_level_lookup as (
         select student_number, academic_year, grade_level,
         from {{ ref("int_focus__student_enrollments") }}
-        where rn_year = 1 and academic_year >= 2026
+        where rn_year = 1
     ),
 
     grade_level_counts as (
@@ -136,12 +130,12 @@ with
         from percentages
     ),
 
-    -- Miami cuts over to Focus at AY2026, matching the enrollment and terms
-    -- unions. The frozen archive keeps every closed year.
+    -- Focus is Miami's system of record for scheduling, so the frozen archive
+    -- contributes no Miami rows.
     powerschool_conformed as (
         select *,
         from {{ ref("int_powerschool__teacher_grade_levels") }}
-        where _dbt_source_project != 'kippmiami' or academic_year <= 2025
+        where _dbt_source_project != 'kippmiami'
     )
 
 select *,

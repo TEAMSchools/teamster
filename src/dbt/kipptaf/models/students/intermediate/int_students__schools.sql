@@ -36,19 +36,14 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
-    focus_schools as (select school_number, from focus_conformed),
-
-    -- Focus supersedes the frozen archive for every Miami school it carries, so
-    -- an archive row for such a school would double-count. The archive still
-    -- holds the 999999 "Graduated Students" sentinel Focus never received,
-    -- which the 1,002 alumni graduate placeholder enrollment rows (Task 8)
-    -- join to directly -- dropping it would null-fill their school attributes
-    -- in dim_student_enrollments.
+    -- Focus is Miami's system of record for schools, so the frozen archive
+    -- contributes no rows. That drops the archive's 999999 "Graduated
+    -- Students" sentinel along with it, which is fine now that the Miami
+    -- alumni graduate placeholder enrollments it served are gone too.
     powerschool_filtered as (
         select p.*,
         from {{ ref("stg_powerschool__schools") }} as p
-        left join focus_schools as f on p.school_number = f.school_number
-        where p._dbt_source_project != 'kippmiami' or f.school_number is null
+        where p._dbt_source_project != 'kippmiami'
     )
 
 select *,

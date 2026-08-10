@@ -4,15 +4,14 @@ models:
       SIS-agnostic school spine. Unions the PowerSchool school staging view for
       the three New Jersey regions with Miami school identity conformed from
       Focus to the PowerSchool school spine's vocabulary, keyed on the
-      PowerSchool numeric school id instead of Focus's own school code. The
-      Miami PowerSchool archive is excluded for every school Focus carries,
-      because Focus now carries Miami school identity and including both
-      double-counts; the 999999 "Graduated Students" sentinel Focus never
-      received stays on the archive branch so alumni graduate placeholder
-      enrollment rows keep their school attributes. The Focus branch is limited
-      to schools with a match on the people locations sheet; Focus's
-      non-physical administrative entries (ZZ Course History, Virtual Franchise)
-      have no such match and are excluded.
+      PowerSchool numeric school id instead of Focus's own school code. Focus is
+      Miami's system of record for schools, so the frozen PowerSchool archive
+      contributes no Miami rows -- including its 999999 "Graduated Students"
+      sentinel, which is no longer needed now that the Miami alumni graduate
+      placeholder enrollments it served are gone. The Focus branch is limited to
+      schools with a match on the people locations sheet; Focus's non-physical
+      administrative entries (ZZ Course History, Virtual Franchise) have no such
+      match and are excluded.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

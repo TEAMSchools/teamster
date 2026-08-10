@@ -12,6 +12,11 @@ with
             on s.school_number = loc.focus_school_id
     ),
 
+    focus_first_year as (
+        select min(academic_year) as academic_year,
+        from {{ ref("int_focus__student_enrollments") }}
+    ),
+
     -- Progress periods have no PowerSchool terms equivalent and are dropped.
     -- The remaining year, semester, and quarter rows match the archive's own
     -- 1 year + 2 semester + 4 quarter rows per school per year.
@@ -70,12 +75,12 @@ with
             if(`type` = 'quarter', quarter_semester, null) as semester,
             if(`type` = 'quarter', is_within_dates, null) as is_current_term,
         from focus_marking_periods
-        -- Miami cuts over to Focus at AY2026, matching the enrollment union.
-        -- Focus marking periods carry template rows back to syear 1980,
-        -- decades before any KIPP Miami school existed, so admitting every
-        -- Focus year would fabricate history. The archive already covers
-        -- Miami's real closed years.
-        where academic_year >= 2026
+        -- Focus carries a full year/semester/quarter set for two schools in
+        -- every syear back to 1980, decades before any KIPP Miami school
+        -- existed -- roughly 760 template rows that would fabricate history.
+        -- Floor the branch at Miami's first real year, taken from the
+        -- enrollment history rather than hardcoded so it follows a backfill.
+        where academic_year >= (select ffy.academic_year, from focus_first_year as ffy)
     ),
 
     -- int_powerschool__terms resolves quarter dates and codes through termbins
@@ -157,11 +162,10 @@ with
             and p.rn = 1
     ),
 
+    -- Focus is Miami's system of record for term definitions, so the frozen
+    -- archive contributes no Miami rows.
     powerschool_conformed as (
-        select *,
-        from powerschool_joined
-        -- Miami cuts over to Focus at AY2026, matching the enrollment union.
-        where _dbt_source_project != 'kippmiami' or academic_year <= 2025
+        select *, from powerschool_joined where _dbt_source_project != 'kippmiami'
     )
 
 select *,

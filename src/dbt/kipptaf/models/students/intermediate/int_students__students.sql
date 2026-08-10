@@ -145,17 +145,14 @@ with
         left join current_stint as e on r.student_number = e.student_number
     ),
 
-    focus_students as (select student_number, from focus_conformed),
-
-    -- Focus supersedes the frozen archive for every Miami student it carries, so
-    -- an archive row for such a student would double-count. The archive still
-    -- holds 493 departed students Focus never received; those stay, or
-    -- dim_students loses them.
+    -- Focus is Miami's system of record for student identity, so the frozen
+    -- archive contributes no rows -- only the carry-forward values above, for
+    -- the fields Focus has no source for. The 493 departed students the Focus
+    -- seed never received are dropped with it.
     powerschool_filtered as (
         select p.*,
         from {{ ref("stg_powerschool__students") }} as p
-        left join focus_students as f on p.student_number = f.student_number
-        where p._dbt_source_project != 'kippmiami' or f.student_number is null
+        where p._dbt_source_project != 'kippmiami'
     )
 
 select *,

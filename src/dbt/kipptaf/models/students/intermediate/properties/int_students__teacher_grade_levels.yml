@@ -7,10 +7,8 @@ models:
       Unions the four PowerSchool district
       `int_powerschool__teacher_grade_levels` sources with Miami's Focus
       schedule and co-teacher assignments, conformed inline to the PowerSchool
-      vocabulary, for AY2026 forward. Miami's pre-AY2026 distribution stays on
-      the PowerSchool archive branch, matching the cutover in
-      int_students__students, int_students__terms, and
-      int_students__student_enrollment_union. Replaces
+      vocabulary. Focus is Miami's system of record for scheduling, so the
+      frozen PowerSchool archive contributes no Miami rows. Replaces
       `int_powerschool__teacher_grade_levels` as the canonical source for
       `grade_level_rank = 1` teacher-grade joins across the network.
     config:
@@ -27,11 +25,10 @@ models:
     columns:
       - name: teachernumber
         description: >-
-          Network teacher/employee number. For Miami AY2026 forward, resolved
-          from the Focus staff id via
-          int_focus__users.staff_number_identifier_local; rows whose Focus user
-          has no populated value for that field are dropped rather than given an
-          invented identifier.
+          Network teacher/employee number. For Miami, resolved from the Focus
+          staff id via int_focus__users.staff_number_identifier_local; rows
+          whose Focus user has no populated value for that field are dropped
+          rather than given an invented identifier.
         data_tests:
           - not_null:
               config:
@@ -39,17 +36,17 @@ models:
       - name: yearid
         description: >-
           A number representing which year the term belongs to (e.g. 13 for
-          2003-2004). Null for Miami AY2026 forward -- no Focus source.
+          2003-2004). Null for Miami -- no Focus source.
       - name: academic_year
         description: >-
-          Academic year the schedule and roster rows belong to. For Miami AY2026
-          forward, from Focus syear.
+          Academic year the schedule and roster rows belong to. For Miami, from
+          Focus syear.
       - name: grade_level
         description: >-
           Numeric grade level of the students this teacher taught in this
-          academic year. For Miami AY2026 forward, resolved from each student's
-          own enrollment stint rather than the schedule's course-level grade,
-          which is effectively unpopulated in Focus.
+          academic year. For Miami, resolved from each student's own enrollment
+          stint rather than the schedule's course-level grade, which is
+          effectively unpopulated in Focus.
       - name: section_count_distinct
         description: >-
           Count of distinct course periods (sections) this teacher taught
@@ -74,8 +71,7 @@ models:
       - name: _dbt_source_relation
         description: >-
           Source relation, passed through from the PowerSchool union view. Null
-          for Miami AY2026 forward -- Focus has no equivalent internal relation
-          exposed here.
+          for Miami -- Focus has no equivalent internal relation exposed here.
       - name: _dbt_source_project
         description: >-
           District code location. Resolved from _dbt_source_relation for the

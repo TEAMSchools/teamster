@@ -3,20 +3,20 @@ models:
     description: >-
       SIS-agnostic school-year, semester, and quarter spine, at full grain (one
       row per school and per term record). Unions the PowerSchool terms staging
-      view for the three New Jersey regions and Miami's pre-AY2026 archive with
-      Miami's Focus marking periods conformed inline to the PowerSchool terms
-      vocabulary for AY2026 forward, matching the enrollment union's cutover.
-      Focus marking periods carry template rows back to syear 1980, decades
-      before any KIPP Miami school existed, so only AY2026-forward Focus rows
-      are admitted; the archive already covers Miami's real closed years. The
-      quarter-only columns (term, term_start_date, term_end_date, semester,
-      is_current_term) are populated only on quarter rows -- for PowerSchool
-      they are attached from the per-district int_powerschool__terms source,
-      which resolves quarter dates through termbins rather than the raw terms
-      table's own quarter row, and for Focus they are derived on Focus's
-      quarter-type marking periods. Consumers that need only the quarter grain
-      (the former int_powerschool__terms consumers) filter to term is not null
-      at the call site.
+      view for the three New Jersey regions with Miami's Focus marking periods
+      conformed inline to the PowerSchool terms vocabulary. Focus is Miami's
+      system of record for term definitions, so the frozen archive contributes
+      no Miami rows. Focus itself carries template marking periods back to syear
+      1980, decades before any KIPP Miami school existed, so the Focus branch is
+      floored at Miami's first real enrollment year. The quarter-only columns
+      (term, term_start_date, term_end_date, semester, is_current_term) are
+      populated only on quarter rows -- for PowerSchool they are attached from
+      the per-district int_powerschool__terms source, which resolves quarter
+      dates through termbins rather than the raw terms table's own quarter row,
+      and for Focus they are derived on Focus's quarter-type marking periods.
+      Consumers that need only the quarter grain (the former
+      int_powerschool__terms consumers) filter to term is not null at the call
+      site.
     data_tests:
       # Two tests, because the two halves of the grain key on different
       # columns. Quarter rows key on term, which termbins supplies; year and
@@ -44,9 +44,9 @@ models:
     columns:
       - name: schoolid
         description: >-
-          The School_Number of the associated school. For Miami AY2026 forward,
-          resolved from Focus's internal school id through the focus package's
-          own school_number and the locations crosswalk.
+          The School_Number of the associated school. For Miami, resolved from
+          Focus's internal school id through the focus package's own
+          school_number and the locations crosswalk.
         data_tests:
           - not_null:
               config:
@@ -54,20 +54,19 @@ models:
       - name: yearid
         description: >-
           A number representing which year the term belongs to (e.g. 13 for
-          2003-2004). For Miami AY2026 forward, no Focus source; derived as
-          academic_year - 1990, the formula verified against every PowerSchool
-          district and year in prod.
+          2003-2004). For Miami, no Focus source; derived as academic_year -
+          1990, the formula verified against every PowerSchool district and year
+          in prod.
       - name: academic_year
         description: >-
-          Academic year the term falls in. For Miami AY2026 forward, from Focus
-          syear.
+          Academic year the term falls in. For Miami, from Focus syear.
       - name: name
         quote: true
         description: The common name for this term (e.g. Semester 1, Quarter 1).
       - name: abbreviation
         description: >-
-          The short code for the term (e.g. S1, Q1, FY). For Miami AY2026
-          forward, from Focus short_name.
+          The short code for the term (e.g. S1, Q1, FY). For Miami, from Focus
+          short_name.
       - name: firstday
         description: The first calendar date of the term.
       - name: lastday
@@ -75,19 +74,18 @@ models:
       - name: isyearrec
         description: >-
           Flag indicating if this record is the year-long term. 1 = yes, 0 = no.
-          For Miami AY2026 forward, derived from Focus's marking period type.
+          For Miami, derived from Focus's marking period type.
       - name: fiscal_year
         description: >-
-          Fiscal year the term falls in. For Miami AY2026 forward, no Focus
-          source; derived as academic_year + 1, matching the archive's own
-          convention.
+          Fiscal year the term falls in. For Miami, no Focus source; derived as
+          academic_year + 1, matching the archive's own convention.
       - name: term
         description: >-
           Quarter code (Q1-Q4). Null for the year and semester rows a school
           year also carries. For PowerSchool, taken from the matching
           int_powerschool__terms quarter row (resolved through termbins), not
-          from this row's own abbreviation. For Miami AY2026 forward, from
-          Focus's quarter-type marking periods only.
+          from this row's own abbreviation. For Miami, from Focus's quarter-type
+          marking periods only.
       - name: term_start_date
         description: >-
           First calendar date of the quarter, sourced from termbins for
@@ -107,16 +105,15 @@ models:
       - name: dcid
         description: >-
           Unique identifier for this term record in PowerSchool. Null for Miami
-          AY2026 forward -- Focus has no equivalent internal surrogate exposed
-          here.
+          -- Focus has no equivalent internal surrogate exposed here.
       - name: id
         description: >-
           Sequential number generated by PowerSchool; not guaranteed unique on
-          its own. Null for Miami AY2026 forward.
+          its own. Null for Miami.
       - name: portion
         description: >-
           The fraction of a year the term takes, PowerSchool-internal. Null for
-          Miami AY2026 forward.
+          Miami.
       - name: importmap
         description:
           If importing, the code that relates to this term. PowerSchool-only.

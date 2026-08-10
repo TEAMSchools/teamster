@@ -4,13 +4,16 @@ with
     -- int_students__students applies to the student spine. ps_schoolid is the
     -- PowerSchool-aligned school id the upstream already resolved through the
     -- locations crosswalk -- Focus's own schoolid is a small internal integer
-    -- with no relation to the network school number. Only AY2026-forward Focus
-    -- rows are admitted: the network union keeps the frozen PowerSchool archive
-    -- for every closed year, because Focus dates a returning student's stint to
-    -- the real first day of school while PowerSchool used a July 1
-    -- administrative rollover, and entrydate feeds the student_enrollment_key
-    -- hash -- re-dating history would recompose every historical key and
-    -- orphan the facts hanging off them.
+    -- with no relation to the network school number.
+    --
+    -- Every Focus year is admitted, back to AY2018. Focus dates a returning
+    -- student's stint to the real first day of school where PowerSchool used a
+    -- July 1 administrative rollover, so 1,421 of Miami's 8,776 historical
+    -- stints carry a different entrydate than the archive did -- concentrated
+    -- in AY2021 (304) and AY2025 (973). entrydate feeds student_enrollment_key,
+    -- so those keys are recomposed rather than preserved. That is deliberate:
+    -- Focus is the system of record, and the archive's dates are not worth
+    -- keeping the archive branch alive for.
     focus_conformed as (
         select
             _dbt_source_relation,
@@ -38,21 +41,16 @@ with
 
             {{ unprefix_focus_student_id("student_number") }} as student_number,
         from {{ ref("int_focus__student_enrollments") }}
-        where academic_year >= 2026
     ),
 
-    -- Miami migrated to Focus for AY2026. The archive contributes two things
-    -- for Miami: every closed year (AY2025 and earlier), and its alumni
-    -- graduate placeholders in ANY year -- one row per academic year,
-    -- enroll_status 3 with null entry/exit dates -- which KIPP Forward
-    -- reporting needs and Focus has no equivalent for.
+    -- Focus is Miami's system of record for enrollment, and carries the full
+    -- history back to AY2018, so the frozen archive contributes no Miami rows
+    -- at all -- including its alumni graduate placeholders (enroll_status 3
+    -- with null entry/exit dates, one per academic year).
     powerschool_conformed as (
         select *,
         from {{ ref("int_powerschool__student_enrollment_union") }}
-        where
-            _dbt_source_project != 'kippmiami'
-            or academic_year <= 2025
-            or (enroll_status = 3 and entrydate is null)
+        where _dbt_source_project != 'kippmiami'
     )
 
 select *,
