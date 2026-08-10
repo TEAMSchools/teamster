@@ -77,6 +77,19 @@ exposures:
         dagster:
           kinds:
             - googlesheets
+  - name: kfwd_student_salesforce_ids
+    label: KIPP Forward Student Salesforce IDs
+    type: application
+    owner:
+      name: Data Team
+    url: https://docs.google.com/spreadsheets/d/1AAiEQ46OeMbgLjRawoFayfW-4WavtkNPwCvxMOkdSLo
+    depends_on:
+      - ref("rpt_gsheets__kfwd_student_salesforce_ids")
+    config:
+      meta:
+        dagster:
+          kinds:
+            - googlesheets
   - name: camden_sar_accommodations_errors20241031
     label: "[Camden] SAR Accommodations Errors - 20241031"
     type: application
