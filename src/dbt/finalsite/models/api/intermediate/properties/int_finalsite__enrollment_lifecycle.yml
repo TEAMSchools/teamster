@@ -9,6 +9,20 @@ models:
       (`accepted`, `enrollment_in_progress`, `assigned_school`, `enrolled`,
       `retained`), OR a transfer-out (a `withdrawal_last_attended_date` on or
       after the enrollment start). SIS-agnostic.
+    config:
+      meta:
+        dagster:
+          automation_condition:
+            # Backstop, not a replacement -- the eager trigger still fires on
+            # every upstream update. This model joins two independently-ingested
+            # feeds (contacts via the Finalsite API, the status report via the
+            # SFTP drop) that rebuild in separate concurrent Dagster runs, so an
+            # update to one side can be swallowed and leave the table holding a
+            # stale read that nothing re-requests. The 12:45 ET Focus delivery
+            # is a plain cron and reports nothing when that happens, silently
+            # omitting new enrollments. This tick leads it by 10 min against a
+            # ~3s build. Refs #4834
+            cron_backstop_schedule: 35 12 * * *
     columns:
       - name: finalsite_enrollment_id
         data_type: string

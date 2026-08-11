@@ -17,6 +17,7 @@ from dagster import (
 from teamster.core.automation_conditions import (
     dbt_cron_automation_condition,
     dbt_table_automation_condition,
+    dbt_table_cron_backstop_automation_condition,
     dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
 )
@@ -2219,3 +2220,103 @@ def test_cron_table_tick_latched_while_dep_missing():
         evaluation_time=datetime(2026, 1, 2, 0, 10, tzinfo=UTC),
     )
     assert result.get_num_requested(AssetKey("latch_cron_table")) == 1
+
+
+def test_cron_backstop_table_requested_on_upstream_update():
+    """The backstop keeps the eager trigger -- this is what separates it from
+    dbt_cron_automation_condition, which replaces it.
+
+    An upstream data refresh mid-day must still rebuild, well before the tick.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        deps=[upstream_table],
+        automation_condition=dbt_table_cron_backstop_automation_condition(
+            "0 0 * * *", cron_timezone="UTC"
+        ),
+        tags=_TABLE_TAG,
+    )
+    def backstop_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, backstop_table]
+    defs = Definitions(assets=all_assets)
+
+    materialize(assets=all_assets, instance=instance)
+
+    t0 = datetime(2026, 1, 1, 6, 0, tzinfo=UTC)
+    result = evaluate_automation_conditions(
+        defs=defs, instance=instance, evaluation_time=t0
+    )
+    assert result.total_requested == 0
+
+    materialize(assets=[upstream_table], instance=instance, selection=[upstream_table])
+
+    # no tick crossed, but eager fires -- the cron-only condition returns 0 here
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 1, 12, 0, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("backstop_table")) == 1
+
+
+def test_cron_backstop_table_requested_on_tick_without_upstream_update():
+    """The tick is unconditional, which is what makes it a backstop.
+
+    This is the recovery property the condition exists for: when a dep update is
+    swallowed (the SINCE memory reset in the same tick that set the trigger, so
+    nothing re-requests the asset and it sits on a stale read), the next tick
+    rebuilds regardless of whether anything upstream looks newly updated.
+    """
+
+    @asset(tags=_TABLE_TAG)
+    def upstream_table():
+        return 1
+
+    @asset(
+        deps=[upstream_table],
+        automation_condition=dbt_table_cron_backstop_automation_condition(
+            "0 0 * * *", cron_timezone="UTC"
+        ),
+        tags=_TABLE_TAG,
+    )
+    def backstop_table():
+        return 2
+
+    instance = DagsterInstance.ephemeral()
+    all_assets = [upstream_table, backstop_table]
+    defs = Definitions(assets=all_assets)
+
+    materialize(assets=all_assets, instance=instance)
+
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        evaluation_time=datetime(2026, 1, 1, 6, 0, tzinfo=UTC),
+    )
+    assert result.total_requested == 0
+
+    # midnight tick crossed with NOTHING newly updated upstream: still requested
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 1, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("backstop_table")) == 1
+
+    # trigger consumed by the request: not re-requested before the next tick
+    result = evaluate_automation_conditions(
+        defs=defs,
+        instance=instance,
+        cursor=result.cursor,
+        evaluation_time=datetime(2026, 1, 2, 0, 2, tzinfo=UTC),
+    )
+    assert result.get_num_requested(AssetKey("backstop_table")) == 0

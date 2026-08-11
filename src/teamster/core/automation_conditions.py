@@ -199,6 +199,36 @@ def dbt_table_automation_condition() -> AutomationCondition:
     )
 
 
+def dbt_table_cron_backstop_automation_condition(
+    cron_schedule: str, cron_timezone: str | None = None
+) -> AutomationCondition:
+    """Eager table condition PLUS an unconditional cron backstop.
+
+    For a table whose staleness is silently consumed by a scheduled downstream
+    delivery. dbt_table_automation_condition alone is not sufficient there: its
+    any_deps_updated trigger is SINCE-wrapped, so a dep update landing between
+    this asset being requested and materialized can be reset away by the same
+    tick that set it. The table is then left holding a stale read with nothing
+    to re-request it -- observed on int_finalsite__enrollment_lifecycle, whose
+    two feeds rebuild in separate concurrent runs (#4834).
+
+    Distinct from dbt_cron_automation_condition, which REPLACES the eager
+    trigger to cut rebuild cost. Here the cron is ADDITIVE: eager keeps normal
+    freshness, and the tick guarantees recovery before a delivery deadline.
+    Size the tick to lead the deadline by more than the model's build time.
+
+    Triggers: newly_missing, any_deps_updated (direct + through views),
+    cron_tick_passed, code_version_changed.
+    """
+    return _build_dbt_condition(
+        _build_any_ancestor_updated(view_selection=_VIEW_SELECTION),
+        AutomationCondition.cron_tick_passed(
+            cron_schedule=cron_schedule,
+            cron_timezone=cron_timezone or "UTC",
+        ),
+    )
+
+
 def dbt_cron_automation_condition(
     cron_schedule: str, cron_timezone: str | None = None
 ) -> AutomationCondition:
