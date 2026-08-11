@@ -1,6 +1,12 @@
 from datetime import date, timedelta
 
-from dagster import AssetExecutionContext, Config, Output, asset
+from dagster import (
+    AssetExecutionContext,
+    Config,
+    Output,
+    PartitionsDefinition,
+    asset,
+)
 
 from teamster.core.asset_checks import (
     build_check_spec_avro_schema_valid,
@@ -22,6 +28,31 @@ def get_finalsite_since(partition_key: str) -> str:
     return (date.fromisoformat(partition_key) - timedelta(days=1)).isoformat()
 
 
+def build_contacts_request_params(
+    params: dict | None, partition_key: str | None, full_pull: bool
+) -> dict:
+    """Build the query params for one contacts pull.
+
+    Three cases, in the order they are decided:
+
+    - `full_pull` omits `since` entirely, pulling every contact. This is the seed
+      run each district performs once at cutover.
+    - A partitioned run derives `since` from its own partition key, so the
+      partition key is the watermark.
+    - An unpartitioned asset has no partition key and therefore pulls in full.
+
+    Never mutates `params` — it is captured once at asset-definition time and
+    reused on every invocation, so writing `since` into it would leak the first
+    run's watermark into every later run.
+    """
+    request_params = {**(params or {})}
+
+    if partition_key is not None and not full_pull:
+        request_params["since"] = get_finalsite_since(partition_key)
+
+    return request_params
+
+
 class FinalsiteContactsConfig(Config):
     """Run config for a contacts pull.
 
@@ -38,7 +69,7 @@ def build_finalsite_asset(
     asset_name: str,
     schema,
     params: dict | None = None,
-    partitions_def=None,
+    partitions_def: PartitionsDefinition | None = None,
 ):
     key = [code_location, "finalsite", asset_name]
 
@@ -60,13 +91,17 @@ def build_finalsite_asset(
         finalsite: FinalsiteResource,
         config: FinalsiteContactsConfig,
     ):
-        request_params = {**(params or {})}
-
         # A partitioned asset pulls incrementally: the partition key IS the
         # watermark, so a failed run writes no partition and advances nothing.
-        # `full_pull` is the seed escape hatch.
-        if partitions_def is not None and not config.full_pull:
-            request_params["since"] = get_finalsite_since(context.partition_key)
+        # `full_pull` is the seed escape hatch. `context.partition_key` raises on
+        # an unpartitioned asset, so it is only read when there is a partition.
+        request_params = build_contacts_request_params(
+            params=params,
+            partition_key=(
+                context.partition_key if partitions_def is not None else None
+            ),
+            full_pull=config.full_pull,
+        )
 
         data = finalsite.list(path=asset_name, params=request_params)
 

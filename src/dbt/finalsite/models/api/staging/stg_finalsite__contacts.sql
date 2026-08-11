@@ -1,7 +1,4 @@
 with
-    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
-    source as (select *, from {{ source("finalsite", "contacts") }}),
-
     -- Pulls accumulate one Hive partition per pull date, and a `since` window
     -- re-delivers a contact on every pull that covers it, so the same `id`
     -- appears in many partitions. Keep the newest. `desc` alone is deliberate:
@@ -10,7 +7,7 @@ with
     deduplicated as (
         {{
             dbt_utils.deduplicate(
-                relation="source",
+                relation=source("finalsite", "contacts"),
                 partition_by="id",
                 order_by="_dagster_partition_date desc",
             )
@@ -52,6 +49,12 @@ select
     track_attributes,
     households,
 
+    -- passed through whole so stg_finalsite__contact_relationships can unnest
+    -- one deduped copy rather than re-reading the accumulated source. Same
+    -- contract-widening move `households` already carries for
+    -- int_finalsite__contacts__households.
+    relationships,
+
     safe_cast(birth_date as date) as birth_date,
 
     households[safe_offset(0)].id as household_1_id,
@@ -78,10 +81,4 @@ select
     {{ clean_phone("phone_1.number") }} as phone_1_number,
     {{ clean_phone("phone_2.number") }} as phone_2_number,
     {{ clean_phone("phone_3.number") }} as phone_3_number,
-
-    -- passed through whole so stg_finalsite__contact_relationships can unnest
-    -- one deduped copy rather than re-reading the accumulated source. Same
-    -- contract-widening move `households` already carries for
-    -- int_finalsite__contacts__households.
-    relationships,
 from deduplicated
