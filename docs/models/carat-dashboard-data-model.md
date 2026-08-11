@@ -371,6 +371,40 @@ Do not "fix" this by unifying the fields. The requirement is that a goal
 declares which basis it is measured on, so both goal sets can live in one table
 and each gets the right denominator.
 
+## Unreported practice administrations in Illuminate
+
+**Illuminate holds two more years of practice SAT than the dashboard shows.**
+Practice reporting stops at AY2023, but `int_assessments__response_rollup` has
+seven further administrations. KIPP Forward is not believed to have aligned on
+these, so their status is a question rather than a defect — recorded here so
+nobody rediscovers them and assumes data loss.
+
+| Year | `assessment_id` | Title                                          | `scope` | Students |
+| ---- | --------------- | ---------------------------------------------- | ------- | -------- |
+| 2024 | 178628          | `SAT-24-25-BOY SAT-11th Grade-Math`            | `SAT`   | 369      |
+| 2024 | 178629          | `SAT-24-25-BOY SAT-11th Grade-ReadingWriting`  | `SAT`   | 378      |
+| 2024 | 187284          | `11th Grade - Practice SAT 2 EBRW`             | null    | 386      |
+| 2024 | 187287          | `11th Grade Practice SAT 2 MATH`               | null    | 378      |
+| 2024 | 187816          | `11th Grade Practice SAT 2 MATH (w/ Grid Ins)` | null    | 374      |
+| 2025 | 204089          | `SAT-25-26-BOY SAT-11th Grade-Math`            | null    | 342      |
+| 2025 | 204090          | `SAT-25-26-BOY SAT-11th Grade-ReadingWriting`  | null    | 347      |
+
+178628 and 178629 follow the same naming convention as the SY26-27 assessments,
+and 204089 / 204090 were administered in September 2025.
+
+They fail for two independent reasons. **All seven are absent from
+`act_scale_score_key`**, so the conversion join yields no scale score. **Five
+also carry a null `scope`**, which the `scope in ('ACT', 'SAT')` filter rejects
+regardless. So 178628 and 178629 would surface on sheet rows alone; the other
+five need both.
+
+The practical consequence: the account that practice administration moved
+entirely to Winward for two years is incomplete. BOY practice SAT continued in
+Illuminate through SY24-25 and SY25-26 at roughly 350-390 students per
+administration, plus a MOY round in spring 2025. Backfilling would take
+conversion rows for those forms, which means asking KIPP Foundation whether the
+scale-score tables still exist.
+
 ## Recorded deviation — one corrected scale score
 
 **The practice scale-score sheet knowingly diverges from its published source in
