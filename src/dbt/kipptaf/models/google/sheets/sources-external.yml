@@ -1204,6 +1204,11 @@ sources:
                 - sheets
                 - people
                 - location_crosswalk
+        columns:
+          - name: Name
+            data_type: STRING
+          - name: Clean_Name
+            data_type: STRING
       - name: src_google_sheets__people__locations
         external:
           options:
