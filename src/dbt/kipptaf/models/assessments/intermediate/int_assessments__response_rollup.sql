@@ -56,47 +56,49 @@ with
     ),
 
     -- Illuminate `date_taken` is unreliable for a small share of rows, in BOTH
-    -- directions: the raw column spans 0001-01-01 to 4024-12-04. Two guards,
-    -- because neither covers the other's cases.
+    -- directions: the raw column spans 0001-01-01 to 4024-12-04. Every row is
+    -- judged against a date it should sit near, never against a calendar
+    -- constant — an absolute floor is arbitrary, and being one-sided it can
+    -- never reject a future date.
     --
-    -- 1. Relative window. Judge a sitting against its OWN administration, which
-    -- catches a 2001 date attached to a 2020 administration and any absurd
-    -- future date. +/-365 days keeps 99.78% of dated rows; 7,508 fail it.
-    -- An absolute floor alone cannot do this — it is arbitrary and one-sided,
-    -- and can never reject a future date.
+    -- Preferred anchor is the row's own administration (+/-365 days). ~296k
+    -- rows have none, so those fall back to their `academic_year`, which is
+    -- always populated; the +/-1 year window is wide enough to absorb the
+    -- academic-year tagging drift of #3801. Together they null 11,455 rows
+    -- (0.34% of dated rows) and bring the range to 2013-06-03 .. 2026-12-27.
     --
-    -- 2. Absolute floor, for rows with NO administration date to anchor to
-    -- (~296k rows). The window cannot judge them, so without a floor that
-    -- path is unbounded — it is how 1969-12-31 survived an earlier version of
-    -- this guard. Only 1 row needs it today; it is here for the class, not
-    -- the row.
+    -- The fallback is what earns its keep: an earlier version of this guard
+    -- used a 2000-01-01 floor for unanchored rows, which caught exactly 1 row
+    -- and let a ~1,300-row cluster of 2001-01-01 sittings through, because
+    -- they cleared the constant while sitting a decade from their academic
+    -- year.
     --
-    -- Anchored rows inside the window pass through untouched, so a legitimately
-    -- future-dated sitting within its administration window is preserved.
+    -- Rows inside their window pass through untouched, so a legitimately
+    -- future-dated sitting within its administration window is preserved, and
+    -- `assessment_date_key` (`coalesce(administration, date_taken)`) keeps a
+    -- real administration date where one exists — the invariant #4546 rests on.
     --
     -- This matters more than the row counts suggest: the final select takes
     -- `min(date_taken)` per canonical group, so one junk row poisons its whole
     -- group's date. Nulling before the aggregate is what actually fixes it.
-    --
-    -- Unanchored rows that clear the floor are left as-is rather than guessed
-    -- at, which also keeps `assessment_date_key`
-    -- (`coalesce(administration, date_taken)`) non-null downstream — the
-    -- invariant #4546 rests on.
     sanitized_responses as (
         select
             * except (date_taken),
 
-            if(
-                date_taken < date '2000-01-01'
-                or (
+            case
+                when date_taken is null
+                then null
+                when
                     canonical_administered_at is not null
                     and date_diff(date_taken, canonical_administered_at, day)
-                    not between -365
-                    and 365
-                ),
-                null,
-                date_taken
-            ) as date_taken,
+                    between -365 and 365
+                then date_taken
+                when
+                    canonical_administered_at is null
+                    and extract(year from date_taken)
+                    between academic_year - 1 and academic_year + 1
+                then date_taken
+            end as date_taken,
         from scaffold_responses
     ),
 
