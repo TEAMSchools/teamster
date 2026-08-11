@@ -129,6 +129,12 @@
   # TODO(description): no description found on the source site
   audiences: [region, teachers]
   system: google-sheet
+  # TODO(regions): REQUIRED, and currently broken. Add `regions:` with this sheet's
+  # TODO(regions): region — [camden], [miami], or [newark] to match the name. These
+  # TODO(regions): three are declared as one `family` in groups.yml, so the page shows
+  # TODO(regions): a single "GPA Roster" row with a button per region. With no
+  # TODO(regions): `regions:` value those buttons render blank and unlabelled and a
+  # TODO(regions): reader cannot tell which region's grades they are opening.
   # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
   # TODO(verify): with no description of its own. Confirm it is still the live roster and
   # TODO(verify): write one.
@@ -141,6 +147,12 @@
   # TODO(description): no description found on the source site
   audiences: [region, teachers]
   system: google-sheet
+  # TODO(regions): REQUIRED, and currently broken. Add `regions:` with this sheet's
+  # TODO(regions): region — [camden], [miami], or [newark] to match the name. These
+  # TODO(regions): three are declared as one `family` in groups.yml, so the page shows
+  # TODO(regions): a single "GPA Roster" row with a button per region. With no
+  # TODO(regions): `regions:` value those buttons render blank and unlabelled and a
+  # TODO(regions): reader cannot tell which region's grades they are opening.
   # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
   # TODO(verify): with no description of its own. Confirm it is still the live roster and
   # TODO(verify): write one.
@@ -155,6 +167,12 @@
   # TODO(description): no description found on the source site
   audiences: [region, teachers]
   system: google-sheet
+  # TODO(regions): REQUIRED, and currently broken. Add `regions:` with this sheet's
+  # TODO(regions): region — [camden], [miami], or [newark] to match the name. These
+  # TODO(regions): three are declared as one `family` in groups.yml, so the page shows
+  # TODO(regions): a single "GPA Roster" row with a button per region. With no
+  # TODO(regions): `regions:` value those buttons render blank and unlabelled and a
+  # TODO(regions): reader cannot tell which region's grades they are opening.
   # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
   # TODO(verify): with no description of its own. Confirm it is still the live roster and
   # TODO(verify): write one.
