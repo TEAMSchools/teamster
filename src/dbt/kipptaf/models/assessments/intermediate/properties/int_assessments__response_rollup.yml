@@ -33,7 +33,7 @@ models:
       - dbt_utils.expression_is_true:
           arguments:
             expression: |-
-              date_taken is null or date_taken >= '2000-01-01'
+              date_taken is null or date_taken > '2000-01-01'
           config:
             severity: warn
     columns:

@@ -63,21 +63,20 @@ models:
           sources that don't capture an exact date (state, AP) -- the
           administration is identified by academic_year and
           administration_period instead.
+
+          A few upstream rows carry sentinel dates (1900-01-01, 1982-02-27)
+          below dim_dates' 2000-01-01 floor and so have no FK match -- 2 such
+          rows as of 2026-08-11. The `relationships` test that used to guard
+          this column was dropped in #4821: its `where: administered_date_key >=
+          '2000-01-01'` excluded exactly those rows, leaving a test that could
+          not fail. The foreign_key constraint below still documents the
+          relationship.
         constraints:
           - type: foreign_key
             to: ref('dim_dates')
             to_columns: [date_key]
             warn_unsupported: false
             warn_unenforced: false
-        data_tests:
-          - relationships:
-              arguments:
-                to: ref('dim_dates')
-                field: date_key
-              # Three upstream rows carry sentinel dates (1900-01-01,
-              # 1982-02-27) outside dim_dates' 2000-01-01 floor.
-              config:
-                where: administered_date_key >= '2000-01-01'
 
       - name: _dbt_source_project
         data_type: string

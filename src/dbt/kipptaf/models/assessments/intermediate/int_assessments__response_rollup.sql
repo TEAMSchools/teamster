@@ -40,7 +40,9 @@ with
                 s.is_internal_assessment, c.grade_level_id, s.grade_level_id
             ) as canonical_grade_level_id,
 
-            if(s.date_taken < date '2000-01-01', null, s.date_taken) as date_taken,
+            -- <= not <: the sentinel IS the floor date (41 rows, 6 students),
+            -- so a strict < left it indistinguishable from a real sitting date.
+            if(s.date_taken <= date '2000-01-01', null, s.date_taken) as date_taken,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
             {{ ref("int_illuminate__agg_student_responses") }} as asr
