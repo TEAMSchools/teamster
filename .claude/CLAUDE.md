@@ -160,6 +160,10 @@ mutate ProjectV2 items/fields fail with "Resource not accessible by integration"
 — prefix with `GITHUB_TOKEN=` to fall back to the user's OAuth token (`gho_*`)
 which has full scopes.
 
+`gh run rerun` fails the same way as the below: the `ghu_*` token lacks
+`workflow` scope, and the `GITHUB_TOKEN=` fallback returns "cannot be retried".
+Hand reruns to the user or push a commit to re-trigger.
+
 `gh workflow run` (`workflow_dispatch`) can't be done from the Codespace: the
 `ghu_*` token lacks the `workflow` scope (403 "Resource not accessible by
 integration"), and emptying it via `GITHUB_TOKEN=` leaves `gh` API calls

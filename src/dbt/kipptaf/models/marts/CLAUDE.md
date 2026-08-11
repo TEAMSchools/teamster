@@ -145,6 +145,12 @@ guarantees the parent row exists, use INNER JOIN. LEFT JOIN silently produces
 null hash inputs that surrogate-key into placeholder hashes — orphans surface
 only at `relationships` test runtime, not at compile.
 
+A dedupe on such a join is information-preserving — not dup-masking — when every
+matched parent yields the SAME hash (e.g. duplicate stints sharing the key's
+only input). Confirm the duplicate output rows are identical across every
+column; a genuine ambiguity produces differing rows and must still fail the PK
+test.
+
 ## BigQuery reserved identifiers
 
 Columns named `name`, `type`, `text`, `order`, `role`, `rank`, `timestamp`, etc.
