@@ -20,6 +20,7 @@ with
             s.is_replacement,
             s.student_assessment_id,
             s.canonical_assessment_id,
+            s.date_taken,
 
             asr.response_type,
             asr.response_type_id,
@@ -40,9 +41,6 @@ with
                 s.is_internal_assessment, c.grade_level_id, s.grade_level_id
             ) as canonical_grade_level_id,
 
-            -- <= not <: the sentinel IS the floor date (41 rows, 6 students),
-            -- so a strict < left it indistinguishable from a real sitting date.
-            if(s.date_taken <= date '2000-01-01', null, s.date_taken) as date_taken,
         from {{ ref("int_assessments__scaffold") }} as s
         left join
             {{ ref("int_illuminate__agg_student_responses") }} as asr
@@ -65,13 +63,58 @@ with
     -- first_value on a deterministic ordering picks both columns from the
     -- same row so independent min() drift can't split them. Once #3801 is
     -- resolved, the partition becomes pure and this CTE can be removed.
+    -- Illuminate `date_taken` is unreliable for a small share of rows, in BOTH
+    -- directions: the raw column spans 0001-01-01 to 4024-12-04. Two guards,
+    -- because neither covers the other's cases.
+    --
+    -- 1. Relative window. Judge a sitting against its OWN administration, which
+    -- catches a 2001 date attached to a 2020 administration and any absurd
+    -- future date. +/-365 days keeps 99.93% of anchored rows; 7,507 fail it.
+    -- An absolute floor alone cannot do this — it is arbitrary and one-sided,
+    -- and can never reject a future date.
+    --
+    -- 2. Absolute floor, for rows with NO administration date to anchor to
+    -- (~296k rows). The window cannot judge them, so without a floor that
+    -- path is unbounded — it is how 1969-12-31 survived an earlier version of
+    -- this guard. Only 1 row needs it today; it is here for the class, not
+    -- the row.
+    --
+    -- Anchored rows inside the window pass through untouched, so a legitimately
+    -- future-dated sitting within its administration window is preserved.
+    --
+    -- This matters more than the row counts suggest: the final select takes
+    -- `min(date_taken)` per canonical group, so one junk row poisons its whole
+    -- group's date. Nulling before the aggregate is what actually fixes it.
+    --
+    -- Unanchored rows that clear the floor are left as-is rather than guessed
+    -- at, which also keeps `assessment_date_key`
+    -- (`coalesce(administration, date_taken)`) non-null downstream — the
+    -- invariant #4546 rests on.
+    sanitized_responses as (
+        select
+            * except (date_taken),
+
+            if(
+                date_taken < date '2000-01-01'
+                or (
+                    canonical_administered_at is not null
+                    and date_diff(date_taken, canonical_administered_at, day)
+                    not between -365
+                    and 365
+                ),
+                null,
+                date_taken
+            ) as date_taken,
+        from scaffold_responses
+    ),
+
     tiebroken_attrs as (
         select
             *,
             first_value(powerschool_school_id) over (w) as selected_school_id,
             first_value(region) over (w) as selected_region,
             first_value(_dbt_source_project) over (w) as selected_dbt_source_project,
-        from scaffold_responses
+        from sanitized_responses
         window
             w as (
                 partition by

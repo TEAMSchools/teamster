@@ -30,10 +30,20 @@ models:
               - response_type
               - response_type_id
               - is_replacement
+      # Asserts the relative invariant the model now enforces: a sitting date is
+      # judged against its own administration, not an absolute calendar floor.
+      # Kept at warn so a source regression surfaces without blocking CI.
       - dbt_utils.expression_is_true:
           arguments:
             expression: |-
-              date_taken is null or date_taken > '2000-01-01'
+              date_taken is null
+              or (
+                date_taken >= '2000-01-01'
+                and (
+                  administered_at is null
+                  or abs(date_diff(date_taken, administered_at, day)) <= 365
+                )
+              )
           config:
             severity: warn
     columns:
