@@ -7,7 +7,6 @@ from dagster_dbt import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from teamster.core.automation_conditions import (
     dbt_cron_automation_condition,
     dbt_table_automation_condition,
-    dbt_table_cron_backstop_automation_condition,
     dbt_union_relations_automation_condition,
     dbt_view_automation_condition,
 )
@@ -71,22 +70,13 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
                 .get("dagster", {})
                 .get("automation_condition", {})
             )
-            cron_timezone = condition_meta.get("cron_timezone") or self.local_timezone
-
             cron_schedule = condition_meta.get("cron_schedule")
 
             if cron_schedule:
                 return dbt_cron_automation_condition(
-                    cron_schedule=cron_schedule, cron_timezone=cron_timezone
-                )
-
-            # additive backstop: keeps the eager trigger, adds a cron tick so a
-            # swallowed dep update cannot leave the table stale into a delivery
-            cron_backstop_schedule = condition_meta.get("cron_backstop_schedule")
-
-            if cron_backstop_schedule:
-                return dbt_table_cron_backstop_automation_condition(
-                    cron_schedule=cron_backstop_schedule, cron_timezone=cron_timezone
+                    cron_schedule=cron_schedule,
+                    cron_timezone=condition_meta.get("cron_timezone")
+                    or self.local_timezone,
                 )
 
         # union_relations views need dep-aware refresh: their compiled SQL
