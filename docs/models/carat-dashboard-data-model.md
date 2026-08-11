@@ -29,6 +29,34 @@ Three further models exist in the repo but are `enabled: false` and are not part
 of the workbook — `rpt_tableau__college_assessment_dashboard`,
 `_dashboard_historic`, and `_qc_report`.
 
+### Naming trap — `test_type` and `scope` are swapped between the hubs
+
+Read this before joining or unioning the two hubs. The columns share names and
+mean opposite things:
+
+| Source                                         | `test_type`                | `scope`                                               |
+| ---------------------------------------------- | -------------------------- | ----------------------------------------------------- |
+| `int_assessments__college_assessment`          | `Official`                 | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT                |
+| `stg_google_sheets__kippfwd__scaffold`         | `Official`, `Practice`     | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT                |
+| `int_assessments__college_assessment_practice` | ACT, SAT, PSAT 8/9, PSAT10 | Illuminate's — `Benchmark` or null on new assessments |
+
+Two consequences. Joining on either column silently mis-groups rather than
+erroring, since both sides hold plausible strings. And the practice hub's
+`scope` only _looks_ usable — it reads `SAT`/`ACT` on the AY2023 rows because
+Illuminate happened to carry those values, but every SY26-27 assessment reads
+`Benchmark` or null, so logic written against it will quietly match nothing.
+
+The convention the rest of the lineage follows is the official hub's:
+`test_type` is Official or Practice, `scope` is the test. The practice hub
+deviates because the kippadb standardized-testing source owns `test_type` for
+ACT/SAT and renaming it there was not wanted. The official hub resolves the
+identical conflict by aliasing at the boundary — `test_type as scope` at
+[int_assessments__college_assessment.sql:8](../../src/dbt/kipptaf/models/assessments/intermediate/int_assessments__college_assessment.sql)
+— then stamping `'Official' as test_type`. Applying the same two-line fix to the
+practice hub would remove the trap entirely; until someone does,
+**reconciliation happens in `int_assessments__all_college_assessments`** and
+every consumer of the practice hub has to know which column means what.
+
 ### Two score pipelines
 
 Every question about CARAT numbers starts with which pipeline is involved,

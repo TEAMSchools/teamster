@@ -58,9 +58,11 @@ models:
       - name: scope
         data_type: string
         description: >-
-          Illuminate's assessment scope, passed through unchanged. Historical
-          practice assessments read SAT or ACT; externally created ones read
-          Benchmark. Not used to designate rows.
+          Illuminate's assessment scope, passed through unchanged, and NOT the
+          test identity. Historical practice assessments read SAT or ACT;
+          externally created ones read Benchmark or null. Do not write logic
+          against it — use test_type, which the conversion sheet supplies. See
+          the naming trap noted on test_type below.
       - name: scope_round
         data_type: string
         description: >-
@@ -71,8 +73,23 @@ models:
       - name: test_type
         data_type: string
         description: >-
-          Always Practice in this model, distinguishing these rows from official
-          results sourced from College Board and kippadb.
+          The test itself — SAT, ACT, PSAT 8/9, or PSAT10 — taken from the
+          conversion sheet, which is authoritative because Illuminate's scope
+          reads Benchmark or null on externally created assessments.
+
+
+          NAMING TRAP. This is the opposite of
+          int_assessments__college_assessment, where test_type is the constant
+          Official and scope holds the test. The columns share names across the
+          two hubs and mean different things, so joining or unioning them on
+          either column silently mis-groups rather than erroring. The convention
+          the rest of the lineage follows is the official hub's — test_type is
+          Official or Practice, scope is the test — which the scaffold sheet
+          also uses. This model deviates because the kippadb
+          standardized-testing source owns test_type for ACT/SAT and renaming
+          here was not wanted; the official hub resolves the same conflict by
+          aliasing at the boundary. Reconciliation happens downstream in
+          int_assessments__all_college_assessments.
       - name: assessment_id
         data_type: int64
         description: >-
