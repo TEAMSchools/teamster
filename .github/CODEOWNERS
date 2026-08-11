@@ -14,9 +14,10 @@
 /src/teamster/ @TEAMSchools/admins @TEAMSchools/data-engineers
 /tests/ @TEAMSchools/admins @TEAMSchools/data-engineers
 
-# analytics engineers — all dbt projects
+# analytics engineers — dbt projects, semantic layer, launch catalog
 /src/dbt/ @TEAMSchools/admins @TEAMSchools/analytics-engineers
 /src/cube/ @TEAMSchools/admins @TEAMSchools/analytics-engineers
+/src/launch/ @TEAMSchools/admins @TEAMSchools/analytics-engineers
 
 # analysts — kipptaf folders without staging models
 /src/dbt/kipptaf/models/assessments/ @TEAMSchools/admins @TEAMSchools/analytics-engineers @TEAMSchools/analysts

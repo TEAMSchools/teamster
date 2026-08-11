@@ -39,6 +39,13 @@ Before step 1, do two things:
   stale and compound: one session re-asserted a field was unpopulated — and
   built a manual workaround around it — when the field had been fine all along.
   If you cannot verify it, write "unverified" next to it.
+  - **An uploaded handoff or summary document is not project knowledge.** Only
+    this file and `assessment-cube-reference.md` are authoritative. A
+    participant may paste or attach a prior session's handoff; treat every claim
+    in it exactly as you would a recalled one — re-verify it against live data
+    or mark it unverified. One session ran off an uploaded handoff carrying five
+    inherited claims and re-checked four of them, which is the right behavior;
+    the fifth stayed labeled unverified, which is also right.
 
 1. **Calibration first (hard gate).** Before answering any participant query —
    regardless of how urgent or complex the opening request is — check network
@@ -49,6 +56,14 @@ Before step 1, do two things:
    known figure. An end-of-year ADA drop-off is an expected seasonal pattern,
    and a zero-row / empty result in summer (no active school week) is likewise
    expected — neither is a connectivity failure or a defect.
+   - **In summer, check the student count, not just the rate.** The latest
+     week-end record can be a small single-region summer-program cohort with an
+     anomalously high ADA — in early August 2026 it was Camden only, 531
+     students (against Camden's usual 2,146), at 99.25%, with no other region
+     present. A 99% "network ADA" is not a network figure. Three logged sessions
+     read that same record three different ways. Report the count alongside the
+     rate and say which regions are in it; a tiny high-ADA cohort still confirms
+     connectivity, which is all this step is for.
 2. **Force-refresh `meta` at session start.** The cached catalog can be stale; a
    stale catalog has already produced a confident-but-wrong "unanswerable" in a
    prior session. If a field or view you need appears to be missing, refresh
@@ -65,6 +80,17 @@ Before step 1, do two things:
    stated legitimate need. Never write student identifiers into the session log
    or the chat transcript; an authorized identified deliverable goes only into
    its own output file, never into the persistent log.
+   - **Authorized means a file, not a message.** Deliver the roster as a
+     downloadable file and nothing more — do not print names into the chat, even
+     once authorization is confirmed. A file can be moved, restricted, and
+     deleted; a transcript cannot, and these transcripts live inside a Project
+     other people can open. One logged session delivered 16 named students in
+     chat after a valid authorization; the authorization was fine, the delivery
+     surface was not.
+   - **Authorization covers the request you asked about, not the rest of the
+     session.** Reformatting or narrowing that same roster is a continuation and
+     needs no fresh gate. A new population, a new subject, or a new grade band
+     is a new request — ask again.
 6. **Flag, don't invent** when a query needs an undecided default. This is the
    same rule as the next section, applied per query — if a provisional choice is
    unavoidable to keep going, label it provisional and log it as an open
@@ -87,8 +113,12 @@ The following are currently open. Do not state a value, threshold, or rule for
 any of them — flag and log only, and route the decision to instructional
 leadership:
 
-- the minimum-n suppression threshold for small-group results
-- intervention tier cut-scores
+- intervention tier cut-scores, and — separately — the method for _deriving_ one
+  from data. A session swept thresholds and picked the best separator per grade
+  to propose intervention cut scores; that method is unratified, and so is the
+  question of how well a cut must separate before it is fit to flag a student at
+  all. Both route to instructional leadership, and neither should reach a
+  student-facing decision without statistical review.
 - whether a multi-instrument mastery question should pool instruments or report
   per instrument
 - which subjects count as `math` for network reporting
@@ -97,7 +127,10 @@ leadership:
   quadrant-style school reporting — a median split of the charted population is
   a convenience, not a ratified threshold
 - how to attribute a mid-year transfer student in growth reporting: to the
-  school they started the year at, or the one they ended it at
+  school they started the year at, or the one they ended it at — and the same
+  question at **teacher** level, when a student changes sections mid-year. A
+  session defaulted to the EOY teacher; that is a convention, not policy, and it
+  decides whose celebration roster a student appears on.
 - which Illuminate subjects count as "ELA" — `Text Study`, `Writing`,
   `English 100`–`400`, `CCR 1`–`4` and the AP courses are all candidates, the
   same shape of question as "which count as math"
@@ -117,8 +150,15 @@ leadership:
 - what "growth" means for a vendor diagnostic: movement between placement bands
   or a scale-score delta. The two give different answers and neither is ratified
 - which sitting is authoritative when a student tests more than once inside a
-  single benchmark window (common — about 15% in one measured window).
+  single benchmark window (usually under 2%, but one measured window hit 15%).
   Most-recent-by-date is the working convention, not policy
+- whether a cumulative flagging rule should trigger on a single dip below a line
+  or require repeated dips. A session modeled single-dip flagging and found it
+  raises catch rate and false-flag rate together; the stricter alternative was
+  never tested
+- whether proficiency-band boundaries should be shared across grades or set per
+  grade. Analysis pointed at different optimal boundaries for different grades;
+  whether that is desirable is a policy call, not a data one
 
 Some individual fields also carry their own narrower open question (for example,
 which count measure is the default for a count/share question) — those are
@@ -205,6 +245,10 @@ WG_LOG_<YYYY-MM-DD>_<HHMM>_<participant>.md
   whichever of last or first name you have (`walters`, `anthony`). Two
   participants: hyphenate (`walters-ramirez`); more than two: use the team name.
   No name given: use initials, then `unknown` as a last resort.
+  - **Reuse the token this person's earlier logs already use.** Search the
+    folder for their prior filings first. One participant filed as a last name
+    once and a first name the next time, so their two sessions no longer group
+    or sort together. Consistency beats picking the "better" name.
 - Example: `WG_LOG_2026-07-24_1430_walters.md`
 - **The filename is the log's identity — there is no session number to
   reconcile.** Several logs per day, including several from the same person, are
@@ -243,6 +287,14 @@ compare before writing anything:
   session, and that this one is authoritative. A reader who lands on either copy
   must be able to tell from the file alone. Never create a second file under the
   identical name.
+
+**A chat resumed on a later date is a new session, not a new revision.** Open a
+fresh log dated the day the new work happened, and reference the earlier log
+rather than extending it. Revisions are for correcting or completing one
+sitting. Without this rule a long-running chat produces an unbounded chain: one
+pilot session was filed seven times over eight days, leaving ~185KB across seven
+permanent files whose header still claimed a session start from the first day.
+Nothing can be deleted, so the only defense is not creating the chain.
 
 Write once per session, at the end — not per query. The connector can only
 create, never update or delete, so every extra write is permanent clutter that
