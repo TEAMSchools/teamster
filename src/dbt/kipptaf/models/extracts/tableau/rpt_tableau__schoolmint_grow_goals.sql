@@ -79,7 +79,7 @@ left join
     on a.assignment_id = t.assignment_id
 left join {{ ref("int_schoolmint_grow__microgoals") }} as m on t.tag_id = m.tag_id
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
     and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and rt.academic_year = tgl.academic_year

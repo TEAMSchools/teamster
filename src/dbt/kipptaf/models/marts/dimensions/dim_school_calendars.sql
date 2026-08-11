@@ -7,7 +7,7 @@ select
     cd.membershipvalue > 0 as is_membership_day,
 from {{ ref("stg_powerschool__calendar_day") }} as cd
 inner join
-    {{ ref("stg_powerschool__schools") }} as sch
+    {{ ref("int_students__schools") }} as sch
     on cd.schoolid = sch.school_number
     and cd._dbt_source_project = sch._dbt_source_project
     and sch.location_key is not null

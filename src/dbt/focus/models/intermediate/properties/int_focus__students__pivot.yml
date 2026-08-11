@@ -127,6 +127,13 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: gifted_eligibility_label
+        description: >-
+          Decoded label for the gifted_eligibility select field — names the
+          FLDOE criteria paragraph a student was found gifted-eligible under.
+        config:
+          meta:
+            contains_pii: true
       - name: prekindergarten_program_participation_label
         description: >-
           Decoded label for the prekindergarten_program_participation select

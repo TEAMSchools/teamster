@@ -18,7 +18,8 @@ with
                 term when 'Q2' then 'Q1' when 'Q3' then 'Q2' when 'Q4' then 'Q3'
             end as prior_quarter,
 
-        from {{ ref("int_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
+        where term is not null
 
         union all
 
@@ -38,7 +39,7 @@ with
 
             cast(null as string) as prior_quarter,
 
-        from {{ ref("stg_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
         where isyearrec = 1
     ),
 

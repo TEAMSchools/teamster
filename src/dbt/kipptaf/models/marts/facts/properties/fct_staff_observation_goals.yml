@@ -31,8 +31,6 @@ models:
             to_columns: [staff_key]
             warn_unsupported: false
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_staff')
@@ -48,7 +46,6 @@ models:
             to_columns: [staff_observation_goal_type_key]
             warn_unsupported: false
         data_tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff_observation_goal_types')

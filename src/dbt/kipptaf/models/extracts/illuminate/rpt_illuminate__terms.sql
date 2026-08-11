@@ -14,6 +14,13 @@ select
 
     dcid as `09 Local Term ID`,
 -- trunk-ignore-end(sqlfluff/RF05)
-from {{ ref("stg_powerschool__terms") }}
--- Miami left Illuminate ahead of AY2026-27
-where _dbt_source_project != 'kippmiami'
+from {{ ref("int_students__terms") }}
+where
+    -- Miami left Illuminate ahead of AY2026-27
+    _dbt_source_project != 'kippmiami'
+    -- Excludes the synthetic quarter rows int_students__terms adds for a
+    -- handful of historical schoolids whose termbins quarter has no matching
+    -- row in the raw terms table (see int_students__terms.sql) -- those carry
+    -- no term name or PowerSchool identifiers and are not real
+    -- Illuminate-importable terms.
+    and `name` is not null
