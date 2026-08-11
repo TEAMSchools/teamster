@@ -339,18 +339,28 @@ beats a silent empty shipment.
   today against the overwritten single object.
 - **Partition count grows without pruning.** One object per district per day. At
   BigQuery's scale this is years away from mattering, so no pruning is designed.
+- **A day where BOTH ticks fail does not self-heal.** `since` is derived from
+  the partition key, so partition `D+1` asks for `since = D` and never
+  re-requests changes made on `D-1`. One failed tick is harmless — the other
+  tick that day covers the same window — but a fully-missed day leaves that
+  window unasked, and the affected contacts hold stale values until the vendor
+  happens to touch them again. Recovery is to backfill the missing partition,
+  which requests its own `D-1` window. **Nothing currently alerts on a missing
+  partition**, so this depends on someone noticing the gap in the Dagster UI.
+  The old full-snapshot design was completely self-healing here; this is a new
+  operational trap accepted in exchange for the incremental cost saving.
 
 ## Acceptance criteria
 
-| Criterion (#4715)                                                                | How this design meets it                                                                                                             |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| A normal tick requests only changed contacts and issues far fewer requests       | 81 pages vs ~1,002 for kippnewark; 40 vs ~308 for kippmiami                                                                          |
-| A relationship-only change is picked up                                          | Confirmed by the probe: 44 relationship-signature diffs on kippnewark, 2 on kippmiami, all present without `since_includes_expanded` |
-| A changed or new contact lands with the same column values                       | Same Avro schema, same projection; verified by the pre/post row-count and value comparison in cutover step 6                         |
-| A deleted contact stops appearing within one full-refresh cycle                  | **Not met, deliberately.** No full refresh; see Known limitations                                                                    |
-| A failed run does not advance the watermark and the next run recovers            | The watermark is the partition key; a failed run writes no partition                                                                 |
-| Asset keys and dbt source names unchanged; downstream builds with no model edits | Asset key and source name unchanged; edits confined to the two staging models                                                        |
-| kippnewark's `MAX_RUNTIME_SECONDS_TAG` can be dropped or reduced                 | 3600 to 900                                                                                                                          |
+| Criterion (#4715)                                                                | How this design meets it                                                                                                                                                                               |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A normal tick requests only changed contacts and issues far fewer requests       | 81 pages vs ~1,002 for kippnewark; 40 vs ~308 for kippmiami                                                                                                                                            |
+| A relationship-only change is picked up                                          | Confirmed by the probe: 44 relationship-signature diffs on kippnewark, 2 on kippmiami, all present without `since_includes_expanded`                                                                   |
+| A changed or new contact lands with the same column values                       | Same Avro schema, same projection; verified by the pre/post row-count and value comparison in cutover step 6                                                                                           |
+| A deleted contact stops appearing within one full-refresh cycle                  | **Not met, deliberately.** No full refresh; see Known limitations                                                                                                                                      |
+| A failed run does not advance the watermark; a failed TICK recovers              | The watermark is the partition key, so a failed run writes no partition. One failed tick is covered by the other tick that day. A day where BOTH ticks fail does NOT self-heal — see Known limitations |
+| Asset keys and dbt source names unchanged; downstream builds with no model edits | Asset key and source name unchanged; edits confined to the two staging models                                                                                                                          |
+| kippnewark's `MAX_RUNTIME_SECONDS_TAG` can be dropped or reduced                 | 3600 to 900                                                                                                                                                                                            |
 
 ## Out of scope
 

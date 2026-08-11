@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 from dagster import (
     DagsterInstance,
     DailyPartitionsDefinition,
+    Definitions,
     asset,
     build_schedule_context,
 )
@@ -17,8 +18,12 @@ TIMEZONE = "America/New_York"
 
 @asset(
     key=["test", "finalsite", "contacts"],
+    # end_offset=1 mirrors the production partitions_def (see the four
+    # code-location finalsite/assets.py files) -- without it today's partition
+    # doesn't exist until tomorrow, and this fixture would not reproduce the
+    # DagsterUnknownPartitionError the production defect actually raised.
     partitions_def=DailyPartitionsDefinition(
-        start_date="2026-08-01", timezone=TIMEZONE
+        start_date="2026-08-01", timezone=TIMEZONE, end_offset=1
     ),
 )
 def _contacts() -> None: ...
@@ -31,14 +36,17 @@ def _run_requests_at(hour: int, minute: int):
         asset_selection=[_contacts],
     )
 
+    defs = Definitions(assets=[_contacts], schedules=[schedule])
+
     context = build_schedule_context(
         instance=DagsterInstance.ephemeral(),
         scheduled_execution_time=datetime(
             2026, 8, 11, hour, minute, tzinfo=ZoneInfo(TIMEZONE)
         ),
+        repository_def=defs.get_repository_def(),
     )
 
-    return list(schedule(context=context))
+    return list(schedule.evaluate_tick(context).run_requests or [])
 
 
 def test_overnight_tick_targets_todays_partition():

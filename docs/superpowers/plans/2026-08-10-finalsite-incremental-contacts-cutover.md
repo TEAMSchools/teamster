@@ -77,14 +77,27 @@ would then ship empty files to DeansList, ParentSquare and Focus instead of
 failing loudly. That is the reason for the step 4 → step 5 order; do not reorder
 these under time pressure.
 
-One per bucket. Check before deleting:
+One per bucket, and every delete is preceded by its own inspection — the paths
+are written out rather than left as "repeat" because this is an irreversible
+delete across four production buckets:
 
 ```bash
 gsutil ls -l gs://teamster-kippnewark/dagster/kippnewark/finalsite/contacts/data
-gsutil rm gs://teamster-kippnewark/dagster/kippnewark/finalsite/contacts/data
+gsutil rm    gs://teamster-kippnewark/dagster/kippnewark/finalsite/contacts/data
+
+gsutil ls -l gs://teamster-kippcamden/dagster/kippcamden/finalsite/contacts/data
+gsutil rm    gs://teamster-kippcamden/dagster/kippcamden/finalsite/contacts/data
+
+gsutil ls -l gs://teamster-kippmiami/dagster/kippmiami/finalsite/contacts/data
+gsutil rm    gs://teamster-kippmiami/dagster/kippmiami/finalsite/contacts/data
+
+gsutil ls -l gs://teamster-kipppaterson/dagster/kipppaterson/finalsite/contacts/data
+gsutil rm    gs://teamster-kipppaterson/dagster/kipppaterson/finalsite/contacts/data
 ```
 
-Repeat for `teamster-kippcamden`, `teamster-kippmiami`, `teamster-kipppaterson`.
+If an `ls` reports the object missing, STOP rather than moving on — either the
+delete already ran or the path is wrong, and the next `rm` would be operating
+blind.
 
 Confirm only partition directories remain:
 
@@ -161,3 +174,15 @@ After the first 00:15 run, check its metadata: `since` should read the previous
 day's date, and `record_count` should be in the low thousands, not the tens of
 thousands. Then confirm the 01:00 Google Directory sync and 01:25 DeansList ship
 read same-day contacts.
+
+## Ongoing: watch for missing partitions
+
+`since` is derived from the partition key, so partition `D+1` asks for
+`since = D` and never re-requests changes made on `D-1`. One failed tick is
+harmless — the other tick that day covers the same window. **A day where both
+ticks fail does not self-heal**, and nothing currently alerts on it.
+
+Check the `contacts` asset for gaps in the Dagster UI's partition view. Backfill
+any missing partition before the next tick; a backfilled partition requests its
+own `D-1` window, which closes the gap. The longer a gap sits, the more contacts
+hold stale values with no error raised anywhere.

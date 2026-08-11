@@ -15,6 +15,12 @@ finalsite_contacts_daily_asset_job_schedule = build_finalsite_contacts_schedule(
     # the full snapshot used ~5. 00:15 replaces the old 04:00: FRESH's 05:00
     # Tableau extract still reads a same-day pull, and the NJ consumers at 01:00
     # and 01:25 stop reading yesterday's. See #4715.
+    #
+    # Miami used to be the ONLY district on a midday tick, so the finalsite_api
+    # pool (limit 1) was uncontended at 12:00. All four now share it. That is
+    # still comfortably inside the budget: four INCREMENTAL pulls serialized is
+    # ~6 min against the 45 min before the 12:45 delivery, where four full
+    # snapshots would have been ~46 min and blown it.
 )
 
 schedules = [
