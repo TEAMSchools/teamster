@@ -17,8 +17,8 @@
   name: Attendance Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/AttendanceDashboard/Trends?:embed=y
   description:
-    Monitor ADA, Chronic Absenteeism, Completion Status of Chronic Absenteeism
-    and interventions, and Daily Attendance Calls
+    Monitor ADA, Chronic Absenteeism, completion status of chronic absenteeism
+    interventions, and Daily Attendance Calls
   audiences: [leaders, ops, region]
   system: tableau
   status: verified
@@ -28,7 +28,7 @@
   url: https://tableau.kipp.org/t/KIPPNJ/views/NJCertificationDashboardSchoolsView/CertificationDashboard?:embed=y
   description:
     Certification status and individual teacher steps for certification, effort
-    logging, and PRAXIS intensive attendance.
+    logging, and Praxis intensive attendance.
   audiences: [leaders, region]
   system: tableau
   status: verified
@@ -48,7 +48,7 @@
   url: https://tableau.kipp.org/t/KIPPNJ/views/CollegeAdmissionReadinessAssessmentsTrackerCARAT/LandingPage?:embed=y
   description:
     "Tracking of any assessment that helps our students go to and through
-    college: ACT, SAT, PSAT10, PSAT NMSQT, PSAT 8/9, Dual Enrollment and AP."
+    college: ACT, SAT, PSAT 10, PSAT/NMSQT, PSAT 8/9, Dual Enrollment, and AP."
   audiences: [region, leaders, teacher]
   system: tableau
   status: verified
@@ -74,8 +74,8 @@
   name: DDI Suite
   url: https://tableau.kipp.org/t/KIPPNJ/views/DDISuite/LandingPage?:embed=y
   description:
-    Data-Driven Instruction info. Week-over-week assessment, standard, and QBL
-    mastery.
+    Data-Driven Instruction metrics. Week-over-week assessment, standard, and
+    QBL mastery.
   audiences: [leaders, region, teachers]
   system: tableau
   status: verified
@@ -96,11 +96,12 @@
 - id: fast_and_iready_data_tool
   name: FAST & iReady Data Tool (MIA)
   url: https://tableau.kipp.org/t/KIPPNJ/views/KIPPMiamiFASTi-ReadyAnalysis_16759101332760/LandingPage?:embed=y&:showAppBanner=false&:display_count=n&:showVizHome=n&:origin=viz_share_link
-  description: View Florida Assessment of Student Thinking (FAST) results.
-  # TODO(description): source site had conflicting wording; verify
+  description:
+    View Florida Assessment of Student Thinking (FAST) results. Covers FAST,
+    i-Ready, STAR, and Florida DOE Growth Metrics
   audiences: [leaders, region, teachers]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: finance_and_accounting_tools
   name: Finance & Accounting Tools
@@ -110,12 +111,12 @@
   audiences: [region]
   system: tableau
   guide: https://teamschools.zendesk.com/hc/en-us/articles/16753644522391#h_01H2QN8AEA0WXWYWJJBTVXF78H
-  status: needs-review
+  status: verified
 
 - id: fresh_dashboard
   name: FRESH Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/FRESHDashboard/LandingPage?%3Aembed=y#1
-  description: Track SRE's efforts for recruitment and registration.
+  description: Track the SRE team's efforts for recruitment and registration.
   audiences: [ops]
   system: tableau
   status: verified
@@ -124,46 +125,39 @@
   name: "GPA Roster: Camden"
   url: https://docs.google.com/spreadsheets/d/1qM6DQk_mqh4x_rI5YVQyZdYbfDxzOaLGyrqjySlVv2Y/edit?gid=0#gid=0
   description:
-    Provides cummulative GPA along with basic identification information for
-    students in the Camden region for grade levels 5 through 12.
-  # TODO(description): no description found on the source site
+    Provides term gpa, Y1 gpa, cumulative GPA (unweighted, weighted, and
+    projected), along with basic identification information for students in the
+    Camden region for grade levels 5 through 12.
   audiences: [region, teachers]
   system: google-sheet
-  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
-  # TODO(verify): with no description of its own. Confirm it is still the live roster and
-  # TODO(verify): write one.
-  status: needs-review
+  status: verified
 
 - id: gpa_roster_miami
   name: "GPA Roster: Miami"
   url: https://docs.google.com/spreadsheets/d/1HsxearGC74LDySGx0QOZFkkH_HbsxmwzZ57Wi4vaZLg/edit?gid=0#gid=0
-  description: ""
-  # TODO(description): no description found on the source site
+  description:
+    Provides term gpa and Y1 gpa, along with basic identification information
+    for students in the Miami region for grade levels 5 through 12.
   audiences: [region, teachers]
   system: google-sheet
-  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
-  # TODO(verify): with no description of its own. Confirm it is still the live roster and
-  # TODO(verify): write one.
-  status: needs-review
+  status: verified
 
 - id: gpa_roster_newark
   name: "GPA Roster: Newark"
   url: https://docs.google.com/spreadsheets/d/12RHEUde41uR91Fp1aNrpImxhg72kOjPAQu7xLJ90evc/edit?gid=0#gid=0
   description:
-    Provides cummulative GPA along with basic identification information for
-    students in the Newark region for grade levels 5 through 12.
-  # TODO(description): no description found on the source site
+    Provides term gpa, Y1 gpa, cumulative GPA (unweighted, weighted, and
+    projected), along with basic identification information for students in the
+    Newark region for grade levels 5 through 12.
   audiences: [region, teachers]
   system: google-sheet
-  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
-  # TODO(verify): with no description of its own. Confirm it is still the live roster and
-  # TODO(verify): write one.
   status: needs-review
 
 - id: gradebook_and_gpa_dashboard
   name: Gradebook and GPA Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/GradebookandGPADashboard/GradebookGPADashboardLandingPage?%3Aembed=y
-  description: GPA, Gradebook Audit, ES Teacher/Monitor Audit.
+  description:
+    GPA, Gradebook Audit, Elementary School(ES) Teacher/Monitor Audit.
   audiences: [region, teachers]
   system: tableau
   status: verified
@@ -172,9 +166,9 @@
   name: Grow Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/SchoolMintGrowDashboard_17226096936880/Home?:embed=y
   description:
-    Completion tracking, ratings and comments for teacher performance management
-    (ETR and Self & Others), Grow classroom walkthroughs, O3s, Microgoals and
-    Look fors.
+    Completion tracking, ratings, and comments for teacher performance
+    management (ETR and Self & Others), Grow classroom walkthroughs, O3s,
+    Microgoals, and Look-Fors.
   audiences: [leaders, region]
   system: tableau
   guide: https://teamschools.zendesk.com/hc/en-us/articles/360008681374-Performance-Management-Teacher-Goals-Coaching-Excellent-Teaching-Rubric-ETR-Observations-SchoolMint-Grow
@@ -183,13 +177,11 @@
 - id: high_school_early_warning
   name: High School Early Warning
   url: https://tableau.kipp.org/t/KIPPNJ/views/HighSchoolEarlyWarningDashboard/HSEarlyWarningDashboard-LandingPage?:embed=y
-  description: High school at-risk data & graduation eligibility
-  # TODO(description): source site had conflicting wording; verify
+  description: High school at-risk data and graduation eligibility
   audiences: [leaders, teachers]
   system: tableau
   guide: https://teamschools.zendesk.com/hc/en-us/articles/13464666347031--User-Guide-High-School-Early-Warning-Dashboard
-  # also listed on the source site as: High School Early Warning & Graduation Eligibility
-  status: needs-review
+  status: verified
 
 - id: home_instruction_tracker
   name: Home Instruction Tracker
@@ -210,8 +202,8 @@
   name: i-Ready APM Tool
   url: https://tableau.kipp.org/t/KIPPNJ/views/APMDashboard/i-Ready?%3Aembed=y&%3AshowAppBanner=false&%3Adisplay_count=n&%3AshowVizHome=n&%3Aorigin=viz_share_link
   description:
-    i-Ready lesson data per week by school, iReady Diagnostic Data with student
-    State Assesment scores
+    i-Ready lesson data per week by school and i-Ready diagnostic data with
+    student state assessment  scores
   # TODO(description): no description found on the source site
   audiences: [leaders, region, teachers]
   system: tableau
