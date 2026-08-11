@@ -3,11 +3,13 @@
 This directory holds the source of truth for the data team's tool catalog — what
 tools exist, what each is for, and who needs it.
 
-**Where it gets served is a separate decision.** The catalog renders into
-role-specific staff-facing articles; the current design candidate is the Zendesk
-Help Center (see #4762), and follow-on work may render the same source into Okta
-bookmark tiles or a discovery skill. Nothing in this directory depends on that
-choice being settled.
+**Where it gets served is settled.** The catalog renders into a single static
+launch page published to GitHub Pages (see #4762). Follow-on work may render the
+same source into Okta bookmark tiles or a discovery skill.
+
+**Only `status: verified` entries publish.** An entry left at `needs-review` is
+excluded from the build, so setting `verified` is not a quality note — it is
+what puts the tool in front of staff. The page starts empty and fills up.
 
 | File         | What it is                                                      |
 | ------------ | --------------------------------------------------------------- |
@@ -22,7 +24,7 @@ will consume.
 ## Current state
 
 `links.yml` was **scraped from the existing Google Site** and merged. It is a
-starting point, not a finished catalog. Every entry carries
+starting point, not a finished catalog. Every entry started at
 `status: needs-review`.
 
 - **46 tools** — 35 Tableau, 7 Google Sheets, 3 AppSheet apps, 1 Zendesk

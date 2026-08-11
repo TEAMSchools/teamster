@@ -1,12 +1,15 @@
 # Data launch page — tool catalog
 #
-# Source of truth for the generated staff-facing catalog articles. Where those
-# get served is a separate decision; the current design candidate is the Zendesk
-# Help Center, tracked in GitHub #4762.
+# Source of truth for the staff-facing launch page: a static page published to
+# GitHub Pages and built from this file. Design spec in GitHub #4762.
+#
+# ONLY `status: verified` ENTRIES PUBLISH. An entry left at `needs-review` is
+# excluded from the build, so setting `verified` is not a quality note — it is
+# what puts the tool in front of staff.
 #
 # THIS FILE IS A STARTING POINT, NOT A FINISHED CATALOG. It was scraped from
-# the existing Google Site, so every entry carries `status: needs-review`
-# until a human has confirmed it against the live tool. See README.md in this
+# the existing Google Site, so every entry started at `status: needs-review`
+# until a human confirmed it against the live tool. See README.md in this
 # directory for what reviewing an entry means.
 #
 # `audiences` controls which role views a tool appears in. It is NOT an
