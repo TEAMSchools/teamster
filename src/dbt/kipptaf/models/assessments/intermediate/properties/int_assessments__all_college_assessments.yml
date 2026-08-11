@@ -1,0 +1,150 @@
+models:
+  - name: int_assessments__all_college_assessments
+    description: >-
+      Single hub for college-entrance assessment scores across both test types,
+      carrying the cross-test ranking and alignment fields that CARAT reporting
+      views each compute for themselves today. Currently official scores only —
+      int_assessments__college_assessment_practice joins in once the official
+      repointing has been verified against production.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - student_number
+              - score_type
+              - test_date
+              - rn_highest
+    columns:
+      - name: student_number
+        data_type: int64
+        description: Student Number assigned by the school. Indexed.
+      - name: administration_round
+        data_type: string
+        description: Test administration identifier from the source system.
+      - name: academic_year
+        data_type: int64
+        description: Academic year of the administration, start-year convention.
+      - name: test_date
+        data_type: date
+        description: Date the student sat the assessment.
+      - name: test_month
+        data_type: string
+        description: Full month name of test_date.
+      - name: test_type
+        data_type: string
+        description: >-
+          Official or Practice. Reads Official on every row until the practice
+          hub is unioned in. Note this is the opposite of the practice hub's own
+          test_type, which holds the test itself — see the naming trap in the
+          reference doc.
+      - name: scope
+        data_type: string
+        description: The test itself — ACT, SAT, PSAT 8/9, PSAT10, PSAT NMSQT.
+      - name: aligned_scope
+        data_type: string
+        description: >-
+          Scope with PSAT10 and PSAT NMSQT folded to PSAT10/NMSQT, since they
+          are the same test offered in different windows and share a scale.
+          Valid for comparing scores. ACT and SAT are never folded here.
+      - name: subject_area
+        data_type: string
+        description: Section as the source system spells it.
+      - name: aligned_subject_area
+        data_type: string
+        description: Subject area with Composite and Combined folded to Total.
+      - name: aligned_subject
+        data_type: string
+        description: >-
+          Subject area with the reading and EBRW variants folded to
+          EBRW/Reading, for comparison across test generations.
+      - name: course_discipline
+        data_type: string
+        description: ENG, MATH, or SCI, matching PowerSchool credit types.
+      - name: score_type
+        data_type: string
+        description: Score identifier, unique per test and section.
+      - name: scale_score
+        data_type: numeric
+        description: The score as reported, on the test's own scale.
+      - name: rn_highest
+        data_type: int64
+        description: >-
+          Rank of this score among the student's scores for the same scope and
+          score type, highest first. Ranked upstream before rows without a test
+          date are dropped, so a student can have no rank-1 row. Part of the
+          grain.
+      - name: salesforce_id
+        data_type: string
+        description: kippadb contact id. Null on College Board rows.
+      - name: is_overall_score
+        data_type: int64
+        description: Flags a total or composite score rather than a section.
+      - name: is_subject_score
+        data_type: int64
+        description: Flags a section score rather than a total or composite.
+      - name: is_benchmark_eligible
+        data_type: boolean
+        description: >-
+          Whether the score can be compared against a benchmark threshold. False
+          for ACT, whose 1-36 scale is not comparable, and for the four legacy
+          sub-test score types reported on a 10-40 scale. The aligned max fields
+          below already exclude these rows, so consumers do not filter on this
+          column — it explains why a row has no aligned max.
+      - name: n_overall_scores
+        data_type: int64
+        description: Count of total or composite scores in the same sitting.
+      - name: n_subject_scores
+        data_type: int64
+        description: Count of section scores in the same sitting.
+      - name: strategy_case
+        data_type: string
+        description: >-
+          Which score shapes the sitting produced — Case 1 overall only, Case 2
+          sections only, Case 3 both.
+      - name: surrogate_key
+        data_type: string
+        description: Hash of student_number, score_type, and test_date.
+      - name: running_max_scale_score
+        data_type: numeric
+        description: >-
+          Highest score for this score type as of this test date, so earlier
+          sittings are not retroactively improved.
+      - name: max_scale_score
+        data_type: numeric
+        description: Highest score for this student and score type, all dates.
+      - name: previous_total_score_change
+        data_type: numeric
+        description: >-
+          Change in total score from the student's previous sitting of the same
+          scope. Positive means improvement. Null on the first sitting.
+      - name: superscore
+        data_type: numeric
+        description: >-
+          Best section scores across sittings recombined into a total — summed
+          for SAT and PSAT, averaged for ACT.
+      - name: avg_running_max_superscore
+        data_type: numeric
+        description: Section running maxes averaged, feeding the ACT superscore.
+      - name: sum_running_max_superscore
+        data_type: numeric
+        description: Section running maxes summed, feeding the SAT superscore.
+      - name: runnning_superscore
+        data_type: numeric
+        description: >-
+          Superscore as of this test date. Name carries a typo inherited from
+          the upstream hub, where it has no consumers.
+      - name: max_aligned_scale_score_within_test_type
+        data_type: numeric
+        description: >-
+          Highest benchmark-eligible score for this student, aligned scope, and
+          subject area, within one test type. Replaces the deduplicated pick
+          that the benchmark view builds for itself. Identical to the across
+          field until practice rows are unioned in.
+      - name: max_aligned_scale_score_across_test_types
+        data_type: numeric
+        description: >-
+          Highest benchmark-eligible score for this student, aligned scope, and
+          subject area, counting official and practice together.
