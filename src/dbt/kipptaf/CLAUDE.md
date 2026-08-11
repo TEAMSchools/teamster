@@ -244,7 +244,11 @@ Canonical-grain consumers (1 row per logical school) should use
 **`stg_google_sheets__people__campus_crosswalk`** uniqueness grain is
 `Location_Name` only. `Name` is the parent campus and repeats across sibling
 schools (e.g., `KIPP Miami - North Campus` rolls up five `Location_Name`
-children).
+children). It is the SOLE owner of location-to-campus — `campus_name` on
+`int_people__location_crosswalk` and `campus` on `dim_locations` resolve from
+here; don't reintroduce a `Campus_Name` scalar on the locations sheet. It
+carries no self-referential rows, so a campus record's `campus_name` is NULL by
+design. It also gates `rpt_illuminate__roles` via an INNER join.
 
 **`stg_powerschool__students` phantom rows**: PowerSchool retains 4 placeholder
 rows (one per district) with
