@@ -250,6 +250,12 @@ config blocks before the move, and rename the model's singular tests and their
 
 ## View→table flips for BigQuery plan depth
 
+**Before re-attempting a materialization or automation-condition change, check
+whether it was already reverted**:
+`git log -S '<config key>' -- <properties yml>`. A reverted perf change reads as
+an obvious win and CI passes for a while — that is how #4464 got re-done here,
+eight days after #4587 reverted it.
+
 A table model with a plan of hundreds of stages (straggler-fragile, e.g.
 [#4153](https://github.com/TEAMSchools/teamster/issues/4153)) usually inherits
 the depth from view upstreams: BigQuery inlines each view's full SQL per
@@ -797,6 +803,10 @@ legitimately-superseded inactive rows that repeat the key.
   `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
   literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
   above overrides this rule; nothing else does.
+- **Disabling a model does NOT disable its tests.** `config: enabled: false` in
+  properties yml moves the model to `disabled` but leaves every test in `nodes`
+  (verified with `--no-partial-parse`), still scanning the stale prod relation.
+  Add `config: enabled: false` to each test as well.
 
 ### Verifying a test-removal PR
 
@@ -804,6 +814,11 @@ Never report a count from the YAML diff — it does not say which dbt nodes
 actually disappeared. `dbt parse` on main and on the branch, then diff the
 `resource_type == 'test'` node names. That fixes the delta and proves nothing
 unintended was dropped.
+
+Parse BOTH sides with `--no-partial-parse` — partial parse caches node
+enable/disable state and under-reports (767 vs 772 tests this session). Re-parse
+main fresh too: the main checkout's manifest is a stale artifact that reports
+since-deleted models as REMOVED and since-added ones as ADDED.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 

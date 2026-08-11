@@ -31,11 +31,11 @@ models:
         description: >-
           FK to dim_student_section_enrollments. Surrogate key derived from
           cc_dcid and _dbt_source_project.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_section_enrollments')
-            to_columns: [student_section_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_section_enrollments')
+              to_columns: [student_section_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -48,11 +48,11 @@ models:
           start_date, region, and school_id. Null when due_date does not fall
           within any reporting term for the school and region.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
         data_tests:
           - relationships:
               arguments:
@@ -69,11 +69,9 @@ models:
             source_system: PowerSchool
             source_model: stg_powerschool__assignmentsection
             source_column: duedate
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:

@@ -22,11 +22,11 @@ models:
         data_type: string
         description: >-
           FK to dim_surveys. Surrogate key derived from survey_id.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_surveys')
-            to_columns: [survey_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_surveys')
+              to_columns: [survey_key]
         data_tests:
           - relationships:
               arguments:
@@ -37,11 +37,11 @@ models:
         description: >-
           FK to dim_survey_questions. Surrogate key derived from
           question_shortname.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_survey_questions')
-            to_columns: [survey_question_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_survey_questions')
+              to_columns: [survey_question_key]
         data_tests:
           - relationships:
               arguments:
