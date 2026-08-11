@@ -83,19 +83,6 @@
   system: tableau
   status: verified
 
-- id: early_literacy_tool
-  name: Early Literacy Tool (ELIT)
-  url: https://tableau.kipp.org/t/KIPPNJ/views/EarlyLiteracyDashboard_16940305949500/RegionOverview-Benchmark?:embed=y
-  description:
-    Analyze participation rates and measure level achievement distribution for
-    DIBELS.
-  audiences: []
-  # TODO(audiences): appeared only on the All page; assign roles
-  system: tableau
-  guide: https://teamschools.zendesk.com/hc/en-us/articles/17344531036183
-  # TODO(verify): See note on 'Literacy Tool (ELIT)'. Different URL, near-identical name.
-  status: needs-review
-
 - id: fast_and_iready_data_tool
   name: FAST & iReady Data Tool (MIA)
   url: https://tableau.kipp.org/t/KIPPNJ/views/KIPPMiamiFASTi-ReadyAnalysis_16759101332760/LandingPage?:embed=y&:showAppBanner=false&:display_count=n&:showVizHome=n&:origin=viz_share_link
@@ -134,9 +121,7 @@
   audiences: [region, teachers]
   system: google-sheet
   regions: [camden]
-  # TODO(sharing): confirm this sheet is shared to a group, not "anyone with the
-  # TODO(sharing): link", then set `status: verified`.
-  status: needs-review
+  status: verified
 
 - id: gpa_roster_miami
   name: "GPA Roster: Miami"
@@ -147,9 +132,7 @@
   audiences: [region, teachers]
   system: google-sheet
   regions: [miami]
-  # TODO(sharing): confirm this sheet is shared to a group, not "anyone with the
-  # TODO(sharing): link", then set `status: verified`.
-  status: needs-review
+  status: verified
 
 - id: gpa_roster_newark
   name: "GPA Roster: Newark"
@@ -161,9 +144,7 @@
   audiences: [region, teachers]
   system: google-sheet
   regions: [newark]
-  # TODO(sharing): confirm this sheet is shared to a group, not "anyone with the
-  # TODO(sharing): link", then set `status: verified`.
-  status: needs-review
+  status: verified
 
 - id: gradebook_and_gpa_dashboard
   name: Gradebook and GPA Dashboard
@@ -197,18 +178,12 @@
 
 - id: home_instruction_tracker
   name: Home Instruction Tracker
-  url: https://tableau.kipp.org/t/KIPPNJ/views/NewarkHomeInstructionTracker/KIPPNJMiamiHomeInstructionTracker?:embed=y
-  # TODO(url-conflict): also linked as https://tableau.kipp.org/t/KIPPNJ/views/OKRTSDashboard_17247098359700/HomeInstruction?:embed=y
+  url: https://tableau.kipp.org/t/KIPPNJ/views/OKRTSDashboard_17247098359700/HomeInstruction?:embed=y
   description: Tracking home instruction requests
-  # TODO(description): source site had conflicting wording; verify
   audiences: [ops]
   system: tableau
   guide: https://teamschools.zendesk.com/hc/en-us/articles/360013473594-Home-Instruction-Request-Process
-  # TODO(verify): TWO different URLs on the live site (a dedicated tracker vs an OKRTS
-  # TODO(verify): tab), and the Operations page shows the OKRTS description on this tool.
-  # TODO(verify): Decide which is canonical; the other may be a separate entry or a dead
-  # TODO(verify): link.
-  status: needs-review
+  status: verified
 
 - id: i_ready_apm_tool
   name: i-Ready APM Tool
@@ -219,17 +194,18 @@
   # TODO(description): no description found on the source site
   audiences: [leaders, region, teachers]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: kipp_forward_data_suite
   name: KIPP Forward Data Suite
   url: https://tableau.kipp.org/t/KIPPNJ/views/KIPPForwardDataSuite_16988639234650/SplashPage?:embed=y
   description:
-    Metrics on match, persistence, college success, career launch, and
-    re-enrollment
+    Metrics on match, persistence, college success, career launch,
+    re-enrollment, Maher Fund Aid Report, college persistance and School
+    Performance Index(SPI)
   audiences: [region]
   system: tableau
-  status: needs-review
+  status: verified
 
 - id: leader_pm_dashboard
   name: Leader PM Dashboard
@@ -254,18 +230,16 @@
   system: appsheet
   status: needs-review
 
-- id: literacy_tool
-  name: Literacy Tool (ELIT)
+- id: lit_dashboard
+  name: LIT Dashboard
   url: https://tableau.kipp.org/t/KIPPNJ/views/LiteracyDashboard/LITDashboard-LandingPage?:embed=y
   description:
-    Analysis of performance, growth and fidelity monitoring for DIBELS 8.
+    DIBELS 8 benchmark and progress monitoring performance, growth, and sight
+    words, with fidelity tracking.
   audiences: [leaders, teachers]
+  #TODO(Check if its the same audience, verify with gaby on whether the new LIT Dashboard uses the same guide as the old ELIT dashboard)
   system: tableau
   guide: https://teamschools.zendesk.com/hc/en-us/articles/17344531036183
-  # also listed on the source site as: LIT Dashboard
-  # TODO(verify): Name collision with 'Early Literacy Tool (ELIT)', which is a DIFFERENT
-  # TODO(verify): dashboard. Confirm both are live and rename one so they are
-  # TODO(verify): distinguishable.
   status: needs-review
 
 - id: manager_survey_report
