@@ -62,8 +62,9 @@ with
     ),
 
     assignments as (
-        /* - School staff assigned to primary school only
-           - Campus staff assigned to all schools at campus
+        /* School and campus staff assigned to their primary school only. The
+           campus crosswalk previously overrode the school id here, but it
+           resolved to the same value the roster already carries.
         */
         select
             sr.powerschool_teacher_number,
