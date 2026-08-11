@@ -33,11 +33,11 @@ models:
         description: >-
           Foreign key to dim_staff_observation_rubrics. Surrogate key derived
           from rubric_id.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff_observation_rubrics')
-            to_columns: [staff_observation_rubric_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_observation_rubrics')
+              to_columns: [staff_observation_rubric_key]
         data_tests:
           - relationships:
               arguments:

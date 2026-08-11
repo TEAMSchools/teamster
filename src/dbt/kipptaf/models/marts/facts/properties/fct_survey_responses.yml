@@ -25,11 +25,11 @@ models:
         description: >-
           FK to dim_survey_questions. Identifies which question this response
           answers.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_survey_questions')
-            to_columns: [survey_question_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_survey_questions')
+              to_columns: [survey_question_key]
         data_tests:
           - relationships:
               arguments:
@@ -41,11 +41,11 @@ models:
         description: >-
           FK to fct_survey_submissions. Links this response to its parent
           submission record.
-        constraints:
-          - type: foreign_key
-            to: ref('fct_survey_submissions')
-            to_columns: [survey_submission_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('fct_survey_submissions')
+              to_columns: [survey_submission_key]
       - name: response_value
         data_type: numeric
         description: >-
