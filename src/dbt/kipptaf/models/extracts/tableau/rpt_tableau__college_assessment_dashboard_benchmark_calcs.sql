@@ -1,4 +1,86 @@
 with
+    scaffold as (
+        select
+            region,
+            school,
+            student_number,
+            student_name,
+            iep_status,
+            is_504,
+            lep_status,
+            graduation_year,
+            year_in_network,
+            college_match_gpa,
+            college_match_gpa_bands,
+
+            regexp_extract(benchmark_group, r'^(.+)_[^_]+_[^_]+$') as aligned_scope,
+            regexp_extract(benchmark_group, r'^.+_([^_]+)_[^_]+$') as subject_area,
+            regexp_extract(benchmark_group, r'_([^_]+)$') as benchmark_name,
+
+            case
+                benchmark_group
+                when 'PSAT 8/9_EBRW_EBRW'
+                then 410
+                when 'PSAT10/NMSQT_EBRW_EBRW'
+                then 430
+                when 'SAT_EBRW_EBRW'
+                then 480
+                when 'PSAT 8/9_Math_Math'
+                then 450
+                when 'PSAT10/NMSQT_Math_Math'
+                then 480
+                when 'SAT_Math_Math'
+                then 530
+                when 'PSAT 8/9_Combined_College-Ready'
+                then 860
+                when 'PSAT 8/9_Combined_EA/ED-Ready'
+                then 1100
+                when 'PSAT 8/9_Combined_HS-Ready'
+                then 800
+                when 'PSAT10/NMSQT_Combined_College-Ready'
+                then 910
+                when 'PSAT10/NMSQT_Combined_EA/ED-Ready'
+                then 1100
+                when 'PSAT10/NMSQT_Combined_HS-Ready'
+                then 840
+                when 'SAT_Combined_College-Ready'
+                then 1010
+                when 'SAT_Combined_EA/ED-Ready'
+                then 1200
+                when 'SAT_Combined_HS-Ready'
+                then 890
+            end as benchmark_goal,
+
+        from {{ ref("int_extracts__student_enrollments") }}
+        cross join
+            unnest(
+                [
+                    'PSAT 8/9_EBRW_EBRW',
+                    'PSAT10/NMSQT_EBRW_EBRW',
+                    'SAT_EBRW_EBRW',
+                    'PSAT 8/9_Math_Math',
+                    'PSAT10/NMSQT_Math_Math',
+                    'SAT_Math_Math',
+                    'PSAT 8/9_Combined_College-Ready',
+                    'PSAT 8/9_Combined_EA/ED-Ready',
+                    'PSAT 8/9_Combined_HS-Ready',
+                    'PSAT10/NMSQT_Combined_College-Ready',
+                    'PSAT10/NMSQT_Combined_EA/ED-Ready',
+                    'PSAT10/NMSQT_Combined_HS-Ready',
+                    'SAT_Combined_College-Ready',
+                    'SAT_Combined_EA/ED-Ready',
+                    'SAT_Combined_HS-Ready'
+                ]
+            ) as benchmark_group
+        where
+            school_level = 'HS'
+            and rn_undergrad = 1
+            and rn_year = 1
+            and grad_iep_exempt_status_overall != 'Yes'
+            and graduation_year is not null
+            and not is_out_of_district
+    ),
+
     -- trunk-ignore(sqlfluff/ST03)
     aligned_scores_pre as (
         select
@@ -22,30 +104,6 @@ with
                 'sat_math_test_score',
                 'sat_reading_test_score'
             )
-
-        union all
-
-        select
-            student_number,
-            test_type,
-            score_type,
-            subject_area,
-            scale_score,
-
-            if(
-                scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope
-            ) as aligned_scope,
-
-        from {{ ref("int_assessments__college_assessment_practice") }}
-        where
-            rn_highest = 1
-            and scope != 'ACT'
-            and score_type not in (
-                'psat10_math_test',
-                'psat10_reading',
-                'sat_math_test_score',
-                'sat_reading_test_score'
-            )
     ),
 
     aligned_scores as (
@@ -56,28 +114,6 @@ with
                 order_by="scale_score desc",
             )
         }}
-    ),
-
-    scaffold as (
-        select distinct
-            expected_test_type,
-            expected_aligned_scope,
-            expected_subject_area,
-
-            expected_benchmark_goal,
-
-            if(
-                benchmark_min_score = 'hs_ready_min_score', 'HS-Ready', 'College-Ready'
-            ) as expecrted_benchmark_name,
-
-        from
-            {{ ref("stg_google_sheets__kippfwd__scaffold") }} unpivot (
-                expected_benchmark_goal for expected_benchmark_min_score
-                in (hs_ready_min_score, college_ready_min_score)
-            )
-        where
-            expected_scope != 'ACT'
-            and academic_year = {{ var("current_academic_year") }}
     ),
 
     base as (
@@ -93,41 +129,27 @@ with
             e.year_in_network,
             e.college_match_gpa,
             e.college_match_gpa_bands,
+            e.aligned_scope,
+            e.subject_area,
+            e.benchmark_name,
+            e.benchmark_goal,
 
-            s.expected_test_type,
-            s.expected_aligned_scope,
-            s.expected_subject_area,
-            s.expected_benchmark_name,
-            s.expected_benchmark_goal,
-
-            a.test_type,
-            a.score_type,
-            a.scale_score,
+            s.test_type,
+            s.score_type,
+            s.scale_score,
 
             cast(
-                max(a.scale_score) over (
-                    partition by
-                        e.student_number,
-                        s.expected_aligned_scope,
-                        s.expected_subject_area
+                max(s.scale_score) over (
+                    partition by e.student_number, e.aligned_scope, e.subject_area
                 ) as int64
             ) as max_score,
 
-        from {{ ref("int_extracts__student_enrollments") }} as e
-        cross join scaffold as s
+        from scaffold as e
         left join
-            aligned_scores as a
-            on e.student_number = a.student_number
-            and s.expected_test_type = a.expected_test_type
-            and s.expected_aligned_scope = a.aligned_scope
-            and s.expected_subject_area = a.subject_area
-        where
-            e.school_level = 'HS'
-            and e.rn_undergrad = 1
-            and e.rn_year = 1
-            and e.grad_iep_exempt_status_overall != 'Yes'
-            and e.graduation_year is not null
-            and not e.is_out_of_district
+            aligned_scores as s
+            on e.student_number = s.student_number
+            and e.aligned_scope = s.aligned_scope
+            and e.subject_area = s.subject_area
     )
 
 select
