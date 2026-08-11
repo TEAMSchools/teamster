@@ -29,11 +29,11 @@ models:
       - name: student_key
         data_type: string
         description: FK to dim_students.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_students')
-            to_columns: [student_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
         data_tests:
           - relationships:
               arguments:
@@ -43,11 +43,11 @@ models:
       - name: assessment_administration_key
         data_type: string
         description: FK to dim_assessment_administrations.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessment_administrations')
-            to_columns: [assessment_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
         data_tests:
           - relationships:
               arguments:
@@ -59,11 +59,11 @@ models:
         description: >-
           FK to dim_terms. Resolves via (region x administered_date x school)
           against the reporting terms sheet.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
         data_tests:
           - relationships:
               arguments:

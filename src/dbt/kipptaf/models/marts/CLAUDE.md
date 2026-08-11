@@ -252,25 +252,38 @@ explicit uniqueness test on its PK (`unique` on a single column, or
 `dbt_utils.unique_combination_of_columns` for composite).
 
 Exception: `dim_assessments`, `dim_courses`, `dim_dates`, `dim_regions`,
-`dim_staff`, `dim_students`, and the four assessment intermediates are
-`materialized: table`. `dim_assessments` also carries a nightly
-`automation_condition.cron_schedule` — Cube is its only consumer and Cube's
-pre-aggregation refreshes daily, so intraday rebuilds are invisible
-([#4559](https://github.com/TEAMSchools/teamster/issues/4559)).
+`dim_staff`, `dim_students`, the six assessment-star marts, and the four
+assessment intermediates are `materialized: table`. All seven assessment marts
+share `int_assessments__response_rollup`'s `0 0,10,13,15,17 * * *` tick — Cube
+is their only consumer and its `proficiency_rollup` pre-aggregation refreshes
+daily, so intraday rebuilds are invisible
+([#4559](https://github.com/TEAMSchools/teamster/issues/4559),
+[#4821](https://github.com/TEAMSchools/teamster/issues/4821)).
 
-**Never materialize an FK-carrying mart as a table.** A table child emits a
-`references` clause into its CTAS DDL, and BigQuery aborts the build when a
-concurrent `create or replace table` on the FK parent changes the parent's PK
-identity ("Referenced primary key in table ... has been updated"). The
-automation condition's `~any_deps_in_progress` guard is upward-facing only, so
-nothing serializes a parent against an in-flight child.
-[#4464](https://github.com/TEAMSchools/teamster/issues/4464) moved the whole
-assessment-scores star to tables for Cube query performance;
-[#4587](https://github.com/TEAMSchools/teamster/issues/4587) reverted the seven
-FK-carrying models to views eight days later, after four such build failures in
-30 days. Per-read recomputation was accepted deliberately to remove the failure
-class — restoring the performance means solving the collision, not re-flipping
-the config.
+**A table mart carries NO outgoing `foreign_key` constraints.** A table child
+renders its declared FKs into the CTAS DDL, and BigQuery aborts when the parent
+isn't a table with a PK, or when a concurrent `create or replace table` on the
+parent changes its PK identity ("Referenced primary key in table ... has been
+updated"). [#4464](https://github.com/TEAMSchools/teamster/issues/4464)
+materialized the assessment star;
+[#4587](https://github.com/TEAMSchools/teamster/issues/4587) reverted it eight
+days later after four such failures in 30 days.
+
+**A cron automation condition does NOT fix this** — the tempting inference, and
+it is wrong. No FK edge under `marts/` is also a `ref()` edge: these models
+re-hash the parent's surrogate key instead of joining the parent, so every
+closure edge is invisible to dbt's topological sort. Parent and child land in
+the same dependency tier and run concurrently across 40 prod threads. The cron
+controls when the run starts, not ordering within it, and
+`~any_deps_in_progress` guards `ref()` deps only. (#4464 set only
+`materialized: table` with no automation condition, so eager was the only
+configuration ever tried — but cron would not have saved it.)
+
+The resolution ([#4821](https://github.com/TEAMSchools/teamster/issues/4821)):
+when materializing a mart, drop its `foreign_key` constraints, keep
+`primary_key`, and record each edge under `config.meta.foreign_key` (below). A
+view mart carries no constraints in BigQuery at all, so a table with a PK and no
+FK is strictly better than the view it replaces.
 
 Drop model-level `dbt_utils.unique_combination_of_columns` when its column set
 equals the surrogate-key hash inputs — `unique` on the PK detects the same
@@ -279,21 +292,35 @@ violations.
 ## FK constraints declared on every mart
 
 `generate_marts_reference.py` derives FK edges **only** from literal
-`foreign_key` constraints — never inferred from `relationships` data tests. So
-every mart (view-materialized and `config.materialized: table` alike) must
-declare its outgoing FKs as column- or model-level `foreign_key` constraints, or
-they vanish from the generated reference diagram. A `relationships` data test is
-still good to keep for orphan detection, but it does not feed the diagram.
+declarations — never inferred from `relationships` data tests. Every mart must
+declare its outgoing FKs one of two ways, or they vanish from the generated
+reference diagram. A `relationships` data test is still good to keep for orphan
+detection, but it does not feed the diagram.
+
+- **View marts** — column- or model-level `foreign_key` constraints, inert in
+  BigQuery because views hold no constraints.
+- **Table marts** — `columns[].config.meta.foreign_key`, same `to:` /
+  `to_columns:` shape, because a real constraint would render into the CTAS DDL
+  (see the prohibition above):
+
+  ```yaml
+  config:
+    meta:
+      foreign_key:
+        to: ref('dim_assessment_administrations')
+        to_columns: [assessment_administration_key]
+  ```
 
 A `config.materialized: table` mart renders `constraints:` into CREATE TABLE DDL
 (inert on the default view marts). On a table mart, add `warn_unenforced: false`
-(not just `warn_unsupported: false`) on EVERY constraint — primary_key AND
-foreign_key both render into DDL and warn otherwise.
+(not just `warn_unsupported: false`) on its `primary_key` constraint — it
+renders into DDL and warns otherwise.
 
 ## Converting a view mart to a table
 
-Only a mart with NO outgoing `foreign_key` constraints is eligible — see the
-FK-carrying prohibition above.
+Move the model's `foreign_key` constraints to `config.meta.foreign_key` first —
+see the FK-carrying prohibition above. That also removes any need to convert the
+FK closure: with no FK DDL rendered, the parents can stay views.
 
 - BigQuery FK DDL requires every referenced relation to be a TABLE with a PK
   constraint. Convert the full FK closure (walk `to: ref(...)` edges) in one PR

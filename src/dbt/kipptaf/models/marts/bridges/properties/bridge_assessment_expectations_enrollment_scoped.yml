@@ -29,11 +29,11 @@ models:
         data_type: string
         description: >-
           FK to dim_student_section_enrollments.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_section_enrollments')
-            to_columns: [student_section_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_section_enrollments')
+              to_columns: [student_section_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -44,11 +44,11 @@ models:
         data_type: string
         description: >-
           FK to dim_assessment_administrations.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessment_administrations')
-            to_columns: [assessment_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
         data_tests:
           - relationships:
               arguments:

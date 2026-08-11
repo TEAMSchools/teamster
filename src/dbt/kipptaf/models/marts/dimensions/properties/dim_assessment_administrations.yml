@@ -44,12 +44,11 @@ models:
           canonical descriptors (title, academic_subject, type,
           grade_level_tested, module_type) without denormalizing them onto this
           dim.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessments')
-            to_columns: [assessment_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessments')
+              to_columns: [assessment_key]
         data_tests:
           - relationships:
               arguments:
@@ -71,12 +70,11 @@ models:
           '2000-01-01'` excluded exactly those rows, leaving a test that could
           not fail. The foreign_key constraint below still documents the
           relationship.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
 
       - name: _dbt_source_project
         data_type: string

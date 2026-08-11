@@ -41,11 +41,11 @@ models:
           FK to `dim_assessment_administrations`. Hashed from canonical inputs
           to match the canonical-grain dim row at the same `(canonical, region,
           canonical_administered_date)` coordinate.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessment_administrations')
-            to_columns: [assessment_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
         data_tests:
           - relationships:
               arguments:
@@ -58,11 +58,11 @@ models:
           `assessment_id`, not canonical). Each bridge row resolves to the
           member's row in the member-grain `dim_assessments` for full
           definitional detail (member title, module_type, etc.).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessments')
-            to_columns: [assessment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessments')
+              to_columns: [assessment_key]
         data_tests:
           - relationships:
               arguments:
