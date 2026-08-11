@@ -118,7 +118,12 @@ models:
         description:
           Repeated key-value custom fields; `value` is a typed union struct
           (boolean / string / string-array). Passed through whole for downstream
-          pivoting.
+          pivoting. Tagged PII because the field set is open-ended and carries
+          indirect identifiers (housing status, race, program flags) alongside
+          benign values — the array cannot be assumed non-sensitive.
+        config:
+          meta:
+            contains_pii: true
       - name: id_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
@@ -126,7 +131,12 @@ models:
           array_string_value array<string>>>>
         description:
           Repeated identifier fields (e.g. minted student number) in the same
-          key-value shape as `custom_attributes`. Passed through whole.
+          key-value shape as `custom_attributes`. Passed through whole. Tagged
+          PII because it carries student and contact identifiers — direct
+          identifiers under FERPA.
+        config:
+          meta:
+            contains_pii: true
       - name: track_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
@@ -147,7 +157,12 @@ models:
           model's scalar `address_*` columns are this array's first element
           only; `int_finalsite__contacts__households` flattens every element per
           contact, with the same blank-to-null and state-uppercasing
-          normalization applied downstream.
+          normalization applied downstream. Tagged PII because it carries raw
+          street address, city and zip — direct identifiers under FERPA, and the
+          same values this model's scalar `address_*` columns already tag.
+        config:
+          meta:
+            contains_pii: true
       - name: birth_date
         data_type: date
         description: Contact's date of birth, cast from the source string.
@@ -212,7 +227,12 @@ models:
           Raw bidirectional relationship links for this contact, passed through
           whole so `stg_finalsite__contact_relationships` unnests a deduped copy
           instead of re-reading the accumulated source. `primary` is a
-          per-record singleton and is NULL, not false, when unset.
+          per-record singleton and is NULL, not false, when unset. Tagged PII
+          because `rel_name` is a person's name — a direct identifier under
+          FERPA.
+        config:
+          meta:
+            contains_pii: true
 
 unit_tests:
   - name: test_contacts_phone_normalization
