@@ -19,6 +19,7 @@ models:
               - academic_year
               - expected_test_type
               - expected_scope
+              - expected_grade_level
               - expected_score_type
     columns:
       - name: academic_year
@@ -73,6 +74,13 @@ models:
           - accepted_values:
               arguments:
                 values: [ACT/SAT, PSAT10/NMSQT, PSAT 8/9]
+      - name: expected_practice_test_subject
+        data_type: string
+        description: >-
+          Subject as the practice scale-score conversion sheet spells it, which
+          differs from expected_subject_area - Mathematics rather than Math,
+          Reading and Writing rather than EBRW. Null on total rows, which have
+          no single section subject.
       - name: expected_subject_area
         data_type: string
         description: >-
@@ -80,6 +88,9 @@ models:
           (digital SAT and PSAT totals), or Composite (ACT totals).
         data_tests:
           - not_null
+      - name: expected_course_discipline
+        data_type: string
+        description: ENG, MATH, SCI, or NA, matching PowerSchool credit types.
       - name: expected_aligned_subject_area
         data_type: string
         description: >-
@@ -90,7 +101,16 @@ models:
           - not_null
           - accepted_values:
               arguments:
-                values: [Total, Math, EBRW/Reading]
+                values:
+                  [
+                    Total,
+                    Math,
+                    EBRW/Reading,
+                    Reading,
+                    Writing,
+                    English,
+                    Science,
+                  ]
       - name: expected_grouping
         data_type: string
         description: >-
@@ -100,7 +120,17 @@ models:
           - not_null
           - accepted_values:
               arguments:
-                values: [Total, Math, EBRW, Reading, Growth]
+                values:
+                  [
+                    Total,
+                    Math,
+                    EBRW,
+                    Reading,
+                    Writing,
+                    English,
+                    Science,
+                    Growth,
+                  ]
       - name: expected_score_category
         data_type: string
         description: >-

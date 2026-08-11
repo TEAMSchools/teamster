@@ -448,6 +448,48 @@ sources:
                 - sheets
                 - kippfwd
                 - act_scale_score_key
+      - name: src_google_sheets__kippfwd__practice_scale_score_conversion
+        external:
+          options:
+            format: GOOGLE_SHEETS
+            uris:
+              - https://docs.google.com/spreadsheets/d/12yqEOmyeNrvzOkmrOFnKOpsHU0L19G7zoG3b9f5cIpI
+            sheet_range: Scale Score Conversion
+            skip_leading_rows: 1
+        config:
+          meta:
+            dagster:
+              asset_key:
+                - kipptaf
+                - google
+                - sheets
+                - kippfwd
+                - practice_scale_score_conversion
+        columns:
+          - name: assessment_id
+            data_type: int64
+          - name: academic_year
+            data_type: int64
+          - name: test_type
+            data_type: string
+          - name: administration_round
+            data_type: string
+          - name: subject
+            data_type: string
+          - name: grade_level
+            data_type: int64
+          - name: raw_score_low
+            data_type: int64
+          - name: raw_score_high
+            data_type: int64
+          - name: scale_score
+            data_type: int64
+          - name: aligned_scale_score
+            data_type: int64
+          - name: score_type
+            data_type: string
+          - name: expected_total_subjects_tested
+            data_type: int64
       - name: src_google_sheets__kippfwd__scaffold
         external:
           options:
@@ -481,11 +523,15 @@ sources:
             data_type: string
           - name: expected_aligned_scope
             data_type: string
+          - name: expected_practice_test_subject
+            data_type: string
           - name: expected_subject_area
             data_type: string
           - name: expected_aligned_subject_area
             data_type: string
           - name: expected_grouping
+            data_type: string
+          - name: expected_course_discipline
             data_type: string
           - name: expected_score_category
             data_type: string
