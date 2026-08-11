@@ -138,8 +138,11 @@ regenerating.
   regions: [newark] # optional
 ```
 
-Required: `id`, `name`, `url`, `description`, `audiences`, `system`, `group`.
-Optional: `access`, `guide`, `regions`.
+Required: `id`, `name`, `url`, `description`, `audiences`, `system`, `group`,
+`status`. Optional: `access`, `guide`, `regions`.
+
+`status` is `needs-review` or `verified`. It is a **publishing gate**, not a
+comment — see _Only verified entries publish_ below.
 
 **Two fields are new in this revision**, both surfaced by designing against the
 real data rather than in the abstract:
@@ -158,9 +161,44 @@ real data rather than in the abstract:
 tool appears under. It is not access control; the destination system enforces
 that.
 
+## Only verified entries publish
+
+**An entry reaches the launch page only when `status: verified`.** Anything
+still `needs-review` is excluded from the build — it does not render, is not
+counted, and does not appear in search.
+
+This makes verification a **release gate rather than a quality note**. The
+catalog is a publishing queue: a tool goes live when a human has confirmed its
+name, URL, description, audiences, and — for Google-hosted entries — its
+sharing. Nothing reaches 1,800 staff on the strength of a scrape.
+
+Consequences worth stating plainly:
+
+- **The page starts empty and fills up.** All 46 entries are `needs-review`
+  today, so the page renders nothing until verification begins. That is correct
+  behaviour, not a bug, but it means **the Google Site cannot be retired until
+  enough of the catalog is verified.** Cutover needs a threshold, and that
+  threshold is a judgement call rather than a number this spec can set.
+- **Partial launch is the expected path.** The page can go live with a subset
+  and grow as entries clear. There is no big-bang migration.
+- **Reverting a `status` silently removes a tool.** That is the intended
+  behaviour — an entry found to be wrong should leave the page immediately — but
+  it is invisible unless the build says so. **The build must report the
+  verified/excluded split on every run** and name what it dropped. Silent
+  omission is the same failure class as a missing `group`: a tool vanishes and
+  nothing errors.
+- **Validation still runs across every entry, verified or not.** Otherwise a
+  schema error sits undetected in an unverified entry until the day someone
+  verifies it, and the build breaks then rather than when the mistake was made.
+- **This resolves the footer question.** An earlier draft of the page reported
+  "N of 46 entries are still being verified" to readers. With unverified entries
+  excluded, there is nothing to disclaim — the page shows what is real, and the
+  count of outstanding work belongs in the build log, not in front of staff.
+
 ## Rendering
 
 One page, `docs/launch/index.html`, self-contained apart from a webfont link.
+Only `status: verified` entries are rendered.
 
 - **Tabs** for All plus the four role views, counts included.
 - **Search** across name, description, and family name.
@@ -364,13 +402,14 @@ recorded there rather than in this public repository.
 
 ## Decisions log
 
-| Decision                                    | Rationale                                                                                                        |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Public static page, no gate                 | The catalog carries nothing worth gating; every destination gates itself. Removes an entire publishing pipeline. |
-| Catalog public in git, prose in Zendesk     | The repo is public; splitting by sensitivity beats a private repo or a lint gauntlet.                            |
-| Build inside the existing MkDocs job        | `mkdocs gh-deploy` force-pushes `gh-pages`; a second writer would be silently clobbered.                         |
-| Fail the docs deploy on a bad catalog build | A stale page that looks current is worse than a loud failure. PR validation is the primary gate.                 |
-| `group` as a required field                 | Role tags and topical domains are different axes. Missing groups fail the build rather than dropping tools.      |
-| Families declared in `groups.yml`           | Seven region-variant rows become two. A modelling fix, not styling.                                              |
-| Link health scheduled, not at build time    | A vendor outage should not break the docs deploy.                                                                |
-| Retire `views.yml`                          | Role views are tabs on one page, not five documents.                                                             |
+| Decision                                    | Rationale                                                                                                                                                              |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Only `status: verified` entries publish     | Verification becomes a release gate, not a quality note. Nothing reaches 1,800 staff on the strength of a scrape, and the page never has to disclaim its own accuracy. |
+| Public static page, no gate                 | The catalog carries nothing worth gating; every destination gates itself. Removes an entire publishing pipeline.                                                       |
+| Catalog public in git, prose in Zendesk     | The repo is public; splitting by sensitivity beats a private repo or a lint gauntlet.                                                                                  |
+| Build inside the existing MkDocs job        | `mkdocs gh-deploy` force-pushes `gh-pages`; a second writer would be silently clobbered.                                                                               |
+| Fail the docs deploy on a bad catalog build | A stale page that looks current is worse than a loud failure. PR validation is the primary gate.                                                                       |
+| `group` as a required field                 | Role tags and topical domains are different axes. Missing groups fail the build rather than dropping tools.                                                            |
+| Families declared in `groups.yml`           | Seven region-variant rows become two. A modelling fix, not styling.                                                                                                    |
+| Link health scheduled, not at build time    | A vendor outage should not break the docs deploy.                                                                                                                      |
+| Retire `views.yml`                          | Role views are tabs on one page, not five documents.                                                                                                                   |
