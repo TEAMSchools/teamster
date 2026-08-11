@@ -20,6 +20,14 @@ models:
 
       Single-member canonical groups produce one bridge row per
       `(canonical_assessment_id, region)`.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 5x/day table instead of an eager view — rationale and tick choice
+          # in fct_assessment_scores_enrollment_scoped. Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:

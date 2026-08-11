@@ -8,6 +8,27 @@ models:
       assessment administration (via assessment_administration_key) and to the
       student's resolved section enrollment (via student_section_enrollment_key
       and enrollment_resolution).
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 5x/day table instead of an eager view. Every reader of this model
+          # recomputed its 27-base-table view chain: each of its 10 dbt tests
+          # per CI build, every Cube query missing the proficiency_rollup, and
+          # every pre-agg partition build. That was 85% of CI's BigQuery spend
+          # (0.486 GiB per test run against a deep view chain vs 0.016 GiB
+          # against a table).
+          #
+          # Tick matches int_assessments__response_rollup, the heaviest
+          # upstream, so ~any_deps_in_progress serializes the pass and
+          # response_rollup builds first. Eager is not an option: the other
+          # upstreams are eager and would drive 125+ rebuilds/day (#4559).
+          # Accepted trade-off: Cube queries that miss the rollup read live
+          # today and become 5x/day fresh. Cube's rollup refresh_key is
+          # already 1 day, so the view bought no freshness Cube consumed.
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: assessment_score_key
         data_type: string
