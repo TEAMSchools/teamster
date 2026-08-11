@@ -371,6 +371,35 @@ Do not "fix" this by unifying the fields. The requirement is that a goal
 declares which basis it is measured on, so both goal sets can live in one table
 and each gets the right denominator.
 
+## Open question — the grade 9 and 10 practice tests are SAT, not PSAT
+
+Six of the eight AY2023 practice assessments are grade 9 and 10 but carry
+`Test_Type = SAT`. Ninth and tenth graders would normally sit PSAT 8/9 and PSAT
+10, so the question is whether that labelling is right.
+
+**The data says they really are SAT.** The sheet's raw-score maxima match the
+legacy paper SAT question counts exactly, and match no PSAT form:
+
+| Section     | Sheet raw max (grades 9-10) | Legacy SAT | PSAT 8/9 | PSAT 10 / NMSQT |
+| ----------- | --------------------------- | ---------- | -------- | --------------- |
+| Reading     | 52                          | **52**     | 42       | 47              |
+| Writing     | 44                          | **44**     | 40       | 44              |
+| Mathematics | 58                          | **58**     | 38       | 48              |
+
+The scale ranges corroborate it. Grades 9-10 store `Reading` and `Writing` on a
+10-40 scale — the legacy SAT _test score_ scale — while `Mathematics` is native
+200-800. Grade 11 (138849 / 138850) is the digital two-section form, 200-790 on
+both sections.
+
+So this is not a mislabelling in the sheet. What remains open is programmatic,
+not technical: **whether 9th and 10th graders should have been sitting a full
+SAT practice form at all.** Note that SY26-27 assigns PSAT 8/9 to grade 9 and
+PSAT 10 to grade 10, so current practice has moved to the grade-appropriate
+tests — the AY2023 rows reflect the older approach. Worth confirming with KIPP
+Forward before any cross-year trend treats grade 9-10 AY2023 scores as
+comparable to SY26-27 PSAT scores. They are on different scales and different
+forms.
+
 ## Unreported practice administrations in Illuminate
 
 **Illuminate holds two more years of practice SAT than the dashboard shows.**

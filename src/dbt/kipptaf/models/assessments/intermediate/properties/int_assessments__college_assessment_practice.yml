@@ -167,8 +167,11 @@ models:
 
 
           Legacy grade 9 and 10 SAT Reading and Writing rows are multiplied by
-          ten, because the sheet stores those on a 20-80 section scale rather
-          than 200-800. The guard is narrow on purpose - scope SAT, subject
-          Reading or Writing, grade 9 or 10 - and PSAT rows are the first to
-          populate those grades, so widening that predicate would wrongly catch
-          them.
+          ten, because the sheet stores those two sections as legacy SAT test
+          scores on a 10-40 scale, not as section scores on 200-800. Rescaled
+          they run 100-400 each, so the pair sums to the 200-800 EBRW equivalent
+          and the three-section total lands on 400-1600 alongside Math's native
+          200-800. The guard is narrow on purpose - scope SAT, subject Reading
+          or Writing, grade 9 or 10 - and the SY26-27 PSAT rows are the first
+          others to populate those grades, so widening that predicate would
+          wrongly catch them.
