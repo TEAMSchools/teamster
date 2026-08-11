@@ -596,6 +596,109 @@ Schema: `total_subjects_tested` is replaced by `actual_total_subjects_tested`
 and `expected_total_subjects_tested`. Added: `grade_level`, `subject`,
 `aligned_subject_area`, `score_type`.
 
+## Planned — `int_assessments__all_college_assessments`
+
+A model unioning the official and practice hubs so the CARAT reporting views
+read one source, with calculations currently repeated across those views moved
+upstream. Modelled on `int_amplify__all_assessments`: union heterogeneous
+sources into one column set, then compute rankings over the union rather than
+within each source.
+
+Practice is reshaped to match official — one row per subject per test, where
+subject includes the total rows. Response-group detail stays in the practice hub
+and gets its own reporting view later.
+
+Several fields need three variants: official only, practice only, and both
+combined.
+
+### Fields identified to move upstream
+
+| Field                                                      | Where it lives now                                                        |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `rn_highest`                                               | both unpivots; consumed by 4 views                                        |
+| `max_scale_score`                                          | official hub, as `avg(scale_score)` over `rn_highest = 1`                 |
+| max score by aligned scope                                 | `_benchmark_calcs`, as the `aligned_scores_pre` and `aligned_scores` CTEs |
+| the `met_min_score_int_*` family                           | `_over_time`, five window variants                                        |
+| attempt counts                                             | `_participation_roster`, as a pivot plus ten windows                      |
+| `aligned_scope`, `aligned_subject`, `aligned_subject_area` | derived by hand in three places; now data in the scaffold                 |
+
+Prune rather than move: `superscore`, `avg_running_max_superscore` and
+`sum_running_max_superscore` have one consumer between them, and
+`runnning_superscore` (three n's) has none.
+
+### The two folds do different jobs
+
+Getting this backwards produces numbers that look plausible and are meaningless.
+
+| Fold                | Used for                     | Why it is valid                                                                                                                                                                                      |
+| ------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PSAT10 + PSAT NMSQT | maxing **scores**            | College Board considers them the same test, offered in different windows. Verified scale-compatible: EBRW 160-690 against 160-680, Math 160-680 against 160-740, Combined 320-1260 against 320-1370. |
+| ACT + SAT           | **attainment booleans** only | "met the HS-ready or college-ready bar ever, by any route". Never a score comparison — ACT Math is 1-36 and SAT Math is 200-800.                                                                     |
+
+So a precomputed max score folds only the PSATs, and `aligned_scope` with its
+`ACT/SAT` value belongs on the met-threshold flags. A max partitioned on
+`ACT/SAT` would silently return the SAT value for every student and rate an
+ACT-only 36 against a 1010 threshold.
+
+Two related traps. `_benchmark_calcs` currently avoids that mix only because it
+filters `scope != 'ACT'` before computing its max — the upstream field should be
+safe by construction instead. And the sub-test score types that CTE excludes
+(`psat10_math_test`, `psat10_reading`, `sat_math_test_score`,
+`sat_reading_test_score`) must stay excluded by construction too:
+`psat10_reading` carries `subject_area = 'Reading'` on an 8-31 scale and would
+otherwise compete in a max against real section scores.
+
+Note that `expected_aligned_scope` in the scaffold reads `ACT/SAT` while
+`_benchmark_calcs` computes `SAT` from its own hardcoded strings. Production is
+consistent because both sides use the same hardcoded list; the mismatch appears
+the moment the scaffold replaces it, and `_benchmark_calcs` should then join on
+`expected_scope` rather than `expected_aligned_scope`.
+
+### Decisions still open
+
+**Splitting scores from attempts in `_over_time`.** Its `score` column is one
+five-branch `CASE` inside an `avg()` holding either a scale score or an attempt
+count depending on `expected_goal_type`, which forces every downstream
+comparison to switch between `=` and `>=`. The plan is two branches in the main
+select, one per measure. Three things to settle when doing it:
+
+- The `avg()` is meaningless over an attempt count and exists only because the
+  `CASE` sits under a `GROUP BY`.
+- Two of the five branches reduce to a `coalesce` — `a is null → b`,
+  `a != b → b`, `else a` — so they read as reconciliation while reconciling
+  nothing.
+- `(goal_subtype = '1 Attempt' and score = min_score)` means **exactly** one
+  attempt, so a student with two fails the one-attempt goal, while scores use
+  `>=`. Confirm that is intended rather than an artifact of cramming both
+  measures into one column, and preserve it explicitly if so.
+
+**Unpivoting the participation lifetime counts into their own intermediate.**
+`_participation_roster` pivots long to wide into five `*_count_lifetime` columns
+and `_over_time` immediately unpivots them back with a five-branch `CASE` to
+recover the scope name. The round trip is pure ceremony, adding practice would
+take the wide form to thirty columns, and a long model keyed on (student, grade,
+scope, test_type) supports a uniqueness test the wide one cannot express. Two
+things to settle:
+
+- **Sparse or dense.** The wide form is implicitly dense — every student carries
+  all five columns, null or zero for tests never sat. Sparse works for
+  `_over_time`, which cross joins goals and left joins attempts, but anything
+  counting students with zero attempts needs dense or must derive the zero.
+- **`rn_lifetime` mostly goes away.** It is
+  `row_number() over (partition by student_number)` with no `ORDER BY`, so which
+  grade row survives is nondeterministic. That is harmless today only because
+  the lifetime columns are identical across a student's rows and `_over_time`
+  uses it purely to collapse to one row per student. Keyed by scope, the counts
+  are already at the right grain.
+
+**The attempt-count fix lands here.** `_over_time`'s
+`alt_attempt_count_lifetime` uses `count(*)`, so duplicate Salesforce records
+count as separate sittings and four students read as meeting the
+two-or-more-attempts goal. Moving attempts upstream makes this model the single
+source and retires both `attempt_count_lifetime` and
+`alt_attempt_count_lifetime`, so `count(distinct test_date)` belongs in that
+work rather than in a separate pass over the participation views.
+
 ## Open question — the grade 9 and 10 practice tests are SAT, not PSAT
 
 Six of the eight AY2023 practice assessments are grade 9 and 10 but carry
