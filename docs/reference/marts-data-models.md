@@ -386,8 +386,8 @@ erDiagram
 
 ```mermaid
 erDiagram
-  fct_survey_responses }o--|| fct_survey_submissions : "survey_submission_key"
   fct_survey_responses }o--|| dim_survey_questions : "survey_question_key"
+  fct_survey_responses }o--|| fct_survey_submissions : "survey_submission_key"
   fct_survey_submissions }o--|| dim_survey_administrations : "survey_administration_key"
   fct_survey_submissions }o--|| dim_staff : "staff_key"
   fct_survey_submissions }o--|| dim_student_enrollments : "student_enrollment_key"

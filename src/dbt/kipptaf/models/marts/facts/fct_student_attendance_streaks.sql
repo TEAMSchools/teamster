@@ -1,5 +1,6 @@
 with
-    enrollments as (
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    enrollments_raw as (
         select
             studentid,
             student_number,
@@ -9,6 +10,25 @@ with
             _dbt_source_relation,
             _dbt_source_project,
         from {{ ref("int_students__student_enrollment_union") }}
+    ),
+
+    -- TODO(#4835): two kippcamden students carry a short AY2026 stint and a
+    -- full-year stint sharing an entrydate, so the half-open date-range join
+    -- below matches both and fans the streak out. Both matches hash to the
+    -- SAME student_enrollment_key (entrydate is its only enrollment input), so
+    -- collapsing them is information-preserving, not duplicate-masking. A
+    -- genuine overlap -- two stints with DIFFERENT entrydates covering one
+    -- streak -- still fans out and still fails the PK test, which is correct.
+    -- Deduped here rather than in the union: the union should faithfully
+    -- represent its source rows, which other consumers may legitimately need.
+    enrollments as (
+        {{
+            dbt_utils.deduplicate(
+                relation="enrollments_raw",
+                partition_by="studentid, yearid, entrydate, _dbt_source_project",
+                order_by="exitdate desc",
+            )
+        }}
     )
 
 select
