@@ -1,12 +1,15 @@
 # Data launch page — tool catalog
 #
-# Source of truth for the generated staff-facing catalog articles. Where those
-# get served is a separate decision; the current design candidate is the Zendesk
-# Help Center, tracked in GitHub #4762.
+# Source of truth for the staff-facing launch page: a static page published to
+# GitHub Pages and built from this file. Design spec in GitHub #4762.
+#
+# ONLY `status: verified` ENTRIES PUBLISH. An entry left at `needs-review` is
+# excluded from the build, so setting `verified` is not a quality note — it is
+# what puts the tool in front of staff.
 #
 # THIS FILE IS A STARTING POINT, NOT A FINISHED CATALOG. It was scraped from
-# the existing Google Site, so every entry carries `status: needs-review`
-# until a human has confirmed it against the live tool. See README.md in this
+# the existing Google Site, so every entry started at `status: needs-review`
+# until a human confirmed it against the live tool. See README.md in this
 # directory for what reviewing an entry means.
 #
 # `audiences` controls which role views a tool appears in. It is NOT an
@@ -130,7 +133,20 @@
     Camden region for grade levels 5 through 12.
   audiences: [region, teachers]
   system: google-sheet
+<<<<<<< HEAD
   status: verified
+=======
+  # TODO(regions): REQUIRED, and currently broken. Add `regions:` with this sheet's
+  # TODO(regions): region — [camden], [miami], or [newark] to match the name. These
+  # TODO(regions): three are declared as one `family` in groups.yml, so the page shows
+  # TODO(regions): a single "GPA Roster" row with a button per region. With no
+  # TODO(regions): `regions:` value those buttons render blank and unlabelled and a
+  # TODO(regions): reader cannot tell which region's grades they are opening.
+  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
+  # TODO(verify): with no description of its own. Confirm it is still the live roster and
+  # TODO(verify): write one.
+  status: needs-review
+>>>>>>> 0f7d23567dc37ec8f2f893857c64fca020e25ace
 
 - id: gpa_roster_miami
   name: "GPA Roster: Miami"
@@ -140,7 +156,20 @@
     for students in the Miami region for grade levels 5 through 12.
   audiences: [region, teachers]
   system: google-sheet
+<<<<<<< HEAD
   status: verified
+=======
+  # TODO(regions): REQUIRED, and currently broken. Add `regions:` with this sheet's
+  # TODO(regions): region — [camden], [miami], or [newark] to match the name. These
+  # TODO(regions): three are declared as one `family` in groups.yml, so the page shows
+  # TODO(regions): a single "GPA Roster" row with a button per region. With no
+  # TODO(regions): `regions:` value those buttons render blank and unlabelled and a
+  # TODO(regions): reader cannot tell which region's grades they are opening.
+  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
+  # TODO(verify): with no description of its own. Confirm it is still the live roster and
+  # TODO(verify): write one.
+  status: needs-review
+>>>>>>> 0f7d23567dc37ec8f2f893857c64fca020e25ace
 
 - id: gpa_roster_newark
   name: "GPA Roster: Newark"
@@ -151,6 +180,15 @@
     Newark region for grade levels 5 through 12.
   audiences: [region, teachers]
   system: google-sheet
+  # TODO(regions): REQUIRED, and currently broken. Add `regions:` with this sheet's
+  # TODO(regions): region — [camden], [miami], or [newark] to match the name. These
+  # TODO(regions): three are declared as one `family` in groups.yml, so the page shows
+  # TODO(regions): a single "GPA Roster" row with a button per region. With no
+  # TODO(regions): `regions:` value those buttons render blank and unlabelled and a
+  # TODO(regions): reader cannot tell which region's grades they are opening.
+  # TODO(verify): Google Sheet, linked as a bare sub-link under the Gradebook dashboard
+  # TODO(verify): with no description of its own. Confirm it is still the live roster and
+  # TODO(verify): write one.
   status: needs-review
 
 - id: gradebook_and_gpa_dashboard
