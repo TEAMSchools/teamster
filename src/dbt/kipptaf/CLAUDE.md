@@ -417,6 +417,15 @@ to your change (a 56-file sweep surfaced 5 duplicate PKs sitting in prod). Query
 prod for the same count before assuming you caused it, and budget for triage
 when scoping a wide sweep.
 
+`state:modified+` is branch-vs-deferred-environment, NOT commit-vs-commit. A
+docs-only or `.md`-only push to a branch that already modifies dbt models
+re-runs the whole selection — measured at 918 relations and ~4.5 min on a
+13-file PR whose last commit touched only `.md`. Batch doc commits before
+pushing, or land them in a separate PR. Verify what a run actually built with
+`creation_time` in `region-us.INFORMATION_SCHEMA.TABLES` filtered to
+`dbt_cloud_pr_<job>_<pr>%` — step duration and warning counts are both weak
+proxies.
+
 CI is scoped to the kipptaf project only. PRs touching only a district project
 (kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
 that selects no models — kipptaf CI green is not evidence the district-side

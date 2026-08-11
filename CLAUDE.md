@@ -359,6 +359,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   `<ide_opened_file>` (which only names the open path). When the user references
   "this" without an `<ide_selection>`, ask for the snippet — don't guess.
 
+- **Arm the Monitor in the same turn you say you'll watch something.** A monitor
+  that has exited is indistinguishable from one still waiting — both are silent.
+  Stating an intention is not a mechanism.
+
 - **Never assert remaining context as fact** — there is no token counter, the
   harness compacts automatically, and a felt sense of a long session is not
   evidence. Truncating analysis or handing off work on that basis costs more
