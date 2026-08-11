@@ -55,21 +55,13 @@ with
             on s.canonical_assessment_id = c.canonical_assessment_id
     ),
 
-    -- Per-partition tiebreak for location columns. NOT a canonical attribute —
-    -- school / _dbt_source_project are per-response location data that vary
-    -- across rows in the same (student, canonical_assessment, is_replacement)
-    -- partition because of upstream Illuminate canonicalization defects
-    -- (#3801) carrying wrong academic_year tags onto duplicated assessments.
-    -- first_value on a deterministic ordering picks both columns from the
-    -- same row so independent min() drift can't split them. Once #3801 is
-    -- resolved, the partition becomes pure and this CTE can be removed.
     -- Illuminate `date_taken` is unreliable for a small share of rows, in BOTH
     -- directions: the raw column spans 0001-01-01 to 4024-12-04. Two guards,
     -- because neither covers the other's cases.
     --
     -- 1. Relative window. Judge a sitting against its OWN administration, which
     -- catches a 2001 date attached to a 2020 administration and any absurd
-    -- future date. +/-365 days keeps 99.93% of anchored rows; 7,507 fail it.
+    -- future date. +/-365 days keeps 99.78% of dated rows; 7,508 fail it.
     -- An absolute floor alone cannot do this — it is arbitrary and one-sided,
     -- and can never reject a future date.
     --
@@ -108,6 +100,14 @@ with
         from scaffold_responses
     ),
 
+    -- Per-partition tiebreak for location columns. NOT a canonical attribute —
+    -- school / _dbt_source_project are per-response location data that vary
+    -- across rows in the same (student, canonical_assessment, is_replacement)
+    -- partition because of upstream Illuminate canonicalization defects
+    -- (#3801) carrying wrong academic_year tags onto duplicated assessments.
+    -- first_value on a deterministic ordering picks both columns from the
+    -- same row so independent min() drift can't split them. Once #3801 is
+    -- resolved, the partition becomes pure and this CTE can be removed.
     tiebroken_attrs as (
         select
             *,
