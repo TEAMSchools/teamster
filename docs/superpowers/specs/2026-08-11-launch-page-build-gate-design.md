@@ -101,8 +101,10 @@ judging. Getting this backwards would force every rule into tier 1.
 | `status` in `{needs-review, verified}`                           | A typo would silently unpublish an entry                       |
 | `access`, if present, is exactly `limited`                       | Prototype treats any truthy value as limited                   |
 | `regions` values all in `{newark, camden, miami, paterson, all}` | Unknown regions render blank                                   |
+| `groups.yml` parses, with `groups`, `families`, `promos` present | Same                                                           |
 | Every family member in `groups.yml` names a real entry           | A rename silently drops a tool                                 |
 | Every family names a real group id                               | An unknown group throws before anything renders                |
+| Every promo card has a non-empty `url` that is not `#`           | Four of five point at `#` today and would render as dead links |
 
 ### Tier 2 — `status: verified` entries only
 
@@ -126,8 +128,19 @@ required per-entry field, and that is the right shape — a side table in
 two individually-green PRs break `main` together.
 
 Adding it means touching all 46 entries while 37 are in flight on #4767.
-Sequenced into a follow-up PR after that merges. Nothing is lost by waiting:
-with zero verified entries there is no grouped rendering to do yet.
+Sequenced into a follow-up PR after that merges.
+
+**What this PR renders in the meantime.** `render()` emits a flat, alphabetical
+list of verified entries — families still collapse into one row with per-region
+sub-links, since that is driven by `groups.yml` and not by `group`. The grouped
+layout arrives with the field. Nothing is lost by waiting: the threshold below
+means no page is generated at all until well after the follow-up lands, so the
+flat layout is never what staff see. It exists so `render()` is complete and
+testable now rather than half-written.
+
+Accordingly `groups.yml` in this PR carries group definitions, families, promos
+and the threshold — but no entry-to-group map. The prototype's `assignments`
+block is dropped rather than re-keyed.
 
 ## Publication threshold
 
@@ -176,6 +189,12 @@ Two steps: `uv run pytest tests/launch`, then `uv run --group docs mkdocs build`
 followed by an upload of `site/launch/index.html` as a workflow artifact. A
 reviewer downloads it and opens the real page before approving. The template
 inlines all CSS and JS, so a single file opens standalone.
+
+Below the threshold no page is generated, so there is nothing to upload. The
+upload step sets `if-no-files-found: ignore` — the default is `warn`, which
+would print a confusing warning on every PR until the catalog crosses the
+threshold. The build still runs and the validation still gates; only the preview
+is absent, which is correct, because there is nothing to preview.
 
 **No `--strict`.** `mkdocs build --strict` fails on `main` today with exactly 80
 warnings, every one an unresolvable relative link inside `docs/superpowers/**`
