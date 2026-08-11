@@ -73,23 +73,11 @@ with
             sr.home_department_name,
             sr.sam_account_name,
 
-            cast(
-                coalesce(
-                    ccw.powerschool_school_id,
-                    sr.home_work_location_powerschool_school_id
-                ) as string
-            ) as school_id,
+            cast(sr.home_work_location_powerschool_school_id as string) as school_id,
         from staff_roster as sr
-        left join
-            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
-            on sr.home_work_location_reporting_name = ccw.location_name
-            and not ccw.is_pathways
         where
             sr.home_department_name not in ('Data', 'Teaching and Learning')
-            and coalesce(
-                ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
-            )
-            != 0
+            and sr.home_work_location_powerschool_school_id != 0
 
         union all
 

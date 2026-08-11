@@ -1271,7 +1271,7 @@ sources:
             format: GOOGLE_SHEETS
             uris:
               - https://docs.google.com/spreadsheets/d/1FCc28XWxFj3gSfItGGJ2tVU0C1fYD1JxKRxuSFqisMo
-            sheet_range: src_people__campus_crosswalk
+            sheet_range: src_people__campus_crosswalk_v2
             skip_leading_rows: 1
         config:
           meta:
@@ -1282,6 +1282,11 @@ sources:
                 - sheets
                 - people
                 - campus_crosswalk
+        columns:
+          - name: Name
+            data_type: STRING
+          - name: Location_Name
+            data_type: STRING
       - name: src_google_sheets__people__powerschool_crosswalk
         external:
           options:

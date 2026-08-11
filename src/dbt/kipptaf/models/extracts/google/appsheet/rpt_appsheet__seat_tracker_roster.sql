@@ -91,7 +91,7 @@ select
         lc.location_abbreviation, sr.home_work_location_name
     ) as location_shortname,
 
-    coalesce(cc.name, sr.home_work_location_name) as campus,
+    coalesce(lc.campus_name, sr.home_work_location_name) as campus,
 
     case
         when
@@ -170,9 +170,6 @@ from {{ ref("int_people__staff_roster") }} as sr
 inner join
     {{ ref("int_people__location_crosswalk") }} as lc
     on sr.home_work_location_name = lc.location_name
-left join
-    {{ ref("stg_google_sheets__people__campus_crosswalk") }} as cc
-    on sr.home_work_location_name = cc.location_name
 left join itr_response as ir on sr.employee_number = ir.employee_number
 left join pm_tier as pm on sr.employee_number = pm.employee_number
 
