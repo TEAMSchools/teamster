@@ -73,6 +73,13 @@ in prod IMMEDIATELY: external sources are excluded from the deps gate
 staging model and its `stage_external_sources` fails on the still-empty prod
 prefix.
 
+**Sheets externals need no manual post-merge prod re-stage.** The
+`build_dbt_assets` stage→refresh→build flow re-stages the prod external and
+rebuilds the `stg_` table on the next tick. The "launch that asset in prod
+IMMEDIATELY" rule above is for NEW Avro/GCS sources only. Verify with
+`INFORMATION_SCHEMA.COLUMNS` on the prod external before filing a manual
+re-stage as outstanding work.
+
 **AVRO external tables autodetect schema from the LAST ALPHABETICAL file.** To
 evolve an Avro source's schema, the new-schema file must sort last — materialize
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
@@ -537,6 +544,11 @@ dev parent dim produces false-positive `relationships` orphans. Before trusting
 a dev relationships warning on a FK, include the parent in `--select` or
 `dbt clone --select <parent_dim>` from prod.
 
+The inverse also happens: a stale dev CHILD makes a `relationships` test pass
+VACUOUSLY. A `dbt test` that passes locally and warns in CI with thousands of
+orphans is this, not a regression — confirm by holding the child fixed and
+swapping only the parent.
+
 Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
 date-range join. Query prod before filing upstream bugs or adding defensive
 dedupe from a dev mart-test failure.
@@ -647,6 +659,17 @@ text-formatted `00000` in Sheets becomes INT64.
       data_type: STRING
 ```
 
+- **Header autodetect needs type variation.** BigQuery only treats row 1 as a
+  header when it differs in type from the data below. An all-STRING range (e.g.
+  a narrowed name-only crosswalk) autodetects as `string_field_0`,
+  `string_field_1` — which fails a contracted `select *`. Declare `columns:`
+  explicitly for any all-string range; `skip_leading_rows: 1` still drops the
+  header.
+- **To narrow a Sheets source, add a new named range and move `sheet_range`**
+  (`src_x` → `src_x_v2`), don't delete sheet columns — AppSheet and other
+  non-dbt consumers read the same tab. Version only the range; keep the source
+  `name:` and Dagster asset key. Precedent:
+  `src_google_sheets__people__locations_v3`.
 - **Phantom empty rows**: a Sheet's full grid (often ~1000 rows) lands as
   null-key rows in the external table → staging `not_null`/`unique` key tests
   fail with ~N results. Filter them in the staging model:
@@ -807,6 +830,14 @@ legitimately-superseded inactive rows that repeat the key.
   properties yml moves the model to `disabled` but leaves every test in `nodes`
   (verified with `--no-partial-parse`), still scanning the stale prod relation.
   Add `config: enabled: false` to each test as well.
+
+### Retiring a crosswalk or lookup as redundant
+
+Check the join TYPE per consumer first. An INNER join makes the table a
+membership filter — often gating an outbound feed — not a lookup, and its row
+set may encode no derivable rule. Likewise count the rows any replacement
+`coalesce` fallback actually fires on: one written to preserve a single row
+fired on 251.
 
 ### Verifying a test-removal PR
 

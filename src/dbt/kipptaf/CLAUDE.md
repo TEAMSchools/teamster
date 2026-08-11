@@ -244,7 +244,11 @@ Canonical-grain consumers (1 row per logical school) should use
 **`stg_google_sheets__people__campus_crosswalk`** uniqueness grain is
 `Location_Name` only. `Name` is the parent campus and repeats across sibling
 schools (e.g., `KIPP Miami - North Campus` rolls up five `Location_Name`
-children).
+children). It is the SOLE owner of location-to-campus — `campus_name` on
+`int_people__location_crosswalk` and `campus` on `dim_locations` resolve from
+here; don't reintroduce a `Campus_Name` scalar on the locations sheet. It
+carries no self-referential rows, so a campus record's `campus_name` is NULL by
+design. It also gates `rpt_illuminate__roles` via an INNER join.
 
 **`stg_powerschool__students` phantom rows**: PowerSchool retains 4 placeholder
 rows (one per district) with
@@ -412,6 +416,15 @@ models it has never built — expect latent `severity: error` failures unrelated
 to your change (a 56-file sweep surfaced 5 duplicate PKs sitting in prod). Query
 prod for the same count before assuming you caused it, and budget for triage
 when scoping a wide sweep.
+
+`state:modified+` is branch-vs-deferred-environment, NOT commit-vs-commit. A
+docs-only or `.md`-only push to a branch that already modifies dbt models
+re-runs the whole selection — measured at 918 relations and ~4.5 min on a
+13-file PR whose last commit touched only `.md`. Batch doc commits before
+pushing, or land them in a separate PR. Verify what a run actually built with
+`creation_time` in `region-us.INFORMATION_SCHEMA.TABLES` filtered to
+`dbt_cloud_pr_<job>_<pr>%` — step duration and warning counts are both weak
+proxies.
 
 CI is scoped to the kipptaf project only. PRs touching only a district project
 (kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
