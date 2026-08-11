@@ -203,6 +203,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **Git resuming**: Before resuming work on an existing branch, merge `main`:
   `git fetch origin main && git merge origin/main`.
 
+- **A CI failure in a file your branch never touched usually means `main`
+  moved** — run `git log <merge-base>..origin/main` before diagnosing. A merged
+  PR that narrowed a contract read as a live production incident this session;
+  merging `main` was the entire fix.
+
 - **A mid-session Codespace restart can delete `.worktrees/` and desync local
   git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
   HEAD that reads as the pre-session commit yet holds merged content). Trust
