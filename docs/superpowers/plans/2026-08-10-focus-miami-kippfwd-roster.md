@@ -35,7 +35,7 @@ trunk.
 - **Never run bare `python` or `dbt`** — always `uv run dbt ...`.
 - **`--state` must be the absolute main-repo path**
   `/workspaces/teamster/src/dbt/kipptaf/target/prod`.
-- **The output contract does not change.** All 30 columns keep their existing
+- **The output contract does not change.** All 29 columns keep their existing
   names, types, and **select order**. The properties yml `columns:` block gains
   descriptions and one model-level test, but no column additions or removals.
 - **SQL style** (`.trunk/config/.sqlfluff`): BigQuery dialect, trailing commas
@@ -52,7 +52,9 @@ trunk.
 - **`git add` names specific files.** Never `-u`, `-A`, or `.`.
 - **Two naming traps.** `int_focus__student_enrollments.student_number` is the
   **Focus** `student_id`, not PowerSchool's `student_number`. And
-  `int_focus__student_contacts.sort_order` is a STRING.
+  `int_focus__student_contacts.sort_order` is NUMERIC, not a STRING -- a quoted
+  literal (`sort_order = '1'`) fails the build; BigQuery has no
+  `NUMERIC = STRING` signature.
 
 ---
 
@@ -80,7 +82,7 @@ trunk.
 - Consumes: `ref("int_focus__student_enrollments")`,
   `ref("int_focus__students")`, `ref("int_focus__student_contacts")`,
   `ref("stg_fldoe__fast")`, `ref("int_extracts__student_enrollments")`.
-- Produces: the unchanged 30-column contract consumed by the
+- Produces: the unchanged 29-column contract consumed by the
   `gsheets__kippfwd_miami_roster` exposure. Task 2 verifies it.
 
 - [ ] **Step 1: Install packages in the worktree**
@@ -137,8 +139,14 @@ with
        every span at year end -- it reads 361 of 365 AY2025 students as
        transferred out. Derive locally until that is fixed upstream, then
        delete these two CTEs and read the upstream column. Anchor on the max
-       academic_year in Focus, NOT var("current_academic_year"), which lags the
-       July rollover. */
+       academic_year in Focus, NOT var("current_academic_year"). NOTE: this
+       anchor's rationale was wrong -- the var does not lag the July rollover
+       (it is 2026, rolled 2026-07-17 in 7cfd878bf) -- and the max()-based
+       anchor was fragile besides (a single stray future row would flip it and
+       mark nearly every student withdrawn). Post-merge review replaced this
+       whole approach with anchoring open_enrollment directly on the var; see
+       the shipped model and the design spec's corrected `enroll_status`
+       section. */
     latest_year as (
         select max(academic_year) as academic_year,
         from {{ ref("int_focus__student_enrollments") }}
@@ -379,10 +387,12 @@ where academic_year = 2026
 group by academic_year, grade_level
 ```
 
-Expected: roughly 194 in grade 7 and 179 in grade 8. Zero rows means the
-`academic_year >= current_academic_year - 1` filter excluded them because the
-var still reads 2025 — correct behavior for today. Note which case you got in
-the PR body.
+Expected: roughly 194 in grade 7 and 179 in grade 8. `current_academic_year` is
+2026 (rolled 2026-07-17 in `7cfd878bf`), so AY2026 rows must be present --
+**zero rows here is not acceptable and is not "correct behavior for today"; it
+is the exact regression this model shipped once already** (see
+`test_kippfwd_miami_roster_current_year_not_empty`, added to guard against a
+recurrence). Note the actual counts in the PR body.
 
 - [ ] **Step 4: Identity and contact coverage**
 

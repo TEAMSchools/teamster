@@ -45,8 +45,9 @@ not the PowerSchool `student_number`. It is the join key to
 `int_focus__students.student_id` and `int_focus__student_contacts.student_id`.
 The roster's `ps_id` must come from `int_focus__students.powerschool_id`.
 
-`int_focus__student_contacts.sort_order` is a STRING (`'1'`, `'2'`), not an
-integer.
+`int_focus__student_contacts.sort_order` is NUMERIC, not a STRING — filter with
+`sort_order = 1` / `sort_order = 2`, unquoted. BigQuery has no
+`NUMERIC = STRING` signature, so a quoted literal fails the build.
 
 ## Column mapping
 
@@ -62,8 +63,8 @@ Match rates and coverage below were measured for Miami grades 7 and 8.
 | `mdcps_id`                 | `int_focus__students.disis_id`, zero-padded to width 7                   |
 | `gender`                   | `regexp_extract(int_focus__students.sex_label, r'\[(\w)\]')`             |
 | `iep_status`               | `int_focus__students.ese_fefp_code` — see recall caveat                  |
-| `contact_1_*` (4 columns)  | `int_focus__student_contacts` at `sort_order = '1'`                      |
-| `contact_2_*` (4 columns)  | `int_focus__student_contacts` at `sort_order = '2'`                      |
+| `contact_1_*` (4 columns)  | `int_focus__student_contacts` at `sort_order = 1`                        |
+| `contact_2_*` (4 columns)  | `int_focus__student_contacts` at `sort_order = 2`                        |
 | 6 FAST columns             | `stg_fldoe__fast` on `fteid` and `academic_year`, unchanged shape        |
 | `previous_year_ada`        | `int_extracts__student_enrollments.ada_unweighted_year_prev`             |
 | `enroll_status`            | Derived locally, see below                                               |
@@ -138,11 +139,17 @@ Local derivation, reading `exitcode` (which is null exactly when the underlying
 | `0`    | the student has an enrollment in the latest `academic_year` with a null `exitcode` |
 | `2`    | otherwise                                                                          |
 
-Anchor on `max(academic_year)` present in Focus, **not**
-`var("current_academic_year")` — that var reads 2025 and has not rolled for July
-2026, so using it would mark nearly every student withdrawn. This reproduces
-PowerSchool `enroll_status` for 341 of 365 students; the 24 disagreements are
-explainable, since PowerSchool froze at the Focus cutover.
+Anchor directly on `var("current_academic_year")`, which is 2026 (rolled
+2026-07-17 in `7cfd878bf`) and is already trusted by this model's own row
+filter. An earlier draft of this design anchored on `max(academic_year)` present
+in Focus instead, on the mistaken belief that the var lags the July rollover —
+it does not. That anchor was also fragile in its own right: AY2018 through
+AY2024 have zero null `exitcode`s, so a single stray future-dated row would flip
+`max(academic_year)` and mark nearly every student withdrawn, and the same
+all-withdrawn failure would recur every year once the current academic year
+closes. Anchoring on the var avoids both problems. This reproduces PowerSchool
+`enroll_status` for 341 of 365 students; the 24 disagreements are explainable,
+since PowerSchool froze at the Focus cutover.
 
 When #4794 lands, delete the local CTEs and read the upstream column.
 
@@ -180,7 +187,20 @@ partitioned by (`student_number`, `academic_year`).
   `previous_year_ada`, which is correct because they were not previously
   enrolled.
 - **`previous_year_ada` empties at the SY2027 rollover, not SY2026.** For SY2026
-  rows the prior year is SY2025, which PowerSchool holds.
+  rows the prior year is SY2025, which PowerSchool holds. It was null for all
+  AY2026 rows in the first cut of this model, keyed to read the current year's
+  own PowerSchool row instead of the prior year's; corrected to read the prior
+  year's `unweighted_ada` directly, it is now populated for roughly 295 of 375
+  AY2026 rows, limited by `powerschool_id` coverage.
+- **`fleid` is null for 81 of 375 AY2026 rows (22%)**, versus 5 of 365 in
+  AY2025. It is the only grain-test key and both FAST join keys, so the grain
+  test covers 78% of current-year rows and those 81 students get no FAST scores.
+  `mdcps_id` is null for exactly the same 81 students and `ps_id` for 80 of
+  them, so those rows carry no usable identifier except `lastfirst`. Not
+  recoverable by coalescing across years — none of the 81 has a prior-year Focus
+  row with a non-null `fteid`.
+- **`enroll_status` reads `-1` for the whole current year until the first day of
+  school**, by deliberate choice — see the `enroll_status` derivation above.
 - **`contact_1_phone_home` is sparse** — 55 of 338 primary contacts. Expected.
 
 ## Testing

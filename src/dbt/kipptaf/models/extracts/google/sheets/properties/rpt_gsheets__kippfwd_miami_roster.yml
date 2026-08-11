@@ -3,10 +3,12 @@ models:
     description: >-
       KIPP Forward Miami grades 7 and 8 roster, one row per student per academic
       year for the current and prior year. Enrollment, identity, demographics,
-      and guardian contacts come from Focus; FAST scores from FLDOE; and
-      prior-year ADA from PowerSchool, which holds no Miami data past academic
-      year 2025. Advisor and both GPA columns are cast null - Focus has no grade
-      7-8 advisory structure, and Miami middle school no longer produces a GPA.
+      and guardian contacts come from Focus; FAST scores from FLDOE.
+      advisor_lastfirst, gpa_cumulative, gpa_y1, and iep_status are
+      hybrid-sourced from PowerSchool for the years it covers and from Focus for
+      AY2026 onward; previous_year_ada always comes from PowerSchool and is null
+      once the prior academic year itself falls past PowerSchool's Miami
+      coverage.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -17,6 +19,41 @@ models:
             severity: error
             where: fleid is not null
     columns:
+      - name: enroll_status
+        data_type: int64
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - -1
+                  - 0
+                  - 2
+                  - 3
+                quote: false
+          - not_null
+        description: >-
+          -1 for a future-dated enrollment, 3 for graduated, 0 for currently
+          enrolled, 2 for withdrawn. Derived locally from Focus enrollment dates
+          and exit codes, except the graduated branch, which reads the upstream
+          enroll_status column directly since it keys on grad_type and is
+          correct — see the inline SQL comment for why the rest is derived
+          locally. -1 fires for every row in the current academic year until the
+          first day of school and self-heals afterward; consumers filtering to 0
+          see zero current-year students until then, a deliberate and disclosed
+          tradeoff.
+      - name: iep_status
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Has IEP
+                  - No IEP
+          - not_null
+        description: >-
+          Has IEP when the student carries a PowerSchool exceptionality code
+          (spedlep) for years PowerSchool covers, else when the student carries
+          an FEFP exceptionality code in Focus, otherwise No IEP.
       - name: academic_year
         description: School year start year, 2026 = 2026-27.
         data_type: int64
@@ -27,8 +64,10 @@ models:
           meta:
             contains_pii: true
       - name: advisor_lastfirst
-        description:
-          Not sourced - Focus has no advisory structure for grades 7-8.
+        description: >-
+          Advisor name from PowerSchool for the years PowerSchool covers. Not
+          sourced for Focus-era years - Focus has no advisory structure for
+          grades 7-8.
         data_type: string
       - name: ps_id
         description: >-
@@ -49,11 +88,6 @@ models:
       - name: gender
         description:
           Single-character gender code extracted from the Focus sex label.
-        data_type: string
-      - name: iep_status
-        description: >-
-          Has IEP when the student carries an FEFP exceptionality code in Focus,
-          otherwise No IEP.
         data_type: string
       - name: contact_1_name
         description: Name of the student's first-listed Focus contact.
@@ -107,26 +141,24 @@ models:
         config:
           meta:
             contains_pii: true
-      - name: enroll_status
-        description: >-
-          -1 for a future-dated enrollment, 3 for graduated, 0 for currently
-          enrolled, 2 for withdrawn. Derived locally from Focus enrollment dates
-          and exit codes, except the graduated branch, which reads the upstream
-          enroll_status column directly since it keys on grad_type and is
-          correct — see the inline SQL comment for why the rest is derived
-          locally.
-        data_type: int64
       - name: gpa_cumulative
-        description: Not sourced - Miami middle school no longer produces a GPA.
+        description: >-
+          Unweighted cumulative Y1 GPA from PowerSchool for the years
+          PowerSchool covers. Not sourced for Focus-era years - Miami middle
+          school no longer produces a GPA.
         data_type: float64
       - name: gpa_y1
-        description: Not sourced - Miami middle school no longer produces a GPA.
+        description: >-
+          Y1 term GPA from PowerSchool for the years PowerSchool covers. Not
+          sourced for Focus-era years - Miami middle school no longer produces a
+          GPA.
         data_type: float64
       - name: previous_year_ada
         description: >-
           Prior academic year's unweighted average daily attendance, from
-          PowerSchool. PowerSchool holds no Miami data past academic year 2025,
-          so this is null for later years.
+          PowerSchool. Null once the prior academic year itself falls past
+          PowerSchool's Miami coverage (academic year 2025), and for students
+          with no powerschool_id match in that prior year.
         data_type: float64
       - name: grade_level
         description:
