@@ -34,10 +34,10 @@ of the workbook — `rpt_tableau__college_assessment_dashboard`,
 Every question about CARAT numbers starts with which pipeline is involved,
 because the two never mix inside a single model:
 
-| Pipeline | Hub model                                      | `test_type` | Origin                                          |
-| -------- | ---------------------------------------------- | ----------- | ----------------------------------------------- |
-| Official | `int_assessments__college_assessment`          | `Official`  | kippadb and College Board                       |
-| Practice | `int_assessments__college_assessment_practice` | `Practice`  | Illuminate plus the `act_scale_score_key` sheet |
+| Pipeline | Hub model                                      | `test_type` | Origin                                           |
+| -------- | ---------------------------------------------- | ----------- | ------------------------------------------------ |
+| Official | `int_assessments__college_assessment`          | `Official`  | kippadb and College Board                        |
+| Practice | `int_assessments__college_assessment_practice` | `Practice`  | Illuminate plus the conversion and scaffold tabs |
 
 ## `rpt_tableau__college_assessment_dashboard_scores`
 
@@ -107,14 +107,42 @@ shifting a reported average.
 out of any grad-year-grouped view silently rather than appearing in an unknown
 bucket.
 
+## The practice pipeline — three pieces
+
+Practice scores are assembled from two KIPP Forward sheet tabs plus one model,
+and the division of labour matters because both tabs live in the same workbook
+and it is easy to put something in the wrong one:
+
+| Piece                                                         | Owns                                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `stg_google_sheets__kippfwd__practice_scale_score_conversion` | raw-score-to-scale-score bands, one row per band per assessment    |
+| `stg_google_sheets__kippfwd__scaffold`                        | the vocabulary — subject alignments, course discipline, cut scores |
+| `int_assessments__college_assessment_practice`                | joins the two, converts responses, builds composites               |
+
+The rule of thumb: if a value repeats across every band of an assessment, it is
+vocabulary and belongs in the scaffold. If it varies band to band, it belongs in
+the conversion sheet. `subject_area`, `aligned_subject_area` and
+`course_discipline` all moved out of conversion into scaffold for exactly that
+reason.
+
+`score_type` is the seam. It stays in **both** — it is the only column whose
+spelling is identical on each side, so it is what joins them. `subject` cannot:
+conversion says `Mathematics` and `Reading and Writing` where the scaffold says
+`Math` and `EBRW`. The scaffold's `expected_practice_test_subject` carries
+conversion's spelling if you ever need to bridge the other way.
+
 ## `stg_google_sheets__kippfwd__scaffold`
 
 The assessment vocabulary — every valid combination of academic year, test type,
-scope, and score type, with its subject alignments and cut scores. 29 rows: 16
-Official, 13 Practice (Practice has no ACT).
+scope, and score type, with its subject alignments and cut scores. 41 rows
+across AY2023 and AY2026, Official and Practice.
 
 Grain is (`academic_year`, `expected_test_type`, `expected_scope`,
-`expected_score_type`), enforced by a composite uniqueness test.
+`expected_grade_level`, `expected_score_type`), enforced by a composite
+uniqueness test. **`expected_grade_level` is part of the key** because AY2023
+ran two SAT forms at once — a three-section form for grades 9-10 and the
+two-section digital form for grade 11 — so `sat_math` and `sat_total_score` each
+appear twice that year, differing only in grade.
 
 ### Why it exists
 
@@ -173,6 +201,68 @@ before `scaffold`, where every sibling range uses one.
 
 **`a1_attempt_min_score` / `a2_plus_attempts_min_score`** lead with `a` because
 a column name cannot start with a digit.
+
+**Four score types carry no cut scores anywhere**, Official or Practice:
+`act_english`, `act_science`, `sat_reading_test_score`, and
+`sat_writing_and_language_test_score`. The goals sheet only ever defined ACT
+composite / math / reading and the SAT section pair, so those nulls are correct
+rather than missing data.
+
+## `stg_google_sheets__kippfwd__practice_scale_score_conversion`
+
+Raw-score-to-scale-score bands, one row per band per assessment. 835 rows across
+20 assessments. Membership here is what designates an Illuminate assessment as a
+reportable practice assessment.
+
+Supersedes `stg_google_sheets__kippfwd__act_scale_score_key`, which reads the
+same rows from an `ACT Scale Score Key V1` tab under PascalCase headers. Both
+sources still exist so the old one can be retired separately; **production still
+reads the old one until this work merges**, so deleting the V1 tab early breaks
+the nightly build.
+
+### Two derived columns worth understanding
+
+**`aligned_scale_score`** is `scale_score` put onto the section's reporting
+scale, so downstream sums need no per-grade adjustment. It differs only for the
+123 grade 9-10 SAT Reading and Writing rows, which College Board stores as
+legacy _test scores_ on a 10-40 scale rather than section scores on 200-800.
+Rescaled by ten they run 100-400 each, so the pair sums to the 200-800 EBRW
+equivalent and a three-section total lands on 400-1600 alongside Math's native
+200-800. The model reads `aligned_scale_score` and does no rescaling of its own.
+
+**`expected_total_subjects_tested`** is how many sections an administration
+expects — 4 for ACT, 3 for the legacy grade 9-10 SAT, 2 for everything else. It
+is constant within an administration, which the composite gate depends on. It
+replaced hardcoded counts and grade filters in the model.
+
+### Gotchas
+
+**`sheet_range` is the tab name, not a named range.** The named range on that
+tab is sheet-scoped (`'Scale Score Conversion'!<name>`), which BigQuery cannot
+resolve, and the qualified form breaks the generated DDL on the embedded quote.
+A workbook-scoped range would work; sheet-scoped ones appear when a tab is
+duplicated, which is how both this tab and `Goals` got theirs.
+
+**The explicit `columns:` list is positional.** An external table with a
+declared schema maps columns to sheet columns in order, so inserting a column in
+the middle of the tab without inserting it at the same position in
+`sources-external.yml` silently shifts every value after it into the wrong
+column. Same-typed neighbours make that invisible.
+
+**`score_type` must not be removed.** It looks redundant next to `subject`, but
+it is the join key to the scaffold.
+
+## Adding a practice administration — what to touch
+
+1. Enter the conversion bands in `Scale Score Conversion`, including
+   `aligned_scale_score`, `score_type`, and `expected_total_subjects_tested`.
+   The `carat-dashboard` skill has the generator and the audit procedure.
+1. Add a scaffold row per section **and one per total**, with
+   `expected_test_type = 'Practice'`. A missing scaffold row silently drops
+   those conversion rows, because the model's join is inner.
+1. Check that `score_type` matches exactly on both sides. That is the only key.
+1. Confirm `expected_total_subjects_tested` equals the number of sections you
+   entered, or no composite will ever be produced for that administration.
 
 ## Goal type — Attempts
 
@@ -370,6 +460,113 @@ than a year of progress.
 Do not "fix" this by unifying the fields. The requirement is that a goal
 declares which basis it is measured on, so both goal sets can live in one table
 and each gets the right denominator.
+
+## `int_assessments__college_assessment_practice`
+
+The practice hub. Illuminate responses converted to scale scores through two
+KIPP Forward sheets: `practice_scale_score_conversion` holds the raw-to-scale
+bands, and `scaffold` holds the vocabulary. Membership in the conversion sheet
+is what designates an Illuminate assessment as a reportable practice assessment
+— Illuminate's own `scope` is not used, because externally created assessments
+carry `Benchmark` or null rather than the test name.
+
+### Two row types
+
+`response_type = 'group'` rows are sections; `response_type = 'NA'` rows are the
+composite. Sections have no scale score of their own — Illuminate splits a
+section into ~4.7 response groups whose `points` are subsets — so the section's
+score comes from its `overall` sibling, attached with a window function rather
+than a self-join (`overall` is exactly one row per student-assessment).
+
+### The composite gate
+
+A composite is produced only when `actual_total_subjects_tested` equals
+`expected_total_subjects_tested`, the latter carried per administration in the
+conversion sheet. ACT averages its sections, everything else sums them — the
+same `if(test_type = 'ACT', avg(…), sum(…))` shape the official hub uses for
+`superscore`.
+
+Counting sections rather than naming them is what makes this general, but the
+count alone is not sufficient: it is partitioned by academic year, student,
+`test_type`, `administration_round` **and `grade_level`**. Grade is load-bearing
+because AY2023 ran two SAT forms concurrently — a three-section form for grades
+9-10 and the two-section digital form for grade 11 — both under
+`administration_round = 'SAT1'`. Four students actually sat sections from both
+forms in one round; without grade in the partition their sections pool and
+produce an invalid total, which is what production did.
+
+The composite is built with `group by`, not `select distinct` over window
+functions. That is deliberate: `course_discipline` and `test_date` vary within
+the partition, so `distinct` cannot collapse them and emits one row per distinct
+value — production held 2,103 composite rows for 1,252 student-rounds for
+exactly this reason. Any new branch must aggregate or stamp those columns
+constant.
+
+### Things that will bite you editing this model
+
+**`WHERE` runs before window functions.** The section rows borrow their score
+from the `overall` sibling via
+`max(if(response_type = 'overall', …)) over (partition by … assessment_id)`, and
+that window must be computed in the `responses` CTE, where both row types are
+present. Computing it in a select that already filters
+`where response_type = 'group'` returns null on every row — silently, with no
+error, because the condition is never true over the surviving partition.
+
+**`grouping` is a BigQuery reserved word.** The scaffold's `expected_grouping`
+needs backticks when aliased to `grouping` (`GROUPING SETS`).
+
+**The conversion-to-scaffold join needs `select distinct`.** Joining on
+(`academic_year`, `test_type`, `score_type`) matches both AY2023 SAT scaffold
+rows for `sat_math`, doubling those bands. The `distinct` is grain projection —
+every selected column is functionally determined by `assessment_id` +
+`raw_score_low` — not a mask for upstream duplicates. If the vocabulary ever
+varies by grade, this breaks quietly and the join needs the grade split instead.
+
+**`scope` is Illuminate's, and is not usable for logic.** It reads `SAT`/`ACT`
+on the AY2023 rows but `Benchmark` on the SY26-27 SAT assessments and null on
+the PSATs. Every branch keys on the sheet's `test_type`. Predicates written
+against `scope` will silently match nothing for anything created externally.
+
+### Changes when this version replaces the AY2023-era model
+
+Verified by full comparison against production. Section rows are **identical** —
+join key unique on both sides at 18,224 rows, zero differences in `scale_score`,
+`raw_score`, `points`, `percent_correct`, dates, or titles. Composite rows
+change in three ways:
+
+| Change                                           | Rows |
+| ------------------------------------------------ | ---- |
+| Duplicate composites collapse                    | -851 |
+| Incomplete sittings gain a row with a null total | +200 |
+| Four students lose an invalid total              | -4   |
+
+**Duplicates collapse.** Production emitted one composite row per distinct
+`course_discipline` per student-round, because it used `select distinct` over
+columns that vary within the partition. 2,103 rows became 1,252. Lossless: every
+duplicated group carried an identical scale score.
+
+**Incomplete sittings become visible.** Production's `where … = 3` dropped a
+student who sat 2 of 3 sections, making an incomplete attempt indistinguishable
+from no attempt. Those rows now exist with a null `scale_score` and the two
+count columns showing why. 162 SAT and 46 ACT student-rounds.
+
+**Four students lose a total, and production's numbers for them were wrong.**
+Students 19342, 200559, 201178 and 203488 each sat two sections of the grade-10
+SAT form and one of the grade-9 form in the same round. Production pooled all
+three and reported a 3-of-3 total — 620, 550, 520 and 600 respectively — summing
+sections from two different test forms on two different scales. Splitting by
+grade means neither half reaches 3 of 3, so both totals are null. These four are
+the only students whose existing scores change, and the change is a correction.
+
+`course_discipline` is also corrected on 8,426 section rows: Math moves from
+`NA` to `MATH` (7,397 rows) and Science from `NA` to `SCI` (1,029). Production's
+`CASE` tested the raw `Mathematics` value while the rename to `Math` happened in
+a sibling column of the same `SELECT`, and BigQuery has no lateral column
+aliases. The derivation now lives in the scaffold sheet instead.
+
+Schema: `total_subjects_tested` is replaced by `actual_total_subjects_tested`
+and `expected_total_subjects_tested`. Added: `grade_level`, `subject`,
+`aligned_subject_area`, `score_type`.
 
 ## Open question — the grade 9 and 10 practice tests are SAT, not PSAT
 
