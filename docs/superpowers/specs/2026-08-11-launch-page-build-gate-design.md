@@ -30,7 +30,8 @@ exist before that merge, not after.
 - Two-tier validation, so in-progress entries never block a commit but nothing
   reaches staff malformed
 - A minimum-verified threshold below which no page is generated at all
-- Generation through an MkDocs `on_files` hook
+- Generation through an MkDocs `on_files` hook, plus the `watch:` entry and
+  module reload that make local `mkdocs serve` show current output
 - `tests/launch/`, a `conftest.py` that makes the module importable, and a
   pytest PR workflow scoped to it
 - A downloadable preview of the rendered page on every catalog PR
@@ -90,6 +91,43 @@ Nothing in `build.py` writes to the filesystem. The hook decides where output
 goes. This is what makes every test run on in-memory data, and it is a
 structural guarantee that the serve loop cannot return.
 
+### How the hook reaches the module
+
+`docs/hooks.py` today is four lines that set `page.meta["hide"]` on the
+homepage. It imports nothing and touches no paths. The `on_files` hook this
+design adds needs `launch.build`, and the production-side import is as much a
+design decision as the test-side one.
+
+It uses the same shim: `sys.path.insert` anchored on
+`Path(__file__).resolve().parent.parent / "src"`. **Anchored on `__file__`, not
+on cwd** — `mkdocs` is normally invoked from the repo root but nothing
+guarantees it, and `mkdocs build -f <path>` is explicitly supported.
+
+Two importers, one idiom. That is a deliberate choice over
+`importlib.util.spec_from_file_location`, which this design rejects for the
+tests and should not silently adopt here.
+
+### `mkdocs serve` needs `watch:` and a module reload
+
+Two gaps follow from the hook living outside `docs_dir`, both real and both
+specific to local preview.
+
+**The catalog is not watched.** The dev server watches `docs_dir` and the config
+file. `mkdocs.yml` has no `watch:` key today, and `src/launch/` is not under
+`docs_dir` — so editing `links.yml` while `mkdocs serve` runs triggers no
+rebuild at all. Not the round-one infinite-loop bug; its mirror image. Fixed by
+adding `watch: [src/launch]` to `mkdocs.yml`.
+
+**The module is cached.** `import launch.build` lands in `sys.modules` on the
+first hook invocation, so edits to `build.py` itself are not picked up on
+subsequent rebuilds. `load()` re-reads YAML from disk every build, so catalog
+edits are fine once watching is on; only generator-code edits are affected. The
+hook calls `importlib.reload()` when the module is already imported.
+
+Without both, "one entry point, three callers" holds for the deploy and the gate
+but quietly fails for the local-preview caller, which is the one a contributor
+uses most.
+
 ## Validation rules
 
 Selection runs **before** validation, so tier 2 knows which entries it is
@@ -102,22 +140,25 @@ without ever suppressing a check. Putting the short-circuit in `select()` would
 mean the entire pre-threshold window — today, and for a long stretch after #4767
 lands nine of 46 — ran with no structural validation on the build path at all.
 
-### Tier 1 — every entry, regardless of status
+### Tier 1 — structural, regardless of status
 
-| Rule                                                             | Why                                                            |
-| ---------------------------------------------------------------- | -------------------------------------------------------------- |
-| `links.yml` parses as a list of mappings                         | Everything else depends on it                                  |
-| `id` present, unique, matching `^[a-z0-9_]+$`                    | Duplicates surface at the worst possible moment                |
-| `name` present and non-empty                                     | Nothing can reference an unnamed entry                         |
-| `url` present, scheme is `https`                                 | A staff-facing link must not be plaintext                      |
-| `system` in the nine-value enum documented in `README.md`        | The prototype hard-codes four; the other five degrade silently |
-| `status` in `{needs-review, verified}`                           | A typo would silently unpublish an entry                       |
-| `access`, if present, is exactly `limited`                       | Prototype treats any truthy value as limited                   |
-| `regions` values all in `{newark, camden, miami, paterson, all}` | Unknown regions render blank                                   |
-| `groups.yml` parses, with `groups`, `families`, `promos` present | Same                                                           |
-| Every family member in `groups.yml` names a real entry           | A rename silently drops a tool                                 |
-| Every family names a real group id                               | An unknown group throws before anything renders                |
-| Every promo card has a non-empty `url` that is not `#`           | Four of five point at `#` today and would render as dead links |
+Most rows check a catalog entry. The last four check `groups.yml` structures,
+which have no `status` field of their own and so are always in tier 1.
+
+| Rule                                                             | Why                                                              |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `links.yml` parses as a list of mappings                         | Everything else depends on it                                    |
+| `id` present, unique, matching `^[a-z0-9_]+$`                    | Duplicates surface at the worst possible moment                  |
+| `name` present and non-empty                                     | Nothing can reference an unnamed entry                           |
+| `url` present, scheme is `https`                                 | A staff-facing link must not be plaintext                        |
+| `system` in the nine-value enum documented in `README.md`        | The prototype hard-codes four; the other five degrade silently   |
+| `status` in `{needs-review, verified}`                           | A typo would silently unpublish an entry                         |
+| `access`, if present, is exactly `limited`                       | Prototype treats any truthy value as limited                     |
+| `regions` values all in `{newark, camden, miami, paterson, all}` | Unknown regions render blank                                     |
+| `groups.yml` parses, with `groups`, `families`, `promos` present | A missing key raises deep in `render()`, not at validation       |
+| Every family member in `groups.yml` names a real entry           | A rename silently drops a tool                                   |
+| Every family names a real group id                               | An unknown group throws before anything renders                  |
+| Every promo card has a non-empty `url` that is not `#`           | Four of five are `#` in the prototype; dead links on a live page |
 
 ### Tier 2 — `status: verified` entries only
 
@@ -165,9 +206,11 @@ returns 404 until the catalog is genuinely ready.
 This exists because the zero-verified page is not merely empty — it is broken.
 With no tools the template falls through to its search-miss branch and renders
 "No tool matches that", above a masthead reading `0 tools` and a footer
-disclaiming `0 of 0 entries are still being verified`. Four of the five promo
-cards in `groups.yml` point at `#`. The first live version would be five cards,
-four of them dead, under an error message.
+disclaiming `0 of 0 entries are still being verified`. In the prototype's
+`groups.yml`, four of the five promo cards point at `#` — so on that seed data
+the first live version would be five cards, four of them dead, under an error
+message. (`groups.yml` does not exist in the repo yet; that count is
+prototype-only, per _Fixes carried from the prototype_ below.)
 
 Gating on a count is cheaper than designing an empty state that should never be
 seen, and it makes a broken intermediate page impossible rather than merely
@@ -271,17 +314,23 @@ fails to collect. Adding `src/launch` to the hatch `packages` list would ship it
 in the `teamster` wheel, which it is not part of. `spec_from_file_location`
 works but is a heavier idiom than a module we control needs.
 
-It also matches what `docs/hooks.py` does, so there is one mechanism to
-understand rather than two.
+It also matches the shim the `on_files` hook uses, so there is one idiom to
+understand rather than two. Note that `docs/hooks.py` does not do this **today**
+— the hook and its `sys.path` insert both arrive with this work.
+
+`tests/cube/__init__.py` is not a collision risk. A regular package with a
+loader always wins over a same-named namespace portion, and `src/cube/` has no
+`__init__.py`, so `import cube` keeps resolving to `tests/cube` even after `src`
+joins `sys.path`. No dependency in `uv.lock` is named `launch` either.
 
 ### The files
 
 | File               | Covers                                                               |
 | ------------------ | -------------------------------------------------------------------- |
 | `test_validate.py` | One test per rule, both tiers, on constructed dicts                  |
-| `test_select.py`   | Status filtering, and that validation still runs below threshold     |
+| `test_select.py`   | Status filtering only — `select()` has no threshold awareness        |
 | `test_render.py`   | Threshold suppression, script-tag escaping, families, `access` badge |
-| `test_catalog.py`  | Runs the real `src/launch/*.yml` through tier 1                      |
+| `test_catalog.py`  | Runs the real `src/launch/*.yml` through tier 1, at any entry count  |
 
 `test_catalog.py` is the one that actually protects `main`. The others protect
 the rules themselves.
@@ -322,6 +371,12 @@ since `groups.yml` does not exist in the repo yet. Carried across as-is: family
 validation, the script-tag escaping, the region accent mapping. Fixed on the
 way:
 
+- **Four of its five promo cards point at `#`.** The new tier-1 rule rejects
+  those, so the seed `groups.yml` cannot simply be lifted across: the
+  implementation either sources real URLs for About us, The Data Feed, Case
+  studies and the "need something we don't have" card, or ships without them.
+  Dropping them is the default — a promo card pointing at a page that does not
+  exist is worse than no card.
 - Reads `git show origin/main:src/launch/links.yml`. Fails outright under a
   shallow CI checkout, and reads the wrong tree in any case.
 - Shells out to `git log` for a "last updated" stamp. Under `actions/checkout`
@@ -383,6 +438,9 @@ Recorded so the omissions are deliberate rather than forgotten.
 | Select before validate                          | Tier 2 cannot exist otherwise                                                                   |
 | Threshold checked in `render()`, not `select()` | Validation must run in full below the threshold, or the pre-launch window has no gate at all    |
 | `tests/launch/conftest.py` path shim            | Scoped to one directory; global pytest config would touch a tree that already fails to collect  |
+| Same `sys.path` shim in the `on_files` hook     | One idiom for both importers, anchored on `__file__` so `mkdocs build -f` works from any cwd    |
+| `watch: [src/launch]` plus `importlib.reload()` | Without both, local `mkdocs serve` silently serves a stale page — the caller used most often    |
+| Drop the prototype's `#` promo cards            | The new tier-1 rule rejects them; a card pointing nowhere is worse than no card                 |
 | Two-tier validation                             | In-progress entries must not block commits; published entries must not be malformed             |
 | Threshold gate instead of an empty state        | The zero-verified page renders an error message, not an empty page; gating makes it unreachable |
 | pytest scoped to `tests/launch`                 | The full tree does not collect; a blanket job turns this into a test-infrastructure project     |
