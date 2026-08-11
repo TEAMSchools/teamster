@@ -693,6 +693,24 @@ things to settle:
   uses it purely to collapse to one row per student. Keyed by scope, the counts
   are already at the right grain.
 
+**Growth for practice is not computed yet.** `previous_total_score_change` is
+one of the fifteen official-only columns that read null on practice rows in
+`int_assessments__all_college_assessments`, because it is derived inside the
+official hub rather than below the union. Three things to settle when doing it:
+
+- **Order by `scope_round`, not `test_date`.** Externally created Illuminate
+  assessments have a null `administered_at`, so practice `administration_round`
+  is null and composite `test_date` is a derived max of section dates.
+  `scope_round` (`SAT1`, `SAT2`, `PSAT891`, `PSAT101`) is the reliable sequence.
+- **The scaffold already anticipates it.** `sat_total_score_growth` exists as an
+  expected score type for AY2026 SAT Combined. Until practice growth is real,
+  every consumer has to exclude that string by name — `_calcs` does, and any
+  fill of `score_type` on practice composite rows would have to as well. Two
+  hardcodings of one literal; a flag column on the sheet would retire both.
+- **Doing it properly means moving the derivation below the union**, which is
+  the same work that would populate the other fourteen official-only columns for
+  practice. Growth alone is not worth a one-off.
+
 **The attempt-count fix lands here.** `_over_time`'s
 `alt_attempt_count_lifetime` uses `count(*)`, so duplicate Salesforce records
 count as separate sittings and four students read as meeting the

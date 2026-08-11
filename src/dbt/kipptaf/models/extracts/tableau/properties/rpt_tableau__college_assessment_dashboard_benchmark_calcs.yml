@@ -84,8 +84,9 @@ models:
         data_type: string
       - name: test_type
         description: >
-          Official or Practice, from the scaffold. Every row reads Official
-          until practice scores are added to the assessments hub.
+          Official or Practice, from the scaffold. Practice rows resolve against
+          practice scores only, so a practice benchmark is never satisfied by an
+          official result.
         data_type: string
       - name: subject_area
         description: >

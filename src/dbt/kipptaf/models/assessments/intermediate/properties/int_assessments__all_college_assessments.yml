@@ -3,9 +3,18 @@ models:
     description: >-
       Single hub for college-entrance assessment scores across both test types,
       carrying the cross-test ranking and alignment fields that CARAT reporting
-      views each compute for themselves today. Currently official scores only —
-      int_assessments__college_assessment_practice joins in once the official
-      repointing has been verified against production.
+      views each compute for themselves today. Official rows come from
+      int_assessments__college_assessment, practice rows from
+      int_assessments__college_assessment_practice, reconciled to the official
+      hub's vocabulary at the union.
+
+
+      Fifteen columns are official-only and read null on practice rows —
+      aligned_subject, salesforce_id, the two score-shape flags and their two
+      counts, strategy_case, surrogate_key, and the seven running-max, growth,
+      and superscore fields. They are computed inside the official hub rather
+      than here. Moving them below the union so they populate for both is
+      separate work.
 
 
       See docs/models/carat-dashboard-data-model.md.
@@ -14,6 +23,7 @@ models:
           arguments:
             combination_of_columns:
               - student_number
+              - test_type
               - score_type
               - test_date
               - rn_highest
@@ -36,10 +46,9 @@ models:
       - name: test_type
         data_type: string
         description: >-
-          Official or Practice. Reads Official on every row until the practice
-          hub is unioned in. Note this is the opposite of the practice hub's own
-          test_type, which holds the test itself — see the naming trap in the
-          reference doc.
+          Official or Practice. Note this is the opposite of the practice hub's
+          own test_type, which holds the test itself and is aliased to scope at
+          the union — see the naming trap in the reference doc.
       - name: scope
         data_type: string
         description: The test itself — ACT, SAT, PSAT 8/9, PSAT10, PSAT NMSQT.
@@ -76,9 +85,10 @@ models:
         data_type: int64
         description: >-
           Rank of this score among the student's scores for the same scope and
-          score type, highest first. Ranked upstream before rows without a test
-          date are dropped, so a student can have no rank-1 row. Part of the
-          grain.
+          score type, highest first. Part of the grain. Official rows inherit
+          the rank from the source unpivots, which assign it before rows without
+          a test date are dropped, so an official student can have no rank-1 row
+          at all. Practice rows are ranked here instead and always have one.
       - name: salesforce_id
         data_type: string
         description: kippadb contact id. Null on College Board rows.
@@ -139,15 +149,16 @@ models:
         description: >-
           Superscore as of this test date. Name carries a typo inherited from
           the upstream hub, where it has no consumers.
-      - name: max_aligned_scale_score_within_test_type
+      - name: max_benchmark_aligned_scale_score_within_test_type
         data_type: numeric
         description: >-
           Highest benchmark-eligible score for this student, benchmark aligned
           scope, and subject area, within one test type. Replaces the
-          deduplicated pick that the benchmark view builds for itself. Identical
-          to the across field until practice rows are unioned in.
-      - name: max_aligned_scale_score_across_test_types
+          deduplicated pick the benchmark view used to build for itself, and
+          keeps an official best from being displaced by a practice one.
+      - name: max_benchmark_aligned_scale_score_across_test_types
         data_type: numeric
         description: >-
           Highest benchmark-eligible score for this student, benchmark aligned
-          scope, and subject area, counting official and practice together.
+          scope, and subject area, counting official and practice together. Use
+          only where a practice result legitimately counts toward the measure.
