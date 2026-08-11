@@ -7,7 +7,7 @@ select
     pl.city,
     pl.postal_code,
 
-    cc.name as campus,
+    coalesce(cc.name, if(pl.is_campus, pl.location_name, null)) as campus,
 
     {{ dbt_utils.generate_surrogate_key(["pl.business_unit_code"]) }} as region_key,
 
