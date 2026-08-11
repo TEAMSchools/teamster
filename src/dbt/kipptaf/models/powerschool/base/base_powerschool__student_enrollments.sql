@@ -140,6 +140,24 @@ select
 
     if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
 
+    /* The NJ re-enrollment extension records homelessness per enrollment stint,
+    but is not written until well after year end -- it is empty for the current
+    year. The student-level tables are maintained live yet overwritten in place,
+    so they describe only current status. Reading the current year from the
+    student-level tables and closed years from the re-enrollment extension keeps
+    both the live value and the history accurate (#4814). */
+    if(
+        ar.academic_year = {{ var("current_academic_year") }},
+        scf.homeless_code,
+        njr.homeless_code
+    ) as homeless_code,
+
+    if(
+        ar.academic_year = {{ var("current_academic_year") }},
+        njs.homelessprimarynighttimeres,
+        njr.homelessprimarynighttimeres
+    ) as homeless_primary_nighttime_residence_code,
+
     coalesce(
         if(ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.spedlep), 'No IEP'
     ) as spedlep,
@@ -227,6 +245,10 @@ left join
     {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
     and ar._dbt_source_project = njr._dbt_source_project
+left join
+    {{ ref("stg_powerschool__studentcorefields") }} as scf
+    on ar.students_dcid = scf.studentsdcid
+    and ar._dbt_source_project = scf._dbt_source_project
 left join
     {{ ref("stg_people__student_logins") }} as sl
     on ar.student_number = sl.student_number
