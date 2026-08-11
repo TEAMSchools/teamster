@@ -25,11 +25,11 @@ models:
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_project, academic_year, and entrydate.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -41,11 +41,11 @@ models:
           First date of the streak. FK to dim_dates (role-playing as streak
           start date).
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
@@ -57,11 +57,11 @@ models:
           Last date of the streak. FK to dim_dates (role-playing as streak end
           date).
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:

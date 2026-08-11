@@ -23,11 +23,11 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from student_number. FK to dim_students.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_students')
-            to_columns: [student_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
         data_tests:
           - relationships:
               arguments:
@@ -37,11 +37,11 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from college_code_branch. FK to dim_colleges.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_colleges')
-            to_columns: [college_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_colleges')
+              to_columns: [college_key]
         data_tests:
           - relationships:
               arguments:
@@ -54,11 +54,11 @@ models:
           x college combination. FK to dim_dates (role-playing as enrollment
           start date).
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
@@ -71,11 +71,11 @@ models:
           college combination. FK to dim_dates (role-playing as enrollment end
           date).
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
