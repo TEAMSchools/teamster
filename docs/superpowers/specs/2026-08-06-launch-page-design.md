@@ -184,26 +184,51 @@ them, and writes `docs/launch/index.html`.
 verbatim, so the page lands at `teamschools.github.io/teamster/launch/`.
 
 **One writer to `gh-pages`, and this is not optional.** `mkdocs gh-deploy`
-force-pushes the `gh-pages` branch, replacing its contents wholesale. A second
-workflow publishing the launch page independently would work until the next docs
-change silently wiped it. The build therefore runs **inside** the existing job,
-not beside it.
+delegates to `ghp-import`, which emits a `deleteall` before the file list — the
+branch tree is rebuilt **entirely** from `site_dir` on every deploy. That holds
+with or without `--force`, so a second workflow publishing the launch page
+independently would be wiped by the next docs deploy regardless of flags. The
+build therefore runs **inside** the existing job, not beside it.
+
+### The PR gate this depends on does not exist yet
+
+The coupling below is only tolerable if bad catalogs are caught before they
+reach `main`. **Today nothing catches them.** No workflow validates
+`src/launch/**`, and no workflow runs `pytest` at all despite a populated
+`tests/` tree. The only pull-request signals on this path are Trunk (formatting
+and YAML syntax, not schema) and the advisory `claude-review`.
+
+So the PR gate is a **deliverable of this spec**, not an existing safeguard:
+
+- A workflow triggered on `pull_request` with `paths: src/launch/**`, running
+  `build.py` in check mode so every validation rule below runs against the
+  proposed catalog.
+- A `pytest` job, which has to be created from scratch — this repo has none.
+- Adding both to the `required_status_checks` ruleset, which currently lists
+  only `dbt Cloud` and `Trunk Check Runner`. Repo-admin, with lead time.
+
+Until those exist, the deploy-time failure is not a backstop. It is the only
+gate, and it fires after merge.
 
 ### The coupling this introduces
 
 Putting the build inside the docs job means **a failure in `build.py` fails the
-docs deploy**. That is a real cost and needs a deliberate answer rather than
-discovery in production.
+docs deploy** — and because that workflow also fires on `docs/**` and
+`mkdocs.yml`, a broken catalog on `main` blocks **all documentation publishing**
+until someone fixes it, not just the launch page. There is no self-healing; the
+next docs-only push fails identically.
 
-The position taken here: **fail the job.** A launch page built from an invalid
-catalog is worse than a stale one, and a silently-skipped build produces a page
-that looks current and is not. The mitigation is that validation runs at pull
-request time, so a merge that would break the build should not reach `main` —
-the deploy-time failure is a backstop, not the primary gate.
+The position taken here: **fail the job**, because a launch page built from an
+invalid catalog is worse than a stale one, and a silently-skipped build produces
+a page that looks current and is not.
 
-Rejected alternative: `continue-on-error` on the build step, letting docs deploy
-regardless. That converts a loud failure into a stale page nobody notices, which
-is the exact failure mode the Google Site has today.
+That price is only acceptable once the PR gate above is real. **Build the gate
+before wiring the build into the deploy job.** Doing it in the other order means
+a single bad merge freezes the docs site for everyone.
+
+Rejected alternative: `continue-on-error` on the build step. That converts a
+loud failure into a stale page nobody notices, which is the exact failure mode
+the Google Site has today.
 
 ### Ordering within the job
 
@@ -271,21 +296,26 @@ Provisioning that identity is a prerequisite, not an implementation detail.
 
 - **Unit tests on the render and validation functions.** Pure, no network. Given
   a fixture catalog, assert the rendered output and each validation failure.
-- **A build smoke test in CI**: build against the real catalog and assert the
-  output contains every tool. Catches a filter or grouping bug that produces a
-  valid-looking page missing half the list.
+- **A build smoke test in CI**, with an important limit. The page is rendered
+  client-side from a single embedded JSON payload; the built HTML ships an empty
+  list container. So asserting "the output contains every tool" only checks the
+  payload, and **passes while the rendered page is wrong, blank, or crashed on a
+  JavaScript error.** Assert on the payload by all means, but do not treat it as
+  coverage of what a reader sees. Catching that needs a headless render
+  asserting row and group counts.
 - **Link health** on a schedule rather than at build time: HEAD every URL,
   report failures, and assert Drive sharing for `google-*` entries. Build-time
   checking would make an unrelated vendor outage break the docs deploy.
 
 ## Failure handling
 
-| Failure                    | Behavior                                                                                                      |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Validation fails on a PR   | Pull request blocked, once the check is required. Nothing publishes.                                          |
-| `build.py` fails on `main` | Docs deploy fails loudly. Previous page stays live, since `gh-pages` is untouched.                            |
-| Bad content merged         | Revert; the next deploy republishes. Note this does not remove it from git history or from any public mirror. |
-| A destination URL dies     | Page still builds and deploys. The scheduled link-health job reports it.                                      |
+| Failure                    | Behavior                                                                                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Validation fails on a PR   | Pull request blocked, once the gate exists and is required. Nothing publishes.                                                                              |
+| `build.py` fails on `main` | Docs deploy fails loudly, previous page stays live — and **the whole docs site stops publishing** until the catalog is fixed.                               |
+| Build succeeds, page wrong | **Not currently detected.** A client-side error or grouping bug yields a blank or partial page while CI is green. See the smoke-test limit under _Testing_. |
+| Bad content merged         | Revert; the next deploy republishes. Does not remove it from git history or any public mirror.                                                              |
+| A destination URL dies     | Page still builds and deploys. The scheduled link-health job reports it.                                                                                    |
 
 ## Open dependencies
 
@@ -297,11 +327,15 @@ is gone.
    trusted, not before the page ships.
 1. **Adding the validation check to the `required_status_checks` ruleset.**
    Repo-admin, has lead time.
-1. **Whether the public page should discourage indexing.** A GitHub Pages site
-   is more discoverable than the current Google Site — sitemapped and crawled.
-   The status quo is already public, so this is not new exposure, but it is a
-   step up in findability and deserves a deliberate call. A `robots` meta tag is
-   the cheap answer.
+1. **Whether the public page should discourage indexing.** Correcting an earlier
+   draft of this spec: the page is **not** sitemapped. MkDocs builds
+   `sitemap.xml` from documentation pages only, so a static `.html` never enters
+   it, and `mkdocs.yml` sets no `site_url` at all. It is still crawlable by
+   ordinary link-following, and a GitHub Pages URL is more findable than the
+   current Google Site, so the call is still worth making deliberately — just on
+   accurate grounds. A `robots` meta tag in the template is the cheap answer;
+   `robots.txt` is not available, because the site is not at an origin root and
+   this repo cannot write `teamschools.github.io/robots.txt`.
 1. **Help Center visibility for the prose articles.** Unchanged from the
    previous draft and independent of this page: the Data categories are
    currently readable without signing in.
