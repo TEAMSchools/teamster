@@ -1,9 +1,14 @@
 # Launch page: build, validation, and CI gate
 
 Design for productionizing the launch page generator and building the CI gate
-that must exist before it can publish. Companion to
-[the launch page design](2026-08-06-launch-page-design.md), which settles what
-the page is; this settles how it gets built and what stops it shipping broken.
+that must exist before it can publish. Companion to the launch page design,
+which settles what the page is; this settles how it gets built and what stops it
+shipping broken.
+
+That companion is **not on `main` yet** — it lives on PR #4762 at
+`docs/superpowers/specs/2026-08-06-launch-page-design.md`. Every reference to it
+below is by PR number rather than by relative link, because a relative link
+would resolve to nothing for anyone reading from `main` until #4762 merges.
 
 ## Context
 
@@ -26,7 +31,8 @@ exist before that merge, not after.
   reaches staff malformed
 - A minimum-verified threshold below which no page is generated at all
 - Generation through an MkDocs `on_files` hook
-- `tests/launch/` and a pytest PR workflow scoped to it
+- `tests/launch/`, a `conftest.py` that makes the module importable, and a
+  pytest PR workflow scoped to it
 - A downloadable preview of the rendered page on every catalog PR
 
 ## Architecture
@@ -39,12 +45,12 @@ exist before that merge, not after.
             v
   src/launch/build.py
       load()      read the three files from the working tree
-      select()    keep only status: verified
+      select()    keep only status: verified          -- partitions, never exits
       validate()  tier 1 over all entries, tier 2 over selected
-      render()    inject JSON, RETURN an HTML string
-            |
-            +--> errors        -> raise CatalogError, listing every problem
-            +--> below minimum -> return None, log the count
+                    |
+                    +--> errors -> raise CatalogError, listing every problem
+      render()    below minimum -> return None, log the count
+                  otherwise     -> inject JSON, RETURN an HTML string
             |
             v
   docs/hooks.py :: on_files
@@ -89,6 +95,13 @@ structural guarantee that the serve loop cannot return.
 Selection runs **before** validation, so tier 2 knows which entries it is
 judging. Getting this backwards would force every rule into tier 1.
 
+`select()` only partitions — it never short-circuits. **Validation always runs
+in full, including below the publication threshold.** The threshold is checked
+in `render()`, after every rule has been applied, so it suppresses output
+without ever suppressing a check. Putting the short-circuit in `select()` would
+mean the entire pre-threshold window — today, and for a long stretch after #4767
+lands nine of 46 — ran with no structural validation on the build path at all.
+
 ### Tier 1 — every entry, regardless of status
 
 | Rule                                                             | Why                                                            |
@@ -121,11 +134,12 @@ the field.
 
 ### Deferred
 
-`group` present on every entry and resolving to a known group id. The
-[launch page design](2026-08-06-launch-page-design.md) records `group` as a
-required per-entry field, and that is the right shape — a side table in
-`groups.yml` has to stay exhaustive, which is precisely the coupling that lets
-two individually-green PRs break `main` together.
+`group` present on every entry and resolving to a known group id. The launch
+page design on #4762 records `group` as a required per-entry field with a logged
+rationale ("role tags and topical domains are different axes"), and that is the
+right shape — a side table in `groups.yml` has to stay exhaustive, which is
+precisely the coupling that lets two individually-green PRs break `main`
+together.
 
 Adding it means touching all 46 entries while 37 are in flight on #4767.
 Sequenced into a follow-up PR after that merges.
@@ -210,9 +224,9 @@ workflow watches `docs/**` and `mkdocs.yml` only, so **merging a catalog change
 currently triggers no deploy at all** — the launch page design's claim that
 "merging a catalog change publishes it" is false until this lands.
 
-Appending after the existing `"!docs/superpowers/**"` negation is safe: GitHub's
-documented rule is that a matching _positive_ pattern after a negative match
-re-includes the path, and `src/launch/**` cannot match `docs/superpowers/**`.
+Position in the list does not matter. `src/launch/**` and `docs/superpowers/**`
+are disjoint prefixes, so no path can match both and the existing negation is
+unaffected wherever the new pattern goes.
 
 A catalog merge will trigger a full docs deploy rather than a partial one. That
 takes about a minute and is acceptable.
@@ -230,15 +244,44 @@ a broken `main`. Worth enabling alongside, or adding a merge queue for
 
 ## Testing
 
-Four files under `tests/launch/`, following the pattern already established by
-`tests/cube/test_cube_schema.py`: pure Python, no Dagster import, no secrets.
+Four files under `tests/launch/`: pure Python, no Dagster import, no secrets.
 
-| File               | Covers                                                              |
-| ------------------ | ------------------------------------------------------------------- |
-| `test_validate.py` | One test per rule, both tiers, on constructed dicts                 |
-| `test_select.py`   | Status filtering, threshold behaviour above and below               |
-| `test_render.py`   | Script-tag escaping regression, family collapse, the `access` badge |
-| `test_catalog.py`  | Runs the real `src/launch/*.yml` through tier 1                     |
+### Making `src/launch/build.py` importable
+
+There is no path by which a test can import it today. `pyproject.toml` packages
+only `src/teamster`; there is no `[tool.pytest.ini_options] pythonpath`, no
+`pytest.ini`, and `tests/conftest.py` does no path manipulation. `tests/` has no
+root `__init__.py`, so pytest inserts only `tests/launch/` itself.
+
+`tests/cube/test_cube_schema.py` is not the precedent for this — it never
+imports `src/cube` code, it only reads YAML through `pathlib.rglob`. The nearest
+real precedent is `tests/cube/test_mcp_server.py`, which reaches
+`src/cube/mcp/server.py` through `importlib.util.spec_from_file_location`
+precisely because no import path exists.
+
+This design uses a **`tests/launch/conftest.py` that inserts `src` on
+`sys.path`**, anchored on `Path(__file__).resolve().parents[2]`. Verified
+empirically: `src/launch` imports as a PEP 420 namespace package with no
+`__init__.py`, and a test importing `launch.build` passes.
+
+Chosen over the alternatives because it is scoped to this one directory and has
+no effect on the other 749 collected tests.
+`[tool.pytest.ini_options] pythonpath` is global config on a tree that already
+fails to collect. Adding `src/launch` to the hatch `packages` list would ship it
+in the `teamster` wheel, which it is not part of. `spec_from_file_location`
+works but is a heavier idiom than a module we control needs.
+
+It also matches what `docs/hooks.py` does, so there is one mechanism to
+understand rather than two.
+
+### The files
+
+| File               | Covers                                                               |
+| ------------------ | -------------------------------------------------------------------- |
+| `test_validate.py` | One test per rule, both tiers, on constructed dicts                  |
+| `test_select.py`   | Status filtering, and that validation still runs below threshold     |
+| `test_render.py`   | Threshold suppression, script-tag escaping, families, `access` badge |
+| `test_catalog.py`  | Runs the real `src/launch/*.yml` through tier 1                      |
 
 `test_catalog.py` is the one that actually protects `main`. The others protect
 the rules themselves.
@@ -250,24 +293,34 @@ at the Unicode level; the test pins that behaviour.
 
 ## Failure handling
 
-| Failure                               | Detected by      | Behaviour                                          |
-| ------------------------------------- | ---------------- | -------------------------------------------------- |
-| `links.yml` unparseable               | tier 1           | `CatalogError`, docs build fails                   |
-| Duplicate or malformed `id`           | tier 1           | Same                                               |
-| Unknown `system`, non-https `url`     | tier 1           | Same                                               |
-| Family names a missing entry          | tier 1           | Same                                               |
-| Verified entry missing a description  | tier 2           | Same                                               |
-| Fewer verified entries than threshold | `select()`       | No page emitted, docs build succeeds, count logged |
-| Catalog valid, rendered page wrong    | **Not detected** | Known gap — the preview artifact is the mitigation |
+| Failure                               | Detected by                       | Behaviour                                          |
+| ------------------------------------- | --------------------------------- | -------------------------------------------------- |
+| `links.yml` unparseable               | tier 1                            | `CatalogError`, docs build fails                   |
+| Duplicate or malformed `id`           | tier 1                            | Same                                               |
+| Unknown `system`, non-https `url`     | tier 1                            | Same                                               |
+| Family names a missing entry          | tier 1                            | Same                                               |
+| Verified entry missing a description  | tier 2                            | Same                                               |
+| Fewer verified entries than threshold | `render()`, after full validation | No page emitted, docs build succeeds, count logged |
+| Catalog valid, rendered page wrong    | **Not detected**                  | Known gap — the preview artifact is the mitigation |
 
 Errors accumulate rather than short-circuit: one build reports every problem, so
 a contributor fixes them in one pass instead of one per push.
 
 ## Fixes carried from the prototype
 
-The prototype at `.claude/scratch/launch-prototype/` is the starting point.
-Carried across as-is: family validation, the script-tag escaping, the region
-accent mapping. Fixed on the way:
+The prototype at `.claude/scratch/launch-prototype/` is the starting point. It
+is gitignored and therefore **not checkable by a reviewer**, so the claims below
+about its behaviour have to be taken on trust until the implementation PR brings
+the code into the repo, where each becomes a diff.
+
+Two of the data claims that motivate the rules do not depend on the prototype
+and can be checked against `main` now: `links.yml` contains three GPA Roster
+entries (`gpa_roster_camden`, `gpa_roster_miami`, `gpa_roster_newark`) and
+exactly four `regions:` keys in the whole file, all four on the Contact Info
+Feeds — so the three Rosters carry none. The promo-card claim is prototype-only,
+since `groups.yml` does not exist in the repo yet. Carried across as-is: family
+validation, the script-tag escaping, the region accent mapping. Fixed on the
+way:
 
 - Reads `git show origin/main:src/launch/links.yml`. Fails outright under a
   shallow CI checkout, and reads the wrong tree in any case.
@@ -302,7 +355,12 @@ Recorded so the omissions are deliberate rather than forgotten.
 - The per-entry `group` field and grouped rendering — follow-up PR after #4767
 - `tests/cube` remains unprotected by CI, as does the rest of `tests/`
 - The 80 pre-existing `docs/superpowers` link warnings
-- The `pythonpath` config that would let the full test tree collect
+- The `pythonpath` config that would let the full test tree collect. This is a
+  separate, pre-existing problem:
+  `tests/sensors/sftp/test_sensors_sftp_renlearn.py` does
+  `from tests.utils import ...` and dies at collection, taking 749 tests with
+  it. The `tests/launch/conftest.py` shim above does not touch it and is not
+  blocked by it.
 - The Drive sharing check and its admin identity
 - Retiring the Google Site
 
@@ -317,16 +375,18 @@ Recorded so the omissions are deliberate rather than forgotten.
 
 ## Decisions log
 
-| Decision                                  | Rationale                                                                                       |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Generate at build, do not commit the page | No generated artifact in git; the preview artifact covers reviewability                         |
-| `on_files` with `File.generated`          | `on_pre_build` writing into `docs_dir` loops `mkdocs serve` at two builds per second            |
-| `render()` returns a string               | Makes the loop structurally impossible and every test in-memory                                 |
-| Select before validate                    | Tier 2 cannot exist otherwise                                                                   |
-| Two-tier validation                       | In-progress entries must not block commits; published entries must not be malformed             |
-| Threshold gate instead of an empty state  | The zero-verified page renders an error message, not an empty page; gating makes it unreachable |
-| pytest scoped to `tests/launch`           | The full tree does not collect; a blanket job turns this into a test-infrastructure project     |
-| No `--strict`                             | Fails on `main` today for unrelated reasons, and buys nothing over `CatalogError`               |
-| Defer per-entry `group`                   | 37 entries in flight on #4767; the field is right, the timing is not                            |
+| Decision                                        | Rationale                                                                                       |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Generate at build, do not commit the page       | No generated artifact in git; the preview artifact covers reviewability                         |
+| `on_files` with `File.generated`                | `on_pre_build` writing into `docs_dir` loops `mkdocs serve` at two builds per second            |
+| `render()` returns a string                     | Makes the loop structurally impossible and every test in-memory                                 |
+| Select before validate                          | Tier 2 cannot exist otherwise                                                                   |
+| Threshold checked in `render()`, not `select()` | Validation must run in full below the threshold, or the pre-launch window has no gate at all    |
+| `tests/launch/conftest.py` path shim            | Scoped to one directory; global pytest config would touch a tree that already fails to collect  |
+| Two-tier validation                             | In-progress entries must not block commits; published entries must not be malformed             |
+| Threshold gate instead of an empty state        | The zero-verified page renders an error message, not an empty page; gating makes it unreachable |
+| pytest scoped to `tests/launch`                 | The full tree does not collect; a blanket job turns this into a test-infrastructure project     |
+| No `--strict`                                   | Fails on `main` today for unrelated reasons, and buys nothing over `CatalogError`               |
+| Defer per-entry `group`                         | 37 entries in flight on #4767; the field is right, the timing is not                            |
 
 Refs #4818, #4761
