@@ -73,6 +73,13 @@ in prod IMMEDIATELY: external sources are excluded from the deps gate
 staging model and its `stage_external_sources` fails on the still-empty prod
 prefix.
 
+**Sheets externals need no manual post-merge prod re-stage.** The
+`build_dbt_assets` stage→refresh→build flow re-stages the prod external and
+rebuilds the `stg_` table on the next tick. The "launch that asset in prod
+IMMEDIATELY" rule above is for NEW Avro/GCS sources only. Verify with
+`INFORMATION_SCHEMA.COLUMNS` on the prod external before filing a manual
+re-stage as outstanding work.
+
 **AVRO external tables autodetect schema from the LAST ALPHABETICAL file.** To
 evolve an Avro source's schema, the new-schema file must sort last — materialize
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files

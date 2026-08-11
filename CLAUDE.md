@@ -106,6 +106,12 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
   the edits to subagents (their context absorbs the injection) and verify via
   `git -C <worktree> diff` from the main repo.
 
+- **When subagents aren't available**, edit worktree files by `Write`-ing a
+  Python script to `.claude/scratch/` and running it by ABSOLUTE path from the
+  main repo cwd — `Write` content is injection-exempt and no `cd` occurs, so
+  neither step re-injects. Assert each anchor matches exactly once and abort
+  otherwise; verify with `git -C <worktree> diff`.
+
 - **`git worktree add` with a RELATIVE path resolves against the shell cwd**,
   which drifts after a foreground `cd` into another worktree — pass an ABSOLUTE
   path (`git worktree add /workspaces/teamster/.worktrees/<branch> <branch>`) or
@@ -206,7 +212,10 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **A CI failure in a file your branch never touched usually means `main`
   moved** — run `git log <merge-base>..origin/main` before diagnosing. A merged
   PR that narrowed a contract read as a live production incident this session;
-  merging `main` was the entire fix.
+  merging `main` was the entire fix. A clean prod baseline does NOT rule this
+  out — CI builds `--full-refresh` against deferred upstreams, so prod passing
+  and CI failing is the expected shape. Check git before the warehouse; it is
+  one command and decisive.
 
 - **A mid-session Codespace restart can delete `.worktrees/` and desync local
   git refs** (stale `main`, `git ls-remote <branch>` empty for a live branch, a
@@ -349,6 +358,11 @@ file; domain specifics live in the nearest subdirectory CLAUDE.md.
 - **IDE selection arrives only via `<ide_selection>` tags**, not
   `<ide_opened_file>` (which only names the open path). When the user references
   "this" without an `<ide_selection>`, ask for the snippet — don't guess.
+
+- **Never assert remaining context as fact** — there is no token counter, the
+  harness compacts automatically, and a felt sense of a long session is not
+  evidence. Truncating analysis or handing off work on that basis costs more
+  than finishing it.
 
 - **Before claiming a harness artifact (rewritten output, phantom rendering,
   truncated literal), verify with a DERIVED value** — line length, `grep -c`, a
