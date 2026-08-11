@@ -270,7 +270,10 @@ with
             canonical_performance_band_set_id as performance_band_set_id,
 
             false as is_multipart_assessment,
-        from scaffold_responses
+        -- sanitized_responses, not scaffold_responses: both union branches must
+        -- read the cleaned date_taken. Reading the raw CTE here leaves the
+        -- non-internal branch unsanitized.
+        from sanitized_responses
         where not is_internal_assessment
     )
 
