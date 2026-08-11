@@ -32,7 +32,7 @@ with
 
             if(
                 scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope
-            ) as aligned_scope,
+            ) as benchmark_aligned_scope,
 
             scope != 'ACT'
             and score_type not in (
@@ -53,7 +53,7 @@ select
     test_month,
     test_type,
     scope,
-    aligned_scope,
+    benchmark_aligned_scope,
     subject_area,
     aligned_subject_area,
     aligned_subject,
@@ -80,11 +80,11 @@ select
     /* rn_highest = 1 is redundant to a max and suppresses 23 real scores. Kept
        to match production while the repointing is verified. See TODO(#4658). */
     max(if(is_benchmark_eligible and rn_highest = 1, scale_score, null)) over (
-        partition by student_number, test_type, aligned_scope, subject_area
+        partition by student_number, test_type, benchmark_aligned_scope, subject_area
     ) as max_aligned_scale_score_within_test_type,
 
     max(if(is_benchmark_eligible and rn_highest = 1, scale_score, null)) over (
-        partition by student_number, aligned_scope, subject_area
+        partition by student_number, benchmark_aligned_scope, subject_area
     ) as max_aligned_scale_score_across_test_types,
 
 from aligned

@@ -88,7 +88,7 @@ with
             test_type,
             score_type,
             subject_area,
-            aligned_scope,
+            benchmark_aligned_scope,
             scale_score,
             max_aligned_scale_score_within_test_type,
 
@@ -100,8 +100,8 @@ with
         {{
             dbt_utils.deduplicate(
                 relation="aligned_scores_pre",
-                partition_by="student_number, aligned_scope, subject_area",
-                order_by="scale_score desc",
+                partition_by="student_number, benchmark_aligned_scope, subject_area",
+                order_by="scale_score desc, score_type",
             )
         }}
     ),
@@ -133,7 +133,7 @@ with
         left join
             aligned_scores as s
             on e.student_number = s.student_number
-            and e.aligned_scope = s.aligned_scope
+            and e.aligned_scope = s.benchmark_aligned_scope
             and e.subject_area = s.subject_area
     )
 

@@ -613,14 +613,14 @@ combined.
 
 ### Fields identified to move upstream
 
-| Field                                                      | Where it lives now                                                        |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `rn_highest`                                               | both unpivots; consumed by 4 views                                        |
-| `max_scale_score`                                          | official hub, as `avg(scale_score)` over `rn_highest = 1`                 |
-| max score by aligned scope                                 | `_benchmark_calcs`, as the `aligned_scores_pre` and `aligned_scores` CTEs |
-| the `met_min_score_int_*` family                           | `_over_time`, five window variants                                        |
-| attempt counts                                             | `_participation_roster`, as a pivot plus ten windows                      |
-| `aligned_scope`, `aligned_subject`, `aligned_subject_area` | derived by hand in three places; now data in the scaffold                 |
+| Field                                                                | Where it lives now                                                        |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `rn_highest`                                                         | both unpivots; consumed by 4 views                                        |
+| `max_scale_score`                                                    | official hub, as `avg(scale_score)` over `rn_highest = 1`                 |
+| max score by aligned scope                                           | `_benchmark_calcs`, as the `aligned_scores_pre` and `aligned_scores` CTEs |
+| the `met_min_score_int_*` family                                     | `_over_time`, five window variants                                        |
+| attempt counts                                                       | `_participation_roster`, as a pivot plus ten windows                      |
+| `benchmark_aligned_scope`, `aligned_subject`, `aligned_subject_area` | derived by hand in three places; now data in the scaffold                 |
 
 Prune rather than move: `superscore`, `avg_running_max_superscore` and
 `sum_running_max_superscore` have one consumer between them, and
@@ -635,8 +635,10 @@ Getting this backwards produces numbers that look plausible and are meaningless.
 | PSAT10 + PSAT NMSQT | maxing **scores**            | College Board considers them the same test, offered in different windows. Verified scale-compatible: EBRW 160-690 against 160-680, Math 160-680 against 160-740, Combined 320-1260 against 320-1370. |
 | ACT + SAT           | **attainment booleans** only | "met the HS-ready or college-ready bar ever, by any route". Never a score comparison — ACT Math is 1-36 and SAT Math is 200-800.                                                                     |
 
-So a precomputed max score folds only the PSATs, and `aligned_scope` with its
-`ACT/SAT` value belongs on the met-threshold flags. A max partitioned on
+So a precomputed max score folds only the PSATs, which is why the hub's version
+is named `benchmark_aligned_scope`. The scaffold's `expected_aligned_scope`,
+with its `ACT/SAT` value, belongs on the met-threshold flags instead. The two
+are not interchangeable despite the near-identical names. A max partitioned on
 `ACT/SAT` would silently return the SAT value for every student and rate an
 ACT-only 36 against a 1010 threshold.
 

@@ -43,12 +43,15 @@ models:
       - name: scope
         data_type: string
         description: The test itself — ACT, SAT, PSAT 8/9, PSAT10, PSAT NMSQT.
-      - name: aligned_scope
+      - name: benchmark_aligned_scope
         data_type: string
         description: >-
           Scope with PSAT10 and PSAT NMSQT folded to PSAT10/NMSQT, since they
           are the same test offered in different windows and share a scale.
-          Valid for comparing scores. ACT and SAT are never folded here.
+          Valid for comparing scores. ACT and SAT are never folded here. Named
+          for the benchmark views it serves, since the goals sheets carry their
+          own expected_aligned_scope that folds ACT and SAT together for
+          attainment and is not interchangeable with this one.
       - name: subject_area
         data_type: string
         description: Section as the source system spells it.
@@ -139,12 +142,12 @@ models:
       - name: max_aligned_scale_score_within_test_type
         data_type: numeric
         description: >-
-          Highest benchmark-eligible score for this student, aligned scope, and
-          subject area, within one test type. Replaces the deduplicated pick
-          that the benchmark view builds for itself. Identical to the across
-          field until practice rows are unioned in.
+          Highest benchmark-eligible score for this student, benchmark aligned
+          scope, and subject area, within one test type. Replaces the
+          deduplicated pick that the benchmark view builds for itself. Identical
+          to the across field until practice rows are unioned in.
       - name: max_aligned_scale_score_across_test_types
         data_type: numeric
         description: >-
-          Highest benchmark-eligible score for this student, aligned scope, and
-          subject area, counting official and practice together.
+          Highest benchmark-eligible score for this student, benchmark aligned
+          scope, and subject area, counting official and practice together.
