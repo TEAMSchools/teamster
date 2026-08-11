@@ -91,8 +91,8 @@ models:
           Whether the score can be compared against a benchmark threshold. False
           for ACT, whose 1-36 scale is not comparable, and for the four legacy
           sub-test score types reported on a 10-40 scale. The aligned max fields
-          below already exclude these rows, so consumers do not filter on this
-          column — it explains why a row has no aligned max.
+          below already exclude these rows. Filter on this column when picking
+          the row a max came from, so the pick and the max cover the same rows.
       - name: n_overall_scores
         data_type: int64
         description: Count of total or composite scores in the same sitting.

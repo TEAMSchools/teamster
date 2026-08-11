@@ -791,6 +791,54 @@ Scale scores throughout the sheet come from the guides' `LOWER` column, the
 established convention, so reported scores sit at the bottom of College Board's
 published range rather than mid-range.
 
+## Known issue — `rn_highest = 1` discards scores whose better sibling has no test date
+
+**23 students read `No Data` in the benchmark view while holding recorded SAT
+totals of 890, 1270, and 1540.** Not a duplicate-record problem and not a filter
+anyone wrote wrong — it is an ordering accident between two models.
+
+`rn_highest` is ranked in the upstream unpivots,
+`partition by (student, scope, score_type) order by score desc`. The official
+hub then applies `where date is not null` when it unions those unpivots. So the
+rank is assigned _before_ the row is dropped. When a student's highest score for
+a score type carries no test date, that row is discarded and the surviving rows
+keep their original ranks — `rn_highest = 2`, `3`, and so on, with no rank-1 row
+anywhere in the hub for that student and score type.
+
+Anything filtering `rn_highest = 1` therefore drops the student entirely rather
+than falling back to their best surviving score. `_benchmark_calcs` does exactly
+that in `aligned_scores_pre`, so those students have no row to join and
+`met_benchmark_goal` returns `No Data`.
+
+Confirm the shape with:
+
+```sql
+select student_number, score_type, test_date, scale_score, rn_highest
+from `teamster-332318.kipptaf_assessments.int_assessments__college_assessment`
+where student_number in (10302, 6272) and scope = 'SAT'
+```
+
+Both return a single row at `rn_highest = 2`.
+
+**The filter is redundant to a `max()`.** `rn_highest = 1` marks the highest
+score per (student, scope, score_type), and a max over a set equals a max over
+that set's per-subgroup maxima — so on any partition at or above that grain, the
+filter cannot change the result. Its only live effect is suppressing scores
+whose better sibling was dropped for a missing date.
+
+`int_assessments__all_college_assessments` **retains the filter deliberately**,
+inside the `if()` feeding both aligned max fields, so that repointing consumers
+onto it is a provable no-op. Verified: with the filter, the new field reproduces
+`_benchmark_calcs.max_score` across 60,264 keys with zero differences; without
+it, 23 keys gain a value production does not have.
+
+Removing it is a real correction that moves 23 students from `No Data` to a
+scored result, some of them to `Met`. It needs to ship visibly and on its own,
+not folded into a refactor. The alternative fix — moving the ranking downstream
+of the null-date filter, so ranks are dense over surviving rows — is the more
+complete repair but changes `rn_highest` for every consumer, and the hub's
+uniqueness test includes that column.
+
 ## Known issue — duplicate kippadb test records
 
 **A long-standing source problem, not a modeling bug.** It is recorded here so

@@ -88,22 +88,12 @@ with
             test_type,
             score_type,
             subject_area,
+            aligned_scope,
             scale_score,
+            max_aligned_scale_score_within_test_type,
 
-            if(
-                scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope
-            ) as aligned_scope,
-
-        from {{ ref("int_assessments__college_assessment") }}
-        where
-            rn_highest = 1
-            and scope != 'ACT'
-            and score_type not in (
-                'psat10_math_test',
-                'psat10_reading',
-                'sat_math_test_score',
-                'sat_reading_test_score'
-            )
+        from {{ ref("int_assessments__all_college_assessments") }}
+        where is_benchmark_eligible and rn_highest = 1
     ),
 
     aligned_scores as (
@@ -136,13 +126,8 @@ with
 
             s.test_type,
             s.score_type,
-            s.scale_score,
 
-            cast(
-                max(s.scale_score) over (
-                    partition by e.student_number, e.aligned_scope, e.subject_area
-                ) as int64
-            ) as max_score,
+            cast(s.max_aligned_scale_score_within_test_type as int64) as max_score,
 
         from scaffold as e
         left join
