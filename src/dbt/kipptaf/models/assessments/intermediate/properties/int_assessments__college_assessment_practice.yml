@@ -1,25 +1,19 @@
 models:
   - name: int_assessments__college_assessment_practice
     description: >-
-      Practice SAT and ACT results from Illuminate, converted from raw score to
-      scale score through the kippfwd act_scale_score_key spreadsheet. An
-      assessment appears here only if its assessment id is present in that sheet
-      — sheet membership is the designation mechanism, and Illuminate's scope is
-      deliberately not filtered because externally created practice assessments
-      carry scope Benchmark rather than SAT. The sheet is authoritative for
-      subject, grade level, and administration round; Illuminate is
-      authoritative for assessment identity and student responses. Section rows
-      carry response_type group; composite and combined rows are appended as
-      separate union branches carrying response_type NA.
+      Practice SAT, PSAT, and ACT results from Illuminate, converted from raw
+      score to scale score through two KIPP Forward sheet tabs:
+      practice_scale_score_conversion supplies the raw-to-scale bands and
+      scaffold supplies the vocabulary, joined on score_type. An assessment
+      appears here only if its id is in the conversion sheet — sheet membership
+      is the designation mechanism, and Illuminate's scope is deliberately not
+      filtered because externally created assessments carry Benchmark or null
+      rather than the test name.
 
 
-      The sheet is joined twice for different purposes. Designation reads a
-      distinct one-row-per-assessment list, because the sheet holds 45-54
-      conversion rows per assessment and joining on assessment_id alone fans
-      every response row out roughly fiftyfold; a singular test guards the
-      constancy that collapse depends on. Conversion is a separate left join on
-      the raw-score range, so an uncovered raw score reports a null scale score
-      instead of dropping the row.
+      Section rows carry response_type group. One composite row per student
+      administration is appended with response_type NA, gated on
+      actual_total_subjects_tested = expected_total_subjects_tested.
 
 
       assessment_id is canonical_assessment_id, since response_rollup is
@@ -40,18 +34,15 @@ models:
               - response_type_description
           config:
             severity: error
-            # Scoped to section rows. The two older composite branches select
-            # distinct over columns that vary within their partition, so they
-            # emit one row per distinct discipline and cannot satisfy this key
-            # until that is fixed.
+            # Scoped to section rows. Composite rows have a different grain —
+            # one per student administration per grade — and null assessment_id.
             where: response_type = 'group'
     columns:
       - name: academic_year
         data_type: int64
         description: >-
-          Academic year of the administration, taken from response_rollup. This
-          is the start-year convention, so SY26-27 reads 2026. The sheet's own
-          Academic_Year column is not read by this model.
+          Academic year of the administration, from response_rollup. Start-year
+          convention, so SY26-27 reads 2026.
       - name: powerschool_student_number
         data_type: int64
         description: Student Number assigned by the school. Indexed.
@@ -59,136 +50,135 @@ models:
         data_type: string
         description: >-
           Illuminate's assessment scope, passed through unchanged, and NOT the
-          test identity. Historical practice assessments read SAT or ACT;
-          externally created ones read Benchmark or null. Do not write logic
-          against it — use test_type, which the conversion sheet supplies. See
-          the naming trap noted on test_type below.
+          test identity. Historical rows read SAT or ACT; externally created
+          ones read Benchmark or null. Do not write logic against it — use
+          test_type. See the naming trap on test_type below.
       - name: scope_round
         data_type: string
         description: >-
-          The sheet's Administration_Round value, such as SAT1, SAT2, or ACT1.
-          Distinguishes administrations within an academic year and is part of
-          the partition that builds composite and combined scores, so two
-          administrations must never share a value.
+          The sheet's administration_round — SAT1, SAT2, ACT1, PSAT891, PSAT101.
+          Part of the partition building composite scores, so two
+          administrations in one year must never share a value.
       - name: test_type
         data_type: string
         description: >-
-          The test itself — SAT, ACT, PSAT 8/9, or PSAT10 — taken from the
-          conversion sheet, which is authoritative because Illuminate's scope
-          reads Benchmark or null on externally created assessments.
+          The test itself — SAT, ACT, PSAT 8/9, or PSAT10 — from the conversion
+          sheet, which is authoritative because Illuminate's scope reads
+          Benchmark or null on externally created assessments.
 
 
           NAMING TRAP. This is the opposite of
           int_assessments__college_assessment, where test_type is the constant
           Official and scope holds the test. The columns share names across the
           two hubs and mean different things, so joining or unioning them on
-          either column silently mis-groups rather than erroring. The convention
-          the rest of the lineage follows is the official hub's — test_type is
-          Official or Practice, scope is the test — which the scaffold sheet
-          also uses. This model deviates because the kippadb
+          either column silently mis-groups rather than erroring. The rest of
+          the lineage follows the official hub's convention, as does the
+          scaffold sheet. This model deviates because the kippadb
           standardized-testing source owns test_type for ACT/SAT and renaming
-          here was not wanted; the official hub resolves the same conflict by
-          aliasing at the boundary. Reconciliation happens downstream in
+          here was not wanted. Reconciliation happens downstream in
           int_assessments__all_college_assessments.
+      - name: grade_level
+        data_type: int64
+        description: >-
+          Grade sitting the assessment, from the conversion sheet. Part of the
+          partition counting sections tested, because AY2023 ran a three-section
+          SAT for grades 9-10 and the two-section digital form for grade 11
+          under one administration round.
       - name: assessment_id
         data_type: int64
         description: >-
-          Illuminate canonical assessment id, and the key that joins to the
-          sheet. Null on composite and combined rows, which aggregate across
+          Illuminate canonical assessment id, and the key joining to the
+          conversion sheet. Null on composite rows, which aggregate across
           assessments.
       - name: assessment_title
         data_type: string
-        description: >-
-          Illuminate assessment title. Reads NA on composite and combined rows.
+        description: Illuminate assessment title. Reads NA on composite rows.
       - name: administration_round
         data_type: string
         description: >-
           Month and two-digit year derived from Illuminate's administered_at,
-          such as Oct 23. Externally created assessments leave administered_at
-          null, so those rows fall back to the sheet's Administration_Round
-          value rather than reporting null.
+          such as Oct 23. Null where administered_at is null, which is every
+          externally created assessment — scope_round is the reliable
+          administration identifier.
       - name: course_discipline
         data_type: string
         description: >-
-          ENG or MATH, derived from the sheet's Subject. Every math row
-          currently reads NA, because the comparison tests for Math while the
-          sheet stores Mathematics. Preserved deliberately — correcting it would
-          change historical values. Stamped NA on the two-section combined
-          branch so that branch yields one row per administration.
-      - name: subject_area
-        data_type: string
-        description: >-
-          Section subject from the sheet, with Mathematics renamed to Math. Read
-          from the sheet rather than Illuminate because Illuminate reports null
-          for every Reading and Writing assessment, which would undercount the
-          sections tested. Composite rows read Composite and combined rows read
-          Combined.
+          ENG, MATH, or SCI, from the scaffold and matching PowerSchool credit
+          types. Stamped NA on composite rows so each administration yields one
+          row.
       - name: test_date
         data_type: date
         description: >-
-          The date this test was given. On the two-section combined branch this
-          is the later of the two section dates, since the sections can be
-          administered on different days.
+          The student's response date, from Illuminate. On composite rows this
+          is the latest section date, since sections can be sat on different
+          days.
       - name: test_month
         data_type: string
         description: Full month name of test_date.
       - name: response_type
         data_type: string
         description: >-
-          Reads group for section-level rows and NA for composite and combined
-          rows. Illuminate's overall rows are consumed to build scale scores and
-          composites rather than emitted directly.
+          group for section rows, NA for composite rows. Illuminate's overall
+          rows are consumed to build section and composite scores rather than
+          emitted.
       - name: response_type_description
         data_type: string
+        description: Illuminate response group name. Reads NA on composite rows.
+      - name: subject
+        data_type: string
         description: >-
-          Illuminate response group name. Reads NA on composite and combined
-          rows.
+          Section subject as the conversion sheet spells it — Mathematics,
+          Reading and Writing, Reading, Writing, English, Science. Null on
+          composite rows.
+      - name: subject_area
+        data_type: string
+        description: >-
+          Section subject as the assessment hubs spell it, from the scaffold.
+          Composite rows read Composite for ACT and Combined for everything
+          else.
+      - name: aligned_subject_area
+        data_type: string
+        description: >-
+          Subject collapsed for cross-test comparison, from the scaffold. Null
+          on composite rows.
+      - name: score_type
+        data_type: string
+        description: >-
+          Score identifier matching score_type in
+          int_assessments__college_assessment, and the key joining the
+          conversion sheet to the scaffold. Null on composite rows.
       - name: points
         data_type: numeric
         description: >-
-          Raw score, meaning the number of questions answered correctly. Summed
-          across sections on composite and combined rows.
+          Raw score for the response group, meaning questions answered
+          correctly. Summed across sections on composite rows.
       - name: percent_correct
         data_type: numeric
         description: >-
-          Share of questions answered correctly, rescaled to a 0-1 fraction.
-          Null on composite and combined rows.
-      - name: total_subjects_tested
+          Share of questions answered correctly, as a 0-1 fraction. Null on
+          composite rows.
+      - name: actual_total_subjects_tested
         data_type: int64
         description: >-
-          Distinct sections the student sat in this administration. Gates which
-          composite branch applies — 4 for the ACT composite, 3 for the legacy
-          three-section SAT, and 2 for the two-section digital SAT.
-
-
-          The two-section branch additionally requires that the administration
-          carry a Reading and Writing section. A partial sitting of the legacy
-          three-section form also reports two subjects, so the count alone would
-          manufacture a full digital-SAT total out of two of three legacy
-          sections — 129 legacy SAT student-rounds and 22 ACT ones are affected.
+          Distinct sections the student sat, counted per academic year, student,
+          test type, administration round, and grade level. Compared against
+          expected_total_subjects_tested to decide whether a composite can be
+          calculated.
+      - name: expected_total_subjects_tested
+        data_type: int64
+        description: >-
+          Sections the administration expects, from the conversion sheet — 4 for
+          ACT, 3 for the legacy grade 9-10 SAT, 2 otherwise.
       - name: raw_score
         data_type: numeric
         description: >-
-          Raw score for the section, or the summed raw score on composite and
-          combined rows. Null when the sheet holds no conversion row covering
-          the student's points value.
+          The section's own raw score, taken from its overall row rather than
+          the response group. Summed across sections on composite rows.
       - name: scale_score
         data_type: float64
         description: >-
-          Converted scale score. Null when no conversion row covers the
-          student's raw score, which surfaces as a visible gap rather than a
-          dropped row. The ACT composite averages its four sections and both SAT
-          combined branches sum theirs. The two-section branch reports null
-          unless both sections converted, so a partial conversion never presents
-          as a complete total.
-
-
-          Legacy grade 9 and 10 SAT Reading and Writing rows are multiplied by
-          ten, because the sheet stores those two sections as legacy SAT test
-          scores on a 10-40 scale, not as section scores on 200-800. Rescaled
-          they run 100-400 each, so the pair sums to the 200-800 EBRW equivalent
-          and the three-section total lands on 400-1600 alongside Math's native
-          200-800. The guard is narrow on purpose - scope SAT, subject Reading
-          or Writing, grade 9 or 10 - and the SY26-27 PSAT rows are the first
-          others to populate those grades, so widening that predicate would
-          wrongly catch them.
+          Converted scale score, read from the sheet's aligned_scale_score so no
+          rescaling happens here. On composite rows it is the average of
+          sections for ACT and the sum for everything else, and null when the
+          student did not sit every expected section — which is how an
+          incomplete attempt stays visible rather than being dropped.
