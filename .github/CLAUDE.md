@@ -126,7 +126,7 @@ principal itself.
 | `admins`              | admin     | Global fallback (`*`)                                                         |
 | `platform`            | maintain  | `.github/`, `.devcontainer/`, `.claude/`, `.trunk/`, Dockerfile, scripts, MCP |
 | `data-engineers`      | write     | `src/teamster/`, tests                                                        |
-| `analytics-engineers` | maintain  | All `src/dbt/`                                                                |
+| `analytics-engineers` | maintain  | `src/dbt/`, `src/cube/`, `src/launch/`                                        |
 | `analysts`            | write     | kipptaf folders without staging models (see CODEOWNERS)                       |
 | `data-team`           | write     | docs                                                                          |
 
