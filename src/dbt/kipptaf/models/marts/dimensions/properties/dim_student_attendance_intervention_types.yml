@@ -23,11 +23,11 @@ models:
         description: >-
           FK to dim_regions. Surrogate key derived from business_unit_code
           (mapped from _dbt_source_project).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_regions')
-            to_columns: [region_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_regions')
+              to_columns: [region_key]
         data_tests:
           - relationships:
               arguments:

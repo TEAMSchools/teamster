@@ -17,11 +17,11 @@ models:
         description: >-
           Surrogate key derived from sections_dcid and _dbt_source_project. FK
           to dim_course_sections.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_course_sections')
-            to_columns: [course_section_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_course_sections')
+              to_columns: [course_section_key]
         data_tests:
           - relationships:
               arguments:
@@ -31,11 +31,11 @@ models:
         data_type: string
         description: >-
           Surrogate key derived from employee_number. FK to dim_staff.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:

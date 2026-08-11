@@ -32,12 +32,11 @@ models:
           `business_unit_code` so this column hashes exactly the keys produced
           by `dim_regions.region_key`. Network-level locations (e.g., KIPP NJ)
           map to KIPP_TAF.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_regions')
-            to_columns: [region_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_regions')
+              to_columns: [region_key]
         data_tests:
           - relationships:
               arguments:

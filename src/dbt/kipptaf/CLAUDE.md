@@ -411,6 +411,12 @@ dbt Cloud project ID: `211862`.
 CI job: `dbt build --select state:modified+ --full-refresh`, target `staging`,
 defers to Staging environment.
 
+A refactor touching many models pulls them into `state:modified+`, so CI builds
+models it has never built — expect latent `severity: error` failures unrelated
+to your change (a 56-file sweep surfaced 5 duplicate PKs sitting in prod). Query
+prod for the same count before assuming you caused it, and budget for triage
+when scoping a wide sweep.
+
 CI is scoped to the kipptaf project only. PRs touching only a district project
 (kipppaterson, kippnewark, kippcamden, kippmiami) get a no-op kipptaf CI run
 that selects no models — kipptaf CI green is not evidence the district-side
