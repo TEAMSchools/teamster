@@ -144,6 +144,14 @@ models:
       - name: ada
         data_type: float64
         description: Average daily attendance for the year.
+      - name: unweighted_ada
+        data_type: float64
+        description: Unweighted average daily attendance for the year.
+      - name: weighted_ada
+        data_type: float64
+        description: >-
+          Weighted average daily attendance for the year, the value used for
+          high school students from SY26 onward.
       - name: ada_above_or_at_80
         data_type: boolean
         description: ADA at or above 80 percent.
