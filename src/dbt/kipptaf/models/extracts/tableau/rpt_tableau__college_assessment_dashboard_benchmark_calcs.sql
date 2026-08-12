@@ -26,6 +26,9 @@ with
             and academic_year = {{ var("current_academic_year") }}
     ),
 
+    /* The hub tags the winning row, so this reads it rather than re-aggregating.
+       The tag's partition is exactly this join key, so rn = 1 yields one row per
+       key and cannot fan out below. */
     benchmark_scores as (
         select
             student_number,
@@ -33,10 +36,10 @@ with
             benchmark_aligned_scope,
             subject_area,
 
-            cast(max(benchmark_aligned_scope_max_score) as int64) as max_scale_score,
+            cast(scale_score as int64) as max_scale_score,
 
         from {{ ref("int_assessments__all_college_assessments") }}
-        group by student_number, test_type, benchmark_aligned_scope, subject_area
+        where rn_highest_benchmark_aligned_scope = 1
     )
 
 select

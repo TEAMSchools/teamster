@@ -163,6 +163,9 @@ models:
         data_type: numeric
         description: >-
           Highest benchmark-eligible score for this student, benchmark aligned
-          scope, and subject area, within one test type. Replaces the
-          deduplicated pick the benchmark view used to build for itself, and
-          keeps an official best from being displaced by a practice one.
+          scope, and subject area, within one test type. test_type is in the
+          partition so an official best is never displaced by a practice one.
+          Carried for reporting views that want the value without filtering; the
+          benchmark view itself now filters rn_highest_benchmark_aligned_scope
+          instead. The two disagree on 27 keys, because this one still requires
+          rn_highest = 1 and the tag does not — see TODO(#4658).
