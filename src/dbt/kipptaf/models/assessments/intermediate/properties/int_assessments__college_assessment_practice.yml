@@ -11,9 +11,12 @@ models:
       rather than the test name.
 
 
-      Section rows carry response_type group. One composite row per student
-      administration is appended with response_type NA, gated on
-      actual_total_subjects_tested = expected_total_subjects_tested.
+      Three row types. Group rows carry the per-response-group detail, one per
+      response group per student per assessment. Subject rows carry one row per
+      student per assessment at the section grain the official hub uses, with
+      points and percent_correct nulled. Total rows carry one row per student
+      administration, with scale_score gated on actual_total_subjects_tested =
+      expected_total_subjects_tested and a null assessment_id.
 
 
       assessment_id is canonical_assessment_id, since response_rollup is
@@ -37,6 +40,34 @@ models:
             # Scoped to section rows. Composite rows have a different grain —
             # one per student administration per grade — and null assessment_id.
             where: response_type = 'Group'
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - powerschool_student_number
+              - assessment_id
+          config:
+            severity: error
+            # Subject rows are one per student per assessment. This is what the
+            # subject branch's select distinct projects to, and it holds only
+            # while the conversion sheet keeps one metadata combination per
+            # assessment_id. A typo that varies any of them breaks the grain
+            # here rather than silently.
+            where: response_type = 'Subject'
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - powerschool_student_number
+              - scope_round
+              - test_type
+              - grade_level
+          config:
+            severity: error
+            # Total rows carry a null assessment_id, so the key is the
+            # administration itself — the same columns the total branch groups
+            # by, minus the derived counts.
+            where: response_type = 'Total'
     columns:
       - name: academic_year
         data_type: int64
