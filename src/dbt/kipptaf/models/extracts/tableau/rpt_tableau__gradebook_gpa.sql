@@ -15,7 +15,8 @@ with
             is_current_term as is_current_quarter,
             semester,
 
-        from {{ ref("int_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
+        where term is not null
 
         union all
 
@@ -34,7 +35,7 @@ with
             false as is_current_quarter,
             'S#' as semester,
 
-        from {{ ref("stg_powerschool__terms") }}
+        from {{ ref("int_students__terms") }}
         where isyearrec = 1
     ),
 

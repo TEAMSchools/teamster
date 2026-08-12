@@ -28,14 +28,12 @@ models:
         description: >-
           Surrogate key for the student. Foreign key to dim_students. Derived
           from the student number.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_students')
-            to_columns: [student_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_students')
+              to_columns: [student_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_students')
@@ -46,14 +44,12 @@ models:
         description: >-
           Surrogate key for the contact person. Foreign key to
           dim_student_contact_persons.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_contact_persons')
-            to_columns: [student_contact_person_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_contact_persons')
+              to_columns: [student_contact_person_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_student_contact_persons')

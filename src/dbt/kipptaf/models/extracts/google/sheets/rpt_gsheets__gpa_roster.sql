@@ -13,6 +13,8 @@ with
             co.lep_status,
             co.is_504,
             co.gifted_and_talented,
+            co.unweighted_ada,
+            co.weighted_ada,
 
             term,
 
@@ -66,6 +68,8 @@ select
     lep_status,
     gifted_and_talented,
     is_504,
+    unweighted_ada,
+    weighted_ada,
 
     gpa_q1,
     gpa_q2,

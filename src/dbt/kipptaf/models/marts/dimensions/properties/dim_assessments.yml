@@ -22,10 +22,14 @@ models:
       materialized: table
       meta:
         dagster:
-          # nightly instead of eager: Cube-only consumer, daily refresh_key —
-          # see fct_assessment_scores_enrollment_scoped. Refs #4559
+          # 5x/day, raised from nightly (#4559) so the whole assessment star
+          # shares one tick — dim_assessment_administrations has an FK test to
+          # this model, and a nightly dim under 5x/day administrations leaves a
+          # window where a new Illuminate assessment is in administrations but
+          # not yet here. Rationale in fct_assessment_scores_enrollment_scoped.
+          # Refs #4821
           automation_condition:
-            cron_schedule: 0 0 * * *
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: assessment_key
         data_type: string

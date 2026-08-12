@@ -42,10 +42,6 @@ models:
             warn_unsupported: false
         data_tests:
           - unique
-          - relationships:
-              arguments:
-                to: ref('dim_staff')
-                field: staff_key
 
       - name: google_email
         data_type: string

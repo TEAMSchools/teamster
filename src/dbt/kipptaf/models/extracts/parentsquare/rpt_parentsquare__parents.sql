@@ -97,25 +97,70 @@ with
                 length(secondary_candidate) = 10, secondary_candidate, null
             ) as secondary_phone,
         from contact_candidates
+    ),
+
+    -- trunk-ignore(sqlfluff/ST03): referenced via dbt_utils.deduplicate below
+    deliverable as (
+        select
+            c.contact_first_name as first_name,
+            c.contact_last_name as last_name,
+            c.relationship,
+            c.mobile,
+            c.secondary_phone,
+            c.email_current as email,
+
+            s.school_id,
+            s.code_location,
+
+            cast(s.student_number as string) as student_id,
+
+            (
+                if(c.mobile is not null, 1, 0)
+                + if(c.secondary_phone is not null, 1, 0)
+                + if(c.email_current is not null, 1, 0)
+            ) as contactable_fields,
+        from contacts as c
+        inner join
+            students as s
+            on c.student_number = s.student_number
+            and c.code_location = s.code_location
+        -- ParentSquare needs an email or a mobile number to create a
+        -- contactable parent account, so a parent carrying neither is not
+        -- deliverable and is dropped.
+        where c.email_current is not null or c.mobile is not null
+    ),
+
+    -- TODO(#4776): Finalsite holds duplicate contact records for one human --
+    -- two finalsite_enrollment_ids, same person -- and both qualify as parent
+    -- candidates, so int_finalsite__student_contacts ranks them into contact_1
+    -- AND contact_2 for the same student. Nine Newark students are affected,
+    -- and this feed would create duplicate ParentSquare accounts for their
+    -- parents. The upstream fix is to rank one row per PERSON rather than per
+    -- contact record; until that lands, collapse here on the grain ParentSquare
+    -- itself keys on, preferring the row carrying the most contact detail so a
+    -- merge never drops a phone number or email the other copy had.
+    --
+    -- Two genuinely different people who share a name for one student would
+    -- also collapse. That is the destination's constraint, not a choice this
+    -- model makes -- ParentSquare cannot represent them separately either.
+    deduped as (
+        {{
+            dbt_utils.deduplicate(
+                relation="deliverable",
+                partition_by="student_id, first_name, last_name",
+                order_by="contactable_fields desc",
+            )
+        }}
     )
 
 select
-    c.contact_first_name as first_name,
-    c.contact_last_name as last_name,
-    c.relationship,
-    c.mobile,
-    c.secondary_phone,
-    c.email_current as email,
-
-    s.school_id,
-    s.code_location,
-
-    cast(s.student_number as string) as student_id,
-from contacts as c
-inner join
-    students as s
-    on c.student_number = s.student_number
-    and c.code_location = s.code_location
--- ParentSquare needs an email or a mobile number to create a contactable parent
--- account, so a parent carrying neither is not deliverable and is dropped.
-where c.email_current is not null or c.mobile is not null
+    first_name,
+    last_name,
+    relationship,
+    mobile,
+    secondary_phone,
+    email,
+    school_id,
+    code_location,
+    student_id,
+from deduped

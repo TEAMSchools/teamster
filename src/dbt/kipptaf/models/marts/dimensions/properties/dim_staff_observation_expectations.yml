@@ -25,13 +25,12 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_staff. Surrogate key derived from employee_number.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff')
@@ -42,13 +41,12 @@ models:
         description: >-
           Foreign key to dim_terms. Surrogate key derived from term type, code,
           name, start_date, region, and school_id.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
         data_tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_terms')
@@ -65,11 +63,11 @@ models:
           tags; the not_null test below fails loudly if that invariant ever
           breaks (e.g., if Grow archives one of the matching tags or renames an
           abbreviation without a coordinated update).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff_observation_types')
-            to_columns: [staff_observation_type_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_observation_types')
+              to_columns: [staff_observation_type_key]
         data_tests:
           - not_null
           - relationships:

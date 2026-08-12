@@ -13,7 +13,6 @@ with
             student_number,
             _dbt_source_relation,
             _dbt_source_project,
-            students_dcid,
             academic_year,
             entrydate,
 
@@ -24,7 +23,7 @@ with
             coalesce(
                 date_sub(exitdate, interval 1 day), cast('9999-12-31' as date)
             ) as enrollment_end,
-        from {{ ref("int_powerschool__student_enrollment_union") }}
+        from {{ ref("int_students__student_enrollment_union") }}
         -- graduates carry NULL entry/exit as a placeholder row; drop them
         -- (no enrollment context to clip against).
         where entrydate is not null
@@ -152,8 +151,8 @@ with
             coalesce(scf.spedlep, 'No IEP') as iep_classification,
         from enrollments as e
         left join
-            {{ ref("stg_powerschool__studentcorefields") }} as scf
-            on e.students_dcid = scf.studentsdcid
+            {{ ref("int_students__student_core_fields") }} as scf
+            on e.student_number = scf.student_number
             and e._dbt_source_project = scf._dbt_source_project
         where e._dbt_source_project in ('kipppaterson', 'kippmiami')
     ),

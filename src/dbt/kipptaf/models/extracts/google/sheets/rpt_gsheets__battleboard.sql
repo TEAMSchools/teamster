@@ -1,7 +1,7 @@
 with
     elementary_grade as (
         select teachernumber, max(grade_level) as max_grade_level,
-        from {{ ref("int_powerschool__teacher_grade_levels") }}
+        from {{ ref("int_students__teacher_grade_levels") }}
         where academic_year = {{ var("current_academic_year") }}
         group by teachernumber
     )

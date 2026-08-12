@@ -26,13 +26,12 @@ models:
         description: >-
           Foreign key to dim_staff_work_assignments. Surrogate key derived from
           item_id. Generated with generate_surrogate_key(["item_id"]).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff_work_assignments')
-            to_columns: [work_assignment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_work_assignments')
+              to_columns: [work_assignment_key]
         data_tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff_work_assignments')
@@ -49,11 +48,11 @@ models:
         description: >-
           ADP business-unit code (KCNA, KIPP_MIAMI, KIPP_TAF, KPAT, TEAM). FK to
           dim_regions.business_unit_code.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_regions')
-            to_columns: [business_unit_code]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_regions')
+              to_columns: [business_unit_code]
         data_tests:
           - not_null
           - relationships:

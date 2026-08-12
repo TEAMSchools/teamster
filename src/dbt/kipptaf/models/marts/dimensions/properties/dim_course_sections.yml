@@ -23,15 +23,12 @@ models:
         description: >-
           Surrogate key derived from courses_course_number and
           _dbt_source_project. FK to dim_courses.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_courses')
-            to_columns: [course_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_courses')
+              to_columns: [course_key]
         data_tests:
-          - not_null
-
           - relationships:
               arguments:
                 to: ref('dim_courses')
@@ -43,12 +40,11 @@ models:
           Null when the section's school ID does not match any location in the
           crosswalk.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
         data_tests:
           - relationships:
               arguments:

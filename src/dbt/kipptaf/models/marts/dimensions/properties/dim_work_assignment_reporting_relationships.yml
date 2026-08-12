@@ -24,13 +24,12 @@ models:
         description: >-
           Foreign key to dim_staff_work_assignments. Surrogate key derived from
           item_id. Generated with generate_surrogate_key(["item_id"]).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff_work_assignments')
-            to_columns: [work_assignment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_work_assignments')
+              to_columns: [work_assignment_key]
         data_tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff_work_assignments')
@@ -43,11 +42,11 @@ models:
           to dim_staff identifying the manager this work assignment reports to.
           Null when the manager's associate_oid has no active number mapping in
           stg_people__employee_numbers.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:

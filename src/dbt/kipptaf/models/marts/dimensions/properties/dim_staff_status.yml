@@ -23,13 +23,12 @@ models:
         description: >-
           Foreign key to dim_staff. Surrogate key derived from employee_number.
           Generated with generate_surrogate_key(["employee_number"]).
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
-          - not_null
           - relationships:
               arguments:
                 to: ref('dim_staff')

@@ -105,3 +105,10 @@ models:
         data_type: boolean
       - name: dibels_most_recent_composite
         data_type: string
+      - name: state_test_proficiency
+        data_type: string
+        description: >-
+          Prior-year state test proficiency for this student and subject — NJSLA
+          aggregated proficiency in New Jersey, FAST PM3 administration in
+          Florida. Populated only where the subject resolves to ELA or Math, and
+          set to the literal No Test when the student has no prior-year result.

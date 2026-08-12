@@ -7,6 +7,14 @@ models:
       administration. Expectations without a resolvable section enrollment
       — replacement assessments and ES Writing in grades K-4 Newark/Camden
       — live in `bridge_assessment_expectations_student_scoped`.
+    config:
+      materialized: table
+      meta:
+        dagster:
+          # 5x/day table instead of an eager view — rationale and tick choice
+          # in fct_assessment_scores_enrollment_scoped. Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     columns:
       - name: assessment_expectation_key
         data_type: string
@@ -14,6 +22,7 @@ models:
         constraints:
           - type: primary_key
             warn_unsupported: false
+            warn_unenforced: false
         data_tests:
           - unique
 
@@ -21,11 +30,11 @@ models:
         data_type: string
         description: >-
           FK to dim_student_section_enrollments.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_section_enrollments')
-            to_columns: [student_section_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_section_enrollments')
+              to_columns: [student_section_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -36,11 +45,11 @@ models:
         data_type: string
         description: >-
           FK to dim_assessment_administrations.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_assessment_administrations')
-            to_columns: [assessment_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_assessment_administrations')
+              to_columns: [assessment_administration_key]
         data_tests:
           - relationships:
               arguments:
