@@ -782,13 +782,45 @@ class TestReadRoster:
         assert roster[0].classroom_name == "Room Alpha"
         assert roster[0].teacher_name == "Teacher One"
 
-    def test_email_is_lowercased(self, script: ModuleType, tmp_path: Path) -> None:
+    def test_email_is_lowercased_and_stripped(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        """Both halves of .strip().lower() are load-bearing for the join."""
         path = tmp_path / "roster.xlsx"
         self._workbook(
             path,
-            [[1001, "Ann Ant", "AAA@Example.org", "Room Alpha", "Teacher One", "t1@example.org"]],
+            [[1001, "Ann Ant", "  AAA@Example.org  ", "Room Alpha", "Teacher One", "t1@example.org"]],
         )
         assert script.read_roster(path)[0].student_email == "aaa@example.org"
+
+    def test_bool_id_raises(self, script: ModuleType, tmp_path: Path) -> None:
+        """bool is an int subclass; True must not become id 1."""
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [[True, "Ann Ant", "aaa@example.org", "Room Alpha", "Teacher One", "t1@example.org"]],
+        )
+        with pytest.raises(ValueError, match="unexpected roster id cell"):
+            script.read_roster(path)
+
+    def test_fractional_id_raises(self, script: ModuleType, tmp_path: Path) -> None:
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [[1001.7, "Ann Ant", "aaa@example.org", "Room Alpha", "Teacher One", "t1@example.org"]],
+        )
+        with pytest.raises(ValueError, match="fractional roster id cell"):
+            script.read_roster(path)
+
+    def test_blank_email_raises(self, script: ModuleType, tmp_path: Path) -> None:
+        """str(None) would become the literal 'none' and never match."""
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [[1001, "Ann Ant", None, "Room Alpha", "Teacher One", "t1@example.org"]],
+        )
+        with pytest.raises(ValueError, match="blank required cell"):
+            script.read_roster(path)
 
     def test_blank_trailing_rows_are_skipped(
         self, script: ModuleType, tmp_path: Path
@@ -902,8 +934,18 @@ def read_roster(path: Path) -> list[RosterRow]:
         # openpyxl types a cell as a wide union (formula, datetime, rich text).
         # Narrow before int() so an unexpected ID cell fails loudly here rather
         # than raising something obscure, and so pyright can check the call.
-        if not isinstance(raw_id, int | float | str):
+        # bool is an int subclass, so True would otherwise coerce to id 1; a
+        # fractional float would truncate. Both are rejected, not coerced.
+        if isinstance(raw_id, bool) or not isinstance(raw_id, int | float | str):
             raise ValueError(f"unexpected roster id cell {raw_id!r}")
+
+        if isinstance(raw_id, float) and not raw_id.is_integer():
+            raise ValueError(f"fractional roster id cell {raw_id!r}")
+
+        # str(None) is the string "None", so a blank email would become the
+        # literal "none" and silently miss every warehouse match. Fail instead.
+        if row[2] is None or row[3] is None or row[4] is None:
+            raise ValueError(f"roster row for id {raw_id!r} has a blank required cell")
 
         roster.append(
             RosterRow(
