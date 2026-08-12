@@ -207,3 +207,11 @@ models:
           sections for ACT and the sum for everything else, and null when the
           student did not sit every expected section — which is how an
           incomplete attempt stays visible rather than being dropped.
+      - name: rn_highest
+        data_type: int64
+        description: >-
+          Ranks a student's scores highest-first within scope, score_type, and
+          response_type, matching the official hub's convention so the two union
+          without translation. response_type is in the partition because group
+          rows repeat the section's score_type and would otherwise compete with
+          the subject row.

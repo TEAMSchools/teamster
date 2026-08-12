@@ -98,147 +98,159 @@ with
             on a.assessment_id = ssk.assessment_id
             and a.points between ssk.raw_score_low and ssk.raw_score_high
         where a.response_type in ('group', 'overall')
+    ),
+
+    scores as (
+        -- group scores
+        select
+            academic_year,
+            powerschool_student_number,
+            scope,
+            scope_round,
+            test_type,
+            grade_level,
+            assessment_id,
+            assessment_title,
+            administration_round,
+            course_discipline,
+            test_date,
+            test_month,
+            response_type,
+            response_type_description,
+            `subject`,
+            subject_area,
+            aligned_subject_area,
+            score_type,
+            points,
+            percent_correct,
+            actual_total_subjects_tested,
+            expected_total_subjects_tested,
+            raw_score,
+            scale_score,
+
+        from responses
+        where response_type = 'Group'
+
+        union all
+
+        -- subject scores
+        select
+            academic_year,
+            powerschool_student_number,
+            scope,
+            scope_round,
+            test_type,
+            grade_level,
+            assessment_id,
+            assessment_title,
+            administration_round,
+            course_discipline,
+            test_date,
+            test_month,
+
+            'Subject' as response_type,
+            'Subject Score' as response_type_description,
+
+            `subject`,
+            subject_area,
+            aligned_subject_area,
+            score_type,
+
+            null as points,
+            null as percent_correct,
+
+            actual_total_subjects_tested,
+            expected_total_subjects_tested,
+            raw_score,
+            scale_score,
+
+        from responses
+        where response_type = 'Overall'
+
+        union all
+
+        -- total scores
+        select
+            academic_year,
+            powerschool_student_number,
+            scope,
+            scope_round,
+            test_type,
+            grade_level,
+
+            null as assessment_id,
+            'NA' as assessment_title,
+
+            administration_round,
+
+            'NA' as course_discipline,
+
+            max(test_date) as test_date,
+
+            format_date('%B', max(test_date)) as test_month,
+
+            'Total' as response_type,
+            'Total Score' as response_type_description,
+            null as subject,
+
+            if(scope = 'ACT', 'Composite', 'Combined') as subject_area,
+
+            'Total' as aligned_subject_area,
+
+            case
+                scope
+                when 'ACT'
+                then 'act_composite'
+                when 'SAT'
+                then 'sat_total_score'
+                when 'PSAT 8/9'
+                then 'psat89_total'
+                when 'PSAT10'
+                then 'psat10_total'
+                when 'PSAT NMSQT'
+                then 'psatnmsqt_total'
+            end as score_type,
+
+            sum(points) as points,
+
+            null as percent_correct,
+
+            actual_total_subjects_tested,
+            expected_total_subjects_tested,
+
+            sum(points) as raw_score,
+
+            round(
+                case
+                    when actual_total_subjects_tested != expected_total_subjects_tested
+                    then null
+                    when scope = 'ACT'
+                    then avg(scale_score)
+                    else sum(scale_score)
+                end,
+                0
+            ) as scale_score,
+
+        from responses
+        where response_type = 'Overall'
+        group by
+            academic_year,
+            powerschool_student_number,
+            scope,
+            scope_round,
+            test_type,
+            grade_level,
+            administration_round,
+            actual_total_subjects_tested,
+            expected_total_subjects_tested
     )
 
--- group scores
 select
-    academic_year,
-    powerschool_student_number,
-    scope,
-    scope_round,
-    test_type,
-    grade_level,
-    assessment_id,
-    assessment_title,
-    administration_round,
-    course_discipline,
-    test_date,
-    test_month,
-    response_type,
-    response_type_description,
-    `subject`,
-    subject_area,
-    aligned_subject_area,
-    score_type,
-    points,
-    percent_correct,
-    actual_total_subjects_tested,
-    expected_total_subjects_tested,
-    raw_score,
-    scale_score,
+    *,
 
-from responses
-where response_type = 'Group'
+    row_number() over (
+        partition by powerschool_student_number, scope, score_type, response_type
+        order by scale_score desc
+    ) as rn_highest,
 
-union all
-
--- subject scores
-select
-    academic_year,
-    powerschool_student_number,
-    scope,
-    scope_round,
-    test_type,
-    grade_level,
-    assessment_id,
-    assessment_title,
-    administration_round,
-    course_discipline,
-    test_date,
-    test_month,
-
-    'Subject' as response_type,
-    'Subject Score' as response_type_description,
-
-    `subject`,
-    subject_area,
-    aligned_subject_area,
-    score_type,
-
-    null as points,
-    null as percent_correct,
-
-    actual_total_subjects_tested,
-    expected_total_subjects_tested,
-    raw_score,
-    scale_score,
-
-from responses
-where response_type = 'Overall'
-
-union all
-
--- total scores
-select
-    academic_year,
-    powerschool_student_number,
-    scope,
-    scope_round,
-    test_type,
-    grade_level,
-
-    null as assessment_id,
-    'NA' as assessment_title,
-
-    administration_round,
-
-    'NA' as course_discipline,
-
-    max(test_date) as test_date,
-
-    format_date('%B', max(test_date)) as test_month,
-
-    'Total' as response_type,
-    'Total Score' as response_type_description,
-    null as subject,
-
-    if(scope = 'ACT', 'Composite', 'Combined') as subject_area,
-
-    'Total' as aligned_subject_area,
-
-    case
-        scope
-        when 'ACT'
-        then 'act_composite'
-        when 'SAT'
-        then 'sat_total_score'
-        when 'PSAT 8/9'
-        then 'psat89_total'
-        when 'PSAT10'
-        then 'psat10_total'
-        when 'PSAT NMSQT'
-        then 'psatnmsqt_total'
-    end as score_type,
-
-    sum(points) as points,
-
-    null as percent_correct,
-
-    actual_total_subjects_tested,
-    expected_total_subjects_tested,
-
-    sum(points) as raw_score,
-
-    round(
-        case
-            when actual_total_subjects_tested != expected_total_subjects_tested
-            then null
-            when scope = 'ACT'
-            then avg(scale_score)
-            else sum(scale_score)
-        end,
-        0
-    ) as scale_score,
-
-from responses
-where response_type = 'Overall'
-group by
-    academic_year,
-    powerschool_student_number,
-    scope,
-    scope_round,
-    test_type,
-    grade_level,
-    administration_round,
-    actual_total_subjects_tested,
-    expected_total_subjects_tested
+from scores

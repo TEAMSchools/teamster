@@ -13,11 +13,7 @@ with
             course_discipline,
             score_type,
             scale_score,
-
-            row_number() over (
-                partition by powerschool_student_number, score_type
-                order by scale_score desc
-            ) as rn_highest,
+            rn_highest,
 
         from {{ ref("int_assessments__college_assessment_practice") }}
         where response_type != 'Group'
