@@ -27,7 +27,11 @@ select
     -- Focus stores this FK as a string here (int64 everywhere else) and prefixes
     -- live postings with a grade-type token (e.g. DT7181), so strip the token
     -- before casting: downstream joins to stg_focus__marking_periods then compare
-    -- plain columns. TODO: the token itself is dropped; decode it from the raw
-    -- dlt table if it turns out to distinguish grade types.
-    cast(regexp_extract(marking_period_id, r'[0-9]+$') as int) as marking_period_id,
+    -- plain columns. The pattern is anchored so an unrecognized format extracts
+    -- null and fails not_null, rather than silently yielding a wrong id.
+    -- TODO: the token itself is dropped; decode it from the raw dlt table if it
+    -- turns out to distinguish grade types.
+    cast(
+        regexp_extract(marking_period_id, r'^[A-Z]*([0-9]+)$') as int
+    ) as marking_period_id,
 from {{ source("focus", "student_report_card_grades") }}

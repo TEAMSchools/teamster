@@ -40,12 +40,13 @@ models:
         description: >-
           Focus marking-period id the grade was earned in. Focus stores this as
           text on this table alone and prefixes live postings with a grade-type
-          token (e.g. DT7181), so only the trailing digits are kept and cast to
-          an integer here, matching stg_focus__marking_periods and every other
-          reference to a marking period. The token is not carried forward.
-          Tested not_null as well as for referential integrity — relationships
-          skips null foreign keys, so it alone would not catch the column going
-          empty.
+          token (e.g. DT7181), so only the digits are kept and cast to an
+          integer here, matching stg_focus__marking_periods and every other
+          reference to a marking period. The token is not carried forward, and a
+          value matching neither shape extracts null so that not_null catches
+          it. Tested not_null as well as for referential integrity —
+          relationships skips null foreign keys, so it alone would not catch the
+          column going empty.
         data_type: int
         data_tests:
           - not_null:
@@ -115,7 +116,7 @@ models:
       - name: course_history
         description: >-
           Whether the row is imported course history rather than a grade posted
-          in Focus. Y on every Miami row today.
+          in Focus. Y on imported rows, empty on grades posted live in Focus.
         data_type: string
       - name: course_flag_1
         description: >-

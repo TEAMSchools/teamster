@@ -72,7 +72,7 @@ models:
       - name: course_history
         description: >-
           Whether the row is imported course history rather than a grade posted
-          in Focus. Y on every Miami row today.
+          in Focus. Y on imported rows, empty on grades posted live in Focus.
       - name: grade_level
         description: >-
           Zero-padded grade level the student was in when the grade was earned
