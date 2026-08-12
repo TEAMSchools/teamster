@@ -1,12 +1,11 @@
 with
-    -- grain projection: every column is functionally determined by
-    -- assessment_id + raw_score_low. The distinct collapses the two AY2023 SAT
-    -- scaffold rows that differ only in expected_grade_level.
+    /* grain projection: determined by assessment_id + raw_score_low. Guards a
+       future per-grade scaffold split; no-op today. */
     conversion as (
         select distinct
             c.assessment_id,
             c.academic_year,
-            c.test_type,
+            c.scope,
             c.scope_round,
             c.subject,
             c.grade_level,
@@ -17,6 +16,7 @@ with
             c.score_type,
             c.expected_total_subjects_tested,
 
+            s.expected_test_type as test_type,
             s.expected_subject_area as subject_area,
             s.expected_aligned_subject_area as aligned_subject_area,
             s.expected_grouping as `grouping`,
@@ -28,7 +28,7 @@ with
         inner join
             {{ ref("stg_google_sheets__kippfwd__scaffold") }} as s
             on c.academic_year = s.academic_year
-            and c.test_type = s.expected_scope
+            and c.scope = s.expected_scope
             and c.score_type = s.expected_score_type
         where s.expected_test_type = 'Practice'
     ),
@@ -38,24 +38,25 @@ with
             a.academic_year,
             a.illuminate_student_id,
             a.powerschool_student_number,
-            a.scope,
             a.assessment_id,
             a.title as assessment_title,
             a.date_taken as test_date,
-            a.response_type,  -- Group or overall
             a.response_type_description,  -- Group name
             /* Points earned... looks to be # of questions correct on Illuminate */
             a.points,
 
+            ssk.test_type,
+            ssk.scope,
             ssk.scope_round,
             ssk.grade_level,
-            ssk.test_type,
             ssk.subject,
             ssk.subject_area,
             ssk.aligned_subject_area,
             ssk.score_type,
             ssk.expected_total_subjects_tested,
             ssk.course_discipline,
+
+            initcap(a.response_type) as response_type,  -- Group or overall
 
             format_date('%B', a.date_taken) as test_month,
 
@@ -81,7 +82,6 @@ with
                 partition by
                     a.academic_year,
                     a.powerschool_student_number,
-                    ssk.test_type,
                     ssk.scope_round,
                     ssk.grade_level
             ) as actual_total_subjects_tested,
@@ -114,7 +114,7 @@ select
     course_discipline,
     test_date,
     test_month,
-    initcap(response_type) as response_type,
+    response_type,
     response_type_description,
     `subject`,
     subject_area,
@@ -128,19 +128,12 @@ select
     scale_score,
 
 from responses
-where response_type = 'group'
+where response_type = 'Group'
 
 union all
 
 -- subject scores
--- grain projection: one row per student per assessment. Every projected column
--- is functionally determined by powerschool_student_number + assessment_id --
--- the ssk.* columns because the sheet holds one metadata combination per
--- assessment_id, and raw_score/scale_score because both read the single
--- 'overall' sibling row through a window. The distinct drops only the
--- per-response-group columns (response_type, response_type_description, points,
--- percent_correct); it is not a mask for upstream duplicates.
-select distinct
+select
     academic_year,
     powerschool_student_number,
     scope,
@@ -171,7 +164,7 @@ select distinct
     scale_score,
 
 from responses
-where response_type = 'group'
+where response_type = 'Overall'
 
 union all
 
@@ -199,12 +192,12 @@ select
     'Total Score' as response_type_description,
     null as subject,
 
-    if(test_type = 'ACT', 'Composite', 'Combined') as subject_area,
+    if(scope = 'ACT', 'Composite', 'Combined') as subject_area,
 
     'Total' as aligned_subject_area,
 
     case
-        test_type
+        scope
         when 'ACT'
         then 'act_composite'
         when 'SAT'
@@ -230,7 +223,7 @@ select
         case
             when actual_total_subjects_tested != expected_total_subjects_tested
             then null
-            when test_type = 'ACT'
+            when scope = 'ACT'
             then avg(scale_score)
             else sum(scale_score)
         end,
@@ -238,7 +231,7 @@ select
     ) as scale_score,
 
 from responses
-where response_type = 'overall'
+where response_type = 'Overall'
 group by
     academic_year,
     powerschool_student_number,

@@ -20,9 +20,13 @@ models:
       - name: academic_year
         data_type: int64
         description: Start-year convention, so SY26-27 reads 2026.
-      - name: test_type
+      - name: scope
         data_type: string
-        description: SAT, PSAT 8/9, PSAT10, or ACT.
+        description: >-
+          The test itself — SAT, PSAT 8/9, PSAT10, or ACT. Matches the official
+          hub's scope vocabulary, and joins the scaffold on expected_scope.
+          Illuminate's own scope is unusable here, reading Benchmark or null on
+          externally created assessments.
       - name: scope_round
         data_type: string
         description: >-

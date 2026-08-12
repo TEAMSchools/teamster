@@ -2,13 +2,15 @@ models:
   - name: int_assessments__college_assessment_practice
     description: >-
       Practice SAT, PSAT, and ACT results from Illuminate, converted from raw
-      score to scale score through two KIPP Forward sheet tabs:
+      score to scale score through two KIPP Forward sheet tabs.
       practice_scale_score_conversion supplies the raw-to-scale bands and
-      scaffold supplies the vocabulary, joined on score_type. An assessment
-      appears here only if its id is in the conversion sheet — sheet membership
-      is the designation mechanism, and Illuminate's scope is deliberately not
-      filtered because externally created assessments carry Benchmark or null
-      rather than the test name.
+      scaffold supplies the vocabulary, joined on academic_year, the sheet's
+      scope against expected_scope, and score_type against expected_score_type.
+      An assessment appears here only if its id is in the conversion sheet and
+      its score_type has a matching Practice scaffold row — that inner join is
+      the designation mechanism, and it drops unmatched bands silently.
+      Illuminate's own scope is never read, because externally created
+      assessments carry Benchmark or null rather than the test name.
 
 
       Three row types. Group rows carry the per-response-group detail, one per
@@ -80,10 +82,12 @@ models:
       - name: scope
         data_type: string
         description: >-
-          Illuminate's assessment scope, passed through unchanged, and NOT the
-          test identity. Historical rows read SAT or ACT; externally created
-          ones read Benchmark or null. Do not write logic against it — use
-          test_type. See the naming trap on test_type below.
+          The test itself — SAT, ACT, PSAT 8/9, or PSAT10 — from the conversion
+          sheet, which is authoritative because Illuminate's own scope reads
+          Benchmark or null on externally created assessments and is never read
+          here. Matches int_assessments__college_assessment, so the two hubs
+          union on this column. Every predicate keying on the test uses it,
+          including the total row's score_type and the ACT average.
       - name: scope_round
         data_type: string
         description: >-
@@ -93,21 +97,11 @@ models:
       - name: test_type
         data_type: string
         description: >-
-          The test itself — SAT, ACT, PSAT 8/9, or PSAT10 — from the conversion
-          sheet, which is authoritative because Illuminate's scope reads
-          Benchmark or null on externally created assessments.
-
-
-          NAMING TRAP. This is the opposite of
+          Always Practice, from the scaffold's expected_test_type, which the
+          conversion join filters to that value. Mirrors
           int_assessments__college_assessment, where test_type is the constant
-          Official and scope holds the test. The columns share names across the
-          two hubs and mean different things, so joining or unioning them on
-          either column silently mis-groups rather than erroring. The rest of
-          the lineage follows the official hub's convention, as does the
-          scaffold sheet. This model deviates because the kippadb
-          standardized-testing source owns test_type for ACT/SAT and renaming
-          here was not wanted. Reconciliation happens downstream in
-          int_assessments__all_college_assessments.
+          Official and scope holds the test, so both hubs use one vocabulary and
+          union without translation.
       - name: grade_level
         data_type: int64
         description: >-

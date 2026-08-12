@@ -6,24 +6,19 @@ with
             academic_year,
             test_date,
             test_month,
+            test_type,
+            scope,
             subject_area,
             course_discipline,
             score_type,
             scale_score,
-
-            'Practice' as test_type,
-
-            /* NAMING TRAP: the practice hub's test_type holds the test itself and
-               its scope holds Illuminate's Benchmark or null. Both are corrected
-               here so the union speaks the official hub's vocabulary. */
-            test_type as scope,
 
             if(
                 subject_area in ('Composite', 'Combined'), 'Total', aligned_subject_area
             ) as aligned_subject_area,
 
             row_number() over (
-                partition by powerschool_student_number, test_type, score_type
+                partition by powerschool_student_number, scope, score_type
                 order by scale_score desc
             ) as rn_highest,
 
