@@ -7,9 +7,11 @@ catalog we would put in front of staff.
 means, and what "verified" requires. This file is the order to do things in and
 who owns what.
 
-The design for how this catalog eventually gets served is under review
-separately in #4762. You do not need to read it to do this work, and the catalog
-does not depend on it landing.
+The design for how this catalog gets served is tracked separately in #4762 — a
+static page built from `links.yml` and published to GitHub Pages. You do not
+need to read it to do this work. One decision from it does matter here: **only
+`status: verified` entries publish.** Anything left at `needs-review` is
+excluded from the page, so verifying an entry is what ships it.
 
 ## The goal
 
@@ -164,9 +166,8 @@ space) needs quotes. Most do not, and adding them anyway fails the linter.
 **Ask early.** Every judgment call in this file is one somebody else can answer
 in two minutes. Guessing costs more than asking.
 
-**Do not worry about** the rendering pipeline, Zendesk configuration or article
-IDs, the `views.yml` intro copy, or the Our Team / support / blog content. All
-handled elsewhere.
+**Do not worry about** the rendering pipeline, the `views.yml` intro copy, or
+the Our Team / support / blog content. All handled elsewhere.
 
 ---
 
