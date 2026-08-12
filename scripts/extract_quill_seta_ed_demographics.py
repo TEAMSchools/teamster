@@ -10,9 +10,11 @@ See docs/reference/quill-seta-ed-demographics-extract.md.
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 OUTPUT_COLUMNS: tuple[str, ...] = (
     "quill_student_id",
@@ -245,3 +247,75 @@ def validate_rows(
         source = str(row["demographics_source"])
         if source != NOT_MATCHED and not _SOURCE_PATTERN.match(source):
             raise ValueError(f"row {index} demographics_source {source!r}")
+
+
+ROSTER_HEADERS: tuple[str, ...] = (
+    "Studetn ID",  # upstream typo; matched verbatim so a fixed export fails loudly
+    "Student Name",
+    "Student Email",
+    "Classroom Name",
+    "Teacher Name",
+    "Teacher Email",
+)
+
+
+def read_roster(path: Path) -> list[RosterRow]:
+    """Read the Quill roster export, keeping only the columns we carry forward."""
+    import openpyxl
+
+    workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    sheet = workbook.worksheets[0]
+    rows = sheet.iter_rows(values_only=True)
+
+    header = tuple(str(value) if value is not None else "" for value in next(rows))
+    if header[: len(ROSTER_HEADERS)] != ROSTER_HEADERS:
+        raise ValueError(f"unexpected roster header {header!r}")
+
+    roster: list[RosterRow] = []
+    for row in rows:
+        if row[0] is None:
+            continue
+
+        roster.append(
+            RosterRow(
+                quill_student_id=int(row[0]),
+                student_email=str(row[2]).strip().lower(),
+                classroom_name=str(row[3]).strip(),
+                teacher_name=str(row[4]).strip(),
+            )
+        )
+
+    workbook.close()
+
+    return roster
+
+
+def read_codebook(path: Path) -> tuple[dict[str, str], dict[str, str]]:
+    """Prior code assignments, so a rerun keeps the same codes."""
+    if not path.exists():
+        return {}, {}
+
+    stored = json.loads(path.read_text())
+
+    return stored.get("classroom_codes", {}), stored.get("teacher_codes", {})
+
+
+def write_key_file(
+    path: Path,
+    classroom_codes: Mapping[str, str],
+    teacher_codes: Mapping[str, str],
+    key_records: Sequence[Mapping[str, object]],
+) -> None:
+    """Write the retained re-identification key. Local only, never transmitted."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "classroom_codes": dict(classroom_codes),
+                "teacher_codes": dict(teacher_codes),
+                "students": [dict(record) for record in key_records],
+            },
+            indent=2,
+            sort_keys=True,
+        )
+    )

@@ -298,3 +298,135 @@ class TestValidateRows:
         rows[0]["demographics_source"] = "whenever"
         with pytest.raises(ValueError, match="demographics_source"):
             script.validate_rows(rows, _roster(script))
+
+
+class TestReadRoster:
+    def _workbook(self, path, rows) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        workbook = openpyxl.Workbook()
+        sheet = workbook.worksheets[0]
+        sheet.append(
+            [
+                "Studetn ID",
+                "Student Name",
+                "Student Email",
+                "Classroom Name",
+                "Teacher Name",
+                "Teacher Email",
+            ]
+        )
+        for row in rows:
+            sheet.append(row)
+        workbook.save(path)
+
+    def test_reads_every_row(self, script: ModuleType, tmp_path: Path) -> None:
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [
+                [
+                    1001,
+                    "Ann Ant",
+                    "AAA@Example.org",
+                    "Room Alpha",
+                    "Teacher One",
+                    "t1@example.org",
+                ],
+                [
+                    1002,
+                    "Bob Bee",
+                    "bbb@example.org",
+                    "Room Beta",
+                    "Teacher Two",
+                    "t2@example.org",
+                ],
+            ],
+        )
+        roster = script.read_roster(path)
+        assert len(roster) == 2
+        assert roster[0].quill_student_id == 1001
+        assert roster[0].classroom_name == "Room Alpha"
+        assert roster[0].teacher_name == "Teacher One"
+
+    def test_email_is_lowercased(self, script: ModuleType, tmp_path: Path) -> None:
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [
+                [
+                    1001,
+                    "Ann Ant",
+                    "AAA@Example.org",
+                    "Room Alpha",
+                    "Teacher One",
+                    "t1@example.org",
+                ]
+            ],
+        )
+        assert script.read_roster(path)[0].student_email == "aaa@example.org"
+
+    def test_blank_trailing_rows_are_skipped(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [
+                [
+                    1001,
+                    "Ann Ant",
+                    "aaa@example.org",
+                    "Room Alpha",
+                    "Teacher One",
+                    "t1@example.org",
+                ],
+                [None, None, None, None, None, None],
+            ],
+        )
+        assert len(script.read_roster(path)) == 1
+
+    def test_unexpected_headers_raise(self, script: ModuleType, tmp_path: Path) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        path = tmp_path / "roster.xlsx"
+        workbook = openpyxl.Workbook()
+        workbook.worksheets[0].append(["Student ID", "Nope"])
+        workbook.save(path)
+        with pytest.raises(ValueError, match="header"):
+            script.read_roster(path)
+
+
+class TestCodebook:
+    def test_missing_file_returns_empty(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        assert script.read_codebook(tmp_path / "absent.json") == ({}, {})
+
+    def test_round_trip_preserves_codes(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        path = tmp_path / "key.json"
+        script.write_key_file(
+            path,
+            {"Room Alpha": "C01"},
+            {"Teacher One": "T1"},
+            [{"quill_student_id": 1001, "student_email": "aaa@example.org"}],
+        )
+        assert script.read_codebook(path) == (
+            {"Room Alpha": "C01"},
+            {"Teacher One": "T1"},
+        )
+
+    def test_key_file_holds_the_student_records(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        import json
+
+        path = tmp_path / "key.json"
+        script.write_key_file(
+            path,
+            {},
+            {},
+            [{"quill_student_id": 1001, "student_email": "aaa@example.org"}],
+        )
+        stored = json.loads(path.read_text())
+        assert stored["students"][0]["student_email"] == "aaa@example.org"
