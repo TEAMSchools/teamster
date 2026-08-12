@@ -91,7 +91,7 @@ models:
         data_type: string
         description: >-
           The conversion sheet's scope_round — SAT1, SAT2, ACT1, PSAT891,
-          PSAT101. Part of the partition building composite scores, so two
+          PSAT101. Part of the partition building Total scores, so two
           administrations in one year must never share a value.
       - name: test_type
         data_type: string
@@ -112,11 +112,11 @@ models:
         data_type: int64
         description: >-
           Illuminate canonical assessment id, and the key joining to the
-          conversion sheet. Null on composite rows, which aggregate across
+          conversion sheet. Null on Total rows, which aggregate across
           assessments.
       - name: assessment_title
         data_type: string
-        description: Illuminate assessment title. Reads NA on composite rows.
+        description: Illuminate assessment title. Reads NA on Total rows.
       - name: administration_round
         data_type: string
         description: >-
@@ -128,14 +128,12 @@ models:
         data_type: string
         description: >-
           ENG, MATH, or SCI, from the scaffold and matching PowerSchool credit
-          types. Stamped NA on composite rows so each administration yields one
-          row.
+          types. Stamped NA on Total rows so each administration yields one row.
       - name: test_date
         data_type: date
         description: >-
-          The student's response date, from Illuminate. On composite rows this
-          is the latest section date, since sections can be sat on different
-          days.
+          The student's response date, from Illuminate. On Total rows this is
+          the latest section date, since sections can be sat on different days.
       - name: test_month
         data_type: string
         description: Full month name of test_date.
@@ -148,47 +146,55 @@ models:
           assessment, Total one per administration.
       - name: response_type_description
         data_type: string
-        description: Illuminate response group name. Reads NA on composite rows.
+        description: >-
+          Illuminate response group name on Group rows. Subject rows read
+          Subject Score and Total rows read Total Score.
       - name: subject
         data_type: string
         description: >-
           Section subject as the conversion sheet spells it — Mathematics,
-          Reading and Writing, Reading, Writing, English, Science. Null on
-          composite rows.
+          Reading and Writing, Reading, Writing, English, Science. Null on Total
+          rows.
       - name: subject_area
         data_type: string
         description: >-
           Section subject as the assessment hubs spell it, from the scaffold.
-          Composite rows read Composite for ACT and Combined for everything
-          else.
+          Total rows read Composite for ACT and Combined for everything else.
       - name: aligned_subject_area
         data_type: string
         description: >-
-          Subject collapsed for cross-test comparison, from the scaffold. Null
-          on composite rows.
+          Subject collapsed for cross-test comparison, from the scaffold. Total
+          rows read Total.
       - name: score_type
         data_type: string
         description: >-
           Score identifier matching score_type in
           int_assessments__college_assessment, and the key joining the
-          conversion sheet to the scaffold. Null on composite rows.
+          conversion sheet to the scaffold. Non-null on every row type — Total
+          rows get theirs from a case on scope, since the conversion sheet holds
+          no total bands to join.
       - name: points
         data_type: numeric
         description: >-
           Raw score for the response group, meaning questions answered
-          correctly. Summed across sections on composite rows.
+          correctly. Group rows only — null on Subject rows, and summed across
+          sections on Total rows.
       - name: percent_correct
         data_type: numeric
         description: >-
-          Share of questions answered correctly, as a 0-1 fraction. Null on
-          composite rows.
+          Share of questions answered correctly, as a 0-1 fraction. Group rows
+          only — null on both Subject and Total rows.
       - name: actual_total_subjects_tested
         data_type: int64
         description: >-
           Distinct sections the student sat, counted per academic year, student,
-          test type, administration round, and grade level. Compared against
-          expected_total_subjects_tested to decide whether a composite can be
-          calculated.
+          scope_round, and grade level. Compared against
+          expected_total_subjects_tested to decide whether a Total row gets a
+          score. The partition uses scope_round rather than administration_round
+          deliberately — administration_round derives from Illuminate's
+          administered_at, which is null on every externally created assessment.
+          Grade level is in the partition because AY2023 ran two SAT forms under
+          one round.
       - name: expected_total_subjects_tested
         data_type: int64
         description: >-
@@ -198,15 +204,15 @@ models:
         data_type: numeric
         description: >-
           The section's own raw score, taken from its overall row rather than
-          the response group. Summed across sections on composite rows.
+          the response group. Summed across sections on Total rows.
       - name: scale_score
         data_type: float64
         description: >-
           Converted scale score, read from the sheet's aligned_scale_score so no
-          rescaling happens here. On composite rows it is the average of
-          sections for ACT and the sum for everything else, and null when the
-          student did not sit every expected section — which is how an
-          incomplete attempt stays visible rather than being dropped.
+          rescaling happens here. On Total rows it is the average of sections
+          for ACT and the sum for everything else, and null when the student did
+          not sit every expected section — which is how an incomplete attempt
+          stays visible rather than being dropped.
       - name: aligned_scope
         data_type: string
         description: >-
