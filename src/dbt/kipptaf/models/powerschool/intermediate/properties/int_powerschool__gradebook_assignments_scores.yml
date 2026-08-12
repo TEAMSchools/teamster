@@ -109,6 +109,33 @@ models:
             source_column: actualscoreentered
       - name: students_dcid
         data_type: int64
+      - name: student_number
+        data_type: int64
+        description:
+          Student number of the student the assignment row belongs to. Carried
+          through from the course-enrollment join so consumers do not re-derive
+          it.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: students_student_number
+      - name: course_name
+        data_type: string
+        description: Name of the course the assignment's section belongs to.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: courses_course_name
+      - name: teacher_name
+        data_type: string
+        description: Teacher of record for the assignment's section, last-first.
+        config:
+          meta:
+            source_system: PowerSchool
+            source_model: base_powerschool__course_enrollments
+            source_column: teacher_lastfirst
       - name: school_level_alt
         data_type: string
       - name: is_late
