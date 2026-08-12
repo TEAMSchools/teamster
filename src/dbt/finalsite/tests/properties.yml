@@ -79,3 +79,32 @@ data_tests:
           ref:
             name: int_finalsite__student_contacts
             package: finalsite
+
+  - name: int_finalsite__enrollment_lifecycle__status_report_not_stale
+    description: >-
+      The model joins two independently-ingested feeds -- contacts from the
+      Finalsite API and the status report from the SFTP drop -- that rebuild in
+      separate concurrent Dagster runs. When they interleave, this table is
+      built from a status report older than the one on disk, so
+      enrollment_start_date or assigned_school comes back null while the live
+      status report already holds a value. The Focus enrollment extract gates on
+      both columns, so each such row is silently dropped from the 12:45 ET
+      delivery, which is a plain cron and reports nothing. Errors rather than
+      warns: that delivery backs a commitment that a student entered in
+      Finalsite by noon is usable in Focus by 2pm, and the failure is invisible
+      to enrollment ops until an import comes up short. A student with no
+      enrolled_date in the feed at all is a legitimate deferral and is not
+      flagged. Warn rather than error, matching every other test in this package
+      -- the root project sets `data_tests: +severity: warn` and root-project
+      config overrides a package resource's own, so `severity: error` here would
+      be silently ignored. Warn is also the behaviour wanted: an errored test
+      fails the dbt build and blocks the delivery outright, and a delivery built
+      from a stale read still beats no delivery at all. The failed asset check
+      is what carries the signal, so this test is only as loud as the Dagster+
+      alert policy on asset-check failures. Refs #4834
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__enrollment_lifecycle
+            package: finalsite

@@ -3,15 +3,8 @@ with
         select
             sr.powerschool_teacher_number,
             sr.home_work_location_dagster_code_location,
-
-            coalesce(
-                ccw.powerschool_school_id, sr.home_work_location_powerschool_school_id
-            ) as school_id,
+            sr.home_work_location_powerschool_school_id as school_id,
         from {{ ref("int_people__staff_roster") }} as sr
-        left join
-            {{ ref("stg_google_sheets__people__campus_crosswalk") }} as ccw
-            on sr.home_work_location_reporting_name = ccw.location_name
-            and not ccw.is_pathways
         where
             sr.assignment_status != 'Terminated'
             -- Miami rosters into Clever directly from Focus; excluded from all

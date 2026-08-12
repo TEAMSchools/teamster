@@ -1,4 +1,21 @@
 data_tests:
+  - name: test_kippfwd_miami_roster_current_year_not_empty
+    description: >-
+      rpt_gsheets__kippfwd_miami_roster must hold at least one row for
+      var("current_academic_year"). This is the exact regression this model
+      shipped once already -- the prior version verified only the prior academic
+      year and silently produced zero current-year rows after the July rollover,
+      because Miami PowerSchool holds no current-year data and the model still
+      read PowerSchool-anchored joins for its year filter. Fails loudly if the
+      current year ever again comes back empty, instead of only being caught by
+      manual spot-checking.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: rpt_gsheets__kippfwd_miami_roster
+
   - name: test_int_finalsite__status_order_matches_crosswalk_ranking
     description: >-
       detailed_status_ranking (stg_google_sheets__finalsite__status_crosswalk,

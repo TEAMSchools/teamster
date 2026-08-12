@@ -24,11 +24,11 @@ models:
         description: >-
           FK to dim_survey_administrations. Identifies which survey
           administration this expectation belongs to.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_survey_administrations')
-            to_columns: [survey_administration_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_survey_administrations')
+              to_columns: [survey_administration_key]
         data_tests:
           - not_null
 
@@ -56,11 +56,11 @@ models:
           FK to dim_staff. Populated when respondent_type is staff. Null for
           student and family respondents.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -72,11 +72,11 @@ models:
           FK to dim_student_enrollments. Populated when respondent_type is
           student. Null for staff and family respondents.
 
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -87,11 +87,11 @@ models:
         description: >-
           FK to dim_student_contact_persons. Populated when respondent_type is
           family. Null for staff and student respondents.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_contact_persons')
-            to_columns: [student_contact_person_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_contact_persons')
+              to_columns: [student_contact_person_key]
         data_tests:
           - relationships:
               arguments:
