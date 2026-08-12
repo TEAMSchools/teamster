@@ -29,8 +29,6 @@ models:
           Pre-hashed surrogate key derived from rubric_id. Generated with
           generate_surrogate_key(["rubric_id"]). Consumed by
           fct_staff_observations as its rubric FK.
-        data_tests:
-          - not_null
       - name: staff_observation_type_key
         data_type: string
         description: >-

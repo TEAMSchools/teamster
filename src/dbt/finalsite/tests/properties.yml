@@ -1,0 +1,110 @@
+data_tests:
+  - name: stg_finalsite__contacts__no_stale_enrolled
+    description: >-
+      Finalsite never rolls a graduated cohort off `enrolled` -- last year's
+      seniors keep that status indefinitely -- and separately, some students who
+      are still enrolled never get a current-year record created. Both surface
+      as an `enrolled` contact stamped with a prior school year. Warn, not
+      error: this is a standing Ops worklist inside Finalsite, and the count
+      only falls when someone corrects records at the source.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_finalsite__contacts
+            package: finalsite
+
+  - name: stg_finalsite__contact_relationships__single_primary
+    description: >-
+      `primary` is a per-student singleton in Finalsite. The old model surfaced
+      a violation as a duplicate contact_1 failing the uniqueness test; dense
+      ranking absorbs a second primary into contact_2 instead, so the condition
+      is tested at the source where it can be acted on. No student trips this
+      today -- it guards against regression rather than reporting a backlog.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_finalsite__contact_relationships
+            package: finalsite
+
+  - name: stg_finalsite__contact_relationships__caregiver_is_adult
+    description: >-
+      A relationship flagged as a caregiver whose related contact does NOT carry
+      Finalsite's adult status. Almost always this is correct and the related
+      person really is a student -- a sibling flagged `financial`, say -- and
+      the model's adult guard drops it as intended. The rows worth acting on are
+      the inverse: an adult whose own contact record was miskeyed with a student
+      status, whose relationship the guard then discards silently, because dense
+      ranking backfills the slot from another candidate and nothing else reports
+      the loss. Warn: each row is a Finalsite record to inspect, not a build
+      failure.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: stg_finalsite__contact_relationships
+            package: finalsite
+
+  - name: int_finalsite__student_contacts__enrolled_has_contact_1
+    description: >-
+      A currently enrolled student with no parent slot at all. The model itself
+      stays SIS-agnostic and emits rows for every student record including
+      prospects and applicants, who legitimately have no parent on file yet --
+      so the enrolled scope lives here, in the test, rather than in the model.
+      Every row is a Finalsite data-entry gap: no relationship on the record
+      carries a `primary` or `financial` flag. A parent miskeyed with a student
+      status does not surface here when another eligible candidate exists --
+      dense ranking backfills the slot from the next candidate -- so that case
+      is reported by stg_finalsite__contact_relationships__caregiver_is_adult
+      instead.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__student_contacts
+            package: finalsite
+
+  - name: int_finalsite__student_contacts__no_extra_contacts
+    description: >-
+      A student with more parents than the two conventional slots. Anything past
+      contact_2 is emitted here; the receivers exclude those slots themselves
+      (the contacts pivot and ParentSquare by construction, DeansList and the
+      contacts bridge via an explicit slot filter) rather than the row being
+      dropped upstream of this model. Warn so the count stays visible; matching
+      `contact_%` rather than a literal catches a fourth slot too.
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__student_contacts
+            package: finalsite
+
+  - name: int_finalsite__enrollment_lifecycle__status_report_not_stale
+    description: >-
+      The model joins two independently-ingested feeds -- contacts from the
+      Finalsite API and the status report from the SFTP drop -- that rebuild in
+      separate concurrent Dagster runs. When they interleave, this table is
+      built from a status report older than the one on disk, so
+      enrollment_start_date or assigned_school comes back null while the live
+      status report already holds a value. The Focus enrollment extract gates on
+      both columns, so each such row is silently dropped from the 12:45 ET
+      delivery, which is a plain cron and reports nothing. Errors rather than
+      warns: that delivery backs a commitment that a student entered in
+      Finalsite by noon is usable in Focus by 2pm, and the failure is invisible
+      to enrollment ops until an import comes up short. A student with no
+      enrolled_date in the feed at all is a legitimate deferral and is not
+      flagged. Warn rather than error, matching every other test in this package
+      -- the root project sets `data_tests: +severity: warn` and root-project
+      config overrides a package resource's own, so `severity: error` here would
+      be silently ignored. Warn is also the behaviour wanted: an errored test
+      fails the dbt build and blocks the delivery outright, and a delivery built
+      from a stale read still beats no delivery at all. The failed asset check
+      is what carries the signal, so this test is only as loud as the Dagster+
+      alert policy on asset-check failures. Refs #4834
+    config:
+      meta:
+        dagster:
+          ref:
+            name: int_finalsite__enrollment_lifecycle
+            package: finalsite

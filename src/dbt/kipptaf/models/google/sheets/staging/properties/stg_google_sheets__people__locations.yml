@@ -16,9 +16,6 @@ models:
           - unique:
               config:
                 severity: error
-          - not_null:
-              config:
-                severity: error
       - name: location_name
         data_type: string
         description: |
@@ -100,12 +97,6 @@ models:
         description: |
           Grow (observation platform) location identifier. STRING type for
           downstream FK uniformity.
-      - name: campus_name
-        data_type: string
-        description: |
-          Parent campus name for multi-school campuses (e.g., two schools that
-          share a building). Null when the location is not grouped under a
-          named campus.
       - name: address
         data_type: string
         description: |

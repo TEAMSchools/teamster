@@ -26,18 +26,20 @@ with
         select
             t.* except (_dbt_source_relation),
 
-            lc.region,
-            lc.abbreviation as school,
-            lc.powerschool_school_id as schoolid,
+            lc.location_region as region,
+            lc.location_abbreviation as school,
+            lc.location_powerschool_school_id as schoolid,
 
             regexp_replace(
-                t._dbt_source_relation, r'kipp[a-z]+_', lc.dagster_code_location || '_'
+                t._dbt_source_relation,
+                r'kipp[a-z]+_',
+                lc.location_dagster_code_location || '_'
             ) as _dbt_source_relation,
 
         from transformations as t
         left join
-            {{ ref("stg_google_sheets__people__location_crosswalk") }} as lc
-            on t.school_name = lc.name
+            {{ ref("int_people__location_crosswalk") }} as lc
+            on t.school_name = lc.location_name
     )
 
 select

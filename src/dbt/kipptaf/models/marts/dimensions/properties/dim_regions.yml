@@ -26,7 +26,6 @@ models:
             warn_unenforced: false
         data_tests:
           - unique
-          - not_null
 
       - name: name
         quote: true

@@ -26,11 +26,11 @@ models:
           Foreign key to dim_staff — a staff member at or above the reportee in
           the reporting tree. Equals reportee_staff_key on the depth-0
           self-pair.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - not_null
           - relationships:
@@ -42,11 +42,11 @@ models:
         data_type: string
         description: >-
           Foreign key to dim_staff — the direct or indirect report.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - not_null
           - relationships:

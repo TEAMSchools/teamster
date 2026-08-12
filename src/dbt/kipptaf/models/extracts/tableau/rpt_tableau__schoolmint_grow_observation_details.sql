@@ -159,7 +159,7 @@ left join
     {{ ref("int_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
     and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and t.academic_year = tgl.academic_year
@@ -307,7 +307,7 @@ left join
     {{ ref("int_people__staff_roster") }} as sro
     on od.observer_employee_number = sro.employee_number
 left join
-    {{ ref("int_powerschool__teacher_grade_levels") }} as tgl
+    {{ ref("int_students__teacher_grade_levels") }} as tgl
     on srh.powerschool_teacher_number = tgl.teachernumber
     and srh.home_work_location_dagster_code_location = tgl._dbt_source_project
     and od.academic_year = tgl.academic_year

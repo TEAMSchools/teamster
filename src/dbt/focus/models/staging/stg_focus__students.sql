@@ -44,6 +44,7 @@ select
     custom_760 as graduation_option,
     custom_829 as doe_test_accommodations_access_for_ells,
     custom_698 as ese_fefp_code,
+    custom_999 as gifted_eligibility,
     custom_640 as prekindergarten_program_participation,
     custom_728 as country_of_birth,
     custom_1429 as year_entered_ninth_grade,
