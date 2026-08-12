@@ -111,6 +111,7 @@ keeping the import pattern local to this test file.
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
 from types import ModuleType
 
@@ -127,6 +128,10 @@ def _load_script() -> ModuleType:
     assert spec is not None
     assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    # Register before executing: @dataclass resolves string annotations via
+    # sys.modules.get(cls.__module__).__dict__, which is an unguarded None
+    # dereference in CPython 3.13 when the module was never registered.
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
