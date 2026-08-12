@@ -16,8 +16,9 @@ core carries the unit tests; the I/O edges are verified by a real run against
 the actual roster. Nothing about the roster is hardcoded — paths are arguments,
 so no student data enters git.
 
-**Tech Stack:** Python 3.13, `uv run`, `google-cloud-bigquery` (already a
-transitive dependency), `openpyxl` (passed per-run with `--with`), pytest.
+**Tech Stack:** Python 3.13, `uv run`, and pytest. `openpyxl` and
+`google-cloud-bigquery` are declared in a PEP 723 inline metadata header rather
+than in `pyproject.toml`, following `scripts/extract_ceds_schema.py`.
 
 Design spec:
 `docs/superpowers/specs/2026-08-12-quill-seta-ed-demographics-design.md`. Issue:
@@ -30,9 +31,24 @@ Design spec:
   Every `git` command uses `git -C {worktree}`. Every file path below is
   relative to that worktree. Editing `/workspaces/teamster/{path}` instead
   silently dirties `main` and leaves the worktree unchanged.
-- **Python invocation:** always `uv run`, never bare `python`. `openpyxl` is not
-  in `pyproject.toml` — every command that touches it needs
-  `uv run --with openpyxl`. Do not run `uv add`.
+- **Python invocation:** always `uv run`, never bare `python`. Neither
+  `openpyxl` nor `google-cloud-bigquery` is a direct `pyproject.toml`
+  dependency, and neither gets added — the script declares them in a PEP 723
+  inline metadata header, matching `scripts/extract_ceds_schema.py`, so
+  `uv run scripts/extract_quill_seta_ed_demographics.py ...` resolves them at
+  launch with no flags. Do not run `uv add`.
+- **Tests still need the flag.** pytest loads the script through `importlib`,
+  which ignores PEP 723, so every test command is
+  `uv run --with openpyxl pytest ...`. Without it the openpyxl-dependent tests
+  SKIP rather than fail — a silent pass is the failure mode to watch for.
+- **Pyright runs over `scripts/` and `tests/` in CI.** `openpyxl` ships stubs
+  but no installed source, so each `import openpyxl` needs
+  `# trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep`
+  on the line immediately before it — the exact form used in
+  `scripts/extract_ceds_schema.py`.
+- **Do not annotate test helpers with a type from the loaded module**
+  (`-> list[mod.RosterRow]`): `mod` is a runtime variable, so pyright raises
+  `reportInvalidTypeForm`. Use a bare `-> list`. (`scripts/CLAUDE.md`.)
 - **IDE Pyright diagnostics on worktree files are false positives** (it resolves
   imports against the main checkout). Trust `uv run` inside the worktree.
 - **No PII in git.** No student name, student email, teacher name, teacher
@@ -432,6 +448,11 @@ does not exist yet.
 Create `scripts/extract_quill_seta_ed_demographics.py`:
 
 ```python
+# /// script
+# requires-python = ">=3.13"
+# dependencies = ["openpyxl>=3.1", "google-cloud-bigquery>=3.0"]
+# ///
+
 """Build a de-identified demographics workbook for the Quill pilot roster.
 
 The roster export keys students by Quill's own platform user ID, not by any
@@ -861,6 +882,7 @@ ROSTER_HEADERS: tuple[str, ...] = (
 
 def read_roster(path: Path) -> list[RosterRow]:
     """Read the Quill roster export, keeping only the columns we carry forward."""
+    # trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep
     import openpyxl
 
     workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
@@ -873,12 +895,19 @@ def read_roster(path: Path) -> list[RosterRow]:
 
     roster: list[RosterRow] = []
     for row in rows:
-        if row[0] is None:
+        raw_id = row[0]
+        if raw_id is None:
             continue
+
+        # openpyxl types a cell as a wide union (formula, datetime, rich text).
+        # Narrow before int() so an unexpected ID cell fails loudly here rather
+        # than raising something obscure, and so pyright can check the call.
+        if not isinstance(raw_id, int | float | str):
+            raise ValueError(f"unexpected roster id cell {raw_id!r}")
 
         roster.append(
             RosterRow(
-                quill_student_id=int(row[0]),
+                quill_student_id=int(raw_id),
                 student_email=str(row[2]).strip().lower(),
                 classroom_name=str(row[3]).strip(),
                 teacher_name=str(row[4]).strip(),
@@ -1154,6 +1183,7 @@ _DICTIONARY_HEADERS = ("column", "definition", "source", "coding")
 
 def write_workbook(path: Path, rows: Sequence[Mapping[str, object]]) -> None:
     """Write the two-sheet deliverable."""
+    # trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep
     import openpyxl
 
     workbook = openpyxl.Workbook()
@@ -1182,6 +1212,7 @@ def read_workbook_rows(path: Path) -> list[dict[str, object]]:
     what gets sent. openpyxl reads a blank cell as None; coerce to '' so the
     whitelist in validate_rows sees the same vocabulary it wrote.
     """
+    # trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep
     import openpyxl
 
     workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
@@ -1425,7 +1456,7 @@ Expected: PASS. The new imports must not break module load.
 
 ```bash
 cd /workspaces/teamster/.worktrees/anthonygwalters/feat/claude-quill-seta-demographics
-uv run --with openpyxl python scripts/extract_quill_seta_ed_demographics.py \
+uv run scripts/extract_quill_seta_ed_demographics.py \
   --roster "/workspaces/teamster/.claude/scratch/Quill request/Quill_KIPP_for SETA-ED (2).xlsx" \
   --output-dir "/workspaces/teamster/.claude/scratch/Quill request/output" \
   --key-file "/workspaces/teamster/.claude/scratch/Quill request/reidentification-key.json"
@@ -1549,8 +1580,8 @@ In `scripts/CLAUDE.md`, in the Script Catalog table, add a row:
 ```markdown
 | `extract_quill_seta_ed_demographics.py` | One-shot: de-identified demographics
 workbook for the Quill pilot research partner. Roster path, output dir, and
-key-file path are arguments — roster data never enters git. Needs
-`--with openpyxl`. See #4848. |
+key-file path are arguments — roster data never enters git. Needs PEP 723 deps,
+so plain `uv run scripts/...` works. See #4848. |
 ```
 
 - [ ] **Step 4: Verify the docs build and lint**
