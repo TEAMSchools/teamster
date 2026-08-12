@@ -341,3 +341,122 @@ def write_key_file(
             sort_keys=True,
         )
     )
+
+
+DATA_DICTIONARY: tuple[tuple[str, str, str, str], ...] = (
+    (
+        "quill_student_id",
+        "Quill platform user ID for the student, unchanged from the roster export.",
+        "Quill roster export, column 'Studetn ID'",
+        "Integer. Join key to Quill platform data. Not a school district identifier.",
+    ),
+    (
+        "classroom_code",
+        "Pseudonymous code for the Quill classroom section.",
+        "Assigned by this script",
+        "C01 through C09. Mapping to section names is retained by the data supplier.",
+    ),
+    (
+        "teacher_code",
+        "Pseudonymous code for the teacher of record for the section.",
+        "Assigned by this script",
+        "T1, T2. Maps 1:1 to school. Mapping to names is retained by the data supplier.",
+    ),
+    (
+        "race_ethnicity",
+        "Race and ethnicity as recorded in the student information system.",
+        "int_extracts__student_enrollments.race_ethnicity",
+        "Asian, BL-AA, Hispanic or Latino, AI-AN, NH-OPI, 2+ races, White, DTS. "
+        "DTS means declined to state. Blank when the student was not matched.",
+    ),
+    (
+        "gender",
+        "Gender as recorded in the student information system.",
+        "int_extracts__student_enrollments.gender",
+        "Female, Male, Non-Binary. Blank when the student was not matched.",
+    ),
+    (
+        "meal_status",
+        "National School Lunch Program eligibility for the school year.",
+        "int_extracts__student_enrollments.lunch_status",
+        "Free, Reduced, Paid. Direct certification is reported as Free. "
+        "Blank when the student was not matched.",
+    ),
+    (
+        "iep_status",
+        "Whether the student had an active individualized education program.",
+        "int_extracts__student_enrollments.iep_status",
+        "Has IEP, No IEP. Blank when the student was not matched.",
+    ),
+    (
+        "mll_status",
+        "Multilingual learner status.",
+        "int_extracts__student_enrollments.ml_status",
+        "ML, Not ML. Blank when the student was not matched.",
+    ),
+    (
+        "demographics_source",
+        "Which school year's enrollment record supplied this row's values.",
+        "Assigned by this script",
+        "SY25-26 for the pilot year. 'SYxx-yy (fallback)' when the student was "
+        "not enrolled in the pilot year and an earlier year was used. "
+        "'not matched' when no enrollment record was found at all.",
+    ),
+)
+
+_DICTIONARY_HEADERS = ("column", "definition", "source", "coding")
+
+
+def write_workbook(path: Path, rows: Sequence[Mapping[str, object]]) -> None:
+    """Write the two-sheet deliverable."""
+    # trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep
+    import openpyxl
+
+    workbook = openpyxl.Workbook()
+
+    # worksheets[0] rather than .active: pyright types .active as Optional and
+    # trunk runs pyright over scripts/.
+    data_sheet = workbook.worksheets[0]
+    data_sheet.title = "student_demographics"
+    data_sheet.append(list(OUTPUT_COLUMNS))
+    for row in rows:
+        data_sheet.append([row[column] for column in OUTPUT_COLUMNS])
+
+    dictionary_sheet = workbook.create_sheet("data_dictionary")
+    dictionary_sheet.append(list(_DICTIONARY_HEADERS))
+    for entry in DATA_DICTIONARY:
+        dictionary_sheet.append(list(entry))
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    workbook.save(path)
+
+
+def read_workbook_rows(path: Path) -> list[dict[str, object]]:
+    """Read the delivered sheet back, so validation runs against the real file.
+
+    An in-memory check cannot catch a serialization mistake, and the file is
+    what gets sent. openpyxl reads a blank cell as None; coerce to '' so the
+    whitelist in validate_rows sees the same vocabulary it wrote.
+    """
+    # trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep
+    import openpyxl
+
+    workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    sheet = workbook["student_demographics"]
+    rows = sheet.iter_rows(values_only=True)
+
+    header = tuple(next(rows))
+    if header != OUTPUT_COLUMNS:
+        raise ValueError(f"unexpected workbook header {header!r}")
+
+    parsed: list[dict[str, object]] = [
+        {
+            column: "" if value is None else value
+            for column, value in zip(OUTPUT_COLUMNS, row, strict=True)
+        }
+        for row in rows
+    ]
+
+    workbook.close()
+
+    return parsed

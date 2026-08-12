@@ -480,3 +480,109 @@ class TestCodebook:
         )
         stored = json.loads(path.read_text())
         assert stored["students"][0]["student_email"] == "aaa@example.org"
+
+
+class TestWriteWorkbook:
+    def _rows(self, script: ModuleType) -> list[dict]:
+        return script.build_output_rows(
+            _roster(script),
+            {
+                "aaa@example.org": script.Demographics(
+                    2025, 900001, "B", "F", "F", "No IEP", "Not ML"
+                )
+            },
+            2025,
+            {"Room Alpha": "C01", "Room Beta": "C02"},
+            {"Teacher One": "T1", "Teacher Two": "T2"},
+        )
+
+    def _write(self, script: ModuleType, path: Path) -> None:
+        script.write_workbook(path, self._rows(script))
+
+    def test_creates_both_sheets(self, script: ModuleType, tmp_path: Path) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        self._write(script, path)
+        workbook = openpyxl.load_workbook(path)
+        assert workbook.sheetnames == ["student_demographics", "data_dictionary"]
+
+    def test_header_row_is_output_columns(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        self._write(script, path)
+        sheet = openpyxl.load_workbook(path)["student_demographics"]
+        header = tuple(cell.value for cell in sheet[1])
+        assert header == script.OUTPUT_COLUMNS
+
+    def test_row_count_matches(self, script: ModuleType, tmp_path: Path) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        self._write(script, path)
+        sheet = openpyxl.load_workbook(path)["student_demographics"]
+        assert sheet.max_row == len(_roster(script)) + 1
+
+    def test_dictionary_documents_every_column(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        self._write(script, path)
+        sheet = openpyxl.load_workbook(path)["data_dictionary"]
+        documented = {row[0].value for row in sheet.iter_rows(min_row=2)}
+        assert documented == set(script.OUTPUT_COLUMNS)
+
+    def test_written_file_contains_no_at_sign(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        self._write(script, path)
+        sheet = openpyxl.load_workbook(path)["student_demographics"]
+        for row in sheet.iter_rows(values_only=True):
+            assert "@" not in " ".join(str(v) for v in row if v is not None)
+
+
+class TestReadWorkbookRows:
+    def test_round_trip_matches_what_was_written(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        writer = TestWriteWorkbook()
+        writer._write(script, path)
+        assert script.read_workbook_rows(path) == writer._rows(script)
+
+    def test_blank_cells_come_back_as_empty_strings(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        """openpyxl reads an empty cell as None; validate_rows needs ''."""
+        pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        TestWriteWorkbook()._write(script, path)
+        unmatched = [
+            row
+            for row in script.read_workbook_rows(path)
+            if row["demographics_source"] == "not matched"
+        ]
+        assert unmatched
+        assert all(row["gender"] == "" for row in unmatched)
+
+    def test_written_file_passes_validation(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        TestWriteWorkbook()._write(script, path)
+        script.validate_rows(script.read_workbook_rows(path), _roster(script))
+
+    def test_unexpected_header_raises(self, script: ModuleType, tmp_path: Path) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        path = tmp_path / "out.xlsx"
+        workbook = openpyxl.Workbook()
+        workbook.worksheets[0].title = "student_demographics"
+        workbook.worksheets[0].append(["nope"])
+        workbook.save(path)
+        with pytest.raises(ValueError, match="header"):
+            script.read_workbook_rows(path)
