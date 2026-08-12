@@ -348,7 +348,10 @@ class TestReadRoster:
         assert roster[0].classroom_name == "Room Alpha"
         assert roster[0].teacher_name == "Teacher One"
 
-    def test_email_is_lowercased(self, script: ModuleType, tmp_path: Path) -> None:
+    def test_email_is_lowercased_and_stripped(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        """Both halves of .strip().lower() are load-bearing for the join."""
         path = tmp_path / "roster.xlsx"
         self._workbook(
             path,
@@ -356,7 +359,7 @@ class TestReadRoster:
                 [
                     1001,
                     "Ann Ant",
-                    "AAA@Example.org",
+                    "  AAA@Example.org  ",
                     "Room Alpha",
                     "Teacher One",
                     "t1@example.org",
@@ -364,6 +367,53 @@ class TestReadRoster:
             ],
         )
         assert script.read_roster(path)[0].student_email == "aaa@example.org"
+
+    def test_bool_id_raises(self, script: ModuleType, tmp_path: Path) -> None:
+        """bool is an int subclass; True must not become id 1."""
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [
+                [
+                    True,
+                    "Ann Ant",
+                    "aaa@example.org",
+                    "Room Alpha",
+                    "Teacher One",
+                    "t1@example.org",
+                ]
+            ],
+        )
+        with pytest.raises(ValueError, match="unexpected roster id cell"):
+            script.read_roster(path)
+
+    def test_fractional_id_raises(self, script: ModuleType, tmp_path: Path) -> None:
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [
+                [
+                    1001.7,
+                    "Ann Ant",
+                    "aaa@example.org",
+                    "Room Alpha",
+                    "Teacher One",
+                    "t1@example.org",
+                ]
+            ],
+        )
+        with pytest.raises(ValueError, match="fractional roster id cell"):
+            script.read_roster(path)
+
+    def test_blank_email_raises(self, script: ModuleType, tmp_path: Path) -> None:
+        """str(None) would become the literal 'none' and never match."""
+        path = tmp_path / "roster.xlsx"
+        self._workbook(
+            path,
+            [[1001, "Ann Ant", None, "Room Alpha", "Teacher One", "t1@example.org"]],
+        )
+        with pytest.raises(ValueError, match="blank required cell"):
+            script.read_roster(path)
 
     def test_blank_trailing_rows_are_skipped(
         self, script: ModuleType, tmp_path: Path

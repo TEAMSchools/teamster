@@ -285,8 +285,18 @@ def read_roster(path: Path) -> list[RosterRow]:
         # openpyxl types a cell as a wide union (formula, datetime, rich text).
         # Narrow before int() so an unexpected ID cell fails loudly here rather
         # than raising something obscure, and so pyright can check the call.
-        if not isinstance(raw_id, int | float | str):
+        # bool is an int subclass, so True would otherwise coerce to id 1; a
+        # fractional float would truncate. Both are rejected, not coerced.
+        if isinstance(raw_id, bool) or not isinstance(raw_id, int | float | str):
             raise ValueError(f"unexpected roster id cell {raw_id!r}")
+
+        if isinstance(raw_id, float) and not raw_id.is_integer():
+            raise ValueError(f"fractional roster id cell {raw_id!r}")
+
+        # str(None) is the string "None", so a blank email would become the
+        # literal "none" and silently miss every warehouse match. Fail instead.
+        if row[2] is None or row[3] is None or row[4] is None:
+            raise ValueError(f"roster row for id {raw_id!r} has a blank required cell")
 
         roster.append(
             RosterRow(
