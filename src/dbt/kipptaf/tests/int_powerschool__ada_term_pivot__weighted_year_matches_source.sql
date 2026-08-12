@@ -38,10 +38,11 @@ select
     source_ada_weighted_year,
     abs_difference,
 from compared
-/* tolerance, not exact equality: both sides round to 3 decimals, and a
-   distributed float sum has no guaranteed association order, so a rate sitting
-   on a rounding midpoint can differ by one unit in the 3rd decimal between two
-   evaluations. Observed artifact is at most 0.001 across ~74k student-years;
-   the wrong-column coalesce this test guards against produced differences up to
-   0.33, averaging ~0.05. */
-where abs_difference > 0.0015
+/* Exact equality, not a tolerance: int_powerschool__ada_term aggregates in exact
+   decimal, so a student-year's rate is identical across its term rows and the pivot's
+   coalesce reproduces it bit for bit. An earlier float-sum version of that model
+   needed a 0.0015 tolerance here, because a rate on a 3-decimal rounding midpoint
+   could round either way between evaluations. Restoring equality is what makes this a
+   strict guard -- the wrong-column coalesce it exists to catch produced differences
+   up to 0.33, but nothing now excuses a difference of any size. */
+where pivot_ada_weighted_year != source_ada_weighted_year

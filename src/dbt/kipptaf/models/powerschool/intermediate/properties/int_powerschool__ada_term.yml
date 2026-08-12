@@ -6,6 +6,8 @@ models:
       column is a rate in the range 0 to 1. Weighted variants divide the summed
       weighted present-day value by the same in-session day count the unweighted
       variants use; starting SY26, high schools report on the weighted measure.
+      Every rate is aggregated in exact decimal and emitted as FLOAT64, so one
+      landing on a rounding midpoint resolves the same way in every build.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
