@@ -33,9 +33,7 @@ with
             benchmark_aligned_scope,
             subject_area,
 
-            cast(
-                max(max_benchmark_aligned_scale_score_within_test_type) as int64
-            ) as max_scale_score,
+            cast(max(benchmark_aligned_scope_max_score) as int64) as max_scale_score,
 
         from {{ ref("int_assessments__all_college_assessments") }}
         group by student_number, test_type, benchmark_aligned_scope, subject_area

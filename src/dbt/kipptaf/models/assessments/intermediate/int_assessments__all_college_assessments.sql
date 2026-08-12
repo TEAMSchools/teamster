@@ -77,10 +77,8 @@ with
                 scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope
             ) as benchmark_aligned_scope,
 
-            /* coalesce is defensive: a null score_type would null the whole
-               predicate and drop the row from the maxes below. */
             scope != 'ACT'
-            and coalesce(score_type, 'not a sub-test') not in (
+            and score_type not in (
                 'psat10_math_test',
                 'psat10_reading',
                 'sat_math_test_score',
@@ -122,14 +120,29 @@ select
     sum_running_max_superscore,
     runnning_superscore,
 
+    /* Tags the row a consumer filters on, replacing the dedupe
+       rpt_tableau__college_assessment_dashboard_benchmark_calcs performs.
+       subject_area rather than score_type so PSAT10 and NMSQT compete for the
+       same subject; test_type so a practice score never outranks an official
+       one; is_benchmark_eligible so ineligible rows never consume a rank. */
+    if(
+        is_benchmark_eligible,
+        row_number() over (
+            partition by
+                student_number,
+                test_type,
+                benchmark_aligned_scope,
+                subject_area,
+                is_benchmark_eligible
+            order by scale_score desc
+        ),
+        null
+    ) as rn_highest_benchmark_aligned_scope,
+
     /* rn_highest = 1 is redundant to a max and suppresses 23 real scores. Kept
        to match production while the repointing is verified. See TODO(#4658). */
     max(if(is_benchmark_eligible and rn_highest = 1, scale_score, null)) over (
         partition by student_number, test_type, benchmark_aligned_scope, subject_area
-    ) as max_benchmark_aligned_scale_score_within_test_type,
-
-    max(if(is_benchmark_eligible and rn_highest = 1, scale_score, null)) over (
-        partition by student_number, benchmark_aligned_scope, subject_area
-    ) as max_benchmark_aligned_scale_score_across_test_types,
+    ) as benchmark_aligned_scope_max_score,
 
 from benchmark_aligned

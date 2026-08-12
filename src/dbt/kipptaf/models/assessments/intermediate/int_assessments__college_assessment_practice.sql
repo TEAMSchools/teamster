@@ -23,14 +23,6 @@ with
             s.expected_grouping as `grouping`,
             s.expected_course_discipline as course_discipline,
 
-            /* folds only PSAT10 and NMSQT, which are the same test in different
-               windows and share a scale. SAT and ACT stay distinct, so a max over
-               this is meaningful -- unlike aligned_scope, which folds ACT/SAT and
-               is for attainment booleans only. */
-            if(
-                c.scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', c.scope
-            ) as benchmark_aligned_scope,
-
         from
             {{ ref("stg_google_sheets__kippfwd__practice_scale_score_conversion") }}
             as c
@@ -57,7 +49,6 @@ with
             ssk.test_type,
             ssk.scope,
             ssk.aligned_scope,
-            ssk.benchmark_aligned_scope,
             ssk.scope_round,
             ssk.grade_level,
             ssk.subject,
@@ -119,7 +110,6 @@ with
             powerschool_student_number,
             scope,
             aligned_scope,
-            benchmark_aligned_scope,
             scope_round,
             test_type,
             grade_level,
@@ -154,7 +144,6 @@ with
             powerschool_student_number,
             scope,
             aligned_scope,
-            benchmark_aligned_scope,
             scope_round,
             test_type,
             grade_level,
@@ -193,7 +182,6 @@ with
             powerschool_student_number,
             scope,
             aligned_scope,
-            benchmark_aligned_scope,
             scope_round,
             test_type,
             grade_level,
@@ -259,7 +247,6 @@ with
             powerschool_student_number,
             scope,
             aligned_scope,
-            benchmark_aligned_scope,
             scope_round,
             test_type,
             grade_level,

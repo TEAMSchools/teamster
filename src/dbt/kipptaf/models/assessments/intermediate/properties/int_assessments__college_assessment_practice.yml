@@ -213,16 +213,9 @@ models:
           The scaffold's expected_aligned_scope — ACT/SAT, PSAT10/NMSQT, or PSAT
           8/9. Folds ACT and SAT together, so it is for attainment booleans
           only. Never max a score partitioned on it — ACT and SAT are different
-          scales, so a 36 would be rated against an SAT threshold. Use
-          benchmark_aligned_scope for scores.
-      - name: benchmark_aligned_scope
-        data_type: string
-        description: >-
-          Derived from scope, folding only PSAT10 and PSAT NMSQT into
-          PSAT10/NMSQT — College Board treats those as one test in different
-          windows and they share a scale, so maxing across them is valid. SAT
-          and ACT stay distinct. This is the scope-like field safe to partition
-          a score max on.
+          scales, so a 36 would be rated against an SAT threshold. Scores use
+          benchmark_aligned_scope, which
+          int_assessments__all_college_assessments derives for both hubs.
       - name: grouping
         data_type: string
         quote: true

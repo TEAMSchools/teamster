@@ -149,16 +149,20 @@ models:
         description: >-
           Superscore as of this test date. Name carries a typo inherited from
           the upstream hub, where it has no consumers.
-      - name: max_benchmark_aligned_scale_score_within_test_type
+      - name: rn_highest_benchmark_aligned_scope
+        data_type: int64
+        description: >-
+          Ranks benchmark-eligible scores highest-first within test type,
+          benchmark aligned scope, and subject area, so rn = 1 tags the row a
+          consumer filters on instead of deduplicating for itself. Partitioned
+          on subject area rather than score type so PSAT10 and PSAT NMSQT
+          compete for the same subject, and on test type so a practice score
+          never outranks an official one. Null on ineligible rows, which rank
+          among themselves so they never consume a rank from an eligible row.
+      - name: benchmark_aligned_scope_max_score
         data_type: numeric
         description: >-
           Highest benchmark-eligible score for this student, benchmark aligned
           scope, and subject area, within one test type. Replaces the
           deduplicated pick the benchmark view used to build for itself, and
           keeps an official best from being displaced by a practice one.
-      - name: max_benchmark_aligned_scale_score_across_test_types
-        data_type: numeric
-        description: >-
-          Highest benchmark-eligible score for this student, benchmark aligned
-          scope, and subject area, counting official and practice together. Use
-          only where a practice result legitimately counts toward the measure.
