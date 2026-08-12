@@ -160,8 +160,16 @@ data_tests:
           - student_number
           - assignmentsectionid
       config:
-        severity: error
+        severity: warn
 ```
+
+`warn`, not `error`, and deliberately so. The upstream grain test on
+`int_powerschool__gradebook_assignments_scores` inherits kipptaf's `warn`
+default, and #3900 documents duplicate `cc` rows in
+`base_powerschool__course_enrollments` that this lineage date-range joins. An
+outbound feed should not hard-fail on an upstream defect that upstream itself
+only warns about. Carry a `TODO(#3915)` comment at the test so it returns to
+`error` once the Ops cleanup lands.
 
 Both columns are in the projection, so the feed grows by exactly one column and
 no others. The key omits `_dbt_source_project`, which means it relies on

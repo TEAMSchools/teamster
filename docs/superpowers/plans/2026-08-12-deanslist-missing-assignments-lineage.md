@@ -307,7 +307,11 @@ models:
               - student_number
               - assignmentsectionid
           config:
-            severity: error
+            # TODO(#3915): severity: warn intentional — the upstream grain test
+            # inherits kipptaf's warn default, and #3900 documents duplicate cc
+            # rows in base_powerschool__course_enrollments that this lineage
+            # date-range joins. Restore to error when the Ops cleanup completes.
+            severity: warn
     columns:
       - name: student_number
         data_type: int64
@@ -554,8 +558,10 @@ Expected: "No issues".
 git -C /workspaces/teamster/.worktrees/claude-deanslist-missing-assignments diff --stat origin/main...HEAD
 ```
 
-Expected: exactly seven files — the spec, the plan, and the five
-model/properties files from Tasks 1 through 3 (2 + 2 + 1). Nothing under
+Expected: eight files — the spec, the plan, and six model/properties files. Five
+come from Tasks 1 through 3 (2 + 2 + 1); the sixth is
+`int_powerschool__section_grade_config.yml`, disabled during the final-review
+fix wave once it turned out to have no consumers left. Nothing under
 `src/dbt/CLAUDE.md`; that rule was moved to the CARAT branch deliberately.
 
 - [ ] **Step 4: Request review**
