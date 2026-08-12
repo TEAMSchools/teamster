@@ -1,0 +1,979 @@
+<!-- @dsCard group="Zendesk" viewport="900x640" name="Sample article" subtitle="A complete help article composed from the snippets, at true help-center width" -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>
+      Submitting a technology support request — KIPP NJ | Miami Help Center
+    </title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      body {
+        margin: 0;
+        background: #f4f6f9;
+        font-family: var(--font-sans);
+      }
+      /* Chrome approximating the Zendesk Guide shell — NOT part of the article */
+      .hc-header {
+        background: #001e62;
+        padding: 0;
+      }
+      .hc-header .bar {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 18px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .hc-header img {
+        height: 34px;
+        width: auto;
+      }
+      .hc-header .nav {
+        display: flex;
+        gap: 26px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #b9caf0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .hc-crumbs {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 16px 32px 0;
+        font-size: 12px;
+        color: #5a6675;
+      }
+      .hc-crumbs a {
+        color: #5a6675;
+        text-decoration: none;
+      }
+      .hc-shell {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 32px 70px;
+      }
+      .hc-title {
+        font-family: var(--font-brand);
+        font-size: 34px;
+        font-weight: 800;
+        color: #001e62;
+        letter-spacing: -0.01em;
+        line-height: 1.15;
+        margin: 14px 0 6px;
+        max-width: 22ch;
+      }
+      .hc-meta {
+        font-size: 12.5px;
+        color: #5a6675;
+        padding-bottom: 22px;
+        border-bottom: 1px solid #d6dde7;
+        margin-bottom: 28px;
+      }
+      .hc-cols {
+        display: grid;
+        grid-template-columns: 1fr 240px;
+        gap: 48px;
+        align-items: start;
+      }
+      .hc-side {
+        background: #fff;
+        border: 1px solid #d6dde7;
+        padding: 16px 18px;
+        font-size: 13px;
+      }
+      .hc-side b {
+        display: block;
+        font-family: var(--font-brand);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #001e62;
+        margin-bottom: 8px;
+      }
+      .hc-side ul {
+        margin: 0;
+        padding-left: 16px;
+        line-height: 1.9;
+        color: #1a44a0;
+      }
+      .article-body {
+        background: #fff;
+        border: 1px solid #d6dde7;
+        padding: 34px 38px;
+      }
+      /* the article-body baseline mirrors kipp-help-center-theme.css */
+      .article-body {
+        font-size: 16px;
+        line-height: 1.65;
+        color: #2a3340;
+      }
+      .article-body p {
+        margin: 0 0 16px;
+      }
+      /* Mimic Zendesk: styles.css resets these, a help center does not */
+      .article-body h2 {
+        margin: 0.83em 0;
+      }
+      .article-body ul,
+      .article-body ol {
+        margin: 1em 0;
+      }
+      .article-body div,
+      .article-body img {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hc-header">
+      <div class="bar">
+        <img src="../assets/logo-horizontal-white.png" alt="KIPP NJ | Miami" />
+        <div class="nav">
+          <span>Guides</span><span>Submit a request</span
+          ><span>My activities</span>
+        </div>
+      </div>
+    </div>
+    <div class="hc-crumbs">
+      <a href="#">Help Center</a> › <a href="#">Technology</a> ›
+      <a href="#">Getting support</a>
+    </div>
+    <div class="hc-shell">
+      <h1 class="hc-title">Submitting a technology support request</h1>
+      <div class="hc-meta">Updated 2 days ago · KIPP NJ | Miami Technology</div>
+      <div class="hc-cols">
+        <div class="article-body">
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 0 0 24px"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 20px 22px;
+                    background-color: #eef3fc;
+                    border: 1px solid #b9caf0;
+                    font-family:
+                      &quot;Hanken Grotesk&quot;, Whitney,
+                      &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                  "
+                >
+                  <div
+                    style="font-size: 15px; line-height: 1.6; color: #2a3340"
+                  >
+                    This article walks you through submitting a technology
+                    support request and tracking it to resolution.
+                  </div>
+                  <div
+                    style="
+                      padding-top: 14px;
+                      font-size: 13px;
+                      line-height: 1.6;
+                      color: #5a6675;
+                    "
+                  >
+                    <strong
+                      style="
+                        color: #001e62;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        font-size: 12px;
+                      "
+                      >Who this is for</strong
+                    ><br />All KIPP NJ and KIPP Miami staff.
+                  </div>
+                  <div
+                    style="
+                      padding-top: 10px;
+                      font-size: 13px;
+                      line-height: 1.6;
+                      color: #5a6675;
+                    "
+                  >
+                    <strong
+                      style="
+                        color: #001e62;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                        font-size: 12px;
+                      "
+                      >Before you start</strong
+                    ><br />Sign in with your
+                    <code
+                      style="
+                        font-family:
+                          &quot;JetBrains Mono&quot;, Consolas, Monaco,
+                          &quot;Courier New&quot;, monospace;
+                        font-size: 12px;
+                        background-color: #ffffff;
+                        border: 1px solid #d6dde7;
+                        padding: 1px 5px;
+                      "
+                      >@kippnj.org</code
+                    >
+                    account.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 0 0 24px"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 16px 20px;
+                    background-color: #fafbfc;
+                    border: 1px solid #d6dde7;
+                    font-family:
+                      &quot;Hanken Grotesk&quot;, Whitney,
+                      &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                  "
+                >
+                  <div
+                    style="
+                      padding-bottom: 8px;
+                      font-size: 12px;
+                      font-weight: 700;
+                      text-transform: uppercase;
+                      letter-spacing: 0.08em;
+                      color: #001e62;
+                    "
+                  >
+                    In this article
+                  </div>
+                  <ul
+                    style="
+                      padding-left: 20px;
+                      font-size: 14px;
+                      line-height: 1.9;
+                      color: #2a3340;
+                    "
+                  >
+                    <li>
+                      <a
+                        href="#submit-a-request"
+                        style="color: #1a44a0; text-decoration: underline"
+                        >Submit a request</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#track-your-ticket"
+                        style="color: #1a44a0; text-decoration: underline"
+                        >Track your ticket</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#response-times"
+                        style="color: #1a44a0; text-decoration: underline"
+                        >Response times</a
+                      >
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2
+            id="submit-a-request"
+            style="
+              font-family:
+                &quot;Hanken Grotesk&quot;, Whitney, &quot;Helvetica Neue&quot;,
+                Helvetica, Arial, sans-serif;
+              font-size: 22px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+              color: #001e62;
+              line-height: 1.25;
+              padding-top: 12px;
+              border-top: 3px solid #001e62;
+            "
+          >
+            Submit a request
+          </h2>
+
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 0 0 22px"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    font-family:
+                      &quot;Hanken Grotesk&quot;, Whitney,
+                      &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                  "
+                >
+                  <ol
+                    style="
+                      padding-left: 22px;
+                      font-size: 15px;
+                      line-height: 1.6;
+                      color: #2a3340;
+                    "
+                  >
+                    <li style="padding-bottom: 12px">
+                      Go to
+                      <a
+                        href="#"
+                        style="color: #1a44a0; text-decoration: underline"
+                        >help.kippnj.org</a
+                      >
+                      and click
+                      <strong style="color: #001e62">Submit a request</strong>.
+                    </li>
+                    <li style="padding-bottom: 12px">
+                      Choose
+                      <strong style="color: #001e62">Technology</strong> from
+                      the request type list.
+                    </li>
+                    <li style="padding-bottom: 12px">
+                      Enter your school code in the
+                      <strong style="color: #001e62">Location</strong> field,
+                      for example
+                      <code
+                        style="
+                          font-family:
+                            &quot;JetBrains Mono&quot;, Consolas, Monaco,
+                            &quot;Courier New&quot;, monospace;
+                          font-size: 13px;
+                          background-color: #f4f6f9;
+                          border: 1px solid #d6dde7;
+                          padding: 1px 5px;
+                        "
+                        >NWK-RISE</code
+                      >.
+                    </li>
+                    <li style="padding-bottom: 12px">
+                      Attach a screenshot. Press
+                      <kbd
+                        style="
+                          font-family:
+                            &quot;JetBrains Mono&quot;, Consolas, Monaco,
+                            &quot;Courier New&quot;, monospace;
+                          font-size: 12px;
+                          background-color: #ffffff;
+                          border: 1px solid #b6c0cf;
+                          border-bottom-width: 2px;
+                          border-radius: 3px;
+                          padding: 2px 6px;
+                          color: #001e62;
+                        "
+                        >Shift</kbd
+                      >
+                      +
+                      <kbd
+                        style="
+                          font-family:
+                            &quot;JetBrains Mono&quot;, Consolas, Monaco,
+                            &quot;Courier New&quot;, monospace;
+                          font-size: 12px;
+                          background-color: #ffffff;
+                          border: 1px solid #b6c0cf;
+                          border-bottom-width: 2px;
+                          border-radius: 3px;
+                          padding: 2px 6px;
+                          color: #001e62;
+                        "
+                        >Cmd</kbd
+                      >
+                      +
+                      <kbd
+                        style="
+                          font-family:
+                            &quot;JetBrains Mono&quot;, Consolas, Monaco,
+                            &quot;Courier New&quot;, monospace;
+                          font-size: 12px;
+                          background-color: #ffffff;
+                          border: 1px solid #b6c0cf;
+                          border-bottom-width: 2px;
+                          border-radius: 3px;
+                          padding: 2px 6px;
+                          color: #001e62;
+                        "
+                        >4</kbd
+                      >
+                      to capture a region.
+                    </li>
+                    <li>
+                      Click <strong style="color: #001e62">Submit</strong>. You
+                      will see a confirmation with your ticket number.
+                    </li>
+                  </ol>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 0 0 20px"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 14px 18px;
+                    background-color: #f0fafe;
+                    border: 1px solid #bce5f7;
+                    border-left: 4px solid #57c0e9;
+                    font-family:
+                      &quot;Hanken Grotesk&quot;, Whitney,
+                      &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                  "
+                >
+                  <div
+                    style="
+                      padding-bottom: 4px;
+                      font-size: 12px;
+                      font-weight: 700;
+                      text-transform: uppercase;
+                      letter-spacing: 0.07em;
+                      color: #1f7fb0;
+                    "
+                  >
+                    Note
+                  </div>
+                  <div
+                    style="font-size: 14px; line-height: 1.6; color: #2a3340"
+                  >
+                    Requests submitted after 4:00 PM are queued for the next
+                    business day.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 0 0 22px"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 0;
+                    font-family:
+                      &quot;Hanken Grotesk&quot;, Whitney,
+                      &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                  "
+                >
+                  <div>
+                    <img
+                      src="https://placehold.co/1200x520/eef3fc/001E62?text=Submit+a+request+form"
+                      alt="The Submit a request form with the Technology option selected"
+                      style="
+                        width: 100%;
+                        max-width: 100%;
+                        height: auto;
+                        display: block;
+                        border: 1px solid #d6dde7;
+                      "
+                    />
+                    <div
+                      style="
+                        padding-top: 8px;
+                        font-size: 13px;
+                        line-height: 1.5;
+                        color: #5a6675;
+                        border-left: 3px solid #d6dde7;
+                        padding-left: 12px;
+                      "
+                    >
+                      The request form with
+                      <strong style="color: #001e62">Technology</strong>
+                      selected.
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2
+            id="track-your-ticket"
+            style="
+              font-family:
+                &quot;Hanken Grotesk&quot;, Whitney, &quot;Helvetica Neue&quot;,
+                Helvetica, Arial, sans-serif;
+              font-size: 22px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+              color: #001e62;
+              line-height: 1.25;
+              padding-top: 12px;
+              border-top: 3px solid #001e62;
+            "
+          >
+            Track your ticket
+          </h2>
+
+          <div
+            style="
+              padding-bottom: 16px;
+              font-size: 16px;
+              line-height: 1.65;
+              color: #2a3340;
+              font-family:
+                &quot;Hanken Grotesk&quot;, Whitney, &quot;Helvetica Neue&quot;,
+                Helvetica, Arial, sans-serif;
+            "
+          >
+            Every request you submit appears under
+            <strong style="color: #001e62">My activities</strong>, reachable
+            from the avatar menu in the top right. You will also get an email
+            each time the status changes.
+          </div>
+
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 0 0 20px"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 0;
+                    border: 1px solid #d6dde7;
+                    font-family:
+                      &quot;Hanken Grotesk&quot;, Whitney,
+                      &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                  "
+                >
+                  <details>
+                    <summary
+                      style="
+                        padding: 14px 18px;
+                        background-color: #fafbfc;
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #001e62;
+                      "
+                    >
+                      What if I forgot my ticket number?
+                    </summary>
+                    <div
+                      style="
+                        padding: 14px 18px;
+                        border-top: 1px solid #d6dde7;
+                        font-size: 14px;
+                        line-height: 1.6;
+                        color: #2a3340;
+                      "
+                    >
+                      Open
+                      <strong style="color: #001e62">My activities</strong> from
+                      the avatar menu. Every request you have submitted is
+                      listed there with its number and status.
+                    </div>
+                  </details>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 0 0 20px"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 14px 18px;
+                    background-color: #fff6e8;
+                    border: 1px solid #fcd99b;
+                    border-left: 4px solid #f9a21a;
+                    font-family:
+                      &quot;Hanken Grotesk&quot;, Whitney,
+                      &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                  "
+                >
+                  <div
+                    style="
+                      padding-bottom: 4px;
+                      font-size: 12px;
+                      font-weight: 700;
+                      text-transform: uppercase;
+                      letter-spacing: 0.07em;
+                      color: #b96b00;
+                    "
+                  >
+                    Warning
+                  </div>
+                  <div
+                    style="font-size: 14px; line-height: 1.6; color: #2a3340"
+                  >
+                    Replying to the notification email from a personal address
+                    creates a duplicate ticket. Always reply from your KIPP
+                    account.
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h2
+            id="response-times"
+            style="
+              font-family:
+                &quot;Hanken Grotesk&quot;, Whitney, &quot;Helvetica Neue&quot;,
+                Helvetica, Arial, sans-serif;
+              font-size: 22px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.04em;
+              color: #001e62;
+              line-height: 1.25;
+              padding-top: 12px;
+              border-top: 3px solid #001e62;
+            "
+          >
+            Response times
+          </h2>
+
+          <table
+            style="
+              width: 100%;
+              border-collapse: collapse;
+              margin: 0 0 22px;
+              font-family:
+                &quot;Hanken Grotesk&quot;, Whitney, &quot;Helvetica Neue&quot;,
+                Helvetica, Arial, sans-serif;
+            "
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <thead>
+              <tr>
+                <th
+                  scope="col"
+                  style="
+                    text-align: left;
+                    padding: 11px 14px;
+                    background-color: #001e62;
+                    color: #ffffff;
+                    font-size: 12px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    border: 1px solid #001e62;
+                  "
+                >
+                  Priority
+                </th>
+                <th
+                  scope="col"
+                  style="
+                    text-align: left;
+                    padding: 11px 14px;
+                    background-color: #001e62;
+                    color: #ffffff;
+                    font-size: 12px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    border: 1px solid #001e62;
+                  "
+                >
+                  First response
+                </th>
+                <th
+                  scope="col"
+                  style="
+                    text-align: left;
+                    padding: 11px 14px;
+                    background-color: #001e62;
+                    color: #ffffff;
+                    font-size: 12px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.06em;
+                    border: 1px solid #001e62;
+                  "
+                >
+                  Example
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #2a3340;
+                    vertical-align: top;
+                  "
+                >
+                  Urgent
+                </td>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #2a3340;
+                    vertical-align: top;
+                  "
+                >
+                  1 hour
+                </td>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #5a6675;
+                    vertical-align: top;
+                  "
+                >
+                  Whole-school network outage
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #2a3340;
+                    background-color: #fafbfc;
+                    vertical-align: top;
+                  "
+                >
+                  High
+                </td>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #2a3340;
+                    background-color: #fafbfc;
+                    vertical-align: top;
+                  "
+                >
+                  4 hours
+                </td>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #5a6675;
+                    background-color: #fafbfc;
+                    vertical-align: top;
+                  "
+                >
+                  Classroom projector down
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #2a3340;
+                    vertical-align: top;
+                  "
+                >
+                  Normal
+                </td>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #2a3340;
+                    vertical-align: top;
+                  "
+                >
+                  2 business days
+                </td>
+                <td
+                  style="
+                    padding: 11px 14px;
+                    border: 1px solid #d6dde7;
+                    font-size: 14px;
+                    color: #5a6675;
+                    vertical-align: top;
+                  "
+                >
+                  Software install request
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 0 0 22px"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td style="padding: 0 10px 0 0; width: 1%; white-space: nowrap">
+                  <a
+                    href="#"
+                    style="
+                      display: inline-block;
+                      padding: 13px 26px;
+                      background-color: #001e62;
+                      color: #ffffff;
+                      font-family:
+                        &quot;Hanken Grotesk&quot;, Whitney,
+                        &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                      font-size: 13px;
+                      font-weight: 700;
+                      text-transform: uppercase;
+                      letter-spacing: 0.05em;
+                      text-decoration: none;
+                      border-radius: 4px;
+                    "
+                    >Submit a request</a
+                  >
+                </td>
+                <td style="padding: 0">
+                  <a
+                    href="#"
+                    style="
+                      display: inline-block;
+                      padding: 11px 24px;
+                      background-color: #ffffff;
+                      color: #001e62;
+                      font-family:
+                        &quot;Hanken Grotesk&quot;, Whitney,
+                        &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                      font-size: 13px;
+                      font-weight: 700;
+                      text-transform: uppercase;
+                      letter-spacing: 0.05em;
+                      text-decoration: none;
+                      border: 2px solid #001e62;
+                      border-radius: 4px;
+                    "
+                    >View my tickets</a
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table
+            style="width: 100%; border-collapse: collapse; margin: 32px 0 0"
+            cellpadding="0"
+            cellspacing="0"
+          >
+            <tbody>
+              <tr>
+                <td
+                  style="
+                    padding: 18px 20px;
+                    background-color: #001e62;
+                    font-family:
+                      &quot;Hanken Grotesk&quot;, Whitney,
+                      &quot;Helvetica Neue&quot;, Helvetica, Arial, sans-serif;
+                  "
+                >
+                  <div
+                    style="
+                      padding-bottom: 10px;
+                      font-size: 12px;
+                      font-weight: 700;
+                      text-transform: uppercase;
+                      letter-spacing: 0.08em;
+                      color: #f9a21a;
+                    "
+                  >
+                    Related articles
+                  </div>
+                  <ul
+                    style="
+                      padding-left: 20px;
+                      font-size: 14px;
+                      line-height: 2;
+                      color: #ffffff;
+                    "
+                  >
+                    <li>
+                      <a
+                        href="#"
+                        style="color: #ffffff; text-decoration: underline"
+                        >Resetting your KIPP NJ password</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        style="color: #ffffff; text-decoration: underline"
+                        >Connecting to staff Wi-Fi</a
+                      >
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        style="color: #ffffff; text-decoration: underline"
+                        >Requesting a new device</a
+                      >
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="hc-side">
+          <b>Technology</b>
+          <ul>
+            <li>
+              <a href="#" style="color: #1a44a0; text-decoration: none"
+                >Getting support</a
+              >
+            </li>
+            <li>
+              <a href="#" style="color: #1a44a0; text-decoration: none"
+                >Accounts &amp; access</a
+              >
+            </li>
+            <li>
+              <a href="#" style="color: #1a44a0; text-decoration: none"
+                >Devices</a
+              >
+            </li>
+            <li>
+              <a href="#" style="color: #1a44a0; text-decoration: none"
+                >Classroom tech</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

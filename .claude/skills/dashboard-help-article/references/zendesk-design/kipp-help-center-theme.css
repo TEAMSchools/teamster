@@ -1,0 +1,379 @@
+/* ============================================================
+   KIPP NJ | Miami — Help Center article styles
+   ------------------------------------------------------------
+   OPTIONAL but recommended. Paste into your Zendesk Guide
+   theme stylesheet (Guide admin > Customize design > Edit code
+   > style.css, or append to the theme's document_head).
+
+   Why: `class` is an allowed global attribute in articles, but
+   <style> blocks are not. Shipping these classes in the THEME
+   lets authors write
+
+       <div class="kipp-callout kipp-callout--warning">
+
+   instead of ~300 characters of inline style per block.
+
+   The inline-style snippets in index.html stay valid either
+   way — they are the fallback when theme access isn't
+   available, and they keep rendering if this file is removed.
+
+   Scope note: everything is namespaced .kipp-* and most rules
+   are scoped under .article-body so they cannot leak into the
+   rest of the help center.
+   ============================================================ */
+
+:root {
+  --kipp-indigo: #001e62;
+  --kipp-orange: #f9a21a;
+  --kipp-blue: #57c0e9;
+  --kipp-green: #c3d52e;
+  --kipp-red: #ee3c37;
+  --kipp-body: #2a3340;
+  --kipp-muted: #5a6675;
+  --kipp-line: #d6dde7;
+  --kipp-tint: #f4f6f9;
+  --kipp-font:
+    "Hanken Grotesk", Whitney, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --kipp-mono: "JetBrains Mono", Consolas, Monaco, "Courier New", monospace;
+}
+
+/* ---- Article body baseline ---- */
+.article-body {
+  font-family: var(--kipp-font);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--kipp-body);
+}
+.article-body h2,
+.article-body h3,
+.article-body h4 {
+  font-family: var(--kipp-font);
+  color: var(--kipp-indigo);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+}
+.article-body h2 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 40px 0 14px;
+  padding-top: 12px;
+  border-top: 3px solid var(--kipp-indigo);
+}
+.article-body h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 28px 0 10px;
+}
+.article-body h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 22px 0 8px;
+}
+.article-body p {
+  margin: 0 0 16px;
+}
+.article-body a {
+  color: #1a44a0;
+  text-decoration: underline;
+}
+.article-body a:hover {
+  color: var(--kipp-indigo);
+}
+.article-body ol,
+.article-body ul {
+  margin: 0 0 18px;
+  padding-left: 22px;
+}
+.article-body li {
+  margin-bottom: 10px;
+}
+.article-body img {
+  border-radius: 0;
+} /* brand rule: photos stay square */
+
+.article-body code {
+  font-family: var(--kipp-mono);
+  font-size: 0.875em;
+  background-color: var(--kipp-tint);
+  border: 1px solid var(--kipp-line);
+  border-radius: 2px;
+  padding: 1px 5px;
+}
+.article-body kbd {
+  font-family: var(--kipp-mono);
+  font-size: 0.8em;
+  background-color: #fff;
+  border: 1px solid #b6c0cf;
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 2px 6px;
+  color: var(--kipp-indigo);
+}
+.article-body pre {
+  background-color: #0d1526;
+  color: #c9d6ee;
+  font-family: var(--kipp-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  padding: 16px 18px;
+  border-radius: 3px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  margin: 0 0 22px;
+}
+.article-body pre code {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* ---- Callouts ---- */
+.kipp-callout {
+  border: 1px solid var(--kipp-line);
+  border-left: 4px solid var(--kipp-indigo);
+  background-color: var(--kipp-tint);
+  padding: 14px 18px;
+  margin: 0 0 20px;
+}
+.kipp-callout__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--kipp-indigo);
+  margin-bottom: 4px;
+}
+.kipp-callout p:last-child {
+  margin-bottom: 0;
+}
+
+.kipp-callout--note {
+  background-color: #f0fafe;
+  border-color: #bce5f7;
+  border-left-color: var(--kipp-blue);
+}
+.kipp-callout--note .kipp-callout__label {
+  color: #1f7fb0;
+}
+.kipp-callout--tip {
+  background-color: #f9fbe9;
+  border-color: #e4eea0;
+  border-left-color: var(--kipp-green);
+}
+.kipp-callout--tip .kipp-callout__label {
+  color: #7e8c12;
+}
+.kipp-callout--warning {
+  background-color: #fff6e8;
+  border-color: #fcd99b;
+  border-left-color: var(--kipp-orange);
+}
+.kipp-callout--warning .kipp-callout__label {
+  color: #b96b00;
+}
+.kipp-callout--critical {
+  background-color: #fef0ef;
+  border-color: #f7b9b6;
+  border-left-color: var(--kipp-red);
+}
+.kipp-callout--critical .kipp-callout__label {
+  color: #b81f1b;
+}
+
+/* ---- Summary panel ---- */
+.kipp-summary {
+  background-color: #eef3fc;
+  border: 1px solid #b9caf0;
+  padding: 20px 22px;
+  margin: 0 0 24px;
+}
+.kipp-summary__lede {
+  font-size: 15px;
+  margin: 0 0 14px;
+}
+.kipp-summary dt {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--kipp-indigo);
+  margin-top: 10px;
+}
+.kipp-summary dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--kipp-muted);
+}
+
+/* ---- Table of contents ---- */
+.kipp-toc {
+  background-color: #fafbfc;
+  border: 1px solid var(--kipp-line);
+  padding: 16px 20px;
+  margin: 0 0 24px;
+}
+.kipp-toc__label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--kipp-indigo);
+  margin: 0 0 8px;
+}
+.kipp-toc ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.kipp-toc li {
+  margin-bottom: 2px;
+  font-size: 14px;
+}
+
+/* ---- Data table ---- */
+.kipp-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 22px;
+  font-size: 14px;
+}
+.kipp-table th {
+  text-align: left;
+  padding: 11px 14px;
+  background-color: var(--kipp-indigo);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1px solid var(--kipp-indigo);
+}
+.kipp-table td {
+  padding: 11px 14px;
+  border: 1px solid var(--kipp-line);
+  vertical-align: top;
+}
+.kipp-table tbody tr:nth-child(even) td {
+  background-color: #fafbfc;
+}
+
+/* ---- Buttons ---- */
+.kipp-btn {
+  display: inline-block;
+  padding: 13px 26px;
+  background-color: var(--kipp-indigo);
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none !important;
+  border-radius: 4px;
+  border: 2px solid var(--kipp-indigo);
+  transition: background-color 0.14s ease;
+}
+.kipp-btn:hover {
+  background-color: #0a2f7e;
+  border-color: #0a2f7e;
+}
+.kipp-btn--secondary {
+  background-color: #fff;
+  color: var(--kipp-indigo) !important;
+}
+.kipp-btn--secondary:hover {
+  background-color: #eef3fc;
+}
+
+/* ---- Accordion ---- */
+.kipp-accordion {
+  border: 1px solid var(--kipp-line);
+  margin: 0 0 20px;
+}
+.kipp-accordion > summary {
+  padding: 14px 18px;
+  background-color: #fafbfc;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--kipp-indigo);
+  cursor: pointer;
+  list-style-position: inside;
+}
+.kipp-accordion > summary:hover {
+  background-color: #eef3fc;
+}
+.kipp-accordion__body {
+  padding: 14px 18px;
+  border-top: 1px solid var(--kipp-line);
+  font-size: 14px;
+}
+.kipp-accordion__body p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---- Figure ---- */
+.kipp-figure {
+  margin: 0 0 22px;
+}
+.kipp-figure img {
+  width: 100%;
+  display: block;
+  border: 1px solid var(--kipp-line);
+  border-radius: 0;
+}
+.kipp-figure figcaption {
+  padding: 0 0 0 12px;
+  margin-top: 8px;
+  border-left: 3px solid var(--kipp-line);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--kipp-muted);
+}
+
+/* ---- Related articles ---- */
+.kipp-related {
+  background-color: var(--kipp-indigo);
+  padding: 18px 20px;
+  margin: 32px 0 0;
+}
+.kipp-related__label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--kipp-orange);
+  margin: 0 0 10px;
+}
+.kipp-related ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.kipp-related li {
+  color: #fff;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.kipp-related a {
+  color: #fff !important;
+  text-decoration: underline;
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 640px) {
+  .article-body h2 {
+    font-size: 19px;
+  }
+  .kipp-table {
+    font-size: 13px;
+  }
+  .kipp-table th,
+  .kipp-table td {
+    padding: 9px 10px;
+  }
+  .kipp-btn {
+    display: block;
+    text-align: center;
+  }
+}

@@ -1,0 +1,426 @@
+<!-- @dsCard group="Zendesk" viewport="900x620" name="Article snippet library" subtitle="Every Zendesk-safe block, rendered live with copy-paste source" -->
+<!-- @startingPoint section="Zendesk" subtitle="Copy-paste HTML blocks for KIPP help center articles" viewport="900x620" -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Zendesk article snippets — KIPP NJ | Miami</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      body {
+        margin: 0;
+        background: var(--surface-page);
+        font-family: var(--font-sans);
+        color: var(--text-body);
+      }
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 32px 80px;
+      }
+      .masthead {
+        border-bottom: 3px solid var(--kipp-indigo);
+        padding-bottom: 20px;
+        margin-bottom: 8px;
+      }
+      .eyebrow {
+        font-family: var(--font-brand);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--brand-accent);
+      }
+      h1 {
+        font-family: var(--font-brand);
+        font-size: 34px;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        margin: 10px 0 0;
+        color: var(--kipp-indigo);
+      }
+      .lede {
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--text-muted);
+        max-width: 62ch;
+        margin-top: 10px;
+      }
+      .warn {
+        background: var(--orange-50);
+        border: 1px solid var(--orange-200);
+        border-left: 4px solid var(--kipp-orange);
+        padding: 14px 16px;
+        margin: 24px 0 0;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .warn b {
+        color: var(--orange-700);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 12px;
+        font-family: var(--font-brand);
+      }
+      .snip {
+        margin-top: 36px;
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-lg);
+        background: var(--surface-card);
+        overflow: hidden;
+      }
+      .snip > header {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border-subtle);
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .snip h2 {
+        font-family: var(--font-brand);
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--kipp-indigo);
+        margin: 0;
+      }
+      .snip .desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        flex: 1;
+        min-width: 200px;
+      }
+      .preview {
+        padding: 22px 24px;
+        background: #fff;
+      }
+      /* Previews must mimic Zendesk, where styles.css's resets do not exist */
+      .preview h2 {
+        margin: 0.83em 0;
+      }
+      .preview ul,
+      .preview ol {
+        margin: 1em 0;
+      }
+      .preview p {
+        margin: 1em 0;
+      }
+      .preview div {
+        margin: 0;
+      }
+      .codewrap {
+        border-top: 1px solid var(--border-subtle);
+        background: #0d1526;
+        position: relative;
+      }
+      .codewrap pre {
+        margin: 0;
+        padding: 16px 18px;
+        overflow-x: auto;
+        font-family: var(--font-mono);
+        font-size: 11.5px;
+        line-height: 1.65;
+        color: #c9d6ee;
+        white-space: pre;
+      }
+      .copy {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-family: var(--font-brand);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        background: rgba(255, 255, 255, 0.1);
+        color: #c9d6ee;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        padding: 5px 9px;
+        cursor: pointer;
+      }
+      .copy:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+      .copy.done {
+        background: var(--kipp-green);
+        color: var(--kipp-indigo);
+        border-color: var(--kipp-green);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="masthead">
+        <div class="eyebrow">Help Center · Zendesk Guide</div>
+        <h1>Article snippet library</h1>
+        <p class="lede">
+          Copy-paste blocks for KIPP NJ | Miami help articles. Every snippet
+          survives Zendesk's sanitizer with
+          <strong>Display Unsafe Content off</strong> — inline styles only,
+          tables for layout, literal hex values.
+        </p>
+      </div>
+      <div class="warn">
+        <b>Before you paste</b><br />Open the article's
+        <strong>source code editor</strong> (<code>&lt;/&gt;</code> in the
+        toolbar) and paste there — not into the rich-text body. Zendesk strips
+        empty elements, so never leave a tag with no content. Always check the
+        <em>published</em> article, not the editor preview.
+      </div>
+      <div id="out"></div>
+    </div>
+
+    <script
+      type="text/plain"
+      data-name="Summary panel"
+      data-desc="Opens the article: what the reader will accomplish, who it's for, what they need first."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 24px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:20px 22px;background-color:#eef3fc;border:1px solid #b9caf0;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <div style="font-size:15px;line-height:1.6;color:#2a3340">This article walks you through submitting a technology support request and tracking it to resolution.</div>
+      <div style="padding-top:14px;font-size:13px;line-height:1.6;color:#5a6675"><strong style="color:#001E62;text-transform:uppercase;letter-spacing:.05em;font-size:12px">Who this is for</strong><br>All KIPP NJ and KIPP Miami staff.</div>
+      <div style="padding-top:10px;font-size:13px;line-height:1.6;color:#5a6675"><strong style="color:#001E62;text-transform:uppercase;letter-spacing:.05em;font-size:12px">Before you start</strong><br>Sign in with your <code style="font-family:'JetBrains Mono',Consolas,Monaco,'Courier New',monospace;font-size:12px;background-color:#ffffff;border:1px solid #d6dde7;padding:1px 5px">@kippnj.org</code> account.</div>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="In this article (table of contents)"
+      data-desc="Use for any article with more than three sections. Anchors are ids on the h2 elements."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 24px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:16px 20px;background-color:#fafbfc;border:1px solid #d6dde7;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <div style="padding-bottom:8px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#001E62">In this article</div>
+      <ul style="padding-left:20px;font-size:14px;line-height:1.9;color:#2a3340">
+      <li><a href="#submit-a-request" style="color:#1a44a0;text-decoration:underline">Submit a request</a></li>
+      <li><a href="#track-your-ticket" style="color:#1a44a0;text-decoration:underline">Track your ticket</a></li>
+      <li><a href="#response-times" style="color:#1a44a0;text-decoration:underline">Response times</a></li>
+      </ul>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Section heading"
+      data-desc="Brand heading treatment with an anchor id. Body headings start at h2 — Zendesk renders the h1 title for you."
+    >
+      <h2 id="submit-a-request" style="font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:#001E62;line-height:1.25;padding-top:12px;border-top:3px solid #001E62">Submit a request</h2>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Callout — Note"
+      data-desc="Neutral context the reader should know. Blue."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:14px 18px;background-color:#f0fafe;border:1px solid #bce5f7;border-left:4px solid #57C0E9;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <div style="padding-bottom:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#1f7fb0">Note</div>
+      <div style="font-size:14px;line-height:1.6;color:#2a3340">Requests submitted after 4:00 PM are queued for the next business day.</div>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Callout — Tip"
+      data-desc="Optional advice that saves the reader time. Green."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:14px 18px;background-color:#f9fbe9;border:1px solid #e4eea0;border-left:4px solid #C3D52E;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <div style="padding-bottom:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#7e8c12">Tip</div>
+      <div style="font-size:14px;line-height:1.6;color:#2a3340">Bookmark <a href="#" style="color:#1a44a0;text-decoration:underline">My activities</a> to jump straight to your open tickets.</div>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Callout — Warning"
+      data-desc="Something that will go wrong if ignored. Orange."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:14px 18px;background-color:#fff6e8;border:1px solid #fcd99b;border-left:4px solid #F9A21A;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <div style="padding-bottom:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#b96b00">Warning</div>
+      <div style="font-size:14px;line-height:1.6;color:#2a3340">Changing your device name breaks existing printer mappings. Re-add your printers afterward.</div>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Callout — Critical"
+      data-desc="Data loss, security, or student-privacy stakes. Red. Use sparingly."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:14px 18px;background-color:#fef0ef;border:1px solid #f7b9b6;border-left:4px solid #EE3C37;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <div style="padding-bottom:4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#b81f1b">Critical</div>
+      <div style="font-size:14px;line-height:1.6;color:#2a3340">Never share student data outside an approved KIPP system. Report suspected exposure to the Data team immediately.</div>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Numbered steps"
+      data-desc="One action per step. Name UI elements in bold exactly as they appear; keys in kbd, literal values in code."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 22px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <ol style="padding-left:22px;font-size:15px;line-height:1.6;color:#2a3340">
+      <li style="padding-bottom:12px">Go to <a href="#" style="color:#1a44a0;text-decoration:underline">help.kippnj.org</a> and click <strong style="color:#001E62">Submit a request</strong>.</li>
+      <li style="padding-bottom:12px">Choose <strong style="color:#001E62">Technology</strong> from the request type list.</li>
+      <li style="padding-bottom:12px">Enter your school code in the <strong style="color:#001E62">Location</strong> field, for example <code style="font-family:'JetBrains Mono',Consolas,Monaco,'Courier New',monospace;font-size:13px;background-color:#f4f6f9;border:1px solid #d6dde7;padding:1px 5px">NWK-RISE</code>.</li>
+      <li style="padding-bottom:12px">Attach a screenshot. Press <kbd style="font-family:'JetBrains Mono',Consolas,Monaco,'Courier New',monospace;font-size:12px;background-color:#ffffff;border:1px solid #b6c0cf;border-bottom-width:2px;border-radius:3px;padding:2px 6px;color:#001E62">Shift</kbd> + <kbd style="font-family:'JetBrains Mono',Consolas,Monaco,'Courier New',monospace;font-size:12px;background-color:#ffffff;border:1px solid #b6c0cf;border-bottom-width:2px;border-radius:3px;padding:2px 6px;color:#001E62">Cmd</kbd> + <kbd style="font-family:'JetBrains Mono',Consolas,Monaco,'Courier New',monospace;font-size:12px;background-color:#ffffff;border:1px solid #b6c0cf;border-bottom-width:2px;border-radius:3px;padding:2px 6px;color:#001E62">4</kbd> to capture a region.</li>
+      <li>Click <strong style="color:#001E62">Submit</strong>. You will see a confirmation with your ticket number.</li>
+      </ol>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Data table"
+      data-desc="Keep to four columns or fewer — tables do not reflow on mobile."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 22px;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif" cellpadding="0" cellspacing="0">
+      <thead><tr>
+      <th scope="col" style="text-align:left;padding:11px 14px;background-color:#001E62;color:#ffffff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:1px solid #001E62">Priority</th>
+      <th scope="col" style="text-align:left;padding:11px 14px;background-color:#001E62;color:#ffffff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:1px solid #001E62">First response</th>
+      <th scope="col" style="text-align:left;padding:11px 14px;background-color:#001E62;color:#ffffff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;border:1px solid #001E62">Example</th>
+      </tr></thead>
+      <tbody>
+      <tr><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#2a3340;vertical-align:top">Urgent</td><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#2a3340;vertical-align:top">1 hour</td><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#5a6675;vertical-align:top">Whole-school network outage</td></tr>
+      <tr><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#2a3340;background-color:#fafbfc;vertical-align:top">High</td><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#2a3340;background-color:#fafbfc;vertical-align:top">4 hours</td><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#5a6675;background-color:#fafbfc;vertical-align:top">Classroom projector down</td></tr>
+      <tr><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#2a3340;vertical-align:top">Normal</td><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#2a3340;vertical-align:top">2 business days</td><td style="padding:11px 14px;border:1px solid #d6dde7;font-size:14px;color:#5a6675;vertical-align:top">Software install request</td></tr>
+      </tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Code block"
+      data-desc="div + code with white-space:pre-wrap. Not &lt;pre&gt; — its default margin is stripped and returns on the published page."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 22px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:0;background-color:#0d1526;border:1px solid #0d1526;border-radius:3px">
+      <div style="padding:16px 18px;font-family:'JetBrains Mono',Consolas,Monaco,'Courier New',monospace;font-size:13px;line-height:1.7;color:#c9d6ee;white-space:pre-wrap;word-spacing:normal"><code style="font-family:'JetBrains Mono',Consolas,Monaco,'Courier New',monospace;color:#c9d6ee">SELECT student_id, school_code, enrolled_on
+      FROM roster.active
+      WHERE region = 'NWK'
+      ORDER BY enrolled_on DESC;</code></div>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Accordion"
+      data-desc="details + summary are supported and need no JavaScript. Good for FAQs and optional detail."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:0;border:1px solid #d6dde7;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <details>
+      <summary style="padding:14px 18px;background-color:#fafbfc;font-size:14px;font-weight:700;color:#001E62">What if I forgot my ticket number?</summary>
+      <div style="padding:14px 18px;border-top:1px solid #d6dde7;font-size:14px;line-height:1.6;color:#2a3340">Open <strong style="color:#001E62">My activities</strong> from the avatar menu. Every request you have submitted is listed there with its number and status.</div>
+      </details>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Button link"
+      data-desc="There is no button element — a styled inline-block anchor is the CTA."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 22px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:0 10px 0 0;width:1%;white-space:nowrap">
+      <a href="#" style="display:inline-block;padding:13px 26px;background-color:#001E62;color:#ffffff;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;border-radius:4px">Submit a request</a>
+      </td>
+      <td style="padding:0">
+      <a href="#" style="display:inline-block;padding:11px 24px;background-color:#ffffff;color:#001E62;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-decoration:none;border:2px solid #001E62;border-radius:4px">View my tickets</a>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Screenshot with caption"
+      data-desc="div + img + caption div. Not &lt;figure&gt; — its default 1em 40px margin cannot be zeroed and would indent the image 40px. Screenshots stay square."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 22px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:0;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <div>
+      <img src="https://placehold.co/1200x520/eef3fc/001E62?text=Screenshot" alt="The Submit a request form with the Technology option selected" style="width:100%;max-width:100%;height:auto;display:block;border:1px solid #d6dde7">
+      <div style="padding-top:8px;font-size:13px;line-height:1.5;color:#5a6675;border-left:3px solid #d6dde7;padding-left:12px">The request form with <strong style="color:#001E62">Technology</strong> selected.</div>
+      </div>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Video embed"
+      data-desc="iframes are allowed only from YouTube, Vimeo, Loom, Wistia, Vidyard, Brightcove, JW Player and Microsoft Stream."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:0 0 22px" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:0">
+      <iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" width="100%" height="380" frameborder="0" allowfullscreen title="How to submit a support request" style="display:block;border:1px solid #d6dde7;aspect-ratio:16/9;width:100%"></iframe>
+      </td></tr></tbody></table>
+    </script>
+
+    <script
+      type="text/plain"
+      data-name="Related articles"
+      data-desc="Closes the article. Keep to five links or fewer."
+    >
+      <table style="width:100%;border-collapse:collapse;margin:32px 0 0" cellpadding="0" cellspacing="0"><tbody><tr>
+      <td style="padding:18px 20px;background-color:#001E62;font-family:'Hanken Grotesk',Whitney,'Helvetica Neue',Helvetica,Arial,sans-serif">
+      <div style="padding-bottom:10px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#F9A21A">Related articles</div>
+      <ul style="padding-left:20px;font-size:14px;line-height:2;color:#ffffff">
+      <li><a href="#" style="color:#ffffff;text-decoration:underline">Resetting your KIPP NJ password</a></li>
+      <li><a href="#" style="color:#ffffff;text-decoration:underline">Connecting to staff Wi-Fi</a></li>
+      <li><a href="#" style="color:#ffffff;text-decoration:underline">Requesting a new device</a></li>
+      </ul>
+      </td></tr></tbody></table>
+    </script>
+
+    <script>
+      (function () {
+        var out = document.getElementById("out");
+        var blocks = document.querySelectorAll('script[type="text/plain"]');
+        blocks.forEach(function (b) {
+          var raw = b.textContent.replace(/^\n/, "").replace(/\s+$/, "");
+          var sec = document.createElement("section");
+          sec.className = "snip";
+          var head = document.createElement("header");
+          var h = document.createElement("h2");
+          h.textContent = b.dataset.name;
+          var d = document.createElement("span");
+          d.className = "desc";
+          d.textContent = b.dataset.desc;
+          head.appendChild(h);
+          head.appendChild(d);
+          var prev = document.createElement("div");
+          prev.className = "preview";
+          prev.innerHTML = raw;
+          var cw = document.createElement("div");
+          cw.className = "codewrap";
+          var pre = document.createElement("pre");
+          pre.textContent = raw;
+          var btn = document.createElement("button");
+          btn.className = "copy";
+          btn.textContent = "Copy";
+          btn.addEventListener("click", function () {
+            navigator.clipboard.writeText(raw).then(function () {
+              btn.textContent = "Copied";
+              btn.classList.add("done");
+              setTimeout(function () {
+                btn.textContent = "Copy";
+                btn.classList.remove("done");
+              }, 1400);
+            });
+          });
+          cw.appendChild(btn);
+          cw.appendChild(pre);
+          sec.appendChild(head);
+          sec.appendChild(prev);
+          sec.appendChild(cw);
+          out.appendChild(sec);
+        });
+      })();
+    </script>
+  </body>
+</html>

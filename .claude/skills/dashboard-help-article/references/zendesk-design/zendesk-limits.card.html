@@ -1,0 +1,97 @@
+<!-- @dsCard group="Zendesk" viewport="700x290" name="What Zendesk strips" subtitle="The sanitizer runs by default — design inside these limits" -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 20px 24px;
+        background: var(--surface-card);
+        font-family: var(--font-sans);
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      h3 {
+        font-family: var(--font-brand);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 0 0 10px;
+      }
+      .no h3 {
+        color: var(--red-700);
+      }
+      .yes h3 {
+        color: var(--green-700);
+      }
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      li {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        line-height: 1.45;
+        padding: 5px 8px;
+        border-radius: 3px;
+      }
+      .no li {
+        background: var(--red-50);
+        color: var(--red-700);
+      }
+      .yes li {
+        background: var(--green-50);
+        color: var(--green-700);
+      }
+      .note {
+        margin-top: 14px;
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: var(--text-muted);
+        border-top: 1px solid var(--divider);
+        padding-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cols">
+      <div class="no">
+        <h3>Removed from the response</h3>
+        <ul>
+          <li>&lt;style&gt; &lt;script&gt; &lt;link&gt;</li>
+          <li>&lt;button&gt; &lt;input&gt; &lt;form&gt; &lt;svg&gt;</li>
+          <li>margin — except on &lt;table&gt;</li>
+          <li>box-shadow · opacity · transform</li>
+          <li>position · float (figure only)</li>
+          <li>gap · flex-* · grid-* · var()</li>
+        </ul>
+      </div>
+      <div class="yes">
+        <h3>Safe to use</h3>
+        <ul>
+          <li>div span section details summary</li>
+          <li>table thead tbody tr th td</li>
+          <li>padding · border-* · border-radius</li>
+          <li>background-color · color · font-*</li>
+          <li>width · max-width · text-align</li>
+          <li>class · id · aria-* · data-*</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">
+      Unsafe HTML is not deleted from the stored article — it is left out of the
+      response sent to the browser. The editor looks correct; the published page
+      does not. Always verify published.
+    </p>
+  </body>
+</html>
