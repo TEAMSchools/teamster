@@ -25,13 +25,13 @@ select
     custom_7 as grade_level,
 
     -- Focus stores this FK as a string here (int64 everywhere else) and prefixes
-    -- live postings with a grade-type token (e.g. DT7181), so strip the token
-    -- before casting: downstream joins to stg_focus__marking_periods then compare
-    -- plain columns. The pattern is anchored so an unrecognized format extracts
-    -- null and fails not_null, rather than silently yielding a wrong id.
-    -- TODO: the token itself is dropped; decode it from the raw dlt table if it
-    -- turns out to distinguish grade types.
-    cast(
-        regexp_extract(marking_period_id, r'^[A-Z]*([0-9]+)$') as int
-    ) as marking_period_id,
+    -- live postings with a grade-type token (e.g. DT7181). safe_cast keeps only
+    -- values that are already a plain id, so downstream joins to
+    -- stg_focus__marking_periods compare plain columns; a prefixed value goes
+    -- null rather than being decoded, since stripping a token cannot be done
+    -- safely without knowing Focus's full token vocabulary — the trailing digit
+    -- run of an unknown token could collide with a real id.
+    -- TODO: decode the token from the raw dlt table once its vocabulary is
+    -- known, so live postings recover their marking period.
+    safe_cast(marking_period_id as int) as marking_period_id,
 from {{ source("focus", "student_report_card_grades") }}

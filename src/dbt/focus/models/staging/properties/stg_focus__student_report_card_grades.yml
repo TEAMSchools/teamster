@@ -38,20 +38,16 @@ models:
                 severity: error
       - name: marking_period_id
         description: >-
-          Focus marking-period id the grade was earned in. Focus stores this as
-          text on this table alone and prefixes live postings with a grade-type
-          token (e.g. DT7181), so only the digits are kept and cast to an
-          integer here, matching stg_focus__marking_periods and every other
-          reference to a marking period. The token is not carried forward, and a
-          value matching neither shape extracts null so that not_null catches
-          it. Tested not_null as well as for referential integrity —
-          relationships skips null foreign keys, so it alone would not catch the
-          column going empty.
+          Focus marking-period id the grade was earned in, as an integer to
+          match stg_focus__marking_periods and every other reference to a
+          marking period. Focus stores this as text on this table alone and
+          prefixes live postings with a grade-type token (e.g. DT7181); those
+          values are safe cast to null rather than decoded, so a live-posted
+          grade carries no marking period until the token vocabulary is known.
+          Nullable by design for that reason — only referential integrity is
+          tested, and relationships skips null foreign keys.
         data_type: int
         data_tests:
-          - not_null:
-              config:
-                severity: error
           - relationships:
               arguments:
                 to: ref('stg_focus__marking_periods')

@@ -37,7 +37,11 @@ models:
       - name: student_id
         description: Focus student id the grade belongs to.
       - name: marking_period_id
-        description: Focus marking-period id the grade was earned in.
+        description: >-
+          Focus marking-period id the grade was earned in. Null on grades posted
+          live in Focus, which store a token-prefixed id that staging cannot
+          safely decode — the marking_period_ columns below are null on those
+          rows too.
       - name: grad_subject_id
         description: >-
           Focus graduation-subject id the course counts toward, populated only
