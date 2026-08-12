@@ -50,11 +50,10 @@ models:
               - assessment_id
           config:
             severity: error
-            # Subject rows are one per student per assessment. This is what the
-            # subject branch's select distinct projects to, and it holds only
-            # while the conversion sheet keeps one metadata combination per
-            # assessment_id. A typo that varies any of them breaks the grain
-            # here rather than silently.
+            # Subject rows are one per student per assessment, inherited from
+            # Illuminate's overall grain. Holds only while the conversion sheet
+            # keeps one metadata combination per assessment_id — a typo that
+            # varies any of them breaks the grain here rather than silently.
             where: response_type = 'Subject'
       - dbt_utils.unique_combination_of_columns:
           arguments:
@@ -143,9 +142,10 @@ models:
       - name: response_type
         data_type: string
         description: >-
-          group for section rows, NA for composite rows. Illuminate's overall
-          rows are consumed to build section and composite scores rather than
-          emitted.
+          Group, Subject, or Total. Group carries Illuminate's response-group
+          detail. Subject and Total are both built from Illuminate's overall
+          rows, which are never emitted as themselves — Subject one per
+          assessment, Total one per administration.
       - name: response_type_description
         data_type: string
         description: Illuminate response group name. Reads NA on composite rows.
