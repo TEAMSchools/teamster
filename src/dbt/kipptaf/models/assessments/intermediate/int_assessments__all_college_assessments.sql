@@ -9,16 +9,13 @@ with
             test_type,
             scope,
             subject_area,
+            aligned_subject_area,
             course_discipline,
             score_type,
             scale_score,
 
-            if(
-                subject_area in ('Composite', 'Combined'), 'Total', aligned_subject_area
-            ) as aligned_subject_area,
-
             row_number() over (
-                partition by powerschool_student_number, scope, score_type
+                partition by powerschool_student_number, score_type
                 order by scale_score desc
             ) as rn_highest,
 
@@ -103,11 +100,8 @@ with
                 scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope
             ) as benchmark_aligned_scope,
 
-            /* coalesce is defensive only. Practice total rows used to carry a
-               null score_type; the practice hub's Total branch now assigns one
-               per test type, so nothing null-valued is expected here. Kept
-               because a null would evaluate the whole predicate to null and
-               silently drop the row from the aligned maxes below. */
+            /* coalesce is defensive: a null score_type would null the whole
+               predicate and drop the row from the maxes below. */
             scope != 'ACT'
             and coalesce(score_type, 'not a sub-test') not in (
                 'psat10_math_test',
