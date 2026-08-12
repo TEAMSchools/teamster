@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.13"
+# dependencies = ["openpyxl>=3.1", "google-cloud-bigquery>=3.0"]
+# ///
 """Build a de-identified demographics workbook for the Quill pilot roster.
 
 The roster export keys students by Quill's own platform user ID, not by any
@@ -261,6 +265,7 @@ ROSTER_HEADERS: tuple[str, ...] = (
 
 def read_roster(path: Path) -> list[RosterRow]:
     """Read the Quill roster export, keeping only the columns we carry forward."""
+    # trunk-ignore(pyright/reportMissingModuleSource): openpyxl is a PEP 723 script dep
     import openpyxl
 
     workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
@@ -273,12 +278,19 @@ def read_roster(path: Path) -> list[RosterRow]:
 
     roster: list[RosterRow] = []
     for row in rows:
-        if row[0] is None:
+        raw_id = row[0]
+        if raw_id is None:
             continue
+
+        # openpyxl types a cell as a wide union (formula, datetime, rich text).
+        # Narrow before int() so an unexpected ID cell fails loudly here rather
+        # than raising something obscure, and so pyright can check the call.
+        if not isinstance(raw_id, int | float | str):
+            raise ValueError(f"unexpected roster id cell {raw_id!r}")
 
         roster.append(
             RosterRow(
-                quill_student_id=int(row[0]),
+                quill_student_id=int(raw_id),
                 student_email=str(row[2]).strip().lower(),
                 classroom_name=str(row[3]).strip(),
                 teacher_name=str(row[4]).strip(),
