@@ -134,9 +134,15 @@ Column mapping from the existing feed:
 | `teacher_name`        | `teacher_lastfirst`                              | `teacher_name`        |
 | `assignmentsectionid` | not projected                                    | `assignmentsectionid` |
 
-`grade_category` is the one real provenance change: it moves from the section's
-grade configuration to the assignment's own category, which is where the audit
-reads it.
+`grade_category` is not just a provenance change — measured against AY2025 data,
+the values themselves change. The old feed's `grade_category` was the single
+constant string `Total_Points` on all 246,810 rows: the legacy view's
+`Total_Points` branch joined assignments with no category predicate, so the
+column carried a grading-formula type, not a category. The new feed carries real
+assignment categories: Homework 83,544, Work Habits 71,471, Formative Mastery
+48,885, Summative Mastery 5,403, and Classwork 8 — 209,311 rows total. This
+makes the column meaningful for the first time, and it is a visible change for
+anyone reading or filtering on `grade_category` on the DeansList side.
 
 The `finalgrade_category = 'Q'` filter is dropped and not replaced. It existed
 only to collapse the storecode fan-out; per-assignment rows carry no storecode.

@@ -127,7 +127,7 @@ The final `select *, ...` then picks them up with no further change.
 - [ ] **Step 3: Add the three columns to the properties yml**
 
 Add these entries to the `columns:` list, following the file's existing pattern
-of `data_type` plus source metadata. Place them after the `credit_type` entry:
+of `data_type` plus source metadata. Place them after the `students_dcid` entry:
 
 ```yaml
 - name: student_number
@@ -554,9 +554,9 @@ Expected: "No issues".
 git -C /workspaces/teamster/.worktrees/claude-deanslist-missing-assignments diff --stat origin/main...HEAD
 ```
 
-Expected: exactly six files — the spec, the plan, and the four model/properties
-files from Tasks 1 through 3. Nothing under `src/dbt/CLAUDE.md`; that rule was
-moved to the CARAT branch deliberately.
+Expected: exactly seven files — the spec, the plan, and the five
+model/properties files from Tasks 1 through 3 (2 + 2 + 1). Nothing under
+`src/dbt/CLAUDE.md`; that rule was moved to the CARAT branch deliberately.
 
 - [ ] **Step 4: Request review**
 
