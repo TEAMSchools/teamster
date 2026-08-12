@@ -2,15 +2,16 @@ models:
   - name: stg_focus__student_report_card_grades
     description: >-
       Focus student report-card grades — one row per student per course per
-      marking period. Every row Miami carries today is imported course history
+      marking period. Nearly every row is imported course history
       (course_history is Y) spanning school years well before the Focus rollout,
-      so the letter grade, GPA points and credits are denormalized onto the row
-      and the foreign keys a live report card would use — report_card_grade_id,
-      grade_scale_id, course_period_id, course_id — are all empty and are not
-      projected. Add them once Focus starts posting live report-card grades in
-      Miami. Distinct from stg_focus__report_card_grades, which is the grade
-      definition table (the available letter grades and their GPA values), not
-      student grades.
+      so the letter grade, GPA points and credits are denormalized onto the row.
+      Miami began posting live grades in Focus in August 2026; those rows leave
+      course_history empty and do populate the foreign keys a live report card
+      uses — report_card_grade_id, grade_scale_id, course_period_id, course_id —
+      which are still not projected here. Add them once live posting volume
+      warrants it. Distinct from stg_focus__report_card_grades, which is the
+      grade definition table (the available letter grades and their GPA values),
+      not student grades.
     columns:
       - name: id
         description: Primary key — Focus student_report_card_grades id.
@@ -38,11 +39,13 @@ models:
       - name: marking_period_id
         description: >-
           Focus marking-period id the grade was earned in. Focus stores this as
-          text on this table alone, so it is cast to an integer here to match
-          stg_focus__marking_periods and every other reference to a marking
-          period. Tested not_null as well as for referential integrity —
-          relationships skips null foreign keys, so it alone would not catch the
-          column going empty.
+          text on this table alone and prefixes live postings with a grade-type
+          token (e.g. DT7181), so only the trailing digits are kept and cast to
+          an integer here, matching stg_focus__marking_periods and every other
+          reference to a marking period. The token is not carried forward.
+          Tested not_null as well as for referential integrity — relationships
+          skips null foreign keys, so it alone would not catch the column going
+          empty.
         data_type: int
         data_tests:
           - not_null:
