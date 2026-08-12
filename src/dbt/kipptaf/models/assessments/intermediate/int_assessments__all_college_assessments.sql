@@ -28,6 +28,7 @@ with
             ) as rn_highest,
 
         from {{ ref("int_assessments__college_assessment_practice") }}
+        where response_type != 'Group'
     ),
 
     all_scores as (
@@ -107,9 +108,11 @@ with
                 scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', scope
             ) as benchmark_aligned_scope,
 
-            /* coalesce keeps this false rather than null on practice composite
-               rows, whose score_type is null. A null would drop them from the
-               aligned maxes below. */
+            /* coalesce is defensive only. Practice total rows used to carry a
+               null score_type; the practice hub's Total branch now assigns one
+               per test type, so nothing null-valued is expected here. Kept
+               because a null would evaluate the whole predicate to null and
+               silently drop the row from the aligned maxes below. */
             scope != 'ACT'
             and coalesce(score_type, 'not a sub-test') not in (
                 'psat10_math_test',

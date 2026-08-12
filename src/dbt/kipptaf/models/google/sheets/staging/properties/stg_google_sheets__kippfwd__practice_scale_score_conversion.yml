@@ -23,12 +23,14 @@ models:
       - name: test_type
         data_type: string
         description: SAT, PSAT 8/9, PSAT10, or ACT.
-      - name: administration_round
+      - name: scope_round
         data_type: string
         description: >-
           Administration within an academic year — SAT1, SAT2, ACT1, PSAT891,
           PSAT101. Must differ between administrations in the same year, since
-          it partitions the composite score calculations.
+          it partitions the composite score calculations. Distinct from the
+          practice hub's administration_round, which is a month and year derived
+          from Illuminate.
       - name: subject
         data_type: string
         description: >-

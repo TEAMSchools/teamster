@@ -7,7 +7,7 @@ with
             c.assessment_id,
             c.academic_year,
             c.test_type,
-            c.administration_round,
+            c.scope_round,
             c.subject,
             c.grade_level,
             c.raw_score_low,
@@ -47,7 +47,7 @@ with
             /* Points earned... looks to be # of questions correct on Illuminate */
             a.points,
 
-            ssk.administration_round as scope_round,
+            ssk.scope_round,
             ssk.grade_level,
             ssk.test_type,
             ssk.subject,
@@ -55,6 +55,7 @@ with
             ssk.aligned_subject_area,
             ssk.score_type,
             ssk.expected_total_subjects_tested,
+            ssk.course_discipline,
 
             format_date('%B', a.date_taken) as test_month,
 
@@ -65,8 +66,6 @@ with
                 ' ',
                 format_date('%g', a.administered_at)
             ) as administration_round,
-
-            coalesce(ssk.course_discipline, 'NA') as course_discipline,
 
             max(if(a.response_type = 'overall', a.points, null)) over (
                 partition by
@@ -83,7 +82,7 @@ with
                     a.academic_year,
                     a.powerschool_student_number,
                     ssk.test_type,
-                    ssk.administration_round,
+                    ssk.scope_round,
                     ssk.grade_level
             ) as actual_total_subjects_tested,
 
@@ -101,7 +100,7 @@ with
         where a.response_type in ('group', 'overall')
     )
 
--- individual scores
+-- group scores
 select
     academic_year,
     powerschool_student_number,
@@ -115,14 +114,57 @@ select
     course_discipline,
     test_date,
     test_month,
-    response_type,
+    initcap(response_type) as response_type,
     response_type_description,
-    subject,
+    `subject`,
     subject_area,
     aligned_subject_area,
     score_type,
     points,
     percent_correct,
+    actual_total_subjects_tested,
+    expected_total_subjects_tested,
+    raw_score,
+    scale_score,
+
+from responses
+where response_type = 'group'
+
+union all
+
+-- subject scores
+-- grain projection: one row per student per assessment. Every projected column
+-- is functionally determined by powerschool_student_number + assessment_id --
+-- the ssk.* columns because the sheet holds one metadata combination per
+-- assessment_id, and raw_score/scale_score because both read the single
+-- 'overall' sibling row through a window. The distinct drops only the
+-- per-response-group columns (response_type, response_type_description, points,
+-- percent_correct); it is not a mask for upstream duplicates.
+select distinct
+    academic_year,
+    powerschool_student_number,
+    scope,
+    scope_round,
+    test_type,
+    grade_level,
+    assessment_id,
+    assessment_title,
+    administration_round,
+    course_discipline,
+    test_date,
+    test_month,
+
+    'Subject' as response_type,
+    'Subject Score' as response_type_description,
+
+    `subject`,
+    subject_area,
+    aligned_subject_area,
+    score_type,
+
+    null as points,
+    null as percent_correct,
+
     actual_total_subjects_tested,
     expected_total_subjects_tested,
     raw_score,
@@ -153,14 +195,27 @@ select
 
     format_date('%B', max(test_date)) as test_month,
 
-    'NA' as response_type,
-    'NA' as response_type_description,
+    'Total' as response_type,
+    'Total Score' as response_type_description,
     null as subject,
 
     if(test_type = 'ACT', 'Composite', 'Combined') as subject_area,
 
-    null as aligned_subject_area,
-    null as score_type,
+    'Total' as aligned_subject_area,
+
+    case
+        test_type
+        when 'ACT'
+        then 'act_composite'
+        when 'SAT'
+        then 'sat_total_score'
+        when 'PSAT 8/9'
+        then 'psat89_total'
+        when 'PSAT10'
+        then 'psat10_total'
+        when 'PSAT NMSQT'
+        then 'psatnmsqt_total'
+    end as score_type,
 
     sum(points) as points,
 

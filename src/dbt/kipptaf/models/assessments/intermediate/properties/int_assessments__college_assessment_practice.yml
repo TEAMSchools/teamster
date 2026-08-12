@@ -36,7 +36,7 @@ models:
             severity: error
             # Scoped to section rows. Composite rows have a different grain —
             # one per student administration per grade — and null assessment_id.
-            where: response_type = 'group'
+            where: response_type = 'Group'
     columns:
       - name: academic_year
         data_type: int64
@@ -56,8 +56,8 @@ models:
       - name: scope_round
         data_type: string
         description: >-
-          The sheet's administration_round — SAT1, SAT2, ACT1, PSAT891, PSAT101.
-          Part of the partition building composite scores, so two
+          The conversion sheet's scope_round — SAT1, SAT2, ACT1, PSAT891,
+          PSAT101. Part of the partition building composite scores, so two
           administrations in one year must never share a value.
       - name: test_type
         data_type: string
