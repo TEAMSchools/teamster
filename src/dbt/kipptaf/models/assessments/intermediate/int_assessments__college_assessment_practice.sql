@@ -17,10 +17,19 @@ with
             c.expected_total_subjects_tested,
 
             s.expected_test_type as test_type,
+            s.expected_aligned_scope as aligned_scope,
             s.expected_subject_area as subject_area,
             s.expected_aligned_subject_area as aligned_subject_area,
             s.expected_grouping as `grouping`,
             s.expected_course_discipline as course_discipline,
+
+            /* folds only PSAT10 and NMSQT, which are the same test in different
+               windows and share a scale. SAT and ACT stay distinct, so a max over
+               this is meaningful -- unlike aligned_scope, which folds ACT/SAT and
+               is for attainment booleans only. */
+            if(
+                c.scope in ('PSAT10', 'PSAT NMSQT'), 'PSAT10/NMSQT', c.scope
+            ) as benchmark_aligned_scope,
 
         from
             {{ ref("stg_google_sheets__kippfwd__practice_scale_score_conversion") }}
@@ -47,11 +56,14 @@ with
 
             ssk.test_type,
             ssk.scope,
+            ssk.aligned_scope,
+            ssk.benchmark_aligned_scope,
             ssk.scope_round,
             ssk.grade_level,
             ssk.subject,
             ssk.subject_area,
             ssk.aligned_subject_area,
+            ssk.`grouping`,
             ssk.score_type,
             ssk.expected_total_subjects_tested,
             ssk.course_discipline,
@@ -106,6 +118,8 @@ with
             academic_year,
             powerschool_student_number,
             scope,
+            aligned_scope,
+            benchmark_aligned_scope,
             scope_round,
             test_type,
             grade_level,
@@ -120,6 +134,7 @@ with
             `subject`,
             subject_area,
             aligned_subject_area,
+            `grouping`,
             score_type,
             points,
             percent_correct,
@@ -138,6 +153,8 @@ with
             academic_year,
             powerschool_student_number,
             scope,
+            aligned_scope,
+            benchmark_aligned_scope,
             scope_round,
             test_type,
             grade_level,
@@ -154,6 +171,7 @@ with
             `subject`,
             subject_area,
             aligned_subject_area,
+            `grouping`,
             score_type,
 
             null as points,
@@ -174,6 +192,8 @@ with
             academic_year,
             powerschool_student_number,
             scope,
+            aligned_scope,
+            benchmark_aligned_scope,
             scope_round,
             test_type,
             grade_level,
@@ -196,6 +216,7 @@ with
             if(scope = 'ACT', 'Composite', 'Combined') as subject_area,
 
             'Total' as aligned_subject_area,
+            'Total' as `grouping`,
 
             case
                 scope
@@ -237,6 +258,8 @@ with
             academic_year,
             powerschool_student_number,
             scope,
+            aligned_scope,
+            benchmark_aligned_scope,
             scope_round,
             test_type,
             grade_level,
