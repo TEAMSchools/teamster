@@ -24,7 +24,14 @@ select
     custom_6 as school_number,
     custom_7 as grade_level,
 
-    -- Focus stores this FK as a string here (int64 everywhere else); cast once so
-    -- downstream joins to stg_focus__marking_periods compare plain columns
-    cast(marking_period_id as int) as marking_period_id,
+    -- Focus stores this FK as a string here (int64 everywhere else) and prefixes
+    -- live postings with a grade-type token (e.g. DT7181). safe_cast keeps only
+    -- values that are already a plain id, so downstream joins to
+    -- stg_focus__marking_periods compare plain columns; a prefixed value goes
+    -- null rather than being decoded, since stripping a token cannot be done
+    -- safely without knowing Focus's full token vocabulary — the trailing digit
+    -- run of an unknown token could collide with a real id.
+    -- TODO: decode the token from the raw dlt table once its vocabulary is
+    -- known, so live postings recover their marking period.
+    safe_cast(marking_period_id as int) as marking_period_id,
 from {{ source("focus", "student_report_card_grades") }}
