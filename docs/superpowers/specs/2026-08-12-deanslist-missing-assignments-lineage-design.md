@@ -57,19 +57,19 @@ gradebooks are audited against per-quarter assignment-count expectations. It has
 no bearing on whether a student turned work in, so importing it into a
 student-follow-up feed would hide 3,624 AY2025 rows of real missing work.
 
-`rpt_tableau__gradebook_assignments` is deleted. It carries no dbt exposure, and
-after the re-point nothing in the repo references it — verified across `.sql`,
-`.yml`, `.yaml`, `.py` and `.md`, with the only remaining mention a historical
-plan document. There is also no Tableau extract config for it; the only extract
-configs are Clever, DeansList and Illuminate.
+`rpt_tableau__gradebook_assignments` is disabled, not deleted. Retiring a model
+in this repo is always a disable — the SQL stays in the tree and the relation
+stays queryable, so a consumer nobody knew about degrades to frozen data rather
+than vanishing.
 
-Deleting the model does not drop the prod BigQuery view, so the relation is
-orphaned until someone drops it by hand. Ship the `drop view` statement with the
-change for the requester to run, since warehouse DDL stays with them.
+It is safe to retire: it carries no dbt exposure, there is no Tableau extract
+config for it (only Clever, DeansList and Illuminate exist), and after the
+re-point nothing in the repo references it — verified across `.sql`, `.yml`,
+`.yaml`, `.py` and `.md`, with the only remaining mention a historical plan
+document.
 
-Residual risk, accepted: a workbook could still read `kipptaf_tableau` directly
-without appearing as an exposure. The absence of an exposure is the standing
-signal this repo uses for an unused reporting view.
+A disabled model stops rebuilding but does not drop its relation, so the prod
+view is left in place. No `drop view` is issued.
 
 ## Design
 
@@ -163,18 +163,12 @@ no others. The key omits `_dbt_source_project`, which means it relies on
 exactly unique on AY2025 data (209,311 rows, 209,311 distinct pairs). If a
 future region ever reuses student numbers, this test is where it surfaces.
 
-### Change 3: delete the legacy view
+### Change 3: disable the legacy view
 
-Delete both `extracts/tableau/rpt_tableau__gradebook_assignments.sql` and
+Add `config: enabled: false` to
 `extracts/tableau/properties/rpt_tableau__gradebook_assignments.yml`. The model
-carries no data tests, so there are no test nodes to remove with it.
-
-Hand this to the requester to run, since warehouse DDL is not Claude's to
-execute:
-
-```sql
-drop view if exists `teamster-332318.kipptaf_tableau.rpt_tableau__gradebook_assignments`;
-```
+carries no data tests, so there are no test nodes needing the same treatment.
+Leave the `.sql` and the prod view in place.
 
 ## Expected output
 
