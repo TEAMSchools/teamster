@@ -210,8 +210,7 @@ models:
       - name: rn_highest
         data_type: int64
         description: >-
-          Ranks a student's scores highest-first within scope, score_type, and
-          response_type, matching the official hub's convention so the two union
-          without translation. response_type is in the partition because group
-          rows repeat the section's score_type and would otherwise compete with
-          the subject row.
+          Ranks a student's scores highest-first within scope and score_type,
+          matching the official hub's convention so the two union without
+          translation. Null on group rows, which are response-group detail and
+          are not ranked — only subject and total rows carry a rank.

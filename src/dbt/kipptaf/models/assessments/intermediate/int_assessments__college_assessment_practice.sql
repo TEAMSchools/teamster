@@ -248,9 +248,15 @@ with
 select
     *,
 
-    row_number() over (
-        partition by powerschool_student_number, scope, score_type, response_type
-        order by scale_score desc
+    /* response_type stays in the partition so group rows rank among themselves
+       and never displace the subject row before being nulled. */
+    if(
+        response_type = 'Group',
+        null,
+        row_number() over (
+            partition by powerschool_student_number, scope, score_type, response_type
+            order by scale_score desc
+        )
     ) as rn_highest,
 
 from scores

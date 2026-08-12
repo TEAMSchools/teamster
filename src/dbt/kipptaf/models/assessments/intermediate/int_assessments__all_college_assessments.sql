@@ -1,24 +1,4 @@
 with
-    practice as (
-        select
-            powerschool_student_number as student_number,
-            administration_round,
-            academic_year,
-            test_date,
-            test_month,
-            test_type,
-            scope,
-            subject_area,
-            aligned_subject_area,
-            course_discipline,
-            score_type,
-            scale_score,
-            rn_highest,
-
-        from {{ ref("int_assessments__college_assessment_practice") }}
-        where response_type != 'Group'
-    ),
-
     all_scores as (
         select
             student_number,
@@ -55,7 +35,7 @@ with
         union all
 
         select
-            student_number,
+            powerschool_student_number as student_number,
             administration_round,
             academic_year,
             test_date,
@@ -85,7 +65,8 @@ with
             cast(null as numeric) as sum_running_max_superscore,
             cast(null as numeric) as runnning_superscore,
 
-        from practice
+        from {{ ref("int_assessments__college_assessment_practice") }}
+        where response_type != 'Group'
     ),
 
     benchmark_aligned as (
