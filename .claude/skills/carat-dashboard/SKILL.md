@@ -34,12 +34,18 @@ source of wrong answers:
 | Official | `int_assessments__college_assessment`          | `Official`  | kippadb + collegeboard                        |
 | Practice | `int_assessments__college_assessment_practice` | `Practice`  | Illuminate + the conversion and scaffold tabs |
 
-`rpt_tableau__college_assessment_dashboard_benchmark_calcs` — the only place the
-890 / 1010 / 1200 thresholds exist in code — reads the **official** hub only.
-Practice scores do not reach it. Do not "fix" that by feeding practice in
-without reading the spec: `rn_highest = 1` there would let a practice score
-outrank an official one and shift reported college-ready attainment
-network-wide.
+Both pipelines meet in `int_assessments__all_college_assessments`, and
+`rpt_tableau__college_assessment_dashboard_benchmark_calcs` reads that hub.
+Thresholds are no longer hardcoded — they come from the scaffold sheet's
+`hs_ready_min_score` / `college_ready_min_score`, and `EA/ED-Ready` is retired.
+
+Practice **does** reach the benchmark view now, and what makes that safe is
+`test_type` sitting in the partition of both
+`rn_highest_benchmark_aligned_scope` and `benchmark_aligned_scope_max_score`.
+Never remove it. Without it a practice score competes with an official one, can
+win, and shifts reported college-ready attainment network-wide. The view also
+joins `expected_test_type` to the hub's `test_type`, so a practice benchmark is
+never satisfied by an official result.
 
 ## Verified facts
 
@@ -63,27 +69,34 @@ and the only column spelled identically on each side.
 this work merges. Do not enter new rows there.
 
 **Conversion tab contract** — 12 columns, in this order, all `int64` except
-`test_type`, `administration_round`, `subject`, `score_type`:
+`scope`, `scope_round`, `subject`, `score_type`:
 
-`assessment_id`, `academic_year`, `test_type`, `administration_round`,
-`subject`, `grade_level`, `raw_score_low`, `raw_score_high`, `scale_score`,
+`assessment_id`, `academic_year`, `scope`, `scope_round`, `subject`,
+`grade_level`, `raw_score_low`, `raw_score_high`, `scale_score`,
 `aligned_scale_score`, `score_type`, `expected_total_subjects_tested`.
+
+The headers are lowercase snake_case. `scope` and `scope_round` were renamed
+from `Test_Type` and `Administration_Round`; the column ORDER did not change, so
+the row generator still emits pasteable output unchanged. Because the external
+declares `skip_leading_rows: 1`, columns map POSITIONALLY from the dbt
+`columns:` list — the sheet header is ignored, so renaming a header needs no
+coordinated dbt change, and reordering the sheet silently corrupts every row.
 
 **Vocabulary the conversion tab actually uses** — not what the column names
 suggest:
 
-| Column                 | Real values                                                                      | Trap                                                                                                                                                     |
-| ---------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `administration_round` | `SAT1`, `SAT2`, `ACT1`, `PSAT891`, `PSAT101`                                     | NOT `Fall`/`Winter`. Those belong to `expected_admin_season` in `expected_assessments`, a different sheet. No underscore, and PSAT keeps a trailing `1`. |
-| `subject`              | `Mathematics`, `Reading and Writing`, `Reading`, `Writing`, `English`, `Science` | `Mathematics`, never `Math`. The scaffold holds the `Math` spelling.                                                                                     |
-| `academic_year`        | The "clean" year (SY26-27 = `2026`)                                              | Illuminate's raw `academic_year` is the spring year (2027). Using it is wrong.                                                                           |
-| `test_type`            | `SAT`, `ACT`, `PSAT 8/9`, `PSAT10`                                               | Stays the real test even when Illuminate `scope` reads `Benchmark` or null. The sheet is the authority. `PSAT10` has no space.                           |
-| `scale_score`          | From the **`Scale Score Lower`** column of College Board's table                 | A perfect section therefore reads **790, not 800** on the digital SAT.                                                                                   |
-| `aligned_scale_score`  | `scale_score`, except ×10 on grade 9-10 SAT Reading and Writing                  | Those are legacy 10-40 test scores, not 200-800 section scores. The model reads this column and does no rescaling of its own.                            |
-| `score_type`           | Must exist in `int_kippadb__standardized_test_unpivot` or the official hub       | Invented values join to nothing. There is no `sat_writing` with data and no `act_writing` at all.                                                        |
+| Column                | Real values                                                                      | Trap                                                                                                                                                     |
+| --------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scope_round`         | `SAT1`, `SAT2`, `ACT1`, `PSAT891`, `PSAT101`                                     | NOT `Fall`/`Winter`. Those belong to `expected_admin_season` in `expected_assessments`, a different sheet. No underscore, and PSAT keeps a trailing `1`. |
+| `subject`             | `Mathematics`, `Reading and Writing`, `Reading`, `Writing`, `English`, `Science` | `Mathematics`, never `Math`. The scaffold holds the `Math` spelling.                                                                                     |
+| `academic_year`       | The "clean" year (SY26-27 = `2026`)                                              | Illuminate's raw `academic_year` is the spring year (2027). Using it is wrong.                                                                           |
+| `scope`               | `SAT`, `ACT`, `PSAT 8/9`, `PSAT10`                                               | The real test, even when Illuminate's own scope reads `Benchmark` or null. The sheet is the authority. `PSAT10` has no space.                            |
+| `scale_score`         | From the **`Scale Score Lower`** column of College Board's table                 | A perfect section therefore reads **790, not 800** on the digital SAT.                                                                                   |
+| `aligned_scale_score` | `scale_score`, except ×10 on grade 9-10 SAT Reading and Writing                  | Those are legacy 10-40 test scores, not 200-800 section scores. The model reads this column and does no rescaling of its own.                            |
+| `score_type`          | Must exist in `int_kippadb__standardized_test_unpivot` or the official hub       | Invented values join to nothing. There is no `sat_writing` with data and no `act_writing` at all.                                                        |
 
 **`academic_year` IS a join key now.** The conversion-to-scaffold join is on
-(`academic_year`, `test_type` = `expected_scope`, `score_type` =
+(`academic_year`, `scope` = `expected_scope`, `score_type` =
 `expected_score_type`). A wrong year silently drops every band for that
 assessment, because the join is inner. This changed — older notes saying
 `Academic_Year` is not a join key describe the superseded model.
@@ -131,24 +144,25 @@ order by assessment_id
 
 Derivation rules:
 
-| Field                  | From                                                                                                      |
-| ---------------------- | --------------------------------------------------------------------------------------------------------- |
-| `Assessment_ID`        | URL query param                                                                                           |
-| `Academic_Year`        | `academic_year_clean`                                                                                     |
-| `Test_Type`            | Title prefix (`SAT-26-27-…` → `SAT`). Never from `scope`, which reads `Benchmark`.                        |
-| `Administration_Round` | Title's `BOY` → `SAT1`, `MOY` → `SAT2`                                                                    |
-| `Subject`              | Title suffix mapped to sheet vocabulary: `ReadingWriting` → `Reading and Writing`, `Math` → `Mathematics` |
-| `Grade_Level`          | Title's `Nth Grade`, cross-checked as `grade_level_id − 1`                                                |
+| Field           | From                                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------------------- |
+| `Assessment_ID` | URL query param                                                                                           |
+| `Academic_Year` | `academic_year_clean`                                                                                     |
+| `scope`         | Title prefix (`SAT-26-27-…` → `SAT`). Never from Illuminate's own scope, which reads `Benchmark`.         |
+| `scope_round`   | Title's `BOY` → `SAT1`, `MOY` → `SAT2`                                                                    |
+| `Subject`       | Title suffix mapped to sheet vocabulary: `ReadingWriting` → `Reading and Writing`, `Math` → `Mathematics` |
+| `Grade_Level`   | Title's `Nth Grade`, cross-checked as `grade_level_id − 1`                                                |
 
 Present the derived table to the user for confirmation before generating rows.
 `subject_area` is frequently `null` on Reading/Writing assessments — expected,
 and exactly why the sheet is authoritative.
 
-**BOY and MOY must get different `Administration_Round` values.** The composite
-branch partitions `sum(scale_score)` by `scope_round` + `administration_round`,
-and the derived `administration_round` is null when `administered_at` is null.
-If both rounds shared a value, a student's BOY and MOY sections would sum into
-one meaningless 1600+ total.
+**BOY and MOY must get different `scope_round` values.** The total branch
+partitions `sum(scale_score)` by `scope_round`, and nothing else distinguishes
+the two rounds — the hub's `administration_round` is derived from Illuminate's
+`administered_at`, which is null on every externally created assessment. If both
+rounds shared a value, a student's BOY and MOY sections would sum into one
+meaningless 1600+ total.
 
 ### Step 3 — ask for the scale scores
 
@@ -271,7 +285,7 @@ carry the test type, grade, subject, and score type.
 
 ```sql
 with conv as (
-  select distinct academic_year, test_type, grade_level, subject, score_type
+  select distinct academic_year, scope, grade_level, subject, score_type
   from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__practice_scale_score_conversion`
 ),
 scaf as (
@@ -283,13 +297,13 @@ select c.*, if(s.expected_score_type is null, 'MISSING', 'present') as status
 from conv as c
 left join scaf as s
   on c.academic_year = s.academic_year
-  and c.test_type = s.expected_scope
+  and c.scope = s.expected_scope
   and c.score_type = s.expected_score_type
 order by status desc, 1, 2, 3
 ```
 
 This finds section rows only. Total rows have no conversion counterpart, so
-check separately that each (`academic_year`, `test_type`) has a row with
+check separately that each (`academic_year`, `scope`) has a row with
 `expected_grouping = 'Total'` — `act_composite`, `sat_total_score`,
 `psat89_total`, `psat10_total`.
 
@@ -346,17 +360,17 @@ instead.
 **Status: shipped for SY26-27.** 181 rows entered and audited clean (every
 digest matches source). Use these as the format precedent:
 
-| `Assessment_ID` | `Test_Type` | `Administration_Round` | `Subject`           | `Grade_Level` | Rows | Raw  | Scale   |
-| --------------- | ----------- | ---------------------- | ------------------- | ------------- | ---- | ---- | ------- |
-| 226308          | `PSAT 8/9`  | `PSAT891`              | Reading and Writing | 9             | 50   | 0-66 | 120-720 |
-| 226309          | `PSAT 8/9`  | `PSAT891`              | Mathematics         | 9             | 42   | 0-54 | 120-690 |
-| 226310          | `PSAT10`    | `PSAT101`              | Reading and Writing | 10            | 49   | 0-66 | 160-760 |
-| 226311          | `PSAT10`    | `PSAT101`              | Mathematics         | 10            | 40   | 0-54 | 160-760 |
+| `assessment_id` | `scope`    | `scope_round` | `subject`           | `grade_level` | Rows | Raw  | Scale   |
+| --------------- | ---------- | ------------- | ------------------- | ------------- | ---- | ---- | ------- |
+| 226308          | `PSAT 8/9` | `PSAT891`     | Reading and Writing | 9             | 50   | 0-66 | 120-720 |
+| 226309          | `PSAT 8/9` | `PSAT891`     | Mathematics         | 9             | 42   | 0-54 | 120-690 |
+| 226310          | `PSAT10`   | `PSAT101`     | Reading and Writing | 10            | 49   | 0-66 | 160-760 |
+| 226311          | `PSAT10`   | `PSAT101`     | Mathematics         | 10            | 40   | 0-54 | 160-760 |
 
-`Administration_Round` has no underscore and keeps a trailing `1` — user's call,
-so do not "normalize" it. The `1` leaves room for a second practice
-administration in the same grade and year, which would otherwise sum into one
-bogus total (see the BOY/MOY warning above).
+`scope_round` has no underscore and keeps a trailing `1` — user's call, so do
+not "normalize" it. The `1` leaves room for a second practice administration in
+the same grade and year, which would otherwise sum into one bogus total (see the
+BOY/MOY warning above).
 
 **Outstanding verification on 226310 / 226311.** Illuminate syncs once nightly,
 and these two were created after that run, so at entry time they were absent
@@ -441,8 +455,9 @@ Ignore `UPPER` entirely.
 
 Do not carry one PSAT bound across both — a PSAT 10 row checked against 120-720
 is 40 points out of range at each end and still passes. `SCALE_RANGE` in
-`scripts/build_scale_score_rows.py` is keyed by `Test_Type` for exactly this;
-add an entry rather than widening one.
+`scripts/build_scale_score_rows.py` is keyed by the test label for exactly this
+(the script still calls that field `Test_Type` internally); add an entry rather
+than widening one.
 
 **PSAT 10 has no separate scoring guide.** College Board publishes one practice
 form for PSAT/NMSQT and PSAT 10 (same 160-760 scale), so the PSAT/NMSQT guide is
@@ -450,8 +465,8 @@ the source for PSAT 10 rows. Nothing in the document says "PSAT 10" — say so
 plainly when reporting, and confirm the Illuminate assessment was built from
 that same form before trusting the conversion.
 
-**`Test_Type` values**: use `PSAT 8/9` and `PSAT10`. These match the `scope`
-values already in `int_assessments__college_assessment` (verified: `PSAT 8/9`,
+**`scope` values**: use `PSAT 8/9` and `PSAT10`. These match the `scope` values
+already in `int_assessments__college_assessment` (verified: `PSAT 8/9`,
 `PSAT10`, `PSAT NMSQT`, alongside `SAT` and `ACT`) and the `benchmark_group`
 prefixes in `_benchmark_calcs` (`PSAT 8/9_...`, `PSAT10/NMSQT_...`). Do not
 invent a new spelling — `_benchmark_calcs` folds `PSAT10` and `PSAT NMSQT` into
@@ -607,7 +622,7 @@ select
   Assessment_ID,
   count(*) as n_rows,
   count(distinct format('%T|%T|%T|%T|%T',
-    Academic_Year, Test_Type, Administration_Round, Subject, Grade_Level
+    academic_year, scope, scope_round, subject, grade_level
   )) as n_meta_combos,
   min(Raw_Score_Low) as raw_lo,
   max(Raw_Score_High) as raw_hi,
@@ -682,9 +697,10 @@ for aid in sorted(rows):
 Two assessments sharing a conversion table (common — BOY and MOY often reuse
 one) produce identical digests. That is a valid result, not a duplication bug.
 
-**What the audit cannot catch**: `Test_Type` is `SAT` while Illuminate `scope`
-is `Benchmark`, so there is nothing to cross-check it against. A typo there
-passes every check above. Eyeball those values explicitly.
+**What the audit cannot catch**: the sheet's `scope` is authoritative and
+Illuminate's own scope disagrees by design, so there is nothing to cross-check
+it against. A typo there passes every check above. Eyeball those values
+explicitly.
 
 ## Procedure: Debug a practice score that isn't appearing
 
@@ -732,13 +748,15 @@ Work outward from the student, stopping at the first layer with zero rows.
   the `overall` sibling via
   `max(if(response_type = 'overall', …)) over (partition by … assessment_id)`,
   and that window must live in the `responses` CTE where both row types exist.
-  Computing it in a select that already filters `where response_type = 'group'`
+  Computing it in a select that already filters `where response_type = 'Group'`
   returns null on every row, silently — the condition is never true over the
   surviving partition.
-- **`scope` is Illuminate's and is unusable for logic.** It reads `SAT`/`ACT` on
-  AY2023 rows, `Benchmark` on the SY26-27 SAT assessments, and null on the
-  PSATs. Every predicate keys on the sheet's `test_type`. `'PSAT 8/9'` and
-  `'PSAT10'` are the official hub's vocabulary and never appear in `scope`.
+- **`scope` now comes from the sheet, not Illuminate.** The hub's `scope` is the
+  real test and `test_type` is the constant `Practice`, matching the official
+  hub. Illuminate's own scope — `SAT`/`ACT` on AY2023 rows, `Benchmark` on the
+  SY26-27 SAT assessments, null on the PSATs — is never read. Every predicate
+  selecting a test keys on `scope`; keying on `test_type` matches nothing and
+  fails silently.
 - **`grouping` is a BigQuery reserved word** (`GROUPING SETS`). Aliasing the
   scaffold's `expected_grouping` to `grouping` needs backticks.
 - **Two defects are now FIXED** — do not re-flag them from older notes.
@@ -747,12 +765,28 @@ Work outward from the student, stopping at the first layer with zero rows.
   duplicated (the composite is built with `group by`, so ACT is 1:1 at 379 rows
   where production had 1,094). Both changes are documented in the reference
   doc's impact section.
+- **AY2023 grade 9-10 SAT is excluded on purpose — do not re-add it.** KIPP
+  Forward ruled those administrations invalid (grades 9-10 should have sat PSAT,
+  not a full SAT form). The exclusion lives in the scaffold sheet: all three
+  AY2023 SAT Practice rows were deleted (`sat_math`, `sat_ebrw`,
+  `sat_total_score`), so the conversion CTE's inner join drops every band. Their
+  conversion bands are still in the sheet and are inert. Deleting `sat_math` was
+  safe only because grade 11 AY2023 has no data at all — 138849 and 138850
+  return zero rows from every Illuminate layer. AY2023 ACT stays and still
+  reports 379 composites.
+- **Deleting a scaffold row is the exclusion mechanism, and it is grade-blind.**
+  The conversion-to-scaffold join keys on (`academic_year`, `scope`,
+  `score_type`) and deliberately omits grade, so a score type shared across
+  grades cannot be excluded for one grade only. A first attempt at the AY2023
+  exclusion removed Reading and Writing but left `sat_math`, which grade 11 also
+  uses — leaving 737 Total rows with `actual_total_subjects_tested = 1` against
+  `expected = 3` and a null score on every one.
 
 ## Common mistakes
 
 | Mistake                                                                           | Consequence                                                                           |
 | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Entering `Fall`/`Winter` in `Administration_Round`                                | Inconsistent with all 12 legacy rows; `scope_round` becomes a value nothing else uses |
+| Entering `Fall`/`Winter` in `scope_round`                                         | Inconsistent with all 12 legacy rows; `scope_round` becomes a value nothing else uses |
 | Entering `Math` instead of `Mathematics`                                          | Breaks the subject join and the total's subject count                                 |
 | Using Illuminate's `academic_year` (2027) instead of `academic_year_clean` (2026) | Rows sort into the wrong year                                                         |
 | Using `Scale Score Upper`                                                         | Every score inflated ~20 points against history                                       |

@@ -29,33 +29,36 @@ Three further models exist in the repo but are `enabled: false` and are not part
 of the workbook — `rpt_tableau__college_assessment_dashboard`,
 `_dashboard_historic`, and `_qc_report`.
 
-### Naming trap — `test_type` and `scope` are swapped between the hubs
+### Resolved — the hubs now share one vocabulary
 
-Read this before joining or unioning the two hubs. The columns share names and
-mean opposite things:
+Both hubs use the same convention: `test_type` is `Official` or `Practice`, and
+`scope` is the test itself.
 
-| Source                                         | `test_type`                | `scope`                                               |
-| ---------------------------------------------- | -------------------------- | ----------------------------------------------------- |
-| `int_assessments__college_assessment`          | `Official`                 | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT                |
-| `stg_google_sheets__kippfwd__scaffold`         | `Official`, `Practice`     | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT                |
-| `int_assessments__college_assessment_practice` | ACT, SAT, PSAT 8/9, PSAT10 | Illuminate's — `Benchmark` or null on new assessments |
+| Source                                         | `test_type`            | `scope`                                |
+| ---------------------------------------------- | ---------------------- | -------------------------------------- |
+| `int_assessments__college_assessment`          | `Official`             | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT |
+| `int_assessments__college_assessment_practice` | `Practice`             | ACT, PSAT 8/9, PSAT10, SAT             |
+| `stg_google_sheets__kippfwd__scaffold`         | `Official`, `Practice` | ACT, PSAT 8/9, PSAT NMSQT, PSAT10, SAT |
 
-Two consequences. Joining on either column silently mis-groups rather than
-erroring, since both sides hold plausible strings. And the practice hub's
-`scope` only _looks_ usable — it reads `SAT`/`ACT` on the AY2023 rows because
-Illuminate happened to carry those values, but every SY26-27 assessment reads
-`Benchmark` or null, so logic written against it will quietly match nothing.
+The practice hub used to hold the reverse — the test in `test_type`, and
+Illuminate's unusable `Benchmark`-or-null in `scope` — which meant joining or
+unioning the hubs on either column silently mis-grouped rather than erroring.
+That is gone. The conversion sheet's column was renamed `Test_Type` to `scope`,
+`test_type` now comes from the scaffold's `expected_test_type` (always
+`Practice`, since the join filters to it), and the union no longer translates
+anything.
 
-The convention the rest of the lineage follows is the official hub's:
-`test_type` is Official or Practice, `scope` is the test. The practice hub
-deviates because the kippadb standardized-testing source owns `test_type` for
-ACT/SAT and renaming it there was not wanted. The official hub resolves the
-identical conflict by aliasing at the boundary — `test_type as scope` at
-[int_assessments__college_assessment.sql:8](../../src/dbt/kipptaf/models/assessments/intermediate/int_assessments__college_assessment.sql)
-— then stamping `'Official' as test_type`. Applying the same two-line fix to the
-practice hub would remove the trap entirely; until someone does,
-**reconciliation happens in `int_assessments__all_college_assessments`** and
-every consumer of the practice hub has to know which column means what.
+!!! warning "Predicates key on `scope`, not `test_type`"
+
+    Anything selecting a specific test — the total row's `score_type`, the ACT
+    average, the benchmark folds — must read `scope`. `test_type` is a constant
+    within each hub, so a predicate like `test_type = 'ACT'` is never true and
+    fails silently. That mistake produced a null `score_type`, a `Combined`
+    subject area on ACT, and a summed ACT composite reading 4-102 instead of an
+    averaged 1-36 before it was caught.
+
+Older PR and issue text still describes the swapped shape; treat this table as
+current.
 
 ### Two score pipelines
 
@@ -498,30 +501,55 @@ is what designates an Illuminate assessment as a reportable practice assessment
 — Illuminate's own `scope` is not used, because externally created assessments
 carry `Benchmark` or null rather than the test name.
 
-### Two row types
+### Three row types
 
-`response_type = 'group'` rows are sections; `response_type = 'NA'` rows are the
-composite. Sections have no scale score of their own — Illuminate splits a
-section into ~4.7 response groups whose `points` are subsets — so the section's
-score comes from its `overall` sibling, attached with a window function rather
-than a self-join (`overall` is exactly one row per student-assessment).
+| `response_type` | Grain                          | Built from                |
+| --------------- | ------------------------------ | ------------------------- |
+| `Group`         | one per response group         | Illuminate `group` rows   |
+| `Subject`       | one per student per assessment | Illuminate `overall` rows |
+| `Total`         | one per student administration | aggregated `overall` rows |
+
+Illuminate supplies only `group` and `overall` rows. `Subject` and `Total` are
+both derived from `overall`, which is never emitted as itself.
+
+`Subject` is the section grain the official hub uses, so it is what the
+assessments hub consumes. `Group` rows carry the response-group detail and are
+excluded from the hub. Group rows have no scale score of their own — Illuminate
+splits a section into ~4.7 response groups whose `points` are subsets — so they
+borrow the score from their `overall` sibling through a window function rather
+than a self-join.
+
+**`overall` is per subject, not the composite.** Each Illuminate assessment is
+one subject, so a student's `overall` rows carry the section score types
+(`act_english`, `act_math`, …) and never a total. `act_composite` and its
+siblings exist nowhere upstream — the `Total` branch produces them from `scope`,
+because the conversion sheet has no total bands to join.
 
 ### The composite gate
 
-A composite is produced only when `actual_total_subjects_tested` equals
-`expected_total_subjects_tested`, the latter carried per administration in the
-conversion sheet. ACT averages its sections, everything else sums them — the
-same `if(test_type = 'ACT', avg(…), sum(…))` shape the official hub uses for
-`superscore`.
+A `Total` row's `scale_score` is produced only when
+`actual_total_subjects_tested` equals `expected_total_subjects_tested`, the
+latter carried per administration in the conversion sheet. ACT averages its
+sections, everything else sums them — the same
+`if(scope = 'ACT', avg(…), sum(…))` shape the official hub uses for
+`superscore`. The row itself is always emitted; only the score is nulled, so an
+incomplete sitting stays visible.
 
 Counting sections rather than naming them is what makes this general, but the
 count alone is not sufficient: it is partitioned by academic year, student,
-`test_type`, `administration_round` **and `grade_level`**. Grade is load-bearing
-because AY2023 ran two SAT forms concurrently — a three-section form for grades
-9-10 and the two-section digital form for grade 11 — both under
-`administration_round = 'SAT1'`. Four students actually sat sections from both
-forms in one round; without grade in the partition their sections pool and
-produce an invalid total, which is what production did.
+`scope_round` **and `grade_level`**. Grade is load-bearing because AY2023 ran
+two SAT forms concurrently — a three-section form for grades 9-10 and the
+two-section digital form for grade 11 — both under `scope_round = 'SAT1'`. Four
+students actually sat sections from both forms in one round; without grade in
+the partition their sections pool and produce an invalid total, which is what
+production did.
+
+`scope_round` rather than `administration_round` is deliberate. The sheet's
+round-within-year (`SAT1`, `SAT2`, `ACT1`, `PSAT891`, `PSAT101`) is reliable;
+`administration_round` is a month-and-year derived from Illuminate's
+`administered_at`, which is null on every externally created assessment. The
+sheet column was renamed from `Administration_Round` to `scope_round` so the two
+stop reading as the same thing.
 
 The composite is built with `group by`, not `select distinct` over window
 functions. That is deliberate: `course_discipline` and `test_date` vary within
@@ -543,17 +571,20 @@ error, because the condition is never true over the surviving partition.
 **`grouping` is a BigQuery reserved word.** The scaffold's `expected_grouping`
 needs backticks when aliased to `grouping` (`GROUPING SETS`).
 
-**The conversion-to-scaffold join needs `select distinct`.** Joining on
-(`academic_year`, `test_type`, `score_type`) matches both AY2023 SAT scaffold
-rows for `sat_math`, doubling those bands. The `distinct` is grain projection —
-every selected column is functionally determined by `assessment_id` +
-`raw_score_low` — not a mask for upstream duplicates. If the vocabulary ever
-varies by grade, this breaks quietly and the join needs the grade split instead.
+**The conversion-to-scaffold join keeps a `select distinct`.** It joins on
+(`academic_year`, `scope`, `score_type`), and the scaffold's uniqueness key
+includes `expected_grade_level` while this join deliberately omits grade. No
+(`academic_year`, `scope`, `score_type`) currently has more than one scaffold
+row, so the `distinct` is a no-op today — it guards a future administration that
+needs different vocabulary per grade, which would otherwise match two rows and
+fan out silently.
 
-**`scope` is Illuminate's, and is not usable for logic.** It reads `SAT`/`ACT`
-on the AY2023 rows but `Benchmark` on the SY26-27 SAT assessments and null on
-the PSATs. Every branch keys on the sheet's `test_type`. Predicates written
-against `scope` will silently match nothing for anything created externally.
+**`rn_highest` excludes Group rows from its partition, not just its output.**
+The `if()` nulls the rank on Group rows, but `response_type` also sits in the
+partition. Drop it and Group rows compete with their Subject sibling — they
+carry the same `score_type` and the same `scale_score`, so they tie and split
+the ranks. Measured: 290 of 1,438 Subject rows lose rank 1. The same reasoning
+applies to `is_benchmark_eligible` in the assessments hub's benchmark rank.
 
 ### Changes when this version replaces the AY2023-era model
 
@@ -579,12 +610,12 @@ from no attempt. Those rows now exist with a null `scale_score` and the two
 count columns showing why. 162 SAT and 46 ACT student-rounds.
 
 **Four students lose a total, and production's numbers for them were wrong.**
-Students 19342, 200559, 201178 and 203488 each sat two sections of the grade-10
-SAT form and one of the grade-9 form in the same round. Production pooled all
-three and reported a 3-of-3 total — 620, 550, 520 and 600 respectively — summing
-sections from two different test forms on two different scales. Splitting by
-grade means neither half reaches 3 of 3, so both totals are null. These four are
-the only students whose existing scores change, and the change is a correction.
+Four students each sat two sections of the grade-10 SAT form and one of the
+grade-9 form in the same round. Production pooled all three and reported a
+3-of-3 total — 620, 550, 520 and 600 respectively — summing sections from two
+different test forms on two different scales. Splitting by grade means neither
+half reaches 3 of 3, so both totals are null. These four are the only students
+whose existing scores change, and the change is a correction.
 
 `course_discipline` is also corrected on 8,426 section rows: Math moves from
 `NA` to `MATH` (7,397 rows) and Science from `NA` to `SCI` (1,029). Production's
@@ -596,35 +627,63 @@ Schema: `total_subjects_tested` is replaced by `actual_total_subjects_tested`
 and `expected_total_subjects_tested`. Added: `grade_level`, `subject`,
 `aligned_subject_area`, `score_type`.
 
-## Planned — `int_assessments__all_college_assessments`
+## `int_assessments__all_college_assessments`
 
-A model unioning the official and practice hubs so the CARAT reporting views
-read one source, with calculations currently repeated across those views moved
+The hub unioning the official and practice hubs so the CARAT reporting views
+read one source, with calculations that were repeated across those views moved
 upstream. Modelled on `int_amplify__all_assessments`: union heterogeneous
 sources into one column set, then compute rankings over the union rather than
 within each source.
 
-Practice is reshaped to match official — one row per subject per test, where
-subject includes the total rows. Response-group detail stays in the practice hub
-and gets its own reporting view later.
+Practice enters at the `Subject` and `Total` grain
+(`where response_type != 'Group'`), matching official's one-row-per-subject
+shape. Response-group detail stays in the practice hub.
 
-Several fields need three variants: official only, practice only, and both
-combined.
+Fifteen columns are official-only and read null on practice rows —
+`aligned_subject`, `salesforce_id`, the two score-shape flags and their counts,
+`strategy_case`, `surrogate_key`, and the running-max, growth, and superscore
+family. They are computed inside the official hub rather than below the union.
 
-### Fields identified to move upstream
+### Fields moved upstream
 
-| Field                                                                | Where it lives now                                                        |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `rn_highest`                                                         | both unpivots; consumed by 4 views                                        |
-| `max_scale_score`                                                    | official hub, as `avg(scale_score)` over `rn_highest = 1`                 |
-| max score by aligned scope                                           | `_benchmark_calcs`, as the `aligned_scores_pre` and `aligned_scores` CTEs |
-| the `met_min_score_int_*` family                                     | `_over_time`, five window variants                                        |
-| attempt counts                                                       | `_participation_roster`, as a pivot plus ten windows                      |
-| `benchmark_aligned_scope`, `aligned_subject`, `aligned_subject_area` | derived by hand in three places; now data in the scaffold                 |
+| Field                                             | Status                                                             |
+| ------------------------------------------------- | ------------------------------------------------------------------ |
+| `rn_highest`                                      | **done** — each hub computes its own, the union passes it through  |
+| max score by aligned scope                        | **done** — `benchmark_aligned_scope_max_score` plus a row tag      |
+| `benchmark_aligned_scope`, `aligned_subject_area` | **done** — derived here for both branches, or data in the scaffold |
+| `max_scale_score`                                 | official hub, as `avg(scale_score)` over `rn_highest = 1`          |
+| the `met_min_score_int_*` family                  | `_over_time`, five window variants                                 |
+| attempt counts                                    | `_participation_roster`, as a pivot plus ten windows               |
 
 Prune rather than move: `superscore`, `avg_running_max_superscore` and
 `sum_running_max_superscore` have one consumer between them, and
 `runnning_superscore` (three n's) has none.
+
+### The benchmark pick lives here, not in the reporting view
+
+`_benchmark_calcs` used to select the winning score itself, with an
+`aligned_scores_pre` CTE reading the **official hub only** and a
+`dbt_utils.deduplicate` over (student, aligned scope, subject area). Both moved
+here, so official and practice get one definition instead of two:
+
+| Column                               | What it is                                        |
+| ------------------------------------ | ------------------------------------------------- |
+| `is_benchmark_eligible`              | excludes ACT and the four sub-test score types    |
+| `rn_highest_benchmark_aligned_scope` | `= 1` tags the winning row; the view filters this |
+| `benchmark_aligned_scope_max_score`  | the same winner as a value, carried on every row  |
+
+Three things about the partition, each load-bearing:
+
+- **`subject_area`, not `score_type`** — PSAT10 and PSAT NMSQT carry different
+  score types (`psat10_ebrw` against `psatnmsqt_ebrw`) but the same subject
+  area, so partitioning on score type would keep them apart and defeat the fold.
+- **`test_type`** — without it a practice score competes with an official one
+  and can win, which would move reported college-ready attainment. This is what
+  makes feeding practice into the benchmark view safe, and it is why the earlier
+  `across_test_types` variant of the max was deleted rather than renamed.
+- **`is_benchmark_eligible`** — a `row_number()` still assigns ranks to rows the
+  `if()` later nulls, so ineligible rows would consume ranks from eligible ones.
+  A `max()` needs no such guard, since it ignores nulls.
 
 ### The two folds do different jobs
 
@@ -642,19 +701,25 @@ are not interchangeable despite the near-identical names. A max partitioned on
 `ACT/SAT` would silently return the SAT value for every student and rate an
 ACT-only 36 against a 1010 threshold.
 
-Two related traps. `_benchmark_calcs` currently avoids that mix only because it
-filters `scope != 'ACT'` before computing its max — the upstream field should be
-safe by construction instead. And the sub-test score types that CTE excludes
-(`psat10_math_test`, `psat10_reading`, `sat_math_test_score`,
-`sat_reading_test_score`) must stay excluded by construction too:
-`psat10_reading` carries `subject_area = 'Reading'` on an 8-31 scale and would
-otherwise compete in a max against real section scores.
+Both exclusions are now safe by construction, in `is_benchmark_eligible`: ACT
+and the four sub-test score types (`psat10_math_test`, `psat10_reading`,
+`sat_math_test_score`, `sat_reading_test_score`) are excluded in the hub rather
+than by a `where` in the reporting view. `psat10_reading` carries
+`subject_area = 'Reading'` on an 8-31 scale and would otherwise compete in a max
+against real section scores.
 
-Note that `expected_aligned_scope` in the scaffold reads `ACT/SAT` while
-`_benchmark_calcs` computes `SAT` from its own hardcoded strings. Production is
-consistent because both sides use the same hardcoded list; the mismatch appears
-the moment the scaffold replaces it, and `_benchmark_calcs` should then join on
-`expected_scope` rather than `expected_aligned_scope`.
+`aligned_scope` is also carried on the practice hub, from the scaffold, so both
+folds are available as data. It has no consumer yet — nothing supplies it
+otherwise, so it is there for the attainment work.
+
+!!! warning "One inconsistency remains"
+
+    `_benchmark_calcs` folds `ACT/SAT` down to `SAT` in its own scaffold CTE and
+    then joins `expected_aligned_scope = benchmark_aligned_scope`. That works only
+    because the fold happens to produce the same string the hub's ACT-excluding
+    max leaves behind. Joining on `expected_scope` would express the intent
+    directly. Left as-is rather than changed blind, since the join drives every
+    reported benchmark row.
 
 ### Decisions still open
 
@@ -719,11 +784,39 @@ source and retires both `attempt_count_lifetime` and
 `alt_attempt_count_lifetime`, so `count(distinct test_date)` belongs in that
 work rather than in a separate pass over the participation views.
 
-## Open question — the grade 9 and 10 practice tests are SAT, not PSAT
+## Resolved — grade 9 and 10 AY2023 SAT is excluded from reporting
 
-Six of the eight AY2023 practice assessments are grade 9 and 10 but carry
-`Test_Type = SAT`. Ninth and tenth graders would normally sit PSAT 8/9 and PSAT
-10, so the question is whether that labelling is right.
+**Decision: those administrations are not valid and are not reported.** Ninth
+and tenth graders should have sat PSAT 8/9 and PSAT 10, not a full SAT form, so
+KIPP Forward excluded them.
+
+The exclusion is implemented in the **scaffold sheet**, not in SQL: deleting a
+Practice scaffold row for (`academic_year`, `expected_scope`,
+`expected_score_type`) makes the conversion CTE's inner join drop every band for
+it. All three AY2023 SAT practice rows are gone — `sat_math`, `sat_ebrw`, and
+`sat_total_score`. AY2023 ACT stays; grade 11 ACT is valid and still reports 379
+composites.
+
+Two things worth knowing about how that landed:
+
+- **The first attempt was incomplete.** Only the Reading and Writing score types
+  were removed, and `sat_math` survived because grade 11 uses it too and the
+  join omits grade. That left 737 Total rows with
+  `actual_total_subjects_tested = 1` against `expected = 3` — a Math-only total
+  that can never compute, null on every row. Removing `sat_math` was safe only
+  because grade 11 AY2023 has **no data**: assessments 138849 and 138850 return
+  zero rows from every layer of Illuminate, down to
+  `stg_illuminate__dna_assessments__agg_student_responses_overall`. They were
+  created and never administered.
+- **The conversion bands were left in place.** They no longer join to anything,
+  so they are inert. Delete them only if the sheet should stop implying those
+  tests are reportable.
+
+The rest of this section records why the labelling itself was correct, since
+that question comes up independently.
+
+Six of the eight AY2023 practice assessments are grade 9 and 10 but carried
+`Test_Type = SAT`. That was not a typo.
 
 **The data says they really are SAT.** The sheet's raw-score maxima match the
 legacy paper SAT question counts exactly, and match no PSAT form:
@@ -739,14 +832,9 @@ The scale ranges corroborate it. Grades 9-10 store `Reading` and `Writing` on a
 200-800. Grade 11 (138849 / 138850) is the digital two-section form, 200-790 on
 both sections.
 
-So this is not a mislabelling in the sheet. What remains open is programmatic,
-not technical: **whether 9th and 10th graders should have been sitting a full
-SAT practice form at all.** Note that SY26-27 assigns PSAT 8/9 to grade 9 and
-PSAT 10 to grade 10, so current practice has moved to the grade-appropriate
-tests — the AY2023 rows reflect the older approach. Worth confirming with KIPP
-Forward before any cross-year trend treats grade 9-10 AY2023 scores as
-comparable to SY26-27 PSAT scores. They are on different scales and different
-forms.
+So the labelling was right and the programme was wrong, which is what the
+exclusion above resolves. SY26-27 assigns PSAT 8/9 to grade 9 and PSAT 10 to
+grade 10, so current practice already uses the grade-appropriate tests.
 
 ## Unreported practice administrations in Illuminate
 
@@ -811,11 +899,75 @@ Scale scores throughout the sheet come from the guides' `LOWER` column, the
 established convention, so reported scores sit at the bottom of College Board's
 published range rather than mid-range.
 
+## Why the benchmark dashboard's totals change
+
+`rpt_tableau__college_assessment_dashboard_benchmark_calcs` reports different
+numbers after this work. **No student's score changed** — verified by full
+comparison of the rebuilt view against production, zero differences in
+`max_score` across all 8,262 shared keys. What changed is the row set and one
+threshold.
+
+### One student-facing change: 20 students move to Met
+
+Exactly one threshold moved:
+
+| Scope    | Subject  | Tier     | Production | Now |
+| -------- | -------- | -------- | ---------- | --- |
+| PSAT 8/9 | Combined | HS-Ready | 800        | 790 |
+
+That is the intended correction — the value now comes from the scaffold sheet
+instead of a hardcoded `CASE`. **20 students move from `Not Met` to `Met`** as a
+result. Lowering a threshold cannot move anyone the other way, and `No Data` is
+unaffected because it depends on a null score rather than on the threshold.
+
+Anyone reconciling a percent-met figure against a pre-merge screenshot should
+expect PSAT 8/9 HS-Ready to rise slightly for that reason alone.
+
+### The row set changes shape, so old and new keys mostly do not line up
+
+Production emits 100,590 rows; this version emits 241,416, over the same 6,706
+students. Only about 8,262 keys are directly comparable. Three reasons:
+
+- **`EA/ED-Ready` is retired.** Its three thresholds (PSAT 8/9 and PSAT10/NMSQT
+  at 1100, SAT at 1200) are gone. SAT 1200 existed nowhere else.
+- **Section rows carry a readiness tier now.** Production put the subject name
+  in `benchmark_name` for section rows (`EBRW`, `Math`) and a tier only on
+  `Combined`. Every subject area now carries both `HS-Ready` and
+  `College-Ready`, which is most of the row-count growth.
+- **`Practice` rows exist.** Production had `Official` plus a set of rows with a
+  null `test_type`; both are replaced by explicit `Official` and `Practice`.
+
+### Practice benchmarks resolve against practice scores only
+
+The view joins `expected_test_type` to the hub's `test_type`, and the hub's
+benchmark rank partitions on `test_type` as well, so a practice result can never
+satisfy an official benchmark or displace an official best. That is what made it
+safe to let practice reach this view at all — the risk flagged during design was
+precisely that `rn_highest = 1` would let a practice score outrank an official
+one.
+
+### Not changed: the 27 suppressed scores
+
+The view reads `benchmark_aligned_scope_max_score`, which retains its
+`rn_highest = 1` filter, so 27 students who hold eligible scores still read
+`No Data`. That matches production deliberately. See the next section.
+
 ## Known issue — `rn_highest = 1` discards scores whose better sibling has no test date
 
-**23 students read `No Data` in the benchmark view while holding recorded SAT
-totals of 890, 1270, and 1540.** Not a duplicate-record problem and not a filter
-anyone wrote wrong — it is an ordering accident between two models.
+**27 students read `No Data` in the benchmark view while holding eligible SAT
+scores.** Not a duplicate-record problem and not a filter anyone wrote wrong —
+it is an ordering accident between two models.
+
+Root cause measured upstream: `int_kippadb__standardized_test_unpivot` holds 670
+rows with a null date, and **342 of them carry `rn_highest = 1`** — the
+student's top score for that score type. So the rank is spent on a row that gets
+dropped. It only surfaces in 27 partitions because the benchmark max spans
+several score types and collapses to null only when _no_ row in the partition
+has rank 1. Every one is Official / SAT; practice contributes none, being all
+ACT and therefore ineligible.
+
+The upstream fix is Ops backfilling the dates in Salesforce, which is not
+planned. The model-side fix is below.
 
 `rn_highest` is ranked in the upstream unpivots,
 `partition by (student, scope, score_type) order by score desc`. The official
@@ -826,19 +978,27 @@ keep their original ranks — `rn_highest = 2`, `3`, and so on, with no rank-1 r
 anywhere in the hub for that student and score type.
 
 Anything filtering `rn_highest = 1` therefore drops the student entirely rather
-than falling back to their best surviving score. `_benchmark_calcs` does exactly
-that in `aligned_scores_pre`, so those students have no row to join and
+than falling back to their best surviving score. The filter now lives inside
+`benchmark_aligned_scope_max_score` in the assessments hub, which
+`_benchmark_calcs` reads, so those students still have no value to report and
 `met_benchmark_goal` returns `No Data`.
 
-Confirm the shape with:
+Confirm the shape with an aggregate rather than by naming students:
 
 ```sql
-select student_number, score_type, test_date, scale_score, rn_highest
-from `teamster-332318.kipptaf_assessments.int_assessments__college_assessment`
-where student_number in (10302, 6272) and scope = 'SAT'
+select
+    count(*) as partitions_with_no_rank_1,
+from (
+    select student_number, score_type, min(rn_highest) as min_rn,
+    from `teamster-332318.kipptaf_assessments.int_assessments__college_assessment`
+    where scope = 'SAT'
+    group by student_number, score_type
+)
+where min_rn > 1
 ```
 
-Both return a single row at `rn_highest = 2`.
+Affected partitions come back with `min_rn = 2` — the rank-1 row is absent, not
+low-scoring.
 
 **The filter is redundant to a `max()`.** `rn_highest = 1` marks the highest
 score per (student, scope, score_type), and a max over a set equals a max over
@@ -847,17 +1007,21 @@ filter cannot change the result. Its only live effect is suppressing scores
 whose better sibling was dropped for a missing date.
 
 `int_assessments__all_college_assessments` **retains the filter deliberately**,
-inside the `if()` feeding both aligned max fields, so that repointing consumers
-onto it is a provable no-op. Verified: with the filter, the new field reproduces
-`_benchmark_calcs.max_score` across 60,264 keys with zero differences; without
-it, 23 keys gain a value production does not have.
+inside the `if()` feeding `benchmark_aligned_scope_max_score`, so that
+repointing consumers onto it stays a provable no-op.
 
-Removing it is a real correction that moves 23 students from `No Data` to a
-scored result, some of them to `Met`. It needs to ship visibly and on its own,
-not folded into a refactor. The alternative fix — moving the ranking downstream
-of the null-date filter, so ranks are dense over surviving rows — is the more
-complete repair but changes `rn_highest` for every consumer, and the hub's
-uniqueness test includes that column.
+`rn_highest_benchmark_aligned_scope` does **not** carry the filter, so the tag
+and the max disagree on exactly those 27 keys — the tag finds a winner where the
+max returns null. Anything reading the tag and taking `scale_score` gets the
+restored values; anything reading the max does not. Verified: 12,267 tagged rows
+against 12,240 with a max, zero value mismatches where both produce one.
+
+Removing the filter is a real correction. Measured impact: 27 students across 51
+threshold rows move from `No Data` to `Met`. It needs to ship visibly and on its
+own, not folded into a refactor. The alternative fix — moving the ranking
+downstream of the null-date filter, so ranks are dense over surviving rows — is
+the more complete repair but changes `rn_highest` for every consumer, and the
+hub's uniqueness test includes that column.
 
 ## Known issue — duplicate kippadb test records
 
