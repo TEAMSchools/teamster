@@ -27,10 +27,14 @@ models:
       from its third phone. `TYPE` and `VALUE` for `CONTACT4` through `CONTACT7`
       are always null — no branch of this model populates those slots. Every
       slot also carries a `CALLOUT` and an `SMS` flag, both null wherever that
-      slot has no phone number (so slots 4 through 7 are always null on both)
-      and populated wherever it does — `CALLOUT` is `Y` and `SMS` is `N` only
-      for a Work Phone or Workplace type, `Y` otherwise. Focus column header
-      casing is applied at transport time via
+      slot has no phone number (so slots 4 through 7 are always null on both).
+      Where a slot has a number, `CALLOUT` is `Y` unless the Finalsite phone
+      opt-in for that slot is explicitly false, in which case both `CALLOUT` and
+      `SMS` are `N`. Otherwise `SMS` is `N` only for a Work Phone or Workplace
+      type, and `Y` in every other case. Guardian phones carry no opt-in signal
+      — the Finalsite phone object for guardians has only a type and a number —
+      so `CALLOUT`/`SMS` on guardian rows follow only the type-based rule. Focus
+      column header casing is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case.
     data_tests:
@@ -195,9 +199,10 @@ models:
         data_type: string
         description:
           Always Y. Every contact in this feed is authorized for pickup (#4769
-          decision G). Note this overwrites the per-phone
-          `emrg_N_phone_N_opt_in` consent signal that exists on the emergency
-          branch only.
+          decision G). Note this overwrites the emergency branch's own
+          `emrg_N_pickup_yn` field, not the phone opt-in signal — no contact
+          currently has `emrg_N_pickup_yn` explicitly false, so this overwrites
+          nothing today.
       - name: address
         data_type: string
         description:
@@ -264,14 +269,19 @@ models:
       - name: contact1_callout
         data_type: string
         description:
-          Callout flag for first phone. Y when CONTACT1_VALUE carries a number,
-          null when the slot is empty.
+          Callout flag for first phone. Null when the slot is empty. N when the
+          Finalsite phone opt-in for this slot (emergency rows only) is
+          explicitly false, honoring a recorded refusal of phone contact — Y
+          otherwise. Guardian rows carry no opt-in signal, so this is always Y
+          when CONTACT1_VALUE carries a number.
       - name: contact1_sms
         data_type: string
         description:
-          SMS opt-in flag for first phone. Null when CONTACT1_VALUE is empty;
-          otherwise N when CONTACT1_TYPE is Work Phone or Workplace, Y
-          otherwise.
+          SMS opt-in flag for first phone. Null when CONTACT1_VALUE is empty. N
+          when the Finalsite phone opt-in for this slot (emergency rows only) is
+          explicitly false, or when CONTACT1_TYPE is Work Phone or Workplace; Y
+          otherwise. Guardian rows carry no opt-in signal, so only the type rule
+          applies to them.
       - name: contact2_value
         data_type: string
         description:
@@ -292,14 +302,19 @@ models:
       - name: contact2_callout
         data_type: string
         description:
-          Callout flag for second phone. Y when CONTACT2_VALUE carries a number,
-          null when the slot is empty.
+          Callout flag for second phone. Null when the slot is empty. N when the
+          Finalsite phone opt-in for this slot (emergency rows only) is
+          explicitly false, honoring a recorded refusal of phone contact — Y
+          otherwise. Guardian rows carry no opt-in signal, so this is always Y
+          when CONTACT2_VALUE carries a number.
       - name: contact2_sms
         data_type: string
         description:
-          SMS opt-in flag for second phone. Null when CONTACT2_VALUE is empty;
-          otherwise N when CONTACT2_TYPE is Work Phone or Workplace, Y
-          otherwise.
+          SMS opt-in flag for second phone. Null when CONTACT2_VALUE is empty. N
+          when the Finalsite phone opt-in for this slot (emergency rows only) is
+          explicitly false, or when CONTACT2_TYPE is Work Phone or Workplace; Y
+          otherwise. Guardian rows carry no opt-in signal, so only the type rule
+          applies to them.
       - name: contact3_value
         data_type: string
         description:
@@ -321,14 +336,17 @@ models:
       - name: contact3_callout
         data_type: string
         description:
-          Callout flag for third contact slot. Y when CONTACT3_VALUE carries a
-          number, null when the slot is empty.
+          Callout flag for third contact slot. Null when the slot is empty
+          (always the case on guardian rows, which never populate CONTACT3). N
+          when the Finalsite phone opt-in for this slot is explicitly false,
+          honoring a recorded refusal of phone contact — Y otherwise.
       - name: contact3_sms
         data_type: string
         description:
           SMS opt-in flag for third contact slot. Null when CONTACT3_VALUE is
-          empty; otherwise N when CONTACT3_TYPE is Work Phone or Workplace, Y
-          otherwise.
+          empty (always the case on guardian rows). N when the Finalsite phone
+          opt-in for this slot is explicitly false, or when CONTACT3_TYPE is
+          Work Phone or Workplace; Y otherwise.
       - name: contact4_type
         data_type: string
         description:
@@ -615,6 +633,9 @@ unit_tests:
             cast(null as string) as emrg_1_phone_2_number,
             cast(null as string) as emrg_1_phone_3_type,
             cast(null as string) as emrg_1_phone_3_number,
+            cast(null as bool) as emrg_1_phone_1_opt_in,
+            cast(null as bool) as emrg_1_phone_2_opt_in,
+            cast(null as bool) as emrg_1_phone_3_opt_in,
             cast(null as string) as emrg_2_name_first_name,
             cast(null as string) as emrg_2_name_middle_name,
             cast(null as string) as emrg_2_name_last_name,
@@ -630,6 +651,9 @@ unit_tests:
             cast(null as string) as emrg_2_phone_2_number,
             cast(null as string) as emrg_2_phone_3_type,
             cast(null as string) as emrg_2_phone_3_number,
+            cast(null as bool) as emrg_2_phone_1_opt_in,
+            cast(null as bool) as emrg_2_phone_2_opt_in,
+            cast(null as bool) as emrg_2_phone_3_opt_in,
             cast(null as string) as emrg_3_name_first_name,
             cast(null as string) as emrg_3_name_last_name,
             cast(null as string) as emrg_3_email,
@@ -644,6 +668,9 @@ unit_tests:
             cast(null as string) as emrg_3_phone_2_number,
             cast(null as string) as emrg_3_phone_3_type,
             cast(null as string) as emrg_3_phone_3_number,
+            cast(null as bool) as emrg_3_phone_1_opt_in,
+            cast(null as bool) as emrg_3_phone_2_opt_in,
+            cast(null as bool) as emrg_3_phone_3_opt_in,
             cast(null as string) as emrg_4_name_first_name,
             cast(null as string) as emrg_4_name_last_name,
             cast(null as string) as emrg_4_email,
@@ -657,7 +684,10 @@ unit_tests:
             cast(null as string) as emrg_4_phone_2_type,
             cast(null as string) as emrg_4_phone_2_number,
             cast(null as string) as emrg_4_phone_3_type,
-            cast(null as string) as emrg_4_phone_3_number
+            cast(null as string) as emrg_4_phone_3_number,
+            cast(null as bool) as emrg_4_phone_1_opt_in,
+            cast(null as bool) as emrg_4_phone_2_opt_in,
+            cast(null as bool) as emrg_4_phone_3_opt_in
     expect:
       rows:
         - {
@@ -946,6 +976,9 @@ unit_tests:
             '+13055550302' as emrg_1_phone_2_number,
             'Work' as emrg_1_phone_3_type,
             '+13055550303' as emrg_1_phone_3_number,
+            cast(null as bool) as emrg_1_phone_1_opt_in,
+            cast(null as bool) as emrg_1_phone_2_opt_in,
+            cast(null as bool) as emrg_1_phone_3_opt_in,
             'Dan' as emrg_2_name_first_name,
             cast(null as string) as emrg_2_name_middle_name,
             'Ortiz' as emrg_2_name_last_name,
@@ -961,6 +994,9 @@ unit_tests:
             cast(null as string) as emrg_2_phone_2_number,
             cast(null as string) as emrg_2_phone_3_type,
             cast(null as string) as emrg_2_phone_3_number,
+            cast(null as bool) as emrg_2_phone_1_opt_in,
+            cast(null as bool) as emrg_2_phone_2_opt_in,
+            cast(null as bool) as emrg_2_phone_3_opt_in,
             '' as emrg_3_name_first_name,
             cast(null as string) as emrg_3_name_last_name,
             cast(null as string) as emrg_3_email,
@@ -975,6 +1011,9 @@ unit_tests:
             cast(null as string) as emrg_3_phone_2_number,
             cast(null as string) as emrg_3_phone_3_type,
             cast(null as string) as emrg_3_phone_3_number,
+            cast(null as bool) as emrg_3_phone_1_opt_in,
+            cast(null as bool) as emrg_3_phone_2_opt_in,
+            cast(null as bool) as emrg_3_phone_3_opt_in,
             'Gigi' as emrg_4_name_first_name,
             'Weber' as emrg_4_name_last_name,
             'gigi@example.com' as emrg_4_email,
@@ -988,7 +1027,10 @@ unit_tests:
             cast(null as string) as emrg_4_phone_2_type,
             cast(null as string) as emrg_4_phone_2_number,
             cast(null as string) as emrg_4_phone_3_type,
-            cast(null as string) as emrg_4_phone_3_number
+            cast(null as string) as emrg_4_phone_3_number,
+            cast(null as bool) as emrg_4_phone_1_opt_in,
+            cast(null as bool) as emrg_4_phone_2_opt_in,
+            cast(null as bool) as emrg_4_phone_3_opt_in
     expect:
       format: sql
       rows: |
@@ -1428,6 +1470,9 @@ unit_tests:
             cast(null as string) as emrg_1_phone_2_number,
             cast(null as string) as emrg_1_phone_3_type,
             cast(null as string) as emrg_1_phone_3_number,
+            cast(null as bool) as emrg_1_phone_1_opt_in,
+            cast(null as bool) as emrg_1_phone_2_opt_in,
+            cast(null as bool) as emrg_1_phone_3_opt_in,
             cast(null as string) as emrg_2_name_first_name,
             cast(null as string) as emrg_2_name_middle_name,
             cast(null as string) as emrg_2_name_last_name,
@@ -1443,6 +1488,9 @@ unit_tests:
             cast(null as string) as emrg_2_phone_2_number,
             cast(null as string) as emrg_2_phone_3_type,
             cast(null as string) as emrg_2_phone_3_number,
+            cast(null as bool) as emrg_2_phone_1_opt_in,
+            cast(null as bool) as emrg_2_phone_2_opt_in,
+            cast(null as bool) as emrg_2_phone_3_opt_in,
             cast(null as string) as emrg_3_name_first_name,
             cast(null as string) as emrg_3_name_last_name,
             cast(null as string) as emrg_3_email,
@@ -1457,6 +1505,9 @@ unit_tests:
             cast(null as string) as emrg_3_phone_2_number,
             cast(null as string) as emrg_3_phone_3_type,
             cast(null as string) as emrg_3_phone_3_number,
+            cast(null as bool) as emrg_3_phone_1_opt_in,
+            cast(null as bool) as emrg_3_phone_2_opt_in,
+            cast(null as bool) as emrg_3_phone_3_opt_in,
             cast(null as string) as emrg_4_name_first_name,
             cast(null as string) as emrg_4_name_last_name,
             cast(null as string) as emrg_4_email,
@@ -1470,7 +1521,10 @@ unit_tests:
             cast(null as string) as emrg_4_phone_2_type,
             cast(null as string) as emrg_4_phone_2_number,
             cast(null as string) as emrg_4_phone_3_type,
-            cast(null as string) as emrg_4_phone_3_number
+            cast(null as string) as emrg_4_phone_3_number,
+            cast(null as bool) as emrg_4_phone_1_opt_in,
+            cast(null as bool) as emrg_4_phone_2_opt_in,
+            cast(null as bool) as emrg_4_phone_3_opt_in
     expect:
       format: sql
       rows: |
@@ -1767,6 +1821,9 @@ unit_tests:
               cast(null as string) as emrg_1_phone_2_number,
               cast(null as string) as emrg_1_phone_3_type,
               cast(null as string) as emrg_1_phone_3_number,
+              cast(null as bool) as emrg_1_phone_1_opt_in,
+              cast(null as bool) as emrg_1_phone_2_opt_in,
+              cast(null as bool) as emrg_1_phone_3_opt_in,
               cast(null as string) as emrg_2_name_first_name,
               cast(null as string) as emrg_2_name_middle_name,
               cast(null as string) as emrg_2_name_last_name,
@@ -1782,6 +1839,9 @@ unit_tests:
               cast(null as string) as emrg_2_phone_2_number,
               cast(null as string) as emrg_2_phone_3_type,
               cast(null as string) as emrg_2_phone_3_number,
+              cast(null as bool) as emrg_2_phone_1_opt_in,
+              cast(null as bool) as emrg_2_phone_2_opt_in,
+              cast(null as bool) as emrg_2_phone_3_opt_in,
               cast(null as string) as emrg_3_name_first_name,
               cast(null as string) as emrg_3_name_last_name,
               cast(null as string) as emrg_3_email,
@@ -1796,6 +1856,9 @@ unit_tests:
               cast(null as string) as emrg_3_phone_2_number,
               cast(null as string) as emrg_3_phone_3_type,
               cast(null as string) as emrg_3_phone_3_number,
+              cast(null as bool) as emrg_3_phone_1_opt_in,
+              cast(null as bool) as emrg_3_phone_2_opt_in,
+              cast(null as bool) as emrg_3_phone_3_opt_in,
               cast(null as string) as emrg_4_name_first_name,
               cast(null as string) as emrg_4_name_last_name,
               cast(null as string) as emrg_4_email,
@@ -1809,7 +1872,10 @@ unit_tests:
               cast(null as string) as emrg_4_phone_2_type,
               cast(null as string) as emrg_4_phone_2_number,
               cast(null as string) as emrg_4_phone_3_type,
-              cast(null as string) as emrg_4_phone_3_number
+              cast(null as string) as emrg_4_phone_3_number,
+              cast(null as bool) as emrg_4_phone_1_opt_in,
+              cast(null as bool) as emrg_4_phone_2_opt_in,
+              cast(null as bool) as emrg_4_phone_3_opt_in
     expect:
       format: sql
       rows: |
@@ -1984,6 +2050,9 @@ unit_tests:
               cast(null as string) as emrg_1_phone_2_number,
               cast(null as string) as emrg_1_phone_3_type,
               cast(null as string) as emrg_1_phone_3_number,
+              cast(null as bool) as emrg_1_phone_1_opt_in,
+              cast(null as bool) as emrg_1_phone_2_opt_in,
+              cast(null as bool) as emrg_1_phone_3_opt_in,
               cast(null as string) as emrg_2_name_first_name,
               cast(null as string) as emrg_2_name_middle_name,
               cast(null as string) as emrg_2_name_last_name,
@@ -1999,6 +2068,9 @@ unit_tests:
               cast(null as string) as emrg_2_phone_2_number,
               cast(null as string) as emrg_2_phone_3_type,
               cast(null as string) as emrg_2_phone_3_number,
+              cast(null as bool) as emrg_2_phone_1_opt_in,
+              cast(null as bool) as emrg_2_phone_2_opt_in,
+              cast(null as bool) as emrg_2_phone_3_opt_in,
               cast(null as string) as emrg_3_name_first_name,
               cast(null as string) as emrg_3_name_last_name,
               cast(null as string) as emrg_3_email,
@@ -2013,6 +2085,9 @@ unit_tests:
               cast(null as string) as emrg_3_phone_2_number,
               cast(null as string) as emrg_3_phone_3_type,
               cast(null as string) as emrg_3_phone_3_number,
+              cast(null as bool) as emrg_3_phone_1_opt_in,
+              cast(null as bool) as emrg_3_phone_2_opt_in,
+              cast(null as bool) as emrg_3_phone_3_opt_in,
               cast(null as string) as emrg_4_name_first_name,
               cast(null as string) as emrg_4_name_last_name,
               cast(null as string) as emrg_4_email,
@@ -2026,7 +2101,10 @@ unit_tests:
               cast(null as string) as emrg_4_phone_2_type,
               cast(null as string) as emrg_4_phone_2_number,
               cast(null as string) as emrg_4_phone_3_type,
-              cast(null as string) as emrg_4_phone_3_number
+              cast(null as string) as emrg_4_phone_3_number,
+              cast(null as bool) as emrg_4_phone_1_opt_in,
+              cast(null as bool) as emrg_4_phone_2_opt_in,
+              cast(null as bool) as emrg_4_phone_3_opt_in
     expect:
       format: sql
       rows: |

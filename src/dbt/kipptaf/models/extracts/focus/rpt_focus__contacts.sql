@@ -28,6 +28,10 @@ with
             cast(null as string) as contact3_type,
             cast(null as string) as contact3_value,
 
+            cast(null as bool) as contact1_opt_in,
+            cast(null as bool) as contact2_opt_in,
+            cast(null as bool) as contact3_opt_in,
+
             if(rel.is_primary, 0, 1) as group_rank,
         from {{ ref("stg_finalsite__contact_relationships") }} as rel
         inner join
@@ -82,6 +86,9 @@ with
             a.emrg_1_phone_2_number as contact2_value,
             a.emrg_1_phone_3_type as contact3_type,
             a.emrg_1_phone_3_number as contact3_value,
+            a.emrg_1_phone_1_opt_in as contact1_opt_in,
+            a.emrg_1_phone_2_opt_in as contact2_opt_in,
+            a.emrg_1_phone_3_opt_in as contact3_opt_in,
 
             ida.focus_student_id_prefixed as student_id,
 
@@ -127,6 +134,9 @@ with
             a.emrg_2_phone_2_number as contact2_value,
             a.emrg_2_phone_3_type as contact3_type,
             a.emrg_2_phone_3_number as contact3_value,
+            a.emrg_2_phone_1_opt_in as contact1_opt_in,
+            a.emrg_2_phone_2_opt_in as contact2_opt_in,
+            a.emrg_2_phone_3_opt_in as contact3_opt_in,
 
             ida.focus_student_id_prefixed as student_id,
 
@@ -172,6 +182,9 @@ with
             a.emrg_3_phone_2_number as contact2_value,
             a.emrg_3_phone_3_type as contact3_type,
             a.emrg_3_phone_3_number as contact3_value,
+            a.emrg_3_phone_1_opt_in as contact1_opt_in,
+            a.emrg_3_phone_2_opt_in as contact2_opt_in,
+            a.emrg_3_phone_3_opt_in as contact3_opt_in,
 
             ida.focus_student_id_prefixed as student_id,
 
@@ -217,6 +230,9 @@ with
             a.emrg_4_phone_2_number as contact2_value,
             a.emrg_4_phone_3_type as contact3_type,
             a.emrg_4_phone_3_number as contact3_value,
+            a.emrg_4_phone_1_opt_in as contact1_opt_in,
+            a.emrg_4_phone_2_opt_in as contact2_opt_in,
+            a.emrg_4_phone_3_opt_in as contact3_opt_in,
 
             ida.focus_student_id_prefixed as student_id,
 
@@ -267,6 +283,9 @@ with
             contact2_value,
             contact3_type,
             contact3_value,
+            contact1_opt_in,
+            contact2_opt_in,
+            contact3_opt_in,
             address,
             address2,
             city,
@@ -294,6 +313,9 @@ with
             contact2_value,
             contact3_type,
             contact3_value,
+            contact1_opt_in,
+            contact2_opt_in,
+            contact3_opt_in,
             address,
             address2,
             city,
@@ -558,10 +580,18 @@ select
 
     cast(null as string) as contact1_blocked,
     cast(null as string) as contact1_unlisted,
-    if(contact1_value is not null, 'Y', cast(null as string)) as contact1_callout,
     case
         when contact1_value is null
         then cast(null as string)
+        when contact1_opt_in is false
+        then 'N'
+        else 'Y'
+    end as contact1_callout,
+    case
+        when contact1_value is null
+        then cast(null as string)
+        when contact1_opt_in is false
+        then 'N'
         when contact1_type in ('Work Phone', 'Workplace')
         then 'N'
         else 'Y'
@@ -572,10 +602,18 @@ select
 
     cast(null as string) as contact2_blocked,
     cast(null as string) as contact2_unlisted,
-    if(contact2_value is not null, 'Y', cast(null as string)) as contact2_callout,
     case
         when contact2_value is null
         then cast(null as string)
+        when contact2_opt_in is false
+        then 'N'
+        else 'Y'
+    end as contact2_callout,
+    case
+        when contact2_value is null
+        then cast(null as string)
+        when contact2_opt_in is false
+        then 'N'
         when contact2_type in ('Work Phone', 'Workplace')
         then 'N'
         else 'Y'
@@ -586,10 +624,18 @@ select
 
     cast(null as string) as contact3_blocked,
     cast(null as string) as contact3_unlisted,
-    if(contact3_value is not null, 'Y', cast(null as string)) as contact3_callout,
     case
         when contact3_value is null
         then cast(null as string)
+        when contact3_opt_in is false
+        then 'N'
+        else 'Y'
+    end as contact3_callout,
+    case
+        when contact3_value is null
+        then cast(null as string)
+        when contact3_opt_in is false
+        then 'N'
         when contact3_type in ('Work Phone', 'Workplace')
         then 'N'
         else 'Y'
