@@ -43,7 +43,7 @@ with
     )
 
 select
-    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
+    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid, homeless_code),
 
     -- same value as _dbt_source_project, named for the Dagster code location;
     -- projected here rather than re-derived from _dbt_source_relation (#3142)
@@ -148,7 +148,7 @@ select
     both the live value and the history accurate (#4814). */
     if(
         ar.academic_year = {{ var("current_academic_year") }},
-        scf.homeless_code,
+        ar.homeless_code,
         njr.homeless_code
     ) as homeless_code,
 
@@ -245,10 +245,6 @@ left join
     {{ ref("stg_powerschool__s_nj_ren_x") }} as njr
     on ar.reenrollments_dcid = njr.reenrollmentsdcid
     and ar._dbt_source_project = njr._dbt_source_project
-left join
-    {{ ref("stg_powerschool__studentcorefields") }} as scf
-    on ar.students_dcid = scf.studentsdcid
-    and ar._dbt_source_project = scf._dbt_source_project
 left join
     {{ ref("stg_people__student_logins") }} as sl
     on ar.student_number = sl.student_number
