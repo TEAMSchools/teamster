@@ -101,6 +101,11 @@ with
                 if(cp.phone_2_type = 'Work', cp.phone_2_number, null),
                 if(cp.phone_3_type = 'Work', cp.phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(cp.phone_1_type is null, cp.phone_1_number, null),
+                if(cp.phone_2_type is null, cp.phone_2_number, null),
+                if(cp.phone_3_type is null, cp.phone_3_number, null)
+            ) as phone_untyped,
             nullif(
                 array_to_string(
                     [cp.address_1, cp.address_2, cp.city, cp.state, cp.zip], ', '
@@ -122,6 +127,7 @@ with
             phone_mobile,
             phone_home,
             phone_work,
+            phone_untyped,
             home_address,
             first_name as contact_first_name,
             last_name as contact_last_name,
@@ -171,6 +177,11 @@ with
                 if(emrg_1_phone_2_type = 'Work', emrg_1_phone_2_number, null),
                 if(emrg_1_phone_3_type = 'Work', emrg_1_phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(emrg_1_phone_1_type is null, emrg_1_phone_1_number, null),
+                if(emrg_1_phone_2_type is null, emrg_1_phone_2_number, null),
+                if(emrg_1_phone_3_type is null, emrg_1_phone_3_number, null)
+            ) as phone_untyped,
         from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_1_name_first_name is not null and emrg_1_name_first_name != ''
 
@@ -208,6 +219,11 @@ with
                 if(emrg_2_phone_2_type = 'Work', emrg_2_phone_2_number, null),
                 if(emrg_2_phone_3_type = 'Work', emrg_2_phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(emrg_2_phone_1_type is null, emrg_2_phone_1_number, null),
+                if(emrg_2_phone_2_type is null, emrg_2_phone_2_number, null),
+                if(emrg_2_phone_3_type is null, emrg_2_phone_3_number, null)
+            ) as phone_untyped,
         from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_2_name_first_name is not null and emrg_2_name_first_name != ''
 
@@ -245,6 +261,11 @@ with
                 if(emrg_3_phone_2_type = 'Work', emrg_3_phone_2_number, null),
                 if(emrg_3_phone_3_type = 'Work', emrg_3_phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(emrg_3_phone_1_type is null, emrg_3_phone_1_number, null),
+                if(emrg_3_phone_2_type is null, emrg_3_phone_2_number, null),
+                if(emrg_3_phone_3_type is null, emrg_3_phone_3_number, null)
+            ) as phone_untyped,
         from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_3_name_first_name is not null and emrg_3_name_first_name != ''
 
@@ -282,6 +303,11 @@ with
                 if(emrg_4_phone_2_type = 'Work', emrg_4_phone_2_number, null),
                 if(emrg_4_phone_3_type = 'Work', emrg_4_phone_3_number, null)
             ) as phone_work,
+            coalesce(
+                if(emrg_4_phone_1_type is null, emrg_4_phone_1_number, null),
+                if(emrg_4_phone_2_type is null, emrg_4_phone_2_number, null),
+                if(emrg_4_phone_3_type is null, emrg_4_phone_3_number, null)
+            ) as phone_untyped,
         from {{ ref("int_finalsite__contact_custom_attributes") }}
         where emrg_4_name_first_name is not null and emrg_4_name_first_name != ''
     ),
@@ -301,6 +327,7 @@ with
             phone_mobile,
             phone_home,
             phone_work,
+            phone_untyped,
             phone_primary,
             is_pickup,
             is_custodial,
@@ -327,6 +354,7 @@ with
             phone_mobile,
             phone_home,
             phone_work,
+            phone_untyped,
             phone_daytime,
             phone_primary,
             home_address,
@@ -350,6 +378,7 @@ with
             phone_mobile,
             phone_home,
             phone_work,
+            phone_untyped,
             phone_daytime,
             phone_primary,
             home_address,
@@ -372,6 +401,7 @@ select
     phone_mobile,
     phone_home,
     phone_work,
+    phone_untyped,
     phone_daytime,
     phone_primary,
     home_address,
