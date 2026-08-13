@@ -8,6 +8,7 @@ with
             g.middle_name,
             g.last_name,
             g.email,
+            g.gender as contact_gender,
             g.phone_1_type as contact1_type,
             g.phone_1_number as contact1_value,
             g.phone_2_type as contact2_type,
@@ -97,6 +98,7 @@ with
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zipcode,
+            cast(null as string) as contact_gender,
 
             coalesce(
                 a.emrg_1_relationship_ss, a.emrg_1_relationship_txt
@@ -145,6 +147,7 @@ with
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zipcode,
+            cast(null as string) as contact_gender,
 
             coalesce(
                 a.emrg_2_relationship_ss, a.emrg_2_relationship_txt
@@ -193,6 +196,7 @@ with
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zipcode,
+            cast(null as string) as contact_gender,
 
             coalesce(
                 a.emrg_3_relationship_ss, a.emrg_3_relationship_txt
@@ -241,6 +245,7 @@ with
             cast(null as string) as city,
             cast(null as string) as state,
             cast(null as string) as zipcode,
+            cast(null as string) as contact_gender,
 
             coalesce(
                 a.emrg_4_relationship_ss, a.emrg_4_relationship_txt
@@ -273,6 +278,7 @@ with
             middle_name,
             last_name,
             email,
+            contact_gender,
             contact1_type,
             contact1_value,
             contact2_type,
@@ -302,6 +308,7 @@ with
             middle_name,
             last_name,
             email,
+            contact_gender,
             contact1_type,
             contact1_value,
             contact2_type,
@@ -322,6 +329,72 @@ with
         from emergency_long
     ),
 
+    crosswalked as (
+        -- Focus does not enforce STUDENT_RELATION, and 12 rows of
+        -- un-crosswalked lowercase feed values are already sitting in prod
+        -- Focus. The accepted_values test on this output is the only gate.
+        -- Domain verified against live Focus: 13 values, no 'Emergency'.
+        -- Gender is present only on the guardian branch (a guardian's own
+        -- stg_finalsite__contacts row); emergency rows are custom fields on
+        -- the student's record and fall through to the non-gendered value.
+        select
+            * except (student_relation, contact_gender),
+
+            case
+                when
+                    student_relation in (
+                        'Mother',
+                        'Father',
+                        'Parent',
+                        'Guardian',
+                        'Grandmother',
+                        'Grandfather',
+                        'Aunt',
+                        'Uncle',
+                        'Stepfather',
+                        'Stepmother',
+                        'Stepparent',
+                        'Surrogate'
+                    )
+                then student_relation
+                when student_relation = 'parent' and contact_gender in ('F', 'Female')
+                then 'Mother'
+                when student_relation = 'parent' and contact_gender in ('M', 'Male')
+                then 'Father'
+                when student_relation = 'parent'
+                then 'Parent'
+                when
+                    student_relation = 'grandparent'
+                    and contact_gender in ('F', 'Female')
+                then 'Grandmother'
+                when
+                    student_relation = 'grandparent' and contact_gender in ('M', 'Male')
+                then 'Grandfather'
+                when
+                    student_relation = 'aunt/uncle'
+                    and contact_gender in ('F', 'Female')
+                then 'Aunt'
+                when student_relation = 'aunt/uncle' and contact_gender in ('M', 'Male')
+                then 'Uncle'
+                when
+                    student_relation = 'stepparent'
+                    and contact_gender in ('F', 'Female')
+                then 'Stepmother'
+                when student_relation = 'stepparent' and contact_gender in ('M', 'Male')
+                then 'Stepfather'
+                when student_relation = 'stepparent'
+                then 'Stepparent'
+                when student_relation = 'guardian'
+                then 'Guardian'
+                when student_relation = 'Great Aunt'
+                then 'Aunt'
+                when student_relation = 'Great Uncle'
+                then 'Uncle'
+                else 'None'
+            end as student_relation,
+        from all_contacts
+    ),
+
     ranked as (
         -- Guardians hold ranks 1..N in their existing order, then emergency
         -- slots follow in emrg_1..4 order. Miami populates no
@@ -340,7 +413,7 @@ with
                     first_name asc,
                     relationship_id asc
             ) as sort_order,
-        from all_contacts
+        from crosswalked
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus CONTACTS contract
