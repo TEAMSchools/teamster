@@ -40,6 +40,31 @@ def compose_regex(
         return regexp
 
 
+def build_local_filepath(asset_key_string: str, remote_filepath: str) -> str:
+    """Map a remote SFTP path to its download location under `/tmp/dagster`.
+
+    The remote directory structure is kept intact — two files sharing a basename
+    in different remote folders must not collide — and the resolved path is
+    asserted to stay inside the asset's own transient directory, so a remote
+    path that traverses upward can never redirect the download elsewhere on
+    disk.
+
+    Raises:
+        ValueError: if the remote path resolves outside the asset's directory.
+    """
+    # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+    local_dir = os.path.normpath(f"/tmp/dagster/{asset_key_string}")
+
+    local_filepath = os.path.normpath(f"{local_dir}/{remote_filepath}")
+
+    if not local_filepath.startswith(f"{local_dir}{os.sep}"):
+        raise ValueError(
+            f"Remote filepath '{remote_filepath}' resolves outside '{local_dir}'"
+        )
+
+    return local_filepath
+
+
 def extract_pdf_to_dict(stream: str, pdf_row_pattern: str):
     records = []
 
@@ -183,7 +208,10 @@ def build_sftp_file_asset(
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,
-            local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file_match}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+            local_filepath=build_local_filepath(
+                asset_key_string=context.asset_key.to_user_string(),
+                remote_filepath=file_match,
+            ),
         )
 
         if os.path.getsize(local_filepath) == 0:
@@ -321,7 +349,10 @@ def build_sftp_archive_asset(
 
         local_filepath = ssh.sftp_get(
             remote_filepath=file_match,
-            local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file_match}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+            local_filepath=build_local_filepath(
+                asset_key_string=context.asset_key.to_user_string(),
+                remote_filepath=file_match,
+            ),
         )
 
         # exit if file is empty
@@ -467,7 +498,10 @@ def build_sftp_folder_asset(
         for file in file_matches:
             local_filepath = ssh.sftp_get(
                 remote_filepath=file,
-                local_filepath=f"/tmp/dagster/{context.asset_key.to_user_string()}/{file}",  # trunk-ignore(bandit/B108): intentional /tmp/dagster transient dir
+                local_filepath=build_local_filepath(
+                    asset_key_string=context.asset_key.to_user_string(),
+                    remote_filepath=file,
+                ),
             )
 
             # skip if file is empty
