@@ -22,8 +22,8 @@ from teamster.code_locations.kippmiami.extracts.jobs import focus_extract_asset_
 # 12:30 freshness check on #4736 stays actionable: a push prompted by it at
 # 12:31 is rebuilt by ~12:42, well before this delivery.
 #
-# Delivering EARLIER is not a safe fallback: it misses anything entered between
-# the push and the noon cutoff, and anything before ~12:11 puts the late bound
+# Pushing EARLY is not a safe fallback -- it misses anything entered between
+# the push and the noon cutoff. Anything before ~12:11 puts the late bound
 # before noon, contradicting the "entered by 12:00" promise outright.
 focus_extract_assets_schedule = ScheduleDefinition(
     name="focus_extract_assets_schedule",
