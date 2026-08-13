@@ -109,11 +109,10 @@ models:
         description:
           Phone type for the first contact slot, mapped to the Focus display
           vocabulary. A blank or unrecognized Finalsite type defaults to Cell
-          Phone rather than dropping the contact.
+          Phone rather than dropping the contact, but only when the slot carries
+          a number — null when the slot has none (including when CONTACT1_VALUE
+          was junk-rejected).
         data_tests:
-          - not_null:
-              config:
-                severity: error
           - accepted_values:
               arguments:
                 values:
@@ -129,11 +128,10 @@ models:
         description:
           Phone type for the second contact slot, mapped to the Focus display
           vocabulary. A blank or unrecognized Finalsite type defaults to Cell
-          Phone rather than dropping the contact.
+          Phone rather than dropping the contact, but only when the slot carries
+          a number — null when the slot has none (including when CONTACT2_VALUE
+          was junk-rejected).
         data_tests:
-          - not_null:
-              config:
-                severity: error
           - accepted_values:
               arguments:
                 values:
@@ -149,11 +147,10 @@ models:
         description:
           Phone type for the third contact slot, mapped to the Focus display
           vocabulary. A blank or unrecognized Finalsite type defaults to Cell
-          Phone rather than dropping the contact.
+          Phone rather than dropping the contact, but only when the slot carries
+          a number — null when the slot has none (including when CONTACT3_VALUE
+          was junk-rejected).
         data_tests:
-          - not_null:
-              config:
-                severity: error
           - accepted_values:
               arguments:
                 values:
@@ -636,7 +633,7 @@ unit_tests:
             contact2_blocked: null,
             contact2_unlisted: null,
             contact2_callout: null,
-            contact3_type: Cell Phone,
+            contact3_type: null,
             contact3_value: null,
             contact3_blocked: null,
             contact3_unlisted: null,
@@ -683,12 +680,12 @@ unit_tests:
             contact1_blocked: null,
             contact1_unlisted: null,
             contact1_callout: null,
-            contact2_type: Cell Phone,
+            contact2_type: null,
             contact2_value: null,
             contact2_blocked: null,
             contact2_unlisted: null,
             contact2_callout: null,
-            contact3_type: Cell Phone,
+            contact3_type: null,
             contact3_value: null,
             contact3_blocked: null,
             contact3_unlisted: null,
@@ -735,12 +732,12 @@ unit_tests:
             contact1_blocked: null,
             contact1_unlisted: null,
             contact1_callout: null,
-            contact2_type: Cell Phone,
+            contact2_type: null,
             contact2_value: null,
             contact2_blocked: null,
             contact2_unlisted: null,
             contact2_callout: null,
-            contact3_type: Cell Phone,
+            contact3_type: null,
             contact3_value: null,
             contact3_blocked: null,
             contact3_unlisted: null,
@@ -944,7 +941,7 @@ unit_tests:
           cast(null as string) as contact2_blocked,
           cast(null as string) as contact2_unlisted,
           cast(null as string) as contact2_callout,
-          'Cell Phone' as contact3_type,
+          cast(null as string) as contact3_type,
           cast(null as string) as contact3_value,
           cast(null as string) as contact3_blocked,
           cast(null as string) as contact3_unlisted,
@@ -975,8 +972,8 @@ unit_tests:
           '200 Oak Ave', null, 'Miami', 'FL', '33102',
           'bob@example.com',
           'Work Phone', '+13055550200', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1001,8 +998,8 @@ unit_tests:
           null, null, null, null, null,
           null,
           'Cell Phone', '+13055550401', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1014,8 +1011,8 @@ unit_tests:
           null, null, null, null, null,
           'gigi@example.com',
           'Cell Phone', '+13055550501', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1413,12 +1410,12 @@ unit_tests:
           cast(null as string) as contact1_blocked,
           cast(null as string) as contact1_unlisted,
           cast(null as string) as contact1_callout,
-          'Cell Phone' as contact2_type,
+          cast(null as string) as contact2_type,
           cast(null as string) as contact2_value,
           cast(null as string) as contact2_blocked,
           cast(null as string) as contact2_unlisted,
           cast(null as string) as contact2_callout,
-          'Cell Phone' as contact3_type,
+          cast(null as string) as contact3_type,
           cast(null as string) as contact3_value,
           cast(null as string) as contact3_blocked,
           cast(null as string) as contact3_unlisted,
@@ -1449,8 +1446,8 @@ unit_tests:
           null, null, null, null, null,
           'cousin@example.com',
           'Home Phone', '+13055550400', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1462,8 +1459,8 @@ unit_tests:
           null, null, null, null, null,
           'dad@example.com',
           'Home Phone', '+13055550200', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1475,8 +1472,8 @@ unit_tests:
           null, null, null, null, null,
           'nogender@example.com',
           'Home Phone', '+13055550300', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1488,8 +1485,8 @@ unit_tests:
           null, null, null, null, null,
           'auntf@example.com',
           'Home Phone', '+13055550500', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1501,8 +1498,8 @@ unit_tests:
           null, null, null, null, null,
           'auntm@example.com',
           'Home Phone', '+13055550600', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1514,8 +1511,8 @@ unit_tests:
           null, null, null, null, null,
           'auntnull@example.com',
           'Home Phone', '+13055550700', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1527,8 +1524,8 @@ unit_tests:
           null, null, null, null, null,
           'grandm@example.com',
           'Home Phone', '+13055550800', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1540,8 +1537,8 @@ unit_tests:
           null, null, null, null, null,
           'grandnull@example.com',
           'Home Phone', '+13055550900', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1553,8 +1550,8 @@ unit_tests:
           null, null, null, null, null,
           'stepf@example.com',
           'Home Phone', '+13055551000', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1566,8 +1563,8 @@ unit_tests:
           null, null, null, null, null,
           'stepm@example.com',
           'Home Phone', '+13055551100', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1579,8 +1576,8 @@ unit_tests:
           null, null, null, null, null,
           'stepnull@example.com',
           'Home Phone', '+13055551200', null, null, null,
-          'Cell Phone', null, null, null, null,
-          'Cell Phone', null, null, null, null,
+          null, null, null, null, null,
+          null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
           null, null, null, null, null,
@@ -1739,17 +1736,17 @@ unit_tests:
             cast(null as string) as state,
             cast(null as string) as zipcode,
             cast(null as string) as email,
-            'Cell Phone' as contact1_type,
+            cast(null as string) as contact1_type,
             cast(null as string) as contact1_value,
             cast(null as string) as contact1_blocked,
             cast(null as string) as contact1_unlisted,
             cast(null as string) as contact1_callout,
-            'Cell Phone' as contact2_type,
+            cast(null as string) as contact2_type,
             cast(null as string) as contact2_value,
             cast(null as string) as contact2_blocked,
             cast(null as string) as contact2_unlisted,
             cast(null as string) as contact2_callout,
-            'Cell Phone' as contact3_type,
+            cast(null as string) as contact3_type,
             cast(null as string) as contact3_value,
             cast(null as string) as contact3_blocked,
             cast(null as string) as contact3_unlisted,
@@ -1779,9 +1776,9 @@ unit_tests:
             'Y', 'Y', 'Y', 'Y',
             null, null, null, null, null,
             null,
-            'Cell Phone', null, null, null, null,
-            'Cell Phone', null, null, null, null,
-            'Cell Phone', null, null, null, null,
+            null, null, null, null, null,
+            null, null, null, null, null,
+            null, null, null, null, null,
             null, null, null, null, null,
             null, null, null, null, null,
             null, null, null, null, null,
@@ -1792,9 +1789,9 @@ unit_tests:
             'N', 'N', 'Y', 'Y',
             null, null, null, null, null,
             null,
-            'Cell Phone', null, null, null, null,
-            'Cell Phone', null, null, null, null,
-            'Cell Phone', null, null, null, null,
+            null, null, null, null, null,
+            null, null, null, null, null,
+            null, null, null, null, null,
             null, null, null, null, null,
             null, null, null, null, null,
             null, null, null, null, null,
@@ -1803,10 +1800,13 @@ unit_tests:
   - name: test_contacts_phone_junk_and_type
     description:
       A repeated-digit number that survives clean_phone's NANP check is nulled
-      here, since clean_phone itself never returns NULL for a non-null input. A
-      real number passes through unchanged. A blank phone type defaults to Cell
-      Phone rather than dropping the contact; a recognized type (Work) maps to
-      its Focus display label (Work Phone).
+      here, since clean_phone itself never returns NULL for a non-null input --
+      and its type is nulled along with it, since a junk-rejected slot carries
+      no contact to guess a type for (not a phantom Cell Phone declaration on an
+      empty slot). A real number passes through unchanged and gets its type
+      mapped normally. The second guardian has only one phone -- CONTACT2_TYPE
+      and CONTACT2_VALUE are both null for that slot, the case that produced
+      thousands of phantom type declarations before this fix.
     model: rpt_focus__contacts
     given:
       - input: ref('stg_finalsite__contact_relationships')
@@ -1945,17 +1945,17 @@ unit_tests:
             cast(null as string) as state,
             cast(null as string) as zipcode,
             cast(null as string) as email,
-            'Cell Phone' as contact1_type,
+            cast(null as string) as contact1_type,
             cast(null as string) as contact1_value,
             cast(null as string) as contact1_blocked,
             cast(null as string) as contact1_unlisted,
             cast(null as string) as contact1_callout,
-            'Cell Phone' as contact2_type,
+            cast(null as string) as contact2_type,
             cast(null as string) as contact2_value,
             cast(null as string) as contact2_blocked,
             cast(null as string) as contact2_unlisted,
             cast(null as string) as contact2_callout,
-            'Cell Phone' as contact3_type,
+            cast(null as string) as contact3_type,
             cast(null as string) as contact3_value,
             cast(null as string) as contact3_blocked,
             cast(null as string) as contact3_unlisted,
@@ -1986,8 +1986,8 @@ unit_tests:
             null, null, null, null, null,
             null,
             'Work Phone', '+13055550134', null, null, null,
-            'Cell Phone', null, null, null, null,
-            'Cell Phone', null, null, null, null,
+            null, null, null, null, null,
+            null, null, null, null, null,
             null, null, null, null, null,
             null, null, null, null, null,
             null, null, null, null, null,

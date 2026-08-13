@@ -405,7 +405,7 @@ with
         from household_compared
     ),
 
-    phones_cleaned as (
+    phones_valid as (
         -- clean_phone already normalized both phone sources to E.164, and its
         -- contract is to never return NULL -- unparseable input passes through
         -- de-garbled. So repeated-digit junk (which is NANP-valid) survives it
@@ -420,14 +420,7 @@ with
         -- past this exact-match list -- vanishingly rare, not worth expanding
         -- scope over.
         select
-            * except (
-                contact1_value,
-                contact2_value,
-                contact3_value,
-                contact1_type,
-                contact2_type,
-                contact3_type
-            ),
+            * except (contact1_value, contact2_value, contact3_value),
 
             if(
                 contact1_value in (
@@ -471,15 +464,37 @@ with
                 cast(null as string),
                 contact3_value
             ) as contact3_value,
-
-            -- A blank or unrecognized type defaults to Cell Phone rather than
-            -- dropping the contact (#4769 decision J). Consequence to know:
-            -- under the SMS rule in the final select this makes an untyped
-            -- number an SMS target, so a mistyped work line can receive texts.
-            {{ focus_phone_type("contact1_type") }} as contact1_type,
-            {{ focus_phone_type("contact2_type") }} as contact2_type,
-            {{ focus_phone_type("contact3_type") }} as contact3_type,
         from household_flagged
+    ),
+
+    phones_typed as (
+        -- A blank or unrecognized type defaults to Cell Phone rather than
+        -- dropping the contact (#4769 decision J) -- but only when the slot
+        -- actually carries a surviving number. A slot with no value (never
+        -- had one, or had one and phones_valid junk-rejected it above) gets a
+        -- null type instead: there is no contact to guess a type for, and
+        -- Task 7 reads this column to decide whether the slot is an SMS
+        -- target, so a phantom type on an empty slot would wrongly mark it
+        -- one.
+        select
+            * except (contact1_type, contact2_type, contact3_type),
+
+            case
+                when contact1_value is not null
+                then {{ focus_phone_type("contact1_type") }}
+                else cast(null as string)
+            end as contact1_type,
+            case
+                when contact2_value is not null
+                then {{ focus_phone_type("contact2_type") }}
+                else cast(null as string)
+            end as contact2_type,
+            case
+                when contact3_value is not null
+                then {{ focus_phone_type("contact3_type") }}
+                else cast(null as string)
+            end as contact3_type,
+        from phones_valid
     ),
 
     ranked as (
@@ -500,7 +515,7 @@ with
                     first_name asc,
                     relationship_id asc
             ) as sort_order,
-        from phones_cleaned
+        from phones_typed
     ),
 
     custody_flagged as (
