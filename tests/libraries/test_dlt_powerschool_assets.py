@@ -1,93 +1,18 @@
 """Unit tests for the probe-gated PowerSchool dlt factory (no external deps)."""
 
 import pathlib
-import types
-from datetime import datetime
 
 import yaml
 
-from teamster.libraries.dlt.powerschool.assets import (
-    PowerSchoolTable,
-    _compute_changed,
-    _stored_signatures,
-    build_powerschool_dlt_assets,
-    probe_signature,
-)
-
-
-class FakeResult:
-    def __init__(self, row):
-        self._row = row
-
-    def one(self):
-        return self._row
-
-
-class FakeConnection:
-    def __init__(self, row):
-        self.row = row
-        self.queries = []
-
-    def execute(self, clause):
-        self.queries.append(str(clause))
-        return FakeResult(self.row)
-
-
-def test_probe_signature_shapes_datetime_cursor():
-    conn = FakeConnection((42, datetime(2026, 7, 15, 13, 30, 0)))
-
-    sig = probe_signature(conn, "students", "transaction_date")
-
-    assert sig == {"count": 42, "max_cursor": "2026-07-15T13:30:00"}
-    assert "COUNT(*)" in conn.queries[0]
-    assert "MAX(transaction_date)" in conn.queries[0]
-    assert "FROM students" in conn.queries[0]
-
-
-def test_probe_signature_empty_table_none_cursor():
-    conn = FakeConnection((0, None))
-
-    sig = probe_signature(conn, "cc", "transaction_date")
-
-    assert sig == {"count": 0, "max_cursor": None}
-
-
-def test_probe_signature_non_datetime_cursor_stringified():
-    # Guard for the ODBC-district template: a future table with a numeric or
-    # string change column has no .isoformat(); it must stringify, not raise.
-    conn = FakeConnection((7, 12345))
-
-    sig = probe_signature(conn, "some_table", "numeric_cursor")
-
-    assert sig == {"count": 7, "max_cursor": "12345"}
-
-
-def test_probe_signature_no_cursor_count_only():
-    # No-cursor tables are count-gated: COUNT(*) only, and the signature keeps
-    # the max_cursor key (None) so it compares equal to the run-config
-    # round-trip shape.
-    conn = FakeConnection((42,))
-
-    sig = probe_signature(conn, "gen", None)
-
-    assert sig == {"count": 42, "max_cursor": None}
-    assert "COUNT(*)" in conn.queries[0]
-    assert "MAX(" not in conn.queries[0]
-
-
-def test_powerschool_table_dataclass():
-    t = PowerSchoolTable(name="students", cursor_column="transaction_date")
-    n = PowerSchoolTable(name="test", cursor_column=None)
-
-    assert t.cursor_column == "transaction_date"
-    assert n.cursor_column is None
+from teamster.libraries.dlt.powerschool.assets import build_powerschool_dlt_assets
+from teamster.libraries.dlt.probe import ProbeTable
 
 
 def test_factory_builds_single_subsettable_multiasset():
     tables = [
-        PowerSchoolTable(name="students", cursor_column="transaction_date"),
-        PowerSchoolTable(name="users", cursor_column="whenmodified"),
-        PowerSchoolTable(name="test", cursor_column=None),
+        ProbeTable(name="students", cursor_column="transaction_date"),
+        ProbeTable(name="users", cursor_column="whenmodified"),
+        ProbeTable(name="test", cursor_column=None),
     ]
 
     assets_def = build_powerschool_dlt_assets(
@@ -243,128 +168,6 @@ def test_nightly_targets_sis_keys_and_counts():
     assert "kipppaterson/powerschool/sis/students" not in nightly
 
 
-def test_compute_changed_no_cursor_count_drift_included():
-    table = PowerSchoolTable(name="gen", cursor_column=None)
-    current = {"gen": {"count": 43, "max_cursor": None}}
-    stored = {"gen": {"count": 42, "max_cursor": None}}
-
-    changed = _compute_changed([table], current, stored)
-
-    assert changed == [table]
-
-
-def test_compute_changed_no_cursor_stable_count_excluded():
-    table = PowerSchoolTable(name="gen", cursor_column=None)
-    signature = {"count": 42, "max_cursor": None}
-    current = {"gen": dict(signature)}
-    stored = {"gen": dict(signature)}
-
-    changed = _compute_changed([table], current, stored)
-
-    assert changed == []
-
-
-def test_compute_changed_no_stored_baseline_included():
-    # Bootstrap: a table new to intraday (or first tick ever) has no stored
-    # signature and must load once to establish one.
-    table = PowerSchoolTable(name="gen", cursor_column=None)
-    current = {"gen": {"count": 42, "max_cursor": None}}
-
-    changed = _compute_changed([table], current, stored={})
-
-    assert changed == [table]
-
-
-def test_compute_changed_cursor_table_drift_included():
-    table = PowerSchoolTable(name="students", cursor_column="transaction_date")
-    current = {"students": {"count": 43, "max_cursor": "2026-07-16T00:00:00"}}
-    stored = {"students": {"count": 42, "max_cursor": "2026-07-15T00:00:00"}}
-
-    changed = _compute_changed([table], current, stored)
-
-    assert changed == [table]
-
-
-def test_compute_changed_cursor_table_unchanged_excluded():
-    table = PowerSchoolTable(name="students", cursor_column="transaction_date")
-    signature = {"count": 42, "max_cursor": "2026-07-15T00:00:00"}
-    current = {"students": dict(signature)}
-    stored = {"students": dict(signature)}
-
-    changed = _compute_changed([table], current, stored)
-
-    assert changed == []
-
-
-def test_compute_changed_first_run_empty_stored_all_cursor_tables_changed():
-    tables = [
-        PowerSchoolTable(name="students", cursor_column="transaction_date"),
-        PowerSchoolTable(name="users", cursor_column="whenmodified"),
-    ]
-    current = {
-        "students": {"count": 10, "max_cursor": "2026-07-15T00:00:00"},
-        "users": {"count": 5, "max_cursor": "2026-07-14T00:00:00"},
-    }
-
-    changed = _compute_changed(tables, current, stored={})
-
-    assert changed == tables
-
-
-def test_compute_changed_mixed_set_order_preserved():
-    no_cursor = PowerSchoolTable(name="test", cursor_column=None)
-    drifted = PowerSchoolTable(name="students", cursor_column="transaction_date")
-    unchanged = PowerSchoolTable(name="users", cursor_column="whenmodified")
-    selected = [no_cursor, drifted, unchanged]
-
-    unchanged_signature = {"count": 5, "max_cursor": "2026-07-14T00:00:00"}
-    current = {
-        "test": {"count": 9, "max_cursor": None},
-        "students": {"count": 43, "max_cursor": "2026-07-16T00:00:00"},
-        "users": dict(unchanged_signature),
-    }
-    stored = {
-        "test": {"count": 8, "max_cursor": None},
-        "students": {"count": 42, "max_cursor": "2026-07-15T00:00:00"},
-        "users": dict(unchanged_signature),
-    }
-
-    changed = _compute_changed(selected, current, stored)
-
-    assert changed == [no_cursor, drifted]
-
-
-def test_stored_signatures_returns_resource_signatures():
-    pipeline = types.SimpleNamespace(
-        state={
-            "sources": {
-                "powerschool": {
-                    "resources": {
-                        "students": {
-                            "signature": {
-                                "count": 5,
-                                "max_cursor": "2026-07-15T00:00:00",
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    )
-
-    stored = _stored_signatures(pipeline, "powerschool")
-
-    assert stored == {"students": {"count": 5, "max_cursor": "2026-07-15T00:00:00"}}
-
-
-def test_stored_signatures_first_run_empty_state():
-    pipeline = types.SimpleNamespace(state={})
-
-    stored = _stored_signatures(pipeline, "powerschool")
-
-    assert stored == {}
-
-
 def _resolved_probe_job(tables):
     from dagster import Definitions, define_asset_job
     from dagster_dlt import DagsterDltResource
@@ -392,8 +195,8 @@ def _resolved_probe_job(tables):
 def test_run_config_schema_accepts_probe_payload():
     job = _resolved_probe_job(
         [
-            PowerSchoolTable(name="students", cursor_column="transaction_date"),
-            PowerSchoolTable(name="gen", cursor_column=None),
+            ProbeTable(name="students", cursor_column="transaction_date"),
+            ProbeTable(name="gen", cursor_column=None),
         ]
     )
 
@@ -423,7 +226,7 @@ def test_run_config_schema_accepts_probe_payload():
 
 def test_run_config_schema_accepts_empty_full_refresh():
     job = _resolved_probe_job(
-        [PowerSchoolTable(name="students", cursor_column="transaction_date")]
+        [ProbeTable(name="students", cursor_column="transaction_date")]
     )
 
     from dagster import validate_run_config

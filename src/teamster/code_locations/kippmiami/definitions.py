@@ -56,6 +56,7 @@ defs = Definitions(
         *finalsite.schedules,
     ],
     sensors=[
+        *dlt.sensors,
         *couchdrop.sensors,
         *iready.sensors,
         *renlearn.sensors,
