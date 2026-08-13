@@ -8,6 +8,21 @@ models:
       enrollment span.
     config:
       materialized: table
+      meta:
+        dagster:
+          # Cron instead of the default eager table condition, which
+          # re-fires on ANY upstream data change, recursing through view
+          # chains up to 10 levels.
+          # ~98 executions/day on the eager table condition. Every downstream
+          # consumer is either the assessment star (dim_assessments,
+          # fct_assessment_scores_*, the expectation bridges) already on
+          # `0 0,10,13,15,17 * * *`, or a topline weekly on `0 0 * * *` — which
+          # the 00:00 tick covers. The deanslist mod extracts run `25 1 * * *`,
+          # after the 00:00 tick.
+          #
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 0,10,13,15,17 * * *
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
