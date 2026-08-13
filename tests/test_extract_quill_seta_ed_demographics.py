@@ -484,7 +484,13 @@ class TestCodebook:
             path,
             {"Room Alpha": "C01"},
             {"Teacher One": "T1"},
-            [{"quill_student_id": 1001, "student_email": "aaa@example.org"}],
+            [
+                {
+                    "quill_student_id": 1001,
+                    "classroom_name": "Room Alpha",
+                    "student_email": "aaa@example.org",
+                }
+            ],
         )
         assert script.read_codebook(path) == (
             {"Room Alpha": "C01"},
@@ -501,14 +507,45 @@ class TestCodebook:
             path,
             {},
             {},
-            [{"quill_student_id": 1001, "student_email": "aaa@example.org"}],
+            [
+                {
+                    "quill_student_id": 1001,
+                    "classroom_name": "Room Alpha",
+                    "student_email": "aaa@example.org",
+                }
+            ],
         )
         stored = json.loads(path.read_text())
         assert stored["students"][0]["student_email"] == "aaa@example.org"
 
 
 class TestWriteKeyFileMerge:
-    """A rerun must not destroy prior students dropped from the current roster."""
+    """A rerun must not destroy prior roster rows dropped from the current
+    roster, and must not collapse a student's multiple sections into one.
+    """
+
+    def test_two_section_student_yields_two_records(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        """The merge key is (quill_student_id, classroom_name), not
+        quill_student_id alone -- a student in two sections keeps both rows.
+        """
+        import json
+
+        path = tmp_path / "key.json"
+        script.write_key_file(
+            path,
+            {},
+            {},
+            [
+                {"quill_student_id": 1001, "classroom_name": "Room Alpha"},
+                {"quill_student_id": 1001, "classroom_name": "Room Beta"},
+            ],
+        )
+        stored = json.loads(path.read_text())
+        matching = [r for r in stored["students"] if r["quill_student_id"] == 1001]
+        assert len(matching) == 2
+        assert {r["classroom_name"] for r in matching} == {"Room Alpha", "Room Beta"}
 
     def test_prior_only_student_is_preserved(
         self, script: ModuleType, tmp_path: Path
@@ -521,8 +558,16 @@ class TestWriteKeyFileMerge:
             {},
             {},
             [
-                {"quill_student_id": 1001, "student_email": "aaa@example.org"},
-                {"quill_student_id": 2002, "student_email": "left@example.org"},
+                {
+                    "quill_student_id": 1001,
+                    "classroom_name": "Room Alpha",
+                    "student_email": "aaa@example.org",
+                },
+                {
+                    "quill_student_id": 2002,
+                    "classroom_name": "Room Beta",
+                    "student_email": "left@example.org",
+                },
             ],
         )
         # Second run's roster no longer includes 2002 (the student left the
@@ -531,9 +576,16 @@ class TestWriteKeyFileMerge:
             path,
             {},
             {},
-            [{"quill_student_id": 1001, "student_email": "aaa@example.org"}],
+            [
+                {
+                    "quill_student_id": 1001,
+                    "classroom_name": "Room Alpha",
+                    "student_email": "aaa@example.org",
+                }
+            ],
         )
         stored = json.loads(path.read_text())
+        assert len(stored["students"]) == 2
         ids = {record["quill_student_id"] for record in stored["students"]}
         assert ids == {1001, 2002}
 
@@ -544,26 +596,73 @@ class TestWriteKeyFileMerge:
 
         path = tmp_path / "key.json"
         script.write_key_file(
-            path, {}, {}, [{"quill_student_id": 1001, "classroom_code": "C01"}]
+            path,
+            {},
+            {},
+            [
+                {
+                    "quill_student_id": 1001,
+                    "classroom_name": "Room Alpha",
+                    "classroom_code": "C01",
+                }
+            ],
         )
         script.write_key_file(
-            path, {}, {}, [{"quill_student_id": 1001, "classroom_code": "C02"}]
+            path,
+            {},
+            {},
+            [
+                {
+                    "quill_student_id": 1001,
+                    "classroom_name": "Room Alpha",
+                    "classroom_code": "C02",
+                }
+            ],
         )
         stored = json.loads(path.read_text())
-        record = next(r for r in stored["students"] if r["quill_student_id"] == 1001)
-        assert record["classroom_code"] == "C02"
+        assert len(stored["students"]) == 1
+        assert stored["students"][0]["classroom_code"] == "C02"
+
+    def test_renamed_section_keeps_both_records(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        """A renamed section mints a new (id, name) key rather than
+        overwriting the old one, so the old code stays resolvable from the
+        retained key. Reconciling renamed sections is explicitly out of scope.
+        """
+        import json
+
+        path = tmp_path / "key.json"
+        script.write_key_file(
+            path, {}, {}, [{"quill_student_id": 1001, "classroom_name": "Room Alpha"}]
+        )
+        script.write_key_file(
+            path,
+            {},
+            {},
+            [{"quill_student_id": 1001, "classroom_name": "Room Alpha Renamed"}],
+        )
+        stored = json.loads(path.read_text())
+        names = {r["classroom_name"] for r in stored["students"]}
+        assert names == {"Room Alpha", "Room Alpha Renamed"}
 
     def test_backup_snapshot_is_written_on_rerun(
         self, script: ModuleType, tmp_path: Path
     ) -> None:
         path = tmp_path / "key.json"
-        script.write_key_file(path, {}, {}, [{"quill_student_id": 1001}])
-        script.write_key_file(path, {}, {}, [{"quill_student_id": 1001}])
+        script.write_key_file(
+            path, {}, {}, [{"quill_student_id": 1001, "classroom_name": "Room Alpha"}]
+        )
+        script.write_key_file(
+            path, {}, {}, [{"quill_student_id": 1001, "classroom_name": "Room Alpha"}]
+        )
         assert path.with_name("key.json.bak").exists()
 
     def test_no_bak_on_first_write(self, script: ModuleType, tmp_path: Path) -> None:
         path = tmp_path / "key.json"
-        script.write_key_file(path, {}, {}, [{"quill_student_id": 1001}])
+        script.write_key_file(
+            path, {}, {}, [{"quill_student_id": 1001, "classroom_name": "Room Alpha"}]
+        )
         assert not path.with_name("key.json.bak").exists()
 
 

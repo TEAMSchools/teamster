@@ -355,28 +355,36 @@ def write_key_file(
 ) -> None:
     """Write the retained re-identification key. Local only, never transmitted.
 
-    Merges this run's student records into any prior key file by
-    quill_student_id rather than overwriting the students array outright.
-    Overwriting would drop any student who left the pilot roster between the
-    pre- and post-period deliveries, making the already-delivered file's rows
-    non-re-identifiable from the one artifact the agreement obliges the
-    supplier to retain. The current run's record wins on conflict; prior-only
-    records are preserved. A `.bak` snapshot of the prior file is written
-    alongside it before it is replaced, and the new content is written via a
-    temp file plus an atomic replace so a crash mid-write cannot corrupt the
-    only copy.
+    Merges this run's student records into any prior key file by the roster
+    row's natural key, (quill_student_id, classroom_name), rather than
+    overwriting the students array outright or merging on quill_student_id
+    alone. quill_student_id alone would collapse a student who appears in two
+    Quill sections down to a single record, silently dropping one of their
+    two classroom associations. Overwriting outright would drop any student
+    who left the pilot roster between the pre- and post-period deliveries,
+    making the already-delivered file's rows non-re-identifiable from the one
+    artifact the agreement obliges the supplier to retain. The current run's
+    record wins on conflict; prior-only records are preserved -- including a
+    prior record for a since-renamed section, which is deliberate: a rename
+    mints a new (id, name) pair rather than overwriting the old one, so the
+    old code stays resolvable from the retained key. A `.bak` snapshot of the
+    prior file is written alongside it before it is replaced, and the new
+    content is written via a temp file plus an atomic replace so a crash
+    mid-write cannot corrupt the only copy.
     """
-    merged_students: dict[object, dict[str, object]] = {}
+    merged_students: dict[tuple[object, object], dict[str, object]] = {}
 
     if path.exists():
         prior = json.loads(path.read_text())
         for record in prior.get("students", []):
-            merged_students[record["quill_student_id"]] = dict(record)
+            key = (record["quill_student_id"], record["classroom_name"])
+            merged_students[key] = dict(record)
 
         path.with_name(f"{path.name}.bak").write_bytes(path.read_bytes())
 
     for record in key_records:
-        merged_students[record["quill_student_id"]] = dict(record)
+        key = (record["quill_student_id"], record["classroom_name"])
+        merged_students[key] = dict(record)
 
     path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.with_name(f"{path.name}.tmp")
