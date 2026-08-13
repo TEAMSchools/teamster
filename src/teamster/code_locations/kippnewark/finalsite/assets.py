@@ -1,4 +1,10 @@
-from teamster.code_locations.kippnewark import CODE_LOCATION, CURRENT_FISCAL_YEAR
+from dagster import DailyPartitionsDefinition
+
+from teamster.code_locations.kippnewark import (
+    CODE_LOCATION,
+    CURRENT_FISCAL_YEAR,
+    LOCAL_TIMEZONE,
+)
 from teamster.code_locations.kippnewark.finalsite.schema import (
     CONTACTS_SCHEMA,
     STATUS_REPORT_SCHEMA,
@@ -27,6 +33,15 @@ contacts = build_finalsite_asset(
     asset_name="contacts",
     schema=CONTACTS_SCHEMA,
     params={"includes": "contacts.relationships"},
+    # One partition per pull date. The partition key is the incremental
+    # watermark (see get_finalsite_since); start_date is the cutover date, so
+    # Dagster shows no backlog of partitions that predate the migration.
+    # end_offset=1 is required: without it the current day's partition does
+    # not exist until the following day, so a schedule targeting today's key
+    # fails with DagsterUnknownPartitionError.
+    partitions_def=DailyPartitionsDefinition(
+        start_date="2026-08-11", timezone=str(LOCAL_TIMEZONE), end_offset=1
+    ),
 )
 
 assets = [

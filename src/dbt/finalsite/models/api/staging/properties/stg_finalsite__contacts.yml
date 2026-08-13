@@ -118,7 +118,12 @@ models:
         description:
           Repeated key-value custom fields; `value` is a typed union struct
           (boolean / string / string-array). Passed through whole for downstream
-          pivoting.
+          pivoting. Tagged PII because the field set is open-ended and carries
+          indirect identifiers (housing status, race, program flags) alongside
+          benign values — the array cannot be assumed non-sensitive.
+        config:
+          meta:
+            contains_pii: true
       - name: id_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
@@ -126,7 +131,12 @@ models:
           array_string_value array<string>>>>
         description:
           Repeated identifier fields (e.g. minted student number) in the same
-          key-value shape as `custom_attributes`. Passed through whole.
+          key-value shape as `custom_attributes`. Passed through whole. Tagged
+          PII because it carries student and contact identifiers — direct
+          identifiers under FERPA.
+        config:
+          meta:
+            contains_pii: true
       - name: track_attributes
         data_type:
           array<struct<field_id string, field_name string, field_display_name
@@ -147,7 +157,12 @@ models:
           model's scalar `address_*` columns are this array's first element
           only; `int_finalsite__contacts__households` flattens every element per
           contact, with the same blank-to-null and state-uppercasing
-          normalization applied downstream.
+          normalization applied downstream. Tagged PII because it carries raw
+          street address, city and zip — direct identifiers under FERPA, and the
+          same values this model's scalar `address_*` columns already tag.
+        config:
+          meta:
+            contains_pii: true
       - name: birth_date
         data_type: date
         description: Contact's date of birth, cast from the source string.
@@ -204,6 +219,20 @@ models:
       - name: country
         data_type: string
         description: Country of the primary household address.
+      - name: relationships
+        data_type:
+          array<struct<id string, rel_id string, rel_name string, rel_type
+          string, `primary` bool, financial bool, portal_access bool>>
+        description:
+          Raw bidirectional relationship links for this contact, passed through
+          whole so `stg_finalsite__contact_relationships` unnests a deduped copy
+          instead of re-reading the accumulated source. `primary` is a
+          per-record singleton and is NULL, not false, when unset. Tagged PII
+          because `rel_name` is a person's name — a direct identifier under
+          FERPA.
+        config:
+          meta:
+            contains_pii: true
 
 unit_tests:
   - name: test_contacts_phone_normalization
@@ -270,7 +299,19 @@ unit_tests:
                 '33101' as zip,
                 'US' as country
               )
-            ] as households
+            ] as households,
+            array<
+              struct<
+                id string,
+                rel_id string,
+                rel_name string,
+                rel_type string,
+                `primary` bool,
+                financial bool,
+                portal_access bool
+              >
+            >[] as relationships,
+            '2026-08-11' as _dagster_partition_date
     expect:
       format: sql
       rows: |
@@ -327,4 +368,207 @@ unit_tests:
           ['hh1'] as household_ids,
           '+18623007240' as phone_1_number,
           '+19292255670' as phone_2_number,
-          'no phone' as phone_3_number
+          'no phone' as phone_3_number,
+          array<
+            struct<
+              id string,
+              rel_id string,
+              rel_name string,
+              rel_type string,
+              `primary` bool,
+              financial bool,
+              portal_access bool
+            >
+          >[] as relationships
+
+  - name: test_contacts_dedupe_newest_partition_wins
+    description: Accumulated partitions hold the same contact more than once.
+      The newest `_dagster_partition_date` wins and exactly one row survives per
+      contact, so the singleton grain every downstream model assumes still
+      holds. Guards the `is_primary` and address-of-record picks in #4616 / #4617 / #4680.
+    model: stg_finalsite__contacts
+    given:
+      - input: source('finalsite', 'contacts')
+        format: sql
+        rows: |
+          select
+            'con1' as id,
+            'Stale' as first_name,
+            cast(null as string) as middle_name,
+            'Doe' as last_name,
+            'Stale Doe' as full_name,
+            cast(null as string) as preferred_name,
+            'stale@example.com' as email,
+            'F' as gender,
+            'Female' as gender_display,
+            'Female' as gender_full_text,
+            'applicant' as status,
+            'new' as enrollment_type,
+            cast(null as string) as inquiry_submit_date,
+            cast(null as string) as application_submit_date,
+            cast(null as string) as contract_submit_date,
+            struct('5' as canonical_name, 'Grade 5' as name, 'ES' as school_level)
+              as grade,
+            struct('6' as canonical_name) as prospect_entry_grade,
+            struct(2025 as start_year) as school_year,
+            struct(2026 as start_year) as prospect_entry_year,
+            struct('Cell' as phone_type, '8623007240' as number) as phone_1,
+            struct(cast(null as string) as phone_type, cast(null as string) as number)
+              as phone_2,
+            struct(cast(null as string) as phone_type, cast(null as string) as number)
+              as phone_3,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as custom_attributes,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as id_attributes,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as track_attributes,
+            '2015-04-05' as birth_date,
+            [
+              struct(
+                'hh1' as id,
+                '1 Old St' as address_1,
+                cast(null as string) as address_2,
+                'Newark' as city,
+                'NJ' as state,
+                '07102' as zip,
+                'US' as country
+              )
+            ] as households,
+            array<
+              struct<
+                id string,
+                rel_id string,
+                rel_name string,
+                rel_type string,
+                `primary` bool,
+                financial bool,
+                portal_access bool
+              >
+            >[] as relationships,
+            '2026-08-10' as _dagster_partition_date
+          union all
+          select
+            'con1' as id,
+            'Fresh' as first_name,
+            cast(null as string) as middle_name,
+            'Doe' as last_name,
+            'Fresh Doe' as full_name,
+            cast(null as string) as preferred_name,
+            'fresh@example.com' as email,
+            'F' as gender,
+            'Female' as gender_display,
+            'Female' as gender_full_text,
+            'enrolled' as status,
+            'returning' as enrollment_type,
+            cast(null as string) as inquiry_submit_date,
+            cast(null as string) as application_submit_date,
+            cast(null as string) as contract_submit_date,
+            struct('6' as canonical_name, 'Grade 6' as name, 'MS' as school_level)
+              as grade,
+            struct('6' as canonical_name) as prospect_entry_grade,
+            struct(2026 as start_year) as school_year,
+            struct(2026 as start_year) as prospect_entry_year,
+            struct('Cell' as phone_type, '8623007240' as number) as phone_1,
+            struct(cast(null as string) as phone_type, cast(null as string) as number)
+              as phone_2,
+            struct(cast(null as string) as phone_type, cast(null as string) as number)
+              as phone_3,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as custom_attributes,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as id_attributes,
+            array<struct<field_name string, value struct<string_value string>>>[]
+              as track_attributes,
+            '2015-04-05' as birth_date,
+            [
+              struct(
+                'hh1' as id,
+                '2 New Ave' as address_1,
+                cast(null as string) as address_2,
+                'Newark' as city,
+                'NJ' as state,
+                '07103' as zip,
+                'US' as country
+              )
+            ] as households,
+            array<
+              struct<
+                id string,
+                rel_id string,
+                rel_name string,
+                rel_type string,
+                `primary` bool,
+                financial bool,
+                portal_access bool
+              >
+            >[] as relationships,
+            '2026-08-11' as _dagster_partition_date
+    expect:
+      format: sql
+      rows: |
+        select
+          'con1' as finalsite_enrollment_id,
+          'Fresh' as first_name,
+          cast(null as string) as middle_name,
+          'Doe' as last_name,
+          'Fresh Doe' as full_name,
+          cast(null as string) as preferred_name,
+          'fresh@example.com' as email,
+          'F' as gender,
+          'Female' as gender_display,
+          'Female' as gender_full_text,
+          'enrolled' as status,
+          'returning' as enrollment_type,
+          cast(null as string) as inquiry_submit_date,
+          cast(null as string) as application_submit_date,
+          cast(null as string) as contract_submit_date,
+          '6' as grade_canonical_name,
+          'Grade 6' as grade_name,
+          'MS' as grade_school_level,
+          '6' as prospect_entry_grade_canonical_name,
+          2026 as school_year_start,
+          2026 as prospect_entry_year_start,
+          'Cell' as phone_1_type,
+          cast(null as string) as phone_2_type,
+          cast(null as string) as phone_3_type,
+          array<struct<field_name string, value struct<string_value string>>>[]
+            as custom_attributes,
+          array<struct<field_name string, value struct<string_value string>>>[]
+            as id_attributes,
+          array<struct<field_name string, value struct<string_value string>>>[]
+            as track_attributes,
+          [
+            struct(
+              'hh1' as id,
+              '2 New Ave' as address_1,
+              cast(null as string) as address_2,
+              'Newark' as city,
+              'NJ' as state,
+              '07103' as zip,
+              'US' as country
+            )
+          ] as households,
+          cast('2015-04-05' as date) as birth_date,
+          'hh1' as household_1_id,
+          '2 New Ave' as address_1,
+          cast(null as string) as address_2,
+          'Newark' as city,
+          'NJ' as state,
+          '07103' as zip,
+          'US' as country,
+          ['hh1'] as household_ids,
+          '+18623007240' as phone_1_number,
+          cast(null as string) as phone_2_number,
+          cast(null as string) as phone_3_number,
+          array<
+            struct<
+              id string,
+              rel_id string,
+              rel_name string,
+              rel_type string,
+              `primary` bool,
+              financial bool,
+              portal_access bool
+            >
+          >[] as relationships

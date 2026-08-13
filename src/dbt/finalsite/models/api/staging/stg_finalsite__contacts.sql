@@ -1,3 +1,19 @@
+with
+    -- Pulls accumulate one Hive partition per pull date, and a `since` window
+    -- re-delivers a contact on every pull that covers it, so the same `id`
+    -- appears in many partitions. Keep the newest. `desc` alone is deliberate:
+    -- the macro compiles to array_agg(... limit 1) and BigQuery rejects
+    -- explicit null-ordering inside an aggregate. See #4715.
+    deduplicated as (
+        {{
+            dbt_utils.deduplicate(
+                relation=source("finalsite", "contacts"),
+                partition_by="id",
+                order_by="_dagster_partition_date desc",
+            )
+        }}
+    )
+
 select
     id as finalsite_enrollment_id,
     first_name,
@@ -33,6 +49,12 @@ select
     track_attributes,
     households,
 
+    -- passed through whole so stg_finalsite__contact_relationships can unnest
+    -- one deduped copy rather than re-reading the accumulated source. Same
+    -- contract-widening move `households` already carries for
+    -- int_finalsite__contacts__households.
+    relationships,
+
     safe_cast(birth_date as date) as birth_date,
 
     households[safe_offset(0)].id as household_1_id,
@@ -59,4 +81,4 @@ select
     {{ clean_phone("phone_1.number") }} as phone_1_number,
     {{ clean_phone("phone_2.number") }} as phone_2_number,
     {{ clean_phone("phone_3.number") }} as phone_3_number,
-from {{ source("finalsite", "contacts") }}
+from deduplicated

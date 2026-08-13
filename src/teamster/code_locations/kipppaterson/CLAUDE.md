@@ -17,7 +17,7 @@ GCS bucket: `teamster-kipppaterson`
 | `powerschool` (sis/dlt) | dlt assets (Oracle→BigQuery) | sensor (intraday probe, 15-min) + schedule (nightly 2am full-refresh) |
 | `amplify` (mclass sftp) | SFTP assets                  | sensor (`build_amplify_mclass_sftp_sensor`)                           |
 | `deanslist`             | API assets                   | schedule (nightly)                                                    |
-| `finalsite`             | API + SFTP assets            | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
+| `finalsite`             | API + SFTP assets            | schedule (`contacts`, 00:15 + 12:00 ET) + sensor (`status_report`)    |
 | `pearson`               | SFTP assets                  | `AutomationConditionSensor`                                           |
 | `extracts`              | BigQuery→SFTP                | schedule (3am)                                                        |
 | `couchdrop`             | sensor only                  | sensor (Google Drive watcher, Finalsite only)                         |
