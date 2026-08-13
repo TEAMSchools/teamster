@@ -1,0 +1,37 @@
+models:
+  - name: rpt_gsheets__people__location_crosswalk
+    description: |
+      Seat Tracker AppSheet feed. Reproduces the pre-2026-08-11 schema of
+      `stg_google_sheets__people__location_crosswalk`, which the app read
+      directly until the source sheet was refactored down to
+      `Name` + `Clean_Name` and every attribute moved to the `Locations` tab.
+      Column names, order, and types are 1:1 with that old table so the app
+      only has to repoint its data source. Attributes describe `Clean_Name`,
+      not `Name`.
+    columns:
+      - name: Name
+        description: Location alias as entered in source systems. One row each.
+        data_type: string
+      - name: Clean_Name
+        description: Canonical location name the alias resolves to.
+        data_type: string
+      - name: Abbreviation
+        data_type: string
+      - name: Grade_Band
+        data_type: string
+      - name: Region
+        data_type: string
+      - name: PowerSchool_School_ID
+        data_type: int64
+      - name: Deanslist_School_ID
+        data_type: int64
+      - name: Reporting_School_ID
+        data_type: int64
+      - name: Is_Campus
+        data_type: boolean
+      - name: Is_Pathways
+        data_type: boolean
+      - name: Dagster_Code_Location
+        data_type: string
+      - name: Head_of_Schools_Employee_Number
+        data_type: int64
