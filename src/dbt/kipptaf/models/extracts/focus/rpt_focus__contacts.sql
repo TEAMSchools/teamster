@@ -558,38 +558,64 @@ select
 
     cast(null as string) as contact1_blocked,
     cast(null as string) as contact1_unlisted,
-    cast(null as string) as contact1_callout,
+    if(contact1_value is not null, 'Y', cast(null as string)) as contact1_callout,
+    case
+        when contact1_value is null
+        then cast(null as string)
+        when contact1_type in ('Work Phone', 'Workplace')
+        then 'N'
+        else 'Y'
+    end as contact1_sms,
 
     contact2_type,
     contact2_value,
 
     cast(null as string) as contact2_blocked,
     cast(null as string) as contact2_unlisted,
-    cast(null as string) as contact2_callout,
+    if(contact2_value is not null, 'Y', cast(null as string)) as contact2_callout,
+    case
+        when contact2_value is null
+        then cast(null as string)
+        when contact2_type in ('Work Phone', 'Workplace')
+        then 'N'
+        else 'Y'
+    end as contact2_sms,
 
     contact3_type,
     contact3_value,
 
     cast(null as string) as contact3_blocked,
     cast(null as string) as contact3_unlisted,
-    cast(null as string) as contact3_callout,
+    if(contact3_value is not null, 'Y', cast(null as string)) as contact3_callout,
+    case
+        when contact3_value is null
+        then cast(null as string)
+        when contact3_type in ('Work Phone', 'Workplace')
+        then 'N'
+        else 'Y'
+    end as contact3_sms,
     cast(null as string) as contact4_type,
     cast(null as string) as contact4_value,
     cast(null as string) as contact4_blocked,
     cast(null as string) as contact4_unlisted,
     cast(null as string) as contact4_callout,
+    cast(null as string) as contact4_sms,
     cast(null as string) as contact5_type,
     cast(null as string) as contact5_value,
     cast(null as string) as contact5_blocked,
     cast(null as string) as contact5_unlisted,
     cast(null as string) as contact5_callout,
+    cast(null as string) as contact5_sms,
     cast(null as string) as contact6_type,
     cast(null as string) as contact6_value,
     cast(null as string) as contact6_blocked,
     cast(null as string) as contact6_unlisted,
     cast(null as string) as contact6_callout,
+    cast(null as string) as contact6_sms,
     cast(null as string) as contact7_type,
     cast(null as string) as contact7_value,
     cast(null as string) as contact7_blocked,
     cast(null as string) as contact7_unlisted,
+    cast(null as string) as contact7_callout,
+    cast(null as string) as contact7_sms,
 from custody_flagged

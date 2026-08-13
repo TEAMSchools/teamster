@@ -16,7 +16,7 @@ models:
       not considered. The address comes from
       `int_finalsite__contact_address_of_record`, resolved from the guardian's
       own household linkage; a guardian whose linkage does not resolve keeps
-      their row and gets a null address. Produces 50 columns in
+      their row and gets a null address. Produces 58 columns in
       `CONTACTS_LAYOUT` order. `SORT_ORDER` ranks guardians per student by
       `is_primary desc` so the primary contact sorts first. Emergency contacts
       are appended from the four `emrg_N` slots on
@@ -24,8 +24,13 @@ models:
       student's own record rather than relationship rows, so the relationship
       filter never sees them. Phone slots `CONTACT1_*` and `CONTACT2_*` map a
       guardian's two phones; an emergency row additionally fills `CONTACT3_*`
-      from its third phone. `CONTACT4` through `CONTACT7` are always null. Focus
-      column header casing is applied at transport time via
+      from its third phone. `TYPE` and `VALUE` for `CONTACT4` through `CONTACT7`
+      are always null — no branch of this model populates those slots. Every
+      slot also carries a `CALLOUT` and an `SMS` flag, both null wherever that
+      slot has no phone number (so slots 4 through 7 are always null on both)
+      and populated wherever it does — `CALLOUT` is `Y` and `SMS` is `N` only
+      for a Work Phone or Workplace type, `Y` otherwise. Focus column header
+      casing is applied at transport time via
       `file_config.format.header_replacements`; dbt column names remain
       lowercase snake_case.
     data_tests:
@@ -259,8 +264,14 @@ models:
       - name: contact1_callout
         data_type: string
         description:
-          Callout flag for first phone; not sourced from Finalsite — always
-          null.
+          Callout flag for first phone. Y when CONTACT1_VALUE carries a number,
+          null when the slot is empty.
+      - name: contact1_sms
+        data_type: string
+        description:
+          SMS opt-in flag for first phone. Null when CONTACT1_VALUE is empty;
+          otherwise N when CONTACT1_TYPE is Work Phone or Workplace, Y
+          otherwise.
       - name: contact2_value
         data_type: string
         description:
@@ -281,8 +292,14 @@ models:
       - name: contact2_callout
         data_type: string
         description:
-          Callout flag for second phone; not sourced from Finalsite — always
-          null.
+          Callout flag for second phone. Y when CONTACT2_VALUE carries a number,
+          null when the slot is empty.
+      - name: contact2_sms
+        data_type: string
+        description:
+          SMS opt-in flag for second phone. Null when CONTACT2_VALUE is empty;
+          otherwise N when CONTACT2_TYPE is Work Phone or Workplace, Y
+          otherwise.
       - name: contact3_value
         data_type: string
         description:
@@ -304,8 +321,14 @@ models:
       - name: contact3_callout
         data_type: string
         description:
-          Callout flag for third contact slot; not sourced from Finalsite —
-          always null.
+          Callout flag for third contact slot. Y when CONTACT3_VALUE carries a
+          number, null when the slot is empty.
+      - name: contact3_sms
+        data_type: string
+        description:
+          SMS opt-in flag for third contact slot. Null when CONTACT3_VALUE is
+          empty; otherwise N when CONTACT3_TYPE is Work Phone or Workplace, Y
+          otherwise.
       - name: contact4_type
         data_type: string
         description:
@@ -330,7 +353,13 @@ models:
         data_type: string
         description:
           Callout flag for fourth contact slot; not sourced from Finalsite —
-          always null.
+          always null. The slot is never populated, so there is no phone number
+          to gate the flag on.
+      - name: contact4_sms
+        data_type: string
+        description:
+          SMS opt-in flag for fourth contact slot; not sourced from Finalsite —
+          always null, for the same reason as CONTACT4_CALLOUT.
       - name: contact5_type
         data_type: string
         description:
@@ -355,7 +384,13 @@ models:
         data_type: string
         description:
           Callout flag for fifth contact slot; not sourced from Finalsite —
-          always null.
+          always null. The slot is never populated, so there is no phone number
+          to gate the flag on.
+      - name: contact5_sms
+        data_type: string
+        description:
+          SMS opt-in flag for fifth contact slot; not sourced from Finalsite —
+          always null, for the same reason as CONTACT5_CALLOUT.
       - name: contact6_type
         data_type: string
         description:
@@ -380,7 +415,13 @@ models:
         data_type: string
         description:
           Callout flag for sixth contact slot; not sourced from Finalsite —
-          always null.
+          always null. The slot is never populated, so there is no phone number
+          to gate the flag on.
+      - name: contact6_sms
+        data_type: string
+        description:
+          SMS opt-in flag for sixth contact slot; not sourced from Finalsite —
+          always null, for the same reason as CONTACT6_CALLOUT.
       - name: contact7_type
         data_type: string
         description:
@@ -401,11 +442,24 @@ models:
         description:
           Unlisted flag for seventh contact slot; not sourced from Finalsite —
           always null.
+      - name: contact7_callout
+        data_type: string
+        description:
+          Callout flag for seventh contact slot; not sourced from Finalsite —
+          always null. The slot is never populated, so there is no phone number
+          to gate the flag on. This column was absent from the select before
+          this feature landed (#4769) — its omission was a truncation bug, not a
+          contract difference.
+      - name: contact7_sms
+        data_type: string
+        description:
+          SMS opt-in flag for seventh contact slot; not sourced from Finalsite —
+          always null, for the same reason as CONTACT7_CALLOUT.
 
 unit_tests:
   - name: test_contacts_two_guardians
     description:
-      Verifies the 50-column CONTACTS layout for one student with three guardian
+      Verifies the 58-column CONTACTS layout for one student with three guardian
       relationships — primary guardian sorts to SORT_ORDER 1, non-primary to 2,
       and a third guardian whose household linkage does not resolve in
       `int_finalsite__contact_address_of_record` to 3. Asserts STUDENT_RELATION,
@@ -627,36 +681,44 @@ unit_tests:
             contact1_value: "+13055550100",
             contact1_blocked: null,
             contact1_unlisted: null,
-            contact1_callout: null,
+            contact1_callout: Y,
+            contact1_sms: Y,
             contact2_type: Cell Phone,
             contact2_value: "+13055550101",
             contact2_blocked: null,
             contact2_unlisted: null,
-            contact2_callout: null,
+            contact2_callout: Y,
+            contact2_sms: Y,
             contact3_type: null,
             contact3_value: null,
             contact3_blocked: null,
             contact3_unlisted: null,
             contact3_callout: null,
+            contact3_sms: null,
             contact4_type: null,
             contact4_value: null,
             contact4_blocked: null,
             contact4_unlisted: null,
             contact4_callout: null,
+            contact4_sms: null,
             contact5_type: null,
             contact5_value: null,
             contact5_blocked: null,
             contact5_unlisted: null,
             contact5_callout: null,
+            contact5_sms: null,
             contact6_type: null,
             contact6_value: null,
             contact6_blocked: null,
             contact6_unlisted: null,
             contact6_callout: null,
+            contact6_sms: null,
             contact7_type: null,
             contact7_value: null,
             contact7_blocked: null,
             contact7_unlisted: null,
+            contact7_callout: null,
+            contact7_sms: null,
           }
         - {
             student_id: "84002002002",
@@ -679,36 +741,44 @@ unit_tests:
             contact1_value: "+13055550200",
             contact1_blocked: null,
             contact1_unlisted: null,
-            contact1_callout: null,
+            contact1_callout: Y,
+            contact1_sms: N,
             contact2_type: null,
             contact2_value: null,
             contact2_blocked: null,
             contact2_unlisted: null,
             contact2_callout: null,
+            contact2_sms: null,
             contact3_type: null,
             contact3_value: null,
             contact3_blocked: null,
             contact3_unlisted: null,
             contact3_callout: null,
+            contact3_sms: null,
             contact4_type: null,
             contact4_value: null,
             contact4_blocked: null,
             contact4_unlisted: null,
             contact4_callout: null,
+            contact4_sms: null,
             contact5_type: null,
             contact5_value: null,
             contact5_blocked: null,
             contact5_unlisted: null,
             contact5_callout: null,
+            contact5_sms: null,
             contact6_type: null,
             contact6_value: null,
             contact6_blocked: null,
             contact6_unlisted: null,
             contact6_callout: null,
+            contact6_sms: null,
             contact7_type: null,
             contact7_value: null,
             contact7_blocked: null,
             contact7_unlisted: null,
+            contact7_callout: null,
+            contact7_sms: null,
           }
         - {
             student_id: "84002002002",
@@ -731,36 +801,44 @@ unit_tests:
             contact1_value: "+13055550400",
             contact1_blocked: null,
             contact1_unlisted: null,
-            contact1_callout: null,
+            contact1_callout: Y,
+            contact1_sms: Y,
             contact2_type: null,
             contact2_value: null,
             contact2_blocked: null,
             contact2_unlisted: null,
             contact2_callout: null,
+            contact2_sms: null,
             contact3_type: null,
             contact3_value: null,
             contact3_blocked: null,
             contact3_unlisted: null,
             contact3_callout: null,
+            contact3_sms: null,
             contact4_type: null,
             contact4_value: null,
             contact4_blocked: null,
             contact4_unlisted: null,
             contact4_callout: null,
+            contact4_sms: null,
             contact5_type: null,
             contact5_value: null,
             contact5_blocked: null,
             contact5_unlisted: null,
             contact5_callout: null,
+            contact5_sms: null,
             contact6_type: null,
             contact6_value: null,
             contact6_blocked: null,
             contact6_unlisted: null,
             contact6_callout: null,
+            contact6_sms: null,
             contact7_type: null,
             contact7_value: null,
             contact7_blocked: null,
             contact7_unlisted: null,
+            contact7_callout: null,
+            contact7_sms: null,
           }
 
   - name: test_contacts_guardians_then_emergency_slots
@@ -935,88 +1013,96 @@ unit_tests:
           '+13055550100' as contact1_value,
           cast(null as string) as contact1_blocked,
           cast(null as string) as contact1_unlisted,
-          cast(null as string) as contact1_callout,
+          'Y' as contact1_callout,
+          'Y' as contact1_sms,
           'Cell Phone' as contact2_type,
           '+13055550101' as contact2_value,
           cast(null as string) as contact2_blocked,
           cast(null as string) as contact2_unlisted,
-          cast(null as string) as contact2_callout,
+          'Y' as contact2_callout,
+          'Y' as contact2_sms,
           cast(null as string) as contact3_type,
           cast(null as string) as contact3_value,
           cast(null as string) as contact3_blocked,
           cast(null as string) as contact3_unlisted,
           cast(null as string) as contact3_callout,
+          cast(null as string) as contact3_sms,
           cast(null as string) as contact4_type,
           cast(null as string) as contact4_value,
           cast(null as string) as contact4_blocked,
           cast(null as string) as contact4_unlisted,
           cast(null as string) as contact4_callout,
+          cast(null as string) as contact4_sms,
           cast(null as string) as contact5_type,
           cast(null as string) as contact5_value,
           cast(null as string) as contact5_blocked,
           cast(null as string) as contact5_unlisted,
           cast(null as string) as contact5_callout,
+          cast(null as string) as contact5_sms,
           cast(null as string) as contact6_type,
           cast(null as string) as contact6_value,
           cast(null as string) as contact6_blocked,
           cast(null as string) as contact6_unlisted,
           cast(null as string) as contact6_callout,
+          cast(null as string) as contact6_sms,
           cast(null as string) as contact7_type,
           cast(null as string) as contact7_value,
           cast(null as string) as contact7_blocked,
-          cast(null as string) as contact7_unlisted
+          cast(null as string) as contact7_unlisted,
+          cast(null as string) as contact7_callout,
+          cast(null as string) as contact7_sms
         union all
         select
           '84002002002', 'Guardian', 2, 'Bob', null, 'Smith',
           'N', 'N', 'Y', 'Y',
           '200 Oak Ave', null, 'Miami', 'FL', '33102',
           'bob@example.com',
-          'Work Phone', '+13055550200', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Work Phone', '+13055550200', null, null, 'Y', 'N',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '84002002002', 'Aunt', 3, 'Carla', null, 'Reyes',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'carla@example.com',
-          'Cell Phone', '+13055550301', null, null, null,
-          'Home Phone', '+13055550302', null, null, null,
-          'Work Phone', '+13055550303', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Cell Phone', '+13055550301', null, null, 'Y', 'Y',
+          'Home Phone', '+13055550302', null, null, 'Y', 'Y',
+          'Work Phone', '+13055550303', null, null, 'Y', 'N',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '84002002002', 'None', 4, 'Dan', null, 'Ortiz',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           null,
-          'Cell Phone', '+13055550401', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Cell Phone', '+13055550401', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '84002002002', 'Aunt', 5, 'Gigi', null, 'Weber',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'gigi@example.com',
-          'Cell Phone', '+13055550501', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Cell Phone', '+13055550501', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
 
   - name: test_contacts_relation_crosswalk
     description:
@@ -1409,179 +1495,187 @@ unit_tests:
           '+13055550100' as contact1_value,
           cast(null as string) as contact1_blocked,
           cast(null as string) as contact1_unlisted,
-          cast(null as string) as contact1_callout,
+          'Y' as contact1_callout,
+          'Y' as contact1_sms,
           cast(null as string) as contact2_type,
           cast(null as string) as contact2_value,
           cast(null as string) as contact2_blocked,
           cast(null as string) as contact2_unlisted,
           cast(null as string) as contact2_callout,
+          cast(null as string) as contact2_sms,
           cast(null as string) as contact3_type,
           cast(null as string) as contact3_value,
           cast(null as string) as contact3_blocked,
           cast(null as string) as contact3_unlisted,
           cast(null as string) as contact3_callout,
+          cast(null as string) as contact3_sms,
           cast(null as string) as contact4_type,
           cast(null as string) as contact4_value,
           cast(null as string) as contact4_blocked,
           cast(null as string) as contact4_unlisted,
           cast(null as string) as contact4_callout,
+          cast(null as string) as contact4_sms,
           cast(null as string) as contact5_type,
           cast(null as string) as contact5_value,
           cast(null as string) as contact5_blocked,
           cast(null as string) as contact5_unlisted,
           cast(null as string) as contact5_callout,
+          cast(null as string) as contact5_sms,
           cast(null as string) as contact6_type,
           cast(null as string) as contact6_value,
           cast(null as string) as contact6_blocked,
           cast(null as string) as contact6_unlisted,
           cast(null as string) as contact6_callout,
+          cast(null as string) as contact6_sms,
           cast(null as string) as contact7_type,
           cast(null as string) as contact7_value,
           cast(null as string) as contact7_blocked,
-          cast(null as string) as contact7_unlisted
+          cast(null as string) as contact7_unlisted,
+          cast(null as string) as contact7_callout,
+          cast(null as string) as contact7_sms
         union all
         select
           '8400001', 'None', 2, 'Cousin', null, 'Lopez',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'cousin@example.com',
-          'Home Phone', '+13055550400', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055550400', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'Father', 3, 'Dad', null, 'Lopez',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'dad@example.com',
-          'Home Phone', '+13055550200', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055550200', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'Parent', 4, 'Nogender', null, 'Lopez',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'nogender@example.com',
-          'Home Phone', '+13055550300', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055550300', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'Aunt', 5, 'Auntf', null, 'Martinez',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'auntf@example.com',
-          'Home Phone', '+13055550500', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055550500', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'Uncle', 6, 'Auntm', null, 'Nunez',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'auntm@example.com',
-          'Home Phone', '+13055550600', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055550600', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'None', 7, 'Auntnull', null, 'Ortega',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'auntnull@example.com',
-          'Home Phone', '+13055550700', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055550700', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'Grandfather', 8, 'Grandm', null, 'Perez',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'grandm@example.com',
-          'Home Phone', '+13055550800', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055550800', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'None', 9, 'Grandnull', null, 'Quintana',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'grandnull@example.com',
-          'Home Phone', '+13055550900', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055550900', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'Stepmother', 10, 'Stepf', null, 'Rivera',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'stepf@example.com',
-          'Home Phone', '+13055551000', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055551000', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'Stepfather', 11, 'Stepm', null, 'Sanchez',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'stepm@example.com',
-          'Home Phone', '+13055551100', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055551100', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
         union all
         select
           '8400001', 'Stepparent', 12, 'Stepnull', null, 'Torres',
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'stepnull@example.com',
-          'Home Phone', '+13055551200', null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null, null,
-          null, null, null, null
+          'Home Phone', '+13055551200', null, null, 'Y', 'Y',
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null,
+          null, null, null, null, null, null
 
   - name: test_contacts_custody_flags
     description:
@@ -1741,61 +1835,69 @@ unit_tests:
             cast(null as string) as contact1_blocked,
             cast(null as string) as contact1_unlisted,
             cast(null as string) as contact1_callout,
+            cast(null as string) as contact1_sms,
             cast(null as string) as contact2_type,
             cast(null as string) as contact2_value,
             cast(null as string) as contact2_blocked,
             cast(null as string) as contact2_unlisted,
             cast(null as string) as contact2_callout,
+            cast(null as string) as contact2_sms,
             cast(null as string) as contact3_type,
             cast(null as string) as contact3_value,
             cast(null as string) as contact3_blocked,
             cast(null as string) as contact3_unlisted,
             cast(null as string) as contact3_callout,
+            cast(null as string) as contact3_sms,
             cast(null as string) as contact4_type,
             cast(null as string) as contact4_value,
             cast(null as string) as contact4_blocked,
             cast(null as string) as contact4_unlisted,
             cast(null as string) as contact4_callout,
+            cast(null as string) as contact4_sms,
             cast(null as string) as contact5_type,
             cast(null as string) as contact5_value,
             cast(null as string) as contact5_blocked,
             cast(null as string) as contact5_unlisted,
             cast(null as string) as contact5_callout,
+            cast(null as string) as contact5_sms,
             cast(null as string) as contact6_type,
             cast(null as string) as contact6_value,
             cast(null as string) as contact6_blocked,
             cast(null as string) as contact6_unlisted,
             cast(null as string) as contact6_callout,
+            cast(null as string) as contact6_sms,
             cast(null as string) as contact7_type,
             cast(null as string) as contact7_value,
             cast(null as string) as contact7_blocked,
-            cast(null as string) as contact7_unlisted
+            cast(null as string) as contact7_unlisted,
+            cast(null as string) as contact7_callout,
+            cast(null as string) as contact7_sms
         union all
         select
             '8400002', 'Guardian', 2, 'Bbb', null, 'Bbb',
             'Y', 'Y', 'Y', 'Y',
             null, null, null, null, null,
             null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null
         union all
         select
             '8400002', 'Guardian', 3, 'Ccc', null, 'Ccc',
             'N', 'N', 'Y', 'Y',
             null, null, null, null, null,
             null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null
 
   - name: test_contacts_phone_junk_and_type
     description:
@@ -1950,45 +2052,53 @@ unit_tests:
             cast(null as string) as contact1_blocked,
             cast(null as string) as contact1_unlisted,
             cast(null as string) as contact1_callout,
+            cast(null as string) as contact1_sms,
             cast(null as string) as contact2_type,
             cast(null as string) as contact2_value,
             cast(null as string) as contact2_blocked,
             cast(null as string) as contact2_unlisted,
             cast(null as string) as contact2_callout,
+            cast(null as string) as contact2_sms,
             cast(null as string) as contact3_type,
             cast(null as string) as contact3_value,
             cast(null as string) as contact3_blocked,
             cast(null as string) as contact3_unlisted,
             cast(null as string) as contact3_callout,
+            cast(null as string) as contact3_sms,
             cast(null as string) as contact4_type,
             cast(null as string) as contact4_value,
             cast(null as string) as contact4_blocked,
             cast(null as string) as contact4_unlisted,
             cast(null as string) as contact4_callout,
+            cast(null as string) as contact4_sms,
             cast(null as string) as contact5_type,
             cast(null as string) as contact5_value,
             cast(null as string) as contact5_blocked,
             cast(null as string) as contact5_unlisted,
             cast(null as string) as contact5_callout,
+            cast(null as string) as contact5_sms,
             cast(null as string) as contact6_type,
             cast(null as string) as contact6_value,
             cast(null as string) as contact6_blocked,
             cast(null as string) as contact6_unlisted,
             cast(null as string) as contact6_callout,
+            cast(null as string) as contact6_sms,
             cast(null as string) as contact7_type,
             cast(null as string) as contact7_value,
             cast(null as string) as contact7_blocked,
-            cast(null as string) as contact7_unlisted
+            cast(null as string) as contact7_unlisted,
+            cast(null as string) as contact7_callout,
+            cast(null as string) as contact7_sms
         union all
         select
             '8400003', 'Guardian', 2, 'Good', null, 'Bbb',
             'N', 'N', 'Y', 'Y',
             null, null, null, null, null,
             null,
-            'Work Phone', '+13055550134', null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null, null,
-            null, null, null, null
+            'Work Phone', '+13055550134', null, null, 'Y', 'N',
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null,
+            null, null, null, null, null, null
