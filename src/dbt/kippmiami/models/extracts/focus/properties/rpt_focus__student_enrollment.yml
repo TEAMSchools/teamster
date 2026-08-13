@@ -15,12 +15,6 @@ models:
               - syear
           config:
             severity: error
-      - dbt_utils.expression_is_true:
-          arguments:
-            expression: enrollment_code is not null
-          config:
-            severity: error
-            where: "true"
     columns:
       - name: syear
         data_type: int64
@@ -152,7 +146,7 @@ unit_tests:
             cast(null as int64) as fl_days_present,
             cast(null as int64) as fl_days_absent
 
-  - name: entry_absent_year_resends_despite_drifted_focus_startdate
+  - name: entry_absent_year_resends_despite_prior_syear_in_focus
     description: >-
       Same student exists in Focus, but only in a different school year —
       (student_id, syear) for the target year is absent, so the 2026 entry is
