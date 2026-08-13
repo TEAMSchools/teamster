@@ -206,13 +206,15 @@ models:
           The section's own raw score, taken from its overall row rather than
           the response group. Summed across sections on Total rows.
       - name: scale_score
-        data_type: float64
+        data_type: numeric
         description: >-
           Converted scale score, read from the sheet's aligned_scale_score so no
           rescaling happens here. On Total rows it is the average of sections
           for ACT and the sum for everything else, and null when the student did
           not sit every expected section — which is how an incomplete attempt
-          stays visible rather than being dropped.
+          stays visible rather than being dropped. Numeric because the
+          conversion CTE casts aligned_scale_score once; left as int64 the ACT
+          average would return float64 and coerce the whole union up.
       - name: aligned_scope
         data_type: string
         description: >-
