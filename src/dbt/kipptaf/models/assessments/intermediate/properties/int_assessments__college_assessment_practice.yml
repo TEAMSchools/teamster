@@ -231,6 +231,31 @@ models:
           time. Total rows carry Total rather than the section value they
           aggregate. Backticked at every site because grouping is a BigQuery
           reserved word.
+      - name: is_overall_score
+        data_type: int64
+        description: >-
+          Flags a total score rather than a section. Keyed on response_type
+          rather than on subject_area as the official hub does, because that hub
+          has no group rows to exclude.
+      - name: is_subject_score
+        data_type: int64
+        description: >-
+          Flags a section score rather than a total. Group rows read 0 on this
+          and on is_overall_score, being response-group detail rather than
+          either.
+      - name: max_scale_score
+        data_type: numeric
+        description: >-
+          The student's best score for this score type, carried on every attempt
+          so an average over attempts can weigh the best rather than each
+          sitting. Two practice SAT administrations in one year give a student
+          two rows per score type, and rn_highest tags which one earned it. Null
+          on group rows.
+      - name: running_max_scale_score
+        data_type: numeric
+        description: >-
+          Highest score for this score type as of this test date, so an earlier
+          sitting is not retroactively improved by a later one.
       - name: rn_highest
         data_type: int64
         description: >-

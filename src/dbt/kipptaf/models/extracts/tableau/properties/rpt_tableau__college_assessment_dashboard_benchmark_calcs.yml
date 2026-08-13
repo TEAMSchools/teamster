@@ -98,12 +98,10 @@ models:
           Highest scale score for the student on this aligned scope and subject
           area across all assessment administrations. Null for students with no
           qualifying score. Used as the score value for benchmark percent-met
-          calculations in Tableau. float64 rather than int64 because it is read
-          straight from the hub without a cast — the practice branch's rounded
-          ACT average is float, and the union coerces the official side's
-          numeric up to match. Every scale score is still a whole number, so
-          only the type changed.
-        data_type: float64
+          calculations in Tableau. numeric rather than int64 because it is read
+          straight from the hub without a cast. Values are unchanged — every
+          scale score is a whole number.
+        data_type: numeric
       - name: benchmark_name
         description: >
           Readiness benchmark label, HS-Ready or College-Ready, derived from

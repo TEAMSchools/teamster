@@ -1,26 +1,39 @@
 models:
   - name: rpt_tableau__college_assessment_dashboard_scores
     description: >-
-      Score-level detail for the CARAT workbook's average-score views. Reads the
-      official assessment hub only, so every row is an official result —
-      practice results never appear here. Region, school, and graduation year
-      come from the student's current enrollment rather than their enrollment at
-      test time, because the join carries no academic-year predicate.
-      Deduplicated against byte-identical rows inherited from duplicate kippadb
-      standardized test records; see the inline TODO.
+      Score-level detail for the CARAT workbook's average-score views. Reads
+      int_assessments__all_college_assessments, so both official and practice
+      results appear and test_type separates them.
+
+
+      One row per attempt. The workbook's Score Category filter switches the
+      measure between scale_score, each attempt's own score, and
+      max_scale_score, that student's best for the score type — both averaged
+      over the same population of attempts, so a student who tested twice counts
+      twice under either measure. That is intended.
+
+
+      Region, school, and graduation year come from the student's current
+      enrollment rather than their enrollment at test time, because the join
+      carries no academic-year predicate. Deduplicated against byte-identical
+      rows inherited from duplicate kippadb standardized test records; see the
+      inline TODO.
     data_tests:
       - dbt_utils.unique_combination_of_columns:
           arguments:
             combination_of_columns:
               - student_number
+              - test_type
               - score_type
               - test_date
               - scale_score
           config:
             severity: error
-            # Guards the deduplication. These four columns functionally determine
-            # every other projected column, so a failure here means new
-            # non-identical duplicates appeared upstream.
+            # Guards the deduplication, and must match its partition exactly.
+            # test_type is in the key because practice and official reuse the
+            # same score_type strings, so a student could hold both on one date
+            # at one score — a legitimate pair the dedupe keeps and a
+            # test_type-less key would fail on.
     columns:
       - name: student_number
         data_type: int64
@@ -28,8 +41,8 @@ models:
       - name: test_type
         data_type: string
         description: >-
-          Always Official in this model, since it reads only the official
-          assessment hub.
+          Official or Practice. A row header on the average-score view, so both
+          bands display and can be filtered.
       - name: scope
         data_type: string
         description: >-

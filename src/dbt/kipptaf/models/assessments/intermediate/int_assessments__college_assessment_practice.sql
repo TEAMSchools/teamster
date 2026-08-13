@@ -12,7 +12,6 @@ with
             c.raw_score_low,
             c.raw_score_high,
             c.scale_score,
-            c.aligned_scale_score,
             c.score_type,
             c.expected_total_subjects_tested,
 
@@ -22,6 +21,13 @@ with
             s.expected_aligned_subject_area as aligned_subject_area,
             s.expected_grouping as `grouping`,
             s.expected_course_discipline as course_discipline,
+
+            /* cast once, here, so every downstream scale score stays numeric and
+               matches the official hub. The total branch averages and sums this,
+               and numeric in means numeric out -- left as int64 the rounded ACT
+               average returns float64, which coerces the whole union up and
+               breaks the contract on every consumer. */
+            cast(c.aligned_scale_score as numeric) as aligned_scale_score,
 
         from
             {{ ref("stg_google_sheets__kippfwd__practice_scale_score_conversion") }}
@@ -268,5 +274,21 @@ select
             order by scale_score desc
         )
     ) as rn_highest,
+
+    if(response_type = 'Total', 1, 0) as is_overall_score,
+
+    if(response_type = 'Subject', 1, 0) as is_subject_score,
+
+    if(
+        response_type = 'Group',
+        null,
+        max(scale_score) over (
+            partition by powerschool_student_number, scope, score_type, response_type
+        )
+    ) as max_scale_score,
+
+    max(scale_score) over (
+        partition by powerschool_student_number, score_type order by test_date asc
+    ) as running_max_scale_score,
 
 from scores

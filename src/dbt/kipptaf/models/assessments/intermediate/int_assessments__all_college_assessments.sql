@@ -51,14 +51,19 @@ with
 
             cast(null as string) as aligned_subject,
             cast(null as string) as salesforce_id,
-            cast(null as int64) as is_overall_score,
-            cast(null as int64) as is_subject_score,
+
+            is_overall_score,
+
+            is_subject_score,
+
             cast(null as int64) as n_overall_scores,
             cast(null as int64) as n_subject_scores,
             cast(null as string) as strategy_case,
             cast(null as string) as surrogate_key,
-            cast(null as numeric) as running_max_scale_score,
-            cast(null as numeric) as max_scale_score,
+
+            running_max_scale_score,
+
+            max_scale_score,
             cast(null as numeric) as previous_total_score_change,
             cast(null as numeric) as superscore,
             cast(null as numeric) as avg_running_max_superscore,

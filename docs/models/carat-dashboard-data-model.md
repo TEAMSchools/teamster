@@ -62,8 +62,9 @@ current.
 
 ### Two score pipelines
 
-Every question about CARAT numbers starts with which pipeline is involved,
-because the two never mix inside a single model:
+Every question about CARAT numbers starts with which pipeline is involved. They
+stay separate until `int_assessments__all_college_assessments`, which unions
+them; from there down, `test_type` is what tells them apart:
 
 | Pipeline | Hub model                                      | `test_type` | Origin                                           |
 | -------- | ---------------------------------------------- | ----------- | ------------------------------------------------ |
@@ -88,7 +89,7 @@ Score Category selects between the two measure columns, `scale_score` and
 ### Lineage
 
 ```text
-int_assessments__college_assessment          (official hub — SAT/PSAT/ACT)
+int_assessments__all_college_assessments     (both hubs — official and practice)
 int_extracts__student_enrollments            (region, school, grad year, cohort)
         └─ rpt_tableau__college_assessment_dashboard_scores
 ```
@@ -98,16 +99,23 @@ six. It adds no calculation; all aggregation happens in Tableau.
 
 ### Grain
 
-One row per student per score record. Approximately 29,000 rows across roughly
-4,600 students, spanning graduation years 2011 through 2029.
+One row per student per attempt. Roughly 29,000 official rows plus 1,100
+practice, across about 4,600 students and graduation years 2011 through 2029.
 
 ### Behavior worth knowing
 
-**Only official scores can ever appear here.** The model reads the official hub
-alone, so `test_type` has exactly one value, `Official`. The workbook still
-shows `test_type` as a row header, which suggests it was built anticipating
-practice rows — but no practice score can reach this view without adding a
-second union branch reading `int_assessments__college_assessment_practice`.
+**Both test types appear here.** The model reads
+`int_assessments__all_college_assessments`, so `test_type` holds `Official` and
+`Practice`, and the workbook's row header separates them. Practice contributes
+AY2023 ACT today — 1,103 rows across composite, math and reading.
+
+**Both Score Category measures average over the same rows, and that is
+deliberate.** The workbook toggles the measure between `scale_score`, each
+attempt's own score, and `max_scale_score`, that student's best for the score
+type. Both average over the full population of attempts, so a student who tested
+twice counts twice under either measure. Do not "fix" that by filtering
+`rn_highest = 1` — the whole point of the `scale_score` option is to see every
+attempt, and both measures share one row set.
 
 **Region and school are the student's current values, not the values at test
 time.** The enrollment join matches on `student_number` only, with no
@@ -128,11 +136,16 @@ in the scope columns without a code change.
 
 **This model is deduplicated, and the duplicates come from Salesforce.** See
 _Known issue — duplicate kippadb test records_ below. The model applies
-`dbt_utils.deduplicate` on `student_number`, `score_type`, `test_date`, and
-`scale_score`, which is lossless because those four columns functionally
-determine every other projected column. A uniqueness test on that key guards the
-deduplication, so new non-identical duplicates upstream fail loudly instead of
-shifting a reported average.
+`dbt_utils.deduplicate` on `student_number`, `test_type`, `score_type`,
+`test_date`, and `scale_score`, which is lossless because those columns
+functionally determine every other projected column. A uniqueness test on the
+same key guards it, so new non-identical duplicates upstream fail loudly instead
+of shifting a reported average.
+
+`test_type` is in that key because practice and official reuse the same
+`score_type` strings — `sat_math`, `sat_ebrw` — so a student could legitimately
+hold both on one date at one score. Without it the dedupe would collapse a real
+pair, and the uniqueness test would fail on what the dedupe correctly kept.
 
 **A small number of rows carry no graduation year.** Fewer than ten. They fall
 out of any grad-year-grouped view silently rather than appearing in an unknown
@@ -639,10 +652,17 @@ Practice enters at the `Subject` and `Total` grain
 (`where response_type != 'Group'`), matching official's one-row-per-subject
 shape. Response-group detail stays in the practice hub.
 
-Fifteen columns are official-only and read null on practice rows —
-`aligned_subject`, `salesforce_id`, the two score-shape flags and their counts,
-`strategy_case`, `surrogate_key`, and the running-max, growth, and superscore
-family. They are computed inside the official hub rather than below the union.
+Eleven columns are official-only and read null on practice rows —
+`aligned_subject`, `salesforce_id`, the two score-shape counts, `strategy_case`,
+`surrogate_key`, `previous_total_score_change`, and the four superscore fields.
+They are computed inside the official hub rather than below the union.
+
+The practice hub supplies `is_overall_score`, `is_subject_score`,
+`max_scale_score`, and `running_max_scale_score` itself, matching the official
+definitions, so those four populate for both test types. `is_overall_score` and
+`is_subject_score` key on `response_type` there rather than on `subject_area` as
+official does — official has no group rows to exclude, and inferring from
+`subject_area` would tag every group row as a subject score.
 
 ### Fields moved upstream
 
@@ -651,7 +671,7 @@ family. They are computed inside the official hub rather than below the union.
 | `rn_highest`                                      | **done** — each hub computes its own, the union passes it through  |
 | max score by aligned scope                        | **done** — `benchmark_aligned_scope_max_score` plus a row tag      |
 | `benchmark_aligned_scope`, `aligned_subject_area` | **done** — derived here for both branches, or data in the scaffold |
-| `max_scale_score`                                 | official hub, as `avg(scale_score)` over `rn_highest = 1`          |
+| `max_scale_score`                                 | **done** — each hub computes its own                               |
 | the `met_min_score_int_*` family                  | `_over_time`, five window variants                                 |
 | attempt counts                                    | `_participation_roster`, as a pivot plus ten windows               |
 

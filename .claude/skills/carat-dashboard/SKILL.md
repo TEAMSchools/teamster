@@ -774,6 +774,15 @@ Work outward from the student, stopping at the first layer with zero rows.
   safe only because grade 11 AY2023 has no data at all — 138849 and 138850
   return zero rows from every Illuminate layer. AY2023 ACT stays and still
   reports 379 composites.
+- **`rpt_tableau__college_assessment_dashboard_scores` averages over ALL
+  attempts under both Score Category options — that is the design, not a bug.**
+  The filter switches the measure between `scale_score` (each attempt's own
+  score) and `max_scale_score` (that student's best for the score type); both
+  average over the same row set, so a student who tested twice counts twice
+  either way. It looks like an attempt-weighting error and it is not. Do not
+  "correct" it by filtering `rn_highest = 1` — that would empty the
+  `scale_score` option, whose entire purpose is showing every attempt. The
+  view's grain is one row per attempt and both measures share it.
 - **Deleting a scaffold row is the exclusion mechanism, and it is grade-blind.**
   The conversion-to-scaffold join keys on (`academic_year`, `scope`,
   `score_type`) and deliberately omits grade, so a score type shared across

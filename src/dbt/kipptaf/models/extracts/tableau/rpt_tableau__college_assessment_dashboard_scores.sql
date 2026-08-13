@@ -26,7 +26,7 @@ with
             e.graduation_year,
             e.ktc_cohort,
 
-        from {{ ref("int_assessments__college_assessment") }} as s
+        from {{ ref("int_assessments__all_college_assessments") }} as s
         inner join
             {{ ref("int_extracts__student_enrollments") }} as e
             on s.student_number = e.student_number
@@ -46,20 +46,10 @@ with
     ),
 
     deduplicated as (
-        /*
-            Partitioning on these four columns is lossless: verified that they
-            functionally determine every other projected column, so the only rows
-            collapsed are byte-identical copies. `scale_score` is deliberately
-            part of the key -- one student has two DIFFERENT scores recorded for
-            the same score type and date, and that pair is a genuine source
-            discrepancy rather than a duplicate, so it must survive rather than
-            have one side silently discarded. The `order_by` is immaterial
-            because every row within a partition is identical.
-        */
         {{
             dbt_utils.deduplicate(
                 relation="scores",
-                partition_by="student_number, score_type, test_date, scale_score",
+                partition_by="student_number, test_type, score_type, test_date, scale_score",
                 order_by="max_scale_score desc",
             )
         }}
