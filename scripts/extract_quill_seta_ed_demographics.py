@@ -14,8 +14,12 @@ See docs/reference/quill-seta-ed-demographics-extract.md.
 
 from __future__ import annotations
 
+import argparse
+import datetime
 import json
 import re
+import sys
+from collections import Counter
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -460,3 +464,159 @@ def read_workbook_rows(path: Path) -> list[dict[str, object]]:
     workbook.close()
 
     return parsed
+
+
+SOURCE_TABLE = "teamster-332318.kipptaf_extracts.int_extracts__student_enrollments"
+
+
+def build_query(table: str) -> str:
+    """One row per roster email: the pilot year if present, else the most recent.
+
+    rn_year = 1 picks the student's primary enrollment stint within a year, so
+    a mid-year school move does not produce two rows for one student-year.
+    """
+    # trunk-ignore(bandit/B608): table is a module constant, not user input; emails/pilot_year are bound as query parameters
+    return f"""
+        with
+            ranked as (
+                select
+                    lower(student_email) as student_email,
+                    student_number,
+                    academic_year,
+                    race_ethnicity,
+                    gender,
+                    lunch_status,
+                    iep_status,
+                    ml_status,
+                    row_number() over (
+                        partition by lower(student_email)
+                        order by academic_year desc
+                    ) as year_rank,
+                from `{table}`
+                where
+                    lower(student_email) in unnest(@emails)
+                    and academic_year <= @pilot_year
+                    and rn_year = 1
+            )
+        select * except (year_rank)
+        from ranked
+        where year_rank = 1
+    """
+
+
+def fetch_demographics(
+    client,
+    emails: Sequence[str],
+    pilot_year: int,
+    table: str = SOURCE_TABLE,
+) -> dict[str, Demographics]:
+    """Query the warehouse for one demographics record per roster email."""
+    from google.cloud import bigquery
+
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ArrayQueryParameter("emails", "STRING", list(emails)),
+            bigquery.ScalarQueryParameter("pilot_year", "INT64", pilot_year),
+        ]
+    )
+
+    results: dict[str, Demographics] = {}
+    for row in client.query(build_query(table), job_config=job_config).result():
+        results[row["student_email"]] = Demographics(
+            academic_year=row["academic_year"],
+            student_number=row["student_number"],
+            race_ethnicity=row["race_ethnicity"],
+            gender=row["gender"],
+            meal_status=row["lunch_status"],
+            iep_status=row["iep_status"],
+            mll_status=row["ml_status"],
+        )
+
+    return results
+
+
+def _report_cell_counts(rows: Sequence[Mapping[str, object]]) -> None:
+    """Print the counts that decide whether this file is safe to send."""
+    for column in (
+        "race_ethnicity",
+        "gender",
+        "meal_status",
+        "iep_status",
+        "mll_status",
+        "demographics_source",
+    ):
+        counts = Counter(str(row[column]) for row in rows)
+        print(f"\n{column}:")
+        for value, count in sorted(counts.items(), key=lambda item: -item[1]):
+            flag = "  <-- singleton" if count == 1 else ""
+            print(f"  {value or '(blank)':<24} {count:>4}{flag}")
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--roster", type=Path, required=True, help="roster .xlsx path")
+    parser.add_argument(
+        "--output-dir", type=Path, required=True, help="directory for the workbook"
+    )
+    parser.add_argument(
+        "--key-file",
+        type=Path,
+        required=True,
+        help="retained re-identification key (JSON); never commit or transmit",
+    )
+    parser.add_argument("--pilot-year", type=int, default=2025)
+    parser.add_argument("--gcp-project", default="teamster-332318")
+    args = parser.parse_args(argv)
+
+    from google.cloud import bigquery
+
+    roster = read_roster(args.roster)
+    print(
+        f"roster: {len(roster)} rows, {len({e.quill_student_id for e in roster})} students"
+    )
+
+    prior_classrooms, prior_teachers = read_codebook(args.key_file)
+    classroom_codes = assign_codes(
+        (entry.classroom_name for entry in roster), prior_classrooms, "C", 2
+    )
+    teacher_codes = assign_codes(
+        (entry.teacher_name for entry in roster), prior_teachers, "T", 1
+    )
+
+    emails = sorted({entry.student_email for entry in roster})
+    demographics = fetch_demographics(
+        bigquery.Client(project=args.gcp_project), emails, args.pilot_year
+    )
+    print(f"matched {len(demographics)} of {len(emails)} emails")
+
+    rows = build_output_rows(
+        roster, demographics, args.pilot_year, classroom_codes, teacher_codes
+    )
+    validate_rows(rows, roster)
+
+    extract_date = datetime.date.today().isoformat()
+    workbook_path = (
+        args.output_dir / f"quill_seta_ed_student_demographics_{extract_date}.xlsx"
+    )
+    write_workbook(workbook_path, rows)
+
+    # Re-validate from disk. The check above proves the rows were built right;
+    # this one proves the file that gets sent is the file we built.
+    validate_rows(read_workbook_rows(workbook_path), roster)
+
+    write_key_file(
+        args.key_file,
+        classroom_codes,
+        teacher_codes,
+        build_key_records(roster, demographics, classroom_codes, teacher_codes),
+    )
+
+    _report_cell_counts(rows)
+    print(f"\nworkbook: {workbook_path}")
+    print(f"key file (do not send): {args.key_file}")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
