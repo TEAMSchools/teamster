@@ -62,8 +62,8 @@ with
             cast(null as string) as surrogate_key,
 
             running_max_scale_score,
-
             max_scale_score,
+
             cast(null as numeric) as previous_total_score_change,
             cast(null as numeric) as superscore,
             cast(null as numeric) as avg_running_max_superscore,
@@ -89,6 +89,18 @@ with
                 'sat_math_test_score',
                 'sat_reading_test_score'
             ) as is_benchmark_eligible,
+
+            /* dense_rank on test_date, not row_number, because 261 official
+               sittings carry the same score twice under different rn_highest.
+               Its max is the distinct-date count, which count(*) would inflate. */
+            dense_rank() over (
+                partition by student_number, test_type, score_type order by test_date
+            ) as rn_test_date,
+
+            dense_rank() over (
+                partition by academic_year, student_number, test_type, score_type
+                order by test_date
+            ) as rn_test_date_year,
 
         from all_scores
     )
@@ -124,6 +136,22 @@ select
     avg_running_max_superscore,
     sum_running_max_superscore,
     runnning_superscore,
+
+    /* Total rows only. A subject score type's partition holds no total rows, so
+       the guard lands null there rather than a section-score count. */
+    if(
+        is_overall_score = 1,
+        max(rn_test_date) over (partition by student_number, test_type, score_type),
+        null
+    ) as attempt_lifetime,
+
+    if(
+        is_overall_score = 1,
+        max(rn_test_date_year) over (
+            partition by academic_year, student_number, test_type, score_type
+        ),
+        null
+    ) as yearly_attempts_totals,
 
     /* Tags the row a consumer filters on, replacing the dedupe
        rpt_tableau__college_assessment_dashboard_benchmark_calcs performs.

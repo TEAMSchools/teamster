@@ -311,104 +311,108 @@ it is the join key to the scaffold.
 ## Goal type — Attempts
 
 Attempt goals answer "what share of students sat this test at least once, and at
-least twice." They are the simplest of the goal types and the clearest example
-of a structural problem that affects all of them, so they are documented first.
+least twice."
 
-### The goals sheet does two jobs, and that is why empty rows cannot be deleted
+### The sheet was rebuilt — thresholds and percentages are now separate
 
-`stg_google_sheets__kippfwd__goals` simultaneously declares **which score types
-exist** and **which score types have targets**. The scaffold role is not
-documented anywhere in the sheet — it is a side effect of how
-`rpt_tableau__college_assessment_dashboard_current` reads it:
+`stg_google_sheets__kippfwd__goals` used to do two jobs at once: declare which
+score types exist, and declare which have targets. That is why rows with a null
+`pct_goal` were load-bearing — `_current` inner joins the sheet on `score_type`
+alone, so deleting an empty row dropped a score type from the dashboard.
 
-```sql
-from int_assessments__college_assessment as s
-inner join stg_google_sheets__kippfwd__goals as g
-    on s.score_type = g.expected_score_type
-    and g.expected_goal_type != 'Board'
+That is resolved. The sheet now carries **only percentages**, one column per
+metric, and the thresholds live on `stg_google_sheets__kippfwd__scaffold` as
+`a1_attempt_min_score`, `a2_plus_attempts_min_score`, `hs_ready_min_score` and
+`college_ready_min_score`. A consumer needs both models to evaluate a goal, and
+`int_google_sheets__kippfwd__goals_unpivot` is the model that pairs them.
+
+Two consequences worth knowing:
+
+`min_score` no longer carries two meanings. It used to be an attempt count on an
+Attempts row and a scale score on a Benchmark row, so no comparison could be
+written generically against it. Each threshold now has its own named column on
+the scaffold.
+
+Goals are no longer differentiated by region or school. KIPP Forward stopped
+setting them that way, so `region` and `schoolid` are gone from the sheet
+entirely rather than sitting null.
+
+### Shape
+
+The sheet is wide — `academic_year`, `test_type`, `grade_level`, `cohort`,
+`score_type`, then one column per metric — and staging unpivots it to long, so a
+goal is identified by:
+
+```text
+(academic_year, test_type, grade_level, score_type, expected_metric_type)
 ```
 
-The join is `inner` and keyed on `score_type` alone, so a score type with no
-goals row disappears from the dashboard entirely.
+`expected_metric_type` holds the sheet's own column names (`pct_1_attempt`,
+`pct_2_plus_attempts`, `pct_hs_ready`, `pct_college_ready`). Two derived columns
+reproduce the vocabulary the reporting views already key on:
+`expected_goal_type` is Attempts or Benchmark, and `expected_goal_subtype` is
+`1 Attempt`, `2+ Attempts`, `HS-Ready` or `College-Ready`.
 
-The consequence is counterintuitive: **rows with no goal value are
-load-bearing.** Deleting rows where `pct_goal is null` would drop 11 of 15 score
-types from `_current` — every section-level type (`sat_ebrw`, `sat_math`,
-`psat10_math_section`, `psat89_ebrw`, …) and all of ACT, because their Benchmark
-rows carry null `pct_goal` too. Only the four `*_total` types would survive.
+Those four subtype strings are spelled out rather than derived. They disagree on
+separator — a space for attempts, a hyphen for ready — and on casing, and `HS`
+is an initialism that `initcap` renders as `Hs`. No regex reaches all four; the
+retired tiers `EA-Ready` and `ED-Ready` were initialisms too, so the exception
+is the norm here.
 
-Until the two roles are separated — scaffold from
-`stg_google_sheets__kippfwd__expected_assessments` or from
-`int_assessments__college_assessment` directly, targets from goals — empty rows
-stay, and `pct_goal is not null` is the de facto "this goal is tracked" flag.
+### Adding a metric is a data change, not a schema change
+
+Because staging unpivots, a fifth metric column on the sheet becomes rows rather
+than columns. Two things must move with it: the `expected_goal_type` and
+`expected_goal_subtype` CASEs, which have no `else` and will read null for an
+unnamed metric — deliberately, so a new column surfaces rather than being folded
+silently into an existing family.
+
+UNPIVOT drops nulls, so a metric blank for a given row produces no row at all
+rather than a row with a null goal. Every PSAT row is blank for
+`pct_2_plus_attempts`, since those tests are administered once, and those rows
+are simply absent.
 
 ### What is tracked
 
-A populated `pct_goal` means the goal is actually tracked; a null means the row
-exists only as scaffold. Reading the sheet that way:
+All current rows are AY2026. Attempts are tracked at 95% for one attempt across
+PSAT 8/9, PSAT10, PSAT NMSQT and SAT; only SAT carries a two-or-more target, at
+80% official and 95% practice. Practice is higher because a practice
+administration is scheduled rather than something a student registers for.
 
-| Year | Tracked for attempts                                                         |
-| ---- | ---------------------------------------------------------------------------- |
-| 2025 | SAT only — 1 attempt 95%, 2+ attempts 80%                                    |
-| 2026 | SAT, PSAT 8/9, PSAT 10, PSAT NMSQT at 95% for 1 attempt; SAT also 80% for 2+ |
+### The attempt count is now measured on distinct dates
 
-The PSATs have no `2+ Attempts` target because they are administered once a
-year. PSAT NMSQT is counted as PSAT 10 where needed, which is also why
-`_benchmark_calcs` folds them into a single `PSAT10/NMSQT` threshold group.
+`attempt_lifetime` and `yearly_attempts_totals` on
+`int_assessments__all_college_assessments` count distinct `test_date` per
+student, test type and score type, on total rows only. This replaces counting
+rows, which credited a double-entered sitting as two attempts — see _Known issue
+— duplicate kippadb test records_.
 
-### Grain
+`dense_rank` on `test_date` is what makes it work: duplicate dates share a rank,
+so the max of the rank is the distinct-date count. `row_number` or `count(*)`
+would both overcount. `alt_attempts` in `_over_time` still counts rows and has
+not been moved over.
 
-Once goals stop varying by region, school, and grade level — the current
-direction, and already true of every attempts row today (all ten have `region`,
-`schoolid`, `grade_level`, and `cohort` null) — an attempts goal is uniquely
-identified by:
+### The participation roster reads those fields rather than deriving counts
 
-```text
-(academic_year, expected_test_type, expected_scope, goal_category)
-```
+`int_students__college_assessment_participation_roster` used to pivot scope
+counts per year, running-sum them, then take a max for a lifetime figure — and
+separately unpivot and re-pivot the goals into twelve columns via a concatenated
+metric key. All of that is gone. It reads `attempt_lifetime` and
+`yearly_attempts_totals` and pivots them once.
 
-`goal_category` is the attempt tier, `1 Attempt` or `2+ Attempts`. No pivot is
-needed at this grain, which removes the 18-branch `CASE` in the staging model
-that maps `'PSAT10 1 Attempt'` to `psat10_1_attempt`, along with
-`expected_metric_name` and `expected_metric_label`.
+`test_type` and `academic_year` are now part of its grain. `academic_year`
+matters because a student repeating a grade holds two years at one grade level,
+which the old grain merged into one row. `test_type` matters because the goals
+join is keyed on it, so practice rows pick up the practice target rather than
+the official one.
 
-### The 12 columns in the participation roster have no consumer
+**A consumer wanting only official participation must filter `test_type` as well
+as `rn_lifetime = 1`.** `rn_lifetime` is partitioned by student and test type,
+so a student with both returns one row of each.
 
-`int_students__college_assessment_participation_roster` unpivots and re-pivots
-the attempts goals into 12 columns (`sat_1_attempt_min_score`,
-`psat89_2_plus_attempts_min_score`, and so on) via `cross join attempt_goals`.
-All four consumers of the roster read only the `*_count_lifetime` columns and
-`rn_lifetime` — none reads a goal column.
-
-The `cross join` is safe today only because the pivot collapses all ten goal
-rows into exactly one. **It stops being safe as soon as the goals source carries
-`academic_year`**, which yields one row per year, or `expected_test_type`, which
-adds a `Practice` row — either fans the roster 2-3× silently.
-
-So the columns should be dropped rather than ported. A consumer that needs an
-attempts goal joins the long-format goals table on `academic_year` and
-`expected_scope`. The roster counts are already per scope (`psat89_count`,
-`psat10_count`, `sat_count`, …), so the shapes line up — but the roster
-currently discards `academic_year` in its `yearly_tests` pivot and would have to
-carry it through to join on.
-
-### The attempt count itself is wrong, independent of the goal
-
-`rpt_tableau__college_assessment_dashboard_over_time` computes `alt_attempts`
-with `count(*)`, so the duplicated Salesforce records described under _Known
-issue — duplicate kippadb test records_ count as separate sittings. **Four
-students currently read as meeting the "2+ Attempts" goal on the strength of a
-duplicate record.** `count(distinct test_date)` fixes it. Reformatting the goals
-sheet does not — this is a measure defect, not a goal-definition defect.
-
-### `min_score` carries two different meanings
-
-On an attempts row `min_score` is an attempt count (1 or 2). On a Benchmark row
-it is a scale score (890, 1010). A threshold comparison therefore cannot be
-written generically against the column, and for attempts it duplicates what
-`goal_category` already says. Worth resolving before Benchmark rows land in a
-reformatted sheet — either drop it from attempts rows or rename it to something
-type-neutral and document it per `goal_type`.
+The goal columns it carries still have no consumer — all four readers take only
+`*_count_lifetime` and `rn_lifetime`. They are kept for the reporting views to
+pick up rather than dropped.
 
 ## Goal type — Benchmark
 
@@ -504,6 +508,62 @@ than a year of progress.
 Do not "fix" this by unifying the fields. The requirement is that a goal
 declares which basis it is measured on, so both goal sets can live in one table
 and each gets the right denominator.
+
+## `int_google_sheets__kippfwd__goals_unpivot`
+
+Pairs each goal with the threshold it is measured against, so a consumer reads
+one model instead of joining two sheets. One row per academic year, test type,
+grade level, score type and metric.
+
+### What it does
+
+The goals sheet arrives already long, having unpivoted its percentage columns in
+staging. This model unpivots the **scaffold's** four min-score columns onto the
+same metric vocabulary and joins the two on
+`(academic_year, test_type, score_type, grade_level, expected_metric_type)`.
+
+Mapping the scaffold's column names onto the goals vocabulary is a CASE, because
+the two sides spell the same concept differently — `hs_ready_min_score` against
+`pct_hs_ready`. If the staging model is ever renamed to a neutral vocabulary,
+that CASE disappears and both sides simply agree.
+
+### The grade split is load-bearing
+
+The scaffold states grade level as a comma-separated list where one row covers
+several grades — SAT thresholds are stated as `11,12`. The goals sheet states
+one grade per row. An equality join therefore matches neither, and **all four
+SAT goals would silently vanish**.
+
+The scaffold is split to one row per grade before the join:
+
+```sql
+cross join unnest(split(expected_grade_level, ',')) as expected_grade_level_item
+```
+
+Values are trimmed as well, because a sheet edit that types `11, 12` would
+otherwise break the join with no error. This is the pattern the scaffold's own
+column description prescribes.
+
+### Driven from goals, so gaps stay visible
+
+The join is a left join from goals. A goal whose score type has no scaffold row
+survives with a null threshold rather than disappearing — `psat10nmsqt_total` is
+in that state today, a combined PSAT10 and NMSQT goal with no matching scaffold
+row. Adding one means widening the scaffold's `expected_scope` accepted values
+to admit `PSAT10/NMSQT`, since a combined row has no single honest scope.
+
+### `expected_metric_label` is not unique per row
+
+The model carries a scope-and-metric token — `sat_1_attempt`, `psat89_hs_ready`
+— so a consumer can PIVOT to one column per metric. It reproduces the vocabulary
+the retired sheet derived through an 18-branch CASE.
+
+It repeats across grades. Grades 11 and 12 both carry `sat_total_score`, so each
+SAT label appears twice. The Attempts metrics hold the same threshold and target
+at both grades, so aggregating over the label is safe for those. **The Benchmark
+metrics do not** — grade 11 and 12 differ on the target, so a PIVOT grouping on
+the label alone averages two grades into one wrong number. Keep `grade_level` in
+the grouping for anything Benchmark.
 
 ## `int_assessments__college_assessment_practice`
 
@@ -1061,10 +1121,34 @@ date, and score — one real sitting entered twice. Measured on `sat_total_score
 | 1                  | 3,401    | yes                                        |
 | 2                  | 87       | yes, all 87                                |
 
-The duplication is confined to SAT. PSAT 8/9, PSAT 10, PSAT NMSQT, and ACT show
-none. Because the SAT unpivots into three score types, each duplicated sitting
-produces three duplicated rows — `sat_ebrw`, `sat_math`, and `sat_total_score` —
-for 258 excess rows reaching the reporting layer.
+Within what reaches the hub, the duplication is confined to SAT — PSAT 8/9, PSAT
+10, PSAT NMSQT and ACT show none. Because the SAT unpivots into three score
+types, each duplicated sitting produces three duplicated rows — `sat_ebrw`,
+`sat_math`, and `sat_total_score` — for 258 excess rows reaching the reporting
+layer.
+
+That is a statement about the hub, not about kippadb. Checking
+`stg_kippadb__standardized_test` directly turns up **478 duplicate PSAT records
+from 2024**, the same shape — two records, one score, one date. They never reach
+CARAT because the hub takes PSAT from College Board rather than Salesforce, but
+they do affect anything reading kippadb standardized tests.
+
+### It is one bad load, not scattered noise
+
+Attributing the SAT duplicates to an administration: 86 of the 87 are **Camden,
+class of 2027, the April 2026 school-day SAT** — 80 on 4/23 and 6 on 4/29. The
+remaining one is a 2019 sitting. The other 32 students from that April
+administration have a single clean record each, so the load hit a subset.
+
+That concentration matters for reading the numbers. Camden 2027 is the senior
+cohort, and their SAT 2+ attempts rate is measured against an 0.80 goal, so 86
+double-counted sittings inflate a board-reported figure for one cohort rather
+than adding noise everywhere.
+
+An AP check using the same method finds **no** duplicates, but only once
+`subject` is part of the key. Grouped on contact, date and test type alone,
+1,548 students who legitimately sit several AP exams on one day read as 2,289
+duplicates. Any duplicate-hunting query over this table must key on subject.
 
 ### Two distinct effects
 
@@ -1073,13 +1157,12 @@ landing-page view read 1013.41 where the deduplicated value is 1017.84 — rough
 four points low, because the duplicated sittings happen to carry below-average
 scores. Now fixed in `_scores`.
 
-**Attempt counts are still inflated.** `rn_highest` in the official hub ranks
-the two copies as separate attempts, visible as rank patterns `1,2`, `1,3`, and
-`2,3`. Anything counting the hub with `count(*)` therefore credits a
-double-entered sitting as two attempts — including the `alt_attempts` CTE in
-`_over_time`, which is the count that actually determines the reported Attempts
-figure. Up to 87 students may read as having taken one more SAT than they did,
-which can move them across an `Attempts` goal threshold. **This is not fixed.**
+**Attempt counts were inflated.** `rn_highest` in the official hub ranks the two
+copies as separate attempts, visible as rank patterns `1,2`, `1,3`, and `2,3`,
+so anything counting the hub with `count(*)` credited a double-entered sitting
+as two attempts. That is what `attempt_lifetime` and `yearly_attempts_totals` on
+`int_assessments__all_college_assessments` now avoid — they count distinct test
+dates, so a score filed twice on one date counts once.
 
 ### Where it is and is not handled
 
@@ -1089,12 +1172,18 @@ which can move them across an `Attempts` goal threshold. **This is not fixed.**
 | `int_kippadb__standardized_test_unpivot`             | Not deduplicated                                      |
 | `int_assessments__college_assessment` (official hub) | Not deduplicated                                      |
 | `rpt_tableau__college_assessment_dashboard_scores`   | **Deduplicated**, with a guarding uniqueness test     |
-| Attempt counts in `_over_time`                       | Not fixed                                             |
+| `attempt_lifetime` / `yearly_attempts_totals`        | **Immune** — counts distinct dates, not rows          |
+| `alt_attempts` in `_over_time`                       | Still counts rows                                     |
 
 Deduplicating in `_scores` was chosen over a source-layer fix so the reported
 averages stop being wrong today, without masking the problem where other
 consumers read it. The inline `TODO` in the model names the source fix so the
 workaround can be removed once the records are cleaned up.
+
+The counting fix and a source cleanup address the same rows from opposite ends,
+so whichever lands first absorbs the correction and the other becomes a no-op
+for these counts. When comparing attempt counts before and after either change,
+record which happened first or the comparison cannot be interpreted.
 
 ### One case that is not a duplicate
 

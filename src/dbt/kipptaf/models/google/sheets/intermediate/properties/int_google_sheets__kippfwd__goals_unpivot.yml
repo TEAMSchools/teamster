@@ -1,0 +1,129 @@
+models:
+  - name: int_google_sheets__kippfwd__goals_unpivot
+    description: >-
+      KIPP Forward's college-entrance assessment goals paired with the threshold
+      each one is measured against, one row per academic year, test type, grade
+      level, score type, and metric. Consumers get the target percentage and the
+      bar from a single model instead of joining two sheets themselves.
+
+
+      The unpivot in the name is the scaffold's four min-score columns —
+      stg_google_sheets__kippfwd__goals already arrives long, having unpivoted
+      the sheet's percentage columns in staging.
+
+
+      Driven from goals with a left join, so a goal whose score type has no
+      scaffold row survives with a null expected_min_score rather than
+      disappearing. psat10nmsqt_total is currently in that state — it is a
+      combined PSAT10 and PSAT NMSQT row on the goals sheet with no matching
+      scaffold row, so its thresholds read null.
+
+
+      The scaffold states grade level as a comma-separated list where one row
+      covers several grades, so it is split to one row per grade before the
+      join. Without that, SAT thresholds (stated as 11,12) would match neither
+      of the goals sheet's separate grade 11 and grade 12 rows.
+
+
+      See docs/models/carat-dashboard-data-model.md.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - test_type
+              - grade_level
+              - score_type
+              - expected_metric_type
+    columns:
+      - name: academic_year
+        data_type: int64
+        description: >-
+          Academic year the goal applies to, start-year convention, so SY26-27
+          reads 2026.
+      - name: test_type
+        data_type: string
+        description: Official or Practice, matching both assessment hubs.
+      - name: grade_level
+        data_type: string
+        description: >-
+          Grade the goal applies to, from the goals sheet. Always a single grade
+          here — the scaffold's multi-grade rows are split to match it rather
+          than the reverse.
+      - name: cohort
+        data_type: string
+        description: >-
+          Graduating class the goal applies to, an alternate key to grade_level
+          for the same students.
+      - name: score_type
+        data_type: string
+        description: >-
+          Score identifier the goal is measured against, matching score_type on
+          the assessment hubs.
+      - name: expected_metric_type
+        data_type: string
+        description: >-
+          Which metric the goal targets — pct_1_attempt, pct_2_plus_attempts,
+          pct_hs_ready, or pct_college_ready. Part of the join key, so the
+          scaffold's min-score column names are mapped onto this vocabulary
+          rather than carried as their own.
+      - name: expected_goal_type
+        data_type: string
+        description: >-
+          Attempts or Benchmark. Attempts compares against a count of sittings,
+          Benchmark against a scale score, which is what expected_min_score
+          means in each case.
+      - name: expected_goal_subtype
+        data_type: string
+        description: >-
+          The metric as the reporting views label it — 1 Attempt, 2+ Attempts,
+          HS-Ready, College-Ready.
+      - name: expected_metric_goal
+        data_type: float64
+        description: >-
+          Share of students expected to meet the metric, as a 0-1 fraction.
+      - name: expected_scope
+        data_type: string
+        description: >-
+          The test itself — SAT, ACT, PSAT 8/9, PSAT10, PSAT NMSQT — from the
+          scaffold. The goals sheet carries no scope, so this is the only place
+          consumers can get it. Null where no scaffold row matched.
+      - name: expected_aligned_scope
+        data_type: string
+        description: >-
+          Scope with ACT and SAT folded together and the two PSAT windows folded
+          together, for attainment comparisons only. Never max a score
+          partitioned on it. Null where no scaffold row matched.
+      - name: expected_subject_area
+        data_type: string
+        description: >-
+          Section as the source systems spell it. Combined or Composite on the
+          total rows these goals are stated at. Null where no scaffold row
+          matched.
+      - name: expected_aligned_subject_area
+        data_type: string
+        description: >-
+          Subject area with Composite and Combined folded to Total. Null where
+          no scaffold row matched.
+      - name: expected_min_score
+        data_type: int64
+        description: >-
+          The bar the metric is measured against, from the scaffold — a count of
+          sittings for the Attempts metrics and a scale score for the Benchmark
+          ones. Null where the goal's score type has no scaffold row.
+      - name: expected_metric_label
+        data_type: string
+        description: >-
+          Scope and metric joined into one token — sat_1_attempt,
+          psat89_hs_ready — reproducing the vocabulary the retired goals sheet
+          derived, so a consumer can PIVOT on it to reach a column per metric.
+          Null where no scaffold row matched, since the scope half is unknown.
+
+
+          Not unique per row. Grades 11 and 12 both carry sat_total_score, so
+          each SAT label appears twice. The Attempts metrics hold the same
+          threshold and target at both grades, so aggregating over the label is
+          safe for those. The Benchmark metrics do not — grade 11 and 12 differ
+          on the target — so a PIVOT that groups on this column alone averages
+          two grades into one wrong number. Keep grade_level in the grouping for
+          anything Benchmark.

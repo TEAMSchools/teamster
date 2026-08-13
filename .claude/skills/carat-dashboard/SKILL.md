@@ -579,18 +579,39 @@ tier (EBRW 480, Math 530) lives in `_benchmark_calcs`, the grad-bar tier (EBRW
 450, Math 440) lives in the goals sheet as `Board` metrics. Same concept, two
 homes.
 
-### Two dimensions the current schema cannot express
+### The rebuilt goals tab — what shipped
 
-`stg_google_sheets__kippfwd__goals` has no column for either, so the SY26-27
-goals are not a value-only sheet update:
+The sheet was rebuilt on named range `src_google_sheets__kippfwd_goals_v3`, nine
+columns:
 
-- **School year.** The sheet carries `College Ready goal SY26-27` _and_
-  `SY27-28` — the same goal with different percentages per year.
-- **Goal horizon.** `Goals by EOY 26-27` versus `Goals by 11th grade` — an
-  interim and a terminal target for the same cohort.
+```text
+academic_year, test_type, grade_level, cohort, score_type,
+pct_1_attempt, pct_2_plus_attempts, pct_hs_ready, pct_college_ready
+```
 
-Also unmodelled: per-school goals arrive as free text in one cell
-(`KHS: 52% NCA: 53% Lab: 69%`).
+Staging unpivots the four percentage columns to long, so a metric is a row
+rather than a column. Ten sheet rows become 34, not 40 — UNPIVOT drops nulls,
+and every PSAT row is blank for `pct_2_plus_attempts`.
+
+Three things this resolved, all previously listed here as unmodellable:
+
+- **School year** is now `academic_year`, a real column.
+- **Thresholds left the goals sheet entirely.** They live on the scaffold as
+  `a1_attempt_min_score`, `a2_plus_attempts_min_score`, `hs_ready_min_score`,
+  `college_ready_min_score`. `min_score` no longer means an attempt count on one
+  row and a scale score on the next.
+- **Region and school differentiators are gone**, not null — KIPP Forward
+  stopped setting goals that way, so the free-text per-school cell has no
+  successor.
+
+`int_google_sheets__kippfwd__goals_unpivot` joins goals to scaffold and is what
+consumers should read. Goal horizon (interim versus terminal for one cohort) is
+still unmodelled; every current row is AY2026.
+
+Declare `grade_level` and `cohort` as STRING in the source. The scaffold's
+`expected_grade_level` holds comma-separated lists, and INT64 would foreclose
+the same on the goals side while needing a sheet-coordinated external rebuild to
+undo.
 
 ### Practice is first-class in the strategy
 
@@ -599,6 +620,41 @@ The strategy's third pillar commissions this work directly — track progress
 "overall and subject-specific". The testing calendar gives every grade a
 `Date 1 (Practice)` and a `Date 2 (official)`. Grade 11 has **two** official
 dates, so official administrations need round identity too, not just practice.
+
+### Counting attempts — use the hub, never `count(*)`
+
+`int_assessments__all_college_assessments` carries `attempt_lifetime` and
+`yearly_attempts_totals`. Both count **distinct `test_date`**, on total rows
+only, partitioned by `test_type`. Read those rather than counting rows anywhere.
+
+`count(*)` is wrong on this data: 261 official sittings hold the same score
+twice under different `rn_highest` values, so a row count credits one sitting as
+two attempts. `dense_rank` on `test_date` is what makes the fix work — duplicate
+dates share a rank, so the max of the rank is the distinct-date count.
+`row_number` would not.
+
+Section rows read null on both fields by design. An attempt is counted once per
+sitting, not once per section sat.
+
+`int_students__college_assessment_participation_roster` reads these rather than
+deriving counts. Its grain now includes `test_type`, so **filter `test_type` as
+well as `rn_lifetime = 1`** — a student with practice data returns one row of
+each.
+
+### Hunting duplicates in kippadb — key on subject
+
+If you check `stg_kippadb__standardized_test` for duplicate records, the key
+must be contact, date, test type **and subject**. Without subject, 1,548
+students who legitimately sit several AP exams on one day read as 2,289
+duplicates, and a delete list built from that would destroy real records.
+
+Fingerprint every non-identity column, not just the score fields, before calling
+a pair redundant — two records can share a score and differ on
+`administration_round` or `scoring_irregularity`.
+
+Verified real duplicates as of 2026-08: 87 ACT/SAT records (86 of them Camden
+class of 2027 on the April 2026 school-day SAT) and 478 PSAT records from 2024.
+One 2015 SAT pair has genuinely different scores and is not a duplicate.
 
 ### Where the new goals tab belongs
 

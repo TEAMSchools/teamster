@@ -161,6 +161,22 @@ models:
         description: >-
           Superscore as of this test date. Name carries a typo inherited from
           the upstream hub, where it has no consumers.
+      - name: attempt_lifetime
+        data_type: int64
+        description: >-
+          How many times the student has sat this test across all years, carried
+          on every row. Counts distinct test dates rather than rows, because 261
+          official sittings hold the same score twice under different rn_highest
+          values and a row count would report those students one attempt high.
+          Partitioned by test_type, so a practice sitting never inflates an
+          official count. Null on section rows — an attempt is counted once per
+          sitting, off the total row, not once per section sat.
+      - name: yearly_attempts_totals
+        data_type: int64
+        description: >-
+          The same count scoped to one academic year, so a student who sat the
+          SAT twice in SY26-27 reads 2 here and carries their full history in
+          attempt_lifetime. Null on section rows for the same reason.
       - name: rn_highest_benchmark_aligned_scope
         data_type: int64
         description: >-
