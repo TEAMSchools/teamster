@@ -85,7 +85,10 @@ models:
         description: Start year of the prospect's intended entry school year.
       - name: phone_1_type
         data_type: string
-        description: Type label of the first phone.
+        description:
+          Type label of the first phone — `Cell`, `Home`, or `Work`. Null when
+          Finalsite holds the number with no type selected, which it emits as an
+          empty string and this model normalizes to null.
       - name: phone_1_number
         data_type: string
         description:
@@ -96,7 +99,10 @@ models:
           (control characters stripped) rather than becoming null.
       - name: phone_2_type
         data_type: string
-        description: Type label of the second phone.
+        description:
+          Type label of the second phone — `Cell`, `Home`, or `Work`. Null when
+          Finalsite holds the number with no type selected, which it emits as an
+          empty string and this model normalizes to null.
       - name: phone_2_number
         data_type: string
         description:
@@ -104,7 +110,10 @@ models:
           `phone_1_number`.
       - name: phone_3_type
         data_type: string
-        description: Type label of the third phone.
+        description:
+          Type label of the third phone — `Cell`, `Home`, or `Work`. Null when
+          Finalsite holds the number with no type selected, which it emits as an
+          empty string and this model normalizes to null.
       - name: phone_3_number
         data_type: string
         description:
