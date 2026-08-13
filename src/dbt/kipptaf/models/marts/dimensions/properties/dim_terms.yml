@@ -28,12 +28,11 @@ models:
           Foreign key to dim_locations. Surrogate key derived from the location
           name. Nullable when the period is region-wide or when the school is
           not present in dim_locations.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
         data_tests:
           - relationships:
               arguments:

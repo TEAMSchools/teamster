@@ -39,11 +39,11 @@ models:
         description: >-
           FK to dim_student_enrollments. Surrogate key derived from
           student_number, _dbt_source_project, academic_year, and entrydate.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -53,11 +53,11 @@ models:
         data_type: date
         description: >-
           Calendar date of the attendance record. FK to dim_dates.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_dates')
-            to_columns: [date_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_dates')
+              to_columns: [date_key]
         data_tests:
           - relationships:
               arguments:
@@ -71,11 +71,11 @@ models:
           stg_google_sheets__reporting__terms on (schoolid, term,
           academic_year). Null when the attendance row's term does not appear in
           the terms sheet for that school-year.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_terms')
-            to_columns: [term_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_terms')
+              to_columns: [term_key]
         data_tests:
           - relationships:
               arguments:

@@ -24,11 +24,11 @@ models:
         data_type: string
         description:
           Foreign key to `dim_staff_work_assignments.work_assignment_key`.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff_work_assignments')
-            to_columns: [work_assignment_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff_work_assignments')
+              to_columns: [work_assignment_key]
         data_tests:
           - not_null
           - relationships:
@@ -38,11 +38,11 @@ models:
       - name: staff_key
         data_type: string
         description: Foreign key to `dim_staff.staff_key`.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - not_null
           - relationships:
@@ -54,11 +54,11 @@ models:
         description: >-
           Foreign key to `dim_staff.staff_key` — point-in-time manager for the
           period. Nullable for manager-less staff.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -69,11 +69,11 @@ models:
         description: >-
           Foreign key to `dim_locations.location_key`. Nullable when the ADP
           location has no canonical mapping.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_locations')
-            to_columns: [location_key]
-            warn_unsupported: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_locations')
+              to_columns: [location_key]
         data_tests:
           - relationships:
               arguments:

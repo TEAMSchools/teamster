@@ -180,6 +180,8 @@ with
             enr.is_counseling_services,
             enr.is_student_athlete,
             enr.ada,
+            enr.unweighted_ada,
+            enr.weighted_ada,
             enr.ada_above_or_at_80,
             enr.hos,
             enr.school_leader,
@@ -900,6 +902,8 @@ select
     s.is_counseling_services,
     s.is_student_athlete,
     s.ada,
+    s.unweighted_ada,
+    s.weighted_ada,
     s.ada_above_or_at_80,
 
     s.`quarter`,

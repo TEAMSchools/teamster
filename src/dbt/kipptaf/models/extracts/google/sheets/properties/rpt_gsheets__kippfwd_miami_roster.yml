@@ -1,61 +1,212 @@
 models:
   - name: rpt_gsheets__kippfwd_miami_roster
+    description: >-
+      KIPP Forward Miami grades 7 and 8 roster, one row per student per academic
+      year for the current and prior year. Enrollment, identity, demographics,
+      and guardian contacts come from Focus; FAST scores from FLDOE.
+      advisor_lastfirst, gpa_cumulative, gpa_y1, and iep_status are
+      hybrid-sourced from PowerSchool for the years it covers and from Focus for
+      AY2026 onward; previous_year_ada always comes from PowerSchool and is null
+      once the prior academic year itself falls past PowerSchool's Miami
+      coverage.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - academic_year
+              - fleid
+          config:
+            severity: error
+            where: fleid is not null
     columns:
-      - name: academic_year
-        data_type: int64
-      - name: lastfirst
-        data_type: string
-      - name: advisor_lastfirst
-        data_type: string
-      - name: ps_id
-        data_type: int64
-      - name: mdcps_id
-        data_type: string
-      - name: gender
-        data_type: string
-      - name: iep_status
-        data_type: string
-      - name: contact_1_name
-        data_type: string
-      - name: contact_1_phone_home
-        data_type: string
-      - name: contact_1_phone_mobile
-        data_type: string
-      - name: contact_1_email_current
-        data_type: string
-      - name: contact_2_name
-        data_type: string
-      - name: contact_2_phone_home
-        data_type: string
-      - name: contact_2_phone_mobile
-        data_type: string
-      - name: contact_2_email_current
-        data_type: string
       - name: enroll_status
         data_type: int64
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - -1
+                  - 0
+                  - 2
+                  - 3
+                quote: false
+          - not_null
+        description: >-
+          -1 for a future-dated enrollment, 3 for graduated, 0 for currently
+          enrolled, 2 for withdrawn. Derived locally from Focus enrollment dates
+          and exit codes, except the graduated branch, which reads the upstream
+          enroll_status column directly since it keys on grad_type and is
+          correct — see the inline SQL comment for why the rest is derived
+          locally. -1 fires for every row in the current academic year until the
+          first day of school and self-heals afterward; consumers filtering to 0
+          see zero current-year students until then, a deliberate and disclosed
+          tradeoff.
+      - name: iep_status
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - Has IEP
+                  - No IEP
+          - not_null
+        description: >-
+          Has IEP when the student carries a PowerSchool exceptionality code
+          (spedlep) for years PowerSchool covers, else when the student carries
+          an FEFP exceptionality code in Focus, otherwise No IEP.
+      - name: academic_year
+        description: School year start year, 2026 = 2026-27.
+        data_type: int64
+      - name: lastfirst
+        description: Student name formatted as Last, First.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: advisor_lastfirst
+        description: >-
+          Advisor name from PowerSchool for the years PowerSchool covers. Not
+          sourced for Focus-era years - Focus has no advisory structure for
+          grades 7-8.
+        data_type: string
+      - name: ps_id
+        description: >-
+          PowerSchool student number. Null for students who enrolled after the
+          Focus cutover and never held a PowerSchool record.
+        data_type: int64
+        config:
+          meta:
+            contains_pii: true
+      - name: mdcps_id
+        description: >-
+          Miami-Dade County Public Schools student id, zero-padded to 7
+          characters.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: gender
+        description:
+          Single-character gender code extracted from the Focus sex label.
+        data_type: string
+      - name: contact_1_name
+        description: Name of the student's first-listed Focus contact.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_phone_home
+        description:
+          Home phone number of the student's first-listed Focus contact.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_phone_mobile
+        description:
+          Mobile phone number of the student's first-listed Focus contact.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_1_email_current
+        description: Email address of the student's first-listed Focus contact.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_name
+        description: Name of the student's second-listed Focus contact.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_phone_home
+        description:
+          Home phone number of the student's second-listed Focus contact.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_phone_mobile
+        description: >-
+          Mobile phone number of the student's second-listed Focus contact.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
+      - name: contact_2_email_current
+        description: Email address of the student's second-listed Focus contact.
+        data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: gpa_cumulative
+        description: >-
+          Unweighted cumulative Y1 GPA from PowerSchool for the years
+          PowerSchool covers. Not sourced for Focus-era years - Miami middle
+          school no longer produces a GPA.
         data_type: float64
       - name: gpa_y1
+        description: >-
+          Y1 term GPA from PowerSchool for the years PowerSchool covers. Not
+          sourced for Focus-era years - Miami middle school no longer produces a
+          GPA.
         data_type: float64
       - name: previous_year_ada
+        description: >-
+          Prior academic year's unweighted average daily attendance, from
+          PowerSchool. Null once the prior academic year itself falls past
+          PowerSchool's Miami coverage (academic year 2025), and for students
+          with no powerschool_id match in that prior year.
         data_type: float64
       - name: grade_level
+        description:
+          Student's grade level. This roster is scoped to grades 7 and 8.
         data_type: int64
       - name: fleid
+        description: Florida Education Identifier.
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: ela_pm1
+        description:
+          FLDOE FAST ELA progress monitoring 1 achievement level and scale
+          score.
         data_type: string
       - name: ela_pm2
+        description:
+          FLDOE FAST ELA progress monitoring 2 achievement level and scale
+          score.
         data_type: string
       - name: ela_pm3
+        description:
+          FLDOE FAST ELA progress monitoring 3 achievement level and scale
+          score.
         data_type: string
       - name: math_pm1
+        description: >-
+          FLDOE FAST math progress monitoring 1 achievement level and scale
+          score.
         data_type: string
       - name: math_pm2
+        description: >-
+          FLDOE FAST math progress monitoring 2 achievement level and scale
+          score.
         data_type: string
       - name: math_pm3
+        description: >-
+          FLDOE FAST math progress monitoring 3 achievement level and scale
+          score.
         data_type: string
       - name: ela_pm3_prev
+        description: >-
+          Prior academic year's FLDOE FAST ELA progress monitoring 3 achievement
+          level and scale score.
         data_type: string
       - name: math_pm3_prev
+        description: >-
+          Prior academic year's FLDOE FAST math progress monitoring 3
+          achievement level and scale score.
         data_type: string
