@@ -35,6 +35,12 @@ models:
               - grade_level
               - score_type
               - expected_metric_type
+          config:
+            severity: error
+            # error, not the project's warn default, because every key column is
+            # taken from the goals side of the join. A fan-out on the scaffold
+            # side therefore lands as duplicate rows identical in all five, and
+            # an avg() over them would skew a reported goal rather than fail.
     columns:
       - name: academic_year
         data_type: int64
