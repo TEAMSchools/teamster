@@ -338,22 +338,13 @@ with
             * except (student_relation, contact_gender),
 
             case
-                when
-                    student_relation in (
-                        'Mother',
-                        'Father',
-                        'Parent',
-                        'Guardian',
-                        'Grandmother',
-                        'Grandfather',
-                        'Aunt',
-                        'Uncle',
-                        'Stepfather',
-                        'Stepmother',
-                        'Stepparent',
-                        'Surrogate'
-                    )
-                then student_relation
+                -- The next several branches are case-sensitive exact matches
+                -- against controlled-vocabulary fields (Finalsite's guardian
+                -- rel_type, or emrg_N_relationship_ss) -- lowercase 'parent',
+                -- 'guardian', and 'stepparent' below are deliberately
+                -- distinct from the Title-Case free-text fallback further
+                -- down, which would otherwise swallow them before their
+                -- gender split ran.
                 when student_relation = 'parent' and contact_gender in ('F', 'Female')
                 then 'Mother'
                 when student_relation = 'parent' and contact_gender in ('M', 'Male')
@@ -387,6 +378,30 @@ with
                 then 'Aunt'
                 when student_relation = 'Great Uncle'
                 then 'Uncle'
+                -- emrg_N_relationship_txt is free text (case and padding not
+                -- guaranteed) -- match it case/whitespace-insensitively, but
+                -- still emit the canonical Title-Case Focus value. Every name
+                -- in this list is a single word, so initcap() reconstructs it
+                -- correctly. Placed last so it only catches values the
+                -- case-sensitive branches above didn't -- otherwise a bare
+                -- lowercase 'parent'/'guardian'/'stepparent' guardian
+                -- rel_type would be swallowed here before its gender split.
+                when
+                    lower(trim(student_relation)) in (
+                        'mother',
+                        'father',
+                        'parent',
+                        'guardian',
+                        'grandmother',
+                        'grandfather',
+                        'aunt',
+                        'uncle',
+                        'stepfather',
+                        'stepmother',
+                        'stepparent',
+                        'surrogate'
+                    )
+                then initcap(trim(student_relation))
                 else 'None'
             end as student_relation,
         from all_contacts
@@ -544,6 +559,13 @@ with
         -- CUSTODY in the final select below -- BigQuery has no lateral
         -- column aliases, so sort_order (added by ranked, above) can't be
         -- read in the same select list that produces it.
+        --
+        -- sort_order = 1 assumes the student's first contact is a guardian --
+        -- zero students currently have emergency contacts but no guardian
+        -- rows, so an emergency contact never actually lands at sort_order 1
+        -- today. If that ever changes, an emergency contact would land
+        -- sort_order 1 and get Y here regardless of what Finalsite says about
+        -- them living with the student.
         select
             * except (shared_household_count),
 
