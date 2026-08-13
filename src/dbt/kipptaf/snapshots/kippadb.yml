@@ -32,6 +32,19 @@ snapshots:
       dbt_valid_to_current: "'9999-12-31'"
       meta:
         dagster:
+          # Nightly instead of the default eager snapshot condition. A
+          # snapshot inherits dbt_table_automation_condition() (materialized is
+          # 'snapshot', not view/ephemeral), so it re-fires on ANY upstream data
+          # change, recursing through view chains — ~101 executions/day. Its only
+          # consumer, int_topline__college_matriculation_weekly, is itself on
+          # `0 0 * * *`, so every other execution was invisible downstream.
+          #
+          # Zero history is lost: this snapshot last captured a change on 2026-07-22, ~2,200
+          # executions ago.
+          # Sharing the consumer's tick lets the deps-in-progress guard
+          # serialize the pass. Refs #4821
+          automation_condition:
+            cron_schedule: 0 0 * * *
           asset_key:
             - kipptaf
             - kippadb

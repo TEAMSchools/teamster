@@ -35,6 +35,7 @@ from teamster.libraries.dlt.focus.assets import (
     build_focus_dlt_assets,
     interval_to_microseconds_adapter,
 )
+from teamster.libraries.dlt.probe import ProbeTable
 
 
 def _gradebook_assignments_table() -> Table:
@@ -93,7 +94,7 @@ def test_factory_builds_a_source_with_the_table_named_resource():
             "postgresql+psycopg://localhost:5432/focus"
         ),
         code_location="kippmiami",
-        table_name="gradebook_assignments",
+        tables=[ProbeTable(name="gradebook_assignments", cursor_column="updated_at")],
     )
 
     dlt_source = next(iter(assets.specs)).metadata[META_KEY_SOURCE]

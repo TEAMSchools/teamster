@@ -2,6 +2,21 @@ models:
   - name: int_students__graduation_path_codes
     config:
       materialized: table
+      meta:
+        dagster:
+          # Cron instead of the default eager table condition, which
+          # re-fires on ANY upstream data change, recursing through view
+          # chains up to 10 levels.
+          # ~119 executions/day on the eager table condition. Two ticks, not
+          # one: the kipp_forward_data_suite exposure refreshes at BOTH
+          # `0 4 * * *` and `0 17 * * *`, so a single nightly tick would leave
+          # its afternoon refresh reading stale data. 03:00 and 16:00 lead each.
+          # high_school_early_warning_dashboard (`0 6 * * *`) is covered by the
+          # 03:00 tick.
+          #
+          # Refs #4821
+          automation_condition:
+            cron_schedule: 0 3,16 * * *
     data_tests:
       - distinct_count:
           arguments:

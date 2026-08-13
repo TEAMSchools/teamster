@@ -43,7 +43,7 @@ with
     )
 
 select
-    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid),
+    ar.* except (lep_status, lunchstatus, spedlep, prevstudentid, homeless_code),
 
     -- same value as _dbt_source_project, named for the Dagster code location;
     -- projected here rather than re-derived from _dbt_source_relation (#3142)
@@ -139,6 +139,24 @@ select
     ) as special_education_code,
 
     if(adb.latest_fafsa_date is null, 'No', 'Yes') as salesforce_contact_df_has_fafsa,
+
+    /* The NJ re-enrollment extension records homelessness per enrollment stint,
+    but is not written until well after year end -- it is empty for the current
+    year. The student-level tables are maintained live yet overwritten in place,
+    so they describe only current status. Reading the current year from the
+    student-level tables and closed years from the re-enrollment extension keeps
+    both the live value and the history accurate (#4814). */
+    if(
+        ar.academic_year = {{ var("current_academic_year") }},
+        ar.homeless_code,
+        njr.homeless_code
+    ) as homeless_code,
+
+    if(
+        ar.academic_year = {{ var("current_academic_year") }},
+        njs.homelessprimarynighttimeres,
+        njr.homelessprimarynighttimeres
+    ) as homeless_primary_nighttime_residence_code,
 
     coalesce(
         if(ar.region in ('Miami', 'Paterson'), ar.spedlep, sped.spedlep), 'No IEP'

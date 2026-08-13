@@ -24,16 +24,21 @@ select
     school_year.start_year as school_year_start,
     prospect_entry_year.start_year as prospect_entry_year_start,
 
-    phone_1.phone_type as phone_1_type,
-    phone_2.phone_type as phone_2_type,
-    phone_3.phone_type as phone_3_type,
-
     custom_attributes,
     id_attributes,
     track_attributes,
     households,
 
     safe_cast(birth_date as date) as birth_date,
+
+    -- Finalsite emits an unset phone type as an empty string on a contact
+    -- record, but as NULL in the emrg_N custom-field sets that feed the
+    -- emergency contact slots. Normalize to NULL so every consumer tests for an
+    -- untyped phone the same way -- the same blank-to-null treatment the
+    -- household address fields get below.
+    nullif(phone_1.phone_type, '') as phone_1_type,
+    nullif(phone_2.phone_type, '') as phone_2_type,
+    nullif(phone_3.phone_type, '') as phone_3_type,
 
     households[safe_offset(0)].id as household_1_id,
 
