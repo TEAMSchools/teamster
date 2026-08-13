@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import datetime
 import json
+import os
 import re
 import sys
 from collections import Counter
@@ -36,7 +37,12 @@ OUTPUT_COLUMNS: tuple[str, ...] = (
     "demographics_source",
 )
 
-# Mirrors rpt_gsheets__csgf_enrollment so the network keeps one convention.
+# Race categories follow rpt_gsheets__csgf_enrollment, but this script's
+# hyphenated punctuation (BL-AA/AI-AN/NH-OPI) differs from csgf's slashes, so
+# the strings won't join across the two outputs. GENDER_LABELS below instead
+# follows int_extracts__student_enrollments.aligned_gender (csgf has no
+# student gender map); MEAL_LABELS' Free/Reduced/Paid trichotomy is
+# introduced by this script and has no prior model.
 RACE_LABELS: dict[str, str] = {
     "A": "Asian",
     "B": "BL-AA",
@@ -222,6 +228,13 @@ def validate_rows(
         raise ValueError(f"row count {len(rows)} does not match roster {len(roster)}")
 
     allowed_ids = {entry.quill_student_id for entry in roster}
+    row_ids = {row["quill_student_id"] for row in rows}
+    if len(row_ids) != len(allowed_ids):
+        raise ValueError(
+            f"distinct quill_student_id count {len(row_ids)} does not match "
+            f"roster distinct count {len(allowed_ids)}"
+        )
+
     allowed: dict[str, frozenset[str]] = {
         "race_ethnicity": frozenset(RACE_LABELS.values()) | {""},
         "gender": frozenset(GENDER_LABELS.values()) | {""},
@@ -255,6 +268,14 @@ def validate_rows(
         source = str(row["demographics_source"])
         if source != NOT_MATCHED and not _SOURCE_PATTERN.match(source):
             raise ValueError(f"row {index} demographics_source {source!r}")
+
+        if source != NOT_MATCHED:
+            for column in allowed:
+                if str(row[column]) == "":
+                    raise ValueError(
+                        f"row {index} {column} is blank but demographics_source "
+                        f"{source!r} indicates a match"
+                    )
 
 
 ROSTER_HEADERS: tuple[str, ...] = (
@@ -332,19 +353,47 @@ def write_key_file(
     teacher_codes: Mapping[str, str],
     key_records: Sequence[Mapping[str, object]],
 ) -> None:
-    """Write the retained re-identification key. Local only, never transmitted."""
+    """Write the retained re-identification key. Local only, never transmitted.
+
+    Merges this run's student records into any prior key file by
+    quill_student_id rather than overwriting the students array outright.
+    Overwriting would drop any student who left the pilot roster between the
+    pre- and post-period deliveries, making the already-delivered file's rows
+    non-re-identifiable from the one artifact the agreement obliges the
+    supplier to retain. The current run's record wins on conflict; prior-only
+    records are preserved. A `.bak` snapshot of the prior file is written
+    alongside it before it is replaced, and the new content is written via a
+    temp file plus an atomic replace so a crash mid-write cannot corrupt the
+    only copy.
+    """
+    merged_students: dict[object, dict[str, object]] = {}
+
+    if path.exists():
+        prior = json.loads(path.read_text())
+        for record in prior.get("students", []):
+            merged_students[record["quill_student_id"]] = dict(record)
+
+        path.with_name(f"{path.name}.bak").write_bytes(path.read_bytes())
+
+    for record in key_records:
+        merged_students[record["quill_student_id"]] = dict(record)
+
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
+    temp_path = path.with_name(f"{path.name}.tmp")
+    temp_path.write_text(
         json.dumps(
             {
                 "classroom_codes": dict(classroom_codes),
                 "teacher_codes": dict(teacher_codes),
-                "students": [dict(record) for record in key_records],
+                "students": [
+                    merged_students[key] for key in sorted(merged_students, key=str)
+                ],
             },
             indent=2,
             sort_keys=True,
         )
     )
+    os.replace(temp_path, path)
 
 
 DATA_DICTIONARY: tuple[tuple[str, str, str, str], ...] = (
@@ -588,6 +637,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         (entry.teacher_name for entry in roster), prior_teachers, "T", 1
     )
 
+    # A renamed section mints a fresh code with nothing else printed, which
+    # silently breaks cross-delivery linkage -- report reuse so that shows up.
+    classroom_names = {entry.classroom_name for entry in roster}
+    teacher_names = {entry.teacher_name for entry in roster}
+    reused_classrooms = len(classroom_names & prior_classrooms.keys())
+    reused_teachers = len(teacher_names & prior_teachers.keys())
+    print(
+        f"classroom codes: {reused_classrooms} reused, "
+        f"{len(classroom_names) - reused_classrooms} new; "
+        f"teacher codes: {reused_teachers} reused, "
+        f"{len(teacher_names) - reused_teachers} new"
+    )
+
     emails = sorted({entry.student_email for entry in roster})
     demographics = fetch_demographics(
         bigquery.Client(project=args.gcp_project), emails, args.pilot_year
@@ -611,11 +673,35 @@ def main(argv: Sequence[str] | None = None) -> int:
     workbook_path = (
         args.output_dir / f"quill_seta_ed_student_demographics_{extract_date}.xlsx"
     )
-    write_workbook(workbook_path, rows)
+    # openpyxl's reader rejects a path whose extension isn't .xlsx/.xlsm/etc
+    # regardless of content, so the temp name keeps the real suffix rather
+    # than appending one.
+    temp_workbook_path = workbook_path.with_name(f"{workbook_path.stem}.tmp.xlsx")
 
-    # Re-validate from disk. The check above proves the rows were built right;
-    # this one proves the file that gets sent is the file we built.
-    validate_rows(read_workbook_rows(workbook_path), roster)
+    # Write to a temp path in the same directory and validate there first.
+    # The workbook only lands on its final, sendable name once every check
+    # below has passed -- otherwise a validation failure leaves a rejected
+    # file sitting under the exact name an operator could attach to an email.
+    try:
+        write_workbook(temp_workbook_path, rows)
+
+        # Re-validate from disk. The check above proves the rows were built
+        # right; this one proves the file that gets sent is the file we
+        # built. The equality check below catches a scrambled row order that
+        # the whitelist alone would accept -- valid cells attached to the
+        # wrong quill_student_id.
+        reread_rows = read_workbook_rows(temp_workbook_path)
+        validate_rows(reread_rows, roster)
+        if reread_rows != rows:
+            raise ValueError(
+                "workbook rows do not match the rows that were built, even "
+                "though each row individually passed validation"
+            )
+    except Exception:
+        temp_workbook_path.unlink(missing_ok=True)
+        raise
+
+    os.replace(temp_workbook_path, workbook_path)
 
     write_key_file(
         args.key_file,

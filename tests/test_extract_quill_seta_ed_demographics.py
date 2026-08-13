@@ -269,6 +269,31 @@ class TestValidateRows:
         with pytest.raises(ValueError, match="row count"):
             script.validate_rows(rows, _roster(script))
 
+    def test_distinct_id_count_mismatch_raises(self, script: ModuleType) -> None:
+        """Row count can match while distinct quill_student_id count does not."""
+        rows = self._valid(script)
+        rows[1]["quill_student_id"] = rows[0]["quill_student_id"]
+        with pytest.raises(ValueError, match="distinct quill_student_id"):
+            script.validate_rows(rows, _roster(script))
+
+    def test_matched_student_with_blank_demographic_raises(
+        self, script: ModuleType
+    ) -> None:
+        """A NULL source field must not ship as an unmatched-looking blank."""
+        rows = script.build_output_rows(
+            _roster(script),
+            {
+                "aaa@example.org": script.Demographics(
+                    2025, 900001, "B", "F", "", "No IEP", "Not ML"
+                )
+            },
+            2025,
+            {"Room Alpha": "C01", "Room Beta": "C02"},
+            {"Teacher One": "T1", "Teacher Two": "T2"},
+        )
+        with pytest.raises(ValueError, match="meal_status"):
+            script.validate_rows(rows, _roster(script))
+
     def test_unexpected_quill_id_raises(self, script: ModuleType) -> None:
         rows = self._valid(script)
         rows[0]["quill_student_id"] = 999999
@@ -480,6 +505,66 @@ class TestCodebook:
         )
         stored = json.loads(path.read_text())
         assert stored["students"][0]["student_email"] == "aaa@example.org"
+
+
+class TestWriteKeyFileMerge:
+    """A rerun must not destroy prior students dropped from the current roster."""
+
+    def test_prior_only_student_is_preserved(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        import json
+
+        path = tmp_path / "key.json"
+        script.write_key_file(
+            path,
+            {},
+            {},
+            [
+                {"quill_student_id": 1001, "student_email": "aaa@example.org"},
+                {"quill_student_id": 2002, "student_email": "left@example.org"},
+            ],
+        )
+        # Second run's roster no longer includes 2002 (the student left the
+        # pilot between the pre- and post-period deliveries).
+        script.write_key_file(
+            path,
+            {},
+            {},
+            [{"quill_student_id": 1001, "student_email": "aaa@example.org"}],
+        )
+        stored = json.loads(path.read_text())
+        ids = {record["quill_student_id"] for record in stored["students"]}
+        assert ids == {1001, 2002}
+
+    def test_current_run_wins_on_conflict(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        import json
+
+        path = tmp_path / "key.json"
+        script.write_key_file(
+            path, {}, {}, [{"quill_student_id": 1001, "classroom_code": "C01"}]
+        )
+        script.write_key_file(
+            path, {}, {}, [{"quill_student_id": 1001, "classroom_code": "C02"}]
+        )
+        stored = json.loads(path.read_text())
+        record = next(r for r in stored["students"] if r["quill_student_id"] == 1001)
+        assert record["classroom_code"] == "C02"
+
+    def test_backup_snapshot_is_written_on_rerun(
+        self, script: ModuleType, tmp_path: Path
+    ) -> None:
+        path = tmp_path / "key.json"
+        script.write_key_file(path, {}, {}, [{"quill_student_id": 1001}])
+        script.write_key_file(path, {}, {}, [{"quill_student_id": 1001}])
+        assert path.with_name("key.json.bak").exists()
+
+    def test_no_bak_on_first_write(self, script: ModuleType, tmp_path: Path) -> None:
+        path = tmp_path / "key.json"
+        script.write_key_file(path, {}, {}, [{"quill_student_id": 1001}])
+        assert not path.with_name("key.json.bak").exists()
 
 
 class TestWriteWorkbook:

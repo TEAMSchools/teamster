@@ -98,14 +98,22 @@ Fallback: a student with no SY25-26 row takes their most recent prior
 `academic_year` row at `rn_year = 1`, tagged in `demographics_source`. One
 student qualifies (last enrolled SY24-25, transferred out).
 
-Label maps reuse the convention already established in
-`rpt_gsheets__csgf_enrollment` rather than inventing a second one:
+Label map provenance, corrected after verifying against
+`rpt_gsheets__csgf_enrollment`: `race_ethnicity` categories follow csgf, but
+punctuation differs — csgf uses slashes (`BL/AA`, `AI/AN`, `NH/OPI`), this
+extract uses hyphens (`BL-AA`, `AI-AN`, `NH-OPI`) — so a KTAF analyst comparing
+the two outputs will find the strings do not join. `gender` follows
+`int_extracts__student_enrollments.aligned_gender`, not csgf, which has no
+student gender map at all (only a staff one). The `meal_status`
+Free/Reduced/Paid trichotomy is introduced by this extract; csgf only reduces
+`lunch_status` to a binary FRL flag, so there is no prior model for the
+three-way vocabulary. `iep_status` and `mll_status` pass through the model's
+existing labels unchanged. Full codes:
 
 - `race_ethnicity`: `A` Asian, `B` BL-AA, `H` Hispanic or Latino, `I` AI-AN, `P`
   NH-OPI, `T` 2+ races, `W` White, and `M`/`N`/`Y`/anything else DTS
 - `gender`: `F` Female, `M` Male, `X` Non-Binary
 - `meal_status` from `lunch_status`: `F` and `FDC` Free, `R` Reduced, `P` Paid
-- `iep_status` and `mll_status` pass through the model's existing labels
 
 Observed value domains for the 244 matched students: race `B`, `T`, `H`, `I`,
 `P`; gender `F`, `M`; meal `F`, `R`, `P`. No nulls.

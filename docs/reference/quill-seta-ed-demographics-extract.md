@@ -25,9 +25,11 @@ identifier at all — no name, no `student_number`, no state or local ID.
 
 ## Data Dictionary
 
-This table matches the `data_dictionary` sheet shipped inside the workbook
-itself. Both are generated from the same `DATA_DICTIONARY` constant in the
-script; keep this table and the constant in sync if either changes.
+This table is transcribed by hand from the `DATA_DICTIONARY` constant in the
+script. Only the `data_dictionary` sheet shipped inside the workbook is
+generated from that constant — this table is not, and it has already drifted out
+of sync with the constant once. Re-check this table against `DATA_DICTIONARY`
+whenever the constant changes.
 
 | column                | definition                                                                | source                                             | coding                                                                                                                                                                                         |
 | --------------------- | ------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -53,11 +55,17 @@ student's primary enrollment stint within the year, so a mid-year school move
 does not produce two rows for one student-year). Joined to the roster on
 `lower(student_email)`.
 
-Label maps for `race_ethnicity`, `gender`, and `meal_status` (sourced from
-`lunch_status`) reuse the convention already established in
-`rpt_gsheets__csgf_enrollment`, rather than inventing a second one for this
-extract. `iep_status` and `mll_status` (sourced from `ml_status`) pass the
-model's existing labels through unchanged.
+Label map provenance is mixed, not a single reused convention. `race_ethnicity`
+categories follow `rpt_gsheets__csgf_enrollment`, but this extract's punctuation
+differs from it — csgf emits `BL/AA`, `AI/AN`, `NH/OPI` with slashes, while this
+script emits `BL-AA`, `AI-AN`, `NH-OPI` with hyphens, so a KTAF analyst
+comparing the two outputs will find the strings do not join. `gender` follows
+`int_extracts__student_enrollments.aligned_gender`, not csgf — csgf has no
+student gender map at all, only a staff one. `meal_status` (sourced from
+`lunch_status`)'s Free/Reduced/Paid trichotomy is introduced by this extract;
+csgf only reduces `lunch_status` to a binary FRL flag, so no prior model carries
+the three-way vocabulary. `iep_status` and `mll_status` (sourced from
+`ml_status`) pass the model's existing labels through unchanged.
 
 ## Inclusion and Exclusion Rules
 
