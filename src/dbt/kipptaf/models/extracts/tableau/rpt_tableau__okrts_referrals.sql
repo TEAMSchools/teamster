@@ -239,6 +239,8 @@ select
     co.ml_status,
     co.status_504,
     co.self_contained_status,
+    co.homeless_status,
+    co.homeless_primary_nighttime_residence,
     co.week_start_monday,
     co.week_end_sunday,
     co.week_number_academic_year,
