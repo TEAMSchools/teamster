@@ -405,6 +405,83 @@ with
         from household_compared
     ),
 
+    phones_cleaned as (
+        -- clean_phone already normalized both phone sources to E.164, and its
+        -- contract is to never return NULL -- unparseable input passes through
+        -- de-garbled. So repeated-digit junk (which is NANP-valid) survives it
+        -- as a well-formed +1XXXXXXXXXX. Reject it here rather than in the
+        -- macro: the macro is shared by rpt_parentsquare__parents,
+        -- rpt_deanslist__family_contacts, and int_students__contacts, and a
+        -- guard inside its CASE would emit the raw digits instead of nulling
+        -- them. Only repeated digits 2-9 can reach this -- clean_phone's NANP
+        -- check already rejects a leading 0 or 1. See #4769 decision Q.
+        -- Known limitation: clean_phone appends x<ext> when the source number
+        -- carries an extension, so a junk number with an extension would slip
+        -- past this exact-match list -- vanishingly rare, not worth expanding
+        -- scope over.
+        select
+            * except (
+                contact1_value,
+                contact2_value,
+                contact3_value,
+                contact1_type,
+                contact2_type,
+                contact3_type
+            ),
+
+            if(
+                contact1_value in (
+                    '+12222222222',
+                    '+13333333333',
+                    '+14444444444',
+                    '+15555555555',
+                    '+16666666666',
+                    '+17777777777',
+                    '+18888888888',
+                    '+19999999999'
+                ),
+                cast(null as string),
+                contact1_value
+            ) as contact1_value,
+            if(
+                contact2_value in (
+                    '+12222222222',
+                    '+13333333333',
+                    '+14444444444',
+                    '+15555555555',
+                    '+16666666666',
+                    '+17777777777',
+                    '+18888888888',
+                    '+19999999999'
+                ),
+                cast(null as string),
+                contact2_value
+            ) as contact2_value,
+            if(
+                contact3_value in (
+                    '+12222222222',
+                    '+13333333333',
+                    '+14444444444',
+                    '+15555555555',
+                    '+16666666666',
+                    '+17777777777',
+                    '+18888888888',
+                    '+19999999999'
+                ),
+                cast(null as string),
+                contact3_value
+            ) as contact3_value,
+
+            -- A blank or unrecognized type defaults to Cell Phone rather than
+            -- dropping the contact (#4769 decision J). Consequence to know:
+            -- under the SMS rule in the final select this makes an untyped
+            -- number an SMS target, so a mistyped work line can receive texts.
+            {{ focus_phone_type("contact1_type") }} as contact1_type,
+            {{ focus_phone_type("contact2_type") }} as contact2_type,
+            {{ focus_phone_type("contact3_type") }} as contact3_type,
+        from household_flagged
+    ),
+
     ranked as (
         -- Guardians hold ranks 1..N in their existing order, then emergency
         -- slots follow in emrg_1..4 order. Miami populates no
@@ -423,7 +500,7 @@ with
                     first_name asc,
                     relationship_id asc
             ) as sort_order,
-        from household_flagged
+        from phones_cleaned
     ),
 
     custody_flagged as (
