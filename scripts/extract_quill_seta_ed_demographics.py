@@ -342,7 +342,7 @@ def read_codebook(path: Path) -> tuple[dict[str, str], dict[str, str]]:
     if not path.exists():
         return {}, {}
 
-    stored = json.loads(path.read_text())
+    stored = json.loads(path.read_text(encoding="utf-8"))
 
     return stored.get("classroom_codes", {}), stored.get("teacher_codes", {})
 
@@ -375,7 +375,7 @@ def write_key_file(
     merged_students: dict[tuple[object, object], dict[str, object]] = {}
 
     if path.exists():
-        prior = json.loads(path.read_text())
+        prior = json.loads(path.read_text(encoding="utf-8"))
         for record in prior.get("students", []):
             key = (record["quill_student_id"], record["classroom_name"])
             merged_students[key] = dict(record)
@@ -399,7 +399,8 @@ def write_key_file(
             },
             indent=2,
             sort_keys=True,
-        )
+        ),
+        encoding="utf-8",
     )
     os.replace(temp_path, path)
 
@@ -547,7 +548,7 @@ def build_query(table: str) -> str:
                     ml_status,
                     row_number() over (
                         partition by lower(student_email)
-                        order by academic_year desc
+                        order by academic_year desc, student_number desc
                     ) as year_rank,
                 from `{table}`
                 where
@@ -709,14 +710,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         temp_workbook_path.unlink(missing_ok=True)
         raise
 
-    os.replace(temp_workbook_path, workbook_path)
-
+    # Write the retained key BEFORE the workbook reaches its sendable name.
+    # write_key_file does much more than os.replace (parses prior JSON, writes
+    # a .bak, merges records, writes its own temp file) and so has more ways
+    # to fail. If it raised after the rename below, a correctly-named,
+    # fully-formed workbook would sit on disk with no matching
+    # re-identification key -- the artifact the agreement requires the
+    # supplier to retain. The reverse failure is the one we accept: if
+    # os.replace fails after this call, the key records a delivery that
+    # never shipped, which is harmless because the key is cumulative and a
+    # rerun rewrites it. Do not swap this order back.
     write_key_file(
         args.key_file,
         classroom_codes,
         teacher_codes,
         build_key_records(roster, demographics, classroom_codes, teacher_codes),
     )
+
+    os.replace(temp_workbook_path, workbook_path)
 
     _report_cell_counts(rows)
     print(f"\nworkbook: {workbook_path}")

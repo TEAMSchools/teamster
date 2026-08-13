@@ -770,3 +770,142 @@ class TestReadWorkbookRows:
         workbook.save(path)
         with pytest.raises(ValueError, match="header"):
             script.read_workbook_rows(path)
+
+
+class TestMain:
+    """Integration tests for main() end to end, without touching the network.
+
+    fetch_demographics is monkeypatched so no real query runs, and
+    google.cloud.bigquery.Client is stubbed so main()'s own
+    `bigquery.Client(project=...)` call (made before fetch_demographics is
+    invoked) never attempts real credential discovery.
+    """
+
+    def _write_roster(self, path: Path) -> None:
+        openpyxl = pytest.importorskip("openpyxl")
+        workbook = openpyxl.Workbook()
+        sheet = workbook.worksheets[0]
+        sheet.append(
+            [
+                "Studetn ID",
+                "Student Name",
+                "Student Email",
+                "Classroom Name",
+                "Teacher Name",
+                "Teacher Email",
+            ]
+        )
+        sheet.append(
+            [
+                2001,
+                "Fixture One",
+                "fix1@example.org",
+                "Room Gamma",
+                "Teacher Three",
+                "t3@example.org",
+            ]
+        )
+        sheet.append(
+            [
+                2002,
+                "Fixture Two",
+                "fix2@example.org",
+                "Room Gamma",
+                "Teacher Three",
+                "t3@example.org",
+            ]
+        )
+        workbook.save(path)
+
+    def _fake_fetch_demographics(self, script: ModuleType):
+        def _fetch(client, emails, pilot_year, table=script.SOURCE_TABLE):
+            return {
+                "fix1@example.org": script.Demographics(
+                    2025, 900101, "W", "F", "P", "No IEP", "Not ML"
+                ),
+                "fix2@example.org": script.Demographics(
+                    2025, 900102, "A", "M", "F", "Has IEP", "ML"
+                ),
+            }
+
+        return _fetch
+
+    def _workbook_path(self, script: ModuleType, output_dir: Path) -> Path:
+        extract_date = script.datetime.date.today().isoformat()
+        return output_dir / f"quill_seta_ed_student_demographics_{extract_date}.xlsx"
+
+    def test_happy_path_writes_workbook_and_key(
+        self,
+        script: ModuleType,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        pytest.importorskip("openpyxl")
+        roster_path = tmp_path / "roster.xlsx"
+        self._write_roster(roster_path)
+        output_dir = tmp_path / "output"
+        key_file = tmp_path / "key.json"
+
+        monkeypatch.setattr(
+            "google.cloud.bigquery.Client", lambda project=None: object()
+        )
+        monkeypatch.setattr(
+            script, "fetch_demographics", self._fake_fetch_demographics(script)
+        )
+
+        exit_code = script.main(
+            [
+                "--roster",
+                str(roster_path),
+                "--output-dir",
+                str(output_dir),
+                "--key-file",
+                str(key_file),
+            ]
+        )
+
+        assert exit_code == 0
+        assert self._workbook_path(script, output_dir).exists()
+        assert key_file.exists()
+        assert list(output_dir.glob("*.tmp.xlsx")) == []
+
+    def test_key_file_is_written_before_workbook_is_renamed(
+        self,
+        script: ModuleType,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Guards the Fix 1 ordering: if write_key_file raises, the workbook
+        must never reach its final, sendable filename.
+        """
+        pytest.importorskip("openpyxl")
+        roster_path = tmp_path / "roster.xlsx"
+        self._write_roster(roster_path)
+        output_dir = tmp_path / "output"
+        key_file = tmp_path / "key.json"
+
+        monkeypatch.setattr(
+            "google.cloud.bigquery.Client", lambda project=None: object()
+        )
+        monkeypatch.setattr(
+            script, "fetch_demographics", self._fake_fetch_demographics(script)
+        )
+
+        def _raise(*args: object, **kwargs: object) -> None:
+            raise RuntimeError("write_key_file boom")
+
+        monkeypatch.setattr(script, "write_key_file", _raise)
+
+        with pytest.raises(RuntimeError, match="write_key_file boom"):
+            script.main(
+                [
+                    "--roster",
+                    str(roster_path),
+                    "--output-dir",
+                    str(output_dir),
+                    "--key-file",
+                    str(key_file),
+                ]
+            )
+
+        assert not self._workbook_path(script, output_dir).exists()
