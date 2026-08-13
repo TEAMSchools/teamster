@@ -1,6 +1,6 @@
 from dagster import ScheduleDefinition
 
-from teamster.code_locations.kippmiami import LOCAL_TIMEZONE
+from teamster.code_locations.kippmiami import CODE_LOCATION, LOCAL_TIMEZONE
 from teamster.code_locations.kippmiami.extracts.jobs import focus_extract_asset_job
 
 # Both schedules deliver the same four Focus import CSVs to the Focus SFTP
@@ -25,21 +25,27 @@ from teamster.code_locations.kippmiami.extracts.jobs import focus_extract_asset_
 # Pushing EARLY is not a safe fallback -- it misses anything entered between
 # the push and the noon cutoff. Anything before ~12:11 puts the late bound
 # before noon, contradicting the "entered by 12:00" promise outright.
+#
+# The name is kept as the job-name-derived default on purpose -- renaming
+# mints a NEW Dagster+ schedule object and abandons this one's status and tick
+# history.
 focus_extract_assets_schedule = ScheduleDefinition(
-    name="focus_extract_assets_schedule",
+    name=f"{CODE_LOCATION}__extracts__focus__asset_job_schedule",
     job=focus_extract_asset_job,
     cron_schedule="15 13 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
-# 03:45 is the unstaffed run. It exists so the overnight state of Finalsite is
-# already staged in Focus when ops start their shift, rather than waiting on the
-# 13:15 delivery. Nobody is watching it, so it is deliberately NOT load-bearing
-# for the 2pm commitment -- if it fails, 13:15 still satisfies the promise.
+# 04:30 is the unstaffed run. It must fire AFTER the 04:00 Focus dlt pull has
+# landed in stg_focus -- the import-once anti-join reads that snapshot, and
+# delivering against a stale one re-sends records ops already imported by
+# hand, duplicating them in Focus. Nobody is watching this run, so it is
+# deliberately NOT load-bearing for the 2pm commitment -- if it fails, 13:15
+# still satisfies the promise.
 focus_extract_assets_overnight_schedule = ScheduleDefinition(
-    name="focus_extract_assets_overnight_schedule",
+    name=f"{CODE_LOCATION}__extracts__focus__overnight_asset_job_schedule",
     job=focus_extract_asset_job,
-    cron_schedule="45 3 * * *",
+    cron_schedule="30 4 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
