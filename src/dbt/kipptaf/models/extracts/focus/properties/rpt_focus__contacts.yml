@@ -883,7 +883,15 @@ unit_tests:
       phone. An emrg_3 slot with a blank first name produces no row. The emrg_4
       slot's relationship (`Great Aunt`, in emrg_4_relationship_ss — the field
       the STUDENT_RELATION coalesce reads first) exercises the crosswalk's
-      emergency-branch label mapping, asserting it rolls up to `Aunt`.
+      emergency-branch label mapping, asserting it rolls up to `Aunt`. Carla's
+      three phone opt-ins pin all three states of the opt-out logic — phone 1 is
+      explicitly `false`, forcing CONTACT1_CALLOUT and CONTACT1_SMS to `N`
+      despite the slot carrying a number; phone 2 is explicitly `true`,
+      asserting CONTACT2_CALLOUT/SMS stay `Y`; phone 3 is `null` (no signal
+      recorded), asserting CALLOUT still defaults to `Y` (its SMS is `N` for the
+      unrelated reason that Work Phone forces SMS off). Dan's phone 1 is also a
+      populated slot with a `null` opt-in, confirming CALLOUT and SMS both
+      default to `Y` with no type interference.
     model: rpt_focus__contacts
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')
@@ -976,8 +984,8 @@ unit_tests:
             '+13055550302' as emrg_1_phone_2_number,
             'Work' as emrg_1_phone_3_type,
             '+13055550303' as emrg_1_phone_3_number,
-            cast(null as bool) as emrg_1_phone_1_opt_in,
-            cast(null as bool) as emrg_1_phone_2_opt_in,
+            false as emrg_1_phone_1_opt_in,
+            true as emrg_1_phone_2_opt_in,
             cast(null as bool) as emrg_1_phone_3_opt_in,
             'Dan' as emrg_2_name_first_name,
             cast(null as string) as emrg_2_name_middle_name,
@@ -1112,7 +1120,7 @@ unit_tests:
           'N', 'N', 'Y', 'Y',
           null, null, null, null, null,
           'carla@example.com',
-          'Cell Phone', '+13055550301', null, null, 'Y', 'Y',
+          'Cell Phone', '+13055550301', null, null, 'N', 'N',
           'Home Phone', '+13055550302', null, null, 'Y', 'Y',
           'Work Phone', '+13055550303', null, null, 'Y', 'N',
           null, null, null, null, null, null,
