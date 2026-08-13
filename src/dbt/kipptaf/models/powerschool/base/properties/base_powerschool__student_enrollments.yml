@@ -13,6 +13,36 @@ models:
       Current enrollment records come from `stg_powerschool__students` and previous
       enrollments come from `stg_powerschool__reenrollments`.
     columns:
+      - name: homeless_code
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - N
+                  - Y1
+                  - Y2
+        description:
+          Raw PowerSchool homelessness code for the enrollment year — N for not
+          homeless, Y1 for homeless while in the physical custody of a parent or
+          legal guardian, Y2 for homeless and unaccompanied. Read from
+          `stg_powerschool__studentcorefields` for the current academic year and
+          from `stg_powerschool__s_nj_ren_x` for closed years. Null for Miami,
+          which does not populate the field.
+      - name: homeless_primary_nighttime_residence_code
+        data_type: int64
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3, 4]
+                quote: false
+        description:
+          Raw NJ primary nighttime residence code for the enrollment year — 1
+          for shelters or transitional housing, 2 for doubled-up, 3 for
+          unsheltered, 4 for hotels or motels. Zero means no selection was made.
+          Read from `stg_powerschool__s_nj_stu_x` for the current academic year
+          and from `stg_powerschool__s_nj_ren_x` for closed years. Null outside
+          New Jersey.
       - name: student_number
         data_type: int64
         description: |-

@@ -6,8 +6,8 @@ exposures:
       name: Data Team
     depends_on:
       - ref("rpt_appsheet__seat_tracker_roster")
-      - ref("stg_google_sheets__people__campus_crosswalk")
-      - ref("stg_google_sheets__people__location_crosswalk")
+      - ref("rpt_gsheets__people__campus_crosswalk")
+      - ref("rpt_gsheets__people__location_crosswalk")
     config:
       meta:
         dagster:

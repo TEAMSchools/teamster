@@ -1,9 +1,10 @@
 # CLAUDE.md — `teamster/libraries/dlt/focus/`
 
-Loads tables from the **Focus SIS** PostgreSQL database directly to BigQuery
-using dlt's `sql_database` source with PyArrow backend. Factory signature and
-asset keys: see `../CLAUDE.md`. All tables come from the `public` schema (Focus
-default).
+Loads tables from the **Focus SIS** PostgreSQL database directly to BigQuery by
+driving dlt's `table_rows` generator directly (not the `sql_database` source),
+with the PyArrow backend, probe-gated same as `powerschool/`. Factory signature
+and asset keys: see `../CLAUDE.md`. All tables come from the `public` schema
+(Focus default).
 
 ## Differences from Illuminate
 
@@ -95,6 +96,39 @@ reach dlt in a single batch — that ordering simplifies the architecture but th
 columns survive either way (dlt absorbs hints that arrive later too). Columns
 are lost only when `table_rows` never yields any items at all, so no reflection
 reaches dlt.
+
+## Probe gating
+
+One `@dlt_assets` op covers every Focus table; the intraday sensor decides which
+of them a run carries. A table is loaded only when its probed signature
+(`COUNT(*)` + `MAX(updated_at)`) differs from the one the last successful load
+wrote to dlt `resource_state`.
+
+- **Gating cannot move into the op.** A `replace` resource that yields zero rows
+  truncates its table, so a skip has to be an exclusion from the run. Probing in
+  the op would also plan all 77 assets every tick and emit
+  `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones.
+- **The signature is written inside the extracted resource.** dlt commits state
+  only from resources that reached the load package, so a failed load keeps the
+  old baseline and the table re-selects on the next tick — failures self-heal.
+- **A 0-row table** carries `{count: 0, max_cursor: null}` and gates out after
+  its first load, so the empty-table materialization runs once, not every tick.
+  Verified: dlt does commit resource_state for a table that yields only
+  reflection hints plus the materialize marker — pinned by
+  `tests/libraries/test_dlt_focus_signature_state.py::test_empty_table_persists_its_signature`,
+  so a dlt upgrade that changes it fails CI. That test seeds a sqlite source
+  (Focus sits behind an IP allowlist unreachable from the codespace) and calls
+  only `pipeline.extract()` — it verifies dlt's state-commit mechanics, not the
+  real BigQuery `_dlt_loads` / `_dlt_pipeline_state` round-trip through a full
+  load. That end-to-end path is still an open branch-deployment validation item
+  (see the design spec's _Partially resolved risk_ section).
+- **Enable order matters.** The sensor selects any table with no stored
+  signature, so enabling it before every table has a seeded baseline makes the
+  first tick select all 77 tables at once. The `0 4 * * *` schedule now only
+  seeds the two count-only tables (`co_teachers`, `login_history`) — it is no
+  longer a full-77-table refresh, so it cannot be relied on to seed the other 75
+  by itself. Seed all 77 with a manual launch of the Focus asset job first, then
+  enable the sensor.
 
 ## Testing Constraints
 
