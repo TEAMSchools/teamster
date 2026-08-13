@@ -220,7 +220,11 @@ unit_tests:
       Each phone normalizes to E.164 as it is flattened out of its source struct
       — a control-char-garbled number and a parenthesized-and-dashed number both
       resolve to `+1XXXXXXXXXX`, while a value with no parseable digits passes
-      through as entered rather than becoming null. Also covers the
+      through as entered rather than becoming null. phone_3 carries the empty
+      string Finalsite emits when no type is selected, and the expected
+      phone_3_type of null is what proves the blank-to-null normalization fired
+      — downstream models test for an untyped phone with `is null`, so an empty
+      string reaching them would silently strand the number. Also covers the
       household-address normalization applied in the same select — blank to
       null, state uppercased.
     model: stg_finalsite__contacts
@@ -259,9 +263,7 @@ unit_tests:
                 || code_points_to_string([8236]) as number
             ) as phone_1,
             struct('Home' as phone_type, '(929) 225-5670' as number) as phone_2,
-            struct(
-              cast(null as string) as phone_type, 'no phone' as number
-            ) as phone_3,
+            struct('' as phone_type, 'no phone' as number) as phone_3,
             array<struct<field_name string, value struct<string_value string>>>[]
               as custom_attributes,
             array<struct<field_name string, value struct<string_value string>>>[]
