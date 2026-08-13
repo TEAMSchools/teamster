@@ -6,32 +6,66 @@ models:
       directly until the source sheet was refactored down to
       `Name` + `Clean_Name` and every attribute moved to the `Locations` tab.
       Column names, order, and types are 1:1 with that old table so the app
-      only has to repoint its data source. Attributes describe `Clean_Name`,
-      not `Name`.
+      only has to repoint its data source. Every attribute column describes
+      `Clean_Name`, not `Name` — sibling aliases of the same school therefore
+      repeat identical attribute values.
     columns:
       - name: Name
-        description: Location alias as entered in source systems. One row each.
+        description: |
+          Location alias as entered in source systems. One row per alias, so
+          several rows can resolve to the same `Clean_Name`.
         data_type: string
+        data_tests:
+          - unique:
+              config:
+                severity: error
       - name: Clean_Name
-        description: Canonical location name the alias resolves to.
+        description: |
+          Canonical location name the alias resolves to. Join key to
+          `stg_google_sheets__people__locations.location_name`.
         data_type: string
       - name: Abbreviation
+        description: |
+          Short location abbreviation (e.g. SPARK, NCA). Not populated for
+          every location.
         data_type: string
       - name: Grade_Band
+        description: Grade band served by the location (e.g. ES, MS, HS).
         data_type: string
       - name: Region
+        description: |
+          Legal-entity name the location rolls up to (e.g. TEAM Academy
+          Charter School, KIPP Cooper Norcross Academy).
         data_type: string
       - name: PowerSchool_School_ID
+        description: PowerSchool school ID. Zero for campus rows.
         data_type: int64
       - name: Deanslist_School_ID
+        description: |
+          DeansList school ID. Null for schools that are not in DeansList.
         data_type: int64
       - name: Reporting_School_ID
+        description: |
+          Reporting school ID used to roll multi-campus schools up to a single
+          reporting unit. Zero for campus rows.
         data_type: int64
       - name: Is_Campus
+        description: |
+          True when the location represents a physical campus rather than an
+          administrative unit.
         data_type: boolean
       - name: Is_Pathways
+        description: |
+          True when the location is a KIPP Forward post-secondary (Pathways)
+          program.
         data_type: boolean
       - name: Dagster_Code_Location
+        description: |
+          Dagster code location identifier (kippnewark, kippcamden, kippmiami,
+          kipppaterson).
         data_type: string
       - name: Head_of_Schools_Employee_Number
+        description: |
+          Employee number of the head of schools responsible for this location.
+          Null where no head of schools is assigned.
         data_type: int64
