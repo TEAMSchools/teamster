@@ -392,6 +392,27 @@ with
         from all_contacts
     ),
 
+    ranked as (
+        -- Guardians hold ranks 1..N in their existing order, then emergency
+        -- slots follow in emrg_1..4 order. Miami populates no
+        -- emrg_N_priority_ss at all, so there is nothing to interleave on.
+        -- relationship_id is the final tiebreak so two guardians sharing
+        -- is_primary and both names get a stable rank between runs.
+        select
+            *,
+
+            row_number() over (
+                partition by student_id
+                order by
+                    contact_group asc,
+                    group_rank asc,
+                    last_name asc,
+                    first_name asc,
+                    relationship_id asc
+            ) as sort_order,
+        from crosswalked
+    ),
+
     household_compared as (
         -- resides_with_stud / custody: the first contact per student is
         -- always Y; a later contact is Y only when it shares a household
@@ -400,19 +421,18 @@ with
         -- or a unit number that sits in address on one row and address2 on
         -- the other, would both read as a false N. N is an explicit default
         -- when household membership is unknown on either side, not a guess.
+        --
+        -- "First contact" here means sort_order = 1 -- the same ordering
+        -- `ranked` (above) uses, read directly off sort_order rather than
+        -- re-deriving it from a second copy of the same five-column ORDER BY,
+        -- so the two can't silently drift apart.
         select
             *,
 
             first_value(household_ids) over (
-                partition by student_id
-                order by
-                    contact_group asc,
-                    group_rank asc,
-                    last_name asc,
-                    first_name asc,
-                    relationship_id asc
+                partition by student_id order by sort_order
             ) as first_contact_household_ids,
-        from crosswalked
+        from ranked
     ),
 
     household_flagged as (
@@ -519,27 +539,6 @@ with
         from phones_valid
     ),
 
-    ranked as (
-        -- Guardians hold ranks 1..N in their existing order, then emergency
-        -- slots follow in emrg_1..4 order. Miami populates no
-        -- emrg_N_priority_ss at all, so there is nothing to interleave on.
-        -- relationship_id is the final tiebreak so two guardians sharing
-        -- is_primary and both names get a stable rank between runs.
-        select
-            *,
-
-            row_number() over (
-                partition by student_id
-                order by
-                    contact_group asc,
-                    group_rank asc,
-                    last_name asc,
-                    first_name asc,
-                    relationship_id asc
-            ) as sort_order,
-        from phones_typed
-    ),
-
     custody_flagged as (
         -- Derived once here and projected as both RESIDES_WITH_STUD and
         -- CUSTODY in the final select below -- BigQuery has no lateral
@@ -551,7 +550,7 @@ with
             if(
                 sort_order = 1 or shared_household_count > 0, 'Y', 'N'
             ) as lives_with_flag,
-        from ranked
+        from phones_typed
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus CONTACTS contract
