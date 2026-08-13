@@ -16,10 +16,11 @@ from teamster.code_locations.kippmiami.extracts.jobs import focus_extract_asset_
 # contacts pull, the Focus dlt pull, and the dbt rebuild the
 # automation-condition sensor fires off each). The binding term is the manual
 # push: worst case ~11 min from push to rebuilt (5 min couchdrop sensor poll +
-# 2m13s ingest + 3m34s dbt). Against the 75 min from 13:15 to the 2pm
-# commitment, that leaves the 12:00-12:15 push window ample margin and keeps the
-# 12:30 freshness check on #4736 actionable -- a push prompted by it at 12:31 is
-# rebuilt by ~12:42 and still makes this delivery.
+# 2m13s ingest + 3m34s dbt). Against the 75 min from noon to 13:15, the push
+# and rebuild chain (worst case ~11 min) has ample room, and the 45 min from
+# 13:15 to the 2pm commitment is slack for ops to run the import by hand. The
+# 12:30 freshness check on #4736 stays actionable: a push prompted by it at
+# 12:31 is rebuilt by ~12:42, well before this delivery.
 #
 # Delivering EARLIER is not a safe fallback: it misses anything entered between
 # the push and the noon cutoff, and anything before ~12:11 puts the late bound
