@@ -1438,6 +1438,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     roster = read_roster(args.roster)
     print(f"roster: {len(roster)} rows, {len({e.quill_student_id for e in roster})} students")
 
+    # validate_rows compares len(rows) to len(roster), so an empty roster
+    # validates trivially and would ship an empty workbook as a success.
+    if not roster:
+        raise ValueError(f"roster at {args.roster} produced no rows")
+
     prior_classrooms, prior_teachers = read_codebook(args.key_file)
     classroom_codes = assign_codes(
         (entry.classroom_name for entry in roster), prior_classrooms, "C", 2
@@ -1451,6 +1456,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         bigquery.Client(project=args.gcp_project), emails, args.pilot_year
     )
     print(f"matched {len(demographics)} of {len(emails)} emails")
+
+    # 'not matched' is a legal demographics_source, so a total fetch failure
+    # would otherwise produce a well-formed workbook with no real data in it.
+    if not demographics:
+        raise ValueError(
+            f"no warehouse match for any of {len(emails)} roster emails; "
+            "refusing to write an all-unmatched deliverable"
+        )
 
     rows = build_output_rows(
         roster, demographics, args.pilot_year, classroom_codes, teacher_codes
