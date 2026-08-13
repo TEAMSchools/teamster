@@ -9,6 +9,7 @@ with
             g.last_name,
             g.email,
             g.gender as contact_gender,
+            g.household_ids,
             g.phone_1_type as contact1_type,
             g.phone_1_number as contact1_value,
             g.phone_2_type as contact2_type,
@@ -24,10 +25,6 @@ with
 
             0 as contact_group,
 
-            cast(null as string) as resides_with_stud,
-            cast(null as string) as custody,
-            cast(null as string) as emergency,
-            cast(null as string) as pickup,
             cast(null as string) as contact3_type,
             cast(null as string) as contact3_value,
 
@@ -90,7 +87,6 @@ with
 
             1 as contact_group,
             1 as group_rank,
-            'Y' as emergency,
 
             cast(null as string) as relationship_id,
             cast(null as string) as address,
@@ -99,14 +95,11 @@ with
             cast(null as string) as state,
             cast(null as string) as zipcode,
             cast(null as string) as contact_gender,
+            cast(null as array<string>) as household_ids,
 
             coalesce(
                 a.emrg_1_relationship_ss, a.emrg_1_relationship_txt
             ) as student_relation,
-
-            if(a.emrg_1_lives_with_yn, 'Y', null) as resides_with_stud,
-            if(a.emrg_1_custody_yn, 'Y', null) as custody,
-            if(a.emrg_1_pickup_yn, 'Y', null) as pickup,
         from {{ ref("int_finalsite__contact_custom_attributes") }} as a
         inner join
             {{ ref("int_finalsite__enrollment_lifecycle") }} as l
@@ -139,7 +132,6 @@ with
 
             1 as contact_group,
             2 as group_rank,
-            'Y' as emergency,
 
             cast(null as string) as relationship_id,
             cast(null as string) as address,
@@ -148,14 +140,11 @@ with
             cast(null as string) as state,
             cast(null as string) as zipcode,
             cast(null as string) as contact_gender,
+            cast(null as array<string>) as household_ids,
 
             coalesce(
                 a.emrg_2_relationship_ss, a.emrg_2_relationship_txt
             ) as student_relation,
-
-            if(a.emrg_2_lives_with_yn, 'Y', null) as resides_with_stud,
-            if(a.emrg_2_custody_yn, 'Y', null) as custody,
-            if(a.emrg_2_pickup_yn, 'Y', null) as pickup,
         from {{ ref("int_finalsite__contact_custom_attributes") }} as a
         inner join
             {{ ref("int_finalsite__enrollment_lifecycle") }} as l
@@ -188,7 +177,6 @@ with
 
             1 as contact_group,
             3 as group_rank,
-            'Y' as emergency,
 
             cast(null as string) as relationship_id,
             cast(null as string) as address,
@@ -197,14 +185,11 @@ with
             cast(null as string) as state,
             cast(null as string) as zipcode,
             cast(null as string) as contact_gender,
+            cast(null as array<string>) as household_ids,
 
             coalesce(
                 a.emrg_3_relationship_ss, a.emrg_3_relationship_txt
             ) as student_relation,
-
-            if(a.emrg_3_lives_with_yn, 'Y', null) as resides_with_stud,
-            if(a.emrg_3_custody_yn, 'Y', null) as custody,
-            if(a.emrg_3_pickup_yn, 'Y', null) as pickup,
         from {{ ref("int_finalsite__contact_custom_attributes") }} as a
         inner join
             {{ ref("int_finalsite__enrollment_lifecycle") }} as l
@@ -237,7 +222,6 @@ with
 
             1 as contact_group,
             4 as group_rank,
-            'Y' as emergency,
 
             cast(null as string) as relationship_id,
             cast(null as string) as address,
@@ -246,14 +230,11 @@ with
             cast(null as string) as state,
             cast(null as string) as zipcode,
             cast(null as string) as contact_gender,
+            cast(null as array<string>) as household_ids,
 
             coalesce(
                 a.emrg_4_relationship_ss, a.emrg_4_relationship_txt
             ) as student_relation,
-
-            if(a.emrg_4_lives_with_yn, 'Y', null) as resides_with_stud,
-            if(a.emrg_4_custody_yn, 'Y', null) as custody,
-            if(a.emrg_4_pickup_yn, 'Y', null) as pickup,
         from {{ ref("int_finalsite__contact_custom_attributes") }} as a
         inner join
             {{ ref("int_finalsite__enrollment_lifecycle") }} as l
@@ -279,6 +260,7 @@ with
             last_name,
             email,
             contact_gender,
+            household_ids,
             contact1_type,
             contact1_value,
             contact2_type,
@@ -290,10 +272,6 @@ with
             city,
             state,
             zipcode,
-            resides_with_stud,
-            custody,
-            emergency,
-            pickup,
             contact_group,
             group_rank,
         from guardians
@@ -309,6 +287,7 @@ with
             last_name,
             email,
             contact_gender,
+            household_ids,
             contact1_type,
             contact1_value,
             contact2_type,
@@ -320,10 +299,6 @@ with
             city,
             state,
             zipcode,
-            resides_with_stud,
-            custody,
-            emergency,
-            pickup,
             contact_group,
             group_rank,
         from emergency_long
@@ -395,6 +370,41 @@ with
         from all_contacts
     ),
 
+    household_compared as (
+        -- resides_with_stud / custody: the first contact per student is
+        -- always Y; a later contact is Y only when it shares a household
+        -- with that first contact. Household membership rather than an
+        -- address string comparison -- '123 Main St' vs '123 Main Street',
+        -- or a unit number that sits in address on one row and address2 on
+        -- the other, would both read as a false N. N is an explicit default
+        -- when household membership is unknown on either side, not a guess.
+        select
+            *,
+
+            first_value(household_ids) over (
+                partition by student_id
+                order by
+                    contact_group asc,
+                    group_rank asc,
+                    last_name asc,
+                    first_name asc,
+                    relationship_id asc
+            ) as first_contact_household_ids,
+        from crosswalked
+    ),
+
+    household_flagged as (
+        select
+            * except (household_ids, first_contact_household_ids),
+
+            (
+                select count(*),
+                from unnest(household_ids) as h
+                where h in unnest(first_contact_household_ids)
+            ) as shared_household_count,
+        from household_compared
+    ),
+
     ranked as (
         -- Guardians hold ranks 1..N in their existing order, then emergency
         -- slots follow in emrg_1..4 order. Miami populates no
@@ -413,7 +423,21 @@ with
                     first_name asc,
                     relationship_id asc
             ) as sort_order,
-        from crosswalked
+        from household_flagged
+    ),
+
+    custody_flagged as (
+        -- Derived once here and projected as both RESIDES_WITH_STUD and
+        -- CUSTODY in the final select below -- BigQuery has no lateral
+        -- column aliases, so sort_order (added by ranked, above) can't be
+        -- read in the same select list that produces it.
+        select
+            * except (shared_household_count),
+
+            if(
+                sort_order = 1 or shared_household_count > 0, 'Y', 'N'
+            ) as lives_with_flag,
+        from ranked
     )
 
 -- trunk-ignore(sqlfluff/ST06): column order fixed by Focus CONTACTS contract
@@ -426,10 +450,10 @@ select
     middle_name,
     last_name,
 
-    resides_with_stud,
-    custody,
-    emergency,
-    pickup,
+    lives_with_flag as resides_with_stud,
+    lives_with_flag as custody,
+    'Y' as emergency,
+    'Y' as pickup,
 
     address,
     address2,
@@ -476,4 +500,4 @@ select
     cast(null as string) as contact7_value,
     cast(null as string) as contact7_blocked,
     cast(null as string) as contact7_unlisted,
-from ranked
+from custody_flagged
