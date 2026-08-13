@@ -73,6 +73,13 @@ in prod IMMEDIATELY: external sources are excluded from the deps gate
 staging model and its `stage_external_sources` fails on the still-empty prod
 prefix.
 
+**Sheets externals need no manual post-merge prod re-stage.** The
+`build_dbt_assets` stage→refresh→build flow re-stages the prod external and
+rebuilds the `stg_` table on the next tick. The "launch that asset in prod
+IMMEDIATELY" rule above is for NEW Avro/GCS sources only. Verify with
+`INFORMATION_SCHEMA.COLUMNS` on the prod external before filing a manual
+re-stage as outstanding work.
+
 **AVRO external tables autodetect schema from the LAST ALPHABETICAL file.** To
 evolve an Avro source's schema, the new-schema file must sort last — materialize
 the MAX partition (latest hive `_dagster_partition_date=`). Mixed old/new files
@@ -249,6 +256,12 @@ config blocks before the move, and rename the model's singular tests and their
 `tests/properties.yml` entries with it.
 
 ## View→table flips for BigQuery plan depth
+
+**Before re-attempting a materialization or automation-condition change, check
+whether it was already reverted**:
+`git log -S '<config key>' -- <properties yml>`. A reverted perf change reads as
+an obvious win and CI passes for a while — that is how #4464 got re-done here,
+eight days after #4587 reverted it.
 
 A table model with a plan of hundreds of stages (straggler-fragile, e.g.
 [#4153](https://github.com/TEAMSchools/teamster/issues/4153)) usually inherits
@@ -531,6 +544,11 @@ dev parent dim produces false-positive `relationships` orphans. Before trusting
 a dev relationships warning on a FK, include the parent in `--select` or
 `dbt clone --select <parent_dim>` from prod.
 
+The inverse also happens: a stale dev CHILD makes a `relationships` test pass
+VACUOUSLY. A `dbt test` that passes locally and warns in CI with thousands of
+orphans is this, not a regression — confirm by holding the child fixed and
+swapping only the parent.
+
 Same trap applies to mart PK `unique` tests — a stale dev parent fans out a
 date-range join. Query prod before filing upstream bugs or adding defensive
 dedupe from a dev mart-test failure.
@@ -641,6 +659,17 @@ text-formatted `00000` in Sheets becomes INT64.
       data_type: STRING
 ```
 
+- **Header autodetect needs type variation.** BigQuery only treats row 1 as a
+  header when it differs in type from the data below. An all-STRING range (e.g.
+  a narrowed name-only crosswalk) autodetects as `string_field_0`,
+  `string_field_1` — which fails a contracted `select *`. Declare `columns:`
+  explicitly for any all-string range; `skip_leading_rows: 1` still drops the
+  header.
+- **To narrow a Sheets source, add a new named range and move `sheet_range`**
+  (`src_x` → `src_x_v2`), don't delete sheet columns — AppSheet and other
+  non-dbt consumers read the same tab. Version only the range; keep the source
+  `name:` and Dagster asset key. Precedent:
+  `src_google_sheets__people__locations_v3`.
 - **Phantom empty rows**: a Sheet's full grid (often ~1000 rows) lands as
   null-key rows in the external table → staging `not_null`/`unique` key tests
   fail with ~N results. Filter them in the staging model:
@@ -797,6 +826,18 @@ legitimately-superseded inactive rows that repeat the key.
   `generate_surrogate_key`, a `coalesce` / `ifnull` with a non-null default, a
   literal in every UNION branch, or `count(...)`. The `accepted_values` pairing
   above overrides this rule; nothing else does.
+- **Disabling a model does NOT disable its tests.** `config: enabled: false` in
+  properties yml moves the model to `disabled` but leaves every test in `nodes`
+  (verified with `--no-partial-parse`), still scanning the stale prod relation.
+  Add `config: enabled: false` to each test as well.
+
+### Retiring a crosswalk or lookup as redundant
+
+Check the join TYPE per consumer first. An INNER join makes the table a
+membership filter — often gating an outbound feed — not a lookup, and its row
+set may encode no derivable rule. Likewise count the rows any replacement
+`coalesce` fallback actually fires on: one written to preserve a single row
+fired on 251.
 
 ### Verifying a test-removal PR
 
@@ -804,6 +845,11 @@ Never report a count from the YAML diff — it does not say which dbt nodes
 actually disappeared. `dbt parse` on main and on the branch, then diff the
 `resource_type == 'test'` node names. That fixes the delta and proves nothing
 unintended was dropped.
+
+Parse BOTH sides with `--no-partial-parse` — partial parse caches node
+enable/disable state and under-reports (767 vs 772 tests this session). Re-parse
+main fresh too: the main checkout's manifest is a stale artifact that reports
+since-deleted models as REMOVED and since-added ones as ADDED.
 
 ### An FK check belongs on the pre-join model, as a column `relationships` test
 

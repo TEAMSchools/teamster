@@ -18,12 +18,11 @@ models:
           record, resolved to a staff member via the staff roster. FK to
           dim_staff. Null when the section's teacher does not resolve to a staff
           record.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_staff')
-            to_columns: [staff_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_staff')
+              to_columns: [staff_key]
         data_tests:
           - relationships:
               arguments:
@@ -53,12 +52,11 @@ models:
           stint covering cc_dateenrolled when one exists, else the earliest
           overlapping stint). Null only when no enrollment stint overlaps the
           section enrollment.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_student_enrollments')
-            to_columns: [student_enrollment_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_student_enrollments')
+              to_columns: [student_enrollment_key]
         data_tests:
           - relationships:
               arguments:
@@ -69,12 +67,11 @@ models:
         description: >-
           Surrogate key derived from sections_dcid and _dbt_source_project. FK
           to dim_course_sections.
-        constraints:
-          - type: foreign_key
-            to: ref('dim_course_sections')
-            to_columns: [course_section_key]
-            warn_unsupported: false
-            warn_unenforced: false
+        config:
+          meta:
+            foreign_key:
+              to: ref('dim_course_sections')
+              to_columns: [course_section_key]
         data_tests:
           - relationships:
               arguments:
