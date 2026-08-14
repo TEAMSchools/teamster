@@ -611,12 +611,21 @@ administrations sharing a hash silently merge their scores.
 ```sql
 select
   expected_unique_test_admin_id,
+  expected_score_category,
   count(distinct expected_admin_season_order) as n_orders,
   string_agg(distinct expected_score_type order by expected_score_type) as score_types
 from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments`
-group by 1
+group by 1, 2
 having count(distinct expected_admin_season_order) > 1
 ```
+
+**`expected_score_category` has to be in that group by.** A growth row hashes to
+the same id as its own Total row on purpose — `expected_score_type_aligned` maps
+`sat_total_score_growth` to `sat_total_score` — and the two are separated by
+score category, which is the other half of the join key in
+`rpt_tableau__college_assessment_dashboard_roster`. Grouping on the id alone
+flags every growth pair as a collision; that false positive shipped in this
+procedure once.
 
 Region is deliberately absent from that hash, so both regions share ids. That is
 fine — a student belongs to one region and the enrollment join constrains it
@@ -634,7 +643,9 @@ with
     where h.test_date is not null
     group by h.scope, h.test_type, test_month
   )
-select s.*
+select
+  s.scope, s.test_type, s.test_month, s.students,
+  if(s.scope = 'ACT', 'ACT never on this sheet', 'ORPHAN') as verdict
 from scores as s
 left join
   `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments` as a
@@ -645,9 +656,25 @@ where a.expected_scope is null
 order by s.students desc
 ```
 
-Any row returned is a month holding real scores with nowhere to land.
-Cross-check against the `Not Official` list before adding it — it may be a
-deliberate exclusion rather than a gap.
+**Triage before acting.** Measured 2026-08 against a clean paste, this returns
+15 months over 5,585 students, and not one of them was a paste error:
+
+- **ACT is 13 of the 15**, about 4,240 students. `_roster_scores` has never
+  covered the ACT and the sheet holds no ACT rows, so these are a standing scope
+  gap rather than anything a rebuild caused. Keep them labelled rather than
+  filtered out, or a future decision to add the ACT will look like it already
+  works.
+- **SAT Official January, 334 students** — a real pre-existing gap. January sits
+  in no season and is not on the `Not Official` list either, so those scores
+  have never reached the report.
+- **SAT Official July, 1 student.** Same shape, immaterial.
+- **SAT Practice August, 10 students** — the seeded practice scores, dated
+  2026-08-19, against a calendar putting grade 11 practice in September per the
+  9/23 administration. Seeded data can simply be dated wrong; confirm that
+  before widening a month list to catch it.
+
+Cross-check anything else against the `Not Official` list before adding it — it
+may be a deliberate exclusion rather than a gap.
 
 **The `Not Official` rows are invisible to all five checks**, because the
 staging model filters them out. Count them on the sheet itself; the SY26-27 spec
