@@ -1438,6 +1438,45 @@ both.
 `expected_metric_label` differs on every Benchmark row and none of the Attempts
 rows, which is the additive change noted above rather than a discrepancy.
 
+## Score change is measured two ways, and they are not interchangeable
+
+| Column                        | Grain            | Crosses test types |
+| ----------------------------- | ---------------- | ------------------ |
+| `previous_total_score_change` | totals only      | **no**             |
+| `previous_score_change`       | every score type | **yes**            |
+
+`previous_total_score_change` is computed inside each hub, so it never sees the
+other test type. Official keys it on test date, practice on `scope_round` —
+because a school can split one practice administration across days, and two
+administrations can therefore share a date. Practice reads null throughout
+today, no student holding two practice administrations of one test.
+
+`previous_score_change` is computed at the union, covers sections as well as
+totals, and **deliberately omits `test_type` from its partition**. That is the
+one place in this lineage where omitting it is correct: every other partition
+carries it so a practice score can never displace an official one, but a
+student's progression runs through both and chaining them is the point. 1,611
+administrations currently follow a practice one across 342 students, mostly the
+AY2023 practice-ACT cohort chaining into their official ACT. The scores stay
+comparable because a practice score is converted onto the same scale as its
+official counterpart.
+
+It also measures between administrations rather than between rows. 261 official
+sittings carry the same score twice under different `rn_highest`, so lagging
+directly would read a change of zero between a row and its own duplicate.
+
+**Nothing reads `previous_score_change` yet.** It exists for the
+growth-over-time work due shortly after this PR, which reports change for totals
+and subjects across all students.
+
+### Subject-level growth is available at the hub and not yet reported
+
+The reporting layer stays at total grain, matching what the roster reports
+today. Extending it to sections needs three things that do not exist: growth
+score types on the scaffold (`sat_ebrw_growth` and friends), matching rows on
+the Expected Assessments tab, and a KIPP Forward decision that they want it. The
+hub column is ready when they ask.
+
 ## Known issue — `rn_highest = 1` discards scores whose better sibling has no test date
 
 **27 students read `No Data` in the benchmark view while holding eligible SAT

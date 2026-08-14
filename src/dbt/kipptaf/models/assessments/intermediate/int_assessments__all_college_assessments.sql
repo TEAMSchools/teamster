@@ -114,53 +114,102 @@ with
             ) as rn_test_date_year,
 
         from all_scores
+    ),
+
+    /* One row per administration per score type, so the change below is measured
+       between administrations rather than between duplicate rows. 261 official
+       sittings carry the same score twice under different rn_highest, and lagging
+       over those directly would read a change of zero between a row and its own
+       duplicate. */
+    admin_scores as (
+        select
+            student_number,
+            test_type,
+            score_type,
+            test_date,
+
+            max(scale_score) as admin_scale_score,
+
+        from benchmark_aligned
+        where test_date is not null and scale_score is not null
+        group by student_number, test_type, score_type, test_date
+    ),
+
+    /* Change between consecutive administrations, for every score type rather than
+       totals only, so a future view can report growth on sections as well.
+
+       test_type is deliberately NOT in the partition. Every other partition in this
+       lineage carries it, because a practice score must never displace an official
+       one -- but growth is the exception: a student's progression runs through both,
+       and chaining them is the point. Scores stay comparable because a practice
+       score is converted onto the same scale as its official counterpart.
+
+       Nothing reads this yet. It exists for the growth-over-time work due shortly
+       after this PR. */
+    admin_growth as (
+        select
+            student_number,
+            test_type,
+            score_type,
+            test_date,
+
+            admin_scale_score - lag(admin_scale_score) over (
+                partition by student_number, score_type
+                order by test_date asc, test_type asc
+            ) as previous_score_change,
+
+        from admin_scores
     )
 
 select
-    student_number,
-    administration_round,
-    academic_year,
-    test_date,
-    test_month,
-    test_type,
-    scope,
-    benchmark_aligned_scope,
-    subject_area,
-    aligned_subject_area,
-    aligned_subject,
-    course_discipline,
-    score_type,
-    scale_score,
-    rn_highest,
-    aligned_month_round,
-    salesforce_id,
-    is_overall_score,
-    is_subject_score,
-    is_benchmark_eligible,
-    n_overall_scores,
-    n_subject_scores,
-    strategy_case,
-    surrogate_key,
-    running_max_scale_score,
-    max_scale_score,
-    previous_total_score_change,
-    superscore,
-    avg_running_max_superscore,
-    sum_running_max_superscore,
-    runnning_superscore,
+    b.student_number,
+    b.administration_round,
+    b.academic_year,
+    b.test_date,
+    b.test_month,
+    b.test_type,
+    b.scope,
+    b.benchmark_aligned_scope,
+    b.subject_area,
+    b.aligned_subject_area,
+    b.aligned_subject,
+    b.course_discipline,
+    b.score_type,
+    b.scale_score,
+    b.rn_highest,
+    b.aligned_month_round,
+    b.salesforce_id,
+    b.is_overall_score,
+    b.is_subject_score,
+    b.is_benchmark_eligible,
+    b.n_overall_scores,
+    b.n_subject_scores,
+    b.strategy_case,
+    b.surrogate_key,
+    b.running_max_scale_score,
+    b.max_scale_score,
+    b.previous_total_score_change,
+    b.superscore,
+    b.avg_running_max_superscore,
+    b.sum_running_max_superscore,
+    b.runnning_superscore,
+
+    g.previous_score_change,
 
     /* Total rows only. A subject score type's partition holds no total rows, so
        the guard lands null there rather than a section-score count. */
     if(
-        is_overall_score = 1,
-        max(rn_test_date) over (partition by student_number, test_type, score_type),
+        b.is_overall_score = 1,
+        max(b.rn_test_date) over (
+            partition by b.student_number, b.test_type, b.score_type
+        ),
         null
     ) as attempt_lifetime,
 
     if(
-        is_overall_score = 1,
-        max(rn_test_date_year) over (
-            partition by academic_year, student_number, test_type, score_type
+        b.is_overall_score = 1,
+        max(b.rn_test_date_year) over (
+            partition by b.academic_year, b.student_number, b.test_type, b.score_type
         ),
         null
     ) as yearly_attempts_totals,
@@ -171,23 +220,30 @@ select
        same subject; test_type so a practice score never outranks an official
        one; is_benchmark_eligible so ineligible rows never consume a rank. */
     if(
-        is_benchmark_eligible,
+        b.is_benchmark_eligible,
         row_number() over (
             partition by
-                student_number,
-                test_type,
-                benchmark_aligned_scope,
-                subject_area,
-                is_benchmark_eligible
-            order by scale_score desc
+                b.student_number,
+                b.test_type,
+                b.benchmark_aligned_scope,
+                b.subject_area,
+                b.is_benchmark_eligible
+            order by b.scale_score desc
         ),
         null
     ) as rn_highest_benchmark_aligned_scope,
 
     /* rn_highest = 1 is redundant to a max and suppresses 23 real scores. Kept
        to match production while the repointing is verified. See TODO(#4658). */
-    max(if(is_benchmark_eligible and rn_highest = 1, scale_score, null)) over (
-        partition by student_number, test_type, benchmark_aligned_scope, subject_area
+    max(if(b.is_benchmark_eligible and b.rn_highest = 1, b.scale_score, null)) over (
+        partition by
+            b.student_number, b.test_type, b.benchmark_aligned_scope, b.subject_area
     ) as benchmark_aligned_scope_max_score,
 
-from benchmark_aligned
+from benchmark_aligned as b
+left join
+    admin_growth as g
+    on b.student_number = g.student_number
+    and b.test_type = g.test_type
+    and b.score_type = g.score_type
+    and b.test_date = g.test_date

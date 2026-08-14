@@ -203,6 +203,39 @@ models:
 
           Practice reads null throughout today: no student holds two practice
           administrations of one test yet.
+      - name: previous_score_change
+        data_type: numeric
+        description: >-
+          Change between consecutive administrations, for every score type
+          rather than totals only, so a view can report growth on sections as
+          well as combined scores. Null on a student's first administration of
+          that score type.
+
+
+          Measured between administrations, not between rows. 261 official
+          sittings carry the same score twice under different rn_highest, and
+          lagging over those directly would read a change of zero between a row
+          and its own duplicate, so the score is taken per administration first.
+
+
+          **test_type is deliberately not in the partition**, and this is the
+          one place in this lineage where that is correct. Every other partition
+          carries it, because a practice score must never displace an official
+          one — but a student's progression runs through both and chaining them
+          is the point. 1,611 administrations currently follow a practice one,
+          across 342 students, mostly the AY2023 practice-ACT cohort chaining
+          into their official ACT. Scores stay comparable because a practice
+          score is converted onto the same scale as its official counterpart.
+
+
+          That is what distinguishes this from previous_total_score_change,
+          which each hub computes for itself and which therefore never crosses
+          test types. This column also covers sections; that one is totals only.
+
+
+          Nothing reads this yet. It exists for the growth-over-time work due
+          shortly after this PR, which reports change for totals and subjects
+          across all students.
       - name: superscore
         data_type: numeric
         description: >-
