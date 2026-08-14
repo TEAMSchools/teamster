@@ -856,6 +856,37 @@ from deduplicate
 `int_focus__student_enrollments.network_student_number` — confirm this in Step 3
 before trusting the join in Task 6.
 
+### Which Focus column is which — verified, do not substitute
+
+`int_focus__schedule` carries four similarly-named columns. Only one is right
+for advisory:
+
+| Column                     | Example value                       | Use                                                |
+| -------------------------- | ----------------------------------- | -------------------------------------------------- |
+| `course_period_short_name` | `Gonzaga`, `FAMU`, `Spelman`        | **this one** — KIPP names homerooms after colleges |
+| `course_period_title`      | `HR HR - Gonzaga - Gabriela Hector` | period code, college, teacher, concatenated        |
+| `course_short_name`        | `5022000R3`                         | FLDOE course code                                  |
+| `course_title`             | `Homeroom - 3rd Grade`              | used only to identify homeroom rows                |
+
+The archive's Miami AY2025 values, for comparison:
+
+| Level | `advisory_section_number`             | `advisory_name`                   |
+| ----- | ------------------------------------- | --------------------------------- |
+| ES    | `2Spelman`, `4NYU`, `0BU`, `4Gonzaga` | `Spelman`, `NYU`, `BU`, `Gonzaga` |
+| MS    | `304HR63`, `319HR52`                  | `HR`                              |
+
+So `advisory_name` reproduces the archive exactly — the archive derived it by
+stripping the leading grade digit off the section number, and Focus stores that
+same college name directly.
+
+`advisory_section_number` deliberately does NOT reproduce the archive. The
+archive prefixed the grade (`4Gonzaga`); Focus stores only `Gonzaga`, and the
+decision (2026-08-14) is to ship the bare college name rather than reconstruct
+the prefix. **This is a user-facing change**:
+`int_extracts__student_enrollments` renames this column to `team`, which reaches
+the Google Sheets extracts, so Miami ES `team` values change from `4Gonzaga` to
+`Gonzaga` at the cutover. Call it out in the PR body.
+
 - [ ] **Step 2: Write the properties YAML**
 
 ```yaml

@@ -116,11 +116,18 @@ translation instead of removing it.
    other PowerSchool-only fields.
 1. **New `int_focus__advisory`** in the kipptaf focus layer. Analogue of
    `int_powerschool__advisory`, but matched on course title rather than the
-   `homeroom` flag: that flag is null on all 18,789 AY2026 rows of
-   `int_focus__schedule` and on all 2,183 rows of `int_focus__users`, so it
-   carries no data. Select rows where `course_title` starts with `Homeroom`,
-   resolve the teacher name through `int_focus__users`, and take `advisory_name`
-   from `course_period_short_name`, falling back to the teacher name.
+   `homeroom` flag. That flag exists on three raw Focus tables — `courses`
+   (14,616 rows), `master_courses` (71,334) and `users` (2,185) — and is NULL in
+   every row of all three, so it carries no data anywhere in Focus. Select rows
+   where `course_title` starts with `Homeroom`, resolve the teacher name through
+   `int_focus__users`, and take `advisory_name` from `course_period_short_name`,
+   falling back to the teacher name.
+
+   `course_period_short_name` is the right column and the others are not:
+   `course_period_title` concatenates period code, college and teacher
+   (`HR HR - Gonzaga - Gabriela Hector`), `course_short_name` is the FLDOE
+   course code (`5022000R3`), and `course_title` only identifies the row as a
+   homeroom (`Homeroom - 3rd Grade`).
 
    **Elementary only.** 957 of 983 ES students (97%) carry a Homeroom course in
    AY2026; MS carries 42 of 593 and HS 0 of 114. The archive covered Miami ES
@@ -340,6 +347,14 @@ downstream contract needs updating and `int_extracts__student_enrollments`'
   rise. More Miami surface moves onto Focus dates while
   `fct_student_attendance_daily` still keys off archive dates. The test stays
   `severity: warn` and does not block CI; Phase 2 resolves it.
+- **Miami ES `team` values change format.** `int_extracts__student_enrollments`
+  renames `advisory_section_number` to `team`, which reaches the Google Sheets
+  extracts. KIPP names Miami homerooms after colleges; the archive stored the
+  section as grade digit plus college (`4Gonzaga`, `2Spelman`, `0BU`) while
+  Focus stores only the college (`Gonzaga`, `Spelman`, `BU`). Decision
+  (2026-08-14): ship the bare college name rather than reconstruct the grade
+  prefix. `advisory_name` is unaffected — the archive derived it by stripping
+  that same prefix, so it already was the college name.
 
 ## Out of scope
 
