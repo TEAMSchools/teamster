@@ -200,8 +200,28 @@ Unaccompanied Youth separates Y1 from Y2.
 | `F`          | Student awaiting foster care                       | null           | Y1 or Y2        |
 | `N`          | Student is not homeless (default)                  | null           | N               |
 
-Y1 when `custom_818` is not set, Y2 when it is. `is_homeless` follows the
-staging formula, `homeless_code in ('Y1', 'Y2')`.
+`custom_818` decides Y1 versus Y2. It is a five-option select, not a flag, so a
+null check is not enough — a homeless student explicitly coded `N` is
+accompanied, and would be mislabeled Y2 by a presence test:
+
+| `custom_818` | Meaning                                                         | `homeless_code` |
+| ------------ | --------------------------------------------------------------- | --------------- |
+| `Y`          | Not in the physical custody of a parent or guardian             | Y2              |
+| `C`          | Homeless, 16 or older, not in custody, certified by the liaison | Y2              |
+| `U`          | Homeless, under 16, not in custody                              | Y2              |
+| `N`          | Homeless, but does not meet the unaccompanied definition        | Y1              |
+| `Z`          | Not homeless, not unaccompanied                                 | Y1              |
+| null         | No unaccompanied record                                         | Y1              |
+
+`custom_820` gates the whole decision: its `N` yields `homeless_code = 'N'`
+regardless of what `custom_818` says, and its null yields null.
+
+The two fields do not share a label convention. Every `custom_820` label carries
+a bracketed `[code]` suffix, but only `Y` and `N` of `custom_818`'s five do — so
+`custom_818` is read from the label's leading character, which all five carry,
+rather than by bracket extraction.
+
+`is_homeless` follows the staging formula, `homeless_code in ('Y1', 'Y2')`.
 
 **Meal eligibility** — `custom_71` Free/Reduced Meals Program is Florida's full
 eligibility element, not a direct-certification flag.

@@ -360,30 +360,38 @@ unit_tests:
         format: sql
         rows: |
           select 1 as student_id, 793 as homeless_student_pk_12,
-            cast(null as numeric) as homeless_unaccompanied_youth,
+            427 as homeless_unaccompanied_youth,
             15 as free_reduced_meals_program
           union all
-          select 2, 789, 1, 24
+          select 2, 789, 425, 24
           union all
-          select 3, 790, cast(null as numeric), 21
+          select 3, 790, 426, 21
           union all
-          select 4, 794, cast(null as numeric), 19
+          select 4, 794, cast(null as int64), 19
+          union all
+          select 5, 791, 7261, 22
       - input: ref('int_focus__students__pivot')
         format: sql
         rows: |
           select 1 as student_id,
             'Student is not homeless-default [N]' as homeless_student_pk_12_label,
-            cast(null as string) as homeless_unaccompanied_youth_label,
+            'Z- Not homeless (or student eligible for homeless services) but does not meet the definition of an unaccompanied youth. ' as homeless_unaccompanied_youth_label,
             'CEP NOT Direct Cert [N]' as free_reduced_meals_program_label
           union all
-          select 2, 'Living in emergency or transitional shel [A]', 'Yes',
+          select 2, 'Living in emergency or transitional shel [A]',
+            'Y- Yes,who is not in the physical custody of parent or guardian [Y]',
             'The student is eligible for free meals [F]'
           union all
-          select 3, 'Sharing the housing of other persons [B]', cast(null as string),
+          select 3, 'Sharing the housing of other persons [B]',
+            'N- No, Is homeless but does not meet the definiton of unaccompanied youth [N]',
             'Eligible for Reduced Lunch [3]'
           union all
           select 4, 'Student awaiting foster care [F]', cast(null as string),
             'Did Not Apply [0]'
+          union all
+          select 5, 'Living in cars, parks, temportary trailer parks or campgrounds, train stations, etc. [D]',
+            'U - Student is a homeless child or youth (or student eligible for homeless services) under the age of 16 years who is not in the physical custody of a parent or guardian',
+            'Eligible for Free Lunch with Direct Cert or extension of eligibility [D]'
     expect:
       format: sql
       rows: |
@@ -396,11 +404,19 @@ unit_tests:
         select 3, 'Y1', true, 2, 'R'
         union all
         select 4, 'Y1', true, cast(null as int64), 'P'
+        union all
+        select 5, 'Y2', true, 3, 'F'
 ```
 
-The four cases cover: not homeless plus CEP, unaccompanied in a shelter plus
-free meals, doubled-up with guardian plus reduced, and awaiting foster care
-(homeless, no residence-code analogue) plus did-not-apply.
+The five cases cover: not homeless plus CEP; unaccompanied (`Y`) in a shelter
+plus free meals; homeless but explicitly NOT unaccompanied (`N`), doubled-up,
+reduced; awaiting foster care with no unaccompanied record at all,
+did-not-apply; and unaccompanied-under-16 (`U`), unsheltered, free with direct
+cert.
+
+Cases 3 and 5 are the ones that matter. `custom_818` is a five-option field, not
+a set/unset flag — a homeless student coded `N` is Y1, not Y2, so a null check
+would mislabel them. Codes `Y`, `C`, and `U` all mean unaccompanied.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
@@ -431,17 +447,44 @@ In `int_focus__students.sql`, in the `labeled` CTE's select list, after
 In the final `select` of `int_focus__students.sql`, after the `lep_status` CASE
 block and before the `ethnicity` block, add:
 
+First derive both codes as named columns. The two fields do not share a label
+convention: every `custom_820` label carries a bracketed `[code]` suffix, but
+only two of `custom_818`'s five labels do — `Z`, `C`, and `U` have none. Both
+label sets do start with their code character, so the leading character is the
+reliable read for `custom_818`.
+
+Add a CTE between `raced` and the final select:
+
+```sql
+    coded as (
+        select
+            *,
+
+            regexp_extract(homeless_student_pk_12_label, r'\[(\w+)\]') as homeless_c,
+
+            left(homeless_unaccompanied_youth_label, 1) as unaccompanied_c,
+
+            regexp_extract(free_reduced_meals_program_label, r'\[(\w+)\]') as meal_c,
+        from raced
+    ),
+```
+
+Then in the final select, add:
+
 ```sql
     -- FLDOE homeless codes describe the student's nighttime residence. Any
-    -- residence type means homeless; N is the not-homeless default. The
-    -- network domain splits homeless by custody instead, so the separate
-    -- unaccompanied-youth field decides Y2 versus Y1.
+    -- residence type means homeless; N is the not-homeless default. The network
+    -- domain splits homeless by custody instead, so the separate
+    -- unaccompanied-youth field decides Y2 versus Y1. That field is a
+    -- five-option select, not a flag -- Y, C and U all mean unaccompanied,
+    -- while N means homeless but accompanied and Z means not homeless, so a
+    -- null check would mislabel an accompanied homeless student as Y2.
     case
-        when regexp_extract(homeless_student_pk_12_label, r'\[(\w+)\]') = 'N'
+        when homeless_c = 'N'
         then 'N'
-        when homeless_student_pk_12_label is null
+        when homeless_c is null
         then null
-        when homeless_unaccompanied_youth_label is not null
+        when unaccompanied_c in ('Y', 'C', 'U')
         then 'Y2'
         else 'Y1'
     end as homeless_code,
@@ -449,7 +492,7 @@ block and before the `ethnicity` block, add:
     -- FLDOE residence types mapped to the network primary-nighttime-residence
     -- domain. Awaiting foster care has no analogue and stays null, as does the
     -- not-homeless default.
-    case regexp_extract(homeless_student_pk_12_label, r'\[(\w+)\]')
+    case homeless_c
         when 'A'
         then 1
         when 'B'
@@ -465,7 +508,7 @@ block and before the `ethnicity` block, add:
     -- network F/R/P domain; CEP and Provision 2 describe the school's program
     -- rather than the student, so they carry no per-student signal and stay
     -- null. Code 2 is retired upstream (DO NOT USE AFTER 1516).
-    case regexp_extract(free_reduced_meals_program_label, r'\[(\w+)\]')
+    case meal_c
         when 'F'
         then 'F'
         when 'D'
@@ -485,49 +528,45 @@ block and before the `ethnicity` block, add:
         when '0'
         then 'P'
     end as lunchstatus,
-from raced
+from coded
 ```
 
-Then add `is_homeless` as a separate derived column. It must read the
-`homeless_code` value, and BigQuery rejects a lateral alias reference in the
-same select list, so wrap the final select in a CTE. Replace the closing
-`from raced` with:
+The final select now reads `from coded`, not `from raced` — the `coded` CTE sits
+between them.
+
+`is_homeless` reads `homeless_code`, and BigQuery rejects a select-list alias
+referenced by another item in the same select list, so it needs its own level.
+Turn the existing final `select` into a `conformed` CTE and add a new final
+select after it.
+
+The model's full CTE chain ends up as:
 
 ```sql
-from raced
-```
-
-changed to a named CTE, and add a new final select:
-
-```sql
-    ),
-
-select
-    *,
-
-    -- Matches the PowerSchool staging formula so both branches agree.
-    homeless_code in ('Y1', 'Y2') as is_homeless,
-from conformed
-```
-
-Rename the existing final `select` block's opening to `conformed as (` and close
-it before the new final select. The full tail shape:
-
-```sql
+with
+    labeled as (...),          -- unchanged, plus the three new label columns
+    raced as (...),            -- unchanged
+    coded as (... from raced), -- new, from Step 4 above
     conformed as (
         select
             *,
-            -- ... the spedlep / gifted / lep_status / homeless / lunch /
-            -- ethnicity blocks ...
-        from raced
+            -- the existing spedlep / gifted_and_talented / lep_status /
+            -- ethnicity blocks, plus homeless_code,
+            -- homeless_primary_nighttime_residence_code and lunchstatus
+        from coded
     )
 
 select
     *,
 
+    -- Matches the formula stg_powerschool__studentcorefields uses, so both SIS
+    -- branches agree on what is_homeless means.
     homeless_code in ('Y1', 'Y2') as is_homeless,
 from conformed
 ```
+
+Two edits to the existing file: the current final `select ... from raced`
+becomes `conformed as (select ... from coded)`, and the new two-line final
+select is appended.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
