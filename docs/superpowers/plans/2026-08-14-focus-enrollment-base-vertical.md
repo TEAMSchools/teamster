@@ -150,13 +150,18 @@ using the `data_type` recorded in Step 1:
 
 ```yaml
 - name: homeless_unaccompanied_youth
-  data_type: numeric
+  data_type: int64
   description:
-    Focus select-field option id for Homeless Unaccompanied Youth, set when a
-    homeless student is not in the physical custody of a parent or guardian.
-    Decoded to a label in int_focus__students__pivot and used there to separate
-    the Y2 homeless code from Y1. Null for students who are not homeless.
+    Focus select-field option id for Homeless Unaccompanied Youth. A five-option
+    field — Y for not in a parent's or guardian's custody, C and U for the
+    certified over-16 and under-16 variants of the same, N for homeless but
+    accompanied, Z for not homeless. Decoded to a label in
+    int_focus__students__pivot.
 ```
+
+Do not describe this field as a flag or as "set only when" anything. Four of its
+five codes describe states other than not-in-custody, and the interpretation
+that turns it into a network homeless code belongs to Task 3, not here.
 
 Match the `data_type` to Step 1's result. If Step 1 returned `NUMERIC`, use
 `numeric`; `numeric` and `float64` are distinct BigQuery types and a mismatch
@@ -229,8 +234,15 @@ Refs #4868"
   (`STRING`).
 
 The model casts each custom field to `STRING` in an `encoded` CTE keyed by the
-raw `custom_NNN` name, then pivots labels back out under readable aliases. Both
-halves need the new field.
+raw `custom_NNN` name, unpivots those into rows, joins the option labels, then
+pivots the labels back out under readable aliases.
+
+**There are THREE lists to edit, not two.** The `encoded` CTE, the `unpivoted`
+CTE's `UNPIVOT (... for column_name in (...))` list, and the final
+`pivot (... for column_name in (...))` list. Omitting the field from the
+`encoded` or `unpivoted` list produces an always-null label column with no build
+error — a silent failure. Grep the file for `custom_820` and add a sibling entry
+at every one of the three sites it appears.
 
 - [ ] **Step 1: Add the field to the `encoded` CTE**
 
@@ -273,12 +285,13 @@ In `properties/int_focus__students__pivot.yml`, after the
 
 ```yaml
 - name: homeless_unaccompanied_youth_label
-  description:
-    Decoded label for the homeless_unaccompanied_youth select field. Set only
-    for homeless students who are not in the physical custody of a parent or
-    guardian, which the network homeless_code domain records as Y2 rather than
-    Y1.
+  description: Decoded label for the homeless_unaccompanied_youth select field.
 ```
+
+Keep it neutral, matching the plain one-line style every sibling `*_label`
+column uses. Do not assert what the field means or how it maps to a network code
+— it has five options describing different states, and the mapping is Task 3's
+job.
 
 - [ ] **Step 4: Build and verify the decode**
 
