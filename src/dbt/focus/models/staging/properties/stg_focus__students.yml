@@ -217,13 +217,13 @@ models:
           meta:
             contains_pii: true
       - name: homeless_unaccompanied_youth
+        description: >-
+          Focus select-field option id for Homeless Unaccompanied Youth. A
+          five-option field — Y for not in a parent's or guardian's custody, C
+          and U for the certified over-16 and under-16 variants of the same, N
+          for homeless but accompanied, Z for not homeless. Decoded to a label
+          in int_focus__students__pivot.
         data_type: int64
-        description:
-          Focus select-field option id for Homeless Unaccompanied Youth, set
-          when a homeless student is not in the physical custody of a parent or
-          guardian. Decoded to a label in int_focus__students__pivot and used
-          there to separate the Y2 homeless code from Y1. Null for students who
-          are not homeless.
         config:
           meta:
             contains_pii: true
