@@ -41,10 +41,11 @@ models:
 
 
           A KTAF total here covers Camden and Newark only, which is narrower
-          than the name suggests. This report is high school, Miami has no high
-          school at all — zero HS rows in any academic year — and Paterson has
-          none either. So the network level is every high school the network
-          runs, but not every region.
+          than the name suggests. This report is high school and Paterson has no
+          high school grades. Miami has no HS rows in this model in any academic
+          year, and is not on Illuminate, so its practice scores could not be
+          tracked even once it does. So the network level is every high school
+          with trackable scores rather than every region.
       - name: region
         data_type: string
       - name: schoolid

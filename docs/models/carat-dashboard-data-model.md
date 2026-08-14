@@ -1411,10 +1411,27 @@ Ready goal line moves to the sheet's HS-Ready value.
   production read null. Additive, with no measure impact.
 
 Validated by pinning both sides to the same academic year, since production's
-mixed years make a direct comparison meaningless. On that basis the Official
-rows match on every column except the six above: `score` is identical across all
-37,330 Benchmark rows, and the Attempts rows differ on 188 of 16,720, all
-accounted for.
+mixed years make a direct comparison meaningless — Benchmark rows against AY2025
+and Attempts rows against AY2026, matching what production's own stored view
+compiles to.
+
+|                                                      | Benchmark | Attempts |
+| ---------------------------------------------------- | --------- | -------- |
+| Rows matched                                         | 37,330    | 16,720   |
+| Production rows not covered                          | 0         | 152      |
+| Rows only in this version                            | 36,252    | 16,720   |
+| `score` differences                                  | **0**     | 188      |
+| `met` / `alt_met` differences                        | 10 / 10   | 4 / 6    |
+| `expected_scope`, both subject columns, `score_type` | 0         | 0        |
+
+Every row only in this version is Practice. The 152 production rows not covered
+are 19 students absent from the developer copy of
+`int_extracts__student_enrollments` and present in production's — a stale defer
+copy rather than a dropped population, confirmed by checking all 19 against
+both.
+
+`expected_metric_label` differs on every Benchmark row and none of the Attempts
+rows, which is the additive change noted above rather than a discrepancy.
 
 ## Known issue — `rn_highest = 1` discards scores whose better sibling has no test date
 
