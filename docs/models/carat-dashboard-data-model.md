@@ -859,10 +859,13 @@ Practice enters at the `Subject` and `Total` grain
 (`where response_type != 'Group'`), matching official's one-row-per-subject
 shape. Response-group detail stays in the practice hub.
 
-Eleven columns are official-only and read null on practice rows —
-`aligned_subject`, `salesforce_id`, the two score-shape counts, `strategy_case`,
-`surrogate_key`, `previous_total_score_change`, and the four superscore fields.
-They are computed inside the official hub rather than below the union.
+Nine columns are official-only and read null on practice rows —
+`aligned_subject`, `salesforce_id`, the two score-shape counts, `surrogate_key`,
+and the four superscore fields. They are computed inside the official hub rather
+than below the union.
+
+`strategy_case` and `previous_total_score_change` were on that list until the
+practice hub gained its own, so both now populate for either test type.
 
 The practice hub supplies `is_overall_score`, `is_subject_score`,
 `max_scale_score`, and `running_max_scale_score` itself, matching the official
@@ -985,24 +988,6 @@ things to settle:
   uses it purely to collapse to one row per student. Keyed by scope, the counts
   are already at the right grain.
 
-**Growth for practice is not computed yet.** `previous_total_score_change` is
-one of the fifteen official-only columns that read null on practice rows in
-`int_assessments__all_college_assessments`, because it is derived inside the
-official hub rather than below the union. Three things to settle when doing it:
-
-- **Order by `scope_round`, not `test_date`.** Externally created Illuminate
-  assessments have a null `administered_at`, so practice `administration_round`
-  is null and composite `test_date` is a derived max of section dates.
-  `scope_round` (`SAT1`, `SAT2`, `PSAT891`, `PSAT101`) is the reliable sequence.
-- **The scaffold already anticipates it.** `sat_total_score_growth` exists as an
-  expected score type for AY2026 SAT Combined. Until practice growth is real,
-  every consumer has to exclude that string by name — `_calcs` does, and any
-  fill of `score_type` on practice composite rows would have to as well. Two
-  hardcodings of one literal; a flag column on the sheet would retire both.
-- **Doing it properly means moving the derivation below the union**, which is
-  the same work that would populate the other fourteen official-only columns for
-  practice. Growth alone is not worth a one-off.
-
 **The attempt-count fix lands here.** `_over_time`'s
 `alt_attempt_count_lifetime` uses `count(*)`, so duplicate Salesforce records
 count as separate sittings and four students read as meeting the
@@ -1065,11 +1050,12 @@ whether they want that split out. `TODO(#4658)`.
 
 ### Growth is measured in season order, and practice counts
 
-`total_growth_score_change` lags over `expected_admin_season_order`, not test
-date, so it measures the seasons this report displays rather than every sitting
-a student had. Season order is reverse-chronological — 1 is the most recent — so
-ordering `desc` walks a student's history forwards in time and `lag()` reads the
-earlier season.
+The value on a `Score Change` row lags over `expected_admin_season_order`, not
+test date, so it measures the seasons this report displays rather than every
+sitting a student had. It is computed as `total_growth_score_change` inside the
+model and reaches consumers as `score`, paired with that category. Season order
+is reverse-chronological — 1 is the most recent — so ordering `desc` walks a
+student's history forwards in time and `lag()` reads the earlier season.
 
 Practice administrations are ordinary links in that chain. The grade 11 practice
 SAT sits at order 17, the far end of the SAT sequence, so a grade 11 Winter
@@ -1136,6 +1122,83 @@ official scores.
     Every row removed is fabricated and the 30 that remain are real, but anyone
     watching the dashboard will see it as a collapse. Tell KIPP Forward before
     they find it.
+
+## The two KIPP Forward Google Sheets extracts
+
+`rpt_gsheets__college_assessments_long` and
+`rpt_gsheets__college_assessments_wide` feed sheets KIPP Forward reads directly.
+Both were official-only until practice was added; practice is kept separate from
+official in each rather than mixed into it, because an attainment figure that
+silently blends a practice sitting with a real one is worse than no figure.
+
+### The long sheet carries a second type column, because the first one is taken
+
+It reads `int_assessments__all_college_assessments` now, so practice rows arrive
+alongside official ones. The discriminator is **`administration_type`**, holding
+`Official` or `Practice`.
+
+It could not be called `test_type`: that column already exists on this model and
+holds the **scope** — SAT, PSAT10 — via `scope as test_type` in the final
+select. Renaming it would break the enforced contract and every formula in the
+live sheet, so the new column took a new name rather than the obvious one.
+
+The change is purely additive. Official rows are identical to production scope
+by scope — PSAT 8/9 2,367, PSAT NMSQT 1,251, PSAT10 1,254, SAT 2,561 — with 33
+practice rows added.
+
+### The wide sheet names practice columns rather than renaming official ones
+
+Practice gets nine score columns, one per administration the tab carries — grade
+9 PSAT 8/9, grade 10 PSAT10, grade 11 SAT, all Fall — plus three practice
+attempt counts.
+
+Existing columns keep their names. Renaming them to `*_official` for symmetry
+was considered and rejected: the model is contract-enforced across 68 columns
+and feeds a live sheet, so a rename changes 40 contract entries and 40 headers
+under anyone with a formula referencing them, and buys only a label. The columns
+have always been official-only and still are. **Every score column without
+`practice` in its name is official.**
+
+### Two defects the practice work surfaced
+
+**The wide sheet was reporting practice sittings as official attempts.** It
+joined `int_students__college_assessment_participation_roster` without filtering
+`test_type`, a column that model only recently gained. Ten practice-only
+students were carrying a practice sitting in `sat_count_lifetime`. With the
+filter, `sat_count_lifetime` reconciles to production exactly minus the
+documented 86-student duplicate correction.
+
+**Its score columns keyed on score type, season and grade but not test type.**
+No column collided only because no practice PSAT data exists yet — the tab
+carries practice administrations at the same score type and grade as official
+ones, so the first practice PSAT scores would have landed silently in official
+columns. The score is now split by test type in the `roster` CTE, so each column
+picks from one side or the other:
+
+```sql
+if(ea.expected_test_type = 'Official', a.score, null) as official_score,
+if(ea.expected_test_type = 'Practice', a.score, null) as practice_score,
+```
+
+That shape was chosen over adding a predicate to each of the 39 `CASE` blocks,
+which is the same fix applied 39 times and 39 chances to miss one.
+
+### `sat_highlights` replaces three joins, on all three consumers
+
+`_dashboard_roster`, and both sheets, each left joined
+`int_assessments__college_assessment` three times — once for the SAT superscore,
+once for the highest EBRW, once for the highest Math — differing only by subject
+area. One CTE with conditional aggregation replaces all three, so each model
+scans that source once instead of three times.
+
+`rn_highest = 1` already yields exactly one row per student per subject area
+(1,974 Total, 1,414 EBRW, 1,414 Math, no fan-out), so the aggregate picks rather
+than collapses and every value is unchanged.
+
+The aggregate would absorb a future fan-out silently rather than surfacing it as
+duplicate rows. That is why `_dashboard_roster` now carries a uniqueness test on
+`(student_number, expected_field_name_score_category)` — it had none at all
+before, which repo convention requires of every `rpt_` model.
 
 ## Resolved — grade 9 and 10 AY2023 SAT is excluded from reporting
 

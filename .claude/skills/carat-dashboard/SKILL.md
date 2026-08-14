@@ -688,7 +688,7 @@ left join
   `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments` as a
   on s.scope = a.expected_scope
   and s.test_type = a.expected_test_type
-  and s.aligned_month_round = a.expected_month
+  and s.aligned_month_round = a.expected_month_round
 where a.expected_scope is null
 order by s.students desc
 ```
@@ -1208,6 +1208,26 @@ Work outward from the student, stopping at the first layer with zero rows.
 
 ## Gotchas that cost time
 
+- **On the wide sheet, a column without `practice` in its name is official.**
+  Practice has its own nine score columns and three attempt counts; the official
+  columns were deliberately NOT renamed to `*_official` for symmetry, because
+  the model is contract-enforced across 68 columns and feeds a live sheet, so a
+  rename changes 40 contract entries and 40 headers under anyone with a formula.
+  If you add an administration to the tab, add its practice column too — a
+  practice score with no column of its own does not fall back anywhere, it
+  simply does not appear.
+- **The long sheet's `test_type` column is the scope, not Official/Practice.**
+  It is `scope as test_type` in the final select and predates the practice work.
+  Official versus Practice lives in `administration_type`. Filtering `test_type`
+  expecting the latter silently returns nothing.
+- **Anything keyed on score type, season and grade needs test type too.** The
+  tab carries practice administrations at the same score type and grade as
+  official ones, so a column or filter keyed on those three alone mixes them. It
+  looks fine today only because no practice PSAT data exists yet; the wide sheet
+  had exactly this latent bug until the score was split by test type in its
+  `roster` CTE. This is the same failure that produced 4,107 fabricated practice
+  rows on the roster dashboard — the general rule is in _Practice is first-class
+  in the strategy_.
 - **An attempts score of 0 is not the same as null, and confusing them halves
   every reported percentage.** `_current` reads 0 where a student holds any
   result of that test type but never sat this particular test, and null where
