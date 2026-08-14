@@ -347,6 +347,25 @@ downstream contract needs updating and `int_extracts__student_enrollments`'
   rise. More Miami surface moves onto Focus dates while
   `fct_student_attendance_daily` still keys off archive dates. The test stays
   `severity: warn` and does not block CI; Phase 2 resolves it.
+- **1,002 Miami alumni graduate-placeholder rows leave `base_`.** These are
+  `enroll_status = 3` rows with null entry and exit dates, one per student per
+  academic year — 420 distinct students across AY2022 to AY2025, matching 881
+  rows in `int_kippadb__roster`. Dropping the archive branch removes them, the
+  same way Phase 1 already removed them from the spine (which holds 57 Miami
+  status-3 rows against `base_`'s 2,123).
+
+  This contradicts #4729's "do not simply drop the archive branch" note and the
+  `kipptaf/CLAUDE.md` rule that derived enrollment models must retain them. Both
+  were written before Phase 1 shipped. Decision (2026-08-14): drop them, keeping
+  `base_` consistent with the spine rather than carrying a divergence between
+  the two enrollment verticals. `kipptaf/CLAUDE.md` is amended in this PR to
+  record Miami as a deliberate exception; #4729's note needs the same
+  correction.
+
+  The KIPP Forward consequence is real and accepted: Miami alumni reached
+  through `int_kippadb__roster` lose their placeholder enrollment rows. Phase 1
+  has already been in production without them on the spine side.
+
 - **Miami ES `team` values change format.** `int_extracts__student_enrollments`
   renames `advisory_section_number` to `team`, which reaches the Google Sheets
   extracts. KIPP names Miami homerooms after colleges; the archive stored the
