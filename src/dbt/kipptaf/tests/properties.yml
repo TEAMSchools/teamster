@@ -1,4 +1,21 @@
 data_tests:
+  - name: test_kippfwd_goals_over_time_collapse
+    description: >-
+      int_google_sheets__kippfwd__goals_unpivot collapses the goals sheet's
+      grade rows to one row for the over time branch, taking the over time goal
+      where the sheet states one and the per-grade goal otherwise. Either path
+      is a silent pick if the values being collapsed disagree, so the failure is
+      a wrong network goal reported without complaint rather than an error.
+      Fires on both shapes -- an over time goal stated inconsistently across a
+      score type's grade rows, or a per-grade goal that disagrees where no over
+      time goal exists to override it.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: stg_google_sheets__kippfwd__goals
+
   - name: test_kippfwd_goals_long_join_grain
     description: >-
       rpt_gsheets__college_assessments_long joins the All Grades benchmark goals
