@@ -457,7 +457,7 @@ Benchmark goals answer "what share of students scored at or above a threshold."
 | ----------------------------------------------------------- | ---------------------------------------------------------------- | ----------- |
 | `rpt_tableau__college_assessment_dashboard_current`         | `int_google_sheets__kippfwd__goals_unpivot`, `By Grade` branch   | yes         |
 | `rpt_tableau__college_assessment_dashboard_over_time`       | `int_google_sheets__kippfwd__goals_unpivot`, `All Grades` branch | yes         |
-| `rpt_gsheets__college_assessments_long`                     | `goal_type = 'Benchmark'`, network only, `avg(min_score)`        | no          |
+| `rpt_gsheets__college_assessments_long`                     | `int_google_sheets__kippfwd__goals_unpivot`, `All Grades` branch | no          |
 | `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | **none** — thresholds hardcoded in SQL                           | yes         |
 
 `_benchmark_calcs` does not read the goals sheet despite its name, so a
