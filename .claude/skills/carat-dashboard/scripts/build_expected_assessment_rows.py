@@ -27,11 +27,22 @@ The spec is JSON:
           "scope": "PSAT 8/9",
           "season": "Fall",
           "months": ["August", "September"],
+          "scope_round": "PSAT891",
           "growth": false
         },
         ...
       ]
     }
+
+A **Practice** administration must carry `scope_round`, and it is emitted in the
+`expected_month_round` column in place of the months. Schools choose their own
+practice dates -- grade 9 spans 25 August to 23 September across four schools -- so
+one administration straddles months and month binding cannot represent it. The
+round identifies the administration regardless of date. Its `months` are still
+required, because the season order sorts on them, and they document when it ran.
+
+That makes the column polymorphic, which the tab already was: a growth row carries
+its season name there rather than a month.
 
 Every admin needs its full month list, historical months included -- see the
 skill's procedure for deriving those from the score data. Omitting a month a
@@ -164,19 +175,30 @@ def validate(spec):
             problems.append(f"{where}: duplicates the season of admin {seen[key]}")
         seen[key] = i
 
-        # A month may belong to only one season within a test and grade, or a score
-        # in it would match two expected rows and fan out.
+        if a.get("test_type") == "Practice" and not a.get("scope_round"):
+            problems.append(f"{where}: Practice needs scope_round, it is the join key")
+
+        # A month may belong to only one season within an OFFICIAL test and grade, or
+        # a score in it would match two expected rows and fan out. Practice binds on
+        # scope_round instead, so two practice administrations may share a month --
+        # grade 11's SAT1 and SAT2 could both fall in September.
         for other_i, other in enumerate(spec.get("admins", [])[:i]):
             same_test = (
                 other.get("grade") == a.get("grade")
                 and other.get("test_type") == a.get("test_type")
                 and other.get("scope") == a.get("scope")
             )
-            if same_test:
+            if same_test and a.get("test_type") == "Official":
                 overlap = set(a.get("months", [])) & set(other.get("months", []))
                 if overlap:
                     problems.append(
                         f"{where}: months {sorted(overlap)} also on admin {other_i}"
+                    )
+            if same_test and a.get("test_type") == "Practice":
+                if a.get("scope_round") == other.get("scope_round"):
+                    problems.append(
+                        f"{where}: scope_round {a.get('scope_round')!r} also on"
+                        f" admin {other_i} -- their scores would merge"
                     )
 
     if problems:
@@ -228,8 +250,15 @@ def rows_for(admin, region):
         sequence.append(("growth", False))
     sequence += [("ebrw", True), ("math", True)]
 
+    # Practice emits its round where the months would go; official emits one row per
+    # month; a growth row emits its season name. All three land in the same column.
+    if admin["test_type"] == "Practice":
+        keys = [admin["scope_round"]]
+    else:
+        keys = admin["months"]
+
     for kind, per_month in sequence:
-        month_values = admin["months"] if per_month else [admin["season"]]
+        month_values = keys if per_month else [admin["season"]]
         for month in month_values:
             yield [
                 region,

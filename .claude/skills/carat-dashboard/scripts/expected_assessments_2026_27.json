@@ -7,7 +7,8 @@
       "scope": "PSAT 8/9",
       "season": "Fall",
       "months": ["August", "September"],
-      "growth": false
+      "growth": false,
+      "scope_round": "PSAT891"
     },
     {
       "grade": 9,
@@ -31,7 +32,8 @@
       "scope": "PSAT10",
       "season": "Fall",
       "months": ["October"],
-      "growth": false
+      "growth": false,
+      "scope_round": "PSAT101"
     },
     {
       "grade": 10,
@@ -55,14 +57,15 @@
       "scope": "SAT",
       "season": "Fall",
       "months": ["September"],
-      "growth": false
+      "growth": false,
+      "scope_round": "SAT1"
     },
     {
       "grade": 11,
       "test_type": "Official",
       "scope": "SAT",
       "season": "Winter",
-      "months": ["December", "March"],
+      "months": ["December", "January", "March"],
       "growth": true
     },
     {
@@ -86,7 +89,7 @@
       "test_type": "Official",
       "scope": "SAT",
       "season": "Winter",
-      "months": ["December"],
+      "months": ["December", "January"],
       "growth": true
     }
   ],

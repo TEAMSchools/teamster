@@ -534,6 +534,24 @@ has no months.
 Verified against the live tab: it reproduces all 110 existing SAT rows exactly,
 order values included.
 
+**`expected_month_round` is polymorphic, deliberately.** It holds a month on an
+Official row, the `scope_round` on a Practice row (`SAT1`, `PSAT891`,
+`PSAT101`), and the season name on a growth row. Practice cannot bind on month:
+schools choose their own practice dates, so one administration straddles months
+— grade 9 runs 25 August to 23 September across four schools — and Foundation
+controls the Illuminate dates, so they cannot be normalised either.
+`scope_round` identifies the administration regardless of when a school ran it.
+
+Three consequences. `expected_months_included` reads `SAT1` rather than months
+for practice, since it aggregates the same column. Two practice administrations
+may share a month without ambiguity, which matters because grade 11's SAT2 may
+also fall in September. And the score side needs a matching key,
+`if(test_type = 'Practice', scope_round, format_date('%B', test_date))`, which
+means **`scope_round` has to reach `int_assessments__all_college_assessments`**
+— it is not there yet, and `administration_round` is no substitute, being null
+on every externally created assessment and wrong on the one that has it
+(`Jul 23` against September test dates).
+
 **A growth row needs its score type to exist.** Only `sat_total_score_growth` is
 in the scaffold and hub vocabulary today, so `"growth": true` on a PSAT
 administration emits `psat89_total_growth` and friends, which nothing downstream
@@ -668,10 +686,14 @@ order by s.students desc
   in no season and is not on the `Not Official` list either, so those scores
   have never reached the report.
 - **SAT Official July, 1 student.** Same shape, immaterial.
-- **SAT Practice August, 10 students** — the seeded practice scores, dated
-  2026-08-19, against a calendar putting grade 11 practice in September per the
-  9/23 administration. Seeded data can simply be dated wrong; confirm that
-  before widening a month list to catch it.
+- **Every practice month appears here until the hub carries `scope_round`.** The
+  query matches on month, and practice no longer binds on month, so practice
+  rows report as orphans by construction. Once `scope_round` reaches
+  `int_assessments__all_college_assessments`, change the score side to
+  `if(test_type = 'Practice', scope_round, format_date('%B', test_date))` and it
+  resolves. Until then read the practice lines as expected noise, not gaps — the
+  seeded scores dated 2026-08-19 are today's example, and they match `SAT1`
+  correctly under round binding despite the August date.
 
 Cross-check anything else against the `Not Official` list before adding it — it
 may be a deliberate exclusion rather than a gap.
