@@ -86,8 +86,26 @@ int_focus__advisory (new)       ┘                                     │
                                                       = select * from the above
 ```
 
-Three file-level changes.
+Six file-level changes, three in the `focus` package and three at kipptaf.
 
+The package half exists because the Focus student conform lives there, not at
+kipptaf. kipptaf's `int_focus__students` is a bare `union_relations`
+passthrough; `spedlep`, `gifted_and_talented`, and `lep_status` are all
+conformed in the package by reading `*_label` columns from
+`int_focus__students__pivot`. `kipptaf/CLAUDE.md` forbids the alternative —
+exposing `int_focus__custom_field_options` at kipptaf relocates hand-rolled
+translation instead of removing it.
+
+1. **`stg_focus__students`** — add `custom_818 as homeless_unaccompanied_youth`.
+   It is not staged today and is the only field distinguishing Y1 from Y2. The
+   model is contract-enforced, so its properties YAML needs the column too.
+1. **`int_focus__students__pivot`** — add `custom_818` to the pivot input and
+   its label to the output. The `custom_71` and `custom_820` labels already
+   exist there.
+1. **`int_focus__students`** (package) — project the three labels into the
+   `labeled` CTE and conform `homeless_code`, `is_homeless`,
+   `homeless_primary_nighttime_residence_code`, and `lunchstatus`, alongside the
+   existing `spedlep` / `gifted_and_talented` / `lep_status` block.
 1. **New `int_students__student_enrollments`.** Today's
    `base_powerschool__student_enrollments` body, with the
    `kippmiami_powerschool` relation dropped from the `union_relations` list and
@@ -236,13 +254,33 @@ Leaving the tests on the passthrough would re-scan 137 columns for nothing.
 
 ## Rollout
 
-Single kipptaf-only PR. `int_focus__schedule` and `int_focus__users` are already
-declared in `models/focus/sources-kippmiami.yml` and wrapped at kipptaf, so this
-needs no district or package change, no two-PR sequence, and no
-`dbt clone --target staging` refresh of `zz_stg_kippmiami_focus`.
+Single PR, using the cross-project workflow in `kipptaf/CLAUDE.md` rather than
+the default two-PR package-then-kipptaf sequence.
+
+This works because `models/focus/sources-kippmiami.yml` already carries the
+`target=staging` branch routing to `zz_stg_kippmiami_focus`. The package change
+adds columns, and per `src/dbt/CLAUDE.md` a column ADD does not reach an
+unmodified kipptaf `union_relations` wrapper — the wrapper defers to the Staging
+environment, so the new columns never appear and downstream models fail
+`Name <col> not found`. Two steps close that gap:
+
+- `dbt build --select int_focus__students --project-dir src/dbt/kippmiami --target staging`
+  writes the widened model into the shared `zz_stg_kippmiami_focus`. This is a
+  shared-schema write and needs direct user authorization.
+- Force the kipptaf `int_focus__students` wrapper `state:modified` with a doc
+  comment in its `.sql`, so CI rebuilds it against the widened staging copy. A
+  properties-YAML `description` change does not mark a model modified.
+
+`int_focus__schedule` and `int_focus__users` are already declared and wrapped at
+kipptaf, so `int_focus__advisory` needs no new source declaration.
 
 dbt Cloud CI builds the kipptaf project, so CI here is real validation rather
-than the trivial no-op a district-only PR produces.
+than the trivial no-op a district-only PR produces. The `focus` package models
+are not built by CI — validate them locally through the `kippmiami` project-dir
+per `src/dbt/CLAUDE.md`.
+
+Post-merge, `stg_focus__students` and both intermediates rematerialize in
+kippmiami prod via Dagster before the kipptaf models pick up real values.
 
 The new model emits the same 137-column set `base_` emits today, so no
 downstream contract needs updating and `int_extracts__student_enrollments`'
