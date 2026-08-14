@@ -1320,6 +1320,102 @@ cohorts that move at all.
 40 Practice goal combinations against 40 Official, with no score-side fan-out.
 This is the point of the work rather than a side effect.
 
+## Why the current dashboard's numbers change
+
+`rpt_tableau__college_assessment_dashboard_current` was five near-identical
+union branches emitting one row per student per granularity level. It is now one
+branch emitting one row per student per goal, with the workbook aggregating its
+school, regional and network views from those rows. A `ktaf` literal carries the
+network level alongside `state`, `region` and `school`.
+
+That collapse is only possible because goals stopped varying by school and
+region. **Every level now shows the same goal line** for a given grade and
+metric, where production showed 9 distinct school goals and 7 regional ones.
+That is the most visible change in this work and it is a KIPP Forward decision,
+not a modelling one.
+
+### The row shape is reproduced exactly for Official
+
+| Block                            | Production | Now    |
+| -------------------------------- | ---------- | ------ |
+| Official sections, 8 score types | 32,224     | 32,224 |
+| Official totals, 4 score types   | 5,106      | 5,106  |
+| Practice sections                | none       | 32,224 |
+| Practice totals                  | none       | 4,028  |
+
+Production's `Region/Grade Level` and `School/Grade Level` blocks were
+row-for-row identical to `Org/Grade Level`, differing only in the label and
+which `pct_goal` attached, so collapsing them loses nothing.
+
+### Only a total-level Benchmark is grade-specific
+
+Attempts and section thresholds apply to every student regardless of grade — a
+grade 9 student has sat the SAT zero times, which is a reportable answer, and
+section thresholds are reference bars that production carried at no grade at
+all. A total-level Benchmark is reported only where a goal was set for that
+grade.
+
+Getting this wrong is easy in both directions. Requiring a grade match on
+Attempts drops them to a quarter of their rows. Letting null-grade rows apply to
+everyone pulls in total-level thresholds that merely lack a goal — Practice
+`psatnmsqt_total` has a scaffold threshold and no stated goal, and it inflated
+the Practice totals by 4,028 rows before the rule was narrowed.
+
+### The attempts denominator is test takers, and a zero is not a null
+
+An attempts score reads **0** where the student holds any result of that test
+type but never sat this particular test, and **null** where they hold no result
+at all. Production reached the same population by reading the participation
+roster, whose grain is enrollment intersected with results; this version derives
+it from the hub with a student-level flag.
+
+This is the single most dangerous thing in the model to get wrong. Every
+attempts metric shares one denominator — 1,319 of 2,090 enrolled students — and
+treating a non-tester as 0 rather than null moves it to 2,090, **roughly halving
+every reported percentage**. SAT 1 Attempt reads 31.8% against 20.2%. Nothing
+errors and no row count changes; only the denominator moves.
+
+### Board metrics became one column
+
+The four `met_min_board_*` flags and the sixteen threshold columns behind them
+are replaced by `benchmark_tier`, a three-way band of College-Ready, HS-Grad
+Ready, or No Benchmark Met. Every board threshold was already a scaffold value:
+
+| Board metric      | Board `min_score` | Scaffold column           |
+| ----------------- | ----------------- | ------------------------- |
+| sat_combined 890  | 890               | `hs_ready_min_score`      |
+| sat_combined 1010 | 1010              | `college_ready_min_score` |
+| sat_ebrw 450      | 450               | `hs_ready_min_score`      |
+| sat_math 440      | 440               | `hs_ready_min_score`      |
+
+So `Board` was a duplicate encoding of the two tiers, and the jinja loop that
+pivoted it is gone. The board goal percentages were genuinely distinct — 0.25
+and 0.28 for the 890 tier against the Benchmark goals' 0.45 and 0.35 — because
+that view reports over test takers rather than all enrolled students. Those
+separate targets do not survive: one goal now applies everywhere, so the NJ Grad
+Ready goal line moves to the sheet's HS-Ready value.
+
+### Everything else that moves
+
+- **The academic year.** Production's stored view has `2026` on the Attempts
+  branch, from the var, and `2025` hardcoded on all four Benchmark branches — so
+  the live report serves attempts a year ahead of benchmarks. Both now read the
+  var. This is the largest mover and it is the rollover this work exists for.
+- **86 students' SAT attempt counts fall**, from the duplicate Salesforce
+  records.
+- **2 students gain attempt values** across all 8 metrics, because counts are no
+  longer scoped to enrolled years.
+- **PSAT 8/9 HS-Ready moves 800 to 790**, flipping 10 rows.
+- **Every total row's `pct_goal` changes**, the sheet having been restated.
+- **`expected_metric_label` is now populated on Benchmark rows** where
+  production read null. Additive, with no measure impact.
+
+Validated by pinning both sides to the same academic year, since production's
+mixed years make a direct comparison meaningless. On that basis the Official
+rows match on every column except the six above: `score` is identical across all
+37,330 Benchmark rows, and the Attempts rows differ on 188 of 16,720, all
+accounted for.
+
 ## Known issue — `rn_highest = 1` discards scores whose better sibling has no test date
 
 **27 students read `No Data` in the benchmark view while holding eligible SAT
