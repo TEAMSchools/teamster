@@ -20,6 +20,7 @@ GCS bucket: `teamster-kipppaterson`
 | `finalsite`             | API + SFTP assets            | schedule (`contacts`, 4am) + sensor (`status_report`)                 |
 | `pearson`               | SFTP assets                  | `AutomationConditionSensor`                                           |
 | `extracts`              | BigQuery→SFTP                | schedule (3am)                                                        |
+| `titan`                 | SFTP assets                  | sensor (`build_titan_sftp_sensor`)                                    |
 | `couchdrop`             | sensor only                  | sensor (Google Drive watcher, Finalsite only)                         |
 
 ## PowerSchool via dlt
@@ -47,7 +48,7 @@ Consequences:
   `powerschool` package `staging/dlt` variant is enabled here
 - The former Couchdrop-SFTP PowerSchool feed is retired; `couchdrop_sftp_sensor`
   now watches Finalsite `status_report` only
-- No `edplan`, `iready`, `overgrad`, `renlearn`, or `titan`
+- No `edplan`, `iready`, `overgrad`, or `renlearn`
 - The `dlt_powerschool_kipppaterson` pool stays at limit 1 (Dagster+ deployment
   settings, UI) so an overrunning tick serializes with the next instead of
   racing it
@@ -68,6 +69,6 @@ change-detection sensor (`kipppaterson__powerschool__dlt__intraday_sensor`,
 re-baseline, matching kippnewark's cadence). DeansList, Finalsite `contacts`,
 and the PowerSchool autocomm `extracts` job add nightly schedules; Finalsite
 `status_report` (`couchdrop_sftp_sensor`), Amplify
-(`build_amplify_mclass_sftp_sensor`), and PowerSchool intraday are
-sensor-driven. `AutomationConditionSensor` handles any assets with an automation
-condition defined (e.g. `pearson`).
+(`build_amplify_mclass_sftp_sensor`), Titan (`build_titan_sftp_sensor`), and
+PowerSchool intraday are sensor-driven. `AutomationConditionSensor` handles any
+assets with an automation condition defined (e.g. `pearson`).

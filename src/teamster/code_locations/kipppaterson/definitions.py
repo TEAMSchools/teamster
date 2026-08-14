@@ -18,6 +18,7 @@ from teamster.code_locations.kipppaterson import (
     finalsite,
     pearson,
     powerschool,
+    titan,
 )
 from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
 from teamster.core.resources import (
@@ -27,6 +28,7 @@ from teamster.core.resources import (
     GOOGLE_DRIVE_RESOURCE,
     SSH_COUCHDROP,
     SSH_RESOURCE_AMPLIFY,
+    SSH_TITAN,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
@@ -46,6 +48,7 @@ defs = Definitions(
             finalsite,
             pearson,
             powerschool,
+            titan,
         ]
     ),
     schedules=[
@@ -58,6 +61,7 @@ defs = Definitions(
         *amplify.sensors,
         *couchdrop.sensors,
         *powerschool.sensors,
+        *titan.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
@@ -78,5 +82,6 @@ defs = Definitions(
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_powerschool": get_powerschool_ssh_resource(),
+        "ssh_titan": SSH_TITAN,
     },
 )
