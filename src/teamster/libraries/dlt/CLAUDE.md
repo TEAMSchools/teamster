@@ -37,19 +37,18 @@ PyArrow backend. Probe-gated, same style as `powerschool/`.
   tag caps dlt's extract concurrency, same diagnostic knob as `powerschool/`
   (see its section below) — absent tag leaves dlt's default (5). No factory
   param for it: no caller passes one, so there is no precedence to resolve.
-- Tiering: `0 4 * * *` targets only the count-only tables (`co_teachers`,
-  `login_history` — derived from `cursor_column: null` in `config/focus.yaml`,
-  not hardcoded) and is their unconditional daily reload, because a count-only
-  probe can't see an in-place edit that leaves row count unchanged. The other 75
+- Tiering: `0 4 * * *` targets only the count-only tables (`co_teachers` as of
+  writing — derived from `cursor_column: null` in `config/focus.yaml`, not
+  hardcoded) and is their unconditional daily reload, because a count-only probe
+  can't see an in-place edit that leaves row count unchanged. The other 75
   tables' `updated_at` cursor is verified reliable (99.9%+ of rows on core
   tables show `updated_at != created_at` with a current max, measured
   2026-08-10), so the intraday sensor's probe alone gates them — they get no
-  separate unconditional reload. The sensor still probes all 77 tables every 15
+  separate unconditional reload. The sensor still probes all 76 tables every 15
   minutes regardless of tier.
-- `cursor_column` is `updated_at` for every Focus table except `co_teachers` and
-  `login_history`, which are count-only. A new table must declare one in
-  `config/focus.yaml`; the code location reads `a["cursor_column"]`, so omitting
-  it fails at module load.
+- `cursor_column` is `updated_at` for every Focus table except `co_teachers`,
+  which is count-only. A new table must declare one in `config/focus.yaml`; the
+  code location reads `a["cursor_column"]`, so omitting it fails at module load.
 - Uses `reflection_level="full_with_precision"` + `remove_nullability_adapter`
   (forces all columns `NULLABLE` so upstream `NOT NULL` changes don't break the
   `replace` load — see `focus/CLAUDE.md`)

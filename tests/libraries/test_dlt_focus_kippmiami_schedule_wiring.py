@@ -63,9 +63,13 @@ def test_schedule_targets_only_count_only_tables() -> None:
     # tier -- fail loudly instead of passing on an empty selection.
     assert expected_keys, "expected at least one count-only table in focus.yaml"
 
+    # One count-only table resolves to a bare KeysAssetSelection; several
+    # resolve to a union with `.operands`. Handle both so this test doesn't
+    # break when a table joins or leaves the tier.
+    selection = schedule.target.resolvable_to_job.selection
     selected_keys = {
         key.to_user_string()
-        for operand in schedule.target.resolvable_to_job.selection.operands
+        for operand in getattr(selection, "operands", (selection,))
         for key in operand.selected_keys
     }
 
