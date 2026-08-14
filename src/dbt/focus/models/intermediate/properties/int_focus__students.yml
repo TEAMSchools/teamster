@@ -11,6 +11,34 @@ models:
       meta:
         contains_pii: true
     columns:
+      - name: homeless_code
+        data_type: string
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [N, Y1, Y2]
+        description:
+          Network homelessness code. N when the student is recorded as not
+          homeless, Y2 when homeless and not in a parent or guardian's custody,
+          Y1 when homeless otherwise. Null when Focus records nothing.
+      - name: is_homeless
+        data_type: boolean
+        description:
+          True when homeless_code is Y1 or Y2. Matches the formula the
+          PowerSchool staging models use so both SIS branches agree.
+      - name: homeless_primary_nighttime_residence_code
+        data_type: int64
+        description:
+          Network primary-nighttime-residence code — 1 for shelters and
+          transitional housing, 2 for doubled-up, 3 for unsheltered, 4 for
+          hotels or motels. Null for students who are not homeless and for those
+          awaiting foster care, which has no network analogue.
+      - name: lunchstatus
+        data_type: string
+        description:
+          Network meal-eligibility code — F for free, R for reduced, P for paid.
+          Null where Focus records a school-level program status such as CEP or
+          USDA Provision 2, which says nothing about the individual student.
       - name: student_id
         description: Primary key — Focus local student id.
         data_tests:
