@@ -829,6 +829,23 @@ models:
       - name: self_contained_status
         data_type: string
         description: Conditional on is_self_contained.
+      - name: homeless_status
+        data_type: string
+        description:
+          Decoded homelessness status for the enrollment year — Not Homeless,
+          Homeless - With Guardian, or Homeless - Unaccompanied. Conditional on
+          homeless_code. Null where the code is unset or unrecognized, and for
+          Miami, which does not populate the field. May disagree with
+          is_homeless on closed years, which reads current status for every
+          year.
+      - name: homeless_primary_nighttime_residence
+        data_type: string
+        description:
+          Decoded primary nighttime residence for the enrollment year —
+          Shelters, transitional housing / Doubled-up / Unsheltered / Hotels or
+          Motels. Conditional on homeless_primary_nighttime_residence_code. Null
+          where no selection was made and outside New Jersey, which is the only
+          state that collects it.
       - name: state_studentnumber
         data_type: string
         description:

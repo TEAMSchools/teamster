@@ -17,6 +17,7 @@ with
             fc.phone_home,
             fc.phone_daytime,
             fc.phone_work,
+            fc.phone_untyped,
             fc.phone_primary,
             fc.is_emergency,
             fc.is_pickup,
@@ -73,6 +74,11 @@ with
             email as email_current,
             home_address as address_home,
 
+            -- Focus types every phone it stores, so there is no untyped number
+            -- to recover on this branch. The column exists to keep both
+            -- branches union-compatible.
+            cast(null as string) as phone_untyped,
+
             safe_cast(
                 regexp_replace(local_student_id, r'^8400', '') as int64
             ) as student_number,
@@ -124,6 +130,7 @@ with
             phone_home,
             phone_daytime,
             phone_work,
+            phone_untyped,
             phone_primary,
             address_home,
             is_emergency,
@@ -148,6 +155,7 @@ with
             phone_home,
             phone_daytime,
             phone_work,
+            phone_untyped,
             phone_primary,
             address_home,
             is_emergency,
@@ -172,6 +180,7 @@ with
             phone_home,
             phone_daytime,
             phone_work,
+            phone_untyped,
             phone_primary,
             address_home,
             is_emergency,
@@ -202,6 +211,7 @@ select
     phone_home,
     phone_daytime,
     phone_work,
+    phone_untyped,
     phone_primary,
     address_home,
     is_emergency,
@@ -227,6 +237,7 @@ select
     phone_home,
     phone_daytime,
     phone_work,
+    phone_untyped,
     phone_primary,
     address_home,
     is_emergency,

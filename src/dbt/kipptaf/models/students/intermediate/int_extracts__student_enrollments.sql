@@ -115,7 +115,9 @@ select
         salesforce_contact_college_match_gpa_band,
         salesforce_contact_owner_name,
         state_studentnumber,
-        `state`
+        `state`,
+        homeless_code,
+        homeless_primary_nighttime_residence_code
     ),
 
     sc.contact_1_name,
@@ -378,6 +380,32 @@ select
     case
         e.ethnicity when 'T' then 'T' when 'H' then 'H' else e.ethnicity
     end as race_ethnicity,
+
+    /* Labels come from the PowerSchool dropdown definitions; the two Y labels are
+    shortened. Codes outside the mapped set decode to null rather than being
+    guessed at -- a small number of dirty values exist upstream, and the
+    accepted_values tests on the raw codes surface anything new (#4814). */
+    case
+        e.homeless_code
+        when 'N'
+        then 'Not Homeless'
+        when 'Y1'
+        then 'Homeless - With Guardian'
+        when 'Y2'
+        then 'Homeless - Unaccompanied'
+    end as homeless_status,
+
+    case
+        e.homeless_primary_nighttime_residence_code
+        when 1
+        then 'Shelters, transitional housing'
+        when 2
+        then 'Doubled-up'
+        when 3
+        then 'Unsheltered'
+        when 4
+        then 'Hotels or Motels'
+    end as homeless_primary_nighttime_residence,
 
     -- TODO: figure out a better way to track these
     case

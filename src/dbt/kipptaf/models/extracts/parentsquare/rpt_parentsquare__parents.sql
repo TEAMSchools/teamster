@@ -28,9 +28,16 @@ with
             contact_last_name,
             relationship,
             email_current,
-            phone_mobile,
             _dbt_source_project as code_location,
 
+            -- A Finalsite number saved with no type label reaches none of the
+            -- typed columns, so without this fallback the parent has no mobile
+            -- at all -- and a parent carrying neither a mobile nor an email is
+            -- dropped below as undeliverable, which is how untyped-phone
+            -- families went missing from ParentSquare entirely. Nearly every
+            -- tenant number that does carry a type is a Cell, so an untyped
+            -- number is treated as the mobile candidate; a typed Cell wins.
+            coalesce(phone_mobile, phone_untyped) as phone_mobile,
             coalesce(phone_home, phone_work) as phone_secondary,
         from {{ ref("int_students__contacts") }}
         where

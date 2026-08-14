@@ -12,7 +12,7 @@ and is validated by automated tests.
 
 Each **midday** run builds four files from current Finalsite data and delivers
 them to Focus over SFTP at **1:15 p.m. ET**, matching Focus's import templates.
-An additional **unstaffed run at 4:30 a.m. ET** delivers the same four files so
+An additional **unstaffed run at 3:45 a.m. ET** delivers the same four files so
 the overnight state of Finalsite is already staged in Focus when the enrollment
 team starts their shift — nobody is watching that run, so it is not load-bearing
 for the 2 p.m. commitment below; if it fails, the 1:15 p.m. delivery still

@@ -36,16 +36,22 @@ focus_extract_assets_schedule = ScheduleDefinition(
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
-# 04:30 is the unstaffed run. It must fire AFTER the 04:00 Focus dlt pull has
-# landed in stg_focus -- the import-once anti-join reads that snapshot, and
-# delivering against a stale one re-sends records ops already imported by
-# hand, duplicating them in Focus. Nobody is watching this run, so it is
-# deliberately NOT load-bearing for the 2pm commitment -- if it fails, 13:15
-# still satisfies the promise.
+# 03:45 is the unstaffed run. It exists so the overnight state of Finalsite is
+# already staged in Focus when ops start their shift, rather than waiting on the
+# 13:15 delivery. Nobody is watching it, so it is deliberately NOT load-bearing
+# for the 2pm commitment -- if it fails, 13:15 still satisfies the promise.
+#
+# The clock time is NOT tied to the 04:00 Focus dlt schedule, and must not be
+# re-reasoned from it. That tier reloads only the count-only tables
+# (`cursor_column: null`), which the import-once anti-join never reads. The
+# tables it DOES read are `updated_at`-tracked, and
+# `kippmiami__dlt__focus__intraday_sensor` keeps them within ~15 min of any
+# change around the clock, so there is no stale-snapshot window to schedule
+# around at 03:45 any more than at any other hour.
 focus_extract_assets_overnight_schedule = ScheduleDefinition(
     name=f"{CODE_LOCATION}__extracts__focus__overnight_asset_job_schedule",
     job=focus_extract_asset_job,
-    cron_schedule="30 4 * * *",
+    cron_schedule="45 3 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
 )
 
