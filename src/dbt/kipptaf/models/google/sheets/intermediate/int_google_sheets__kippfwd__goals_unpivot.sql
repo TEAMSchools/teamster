@@ -3,8 +3,7 @@ with
         select
             academic_year,
             expected_test_type,
-            expected_grade_level,
-            expected_grouping,
+            expected_score_category,
             expected_scope,
             expected_aligned_scope,
             expected_subject_area,
@@ -76,16 +75,6 @@ with
             )
     ),
 
-    scaffold_by_grade as (
-        select
-            * except (expected_grade_level),
-
-            trim(expected_grade_level_item) as expected_grade_level,
-
-        from scaffold_unpivot
-        cross join unnest(split(expected_grade_level, ',')) as expected_grade_level_item
-    ),
-
     goals_all_grades as (
         select
             academic_year,
@@ -107,16 +96,12 @@ with
 
     goals_by_grade as (
         select
-            g.academic_year,
-            g.test_type,
-            g.grade_level,
-            g.cohort,
-            g.score_type,
-            g.expected_metric_type,
-            g.expected_goal_type,
-            g.expected_goal_subtype,
-            g.expected_metric_goal,
-
+            s.academic_year,
+            s.expected_test_type as test_type,
+            s.expected_score_type as score_type,
+            s.expected_metric_type,
+            s.expected_goal_type,
+            s.expected_goal_subtype,
             s.expected_scope,
             s.expected_aligned_scope,
             s.expected_subject_area,
@@ -125,23 +110,39 @@ with
             s.expected_min_score,
             s.scope_stem,
 
+            g.grade_level,
+            g.cohort,
+            g.expected_metric_goal,
+
+            'By Grade' as goal_branch,
+
             [
                 'rpt_tableau__college_assessment_dashboard_roster',
                 'rpt_tableau__college_assessment_dashboard_current',
                 'rpt_gsheets__college_assessments_wide'
             ] as rpt_consumers,
 
-            regexp_replace(g.expected_metric_type, r'^pct_', '') as metric_stem,
+            regexp_replace(s.expected_metric_type, r'^pct_', '') as metric_stem,
 
-        from {{ ref("stg_google_sheets__kippfwd__goals") }} as g
+        /* grade_level comes from the goal, not the scaffold, so a threshold with
+           no goal stated for it reads null — matching how the retired sheet
+           carried section thresholds at no grade. A score type with goals at two
+           grades therefore fans to one row per grade, which is the grain
+           _current reports at. */
+        from scaffold_unpivot as s
         left join
-            scaffold_by_grade as s
-            on g.academic_year = s.academic_year
-            and g.test_type = s.expected_test_type
-            and g.score_type = s.expected_score_type
-            and g.grade_level = s.expected_grade_level
-            and g.expected_metric_type = s.expected_metric_type
-        where not g.is_over_time_goal
+            {{ ref("stg_google_sheets__kippfwd__goals") }} as g
+            on s.academic_year = g.academic_year
+            and s.expected_test_type = g.test_type
+            and s.expected_score_type = g.score_type
+            and s.expected_metric_type = g.expected_metric_type
+            and not g.is_over_time_goal
+        where
+            s.expected_score_category != 'Score Change'
+            and (
+                s.expected_goal_type = 'Benchmark'
+                or s.expected_aligned_subject_area = 'Total'
+            )
     ),
 
     goals_over_time as (
@@ -165,6 +166,8 @@ with
             cast(null as string) as grade_level,
             cast(null as string) as cohort,
 
+            'All Grades' as goal_branch,
+
             ['rpt_tableau__college_assessment_dashboard_over_time'] as rpt_consumers,
 
             regexp_replace(s.expected_metric_type, r'^pct_', '') as metric_stem,
@@ -177,7 +180,7 @@ with
             and s.expected_score_type = g.score_type
             and s.expected_metric_type = g.expected_metric_type
         where
-            s.expected_grouping != 'Growth'
+            s.expected_score_category != 'Score Change'
             and (
                 s.expected_goal_type = 'Benchmark'
                 or s.expected_aligned_subject_area = 'Total'
@@ -201,6 +204,7 @@ with
             expected_aligned_subject_area,
             expected_aligned_subject,
             expected_min_score,
+            goal_branch,
             rpt_consumers,
             scope_stem,
             metric_stem,
@@ -225,6 +229,7 @@ with
             expected_aligned_subject_area,
             expected_aligned_subject,
             expected_min_score,
+            goal_branch,
             rpt_consumers,
             scope_stem,
             metric_stem,

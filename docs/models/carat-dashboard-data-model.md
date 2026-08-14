@@ -456,7 +456,7 @@ Benchmark goals answer "what share of students scored at or above a threshold."
 | Model                                                       | How                                                                   | In workbook |
 | ----------------------------------------------------------- | --------------------------------------------------------------------- | ----------- |
 | `rpt_tableau__college_assessment_dashboard_current`         | inner join on `score_type`, `goal_type != 'Board'`, all granularities | yes         |
-| `rpt_tableau__college_assessment_dashboard_over_time`       | `int_google_sheets__kippfwd__goals_unpivot`, over-time branch         | yes         |
+| `rpt_tableau__college_assessment_dashboard_over_time`       | `int_google_sheets__kippfwd__goals_unpivot`, `All Grades` branch      | yes         |
 | `rpt_gsheets__college_assessments_long`                     | `goal_type = 'Benchmark'`, network only, `avg(min_score)`             | no          |
 | `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | **none** — thresholds hardcoded in SQL                                | yes         |
 
@@ -587,59 +587,70 @@ one model instead of joining two sheets.
 
 ### Two branches, because the reporting views disagree on grain
 
-The model is a `UNION ALL` of two branches, and `rpt_consumers` names the views
-that read each. **Edit the branch your view is listed on**; that column is the
+The model is a `UNION ALL` of two branches. `goal_branch` names which one a row
+belongs to and is what a consumer filters on; `rpt_consumers` names the views
+that read each. **Edit the branch your view is listed on** — that column is the
 record of what else the edit moves.
 
-| Branch            | Driven from | Grain                                          | `rpt_consumers`                |
-| ----------------- | ----------- | ---------------------------------------------- | ------------------------------ |
-| `goals_by_grade`  | goals sheet | year, test type, **grade**, score type, metric | `_roster`, `_current`, `_wide` |
-| `goals_over_time` | scaffold    | year, test type, score type, metric (no grade) | `_over_time`                   |
+| `goal_branch` | Grade handling                     | `rpt_consumers`                |
+| ------------- | ---------------------------------- | ------------------------------ |
+| `By Grade`    | `grade_level` from the goals sheet | `_roster`, `_current`, `_wide` |
+| `All Grades`  | `grade_level` null throughout      | `_over_time`                   |
 
-`rpt_consumers` is an `ARRAY<STRING>`, so a consumer selects its branch with
-`cross join unnest(rpt_consumers) as rpt_consumer` and filters that plain
-column. Appending a consumer therefore never changes an existing filter, and an
-array cannot be folded into a grouping key by accident the way a delimited
-string can.
+Both are driven from the scaffold, so both carry every threshold it states
+rather than only those a goal was written for, and both apply the same two
+exclusions. They differ only in how a goal's grade is treated.
 
-The branches also tell themselves apart in the data: `grade_level` is non-null
-on every by-grade row and null on every over-time row, which is why the
-uniqueness test holds across the union without naming the branch.
+`goal_branch` is in the uniqueness key for that reason: the branches agree on
+every other key column wherever they overlap. `grade_level` being null on one
+side separates them today, but only incidentally.
 
-### Which side drives, and why it differs per branch
+**Filter `goal_branch`, not `rpt_consumers`, from an intermediate.**
+`rpt_consumers` is an `ARRAY<STRING>` whose job is declaring blast radius to BI
+— a consumer selects from it with `cross join unnest(rpt_consumers)` and filters
+the plain column, so appending a consumer never changes an existing filter. But
+an upstream model filtering on a _view name_ couples its own output to that
+view's existence, which is the wrong dependency.
+`int_students__college_assessment_participation_roster` filters `goal_branch`
+for this reason.
 
-`goals_by_grade` left joins **from the goals sheet** on
-`(academic_year, test_type, score_type, grade_level, expected_metric_type)`, so
-every goal survives and a threshold nobody wrote a goal for never appears. 34
-rows today, 31 with a threshold.
+### Which grade a row carries, and why it comes from the goals sheet
 
-`goals_over_time` reverses it and drives **from the scaffold**, looking the
-percentage up. Every threshold the scaffold states gets a row whether or not a
-goal exists for it, because `_over_time` plots the metric regardless and the
-goal is only a reference line. 80 rows today, all with a threshold, 23 with a
-goal — the ACT and every section-level bar carry a null `pct_goal`, exactly as
-prod does.
+`grade_level` is taken from the goals side of the join, not the scaffold. Three
+consequences, all of them reproducing the retired sheet's shape:
+
+- A score type with goals at two grades **fans to one row per grade**. SAT
+  states separate grade 11 and grade 12 targets, so `sat_total_score` appears
+  twice per metric. That is the grain the grade-reporting views report at.
+- A threshold with no goal stated for it reads **null grade**. That is every
+  section row, because the rebuilt sheet states no section goals — and it
+  matches how the retired sheet carried section thresholds at no grade, which is
+  what let every student be measured against every section bar regardless of
+  their own grade.
+- The join therefore does **not** key on grade, and the scaffold's
+  comma-separated `expected_grade_level` list is not read at all. An earlier
+  version split that list and joined on it; taking grade from the goal instead
+  removed the split and its trimming.
 
 Mapping the scaffold's column names onto the goals vocabulary is a CASE, because
 the two sides spell the same concept differently — `hs_ready_min_score` against
 `pct_hs_ready`. If the staging model is ever renamed to a neutral vocabulary,
 that CASE disappears and both sides simply agree.
 
-### Attempts exist only at the total grain on the over-time branch
+### Attempts exist only at the total grain, on both branches
 
 An attempt is one sitting of a test, recorded on the total row. A section row is
 a slice of that same sitting and carries no attempt count of its own.
 
 The scaffold does not encode this: it sets `a1_attempt_min_score` to 1 and
 `a2_plus_attempts_min_score` to 2 on **every** row, sections included. Reading
-those literally invents 44 goal combinations the report has never had. Prod's
-goal set contains zero Attempts-on-section rows, so the rule below reproduces
-prod's Official set exactly — 40 combinations against prod's 40 distinct —
-rather than imposing a new judgment:
+those literally invents goal combinations the report has never had — prod's goal
+set contains zero Attempts-on-section rows, so the rule below reproduces prod's
+Official set rather than imposing a new judgment:
 
 ```sql
 where
-    expected_grouping != 'Growth'
+    expected_score_category != 'Score Change'
     and (
         expected_goal_type = 'Benchmark'
         or expected_aligned_subject_area = 'Total'
@@ -647,49 +658,33 @@ where
 ```
 
 Benchmark rows are kept at every grain, sections included, because prod has 20
-of those. Growth is excluded for a related reason — a score _change_ is neither
-a sitting nor a score to compare against a bar — and it is written against the
-scaffold's own `Growth` label rather than naming `sat_total_score_growth`, so a
-second growth row would be handled without a code change.
+of those. Row math out of the scaffold unpivot: 126 rows, less 2 score-change,
+less 44 Attempts-on-section, leaves 80 on the All Grades branch. By Grade lands
+at 88, the difference being SAT fanning to two grades where the sheet states two
+goals.
 
-Row math out of the scaffold unpivot: 126 rows, less 2 Growth, less 44
-Attempts-on-section, leaves 80.
+`expected_score_category` is the scaffold's purpose-built level-versus-change
+flag, which is why the growth exclusion keys on it rather than on
+`expected_grouping`. Both markers work today, but `expected_grouping`'s primary
+job is subject bucketing with `Growth` layered on as a special case. This is
+**not** dead code: of the scaffold's two growth rows, one carries populated
+attempt thresholds, so the predicate removes 2 rows that `UNPIVOT` would
+otherwise emit.
 
-### The grade split is load-bearing
+### A goal with no scaffold row does not appear
 
-The scaffold states grade level as a comma-separated list where one row covers
-several grades — SAT thresholds are stated as `11,12`. The goals sheet states
-one grade per row. An equality join therefore matches neither, and **all four
-SAT goals would silently vanish**.
+Both branches being scaffold-driven means a goal whose score type has no
+scaffold row is absent entirely, rather than surviving with a null threshold as
+it did when the by-grade branch was goals-driven.
+`test_kippfwd_goals_resolve_to_scaffold` surfaces those instead, so a stated
+goal cannot go silently unreported.
 
-The scaffold is split to one row per grade before the join:
-
-```sql
-cross join unnest(split(expected_grade_level, ',')) as expected_grade_level_item
-```
-
-Values are trimmed as well, because a sheet edit that types `11, 12` would
-otherwise break the join with no error. This is the pattern the scaffold's own
-column description prescribes.
-
-The split lives in its own CTE, `scaffold_by_grade`, and feeds the by-grade
-branch **only**. The over-time branch reads the unsplit `scaffold_unpivot`,
-because it has no grade to match on. Moving the split upstream into the shared
-CTE would hand the over-time branch two identical rows for every SAT bar and
-silently double its output.
-
-### The `psat10nmsqt_total` gap
-
-Because the by-grade branch left joins from goals, a goal whose score type has
-no scaffold row survives with a null threshold rather than disappearing.
-`psat10nmsqt_total` is in that state today — a combined PSAT10 and NMSQT goal
-with no matching scaffold row, and the 3 of 34 rows that carry no threshold.
-Adding one means widening the scaffold's `expected_scope` accepted values to
-admit `PSAT10/NMSQT`, since a combined row has no single honest scope.
-
-It is absent from the over-time branch entirely, which is correct rather than a
-second gap: that branch is scaffold-driven, so a goal with no scaffold row has
-nothing to attach to.
+`psat10nmsqt_total` fails that test today — a combined PSAT10 and PSAT NMSQT
+goal with no scaffold equivalent, five rows counting its over-time pair. Adding
+one means widening the scaffold's `expected_scope` accepted values to admit
+`PSAT10/NMSQT`, since a combined row has no single honest scope. It has no
+consumer today: `_current` never reported it, and the roster's PIVOT enumerates
+five labels that do not include it.
 
 ### `expected_metric_label` is not unique per row
 
@@ -697,7 +692,7 @@ The model carries a scope-and-metric token — `sat_1_attempt`, `psat89_hs_ready
 — so a consumer can PIVOT to one column per metric. It reproduces the vocabulary
 the retired sheet derived through an 18-branch CASE.
 
-It repeats across grades on the by-grade branch. Grades 11 and 12 both carry
+It repeats across grades on the By Grade branch. Grades 11 and 12 both carry
 `sat_total_score`, so each SAT label appears twice. The Attempts metrics hold
 the same threshold and target at both grades, so aggregating over the label is
 safe for those. **The Benchmark metrics do not** — grade 11 and 12 differ on the

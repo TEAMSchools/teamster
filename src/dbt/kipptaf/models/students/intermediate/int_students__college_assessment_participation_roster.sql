@@ -31,12 +31,9 @@ with
             test_type, expected_metric_label, expected_min_score, expected_metric_goal,
 
         from {{ ref("int_google_sheets__kippfwd__goals_unpivot") }}
-        cross join unnest(rpt_consumers) as rpt_consumer
-        -- by-grade branch; the over-time branch states its goals grade-free and
-        -- would collapse into the pivot's avg() alongside them
-        where
-            expected_goal_type = 'Attempts'
-            and rpt_consumer = 'rpt_tableau__college_assessment_dashboard_roster'
+        -- the all-grades branch states its goals grade-free and would collapse
+        -- into the pivot's avg() alongside these
+        where expected_goal_type = 'Attempts' and goal_branch = 'By Grade'
     )
 
 select
