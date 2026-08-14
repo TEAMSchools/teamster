@@ -446,3 +446,11 @@ metadata:
   namespace: dagster-cloud
 spec:
   itemPath: vaults/Data Team/items/PowerSchool SSH - Paterson
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: op-titan-sftp-kipppaterson
+  namespace: dagster-cloud
+spec:
+  itemPath: vaults/Data Team/items/Titan SFTP - Paterson
