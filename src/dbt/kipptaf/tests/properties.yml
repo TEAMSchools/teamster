@@ -1,4 +1,24 @@
 data_tests:
+  - name: test_kippfwd_goals_long_join_grain
+    description: >-
+      rpt_gsheets__college_assessments_long joins the All Grades benchmark goals
+      on test type and score type alone, with no academic year binding, and
+      resolves its pivot with any_value(). A second academic year stating a goal
+      for a key that already has one would double every matching score row and
+      pick a threshold arbitrarily, so the failure is a silently wrong reported
+      threshold rather than an error -- which is the wrong loudness for a
+      warning. The goals model already spans two academic years and stays
+      unambiguous only because the earlier rows are practice ACT while the later
+      ACT rows are official, a property of the data rather than of the model.
+      int_google_sheets__kippfwd__goals_unpivot's own uniqueness test carries
+      academic_year and so cannot catch this.
+    config:
+      severity: error
+      meta:
+        dagster:
+          ref:
+            name: int_google_sheets__kippfwd__goals_unpivot
+
   - name: test_kippfwd_miami_roster_current_year_not_empty
     description: >-
       rpt_gsheets__kippfwd_miami_roster must hold at least one row for
