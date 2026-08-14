@@ -19,7 +19,7 @@ GCS bucket: `teamster-kippmiami`
 | `fldoe`     | SFTP assets   | `AutomationConditionSensor`                                            |
 | `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                    |
 | `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                                  |
-| `extracts`  | BigQuery→SFTP | schedules (Focus delivery 13:15 ET staffed, 03:45 ET overnight)        |
+| `extracts`  | BigQuery→SFTP | schedule (Focus delivery 13:15 ET staffed + 03:45 ET overnight)        |
 | `couchdrop` | sensor only   | sensor (Google Drive watcher)                                          |
 | `dlt/focus` | dlt assets    | schedule (04:00 ET, count-only tables only) + intraday sensor (15 min) |
 
@@ -36,7 +36,8 @@ freshness is no longer tied to that 12:00 slot — see below.
 A second, unstaffed delivery runs at 03:45 so the overnight Finalsite state is
 already staged when ops start their shift. It is not load-bearing for the 2pm
 commitment, and its clock time is not tied to the 04:00 dlt tier — see
-`extracts/schedules.py`.
+`extracts/schedules.py`. Both deliveries are crons on the SAME
+`ScheduleDefinition`, so enabling that one schedule enables both.
 
 **The 12:00 contacts pull and the manually-pushed SFTP drop run concurrently on
 purpose.** They share no pool and neither gates the other: the contacts API pull
