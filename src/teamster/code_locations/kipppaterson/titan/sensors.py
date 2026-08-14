@@ -7,7 +7,7 @@ titan_sftp_sensor = build_titan_sftp_sensor(
     asset_selection=[person_data],
     timezone=LOCAL_TIMEZONE,
     minimum_interval_seconds=(60 * 10),
-    exclude_dirs=["Scipt", "Script"],
+    exclude_dirs=["Script"],
 )
 
 sensors = [
