@@ -19,7 +19,7 @@ GCS bucket: `teamster-kippmiami`
 | `fldoe`     | SFTP assets   | `AutomationConditionSensor`                                            |
 | `iready`    | SFTP assets   | sensor (`build_iready_sftp_sensor`)                                    |
 | `renlearn`  | SFTP assets   | sensor (`build_renlearn_sftp_sensor`)                                  |
-| `extracts`  | BigQuery→SFTP | schedule (Focus delivery 12:45 ET)                                     |
+| `extracts`  | BigQuery→SFTP | schedule (Focus delivery 13:15 ET staffed + 03:45 ET overnight)        |
 | `couchdrop` | sensor only   | sensor (Google Drive watcher)                                          |
 | `dlt/focus` | dlt assets    | schedule (04:00 ET, count-only tables only) + intraday sensor (15 min) |
 
@@ -30,8 +30,14 @@ This exists to keep a promise to stakeholders: a student entered in Finalsite by
 Finalsite SFTP export at 12:00 (Finalsite's own export is overnight and not ours
 to reschedule) → couchdrop sensor ingests within 5 min → contacts pull at 12:00
 → dbt rebuild ~3.5 min → four CSVs delivered to the Focus SFTP `incoming/`
-folder at 12:45 → **ops runs the Focus imports by hand**. Focus's own live-data
+folder at 13:15 → **ops runs the Focus imports by hand**. Focus's own live-data
 freshness is no longer tied to that 12:00 slot — see below.
+
+A second, unstaffed delivery runs at 03:45 so the overnight Finalsite state is
+already staged when ops start their shift. It is not load-bearing for the 2pm
+commitment, and its clock time is not tied to the 04:00 dlt tier — see
+`extracts/schedules.py`. Both deliveries are crons on the SAME
+`ScheduleDefinition`, so enabling that one schedule enables both.
 
 **The 12:00 contacts pull and the manually-pushed SFTP drop run concurrently on
 purpose.** They share no pool and neither gates the other: the contacts API pull
@@ -44,11 +50,11 @@ offset minute.
 
 Constraints to preserve when touching any of these:
 
-- **The 12:45 delivery is a plain cron — nothing gates it on the upstreams.**
+- **The 13:15 delivery is a plain cron — nothing gates it on the upstreams.**
   The gaps are a time budget, not a dependency. Measured need is 4-7 min from a
   schedule firing to the dependent staging table being rebuilt, or ~11 min worst
   case from a manual SFTP push (5 min sensor poll + 2m13s ingest + 3m34s dbt)
-  plus up to 9 min of top-of-hour pod-scheduling queue, against 45 min of
+  plus up to 9 min of top-of-hour pod-scheduling queue, against 75 min of
   budget. That 5-minute poll is deliberate and Miami-only — see
   `couchdrop/sensors.py`; at the 10 min the other locations use, the ~16 min
   worst case leaves the 12:30 freshness check on #4736 unable to tell a stalled

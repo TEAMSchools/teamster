@@ -88,7 +88,7 @@ data_tests:
       built from a status report older than the one on disk, so
       enrollment_start_date or assigned_school comes back null while the live
       status report already holds a value. The Focus enrollment extract gates on
-      both columns, so each such row is silently dropped from the 12:45 ET
+      both columns, so each such row is silently dropped from the 13:15 ET
       delivery, which is a plain cron and reports nothing. Errors rather than
       warns: that delivery backs a commitment that a student entered in
       Finalsite by noon is usable in Focus by 2pm, and the failure is invisible

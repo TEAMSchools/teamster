@@ -42,7 +42,7 @@ focus_dlt_daily_asset_job_schedule = ScheduleDefinition(
     # that data comes from `updated_at`-tracked tables the sensor keeps fresh
     # continuously, not from here. Losing this tier delays an in-place edit to
     # a count-only table by up to a day; it has no effect on FRESH's 05:00
-    # Tableau extract or the 12:45 delivery.
+    # Tableau extract or the 13:15 delivery.
     cron_schedule="0 4 * * *",
     execution_timezone=str(LOCAL_TIMEZONE),
     target=daily_full_refresh_targets,
