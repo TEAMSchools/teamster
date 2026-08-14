@@ -216,6 +216,17 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: homeless_unaccompanied_youth
+        data_type: int64
+        description:
+          Focus select-field option id for Homeless Unaccompanied Youth, set
+          when a homeless student is not in the physical custody of a parent or
+          guardian. Decoded to a label in int_focus__students__pivot and used
+          there to separate the Y2 homeless code from Y1. Null for students who
+          are not homeless.
+        config:
+          meta:
+            contains_pii: true
       - name: idea_educational_environment
         description: IDEA Educational Environment
         data_type: int
