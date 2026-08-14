@@ -1132,7 +1132,7 @@ is absent, but a type mismatch on a shared name is an error.
             and enr.academic_year = yg.academic_year
         left join
             {{ ref("int_focus__advisory") }} as adv
-            on enr.network_student_number = adv.student_number
+            on enr.student_number = adv.student_number
             and enr.academic_year = adv.academic_year
             and enr.ps_schoolid = adv.schoolid
     ),
@@ -1204,6 +1204,22 @@ The remaining derivations are windows over the conformed rows. Insert after
 `focus_conformed` must also project `yg.grade_level_prev` and
 `yg.academic_year_prev` for this CTE to read them — add both to its select list
 alongside `is_retained_year`.
+
+### Two student-number columns — use the right one per join
+
+Inside the Focus layer, `student_number` is the **8400-prefixed Focus id**
+(`8400305984`) and `network_student_number` is the network student number
+(`305984`). Both `int_focus__student_enrollments` and `int_focus__advisory`
+follow that convention, so:
+
+- Join `int_focus__advisory` on `enr.student_number = adv.student_number` — both
+  prefixed. Joining on `network_student_number` matches zero rows.
+- Join `int_focus__students` on
+  `enr.network_student_number = stu.student_number` — `int_focus__students`
+  already unprefixes, so its `student_number` IS the network number. This is the
+  opposite side of the same trap.
+- Project `enr.network_student_number as student_number` for output, because the
+  network layer's `student_number` means the network number.
 
 `cohort` omits the grade-99 arm because Focus carries no graduate placeholders,
 so `cohort_graduated` null-fills and the arm would always yield null.
