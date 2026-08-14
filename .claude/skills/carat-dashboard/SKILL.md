@@ -655,45 +655,45 @@ before the hash join runs.
 with
   scores as (
     select
-      h.scope, h.test_type, format_date('%B', h.test_date) as test_month,
+      h.scope, h.test_type, h.aligned_month_round,
       count(distinct h.student_number) as students
     from `teamster-332318.kipptaf_assessments.int_assessments__all_college_assessments` as h
-    where h.test_date is not null
-    group by h.scope, h.test_type, test_month
+    where h.aligned_month_round is not null
+    group by h.scope, h.test_type, h.aligned_month_round
   )
 select
-  s.scope, s.test_type, s.test_month, s.students,
+  s.scope, s.test_type, s.aligned_month_round, s.students,
   if(s.scope = 'ACT', 'ACT never on this sheet', 'ORPHAN') as verdict
 from scores as s
 left join
   `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments` as a
   on s.scope = a.expected_scope
   and s.test_type = a.expected_test_type
-  and s.test_month = a.expected_month
+  and s.aligned_month_round = a.expected_month
 where a.expected_scope is null
 order by s.students desc
 ```
 
-**Triage before acting.** Measured 2026-08 against a clean paste, this returns
-15 months over 5,585 students, and not one of them was a paste error:
+`aligned_month_round` on the hub is what lets one join serve both pipelines — it
+holds the month on an official row and the `scope_round` on a practice row,
+matching the tab's own polymorphic column.
 
-- **ACT is 13 of the 15**, about 4,240 students. `_roster_scores` has never
+**Triage before acting.** Measured 2026-08 against the rebuilt tab, this returns
+13 rows and only one is a genuine gap:
+
+- **ACT is 12 of the 13**, about 4,240 students. `_roster_scores` has never
   covered the ACT and the sheet holds no ACT rows, so these are a standing scope
   gap rather than anything a rebuild caused. Keep them labelled rather than
   filtered out, or a future decision to add the ACT will look like it already
   works.
-- **SAT Official January, 334 students** — a real pre-existing gap. January sits
-  in no season and is not on the `Not Official` list either, so those scores
-  have never reached the report.
-- **SAT Official July, 1 student.** Same shape, immaterial.
-- **Every practice month appears here until the hub carries `scope_round`.** The
-  query matches on month, and practice no longer binds on month, so practice
-  rows report as orphans by construction. Once `scope_round` reaches
-  `int_assessments__all_college_assessments`, change the score side to
-  `if(test_type = 'Practice', scope_round, format_date('%B', test_date))` and it
-  resolves. Until then read the practice lines as expected noise, not gaps — the
-  seeded scores dated 2026-08-19 are today's example, and they match `SAT1`
-  correctly under round binding despite the August date.
+- **SAT Official July, 1 student** — the only real orphan, and immaterial.
+
+Two groups used to appear here and no longer do. Their return would mean
+something, so they are worth knowing: **SAT Official January** held 334 students
+before January was added to Winter at grades 11 and 12, and **practice scores**
+orphaned wholesale while the join still matched on month. The seeded practice
+set is dated 2026-08-19 against a September administration and matches `SAT1`
+regardless, which is the whole point of round binding.
 
 Cross-check anything else against the `Not Official` list before adding it — it
 may be a deliberate exclusion rather than a gap.

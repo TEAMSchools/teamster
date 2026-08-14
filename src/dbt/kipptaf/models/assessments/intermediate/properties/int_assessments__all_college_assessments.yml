@@ -92,6 +92,33 @@ models:
           the rank from the source unpivots, which assign it before rows without
           a test date are dropped, so an official student can have no rank-1 row
           at all. Practice rows are ranked here instead and always have one.
+      - name: aligned_month_round
+        data_type: string
+        description: >-
+          The administration a score belongs to, in the vocabulary the Expected
+          Assessments tab uses, so a reporting view can join the two without
+          knowing which pipeline a row came from.
+
+
+          Official rows carry the month name. College Board sets those dates
+          nationally, so the month identifies the administration reliably.
+
+
+          Practice rows carry scope_round — SAT1, PSAT891, PSAT101. A month
+          cannot identify a practice administration: schools choose their own
+          dates, so a single administration straddles two months (grade 9 runs
+          25 August to 23 September across four schools), and the Illuminate
+          dates are Foundation's to set rather than ours to normalise.
+
+
+          administration_round is not a substitute for either. It derives from
+          Illuminate's administered_at, which is null on every externally
+          created assessment and wrong on the one that has a value — it reads
+          Jul 23 against September test dates.
+
+
+          Null where test_date is null, which is every official row the source
+          system left undated.
       - name: salesforce_id
         data_type: string
         description: kippadb contact id. Null on College Board rows.

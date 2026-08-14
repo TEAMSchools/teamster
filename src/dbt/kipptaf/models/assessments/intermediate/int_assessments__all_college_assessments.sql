@@ -15,6 +15,13 @@ with
             scale_score,
             rn_highest,
             aligned_subject,
+
+            /* The administration a score belongs to, in the vocabulary the
+               Expected Assessments tab uses. Official sittings are on College
+               Board's national dates, so the month identifies the administration.
+               Practice cannot use a month -- schools choose their own dates and one
+               administration straddles two -- so it carries scope_round instead. */
+            test_month as aligned_month_round,
             salesforce_id,
             is_overall_score,
             is_subject_score,
@@ -50,6 +57,8 @@ with
             rn_highest,
 
             cast(null as string) as aligned_subject,
+
+            scope_round as aligned_month_round,
             cast(null as string) as salesforce_id,
 
             is_overall_score,
@@ -123,6 +132,7 @@ select
     score_type,
     scale_score,
     rn_highest,
+    aligned_month_round,
     salesforce_id,
     is_overall_score,
     is_subject_score,
