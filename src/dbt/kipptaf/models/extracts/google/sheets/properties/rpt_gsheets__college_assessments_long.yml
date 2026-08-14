@@ -55,6 +55,17 @@ models:
         data_type: numeric
       - name: test_type
         data_type: string
+        description: >-
+          The test itself — SAT, PSAT 8/9, PSAT10, PSAT NMSQT, ACT. Named
+          test_type for historical reasons; administration_type is what
+          distinguishes an official sitting from a practice one.
+      - name: administration_type
+        data_type: string
+        description: >-
+          Official or Practice. Practice rows come from Illuminate and are
+          converted onto the same scale as their official counterpart, so scores
+          are comparable, but an official attainment decision should filter to
+          Official.
       - name: test_date
         data_type: date
       - name: test_subject

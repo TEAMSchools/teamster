@@ -10,6 +10,31 @@ with
         where expected_goal_type = 'Benchmark' and goal_branch = 'All Grades'
     ),
 
+    /* One row per student holding all three SAT highlights, replacing three
+       separate left joins to the same model that differed only by subject area.
+       Official only: superscore is not computed for practice. */
+    sat_highlights as (
+        select
+            student_number,
+
+            max(
+                if(aligned_subject_area = 'Total', superscore, null)
+            ) as sat_total_superscore,
+            max(
+                if(aligned_subject_area = 'EBRW', max_scale_score, null)
+            ) as sat_ebrw_highest,
+            max(
+                if(aligned_subject_area = 'Math', max_scale_score, null)
+            ) as sat_math_highest,
+
+        from {{ ref("int_assessments__college_assessment") }}
+        where
+            scope = 'SAT'
+            and rn_highest = 1
+            and aligned_subject_area in ('Total', 'EBRW', 'Math')
+        group by student_number
+    ),
+
     final as (
         select
             e.region,
@@ -39,13 +64,15 @@ with
             sc.score_type,
             sc.scale_score,
 
+            /* Official or Practice. The test_type column below already carries the
+               scope, so this cannot reuse that name. */
+            sc.test_type as administration_type,
+
             g.expected_metric_name,
 
-            ss.superscore as sat_total_superscore,
-
-            he.max_scale_score as sat_ebrw_highest,
-
-            hm.max_scale_score as sat_math_highest,
+            sh.sat_total_superscore,
+            sh.sat_ebrw_highest,
+            sh.sat_math_highest,
 
             coalesce(c.courses_course_name, 'No Data') as ccr_course,
             coalesce(c.teacher_lastfirst, 'No Data') as ccr_teacher_name,
@@ -56,30 +83,13 @@ with
 
         from {{ ref("int_extracts__student_enrollments") }} as e
         left join
-            {{ ref("int_assessments__college_assessment") }} as sc
+            {{ ref("int_assessments__all_college_assessments") }} as sc
             on e.student_number = sc.student_number
         left join
             goals as g
             on sc.test_type = g.expected_test_type
             and sc.score_type = g.expected_score_type
-        left join
-            {{ ref("int_assessments__college_assessment") }} as ss
-            on e.student_number = ss.student_number
-            and ss.scope = 'SAT'
-            and ss.aligned_subject_area = 'Total'
-            and ss.rn_highest = 1
-        left join
-            {{ ref("int_assessments__college_assessment") }} as he
-            on e.student_number = he.student_number
-            and he.scope = 'SAT'
-            and he.aligned_subject_area = 'EBRW'
-            and he.rn_highest = 1
-        left join
-            {{ ref("int_assessments__college_assessment") }} as hm
-            on e.student_number = hm.student_number
-            and hm.scope = 'SAT'
-            and hm.aligned_subject_area = 'Math'
-            and hm.rn_highest = 1
+        left join sat_highlights as sh on e.student_number = sh.student_number
         left join
             {{ ref("base_powerschool__course_enrollments") }} as c
             on e.student_number = c.students_student_number
@@ -129,6 +139,7 @@ select
     sat_math_highest,
 
     scope as test_type,
+    administration_type,
     test_date,
     subject_area as test_subject,
     scale_score,
