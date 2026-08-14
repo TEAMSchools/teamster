@@ -17,12 +17,46 @@ description: >-
 
 ## Always read first
 
+**Read
+[`docs/models/carat-dashboard-data-model.md`](../../../docs/models/carat-dashboard-data-model.md)
+before answering anything.** Not optional, and not only for deep questions. Its
+first two sections — _What is CARAT?_ and _Models behind the workbook_ —
+establish what the dashboard actually reports, who reads it, and which models
+feed which view. Without that, it is easy to answer confidently about the wrong
+pipeline: CARAT has two, official and practice, and confusing them is the most
+common source of wrong answers.
+
+It is also authoritative for the shipped models, which the design spec is not —
+several things landed differently from the spec, and the doc records the
+deviations.
+
+Also relevant:
+
 - Design spec:
   [`docs/superpowers/specs/2026-07-31-carat-illuminate-interims-design.md`](../../../docs/superpowers/specs/2026-07-31-carat-illuminate-interims-design.md)
+  — authoritative for the designation/conversion split, the two-section SAT
+  total, and which pre-existing defects were deliberately left unfixed
 - Exposure: `college_admission_readiness_assessments_tracker_carat`
 
-The spec is authoritative for the designation/conversion split, the two-section
-SAT total, and which pre-existing defects were deliberately left unfixed.
+### Routing "why did this number change" questions
+
+These come up most often and each has a documented answer with measured figures.
+Cite the doc rather than re-deriving:
+
+| Question                                              | Section                                              |
+| ----------------------------------------------------- | ---------------------------------------------------- |
+| An attempt count is lower than it was                 | _Why participation attempt counts change_            |
+| A student's SAT attempts dropped by one               | same — 86 students, the Camden 2027 duplicate load   |
+| An attempt count is higher than it was                | same — counts are no longer scoped to enrolled years |
+| The roster returns two rows for one student           | same — `test_type` is in the grain                   |
+| A percent-met or benchmark total moved                | _Why the benchmark dashboard's totals change_        |
+| Two records for one sitting, or an inflated row count | _Known issue — duplicate kippadb test records_       |
+
+Each of those carries the measured numbers, so an answer can cite them instead
+of re-running a comparison. If a reconciliation disagrees with the documented
+figures, read the last subsection of the participation section first — the
+counting fix and the Salesforce cleanup cancel each other depending on which
+landed first, which is the usual reason.
 
 ## Orientation
 

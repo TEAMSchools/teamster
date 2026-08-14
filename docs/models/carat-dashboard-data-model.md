@@ -979,6 +979,67 @@ Scale scores throughout the sheet come from the guides' `LOWER` column, the
 established convention, so reported scores sit at the bottom of College Board's
 published range rather than mid-range.
 
+## Why participation attempt counts change
+
+`int_students__college_assessment_participation_roster` reports different
+numbers after this work, and so does anything reading its `*_count_lifetime`
+columns — `_dashboard_roster`, `_over_time`, `_current`, and
+`rpt_gsheets__college_assessments_wide`. Measured student by student against
+production across all 4,554 students and all five lifetime counts:
+
+| Group                                       | Students  |
+| ------------------------------------------- | --------- |
+| identical on all five lifetime counts       | **4,453** |
+| SAT lower                                   | 86        |
+| SAT higher                                  | 8         |
+| ACT higher (one student also in SAT higher) | 8         |
+| any PSAT 8/9, PSAT10 or NMSQT difference    | **0**     |
+
+The student set is unchanged — nobody present in one and absent from the other.
+PSAT counts do not move at all. Two causes, both intended.
+
+### 86 students lose one SAT attempt — the duplicate correction
+
+These are the double-entered Salesforce records described under _Known issue —
+duplicate kippadb test records_. Counting distinct test dates instead of rows
+credits one sitting once. Almost all are Camden class of 2027 on the April 2026
+school-day SAT.
+
+This is the change most likely to be questioned, because that cohort's SAT
+`2+ Attempts` rate is measured against an 0.80 goal and a student sitting
+exactly on the one-versus-two boundary flips from meeting it to not. The rate
+falls because double-counting stopped, not because participation dropped.
+
+### 16 students gain an attempt — counts are no longer scoped to enrollment years
+
+`attempt_lifetime` is computed on the hub before any enrollment filter, so a
+sitting in a year the student had no high school enrollment record counts toward
+their lifetime total. The old chain counted only rows surviving that join, so it
+dropped them.
+
+This is deliberate and matches how attempts are treated elsewhere — a test sat
+outside our schools still counts. The roster's **population** is still scoped to
+enrolled high school students, because the Tableau views require it; only the
+counts span a student's whole history.
+
+### 13 students gain a row, with no count change
+
+Row count goes 7,294 to 7,307 on the Official side. Those 13 are grade
+repeaters: one student holding two academic years at the same grade level, which
+the old grain merged and `academic_year` now separates. All 26 rows carry
+attempts, none is empty, and no lifetime count differs. They never reach
+consumers, because `rn_lifetime = 1` still yields one row per student per test
+type.
+
+A further 378 rows are Practice, which production had no concept of.
+
+### If you are reconciling and the numbers do not match this table
+
+The counting fix and a Salesforce cleanup of the duplicate records address the
+same rows from opposite ends. Whichever lands first absorbs the correction and
+the other becomes a no-op for these counts, so a comparison run after a cleanup
+shows a smaller delta than the table above — not because the fix did nothing.
+
 ## Why the benchmark dashboard's totals change
 
 `rpt_tableau__college_assessment_dashboard_benchmark_calcs` reports different
