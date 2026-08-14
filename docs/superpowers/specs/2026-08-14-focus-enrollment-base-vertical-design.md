@@ -115,10 +115,24 @@ translation instead of removing it.
    through the joins keyed on `students_dcid`, exactly as they already do for
    other PowerSchool-only fields.
 1. **New `int_focus__advisory`** in the kipptaf focus layer. Analogue of
-   `int_powerschool__advisory`: `homeroom` rows from `int_focus__schedule`,
-   teacher name resolved through `int_focus__users`, `advisory_name` taken as
-   the leading non-digit run of the section number falling back to the teacher
-   name.
+   `int_powerschool__advisory`, but matched on course title rather than the
+   `homeroom` flag: that flag is null on all 18,789 AY2026 rows of
+   `int_focus__schedule` and on all 2,183 rows of `int_focus__users`, so it
+   carries no data. Select rows where `course_title` starts with `Homeroom`,
+   resolve the teacher name through `int_focus__users`, and take `advisory_name`
+   from `course_period_short_name`, falling back to the teacher name.
+
+   **Elementary only.** 957 of 983 ES students (97%) carry a Homeroom course in
+   AY2026; MS carries 42 of 593 and HS 0 of 114. The archive covered Miami ES
+   and MS at roughly 99%, so this is a regression for MS, not a like-for-like
+   port. MS and HS rows read null. `int_focus__schedule` also holds AY2026
+   alone, so advisory is null for every historical year and cannot be reconciled
+   against the archive.
+
+   Tracked for Ops separately: scheduling homeroom course periods for MS and HS,
+   or populating the `homeroom` flag, makes this model work network-wide with no
+   code change.
+
 1. **`base_powerschool__student_enrollments` becomes a passthrough** —
    `select * from {{ ref("int_students__student_enrollments") }}`. All 15
    consumer sites keep working untouched. This is the seam #3999 deletes.
@@ -162,7 +176,7 @@ Each reproduces the PowerSchool formula against Focus columns.
 | `boy_status`                                                    | grade-history `lag()` — Graduated / New / Re-Enrolled / Promoted / Retained / Demoted       |
 | `entry_schoolid`, `entry_grade_level`                           | `max(if(year_in_network = 1, x, null))` over (student)                                      |
 | `is_retained_ever`                                              | `max(is_retained_year)` over (student)                                                      |
-| `advisory_section_number`, `advisory_name`, `advisor_lastfirst` | new `int_focus__advisory`                                                                   |
+| `advisory_section_number`, `advisory_name`, `advisor_lastfirst` | new `int_focus__advisory`, ES and AY2026 only — see the architecture note                   |
 
 `boy_status` needs a prior-year grade level and academic year per student.
 PowerSchool compares `yearid`; Focus carries `academic_year`, and the
@@ -235,12 +249,21 @@ Downstream, `if(is_self_contained, ...)` renders null identically to today's
    Miami relation must not perturb NJ.
 1. **Miami historical reconciliation, AY2018 through AY2025.** Compare conformed
    Focus rows against the archive on student number and academic year, then per
-   derived value — `cohort`, `boy_status`, `advisory_name`, `homeless_code`,
-   `school_level`. Reconcile on (student, academic year), not entry date: Focus
-   dates a returning student's stint to the real first day of school where
-   PowerSchool used a July 1 administrative rollover, so roughly 1,421 of 8,776
-   historical stints carry a different `entrydate`.
-1. **Miami AY2026 presence.** Roughly 1,585 rows where there are 0 today.
+   derived value — `cohort`, `boy_status`, `homeless_code`, `school_level`.
+   Reconcile on (student, academic year), not entry date: Focus dates a
+   returning student's stint to the real first day of school where PowerSchool
+   used a July 1 administrative rollover, so roughly 1,421 of 8,776 historical
+   stints carry a different `entrydate`. `advisory_name` is NOT in this check —
+   `int_focus__schedule` holds AY2026 alone, so advisory is null for every
+   historical year by construction.
+1. **Miami AY2026 presence.** Roughly 1,585 rows where there are 0 today,
+   including 114 HS students — a school level the archive never carried, so the
+   HS paths in `base_` (weighted ADA, `ktc_cohort`, the KIPP Forward joins) see
+   Miami rows for the first time. Spot-check those columns rather than assuming
+   the NJ behavior transfers.
+1. **Advisory coverage.** 957 ES students populated, MS and HS null. Assert the
+   ES count rather than a network-wide non-null rate, which would fail by
+   design.
 1. **Extract acceptance.** `rpt_gsheets__student_contact_info` reports Miami at
    `academic_year = 2026`, closing #4811.
 1. **Consumer resolution.** `dbt build --empty` across the descendant graph —
@@ -309,7 +332,18 @@ downstream contract needs updating and `int_extracts__student_enrollments`'
 
 ## Follow-up for Ops, not this PR
 
-The `custom_820` option set labels `N` as "Student is not homeless-default", and
-its homeless options describe residence type. Confirm with the Miami team that
-`custom_818` is being maintained, since it is the only field distinguishing an
-unaccompanied youth and currently carries one populated row.
+Two items, each filed as its own issue rather than carried in this PR.
+
+**Homeroom scheduling for MS and HS.** Focus's `homeroom` flag is null
+everywhere, and only ES has Homeroom course periods scheduled, so advisory
+resolves for 957 of 1,690 AY2026 students. Either scheduling homeroom course
+periods for MS and HS or populating the `homeroom` flag makes
+`int_focus__advisory` work network-wide with no code change. The archive covered
+Miami ES and MS at roughly 99%, so this is a live reporting regression for MS
+until it is resolved.
+
+**Homelessness field maintenance.** The `custom_820` option set labels `N` as
+"Student is not homeless-default", and its options describe residence type
+rather than custody. Confirm with the Miami team that `custom_818` Homeless
+Unaccompanied Youth is being maintained — it is the only field distinguishing Y2
+from Y1 and currently carries one populated row.
