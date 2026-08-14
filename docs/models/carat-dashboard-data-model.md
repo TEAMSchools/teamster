@@ -453,12 +453,12 @@ Benchmark goals answer "what share of students scored at or above a threshold."
 
 ### Which models read them
 
-| Model                                                       | How                                                                   | In workbook |
-| ----------------------------------------------------------- | --------------------------------------------------------------------- | ----------- |
-| `rpt_tableau__college_assessment_dashboard_current`         | inner join on `score_type`, `goal_type != 'Board'`, all granularities | yes         |
-| `rpt_tableau__college_assessment_dashboard_over_time`       | `int_google_sheets__kippfwd__goals_unpivot`, `All Grades` branch      | yes         |
-| `rpt_gsheets__college_assessments_long`                     | `goal_type = 'Benchmark'`, network only, `avg(min_score)`             | no          |
-| `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | **none** — thresholds hardcoded in SQL                                | yes         |
+| Model                                                       | How                                                              | In workbook |
+| ----------------------------------------------------------- | ---------------------------------------------------------------- | ----------- |
+| `rpt_tableau__college_assessment_dashboard_current`         | `int_google_sheets__kippfwd__goals_unpivot`, `By Grade` branch   | yes         |
+| `rpt_tableau__college_assessment_dashboard_over_time`       | `int_google_sheets__kippfwd__goals_unpivot`, `All Grades` branch | yes         |
+| `rpt_gsheets__college_assessments_long`                     | `goal_type = 'Benchmark'`, network only, `avg(min_score)`        | no          |
+| `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | **none** — thresholds hardcoded in SQL                           | yes         |
 
 `_benchmark_calcs` does not read the goals sheet despite its name, so a
 threshold can exist twice with two values. `_current` is the only consumer of
@@ -466,11 +466,16 @@ the region/school/grade granularity; the other two discard it.
 
 ### Benchmark is two different things under one `goal_type`
 
-`*_total` rows carry full granularity and a `pct_goal` — real attainment goals.
-Section-level rows (`*_ebrw`, `*_math_section`, `act_*`) are a single network
-row each with `min_score` only and no `pct_goal` — threshold definitions, not
-goals. Same `goal_type`, different shape, and the second kind is what makes
-empty rows undeletable (see the attempts section above).
+`*_total` rows carry a grade and a `pct_goal` — real attainment goals.
+Section-level rows (`*_ebrw`, `*_math_section`, `act_*`) carry `min_score` only,
+at no grade — threshold definitions, not goals. Same `goal_type`, different
+shape.
+
+That distinction is now structural rather than incidental.
+`int_google_sheets__kippfwd__goals_unpivot` reads both from the scaffold, and
+`grade_level` is null on exactly the second kind, because it comes from the
+goals side of the join. `_current` keys its grade predicate on that: only a
+total-level Benchmark is grade-specific.
 
 ### `min_score` never varies within a score type and tier
 

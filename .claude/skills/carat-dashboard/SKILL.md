@@ -43,20 +43,24 @@ Also relevant:
 These come up most often and each has a documented answer with measured figures.
 Cite the doc rather than re-deriving:
 
-| Question                                              | Section                                              |
-| ----------------------------------------------------- | ---------------------------------------------------- |
-| An attempt count is lower than it was                 | _Why participation attempt counts change_            |
-| A student's SAT attempts dropped by one               | same — 86 students, the Camden 2027 duplicate load   |
-| An attempt count is higher than it was                | same — counts are no longer scoped to enrolled years |
-| The roster returns two rows for one student           | same — `test_type` is in the grain                   |
-| A percent-met or benchmark total moved                | _Why the benchmark dashboard's totals change_        |
-| Two records for one sitting, or an inflated row count | _Known issue — duplicate kippadb test records_       |
-| A goal line moved, or does not match the strategy doc | _The rebuilt goals tab — what shipped_               |
-| `_over_time` shows two rows per student for one goal  | same — resolved by the `_over_time` goal columns     |
-| An over-time percent-met moved                        | _Why the over-time dashboard's numbers change_       |
-| PSAT 8/9 HS-Ready rose for 2028 or 2029               | same — the 800 to 790 threshold, 10 students each    |
-| A 2014, 2015 or 2022 cohort's percent-met rose        | same — the 27 restored scores                        |
-| A score reads `No Data` in one view but not another   | _Known issue — `rn_highest = 1` discards scores_     |
+| Question                                               | Section                                              |
+| ------------------------------------------------------ | ---------------------------------------------------- |
+| An attempt count is lower than it was                  | _Why participation attempt counts change_            |
+| A student's SAT attempts dropped by one                | same — 86 students, the Camden 2027 duplicate load   |
+| An attempt count is higher than it was                 | same — counts are no longer scoped to enrolled years |
+| The roster returns two rows for one student            | same — `test_type` is in the grain                   |
+| A percent-met or benchmark total moved                 | _Why the benchmark dashboard's totals change_        |
+| Two records for one sitting, or an inflated row count  | _Known issue — duplicate kippadb test records_       |
+| A goal line moved, or does not match the strategy doc  | _The rebuilt goals tab — what shipped_               |
+| `_over_time` shows two rows per student for one goal   | same — resolved by the `_over_time` goal columns     |
+| An over-time percent-met moved                         | _Why the over-time dashboard's numbers change_       |
+| PSAT 8/9 HS-Ready rose for 2028 or 2029                | same — the 800 to 790 threshold, 10 students each    |
+| A 2014, 2015 or 2022 cohort's percent-met rose         | same — the 27 restored scores                        |
+| A score reads `No Data` in one view but not another    | _Known issue — `rn_highest = 1` discards scores_     |
+| Every school shows the same goal line                  | _Why the current dashboard's numbers change_         |
+| An attempts percentage roughly halved or doubled       | same — the attempts denominator is test takers       |
+| The board metrics view lost its goal line              | same — Board is retired, goals are now uniform       |
+| `_current` reports a year behind, or two years at once | same — four branches hardcoded AY2025                |
 
 Each of those carries the measured numbers, so an answer can cite them instead
 of re-running a comparison. If a reconciliation disagrees with the documented
@@ -621,10 +625,20 @@ at 0.60 against 860 — a harder bar with a higher expected share. It now reads
 0.50 and 0.30. PSAT10 and NMSQT were never inverted, so do not go looking for
 the same fault there.
 
-Subject thresholds are currently split across two systems — the College-Ready
-tier (EBRW 480, Math 530) lives in `_benchmark_calcs`, the grad-bar tier (EBRW
-450, Math 440) lives in the goals sheet as `Board` metrics. Same concept, two
-homes.
+Subject thresholds used to be split across two systems — the College-Ready tier
+(EBRW 480, Math 530) in `_benchmark_calcs`, the grad-bar tier (EBRW 450,
+Math 440) in the goals sheet as `Board` metrics. **That is resolved: both tiers
+live on the scaffold and `Board` is retired.** Every board threshold turned out
+to be a scaffold value already — SAT combined 890 and 1010 are its HS-Ready and
+College-Ready cut scores, EBRW 450 and Math 440 its grad bars — so `Board` was a
+duplicate encoding.
+
+`_current` reports the two tiers as `benchmark_tier`, a three-way band of
+College-Ready, HS-Grad Ready, or No Benchmark Met, replacing four wide
+`met_min_board_*` flags. The board goal percentages do **not** survive: they
+were distinct (0.25 and 0.28 for the 890 tier against the Benchmark goals' 0.45
+and 0.35) because that view reports over test takers, but goals are now uniform,
+so the NJ Grad Ready line takes the sheet's HS-Ready value.
 
 ### The rebuilt goals tab — what shipped
 
@@ -872,6 +886,26 @@ Work outward from the student, stopping at the first layer with zero rows.
 
 ## Gotchas that cost time
 
+- **An attempts score of 0 is not the same as null, and confusing them halves
+  every reported percentage.** `_current` reads 0 where a student holds any
+  result of that test type but never sat this particular test, and null where
+  they hold no result at all. Every attempts metric shares one denominator —
+  1,319 of 2,090 enrolled students — so treating a non-tester as 0 moves it to
+  2,090 and SAT 1 Attempt reads 20.2% instead of 31.8%. Nothing errors, no row
+  count changes, only the denominator moves. Production got this population by
+  reading the participation roster, whose grain is enrollment intersected with
+  results.
+- **Only a total-level Benchmark is grade-specific.** Attempts and section
+  thresholds apply to every student regardless of grade. Requiring a grade match
+  on Attempts cuts them to a quarter of their rows; letting null-grade rows
+  apply to everyone pulls in total-level thresholds that merely lack a goal,
+  which inflated Practice totals by 4,028 rows before the rule was narrowed. The
+  tell is that `grade_level` is null on exactly the rows where no goal was
+  stated.
+- **A `KTAF` total on `_current` is Camden and Newark.** The report is high
+  school, Paterson has no high school grades, and Miami is not on Illuminate so
+  its scores are untrackable. `district` reads KTAF regardless, so the label is
+  wider than the population.
 - **`_over_time` and `_benchmark_calcs` deliberately disagree on 27 students
   right now.** `_over_time` dropped the `rn_highest = 1` score filter and shows
   their restored SAT scores; `_benchmark_calcs` reads
