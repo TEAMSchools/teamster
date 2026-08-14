@@ -23,7 +23,7 @@ models:
       - name: benchmark_goal
         description: >
           Score threshold for the benchmark, from the scaffold sheet's
-          hs_ready_min_score and college_ready_min_score columns.
+          hs_grad_ready_min_score and college_ready_min_score columns.
         data_type: int64
         data_tests:
           - not_null
@@ -104,8 +104,8 @@ models:
         data_type: numeric
       - name: benchmark_name
         description: >
-          Readiness benchmark label, HS-Ready or College-Ready, derived from
-          which scaffold threshold column the row came from. Applies to every
-          subject area, so a section row now carries a readiness tier rather
-          than being named for its subject. EA/ED-Ready is retired.
+          Readiness benchmark label, HS Grad-Ready or College-Ready, derived
+          from which scaffold threshold column the row came from. Applies to
+          every subject area, so a section row now carries a readiness tier
+          rather than being named for its subject. EA/ED-Ready is retired.
         data_type: string

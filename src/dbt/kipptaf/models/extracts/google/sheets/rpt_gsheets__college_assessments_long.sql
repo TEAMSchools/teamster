@@ -1,15 +1,13 @@
 with
-    goals_distinct as (
+    goals as (
         select
-            expected_test_type,
-            expected_score_type,
+            test_type as expected_test_type,
+            score_type as expected_score_type,
             expected_metric_name,
+            expected_min_score as min_score,
 
-            avg(min_score) as min_score,
-
-        from {{ ref("stg_google_sheets__kippfwd__goals") }}
-        where expected_goal_type = 'Benchmark' and region is null and schoolid is null
-        group by expected_test_type, expected_score_type, expected_metric_name
+        from {{ ref("int_google_sheets__kippfwd__goals_unpivot") }}
+        where expected_goal_type = 'Benchmark' and goal_branch = 'All Grades'
     ),
 
     final as (
@@ -61,7 +59,7 @@ with
             {{ ref("int_assessments__college_assessment") }} as sc
             on e.student_number = sc.student_number
         left join
-            goals_distinct as g
+            goals as g
             on sc.test_type = g.expected_test_type
             and sc.score_type = g.expected_score_type
         left join
@@ -142,7 +140,7 @@ select
 from
     final pivot (
         any_value(met_minimum) for expected_metric_name
-        in ('HS-Grad Ready' as hs_grad_ready, 'College-Ready' as college_ready)
+        in ('HS Grad-Ready' as hs_grad_ready, 'College-Ready' as college_ready)
     )
 where
     score_type not in (

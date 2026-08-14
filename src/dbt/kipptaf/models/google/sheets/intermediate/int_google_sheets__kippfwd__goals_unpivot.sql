@@ -24,8 +24,8 @@ with
                 then 'pct_1_attempt'
                 when 'a2_plus_attempts_min_score'
                 then 'pct_2_plus_attempts'
-                when 'hs_ready_min_score'
-                then 'pct_hs_ready'
+                when 'hs_grad_ready_min_score'
+                then 'pct_hs_grad_ready'
                 when 'college_ready_min_score'
                 then 'pct_college_ready'
             end as expected_metric_type,
@@ -36,8 +36,8 @@ with
                 then '1 Attempt'
                 when 'a2_plus_attempts_min_score'
                 then '2+ Attempts'
-                when 'hs_ready_min_score'
-                then 'HS-Ready'
+                when 'hs_grad_ready_min_score'
+                then 'HS Grad-Ready'
                 when 'college_ready_min_score'
                 then 'College-Ready'
             end as expected_goal_subtype,
@@ -69,7 +69,7 @@ with
                 expected_min_score for expected_min_score_type in (
                     a1_attempt_min_score,
                     a2_plus_attempts_min_score,
-                    hs_ready_min_score,
+                    hs_grad_ready_min_score,
                     college_ready_min_score
                 )
             )
@@ -168,7 +168,10 @@ with
 
             'All Grades' as goal_branch,
 
-            ['rpt_tableau__college_assessment_dashboard_over_time'] as rpt_consumers,
+            [
+                'rpt_tableau__college_assessment_dashboard_over_time',
+                'rpt_gsheets__college_assessments_long'
+            ] as rpt_consumers,
 
             regexp_replace(s.expected_metric_type, r'^pct_', '') as metric_stem,
 

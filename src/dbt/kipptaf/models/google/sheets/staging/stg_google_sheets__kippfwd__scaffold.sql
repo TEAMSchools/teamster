@@ -14,7 +14,7 @@ select
     expected_score_type,
     a1_attempt_min_score,
     a2_plus_attempts_min_score,
-    hs_ready_min_score,
+    hs_grad_ready_min_score,
     college_ready_min_score,
 
 from {{ source("google_sheets", "src_google_sheets__kippfwd__scaffold") }}

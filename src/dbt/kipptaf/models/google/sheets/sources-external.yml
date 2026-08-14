@@ -418,7 +418,7 @@ sources:
           # goes fully null, which would silently break the contract here.
           - name: pct_2_plus_attempts
             data_type: float64
-          - name: pct_hs_ready
+          - name: pct_hs_grad_ready
             data_type: float64
           - name: pct_college_ready
             data_type: float64
@@ -427,7 +427,7 @@ sources:
           # branch never falls back to a per-grade goal for a benchmark. Declared
           # for the same reason as pct_2_plus_attempts above — autodetect drops a
           # column that goes fully null.
-          - name: pct_hs_ready_over_time
+          - name: pct_hs_grad_ready_over_time
             data_type: float64
           - name: pct_college_ready_over_time
             data_type: float64
@@ -575,7 +575,7 @@ sources:
             data_type: int64
           - name: a2_plus_attempts_min_score
             data_type: int64
-          - name: hs_ready_min_score
+          - name: hs_grad_ready_min_score
             data_type: int64
           - name: college_ready_min_score
             data_type: int64

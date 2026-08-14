@@ -9,8 +9,9 @@ models:
 
       Carries only the share of students expected to clear a bar — the bar
       itself lives on stg_google_sheets__kippfwd__scaffold as
-      a1_attempt_min_score, a2_plus_attempts_min_score, hs_ready_min_score, and
-      college_ready_min_score. A consumer needs both models to evaluate a goal.
+      a1_attempt_min_score, a2_plus_attempts_min_score, hs_grad_ready_min_score,
+      and college_ready_min_score. A consumer needs both models to evaluate a
+      goal.
 
 
       PSAT administrations have no second-attempt goal, and UNPIVOT excludes
@@ -81,12 +82,12 @@ models:
         data_type: string
         description: >-
           Which metric the goal targets — pct_1_attempt, pct_2_plus_attempts,
-          pct_hs_ready, or pct_college_ready. Values are the sheet's wide column
-          names, carried through by the unpivot, so adding a metric to the sheet
-          adds rows here rather than columns. The sheet's two over time columns
-          strip to the same four values, so this column names the metric and
-          is_over_time_goal names which framing of it, keeping consumers off
-          suffixed string matching.
+          pct_hs_grad_ready, or pct_college_ready. Values are the sheet's wide
+          column names, carried through by the unpivot, so adding a metric to
+          the sheet adds rows here rather than columns. The sheet's two over
+          time columns strip to the same four values, so this column names the
+          metric and is_over_time_goal names which framing of it, keeping
+          consumers off suffixed string matching.
       - name: expected_metric_goal
         data_type: float64
         description: >-
@@ -122,7 +123,7 @@ models:
         data_type: string
         description: >-
           The metric as the reporting views label it — 1 Attempt, 2+ Attempts,
-          HS-Ready, College-Ready. Spelled out rather than derived from
+          HS Grad-Ready, College-Ready. Spelled out rather than derived from
           expected_metric_type because the four values disagree on separator and
           on casing, and HS is an initialism no casing function reproduces.
           Reuses the strings the retired sheet emitted, so predicates already

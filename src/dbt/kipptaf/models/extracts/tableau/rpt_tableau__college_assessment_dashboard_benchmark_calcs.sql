@@ -10,15 +10,15 @@ with
             ) as expected_aligned_scope,
 
             if(
-                expected_benchmark_min_score = 'hs_ready_min_score',
-                'HS-Ready',
+                expected_benchmark_min_score = 'hs_grad_ready_min_score',
+                'HS Grad-Ready',
                 'College-Ready'
             ) as expected_benchmark_name,
 
         from
             {{ ref("stg_google_sheets__kippfwd__scaffold") }} unpivot (
                 expected_benchmark_goal for expected_benchmark_min_score
-                in (hs_ready_min_score, college_ready_min_score)
+                in (hs_grad_ready_min_score, college_ready_min_score)
             )
         where
             expected_scope != 'ACT'

@@ -98,7 +98,7 @@ models:
         data_type: string
         description: >-
           Which metric the goal targets — pct_1_attempt, pct_2_plus_attempts,
-          pct_hs_ready, or pct_college_ready. Part of the join key, so the
+          pct_hs_grad_ready, or pct_college_ready. Part of the join key, so the
           scaffold's min-score column names are mapped onto this vocabulary
           rather than carried as their own.
       - name: expected_goal_type
@@ -111,7 +111,7 @@ models:
         data_type: string
         description: >-
           The metric as the reporting views label it — 1 Attempt, 2+ Attempts,
-          HS-Ready, College-Ready.
+          HS Grad-Ready, College-Ready.
       - name: expected_metric_goal
         data_type: float64
         description: >-
@@ -194,9 +194,10 @@ models:
         data_type: string
         description: >-
           Scope and metric joined into one token — sat_1_attempt,
-          psat89_hs_ready — reproducing the vocabulary the retired goals sheet
-          derived, so a consumer can PIVOT on it to reach a column per metric.
-          Null where no scaffold row matched, since the scope half is unknown.
+          psat89_hs_grad_ready — reproducing the vocabulary the retired goals
+          sheet derived, so a consumer can PIVOT on it to reach a column per
+          metric. Null where no scaffold row matched, since the scope half is
+          unknown.
 
 
           Not unique per row. Grades 11 and 12 both carry sat_total_score, so
@@ -210,8 +211,8 @@ models:
         data_type: string
         description: >-
           The metric as the over-time view labels it. Benchmark rows read the
-          goal subtype alone — HS-Ready, College-Ready — and Attempts rows carry
-          the scope too, ACT 1 Attempt or SAT 2+ Attempts, because an attempt
-          count is only meaningful against a named test. Reproduces the strings
-          the retired goals sheet emitted, so predicates already keyed on them
-          keep working.
+          goal subtype alone — HS Grad-Ready, College-Ready — and Attempts rows
+          carry the scope too, ACT 1 Attempt or SAT 2+ Attempts, because an
+          attempt count is only meaningful against a named test. Reproduces the
+          strings the retired goals sheet emitted, so predicates already keyed
+          on them keep working.

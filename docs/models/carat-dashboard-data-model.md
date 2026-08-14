@@ -334,9 +334,9 @@ alone, so deleting an empty row dropped a score type from the dashboard.
 
 That is resolved. The sheet now carries **only percentages**, one column per
 metric, and the thresholds live on `stg_google_sheets__kippfwd__scaffold` as
-`a1_attempt_min_score`, `a2_plus_attempts_min_score`, `hs_ready_min_score` and
-`college_ready_min_score`. A consumer needs both models to evaluate a goal, and
-`int_google_sheets__kippfwd__goals_unpivot` is the model that pairs them.
+`a1_attempt_min_score`, `a2_plus_attempts_min_score`, `hs_grad_ready_min_score`
+and `college_ready_min_score`. A consumer needs both models to evaluate a goal,
+and `int_google_sheets__kippfwd__goals_unpivot` is the model that pairs them.
 
 Two consequences worth knowing:
 
@@ -361,20 +361,20 @@ goal is identified by:
 ```
 
 `expected_metric_type` holds the sheet's own column names (`pct_1_attempt`,
-`pct_2_plus_attempts`, `pct_hs_ready`, `pct_college_ready`). Two derived columns
-reproduce the vocabulary the reporting views already key on:
+`pct_2_plus_attempts`, `pct_hs_grad_ready`, `pct_college_ready`). Two derived
+columns reproduce the vocabulary the reporting views already key on:
 `expected_goal_type` is Attempts or Benchmark, and `expected_goal_subtype` is
-`1 Attempt`, `2+ Attempts`, `HS-Ready` or `College-Ready`.
+`1 Attempt`, `2+ Attempts`, `HS Grad-Ready` or `College-Ready`.
 
 `is_over_time_goal` is why the key has six columns rather than five. The sheet
-carries two extra percentage columns, `pct_hs_ready_over_time` and
+carries two extra percentage columns, `pct_hs_grad_ready_over_time` and
 `pct_college_ready_over_time`, holding a cohort-independent goal for
 `_over_time`, which reports on neither grade level nor cohort and so cannot use
 a per-grade goal. Staging strips the `_over_time` suffix, so those rows land
 under the same four `expected_metric_type` values and the flag says which
 framing a row is. Stripping keeps the two CASEs above at four arms — the new
-rows inherit `Benchmark` and `HS-Ready` automatically instead of needing new
-branches that could be missed.
+rows inherit `Benchmark` and `HS Grad-Ready` automatically instead of needing
+new branches that could be missed.
 
 The practical consequence: **anything reading this model that does not filter
 the flag sees both framings.** `int_google_sheets__kippfwd__goals_unpivot`
@@ -487,37 +487,38 @@ granularity.
 
 Current values, and how they compare to the SY26-27 strategy doc:
 
-| Scope           | Score type                         | HS-Ready | College-Ready |
-| --------------- | ---------------------------------- | -------- | ------------- |
-| SAT             | `sat_total_score`                  | 890      | 1010          |
-| SAT             | `sat_ebrw`                         | 450      | 480           |
-| SAT             | `sat_math`                         | 440      | 530           |
-| PSAT 10 / NMSQT | `psat10_total` / `psatnmsqt_total` | 840      | 910           |
-| PSAT 10 / NMSQT | `*_ebrw`                           | 420      | 430           |
-| PSAT 10 / NMSQT | `*_math_section`                   | 420      | 480           |
-| PSAT 8/9        | `psat89_total`                     | 790      | 860           |
-| PSAT 8/9        | `psat89_ebrw`                      | 400      | 410           |
-| PSAT 8/9        | `psat89_math_section`              | 400      | 450           |
-| ACT             | `act_composite`                    | 17       | 21            |
-| ACT             | `act_math` / `act_reading`         | 17       | 22            |
+| Scope           | Score type                         | HS Grad-Ready | College-Ready |
+| --------------- | ---------------------------------- | ------------- | ------------- |
+| SAT             | `sat_total_score`                  | 890           | 1010          |
+| SAT             | `sat_ebrw`                         | 450           | 480           |
+| SAT             | `sat_math`                         | 440           | 530           |
+| PSAT 10 / NMSQT | `psat10_total` / `psatnmsqt_total` | 840           | 910           |
+| PSAT 10 / NMSQT | `*_ebrw`                           | 420           | 430           |
+| PSAT 10 / NMSQT | `*_math_section`                   | 420           | 480           |
+| PSAT 8/9        | `psat89_total`                     | 790           | 860           |
+| PSAT 8/9        | `psat89_ebrw`                      | 400           | 410           |
+| PSAT 8/9        | `psat89_math_section`              | 400           | 450           |
+| ACT             | `act_composite`                    | 17            | 21            |
+| ACT             | `act_math` / `act_reading`         | 17            | 22            |
 
-Every total-level threshold now matches the SY26-27 strategy doc. PSAT 8/9
-HS-Ready was the one exception, at 800 on the sheet against 790 in the doc; the
-rebuilt scaffold has it at 790.
+Every total-level threshold now matches the SY26-27 strategy doc. PSAT 8/9 HS
+Grad-Ready was the one exception, at 800 on the sheet against 790 in the doc;
+the rebuilt scaffold has it at 790.
 
 The rebuilt sheet also corrected an inverted PSAT 8/9 percentage pair. The
-retired sheet had HS-Ready at 0.34 against a threshold of 800 and College-Ready
-at 0.60 against 860 — a harder bar with a higher expected share. The per-grade
-columns now read 0.50 and 0.30, and the over-time columns read 0.60 and 0.30,
-keeping the retired sheet's two values with the pair the right way round. PSAT10
-and NMSQT were never inverted, so this was specific to PSAT 8/9.
+retired sheet had HS Grad-Ready at 0.34 against a threshold of 800 and
+College-Ready at 0.60 against 860 — a harder bar with a higher expected share.
+The per-grade columns now read 0.50 and 0.30, and the over-time columns read
+0.60 and 0.30, keeping the retired sheet's two values with the pair the right
+way round. PSAT10 and NMSQT were never inverted, so this was specific to PSAT
+8/9.
 
 ### Dropping region and school is lossless for the PSATs, not for SAT
 
 All three PSAT totals carry an identical `pct_goal` at network, region, and
 school level, so collapsing them loses nothing. SAT grade 11 genuinely varies —
-College-Ready is 0.22 at network, 0.17-0.24 by region, 0.15-0.30 by school;
-HS-Ready is 0.45 at network against 0.30-0.55 by school. SAT grade 12 is
+College-Ready is 0.22 at network, 0.17-0.24 by region, 0.15-0.30 by school; HS
+Grad-Ready is 0.45 at network against 0.30-0.55 by school. SAT grade 12 is
 uniform.
 
 Grade level is also load-bearing for SAT: College-Ready is 0.22 at grade 11 and
@@ -533,7 +534,7 @@ That left `_over_time` with no right answer, since it projects neither grade nor
 cohort. Prod cross joins the whole goal set, so those two rows arrive as two
 indistinguishable rows per student differing only in `pct_goal` — 42 goal rows
 per student where there are 40 distinct combinations, with Tableau resolving the
-pair by `MIN()`. That is where the dashboard's 35% HS-Ready and 17%
+pair by `MIN()`. That is where the dashboard's 35% HS Grad-Ready and 17%
 College-Ready come from: the grade 12 value, picked by aggregation rather than
 by decision.
 
@@ -638,9 +639,9 @@ consequences, all of them reproducing the retired sheet's shape:
   removed the split and its trimming.
 
 Mapping the scaffold's column names onto the goals vocabulary is a CASE, because
-the two sides spell the same concept differently — `hs_ready_min_score` against
-`pct_hs_ready`. If the staging model is ever renamed to a neutral vocabulary,
-that CASE disappears and both sides simply agree.
+the two sides spell the same concept differently — `hs_grad_ready_min_score`
+against `pct_hs_grad_ready`. If the staging model is ever renamed to a neutral
+vocabulary, that CASE disappears and both sides simply agree.
 
 ### Attempts exist only at the total grain, on both branches
 
@@ -693,9 +694,9 @@ five labels that do not include it.
 
 ### `expected_metric_label` is not unique per row
 
-The model carries a scope-and-metric token — `sat_1_attempt`, `psat89_hs_ready`
-— so a consumer can PIVOT to one column per metric. It reproduces the vocabulary
-the retired sheet derived through an 18-branch CASE.
+The model carries a scope-and-metric token — `sat_1_attempt`,
+`psat89_hs_grad_ready` — so a consumer can PIVOT to one column per metric. It
+reproduces the vocabulary the retired sheet derived through an 18-branch CASE.
 
 It repeats across grades on the By Grade branch. Grades 11 and 12 both carry
 `sat_total_score`, so each SAT label appears twice. The Attempts metrics hold
@@ -706,7 +707,7 @@ wrong number. Keep `grade_level` in the grouping for anything Benchmark.
 
 `expected_metric_name` is the separate, display-facing label `_over_time` reads,
 and it is not interchangeable with the token above. Benchmark rows carry the
-subtype alone — `HS-Ready` — while Attempts rows carry the scope too,
+subtype alone — `HS Grad-Ready` — while Attempts rows carry the scope too,
 `SAT 2+ Attempts`, because an attempt count means nothing without naming the
 test. Both columns are derived once in the final select and so hold the same
 values on either branch.
@@ -1010,6 +1011,132 @@ source and retires both `attempt_count_lifetime` and
 `alt_attempt_count_lifetime`, so `count(distinct test_date)` belongs in that
 work rather than in a separate pass over the participation views.
 
+## `int_tableau__college_assessment_roster_scores`
+
+One row per administration the Expected Assessments tab expects of a student,
+carrying the score they earned in it, for every current student graduating this
+year or later. It spans a student's whole high school history rather than the
+current year, because the roster dashboard reports progress across
+administrations.
+
+The tab drives it. A score sat in a month the tab does not list has nowhere to
+land and does not appear — widening coverage is an edit to the tab, not to this
+model.
+
+### One join, not two pipelines
+
+The model now reads `int_assessments__all_college_assessments`, so official and
+practice arrive already reconciled to one vocabulary. The join binds
+`expected_month_round` to the hub's `aligned_month_round`, which carries a month
+name for official rows and a `scope_round` for practice, so a single predicate
+serves both. That replaced a two-branch union whose SAT and PSAT halves were
+near-identical.
+
+Three bindings carry the weight, and one of them is deliberately asymmetric:
+
+- **`test_type`** — a practice scaffold row matches a practice score only. This
+  was previously unbound, which is what produced the fabricated practice rows
+  described below.
+- **`aligned_month_round`** — the administration a score belongs to. Previously
+  bound on the SAT branch only.
+- **`academic_year`, for SAT only.** Grades 11 and 12 both report a Winter
+  season and both include December and January, so an unbound December score
+  would attach to both grades' rows.
+
+### Why every scope except SAT is unbound on year
+
+PSAT NMSQT is normally sat in grade 11, but the tab carries it at grade 10 only.
+150 current students sat it in grade 11, and their scores reach the report
+solely because no year binds a score to the enrollment row supplying its season
+— the student's grade 10 enrollment row, in a different academic year, matches
+the grade 10 scaffold row and collects the score.
+
+Binding the year would drop those 150. The alternative — adding a grade 11 NMSQT
+row to the tab — is worse: the tab has no cohort dimension, so every row added
+is expected of every student forever, and a grade 11 NMSQT row would read as a
+missing assessment for every future student when nobody is expected to sit it
+anymore.
+
+The cost of forcing them onto the grade 10 row is bounded. Of the 150, 68 sat
+NMSQT only in grade 11, so the grade 10 row is their single data point either
+way. The other 82, all class of 2027, sat it in both grades and show their best
+score rather than both administrations. Worth confirming with KIPP Forward
+whether they want that split out. `TODO(#4658)`.
+
+### Growth is measured in season order, and practice counts
+
+`total_growth_score_change` lags over `expected_admin_season_order`, not test
+date, so it measures the seasons this report displays rather than every sitting
+a student had. Season order is reverse-chronological — 1 is the most recent — so
+ordering `desc` walks a student's history forwards in time and `lag()` reads the
+earlier season.
+
+Practice administrations are ordinary links in that chain. The grade 11 practice
+SAT sits at order 17, the far end of the SAT sequence, so a grade 11 Winter
+score's change is measured against it. Nothing in the model treats practice
+specially; it follows from binding `test_type` correctly.
+
+It stays restricted to SAT totals because those are the only administrations the
+tab carries a Growth row for — grade 11 Winter and Spring, grade 12 Fall and
+Winter. Subject growth becomes available the moment KIPP Forward adds those
+rows.
+
+The hub's own `previous_score_change` is deliberately **not** used here. It
+chains every administration a student has, including the ones the tab lists
+under `Not Official`, so a growth figure taken from it would be measured against
+a score the dashboard does not show.
+
+### It emits score categories long, so its consumers do not
+
+The model has two consumers — `rpt_tableau__college_assessment_dashboard_roster`
+and `rpt_gsheets__college_assessments_wide` — and both used to open with a
+byte-identical CTE unioning the model to itself, once as `Scale Score` and once
+as `Score Change`. That union now lives here, so each row carries `score` and
+`score_category` and both views join straight through.
+
+Folding the model into one of those views was the alternative, and it would have
+forced the same 120 lines into the other. Two views got shorter instead.
+
+The union is expressed as an `UNPIVOT`, which drops null rows, so an
+administration with no growth produces no `Score Change` row rather than one
+holding null. That is not a behavior change: a consumer left joining the
+scaffold reads null either way. It does cut the row count — 7,791 `Scale Score`
+rows plus 1,170 `Score Change`, against 15,582 when both categories were emitted
+for every administration.
+
+### What the repointing changed
+
+Official SAT, PSAT10 and PSAT NMSQT are unchanged — same rows, same students,
+zero score disagreements against production. The other two groups changed, and
+both were production defects:
+
+| group                         | before | after | why                                            |
+| ----------------------------- | -----: | ----: | ---------------------------------------------- |
+| Official SAT / PSAT10 / NMSQT |  4,980 | 4,980 | exact parity                                   |
+| Official PSAT 8/9             |  5,562 | 2,781 | every score was counted into both seasons      |
+| Practice PSAT 8/9 and PSAT10  |  4,107 |     0 | official scores carrying a practice label      |
+| Practice SAT                  |      0 |    30 | real practice scores that never had a join key |
+
+The PSAT 8/9 double-count came from the missing month binding: the tab carries
+grade 9 PSAT 8/9 in two seasons, Fall (October) and Spring (March), and every
+score matched both. All 927 students sat it in October, so the Spring rows were
+entirely fabricated. The March administration is real but has not happened yet —
+it is scheduled for 3 March 2027 — so that scaffold row is correctly empty until
+then.
+
+The practice rows were the same failure one level up: with `test_type` unbound,
+a practice scaffold row matched any official score sharing its score type. Both
+PSAT 8/9 and PSAT10 practice populations were identical to their official
+counterparts — same students, same score ranges — because they _were_ the
+official scores.
+
+!!! warning "Practice figures on the roster dashboard drop sharply"
+
+    Practice students fall from 899 to 10 and practice rows from 4,107 to 30.
+    Every row removed is fabricated and the 30 that remain are real, but anyone
+    watching the dashboard will see it as a collapse. Tell KIPP Forward before
+    they find it.
+
 ## Resolved — grade 9 and 10 AY2023 SAT is excluded from reporting
 
 **Decision: those administrations are not valid and are not reported.** Ninth
@@ -1198,9 +1325,9 @@ threshold.
 
 Exactly one threshold moved:
 
-| Scope    | Subject  | Tier     | Production | Now |
-| -------- | -------- | -------- | ---------- | --- |
-| PSAT 8/9 | Combined | HS-Ready | 800        | 790 |
+| Scope    | Subject  | Tier          | Production | Now |
+| -------- | -------- | ------------- | ---------- | --- |
+| PSAT 8/9 | Combined | HS Grad-Ready | 800        | 790 |
 
 That is the intended correction — the value now comes from the scaffold sheet
 instead of a hardcoded `CASE`. **20 students move from `Not Met` to `Met`** as a
@@ -1208,7 +1335,7 @@ result. Lowering a threshold cannot move anyone the other way, and `No Data` is
 unaffected because it depends on a null score rather than on the threshold.
 
 Anyone reconciling a percent-met figure against a pre-merge screenshot should
-expect PSAT 8/9 HS-Ready to rise slightly for that reason alone.
+expect PSAT 8/9 HS Grad-Ready to rise slightly for that reason alone.
 
 ### The row set changes shape, so old and new keys mostly do not line up
 
@@ -1219,7 +1346,7 @@ students. Only about 8,262 keys are directly comparable. Three reasons:
   at 1100, SAT at 1200) are gone. SAT 1200 existed nowhere else.
 - **Section rows carry a readiness tier now.** Production put the subject name
   in `benchmark_name` for section rows (`EBRW`, `Math`) and a tier only on
-  `Combined`. Every subject area now carries both `HS-Ready` and
+  `Combined`. Every subject area now carries both `HS Grad-Ready` and
   `College-Ready`, which is most of the row-count growth.
 - **`Practice` rows exist.** Production had `Official` plus a set of rows with a
   null `test_type`; both are replaced by explicit `Official` and `Practice`.
@@ -1263,11 +1390,11 @@ emits 556,406:
 | **Official total**                                        | **278,366** |
 | Practice, 40 goal combinations, no fan-out                | 278,040     |
 
-Production's 42 is 40 distinct combinations plus 2 duplicates — SAT HS-Ready and
-College-Ready are stated per grade, and the view projects neither grade nor
-cohort, so both rows arrive per student differing only in `pct_goal`. Tableau
-resolves the pair with `MIN()`. The sheet's over-time goal columns replace that,
-which is why the count drops to 40.
+Production's 42 is 40 distinct combinations plus 2 duplicates — SAT HS
+Grad-Ready and College-Ready are stated per grade, and the view projects neither
+grade nor cohort, so both rows arrive per student differing only in `pct_goal`.
+Tableau resolves the pair with `MIN()`. The sheet's over-time goal columns
+replace that, which is why the count drops to 40.
 
 All 40 Official goal combinations are structurally identical to production —
 compared across `expected_aligned_subject_area`, `expected_aligned_subject`,
@@ -1295,11 +1422,11 @@ scores to preserve a defect.
 Nothing is lost in the other direction — zero rows go from scored to null. The
 effect is confined to three historical grad years:
 
-| Grad year | Students restored                            | Effect                               |
-| --------- | -------------------------------------------- | ------------------------------------ |
-| 2015      | 13 benchmark, 16 SAT 1-Attempt, 6 SAT 2+     | +8.1pp on HS-Ready and College-Ready |
-| 2014      | 3 College-Ready, 2 HS-Ready, 3 SAT 1-Attempt | +1.3 to +1.9pp                       |
-| 2022      | 2 benchmark, 7 ACT 1-Attempt, 7 ACT 2+       | +0.3 to +1.3pp                       |
+| Grad year | Students restored                                 | Effect                                    |
+| --------- | ------------------------------------------------- | ----------------------------------------- |
+| 2015      | 13 benchmark, 16 SAT 1-Attempt, 6 SAT 2+          | +8.1pp on HS Grad-Ready and College-Ready |
+| 2014      | 3 College-Ready, 2 HS Grad-Ready, 3 SAT 1-Attempt | +1.3 to +1.9pp                            |
+| 2022      | 2 benchmark, 7 ACT 1-Attempt, 7 ACT 2+            | +0.3 to +1.3pp                            |
 
 **No live cohort moves from this cause.** Measured with a causal decomposition
 per grad year: on all three, the students who move have a score that appeared,
@@ -1312,7 +1439,7 @@ spans score types. One restored SAT score flips both the `sat_total_score` and
 `act_composite` rows inside the same ACT/SAT-and-Total partition, so 13 students
 show as 26 moved rows.
 
-### PSAT 8/9 HS-Ready rises for 2028 and 2029
+### PSAT 8/9 HS Grad-Ready rises for 2028 and 2029
 
 The threshold moved 800 to 790, so 10 students in each of grad years 2028 and
 2029 cross it — +1.7pp and +1.5pp respectively. Decomposed the same way: every
@@ -1388,17 +1515,17 @@ Ready, or No Benchmark Met. Every board threshold was already a scaffold value:
 
 | Board metric      | Board `min_score` | Scaffold column           |
 | ----------------- | ----------------- | ------------------------- |
-| sat_combined 890  | 890               | `hs_ready_min_score`      |
+| sat_combined 890  | 890               | `hs_grad_ready_min_score` |
 | sat_combined 1010 | 1010              | `college_ready_min_score` |
-| sat_ebrw 450      | 450               | `hs_ready_min_score`      |
-| sat_math 440      | 440               | `hs_ready_min_score`      |
+| sat_ebrw 450      | 450               | `hs_grad_ready_min_score` |
+| sat_math 440      | 440               | `hs_grad_ready_min_score` |
 
 So `Board` was a duplicate encoding of the two tiers, and the jinja loop that
 pivoted it is gone. The board goal percentages were genuinely distinct — 0.25
 and 0.28 for the 890 tier against the Benchmark goals' 0.45 and 0.35 — because
 that view reports over test takers rather than all enrolled students. Those
 separate targets do not survive: one goal now applies everywhere, so the NJ Grad
-Ready goal line moves to the sheet's HS-Ready value.
+Ready goal line moves to the sheet's HS Grad-Ready value.
 
 ### Everything else that moves
 
@@ -1410,7 +1537,7 @@ Ready goal line moves to the sheet's HS-Ready value.
   records.
 - **2 students gain attempt values** across all 8 metrics, because counts are no
   longer scoped to enrolled years.
-- **PSAT 8/9 HS-Ready moves 800 to 790**, flipping 10 rows.
+- **PSAT 8/9 HS Grad-Ready moves 800 to 790**, flipping 10 rows.
 - **Every total row's `pct_goal` changes**, the sheet having been restated.
 - **`expected_metric_label` is now populated on Benchmark rows** where
   production read null. Additive, with no measure impact.

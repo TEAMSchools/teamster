@@ -159,7 +159,7 @@ models:
         description: >-
           Minimum attempts for the two-or-more-attempts participation goal. Null
           where the goal does not apply - growth score types and retired ACT.
-      - name: hs_ready_min_score
+      - name: hs_grad_ready_min_score
         data_type: int64
         description: >-
           Minimum scale score meeting the high-school-ready bar. Null on growth

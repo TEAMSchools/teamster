@@ -197,7 +197,7 @@ with
 
             max(
                 if(
-                    expected_goal_subtype = 'HS-Ready'
+                    expected_goal_subtype = 'HS Grad-Ready'
                     and score >= expected_metric_min_score,
                     1,
                     0
@@ -218,7 +218,7 @@ select
         when met_college_ready = 1
         then 'College-Ready'
         when met_hs_ready = 1
-        then 'HS-Grad Ready'
+        then 'HS Grad-Ready'
         else 'No Benchmark Met'
     end as benchmark_tier,
 

@@ -1,26 +1,3 @@
-with
-    scores as (
-        select
-            student_number,
-            unique_test_admin_id,
-            scale_score as score,
-
-            'Scale Score' as score_category,
-
-        from {{ ref("int_tableau__college_assessment_roster_scores") }}
-
-        union all
-
-        select
-            student_number,
-            unique_test_admin_id,
-            total_growth_score_change as score,
-
-            'Score Change' as score_category,
-
-        from {{ ref("int_tableau__college_assessment_roster_scores") }}
-    )
-
 select
     e.region,
     e.schoolid,
@@ -82,7 +59,7 @@ inner join
     on e.region = ea.expected_region
     and ea.rn = 1
 left join
-    scores as a
+    {{ ref("int_tableau__college_assessment_roster_scores") }} as a
     on e.student_number = a.student_number
     and ea.expected_unique_test_admin_id = a.unique_test_admin_id
     and ea.expected_score_category = a.score_category

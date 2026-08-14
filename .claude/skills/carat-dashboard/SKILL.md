@@ -54,7 +54,7 @@ Cite the doc rather than re-deriving:
 | A goal line moved, or does not match the strategy doc  | _The rebuilt goals tab — what shipped_               |
 | `_over_time` shows two rows per student for one goal   | same — resolved by the `_over_time` goal columns     |
 | An over-time percent-met moved                         | _Why the over-time dashboard's numbers change_       |
-| PSAT 8/9 HS-Ready rose for 2028 or 2029                | same — the 800 to 790 threshold, 10 students each    |
+| PSAT 8/9 HS Grad-Ready rose for 2028 or 2029           | same — the 800 to 790 threshold, 10 students each    |
 | A 2014, 2015 or 2022 cohort's percent-met rose         | same — the 27 restored scores                        |
 | A score reads `No Data` in one view but not another    | _Known issue — `rn_highest = 1` discards scores_     |
 | Every school shows the same goal line                  | _Why the current dashboard's numbers change_         |
@@ -81,7 +81,8 @@ source of wrong answers:
 Both pipelines meet in `int_assessments__all_college_assessments`, and
 `rpt_tableau__college_assessment_dashboard_benchmark_calcs` reads that hub.
 Thresholds are no longer hardcoded — they come from the scaffold sheet's
-`hs_ready_min_score` / `college_ready_min_score`, and `EA/ED-Ready` is retired.
+`hs_grad_ready_min_score` / `college_ready_min_score`, and `EA/ED-Ready` is
+retired.
 
 Practice **does** reach the benchmark view now, and what makes that safe is
 `test_type` sitting in the partition of both
@@ -365,7 +366,7 @@ check separately that each (`academic_year`, `scope`) has a row with
 ### Step 2 — take vocabulary from an existing row of the same score type
 
 Values are constant per `score_type` across years and test types, so copy them
-rather than deriving. Thresholds especially: `hs_ready_min_score` and
+rather than deriving. Thresholds especially: `hs_grad_ready_min_score` and
 `college_ready_min_score` are per score type, and four score types legitimately
 have none anywhere — `act_english`, `act_science`, `sat_reading_test_score`,
 `sat_writing_and_language_test_score`.
@@ -374,7 +375,7 @@ have none anywhere — `act_english`, `act_science`, `sat_reading_test_score`,
 select distinct
   expected_score_type, expected_practice_test_subject, expected_subject_area,
   expected_aligned_subject_area, expected_grouping, expected_course_discipline,
-  expected_score_category, hs_ready_min_score, college_ready_min_score
+  expected_score_category, hs_grad_ready_min_score, college_ready_min_score
 from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__scaffold`
 order by expected_score_type
 ```
@@ -386,7 +387,7 @@ order by expected_score_type
 `expected_practice_test_subject`, `expected_subject_area`,
 `expected_aligned_subject_area`, `expected_grouping`,
 `expected_course_discipline`, `expected_score_category`, `expected_score_type`,
-`a1_attempt_min_score`, `a2_plus_attempts_min_score`, `hs_ready_min_score`,
+`a1_attempt_min_score`, `a2_plus_attempts_min_score`, `hs_grad_ready_min_score`,
 `college_ready_min_score`.
 
 Emit **without a header row** — rows append to the existing tab.
@@ -417,6 +418,24 @@ The `Expected Assessments` tab drives the forced scaffold in
 per assessment, covering a current student's entire high school history, so
 Tableau renders a complete progression instead of a ragged one. KIPP Forward
 owns the calendar; the data team transcribes it.
+
+Three things about that model are easy to get wrong:
+
+- **It is long on `score_category`.** Each row carries `score` and either
+  `Scale Score` or `Score Change`, matching `expected_score_category` on the
+  tab. Its two consumers — `_roster` and `rpt_gsheets__college_assessments_wide`
+  — join straight through. Do not re-add a union in either; that is what was
+  removed.
+- **The join binds `test_type`.** Until #4658 it did not, so every practice
+  scaffold row collected the matching official score and the dashboard reported
+  4,107 practice rows that were official scores wearing a practice label. If
+  practice numbers ever look suspiciously close to official ones, check this
+  binding first.
+- **Only SAT binds `academic_year`.** Grades 11 and 12 both report a Winter
+  season covering December and January, so an unbound SAT score would attach to
+  both. Every PSAT stays unbound deliberately — PSAT NMSQT is sat in grade 11 by
+  150 current students but the tab carries it at grade 10 only, and the missing
+  year binding is the only reason those scores land. Binding it drops them.
 
 **Regenerate the whole tab. Never hand-edit it.** Two failure modes, both
 silent:
@@ -918,30 +937,30 @@ doc. Two decisions have been taken:
 - **`EA/ED-Ready` is retired.** The three hardcoded entries — PSAT 8/9 and
   PSAT10/NMSQT at 1100, SAT at 1200 — come out. SAT 1200 exists nowhere else, so
   check for downstream filters on that `benchmark_group` before deleting.
-- **PSAT 8/9 HS-Ready is 790, not the hardcoded 800.** Fixed on the scaffold
-  rather than in code, so the number becomes data. Shipped — the model
+- **PSAT 8/9 HS Grad-Ready is 790, not the hardcoded 800.** Fixed on the
+  scaffold rather than in code, so the number becomes data. Shipped — the model
   reads 790.
 
 The rebuilt sheet also corrected an **inverted PSAT 8/9 percentage pair**. The
-retired sheet had HS-Ready at 0.34 against a threshold of 800 and College-Ready
-at 0.60 against 860 — a harder bar with a higher expected share. It now reads
-0.50 and 0.30. PSAT10 and NMSQT were never inverted, so do not go looking for
-the same fault there.
+retired sheet had HS Grad-Ready at 0.34 against a threshold of 800 and
+College-Ready at 0.60 against 860 — a harder bar with a higher expected share.
+It now reads 0.50 and 0.30. PSAT10 and NMSQT were never inverted, so do not go
+looking for the same fault there.
 
 Subject thresholds used to be split across two systems — the College-Ready tier
 (EBRW 480, Math 530) in `_benchmark_calcs`, the grad-bar tier (EBRW 450,
 Math 440) in the goals sheet as `Board` metrics. **That is resolved: both tiers
 live on the scaffold and `Board` is retired.** Every board threshold turned out
-to be a scaffold value already — SAT combined 890 and 1010 are its HS-Ready and
-College-Ready cut scores, EBRW 450 and Math 440 its grad bars — so `Board` was a
-duplicate encoding.
+to be a scaffold value already — SAT combined 890 and 1010 are its HS Grad-Ready
+and College-Ready cut scores, EBRW 450 and Math 440 its grad bars — so `Board`
+was a duplicate encoding.
 
 `_current` reports the two tiers as `benchmark_tier`, a three-way band of
-College-Ready, HS-Grad Ready, or No Benchmark Met, replacing four wide
+College-Ready, HS Grad-Ready, or No Benchmark Met, replacing four wide
 `met_min_board_*` flags. The board goal percentages do **not** survive: they
 were distinct (0.25 and 0.28 for the 890 tier against the Benchmark goals' 0.45
 and 0.35) because that view reports over test takers, but goals are now uniform,
-so the NJ Grad Ready line takes the sheet's HS-Ready value.
+so the NJ Grad Ready line takes the sheet's HS Grad-Ready value.
 
 ### The rebuilt goals tab — what shipped
 
@@ -950,8 +969,8 @@ The sheet was rebuilt on named range `src_google_sheets__kippfwd_goals_v3`,
 
 ```text
 academic_year, test_type, grade_level, cohort, score_type,
-pct_1_attempt, pct_2_plus_attempts, pct_hs_ready, pct_college_ready,
-pct_hs_ready_over_time, pct_college_ready_over_time
+pct_1_attempt, pct_2_plus_attempts, pct_hs_grad_ready, pct_college_ready,
+pct_hs_grad_ready_over_time, pct_college_ready_over_time
 ```
 
 Staging unpivots all six percentage columns to long, so a metric is a row rather
@@ -976,11 +995,11 @@ spelling is irrelevant, and the only symptom is that no row has
 **The over-time values are provisional — they hold the dashboard steady, they
 are not authoritative goals.** Each is set to what the report already displays:
 
-| Score type                         | HS-Ready | College-Ready | vs prod                     |
-| ---------------------------------- | -------- | ------------- | --------------------------- |
-| `sat_total_score`                  | 0.35     | 0.17          | matches (Tableau's `MIN()`) |
-| `psat10_total` / `psatnmsqt_total` | 0.55     | 0.28          | matches                     |
-| `psat89_total`                     | 0.60     | 0.30          | prod's values, un-inverted  |
+| Score type                         | HS Grad-Ready | College-Ready | vs prod                     |
+| ---------------------------------- | ------------- | ------------- | --------------------------- |
+| `sat_total_score`                  | 0.35          | 0.17          | matches (Tableau's `MIN()`) |
+| `psat10_total` / `psatnmsqt_total` | 0.55          | 0.28          | matches                     |
+| `psat89_total`                     | 0.60          | 0.30          | prod's values, un-inverted  |
 
 They are deliberately **not** the topline per-cohort goals above — class of 2027
 is 45% / 22%, class of 2028 is 55% / 28%. KIPP Forward has not stated a
@@ -993,9 +1012,9 @@ Three things this resolved, all previously listed here as unmodellable:
 
 - **School year** is now `academic_year`, a real column.
 - **Thresholds left the goals sheet entirely.** They live on the scaffold as
-  `a1_attempt_min_score`, `a2_plus_attempts_min_score`, `hs_ready_min_score`,
-  `college_ready_min_score`. `min_score` no longer means an attempt count on one
-  row and a scale score on the next.
+  `a1_attempt_min_score`, `a2_plus_attempts_min_score`,
+  `hs_grad_ready_min_score`, `college_ready_min_score`. `min_score` no longer
+  means an attempt count on one row and a scale score on the next.
 - **Region and school differentiators are gone**, not null — KIPP Forward
   stopped setting goals that way, so the free-text per-school cell has no
   successor.

@@ -145,7 +145,7 @@ models:
         data_type: string
         description: >-
           Which readiness band the student's score falls in for this score type
-          — College-Ready, HS-Grad Ready, or No Benchmark Met. The three are
+          — College-Ready, HS Grad-Ready, or No Benchmark Met. The three are
           mutually exclusive and cover every test taker, so a share of test
           takers sums to one across them.
 
@@ -153,7 +153,7 @@ models:
           Derived from both tiers evaluated over the same student and score
           type, which is why it can be read off a single row. It replaces four
           wide met_min_board_* flags, whose thresholds were a duplicate encoding
-          of the HS-Ready and College-Ready cut scores the scaffold already
+          of the HS Grad-Ready and College-Ready cut scores the scaffold already
           carries.
 
 
