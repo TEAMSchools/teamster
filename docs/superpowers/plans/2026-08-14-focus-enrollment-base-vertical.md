@@ -1134,7 +1134,8 @@ is absent, but a type mismatch on a shared name is an error.
             {{ ref("int_focus__advisory") }} as adv
             on enr.student_number = adv.student_number
             and enr.academic_year = adv.academic_year
-            and enr.ps_schoolid = adv.schoolid
+            and enr.schoolid = adv.schoolid
+            and enr._dbt_source_project = adv._dbt_source_project
     ),
 ```
 
@@ -1261,13 +1262,32 @@ with:
 
         full union all corresponding
 
-        select * except (grade_level_prev, academic_year_prev),
+        select * except (academic_year_prev),
         from focus_final
     )
 ```
 
-The `except` drops the two lag helpers, which exist only to derive `boy_status`
-and are not part of the output column set.
+The `except` drops `academic_year_prev` ONLY. `grade_level_prev` looks like a
+lag helper but IS one of prod's 137 output columns — excepting it leaves Miami
+null where prod carries 5,980 values.
+
+### Three identifier spaces, not two
+
+The student-number trap has a school-id twin. `int_focus__student_enrollments`
+carries BOTH `schoolid` (the Focus internal id — 15, 58, 68, 69) and
+`ps_schoolid` (the network PowerSchool id — 30200801 and up).
+`int_focus__advisory.schoolid` is the **Focus internal** id, since it comes from
+`int_focus__schedule`.
+
+So the advisory join reads `enr.schoolid`, not `enr.ps_schoolid`. Measured:
+`ps_schoolid` matches 0 rows, `schoolid` matches 908. Keep `schoolid` in the
+predicate rather than dropping it — 10 student-years carry two advisory rows and
+would fan out without it. Add `_dbt_source_project` to the predicate too, per
+the cross-region join rule.
+
+Meanwhile `focus_conformed` aliases `enr.ps_schoolid as schoolid` for OUTPUT,
+because the network layer's `schoolid` means the PowerSchool school number. The
+join reads the Focus id; the projection emits the network id, in the same CTE.
 
 - [ ] **Step 7: Verify the column set is unchanged**
 
