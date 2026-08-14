@@ -99,6 +99,9 @@ models:
           - not_null
       - name: first_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Guardian's first name from their Finalsite contact record on guardian
           rows; the emergency contact's first name (`emrg_N_name_first_name`) on
@@ -107,6 +110,9 @@ models:
           - not_null
       - name: last_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Guardian's last name from their Finalsite contact record on guardian
           rows; the emergency contact's last name (`emrg_N_name_last_name`) on
@@ -172,6 +178,9 @@ models:
                 severity: error
       - name: middle_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Guardian's middle name from their Finalsite contact record on guardian
           rows. On emergency rows, sourced from `emrg_1_name_middle_name` /
@@ -205,6 +214,9 @@ models:
           nothing today.
       - name: address
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Line 1 of the guardian's resolved address from
           `int_finalsite__contact_address_of_record` on guardian rows. A
@@ -216,6 +228,9 @@ models:
           household in Finalsite, so there is no address to resolve.
       - name: address2
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Line 2 (apartment or unit) of the guardian's resolved address on
           guardian rows. Legitimately null when the household has no unit line,
@@ -224,6 +239,9 @@ models:
           address from.
       - name: city
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           City of the guardian's resolved address on guardian rows. Null when
           unresolved, and possibly null on a resolved but incomplete address.
@@ -231,6 +249,9 @@ models:
           in Finalsite to resolve an address from.
       - name: state
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           State of the guardian's resolved address on guardian rows. Null when
           unresolved, and possibly null on a resolved but incomplete address.
@@ -238,6 +259,9 @@ models:
           in Finalsite to resolve an address from.
       - name: zipcode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           ZIP code of the guardian's resolved address on guardian rows. Null
           when unresolved, and possibly null on a resolved but incomplete
@@ -245,12 +269,18 @@ models:
           household in Finalsite to resolve an address from.
       - name: email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Guardian's email address from their Finalsite contact record on
           guardian rows; the emergency contact's email (`emrg_N_email`) on
           emergency rows.
       - name: contact1_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Number of the guardian's first phone (`phone_1_number`) on guardian
           rows; the emergency contact's first phone number
@@ -284,6 +314,9 @@ models:
           applies to them.
       - name: contact2_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Number of the guardian's second phone (`phone_2_number`) on guardian
           rows; the emergency contact's second phone number
@@ -317,6 +350,9 @@ models:
           applies to them.
       - name: contact3_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Number of the emergency contact's third phone
           (`emrg_N_phone_3_number`). Null on guardian rows for a different
@@ -354,6 +390,9 @@ models:
           always null.
       - name: contact4_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Number for fourth contact slot; not sourced from Finalsite — always
           null.
@@ -385,6 +424,9 @@ models:
           null.
       - name: contact5_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Number for fifth contact slot; not sourced from Finalsite — always
           null.
@@ -416,6 +458,9 @@ models:
           null.
       - name: contact6_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Number for sixth contact slot; not sourced from Finalsite — always
           null.
@@ -447,6 +492,9 @@ models:
           always null.
       - name: contact7_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
         description:
           Number for seventh contact slot; not sourced from Finalsite — always
           null.

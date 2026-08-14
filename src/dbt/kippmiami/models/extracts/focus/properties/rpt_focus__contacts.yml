@@ -17,10 +17,19 @@ models:
         data_type: int64
       - name: first_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: middle_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: last_name
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: resides_with_stud
         data_type: string
       - name: custody
@@ -31,20 +40,41 @@ models:
         data_type: string
       - name: address
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: address2
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: city
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: state
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: zipcode
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: email
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact1_type
         data_type: string
       - name: contact1_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact1_blocked
         data_type: string
       - name: contact1_unlisted
@@ -57,6 +87,9 @@ models:
         data_type: string
       - name: contact2_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact2_blocked
         data_type: string
       - name: contact2_unlisted
@@ -69,6 +102,9 @@ models:
         data_type: string
       - name: contact3_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact3_blocked
         data_type: string
       - name: contact3_unlisted
@@ -81,6 +117,9 @@ models:
         data_type: string
       - name: contact4_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact4_blocked
         data_type: string
       - name: contact4_unlisted
@@ -93,6 +132,9 @@ models:
         data_type: string
       - name: contact5_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact5_blocked
         data_type: string
       - name: contact5_unlisted
@@ -105,6 +147,9 @@ models:
         data_type: string
       - name: contact6_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact6_blocked
         data_type: string
       - name: contact6_unlisted
@@ -117,6 +162,9 @@ models:
         data_type: string
       - name: contact7_value
         data_type: string
+        config:
+          meta:
+            contains_pii: true
       - name: contact7_blocked
         data_type: string
       - name: contact7_unlisted
