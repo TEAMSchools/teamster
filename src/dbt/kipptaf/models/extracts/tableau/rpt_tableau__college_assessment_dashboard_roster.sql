@@ -119,6 +119,7 @@ left join
 left join
     {{ ref("int_students__college_assessment_participation_roster") }} as p
     on e.student_number = p.student_number
+    and p.test_type = 'Official'
     and p.rn_lifetime = 1
 where
     e.academic_year = {{ var("current_academic_year") }}
