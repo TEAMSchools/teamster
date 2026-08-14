@@ -21,6 +21,15 @@ models:
           Network homelessness code. N when the student is recorded as not
           homeless, Y2 when homeless and not in a parent or guardian's custody,
           Y1 when homeless otherwise. Null when Focus records nothing.
+      - name: student_id
+        description: Primary key — Focus local student id.
+        data_tests:
+          - unique:
+              config:
+                severity: error
+          - not_null:
+              config:
+                severity: error
       - name: is_homeless
         data_type: boolean
         description:
@@ -39,15 +48,6 @@ models:
           Network meal-eligibility code — F for free, R for reduced, P for paid.
           Null where Focus records a school-level program status such as CEP or
           USDA Provision 2, which says nothing about the individual student.
-      - name: student_id
-        description: Primary key — Focus local student id.
-        data_tests:
-          - unique:
-              config:
-                severity: error
-          - not_null:
-              config:
-                severity: error
       - name: student_number
         description: >-
           Canonical network student number — student_id with the leading 8400
