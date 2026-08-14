@@ -1233,11 +1233,97 @@ safe to let practice reach this view at all — the risk flagged during design w
 precisely that `rn_highest = 1` would let a practice score outrank an official
 one.
 
-### Not changed: the 27 suppressed scores
+### Not changed here: the 27 suppressed scores
 
-The view reads `benchmark_aligned_scope_max_score`, which retains its
+This view reads `benchmark_aligned_scope_max_score`, which retains its
 `rn_highest = 1` filter, so 27 students who hold eligible scores still read
-`No Data`. That matches production deliberately. See the next section.
+`No Data` in the benchmark view. That matches production deliberately.
+
+`rpt_tableau__college_assessment_dashboard_over_time` **no longer suppresses
+them** — see _Why the over-time dashboard's numbers change_ below. The two views
+therefore disagree on those 27 students until the benchmark view is repointed,
+which is expected rather than drift.
+
+## Why the over-time dashboard's numbers change
+
+`rpt_tableau__college_assessment_dashboard_over_time` reports different numbers
+after this work, from five separate causes. They are listed separately because
+they land on different grad years, and reconciling against a pre-merge
+screenshot means knowing which one you are looking at.
+
+### Row count
+
+Production emits 292,656 rows — 6,968 students times 42 goal rows. This version
+emits 556,406:
+
+|                                                           | rows        |
+| --------------------------------------------------------- | ----------- |
+| Official, 40 goal combinations                            | 278,040     |
+| plus `strategy_case` emitting two rows for one score type | 326         |
+| **Official total**                                        | **278,366** |
+| Practice, 40 goal combinations, no fan-out                | 278,040     |
+
+Production's 42 is 40 distinct combinations plus 2 duplicates — SAT HS-Ready and
+College-Ready are stated per grade, and the view projects neither grade nor
+cohort, so both rows arrive per student differing only in `pct_goal`. Tableau
+resolves the pair with `MIN()`. The sheet's over-time goal columns replace that,
+which is why the count drops to 40.
+
+All 40 Official goal combinations are structurally identical to production —
+compared across `expected_aligned_subject_area`, `expected_aligned_subject`,
+`expected_metric_name`, `min_score` and `pct_goal`, with zero naming or
+alignment mismatches. So the `expected_aligned_subject_area` correction changed
+no values.
+
+### Attempt counts fall for 87 students
+
+174 rows, being 87 students across the two SAT attempt metrics, all lower and
+none higher. Two causes, both covered in _Why participation attempt counts
+change_: the duplicate Salesforce records, and counting distinct test dates
+rather than rows.
+
+### 27 students gain a score production suppresses
+
+Production joins scores with `and s.rn_highest = 1`, which discards a score
+whose rank was spent on a sibling row later dropped for a missing test date —
+the known issue documented in the next section. This version reads the hub
+through a `max(scale_score)` CTE with no rank filter, so those scores return.
+**This was a side effect of the refactor rather than a planned change, and it is
+kept deliberately**: re-adding the filter would mean suppressing known-good
+scores to preserve a defect.
+
+Nothing is lost in the other direction — zero rows go from scored to null. The
+effect is confined to three historical grad years:
+
+| Grad year | Students restored                            | Effect                               |
+| --------- | -------------------------------------------- | ------------------------------------ |
+| 2015      | 13 benchmark, 16 SAT 1-Attempt, 6 SAT 2+     | +8.1pp on HS-Ready and College-Ready |
+| 2014      | 3 College-Ready, 2 HS-Ready, 3 SAT 1-Attempt | +1.3 to +1.9pp                       |
+| 2022      | 2 benchmark, 7 ACT 1-Attempt, 7 ACT 2+       | +0.3 to +1.3pp                       |
+
+**No live cohort moves from this cause.** Measured with a causal decomposition
+per grad year: on all three, the students who move have a score that appeared,
+and none of them have a threshold that changed.
+
+One thing to expect when reading the flags: a single restored score flips the
+flag on more rows than there are students, because
+`met_min_score_int_overall_aligned_scope_subject` is a max over a partition that
+spans score types. One restored SAT score flips both the `sat_total_score` and
+`act_composite` rows inside the same ACT/SAT-and-Total partition, so 13 students
+show as 26 moved rows.
+
+### PSAT 8/9 HS-Ready rises for 2028 and 2029
+
+The threshold moved 800 to 790, so 10 students in each of grad years 2028 and
+2029 cross it — +1.7pp and +1.5pp respectively. Decomposed the same way: every
+one of those 20 has an unchanged score and a changed threshold, so this is the
+threshold correction and not the restored scores above. These are the only live
+cohorts that move at all.
+
+### Practice doubles the row count
+
+40 Practice goal combinations against 40 Official, with no score-side fan-out.
+This is the point of the work rather than a side effect.
 
 ## Known issue — `rn_highest = 1` discards scores whose better sibling has no test date
 
@@ -1303,12 +1389,30 @@ max returns null. Anything reading the tag and taking `scale_score` gets the
 restored values; anything reading the max does not. Verified: 12,267 tagged rows
 against 12,240 with a max, zero value mismatches where both produce one.
 
-Removing the filter is a real correction. Measured impact: 27 students across 51
-threshold rows move from `No Data` to `Met`. It needs to ship visibly and on its
-own, not folded into a refactor. The alternative fix — moving the ranking
-downstream of the null-date filter, so ranks are dense over surviving rows — is
-the more complete repair but changes `rn_highest` for every consumer, and the
-hub's uniqueness test includes that column.
+Removing the filter is a real correction. Measured impact on the benchmark view:
+27 students across 51 threshold rows move from `No Data` to `Met`.
+
+**It has partly shipped, contrary to the intent originally recorded here.**
+`rpt_tableau__college_assessment_dashboard_over_time` replaced its direct score
+join, which carried `and s.rn_highest = 1`, with a `max(scale_score)` CTE
+reading the hub — and that dropped the filter as a side effect of the refactor
+rather than as a decision. It was measured afterwards and kept, because
+re-adding it would mean suppressing known-good scores to preserve a defect. The
+"ship it visibly" requirement is met for that view by documentation instead of a
+separate release, which is defensible only because the effect lands entirely on
+grad years 2014, 2015 and 2022 and moves no live cohort. See _Why the over-time
+dashboard's numbers change_.
+
+`_benchmark_calcs` still suppresses, reading
+`benchmark_aligned_scope_max_score`, which retains the filter. **The two views
+now disagree on those 27 students** — expected, not drift — until the benchmark
+view is repointed. That repoint is where the remaining visible change lives, and
+it is still worth shipping on its own.
+
+The alternative fix — moving the ranking downstream of the null-date filter, so
+ranks are dense over surviving rows — is the more complete repair but changes
+`rn_highest` for every consumer, and the hub's uniqueness test includes that
+column.
 
 ## Known issue — duplicate kippadb test records
 

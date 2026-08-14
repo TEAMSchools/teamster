@@ -53,6 +53,10 @@ Cite the doc rather than re-deriving:
 | Two records for one sitting, or an inflated row count | _Known issue — duplicate kippadb test records_       |
 | A goal line moved, or does not match the strategy doc | _The rebuilt goals tab — what shipped_               |
 | `_over_time` shows two rows per student for one goal  | same — resolved by the `_over_time` goal columns     |
+| An over-time percent-met moved                        | _Why the over-time dashboard's numbers change_       |
+| PSAT 8/9 HS-Ready rose for 2028 or 2029               | same — the 800 to 790 threshold, 10 students each    |
+| A 2014, 2015 or 2022 cohort's percent-met rose        | same — the 27 restored scores                        |
+| A score reads `No Data` in one view but not another   | _Known issue — `rn_highest = 1` discards scores_     |
 
 Each of those carries the measured numbers, so an answer can cite them instead
 of re-running a comparison. If a reconciliation disagrees with the documented
@@ -868,6 +872,23 @@ Work outward from the student, stopping at the first layer with zero rows.
 
 ## Gotchas that cost time
 
+- **`_over_time` and `_benchmark_calcs` deliberately disagree on 27 students
+  right now.** `_over_time` dropped the `rn_highest = 1` score filter and shows
+  their restored SAT scores; `_benchmark_calcs` reads
+  `benchmark_aligned_scope_max_score`, which keeps the filter, so the same
+  students still read `No Data` there. This is expected until the benchmark view
+  is repointed — do not "fix" either side to make them match without reading
+  _Known issue — `rn_highest = 1` discards scores_ first.
+- **Two different causes move over-time percent-met, and they never overlap.**
+  Restored scores land only on grad years 2014, 2015 and 2022; the PSAT 8/9
+  800-to-790 threshold lands only on 2028 and 2029. Before explaining a moved
+  number, check which grad year it is — attributing a 2029 shift to the restored
+  scores, or a 2015 shift to the threshold, is the easy mistake.
+- **A restored score flips more rows than there are students.** The
+  `met_min_score_int_overall_*` columns are window maxes over partitions
+  spanning score types, so one restored SAT score also flips that student's
+  `act_composite` row inside the same ACT/SAT-and-Total partition. 13 students
+  read as 26 moved rows. Count distinct students, never rows.
 - **`__TABLES__.row_count` is unreliable and reads 0 for views.** Confirm with
   `count(*)`.
 - **The BigQuery MCP service account cannot read Google Sheets externals** (no
