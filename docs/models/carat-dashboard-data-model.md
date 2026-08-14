@@ -1146,6 +1146,15 @@ The change is purely additive. Official rows are identical to production scope
 by scope — PSAT 8/9 2,367, PSAT NMSQT 1,251, PSAT10 1,254, SAT 2,561 — with 33
 practice rows added.
 
+Its goals join is guarded by `test_kippfwd_goals_long_join_grain`. The view
+joins goals on test type and score type alone, with no academic year binding,
+and resolves its pivot with `any_value()`, so a second academic year stating a
+goal for a key that already has one would double every matching score row and
+pick a threshold arbitrarily. The goals model spans AY2023 and AY2026 today and
+stays unambiguous only because the 2023 rows are practice ACT while the 2026 ACT
+rows are official — a property of the data, not the model. The model's own
+uniqueness test carries `academic_year` and so cannot catch it.
+
 ### The wide sheet names practice columns rather than renaming official ones
 
 Practice gets nine score columns, one per administration the tab carries — grade
