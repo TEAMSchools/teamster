@@ -192,11 +192,16 @@ def order_admins(admins):
     takes. Section and growth rows count up from there, so each administration
     consumes as many slots as it has score types.
     """
+    # scope and test type break a tie so the output does not depend on the order
+    # the admins happen to be listed in -- grade 10 has a Practice PSAT10 and an
+    # Official PSAT NMSQT that both sit in October.
     ordered = sorted(
         admins,
         key=lambda a: (
             -a["grade"],
             -min(SCHOOL_YEAR_MONTHS[m] for m in a["months"]),
+            a["scope"],
+            a["test_type"],
         ),
     )
 

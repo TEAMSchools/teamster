@@ -482,11 +482,34 @@ landed in, not by this year's plan, so a test with a moved calendar needs
 **both** months — possibly as two seasons, the way SAT already carries G11
 Winter as December _and_ March.
 
-### Step 3 — ask for the new calendar
+### Step 3 — take the dates, infer the season, ask only when you cannot
 
-Ask KIPP Forward, per grade and test type, for the administration dates and
-which season each belongs to. Do not infer a season from a month: boundaries
-vary by grade, and G9's March is Spring while G11's March is Winter.
+Ask KIPP Forward for administration **dates** per grade and test type. Do not
+ask for season labels up front — derive them from what the tab already encodes:
+
+```sql
+select
+  expected_grade_level as grade, expected_scope as scope,
+  expected_test_type as tt, expected_month_round as month,
+  expected_admin_season as season
+from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments`
+where expected_region = 'Newark' and expected_grouping = 'Total'
+group by grade, scope, tt, month, season
+order by grade, scope, season, month
+```
+
+Resolve each date in this order, and say which rule fired:
+
+1. **Same grade, scope and test type already maps that month** — use that
+   season. The only case needing no confirmation.
+2. **Same scope at another grade maps it** — propose it, and say it came from a
+   different grade.
+3. **Neither** — ask. Never fall back to a calendar convention silently.
+
+Two cases where rule 1 will not save you. **March is mapped to Winter at grade
+11 and to Spring at grade 9**, so a March date always needs asking. And as of
+2026-08 the PSAT grades map only `Year`, so no PSAT month has a precedent at all
+— every PSAT season needs asking until the first rebuild lands.
 
 Present the historical months from step 2 alongside their answer and **require
 an explicit decision to drop a month**. Dropping by omission is the failure this
@@ -510,6 +533,13 @@ has no months.
 
 Verified against the live tab: it reproduces all 110 existing SAT rows exactly,
 order values included.
+
+**A growth row needs its score type to exist.** Only `sat_total_score_growth` is
+in the scaffold and hub vocabulary today, so `"growth": true` on a PSAT
+administration emits `psat89_total_growth` and friends, which nothing downstream
+knows. Adding growth to PSAT means adding those score types to the scaffold
+first — see the roster-scores growth work in TODO(#4658). Leave
+`"growth": false` on PSAT until then.
 
 Eight columns, no header, paste over **A2** of `Expected Assessments`:
 
