@@ -15,7 +15,9 @@ models:
               - schoolid
     columns:
       - name: student_number
-        description: Network student number for the student in the homeroom.
+        description: >-
+          Focus student id (10-digit, FLDOE-district-prefixed) — the student in
+          the homeroom.
       - name: academic_year
         description: Academic year of the homeroom enrollment.
       - name: schoolid
