@@ -1745,8 +1745,8 @@ unit_tests:
       emrg_N_relationship_ss fields the other crosswalk branches above read --
       its case and whitespace aren't guaranteed. A padded, lowercase value
       ("  mother  ") still crosswalks to the canonical Title-Case Focus value
-      (Mother), the same normalization focus_phone_type already applies to phone
-      types.
+      (Mother), matching the case-and-whitespace normalization the phone-type
+      mapping in phones_typed applies.
     model: rpt_focus__contacts
     given:
       - input: ref('int_finalsite__enrollment_lifecycle')

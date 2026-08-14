@@ -537,19 +537,49 @@ with
             * except (contact1_type, contact2_type, contact3_type),
 
             case
-                when contact1_value is not null
-                then {{ focus_phone_type("contact1_type") }}
-                else cast(null as string)
+                when contact1_value is null
+                then cast(null as string)
+                when lower(trim(contact1_type)) in ('cell', 'mobile')
+                then 'Cell Phone'
+                when lower(trim(contact1_type)) = 'home'
+                then 'Home Phone'
+                when lower(trim(contact1_type)) in ('work', 'business', 'office')
+                then 'Work Phone'
+                when lower(trim(contact1_type)) = 'workplace'
+                then 'Workplace'
+                when lower(trim(contact1_type)) in ('alternate', 'day', 'daytime')
+                then 'Alternate Phone'
+                else 'Cell Phone'
             end as contact1_type,
             case
-                when contact2_value is not null
-                then {{ focus_phone_type("contact2_type") }}
-                else cast(null as string)
+                when contact2_value is null
+                then cast(null as string)
+                when lower(trim(contact2_type)) in ('cell', 'mobile')
+                then 'Cell Phone'
+                when lower(trim(contact2_type)) = 'home'
+                then 'Home Phone'
+                when lower(trim(contact2_type)) in ('work', 'business', 'office')
+                then 'Work Phone'
+                when lower(trim(contact2_type)) = 'workplace'
+                then 'Workplace'
+                when lower(trim(contact2_type)) in ('alternate', 'day', 'daytime')
+                then 'Alternate Phone'
+                else 'Cell Phone'
             end as contact2_type,
             case
-                when contact3_value is not null
-                then {{ focus_phone_type("contact3_type") }}
-                else cast(null as string)
+                when contact3_value is null
+                then cast(null as string)
+                when lower(trim(contact3_type)) in ('cell', 'mobile')
+                then 'Cell Phone'
+                when lower(trim(contact3_type)) = 'home'
+                then 'Home Phone'
+                when lower(trim(contact3_type)) in ('work', 'business', 'office')
+                then 'Work Phone'
+                when lower(trim(contact3_type)) = 'workplace'
+                then 'Workplace'
+                when lower(trim(contact3_type)) in ('alternate', 'day', 'daytime')
+                then 'Alternate Phone'
+                else 'Cell Phone'
             end as contact3_type,
         from phones_valid
     ),
