@@ -91,6 +91,17 @@ win, and shifts reported college-ready attainment network-wide. The view also
 joins `expected_test_type` to the hub's `test_type`, so a practice benchmark is
 never satisfied by an official result.
 
+**This generalises to every partition and dedupe key in the lineage**, because
+Official and Practice share one `score_type` vocabulary by design — the same
+string means a different sitting depending on `test_type`. `_current`'s
+`benchmark_tier` shipped without it in review and would have let a practice
+score raise the official row's readiness band; `_roster` joined the
+participation roster on `rn_lifetime = 1` alone and duplicated every row for
+students with practice data; `_current`'s own `attempts` CTE had the same
+defect. **When you add a `partition by`, a dedupe, or a join to the roster or
+either hub, ask whether `test_type` belongs in it — the answer has been yes
+every time so far**, and the failure is silent in all three cases.
+
 ## Verified facts
 
 ### Two tabs, not one

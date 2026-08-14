@@ -180,7 +180,10 @@ with
             ) as alt_met_min_score_int,
 
             /* Both tiers evaluated for the same student and score type, so the
-               three-way bucket below can be read off one row. */
+               three-way bucket below can be read off one row. expected_test_type
+               is in the partition because Official and Practice share one
+               score_type vocabulary -- without it a practice score raises the
+               official row's band, and vice versa. */
             max(
                 if(
                     expected_goal_subtype = 'College-Ready'
@@ -188,8 +191,9 @@ with
                     1,
                     0
                 )
-            ) over (partition by student_number, expected_score_type)
-            as met_college_ready,
+            ) over (
+                partition by student_number, expected_test_type, expected_score_type
+            ) as met_college_ready,
 
             max(
                 if(
@@ -198,7 +202,9 @@ with
                     1,
                     0
                 )
-            ) over (partition by student_number, expected_score_type) as met_hs_ready,
+            ) over (
+                partition by student_number, expected_test_type, expected_score_type
+            ) as met_hs_ready,
 
         from roster
     )
