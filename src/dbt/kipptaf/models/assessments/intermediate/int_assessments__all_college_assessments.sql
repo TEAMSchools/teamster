@@ -58,7 +58,9 @@ with
 
             cast(null as int64) as n_overall_scores,
             cast(null as int64) as n_subject_scores,
-            cast(null as string) as strategy_case,
+
+            strategy_case,
+
             cast(null as string) as surrogate_key,
 
             running_max_scale_score,

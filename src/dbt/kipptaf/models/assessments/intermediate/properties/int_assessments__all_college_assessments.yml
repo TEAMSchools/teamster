@@ -9,16 +9,16 @@ models:
       hub's vocabulary at the union.
 
 
-      Eleven columns are official-only and read null on practice rows —
-      aligned_subject, salesforce_id, the two score-shape counts, strategy_case,
-      surrogate_key, previous_total_score_change, and the four superscore
-      fields. They are computed inside the official hub rather than here. Moving
-      them below the union so they populate for both is separate work.
+      Ten columns are official-only and read null on practice rows —
+      aligned_subject, salesforce_id, the two score-shape counts, surrogate_key,
+      previous_total_score_change, and the four superscore fields. They are
+      computed inside the official hub rather than here. Moving them below the
+      union so they populate for both is separate work.
 
 
       The practice hub now supplies is_overall_score, is_subject_score,
-      max_scale_score, and running_max_scale_score itself, matching the official
-      definitions, so those four populate for both test types.
+      max_scale_score, running_max_scale_score, and strategy_case itself, so
+      those five populate for both test types.
 
 
       See docs/models/carat-dashboard-data-model.md.
@@ -123,8 +123,28 @@ models:
       - name: strategy_case
         data_type: string
         description: >-
-          Which score shapes the sitting produced — Case 1 overall only, Case 2
-          sections only, Case 3 both.
+          Which score shapes the testing produced — Case 1 overall only, Case 2
+          sections only, Case 3 both. Populated for both test types, each from
+          its own hub.
+
+
+          Case 1 appears on official rows only. Practice derives a total from
+          its sections, so it cannot produce one without them, and a consumer
+          filtering to Case 1 correctly sees official students only.
+
+
+          The unit differs by one dimension between the two. Official counts
+          score shapes per student, scope, and test date, so the label describes
+          a single sitting. Practice counts sections sat per academic year,
+          student, scope_round, and grade, so it describes an administration.
+
+
+          Not constant across a student's rows for one score type. It is a
+          property of a sitting, so a student who tested completely once and
+          partially another time carries both values — 121 keys today, of which
+          110 are genuinely separate administrations months apart rather than
+          duplicate entry. A consumer aggregating to one row per student must
+          therefore pick, and the pick is theirs to justify.
       - name: surrogate_key
         data_type: string
         description: Hash of student_number, score_type, and test_date.

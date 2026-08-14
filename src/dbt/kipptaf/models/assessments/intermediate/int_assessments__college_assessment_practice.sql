@@ -279,6 +279,14 @@ select
 
     if(response_type = 'Subject', 1, 0) as is_subject_score,
 
+    /* Case 1 cannot occur -- a total is derived from its sections, so practice
+       never produces one without them. */
+    if(
+        actual_total_subjects_tested = expected_total_subjects_tested,
+        'Case 3',
+        'Case 2'
+    ) as strategy_case,
+
     if(
         response_type = 'Group',
         null,

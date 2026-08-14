@@ -245,6 +245,27 @@ models:
           Flags a section score rather than a total. Group rows read 0 on this
           and on is_overall_score, being response-group detail rather than
           either.
+      - name: strategy_case
+        data_type: string
+        description: >-
+          Which score shapes the administration produced, using the same labels
+          the official hub assigns — Case 2 for sections without a total, Case 3
+          for both. Derived from whether the student sat every expected section,
+          since a total is scored only when they did.
+
+
+          Case 1, a total with no sections, cannot occur here. The total is
+          computed from the sections, so there is no path to one without them. A
+          consumer filtering to Case 1 therefore sees official students only,
+          which is correct rather than missing data.
+
+
+          The unit differs from the official hub's by one dimension. There the
+          counts partition by student, scope, and test date, so the label
+          describes a single sitting. Here actual_total_subjects_tested is
+          counted per academic year, student, scope_round, and grade, so the
+          label describes an administration, whose sections can be sat on
+          different days.
       - name: max_scale_score
         data_type: numeric
         description: >-
