@@ -90,6 +90,15 @@ models:
         config:
           meta:
             contains_pii: true
+      - name: homeless_unaccompanied_youth_label
+        description: >-
+          Decoded label for the homeless_unaccompanied_youth select field. Set
+          only for homeless students who are not in the physical custody of a
+          parent or guardian, which the network homeless_code domain records as
+          Y2 rather than Y1.
+        config:
+          meta:
+            contains_pii: true
       - name: idea_educational_environment_label
         description: >-
           Decoded label for the idea_educational_environment select field — the
