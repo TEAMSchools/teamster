@@ -54,6 +54,7 @@ with
             e.academic_year,
             e.academic_year_display,
             e.state,
+            e.district,
             e.region,
             e.schoolid,
             e.school,
@@ -86,8 +87,6 @@ with
             s.scope,
             s.subject_area,
             s.score_type,
-
-            'KTAF' as ktaf,
 
             avg(
                 if(
@@ -128,6 +127,7 @@ with
             e.academic_year,
             e.academic_year_display,
             e.state,
+            e.district,
             e.region,
             e.schoolid,
             e.school,

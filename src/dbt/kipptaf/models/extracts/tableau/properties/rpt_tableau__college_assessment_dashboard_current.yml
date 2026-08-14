@@ -30,6 +30,21 @@ models:
         data_type: string
       - name: state
         data_type: string
+      - name: district
+        data_type: string
+        description: >-
+          Reads KTAF for every row, so the network view is an aggregation over a
+          real column rather than a grand total. state, region, school and
+          schoolid carry the narrower levels, and all of them now share one goal
+          per grade and metric — the sheet no longer differentiates a goal by
+          school or region.
+
+
+          A KTAF total here covers Camden and Newark only, which is narrower
+          than the name suggests. This report is high school, Miami has no high
+          school at all — zero HS rows in any academic year — and Paterson has
+          none either. So the network level is every high school the network
+          runs, but not every region.
       - name: region
         data_type: string
       - name: schoolid
@@ -90,14 +105,6 @@ models:
         data_type: string
       - name: score_type
         data_type: string
-      - name: ktaf
-        data_type: string
-        description: >-
-          The constant KTAF, so the network view is an aggregation over a column
-          rather than a grand total. state, region, school and schoolid carry
-          the narrower levels, and all four now share one goal per grade and
-          metric — the sheet no longer differentiates a goal by school or
-          region.
       - name: score
         data_type: float64
         description: >-
