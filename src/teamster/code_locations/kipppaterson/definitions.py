@@ -16,10 +16,13 @@ from teamster.code_locations.kipppaterson import (
     deanslist,
     extracts,
     finalsite,
+    freshness,
     pearson,
     powerschool,
+    titan,
 )
 from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
+from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
@@ -27,6 +30,7 @@ from teamster.core.resources import (
     GOOGLE_DRIVE_RESOURCE,
     SSH_COUCHDROP,
     SSH_RESOURCE_AMPLIFY,
+    SSH_TITAN,
     get_dbt_cli_resource,
     get_io_manager_gcs_avro,
     get_io_manager_gcs_file,
@@ -37,16 +41,20 @@ from teamster.core.resources import (
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=load_assets_from_modules(
-        modules=[
-            dbt,
-            amplify,
-            deanslist,
-            extracts,
-            finalsite,
-            pearson,
-            powerschool,
-        ]
+    assets=apply_freshness_policies(
+        load_assets_from_modules(
+            modules=[
+                dbt,
+                amplify,
+                deanslist,
+                extracts,
+                finalsite,
+                pearson,
+                powerschool,
+                titan,
+            ]
+        ),
+        policies=freshness.policies,
     ),
     schedules=[
         *deanslist.schedules,
@@ -58,6 +66,7 @@ defs = Definitions(
         *amplify.sensors,
         *couchdrop.sensors,
         *powerschool.sensors,
+        *titan.sensors,
         AutomationConditionSensorDefinition(
             name=f"{CODE_LOCATION}__automation_condition_sensor",
             target=AssetSelection.all(),
@@ -78,5 +87,6 @@ defs = Definitions(
         "ssh_amplify": SSH_RESOURCE_AMPLIFY,
         "ssh_couchdrop": SSH_COUCHDROP,
         "ssh_powerschool": get_powerschool_ssh_resource(),
+        "ssh_titan": SSH_TITAN,
     },
 )

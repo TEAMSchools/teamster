@@ -11,7 +11,12 @@ and is validated by automated tests.
 ## What the pipeline does
 
 Each **midday** run builds four files from current Finalsite data and delivers
-them to Focus over SFTP at **12:45 p.m. ET**, matching Focus's import templates:
+them to Focus over SFTP at **1:15 p.m. ET**, matching Focus's import templates.
+An additional **unstaffed run at 3:45 a.m. ET** delivers the same four files so
+the overnight state of Finalsite is already staged in Focus when the enrollment
+team starts their shift — nobody is watching that run, so it is not load-bearing
+for the 2 p.m. commitment below; if it fails, the 1:15 p.m. delivery still
+satisfies the promise.
 
 | File               | Focus template       | Status |
 | ------------------ | -------------------- | ------ |
@@ -32,16 +37,16 @@ both:
 
 1. **Push the Finalsite SFTP export at 12:00 p.m.** Finalsite's own export runs
    overnight on a schedule that is not ours to change. Without a manual push,
-   the 12:45 delivery carries Finalsite data as of roughly 2:50 a.m. — silently,
-   with no error and nothing on screen to notice. Push it after the noon cutoff,
-   every day. **This is Miami only** — no other region needs it.
+   the 1:15 p.m. delivery carries Finalsite data as of roughly 2:50 a.m. —
+   silently, with no error and nothing on screen to notice. Push it after the
+   noon cutoff, every day. **This is Miami only** — no other region needs it.
 
    **The window is 12:00 to 12:15 — push at noon or just after, not before.** An
    early push misses anything entered between it and the 12:00 cutoff, and those
    students then wait for tomorrow. The late bound is **12:15**: past that, the
-   file may not be ingested and rebuilt in time for the 12:45 delivery. From a
-   12:15 push the pipeline needs about 11 minutes to have everything rebuilt, so
-   the delivery clears it with roughly 19 minutes to spare.
+   file may not be ingested and rebuilt in time for the 1:15 p.m. delivery. From
+   a 12:15 push the pipeline needs about 11 minutes to have everything rebuilt,
+   so the delivery clears it with roughly 49 minutes to spare.
 
    Nothing breaks if a push lands outside the window. A student whose record is
    only half-captured is skipped for that day, not half-imported — there is no
@@ -49,9 +54,9 @@ both:
 
 1. **Run the four Focus imports.** The pipeline only delivers files to Focus's
    `incoming/` folder; nothing imports them for you. The imports themselves are
-   quick, so the 75 minutes between the 12:45 delivery and 2 p.m. is slack, not
-   time you need — a student is usable in Focus within minutes of you running
-   them, typically well before 1 p.m.
+   quick, so the 45 minutes between the 1:15 p.m. delivery and 2 p.m. is slack,
+   not time you need — a student is usable in Focus within minutes of you
+   running them, typically well before 1:30 p.m.
 
 > **Do not re-run the delivery after you have imported — ask the data team
 > first.** The pipeline decides what Focus already has by reading a copy of
@@ -99,32 +104,29 @@ The entry code is derived from grade level:
 | Kindergarten | `E05`           |
 | All others   | `E01`           |
 
-The entry code reflects how the student **entered** and does not change when a
-student withdraws — a withdrawal is expressed by the drop code and end date, not
-by clearing the entry code. It is written to Focus **once**; because it's
-derived from grade, the pipeline never resends it, so a wrong entry code must be
-corrected manually in Focus.
+The entry code reflects how the student **entered** and does not change once
+written. It is written to Focus **once**; because it's derived from grade, the
+pipeline never resends it, so a wrong entry code must be corrected manually in
+Focus.
 
-### Withdraw / drop codes
+### Withdrawals are never sent to Focus
 
 A withdrawal is recognized from a single Finalsite signal: **the last-attended
-date** (`withdrawal_last_attended_date`). A student is treated as withdrawn only
-when that date is populated and falls on or after the enrollment's start date.
-When it is, the pipeline sends the end date together with the drop code.
+date** (`withdrawal_last_attended_date`). A student is treated as withdrawn once
+that date is populated and falls on or after the enrollment's start date — but
+the pipeline does not push that withdrawal to Focus at all. The Student
+Enrollment feed **creates entries only**; a withdrawn enrollment (one with an
+end date) is held back from the feed entirely rather than sent as an update, so
+no end date and no drop code ever reach Focus through this pipeline. A
+withdrawal in Focus is recorded there directly, by hand, and kept in sync with
+Finalsite manually — see _Where to make corrections_ below.
 
-The drop code itself comes from Finalsite's `fl_state_withdraw_codes_ss` field
-as the full FLDOE label — e.g. `(W02) In District Transfer`. Focus's import
-wants the short code (`W02`), not the label, so the pipeline looks the label up
-in Focus's own withdrawal-code list and sends the matching short code in the
-`DROP_CODE` column.
-
-Like everything else, a withdrawal is a **one-time push** — and it only ever
-lands on an enrollment Focus still shows as **open**, meaning it has no end date
-yet. The pipeline fills in the end date and drop code only when that open
-enrollment doesn't already have a drop code of its own. If Focus has already
-closed the enrollment with an end date, or the open enrollment already carries a
-drop code, the pipeline leaves it alone and will not add or correct one — even a
-wrong or missing drop code has to be fixed in Focus directly.
+> **A withdrawal recorded before the student's initial enrollment ever reached
+> Focus means that enrollment is never sent — not now, not later.** Because the
+> feed holds back any enrollment with an end date, a student who withdraws
+> before their first Student Enrollment row was ever imported drops out of the
+> feed for good; there is no separate withdrawal push to catch them later. See
+> _Known limitations_ for how many students this affects today.
 
 ### Enrollment feed — current year, enrolled students only
 
@@ -171,23 +173,14 @@ An enrollment counts as "already in Focus" when Focus has a record for the same
 enrollment's start date is not part of it. That's deliberate: once an enrollment
 lands in Focus, the registrar team may need to correct its start date there, and
 the pipeline should not mistake that corrected enrollment for a brand-new one.
-Matched student-years are not re-sent as a new entry (see the exception for
-withdrawals below).
+Matched student-years are never re-sent, for any reason — there is no exception
+for a withdrawal recorded afterward (see _Withdrawals are never sent to Focus_
+above).
 
 School, grade, and entry code are **not** used to decide this either. Focus
 stores its own internal codes for them and translates the imported values on
 load, so they never match on a literal comparison even when they describe the
 same school and grade — comparing them would make every record look new.
-
-The one thing that will still be sent for a matched student-year is a **new
-withdrawal** — and only onto that student-year's currently **open** Focus
-enrollment (the one Focus has not yet closed with an end date). If the extract
-now has an end date and drop code, and that open enrollment doesn't already have
-a drop code of its own, the exit is filled in against whatever start date Focus
-currently shows for it — so an ops correction to the Focus start date does not
-stop the withdrawal from landing. See Withdraw / drop codes above for what
-happens when Focus has already closed the enrollment or the open enrollment
-already has a drop code.
 
 ### What gets sent
 
@@ -200,10 +193,10 @@ does not already have it, and nothing is ever overwritten:
 - **Student enrollment** — an enrollment is sent when the student's **(student,
   academic year)** is new to Focus, the student is enrolled (has a start date),
   **and** that academic year is the **current** one; a prior-year or
-  not-yet-current next-year enrollment is held back. A withdrawal (end date +
-  drop code) is filled in once onto that student-year's **open** Focus
-  enrollment when it has neither yet — never onto one Focus already shows as
-  closed.
+  not-yet-current next-year enrollment is held back. **A withdrawn enrollment
+  (one with a last-attended date recorded) is held back too — the feed creates
+  new entries only and never sends a withdrawal, end date, or drop code to
+  Focus.**
 - **Addresses** — sent only once the student is **enrolled** and Focus does not
   already have the address record for that student. The address itself comes
   from the households the student's Parent 1 is linked to, falling back to the
@@ -225,9 +218,12 @@ does not already have it, and nothing is ever overwritten:
 
 A Finalsite contact is reused year to year (re-enrollment keeps the same
 Finalsite ID and moves the start date forward). The pipeline ensures a **new
-enrollment never carries a previous year's drop code or end date** — a
-last-attended date before the current enrollment's start is treated as belonging
-to the prior enrollment and is ignored.
+enrollment never carries a previous year's end date** — a last-attended date
+before the current enrollment's start is treated as belonging to the prior
+enrollment and is ignored. This matters even though a withdrawal is never sent
+to Focus (see _Withdrawals are never sent to Focus_ above): a stray end date
+misattributed to the new enrollment would hold that new enrollment's entry back
+from ever being sent at all.
 
 ### Address and contact formatting
 
@@ -292,10 +288,15 @@ carries its name, relationship, email, and up to three phone numbers, and is
 flagged in Focus as an emergency contact. Emergency contacts have no household
 in Finalsite, so they arrive with no address; that is expected, not a gap.
 
-The custody, pickup, and lives-with checkboxes are sent when Finalsite has them.
-KIPP Miami's emergency form does not currently collect them, so those three
-columns arrive blank today and will populate on their own if the form starts
-asking.
+The **custody** and **lives-with** checkboxes are derived from Finalsite
+household membership, for guardians and emergency contacts alike: the first
+contact for a student (by the same sort order the Contacts file uses) is always
+marked Y, and a later contact is marked Y only when they share a Finalsite
+household with that first contact — N otherwise. Emergency contacts have no
+household in Finalsite, so a given one gets Y only when they happen to be the
+student's first contact; every other emergency contact is N. **Pickup** is
+always sent as Y for every contact in the feed, guardians and emergency contacts
+alike.
 
 > **Emergency contacts only reach a student Focus does not already have.** The
 > import-once rule matches on the student, not the individual contact — once any
@@ -311,12 +312,12 @@ won't carry a later Finalsite correction into Focus. Until a clearer sync
 process exists, treat the two systems as independent after the first import and
 harmonize them by hand:
 
-| Field                          | After initial import                                                                                      |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Demographics (all fields)      | Sent once. A Focus edit sticks; a later Finalsite change is **not** pushed.                               |
-| Entry code (`ENROLLMENT_CODE`) | Sent once (derived from grade). A wrong code must be fixed in Focus.                                      |
-| Withdraw code / end date       | Filled once onto Focus's **open** enrollment; once Focus closes it, a later change must be made in Focus. |
-| Address, contacts              | Sent once. A Focus edit sticks.                                                                           |
+| Field                           | After initial import                                                        |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| Demographics (all fields)       | Sent once. A Focus edit sticks; a later Finalsite change is **not** pushed. |
+| Entry code (`ENROLLMENT_CODE`)  | Sent once (derived from grade). A wrong code must be fixed in Focus.        |
+| Withdrawal (end date/drop code) | Never sent by the pipeline. Record a withdrawal in Focus directly.          |
+| Address, contacts               | Sent once. A Focus edit sticks.                                             |
 
 **Correct after the first import in both systems.** Fix the record in Focus so
 Focus is right today, and update Finalsite too so the two stay aligned — the
@@ -333,11 +334,17 @@ pipeline will not reconcile them for you.
 
 - **Home language** is sent as the FLDOE language code (e.g. `EN`), matching
   what Focus stores.
-- **A withdrawal depends on the last-attended date being set in Finalsite.** If
-  `withdrawal_last_attended_date` is blank, the student is treated as still
-  enrolled and no end date or drop code is sent — even if other withdrawal notes
-  exist in Finalsite. Make sure the last-attended date is recorded when a
-  student withdraws.
+- **Setting the last-attended date on a student never yet imported removes them
+  from the import path permanently.** The Student Enrollment feed holds back any
+  enrollment with an end date (see _Withdrawals are never sent to Focus_ above),
+  so a student who withdraws in Finalsite before their initial entry ever
+  reached Focus will never be sent — there is no separate withdrawal push to
+  catch them later. As of this writing, **124 students who withdrew before ever
+  reaching Focus have never been imported**, and Focus holds no record that they
+  were ever enrolled. Recording the last-attended date is still correct practice
+  for keeping Finalsite accurate, but it is not a signal this pipeline acts on,
+  and doing it early on a not-yet-imported student is effectively silent and
+  permanent.
 - **No changes flow after the first import.** Because every feed is import-once,
   a later Finalsite edit will not reach Focus and a Focus edit will not reach
   Finalsite. The two systems are kept aligned manually.
@@ -373,11 +380,14 @@ pipeline will not reconcile them for you.
   falls back to their own household instead of being skipped. A student still
   gets no address only when neither they nor their Parent 1 has a household with
   a street line.
-- **Set the last-attended date** in Finalsite when a student withdraws — it is
-  what triggers the end date and drop code being sent.
-- **Corrections after the first import are manual.** A wrong entry code, drop
-  code, or demographic field must be fixed in Focus, and the same fix made in
-  Finalsite to keep the systems aligned — the pipeline won't resend it.
+- **Setting the last-attended date early, on a student not yet imported, is
+  permanent and silent.** It does not push a withdrawal to Focus — nothing ever
+  does — it only holds that student's enrollment out of the feed for good. See
+  _Known limitations_ above.
+- **Corrections after the first import are manual.** A wrong entry code or
+  demographic field must be fixed in Focus, and the same fix made in Finalsite
+  to keep the systems aligned — the pipeline won't resend it. A withdrawal for
+  an already-imported student is likewise recorded in Focus directly.
 
 ## Questions or issues
 
