@@ -547,15 +547,87 @@ Eight columns, no header, paste over **A2** of `Expected Assessments`:
 `expected_scope`, `expected_score_type`, `expected_month_round`,
 `expected_admin_season`, `expected_admin_season_order`.
 
-### Step 5 — check nothing orphaned
+### Step 5 — audit the paste before trusting it
 
-Rebuild the staging model, then confirm every score a current student holds
-lands on an expected row. This is the check that catches a missing month:
+Rebuild the staging model into a dev schema first
+(`dbt build --select stg_google_sheets__kippfwd__expected_assessments --target dev`)
+— a Sheets external reads live, so a value edit needs no re-stage, but the
+`stg_` table is a table and will serve pre-paste content until it rebuilds.
+
+Then run all five checks. Each one catches a different way the paste goes wrong,
+and four of them fail silently in the report rather than erroring.
+
+**A — shape and symmetry.** A truncated paste shows up here and nowhere else.
+
+```sql
+select
+  expected_region,
+  count(*) as n_rows,
+  count(distinct expected_admin_season_order) as distinct_orders,
+  min(expected_admin_season_order) as min_ord,
+  max(expected_admin_season_order) as max_ord,
+  countif(expected_admin_season_order is null) as null_orders
+from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments`
+group by expected_region
+order by expected_region
+```
+
+Both regions must be identical on every column, `min_ord` must be 1, and
+`null_orders` must be 0 — the model already filters `Not Official`, so a null
+order here means a reported row lost its order value.
+
+**B — one order per administration.** Every month row of one administration
+shares a single order value. More than one means the paste mixed two blocks.
+
+```sql
+select
+  expected_grade_level, expected_test_type, expected_scope,
+  expected_score_type, expected_admin_season,
+  count(distinct expected_admin_season_order) as n_orders
+from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments`
+group by 1, 2, 3, 4, 5
+having count(distinct expected_admin_season_order) > 1
+```
+
+**C — a month in two seasons.** This one fans out scores rather than dropping
+them, so it inflates a count instead of shrinking it. Growth rows are excluded
+because they carry the season name where a month would go.
+
+```sql
+select
+  expected_grade_level, expected_test_type, expected_scope, expected_month_round,
+  string_agg(distinct expected_admin_season order by expected_admin_season) as seasons
+from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments`
+where expected_grouping != 'Growth'
+group by 1, 2, 3, 4
+having count(distinct expected_admin_season) > 1
+```
+
+**D — the admin id still identifies one administration.**
+`expected_unique_test_admin_id` hashes test type, aligned score type, grade and
+season, and `int_tableau__college_assessment_roster_scores` joins on it. Two
+administrations sharing a hash silently merge their scores.
+
+```sql
+select
+  expected_unique_test_admin_id,
+  count(distinct expected_admin_season_order) as n_orders,
+  string_agg(distinct expected_score_type order by expected_score_type) as score_types
+from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments`
+group by 1
+having count(distinct expected_admin_season_order) > 1
+```
+
+Region is deliberately absent from that hash, so both regions share ids. That is
+fine — a student belongs to one region and the enrollment join constrains it
+before the hash join runs.
+
+**E — nothing orphaned.** The check that catches a missing month:
 
 ```sql
 with
   scores as (
-    select distinct
+    select
       h.scope, h.test_type, format_date('%B', h.test_date) as test_month,
       count(distinct h.student_number) as students
     from `teamster-332318.kipptaf_assessments.int_assessments__all_college_assessments` as h
@@ -570,11 +642,16 @@ left join
   and s.test_type = a.expected_test_type
   and s.test_month = a.expected_month
 where a.expected_scope is null
+order by s.students desc
 ```
 
 Any row returned is a month holding real scores with nowhere to land.
-Cross-check it against the `Not Official` list before adding it — it may be a
+Cross-check against the `Not Official` list before adding it — it may be a
 deliberate exclusion rather than a gap.
+
+**The `Not Official` rows are invisible to all five checks**, because the
+staging model filters them out. Count them on the sheet itself; the SY26-27 spec
+carries 42. A paste that dropped them looks perfectly healthy here.
 
 ## Exception: PSAT 8/9 and PSAT 10 use official College Board tables
 
