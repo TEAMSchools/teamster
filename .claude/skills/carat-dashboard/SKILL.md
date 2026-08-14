@@ -410,6 +410,142 @@ grade differs. If a future administration needs _different_ vocabulary per
 grade, that `distinct` breaks quietly and the join needs the grade split
 instead.
 
+## Procedure: Rebuild the Expected Assessments seasons tab
+
+The `Expected Assessments` tab drives the forced scaffold in
+`int_tableau__college_assessment_roster_scores` — one expected row per student
+per assessment, covering a current student's entire high school history, so
+Tableau renders a complete progression instead of a ragged one. KIPP Forward
+owns the calendar; the data team transcribes it.
+
+**Regenerate the whole tab. Never hand-edit it.** Two failure modes, both
+silent:
+
+- `expected_admin_season_order` is a **single reverse-chronological sequence
+  across all four grades**, and inserting one administration renumbers every row
+  after it. Editing one block leaves the rest inconsistent and nothing errors —
+  Tableau just orders the seasons wrongly.
+- **A season whose months are not listed matches no scores at all.** The join
+  binds month, so an omitted month orphans every score in it with no signal.
+
+### Step 1 — read what is already there
+
+```sql
+select
+  expected_admin_season_order as ord, expected_grade_level as grade,
+  expected_test_type, expected_scope, expected_admin_season as season,
+  expected_month_round, expected_score_type
+from `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments`
+where expected_region = 'Newark'
+order by expected_admin_season_order, expected_score_type
+```
+
+That model **filters out `expected_admin_season = 'Not Official'`**, so it hides
+42 rows the tab actually holds. Read those from the sheet itself, not from the
+model, or the rebuild deletes them. They mark months where a test genuinely
+happens at a grade but is deliberately not reported — 11th-grade SAT in
+Aug/Sep/Oct/Nov, and 12th-grade in Mar/May/Jun. They carry no order value and
+are inert to every model, so they exist only as the record of that decision.
+
+### Step 2 — derive the historical months, and do not skip this
+
+The tab has **no `academic_year` column**, so one row set covers every current
+student's whole history. A test's month moves between years, so transcribing
+only this year's calendar orphans earlier cohorts' scores:
+
+```sql
+with
+  current_hs as (
+    select distinct student_number
+    from `teamster-332318.kipptaf_extracts.int_extracts__student_enrollments`
+    where academic_year = {{ current year }} and school_level = 'HS'
+      and rn_year = 1 and not is_out_of_district
+  )
+select
+  h.scope, h.test_type, format_date('%B', h.test_date) as test_month,
+  count(distinct h.student_number) as current_students
+from `teamster-332318.kipptaf_assessments.int_assessments__all_college_assessments` as h
+inner join current_hs as c on h.student_number = c.student_number
+where h.test_date is not null
+group by h.scope, h.test_type, test_month
+order by h.scope, h.test_type, current_students desc
+```
+
+Measured 2026-08: PSAT 8/9 October (785 current students), PSAT NMSQT October
+(336), PSAT10 April (416) and March (8). PSAT10's official month has moved
+February to March to April across four years. So a rebuild that puts G9 and G10
+official in March alone orphans roughly 1,500 students' PSAT scores.
+
+Scope the query to **currently enrolled** students, which self-prunes months
+only reachable by graduates. A season is defined by the month a score actually
+landed in, not by this year's plan, so a test with a moved calendar needs
+**both** months — possibly as two seasons, the way SAT already carries G11
+Winter as December _and_ March.
+
+### Step 3 — ask for the new calendar
+
+Ask KIPP Forward, per grade and test type, for the administration dates and
+which season each belongs to. Do not infer a season from a month: boundaries
+vary by grade, and G9's March is Spring while G11's March is Winter.
+
+Present the historical months from step 2 alongside their answer and **require
+an explicit decision to drop a month**. Dropping by omission is the failure this
+procedure exists to prevent.
+
+### Step 4 — generate every row
+
+Write the spec and run
+[`scripts/build_expected_assessment_rows.py`](scripts/build_expected_assessment_rows.py):
+
+```bash
+uv run python .claude/skills/carat-dashboard/scripts/build_expected_assessment_rows.py \
+    spec.json out.tsv
+```
+
+It computes the order sequence, emits one row per score type per month, emits a
+single growth row per administration carrying the **season name** in
+`expected_month_round` rather than a month, and rejects a spec where a month
+belongs to two seasons of the same test and grade, or where an administration
+has no months.
+
+Verified against the live tab: it reproduces all 110 existing SAT rows exactly,
+order values included.
+
+Eight columns, no header, paste over **A2** of `Expected Assessments`:
+
+`expected_region`, `expected_grade_level`, `expected_test_type`,
+`expected_scope`, `expected_score_type`, `expected_month_round`,
+`expected_admin_season`, `expected_admin_season_order`.
+
+### Step 5 — check nothing orphaned
+
+Rebuild the staging model, then confirm every score a current student holds
+lands on an expected row. This is the check that catches a missing month:
+
+```sql
+with
+  scores as (
+    select distinct
+      h.scope, h.test_type, format_date('%B', h.test_date) as test_month,
+      count(distinct h.student_number) as students
+    from `teamster-332318.kipptaf_assessments.int_assessments__all_college_assessments` as h
+    where h.test_date is not null
+    group by h.scope, h.test_type, test_month
+  )
+select s.*
+from scores as s
+left join
+  `teamster-332318.kipptaf_google_sheets.stg_google_sheets__kippfwd__expected_assessments` as a
+  on s.scope = a.expected_scope
+  and s.test_type = a.expected_test_type
+  and s.test_month = a.expected_month
+where a.expected_scope is null
+```
+
+Any row returned is a month holding real scores with nowhere to land.
+Cross-check it against the `Not Official` list before adding it — it may be a
+deliberate exclusion rather than a gap.
+
 ## Exception: PSAT 8/9 and PSAT 10 use official College Board tables
 
 **Status: shipped for SY26-27.** 181 rows entered and audited clean (every
