@@ -106,7 +106,7 @@ wrote to dlt `resource_state`.
 
 - **Gating cannot move into the op.** A `replace` resource that yields zero rows
   truncates its table, so a skip has to be an exclusion from the run. Probing in
-  the op would also plan all 77 assets every tick and emit
+  the op would also plan all 76 assets every tick and emit
   `ASSET_FAILED_TO_MATERIALIZE` for the skipped ones.
 - **The signature is written inside the extracted resource.** dlt commits state
   only from resources that reached the load package, so a failed load keeps the
@@ -124,11 +124,10 @@ wrote to dlt `resource_state`.
   (see the design spec's _Partially resolved risk_ section).
 - **Enable order matters.** The sensor selects any table with no stored
   signature, so enabling it before every table has a seeded baseline makes the
-  first tick select all 77 tables at once. The `0 4 * * *` schedule now only
-  seeds the two count-only tables (`co_teachers`, `login_history`) — it is no
-  longer a full-77-table refresh, so it cannot be relied on to seed the other 75
-  by itself. Seed all 77 with a manual launch of the Focus asset job first, then
-  enable the sensor.
+  first tick select all 76 tables at once. The `0 4 * * *` schedule now only
+  seeds the count-only tables (`co_teachers`) — it is no longer a full-76-table
+  refresh, so it cannot be relied on to seed the other 75 by itself. Seed all 76
+  with a manual launch of the Focus asset job first, then enable the sensor.
 
 ## Testing Constraints
 
