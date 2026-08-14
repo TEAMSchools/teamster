@@ -279,6 +279,26 @@ models:
         description: >-
           Highest score for this score type as of this test date, so an earlier
           sitting is not retroactively improved by a later one.
+      - name: previous_total_score_change
+        data_type: numeric
+        description: >-
+          Change in total score from the student's previous practice
+          administration of the same test. Positive means improvement, null on
+          their first administration. Mirrors the column of the same name on
+          int_assessments__college_assessment so the union carries one meaning.
+
+
+          Total rows drive it and every row of that administration carries the
+          result, matching how the official hub spreads it across a sitting. A
+          section's own change is not computed — the roster reports growth at
+          the total grain, and the goals sheet has no section growth score type.
+
+
+          Keyed on the administration rather than the date, because two
+          administrations can share a date where a school splits its testing
+          across days. Reads null everywhere today: no student yet holds two
+          practice administrations of one test, ACT1 being AY2023 only and SAT1
+          AY2026 only.
       - name: rn_highest
         data_type: int64
         description: >-

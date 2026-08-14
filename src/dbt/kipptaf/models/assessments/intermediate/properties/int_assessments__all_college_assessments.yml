@@ -9,11 +9,11 @@ models:
       hub's vocabulary at the union.
 
 
-      Ten columns are official-only and read null on practice rows —
+      Nine columns are official-only and read null on practice rows —
       aligned_subject, salesforce_id, the two score-shape counts, surrogate_key,
-      previous_total_score_change, and the four superscore fields. They are
-      computed inside the official hub rather than here. Moving them below the
-      union so they populate for both is separate work.
+      and the four superscore fields. They are computed inside the official hub
+      rather than here. Moving them below the union so they populate for both is
+      separate work.
 
 
       The practice hub now supplies is_overall_score, is_subject_score,
@@ -190,8 +190,19 @@ models:
       - name: previous_total_score_change
         data_type: numeric
         description: >-
-          Change in total score from the student's previous sitting of the same
-          scope. Positive means improvement. Null on the first sitting.
+          Change in total score from the student's previous administration of
+          the same scope. Positive means improvement, null on the first one.
+          Populated for both test types, each hub computing its own.
+
+
+          The unit differs by one dimension, as with strategy_case. Official
+          keys on test date, so it measures sitting to sitting. Practice keys on
+          scope_round, because schools can split one administration across days
+          and two administrations can therefore share a date.
+
+
+          Practice reads null throughout today: no student holds two practice
+          administrations of one test yet.
       - name: superscore
         data_type: numeric
         description: >-

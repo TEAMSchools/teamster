@@ -74,8 +74,8 @@ with
 
             running_max_scale_score,
             max_scale_score,
+            previous_total_score_change,
 
-            cast(null as numeric) as previous_total_score_change,
             cast(null as numeric) as superscore,
             cast(null as numeric) as avg_running_max_superscore,
             cast(null as numeric) as sum_running_max_superscore,

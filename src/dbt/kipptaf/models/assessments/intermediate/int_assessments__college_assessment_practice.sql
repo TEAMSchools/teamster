@@ -259,44 +259,78 @@ with
             administration_round,
             actual_total_subjects_tested,
             expected_total_subjects_tested
+    ),
+
+    /* Change in total score from the student's previous practice administration of
+       the same test, mirroring previous_total_score_change on the official hub.
+       Total rows only -- a section's change is not what the roster reports -- and
+       keyed on the administration rather than the date, because two administrations
+       can share a date where a school splits its testing. */
+    growth as (
+        select
+            academic_year,
+            powerschool_student_number,
+            scope,
+            scope_round,
+            grade_level,
+
+            scale_score - lag(scale_score) over (
+                partition by powerschool_student_number, scope
+                order by test_date asc, scope_round asc
+            ) as previous_total_score_change,
+
+        from scores
+        where response_type = 'Total'
     )
 
 select
-    *,
+    s.*,
+
+    g.previous_total_score_change,
 
     /* response_type stays in the partition so group rows rank among themselves
        and never displace the subject row before being nulled. */
     if(
-        response_type = 'Group',
+        s.response_type = 'Group',
         null,
         row_number() over (
-            partition by powerschool_student_number, scope, score_type, response_type
-            order by scale_score desc
+            partition by
+                s.powerschool_student_number, s.scope, s.score_type, s.response_type
+            order by s.scale_score desc
         )
     ) as rn_highest,
 
-    if(response_type = 'Total', 1, 0) as is_overall_score,
+    if(s.response_type = 'Total', 1, 0) as is_overall_score,
 
-    if(response_type = 'Subject', 1, 0) as is_subject_score,
+    if(s.response_type = 'Subject', 1, 0) as is_subject_score,
 
     /* Case 1 cannot occur -- a total is derived from its sections, so practice
        never produces one without them. */
     if(
-        actual_total_subjects_tested = expected_total_subjects_tested,
+        s.actual_total_subjects_tested = s.expected_total_subjects_tested,
         'Case 3',
         'Case 2'
     ) as strategy_case,
 
     if(
-        response_type = 'Group',
+        s.response_type = 'Group',
         null,
-        max(scale_score) over (
-            partition by powerschool_student_number, scope, score_type, response_type
+        max(s.scale_score) over (
+            partition by
+                s.powerschool_student_number, s.scope, s.score_type, s.response_type
         )
     ) as max_scale_score,
 
-    max(scale_score) over (
-        partition by powerschool_student_number, score_type order by test_date asc
+    max(s.scale_score) over (
+        partition by s.powerschool_student_number, s.score_type order by s.test_date asc
     ) as running_max_scale_score,
 
-from scores
+from scores as s
+left join
+    growth as g
+    on s.academic_year = g.academic_year
+    and s.powerschool_student_number = g.powerschool_student_number
+    and s.scope = g.scope
+    and s.scope_round = g.scope_round
+    and s.grade_level = g.grade_level
+    and g.previous_total_score_change is not null
