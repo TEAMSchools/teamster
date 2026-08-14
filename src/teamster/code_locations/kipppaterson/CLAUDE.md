@@ -63,12 +63,14 @@ Consequences:
 
 ## Schedules
 
-Paterson has no freshness checks. PowerSchool dlt runs on an intraday
-change-detection sensor (`kipppaterson__powerschool__dlt__intraday_sensor`,
-15-min probe) plus one nightly cron schedule (unconditional full-refresh +
-re-baseline, matching kippnewark's cadence). DeansList, Finalsite `contacts`,
-and the PowerSchool autocomm `extracts` job add nightly schedules; Finalsite
-`status_report` (`couchdrop_sftp_sensor`), Amplify
-(`build_amplify_mclass_sftp_sensor`), Titan (`build_titan_sftp_sensor`), and
-PowerSchool intraday are sensor-driven. `AutomationConditionSensor` handles any
-assets with an automation condition defined (e.g. `pearson`).
+Titan `person_data` and `stg_titan__person_data` carry a 1:00am
+`FreshnessPolicy.cron` (matching Newark and Camden); no other Paterson asset has
+a freshness check. PowerSchool dlt runs on an intraday change-detection sensor
+(`kipppaterson__powerschool__dlt__intraday_sensor`, 15-min probe) plus one
+nightly cron schedule (unconditional full-refresh + re-baseline, matching
+kippnewark's cadence). DeansList, Finalsite `contacts`, and the PowerSchool
+autocomm `extracts` job add nightly schedules; Finalsite `status_report`
+(`couchdrop_sftp_sensor`), Amplify (`build_amplify_mclass_sftp_sensor`), Titan
+(`build_titan_sftp_sensor`), and PowerSchool intraday are sensor-driven.
+`AutomationConditionSensor` handles any assets with an automation condition
+defined (e.g. `pearson`).

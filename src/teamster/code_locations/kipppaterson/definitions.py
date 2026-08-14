@@ -16,11 +16,13 @@ from teamster.code_locations.kipppaterson import (
     deanslist,
     extracts,
     finalsite,
+    freshness,
     pearson,
     powerschool,
     titan,
 )
 from teamster.code_locations.kipppaterson.resources import FINALSITE_RESOURCE
+from teamster.core.freshness import apply_freshness_policies
 from teamster.core.resources import (
     BIGQUERY_RESOURCE,
     DEANSLIST_RESOURCE,
@@ -39,17 +41,20 @@ from teamster.core.resources import (
 
 defs = Definitions(
     executor=k8s_job_executor,
-    assets=load_assets_from_modules(
-        modules=[
-            dbt,
-            amplify,
-            deanslist,
-            extracts,
-            finalsite,
-            pearson,
-            powerschool,
-            titan,
-        ]
+    assets=apply_freshness_policies(
+        load_assets_from_modules(
+            modules=[
+                dbt,
+                amplify,
+                deanslist,
+                extracts,
+                finalsite,
+                pearson,
+                powerschool,
+                titan,
+            ]
+        ),
+        policies=freshness.policies,
     ),
     schedules=[
         *deanslist.schedules,
