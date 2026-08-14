@@ -422,6 +422,15 @@ sources:
             data_type: float64
           - name: pct_college_ready
             data_type: float64
+          # cohort-independent goals for the over time view, which reports on
+          # neither grade level nor cohort. Stated on every row, so the over time
+          # branch never falls back to a per-grade goal for a benchmark. Declared
+          # for the same reason as pct_2_plus_attempts above — autodetect drops a
+          # column that goes fully null.
+          - name: pct_hs_ready_over_time
+            data_type: float64
+          - name: pct_college_ready_over_time
+            data_type: float64
       - name: src_google_sheets__kippfwd__expected_assessments
         external:
           options:

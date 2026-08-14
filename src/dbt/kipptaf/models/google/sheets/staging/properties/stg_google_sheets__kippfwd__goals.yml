@@ -32,6 +32,7 @@ models:
               - grade_level
               - score_type
               - expected_metric_type
+              - is_over_time_goal
           config:
             severity: error
             # expected_metric_type is in the key because the unpivot emits one
@@ -39,7 +40,9 @@ models:
             # one-for-one with grade_level, so it would never break a tie.
             # score_type is in it because grade 10 carries separate PSAT10, PSAT
             # NMSQT, and combined rows, and grade_level is in it because SAT
-            # appears at both 11 and 12.
+            # appears at both 11 and 12. is_over_time_goal is in it because the
+            # sheet's over time columns strip to the same expected_metric_type as
+            # their per-grade counterparts.
     columns:
       - name: academic_year
         data_type: int64
@@ -80,11 +83,33 @@ models:
           Which metric the goal targets — pct_1_attempt, pct_2_plus_attempts,
           pct_hs_ready, or pct_college_ready. Values are the sheet's wide column
           names, carried through by the unpivot, so adding a metric to the sheet
-          adds rows here rather than columns.
+          adds rows here rather than columns. The sheet's two over time columns
+          strip to the same four values, so this column names the metric and
+          is_over_time_goal names which framing of it, keeping consumers off
+          suffixed string matching.
       - name: expected_metric_goal
         data_type: float64
         description: >-
           Share of students expected to meet the metric, as a 0-1 fraction.
+      - name: is_over_time_goal
+        data_type: boolean
+        description: >-
+          Whether the goal is the cohort-independent one stated for the over
+          time view, which reports on neither grade level nor cohort and so
+          cannot use a per-grade goal. False rows are the per-grade goals every
+          other view reads.
+
+
+          Stated on every row, so a benchmark goal always resolves from one
+          place rather than sometimes falling back to the per-grade columns. SAT
+          is the only score type where the two disagree, being the only one
+          stated at more than one grade.
+
+
+          The sheet has no over time column for the Attempts metrics, whose
+          goals match across a score type's grades, so those have no true row
+          here. UNPIVOT excludes nulls, so an absent over time goal is a missing
+          row rather than a row with a null goal.
       - name: expected_goal_type
         data_type: string
         description: >-

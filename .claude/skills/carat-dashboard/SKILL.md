@@ -51,6 +51,8 @@ Cite the doc rather than re-deriving:
 | The roster returns two rows for one student           | same — `test_type` is in the grain                   |
 | A percent-met or benchmark total moved                | _Why the benchmark dashboard's totals change_        |
 | Two records for one sitting, or an inflated row count | _Known issue — duplicate kippadb test records_       |
+| A goal line moved, or does not match the strategy doc | _The rebuilt goals tab — what shipped_               |
+| `_over_time` shows two rows per student for one goal  | same — resolved by the `_over_time` goal columns     |
 
 Each of those carries the measured numbers, so an answer can cite them instead
 of re-running a comparison. If a reconciliation disagrees with the documented
@@ -605,8 +607,15 @@ doc. Two decisions have been taken:
 - **`EA/ED-Ready` is retired.** The three hardcoded entries — PSAT 8/9 and
   PSAT10/NMSQT at 1100, SAT at 1200 — come out. SAT 1200 exists nowhere else, so
   check for downstream filters on that `benchmark_group` before deleting.
-- **PSAT 8/9 HS-Ready is 790, not the hardcoded 800.** Fixed in the new goals
-  staging sheet rather than in code, so the number becomes data.
+- **PSAT 8/9 HS-Ready is 790, not the hardcoded 800.** Fixed on the scaffold
+  rather than in code, so the number becomes data. Shipped — the model
+  reads 790.
+
+The rebuilt sheet also corrected an **inverted PSAT 8/9 percentage pair**. The
+retired sheet had HS-Ready at 0.34 against a threshold of 800 and College-Ready
+at 0.60 against 860 — a harder bar with a higher expected share. It now reads
+0.50 and 0.30. PSAT10 and NMSQT were never inverted, so do not go looking for
+the same fault there.
 
 Subject thresholds are currently split across two systems — the College-Ready
 tier (EBRW 480, Math 530) lives in `_benchmark_calcs`, the grad-bar tier (EBRW
@@ -615,17 +624,49 @@ homes.
 
 ### The rebuilt goals tab — what shipped
 
-The sheet was rebuilt on named range `src_google_sheets__kippfwd_goals_v3`, nine
-columns:
+The sheet was rebuilt on named range `src_google_sheets__kippfwd_goals_v3`,
+**eleven** columns spanning A:K:
 
 ```text
 academic_year, test_type, grade_level, cohort, score_type,
-pct_1_attempt, pct_2_plus_attempts, pct_hs_ready, pct_college_ready
+pct_1_attempt, pct_2_plus_attempts, pct_hs_ready, pct_college_ready,
+pct_hs_ready_over_time, pct_college_ready_over_time
 ```
 
-Staging unpivots the four percentage columns to long, so a metric is a row
-rather than a column. Ten sheet rows become 34, not 40 — UNPIVOT drops nulls,
-and every PSAT row is blank for `pct_2_plus_attempts`.
+Staging unpivots all six percentage columns to long, so a metric is a row rather
+than a column. Ten sheet rows become 54 — 34 per-grade rows (UNPIVOT drops
+nulls, and every PSAT row is blank for `pct_2_plus_attempts`) plus 20 over-time
+rows.
+
+**The two `_over_time` columns exist because `_over_time` reports on neither
+grade level nor cohort**, and the per-grade goals disagree for SAT. Staging
+strips the suffix and sets `is_over_time_goal`, so both framings land under the
+same four `expected_metric_type` values. Consequence: **a consumer reading this
+staging model must filter `is_over_time_goal` or it sees both.**
+
+Widening the range is the step that is easy to miss. Adding the columns to the
+tab is not enough — the named range was A:I, and because the source declares
+`columns:` explicitly with `skip_leading_rows: 1`, mapping is **positional**.
+Out- of-range columns therefore read all-null rather than erroring, header
+spelling is irrelevant, and the only symptom is that no row has
+`is_over_time_goal` true. A column add also needs `stage_external_sources` with
+`ext_full_refresh: true`; a value edit does not.
+
+**The over-time values are provisional — they hold the dashboard steady, they
+are not authoritative goals.** Each is set to what the report already displays:
+
+| Score type                         | HS-Ready | College-Ready | vs prod                     |
+| ---------------------------------- | -------- | ------------- | --------------------------- |
+| `sat_total_score`                  | 0.35     | 0.17          | matches (Tableau's `MIN()`) |
+| `psat10_total` / `psatnmsqt_total` | 0.55     | 0.28          | matches                     |
+| `psat89_total`                     | 0.60     | 0.30          | prod's values, un-inverted  |
+
+They are deliberately **not** the topline per-cohort goals above — class of 2027
+is 45% / 22%, class of 2028 is 55% / 28%. KIPP Forward has not stated a
+cohort-independent goal yet, so the placeholder is the status quo rather than a
+guess. **Do not "correct" these to a topline value, and do not report them as a
+discrepancy against the strategy doc.** Ask KIPP Forward what the over-time goal
+should be.
 
 Three things this resolved, all previously listed here as unmodellable:
 

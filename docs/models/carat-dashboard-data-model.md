@@ -222,6 +222,18 @@ silently changes what a view reports:
 | `expected_aligned_subject_area` | **merged**          | merged          |
 | `expected_grouping`             | separate            | **separate**    |
 
+`expected_aligned_subject_area` merges **both** ways — Composite and Combined to
+Total, _and_ ACT Reading to EBRW/Reading. The assessment hub splits those across
+two columns: `aligned_subject_area` folds only to Total, and `aligned_subject`
+folds both. So despite the matching name, the scaffold's column is the hub's
+`aligned_subject`, not its `aligned_subject_area`.
+
+A consumer needing the hub's narrower framing has to derive it.
+`int_google_sheets__kippfwd__goals_unpivot` does, with an `if()` on
+`expected_subject_area`. Passing the scaffold's column straight through under
+the hub's name is a silent relabel — EBRW rows read `EBRW/Reading` where the
+report expects `EBRW`, and it type-checks and builds clean.
+
 ### Gotchas
 
 **`expected_grade_level` is a string holding a comma-separated list.** One row
@@ -344,7 +356,8 @@ The sheet is wide — `academic_year`, `test_type`, `grade_level`, `cohort`,
 goal is identified by:
 
 ```text
-(academic_year, test_type, grade_level, score_type, expected_metric_type)
+(academic_year, test_type, grade_level, score_type, expected_metric_type,
+ is_over_time_goal)
 ```
 
 `expected_metric_type` holds the sheet's own column names (`pct_1_attempt`,
@@ -352,6 +365,21 @@ goal is identified by:
 reproduce the vocabulary the reporting views already key on:
 `expected_goal_type` is Attempts or Benchmark, and `expected_goal_subtype` is
 `1 Attempt`, `2+ Attempts`, `HS-Ready` or `College-Ready`.
+
+`is_over_time_goal` is why the key has six columns rather than five. The sheet
+carries two extra percentage columns, `pct_hs_ready_over_time` and
+`pct_college_ready_over_time`, holding a cohort-independent goal for
+`_over_time`, which reports on neither grade level nor cohort and so cannot use
+a per-grade goal. Staging strips the `_over_time` suffix, so those rows land
+under the same four `expected_metric_type` values and the flag says which
+framing a row is. Stripping keeps the two CASEs above at four arms — the new
+rows inherit `Benchmark` and `HS-Ready` automatically instead of needing new
+branches that could be missed.
+
+The practical consequence: **anything reading this model that does not filter
+the flag sees both framings.** `int_google_sheets__kippfwd__goals_unpivot`
+filters it on both branches. A view still reading staging directly must add
+`where not is_over_time_goal` or it double-counts every SAT and PSAT benchmark.
 
 Those four subtype strings are spelled out rather than derived. They disagree on
 separator — a space for attempts, a hyphen for ready — and on casing, and `HS`
@@ -366,6 +394,11 @@ than columns. Two things must move with it: the `expected_goal_type` and
 `expected_goal_subtype` CASEs, which have no `else` and will read null for an
 unnamed metric — deliberately, so a new column surfaces rather than being folded
 silently into an existing family.
+
+An `_over_time` variant of an existing metric is the exception: the suffix strip
+lands it on a name both CASEs already handle, so only the sheet and the source
+`columns:` block change. That is the point of stripping rather than carrying the
+raw column name.
 
 UNPIVOT drops nulls, so a metric blank for a given row produces no row at all
 rather than a row with a null goal. Every PSAT row is blank for
@@ -423,7 +456,7 @@ Benchmark goals answer "what share of students scored at or above a threshold."
 | Model                                                       | How                                                                   | In workbook |
 | ----------------------------------------------------------- | --------------------------------------------------------------------- | ----------- |
 | `rpt_tableau__college_assessment_dashboard_current`         | inner join on `score_type`, `goal_type != 'Board'`, all granularities | yes         |
-| `rpt_tableau__college_assessment_dashboard_over_time`       | `goal_type != 'Board'` and `region is null and schoolid is null`      | yes         |
+| `rpt_tableau__college_assessment_dashboard_over_time`       | `int_google_sheets__kippfwd__goals_unpivot`, over-time branch         | yes         |
 | `rpt_gsheets__college_assessments_long`                     | `goal_type = 'Benchmark'`, network only, `avg(min_score)`             | no          |
 | `rpt_tableau__college_assessment_dashboard_benchmark_calcs` | **none** — thresholds hardcoded in SQL                                | yes         |
 
@@ -457,14 +490,22 @@ Current values, and how they compare to the SY26-27 strategy doc:
 | PSAT 10 / NMSQT | `psat10_total` / `psatnmsqt_total` | 840      | 910           |
 | PSAT 10 / NMSQT | `*_ebrw`                           | 420      | 430           |
 | PSAT 10 / NMSQT | `*_math_section`                   | 420      | 480           |
-| PSAT 8/9        | `psat89_total`                     | **800**  | 860           |
+| PSAT 8/9        | `psat89_total`                     | 790      | 860           |
 | PSAT 8/9        | `psat89_ebrw`                      | 400      | 410           |
 | PSAT 8/9        | `psat89_math_section`              | 400      | 450           |
 | ACT             | `act_composite`                    | 17       | 21            |
 | ACT             | `act_math` / `act_reading`         | 17       | 22            |
 
-Every total-level threshold matches the strategy doc except **PSAT 8/9 HS-Ready,
-which the sheet has at 800 and the doc at 790.**
+Every total-level threshold now matches the SY26-27 strategy doc. PSAT 8/9
+HS-Ready was the one exception, at 800 on the sheet against 790 in the doc; the
+rebuilt scaffold has it at 790.
+
+The rebuilt sheet also corrected an inverted PSAT 8/9 percentage pair. The
+retired sheet had HS-Ready at 0.34 against a threshold of 800 and College-Ready
+at 0.60 against 860 — a harder bar with a higher expected share. The per-grade
+columns now read 0.50 and 0.30, and the over-time columns read 0.60 and 0.30,
+keeping the retired sheet's two values with the pair the right way round. PSAT10
+and NMSQT were never inverted, so this was specific to PSAT 8/9.
 
 ### Dropping region and school is lossless for the PSATs, not for SAT
 
@@ -478,6 +519,36 @@ Grade level is also load-bearing for SAT: College-Ready is 0.22 at grade 11 and
 0.17 at grade 12. Those are two cohorts, not two grades, which is why a
 reformatted sheet needs a cohort or grade key rather than dropping the dimension
 outright.
+
+The rebuilt sheet keeps the grade key, and grade now pairs one-to-one with
+cohort — grade 12 is cohort 2027, grade 11 is cohort 2028. So the two SAT rows
+are goals for two different cohorts, both correct, not a conflict.
+
+That left `_over_time` with no right answer, since it projects neither grade nor
+cohort. Prod cross joins the whole goal set, so those two rows arrive as two
+indistinguishable rows per student differing only in `pct_goal` — 42 goal rows
+per student where there are 40 distinct combinations, with Tableau resolving the
+pair by `MIN()`. That is where the dashboard's 35% HS-Ready and 17%
+College-Ready come from: the grade 12 value, picked by aggregation rather than
+by decision.
+
+The `_over_time` columns replace that. One cohort-independent goal per benchmark
+metric is stated on the sheet, `_over_time` reads it directly, and the per-grade
+rows are untouched for the views that do report on grade.
+
+Those columns are currently set to **the goals the dashboard already displays**,
+so the reported goal lines hold steady while the provenance changes — SAT at
+0.35 and 0.17, PSAT10 and NMSQT at 0.55 and 0.28, all matching prod exactly.
+PSAT 8/9 is the one departure, at 0.60 and 0.30, because prod's pair was
+inverted. They are deliberately **not** the topline per-cohort goals; KIPP
+Forward has not yet stated a cohort-independent goal, so the placeholder is the
+status quo rather than a guess. Do not reconcile them against the strategy doc's
+per-cohort table.
+
+No pick happens in SQL, and `test_kippfwd_goals_over_time_collapse` fails if a
+collapse ever becomes a pick again — either an `_over_time` goal stated
+inconsistently across a score type's grade rows, or a per-grade goal that
+disagrees with no `_over_time` goal to override it.
 
 ### Two cohort fields, both official, and the models disagree
 
@@ -512,20 +583,77 @@ and each gets the right denominator.
 ## `int_google_sheets__kippfwd__goals_unpivot`
 
 Pairs each goal with the threshold it is measured against, so a consumer reads
-one model instead of joining two sheets. One row per academic year, test type,
-grade level, score type and metric.
+one model instead of joining two sheets.
 
-### What it does
+### Two branches, because the reporting views disagree on grain
 
-The goals sheet arrives already long, having unpivoted its percentage columns in
-staging. This model unpivots the **scaffold's** four min-score columns onto the
-same metric vocabulary and joins the two on
-`(academic_year, test_type, score_type, grade_level, expected_metric_type)`.
+The model is a `UNION ALL` of two branches, and `rpt_consumers` names the views
+that read each. **Edit the branch your view is listed on**; that column is the
+record of what else the edit moves.
+
+| Branch            | Driven from | Grain                                          | `rpt_consumers`                |
+| ----------------- | ----------- | ---------------------------------------------- | ------------------------------ |
+| `goals_by_grade`  | goals sheet | year, test type, **grade**, score type, metric | `_roster`, `_current`, `_wide` |
+| `goals_over_time` | scaffold    | year, test type, score type, metric (no grade) | `_over_time`                   |
+
+`rpt_consumers` is an `ARRAY<STRING>`, so a consumer selects its branch with
+`cross join unnest(rpt_consumers) as rpt_consumer` and filters that plain
+column. Appending a consumer therefore never changes an existing filter, and an
+array cannot be folded into a grouping key by accident the way a delimited
+string can.
+
+The branches also tell themselves apart in the data: `grade_level` is non-null
+on every by-grade row and null on every over-time row, which is why the
+uniqueness test holds across the union without naming the branch.
+
+### Which side drives, and why it differs per branch
+
+`goals_by_grade` left joins **from the goals sheet** on
+`(academic_year, test_type, score_type, grade_level, expected_metric_type)`, so
+every goal survives and a threshold nobody wrote a goal for never appears. 34
+rows today, 31 with a threshold.
+
+`goals_over_time` reverses it and drives **from the scaffold**, looking the
+percentage up. Every threshold the scaffold states gets a row whether or not a
+goal exists for it, because `_over_time` plots the metric regardless and the
+goal is only a reference line. 80 rows today, all with a threshold, 23 with a
+goal — the ACT and every section-level bar carry a null `pct_goal`, exactly as
+prod does.
 
 Mapping the scaffold's column names onto the goals vocabulary is a CASE, because
 the two sides spell the same concept differently — `hs_ready_min_score` against
 `pct_hs_ready`. If the staging model is ever renamed to a neutral vocabulary,
 that CASE disappears and both sides simply agree.
+
+### Attempts exist only at the total grain on the over-time branch
+
+An attempt is one sitting of a test, recorded on the total row. A section row is
+a slice of that same sitting and carries no attempt count of its own.
+
+The scaffold does not encode this: it sets `a1_attempt_min_score` to 1 and
+`a2_plus_attempts_min_score` to 2 on **every** row, sections included. Reading
+those literally invents 44 goal combinations the report has never had. Prod's
+goal set contains zero Attempts-on-section rows, so the rule below reproduces
+prod's Official set exactly — 40 combinations against prod's 40 distinct —
+rather than imposing a new judgment:
+
+```sql
+where
+    expected_grouping != 'Growth'
+    and (
+        expected_goal_type = 'Benchmark'
+        or expected_aligned_subject_area = 'Total'
+    )
+```
+
+Benchmark rows are kept at every grain, sections included, because prod has 20
+of those. Growth is excluded for a related reason — a score _change_ is neither
+a sitting nor a score to compare against a bar — and it is written against the
+scaffold's own `Growth` label rather than naming `sat_total_score_growth`, so a
+second growth row would be handled without a code change.
+
+Row math out of the scaffold unpivot: 126 rows, less 2 Growth, less 44
+Attempts-on-section, leaves 80.
 
 ### The grade split is load-bearing
 
@@ -544,13 +672,24 @@ Values are trimmed as well, because a sheet edit that types `11, 12` would
 otherwise break the join with no error. This is the pattern the scaffold's own
 column description prescribes.
 
-### Driven from goals, so gaps stay visible
+The split lives in its own CTE, `scaffold_by_grade`, and feeds the by-grade
+branch **only**. The over-time branch reads the unsplit `scaffold_unpivot`,
+because it has no grade to match on. Moving the split upstream into the shared
+CTE would hand the over-time branch two identical rows for every SAT bar and
+silently double its output.
 
-The join is a left join from goals. A goal whose score type has no scaffold row
-survives with a null threshold rather than disappearing — `psat10nmsqt_total` is
-in that state today, a combined PSAT10 and NMSQT goal with no matching scaffold
-row. Adding one means widening the scaffold's `expected_scope` accepted values
-to admit `PSAT10/NMSQT`, since a combined row has no single honest scope.
+### The `psat10nmsqt_total` gap
+
+Because the by-grade branch left joins from goals, a goal whose score type has
+no scaffold row survives with a null threshold rather than disappearing.
+`psat10nmsqt_total` is in that state today — a combined PSAT10 and NMSQT goal
+with no matching scaffold row, and the 3 of 34 rows that carry no threshold.
+Adding one means widening the scaffold's `expected_scope` accepted values to
+admit `PSAT10/NMSQT`, since a combined row has no single honest scope.
+
+It is absent from the over-time branch entirely, which is correct rather than a
+second gap: that branch is scaffold-driven, so a goal with no scaffold row has
+nothing to attach to.
 
 ### `expected_metric_label` is not unique per row
 
@@ -558,12 +697,19 @@ The model carries a scope-and-metric token — `sat_1_attempt`, `psat89_hs_ready
 — so a consumer can PIVOT to one column per metric. It reproduces the vocabulary
 the retired sheet derived through an 18-branch CASE.
 
-It repeats across grades. Grades 11 and 12 both carry `sat_total_score`, so each
-SAT label appears twice. The Attempts metrics hold the same threshold and target
-at both grades, so aggregating over the label is safe for those. **The Benchmark
-metrics do not** — grade 11 and 12 differ on the target, so a PIVOT grouping on
-the label alone averages two grades into one wrong number. Keep `grade_level` in
-the grouping for anything Benchmark.
+It repeats across grades on the by-grade branch. Grades 11 and 12 both carry
+`sat_total_score`, so each SAT label appears twice. The Attempts metrics hold
+the same threshold and target at both grades, so aggregating over the label is
+safe for those. **The Benchmark metrics do not** — grade 11 and 12 differ on the
+target, so a PIVOT grouping on the label alone averages two grades into one
+wrong number. Keep `grade_level` in the grouping for anything Benchmark.
+
+`expected_metric_name` is the separate, display-facing label `_over_time` reads,
+and it is not interchangeable with the token above. Benchmark rows carry the
+subtype alone — `HS-Ready` — while Attempts rows carry the scope too,
+`SAT 2+ Attempts`, because an attempt count means nothing without naming the
+test. Both columns are derived once in the final select and so hold the same
+values on either branch.
 
 ## `int_assessments__college_assessment_practice`
 
