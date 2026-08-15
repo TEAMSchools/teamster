@@ -967,6 +967,219 @@ CARAT rollover work, so they are recorded as done rather than pending:
   longer exists anywhere in the project. Attempts count distinct test dates on
   the hub, so duplicate Salesforce records no longer read as separate sittings.
 
+## `int_tableau__college_assessment_roster_scores`
+
+One row per administration the Expected Assessments tab expects of a student,
+carrying the score they earned in it, for every current student graduating this
+year or later. It spans a student's whole high school history rather than the
+current year, because the roster dashboard reports progress across
+administrations.
+
+The tab drives it. A score sat in a month the tab does not list has nowhere to
+land and does not appear — widening coverage is an edit to the tab, not to this
+model.
+
+### One join, not two pipelines
+
+The model now reads `int_assessments__all_college_assessments`, so official and
+practice arrive already reconciled to one vocabulary. The join binds
+`expected_month_round` to the hub's `aligned_month_round`, which carries a month
+name for official rows and a `scope_round` for practice, so a single predicate
+serves both. That replaced a two-branch union whose SAT and PSAT halves were
+near-identical.
+
+Three bindings carry the weight, and one of them is deliberately asymmetric:
+
+- **`test_type`** — a practice scaffold row matches a practice score only. This
+  was previously unbound, which is what produced the fabricated practice rows
+  described below.
+- **`aligned_month_round`** — the administration a score belongs to. Previously
+  bound on the SAT branch only.
+- **`academic_year`, for SAT only.** Grades 11 and 12 both report a Winter
+  season and both include December and January, so an unbound December score
+  would attach to both grades' rows.
+
+### Why every scope except SAT is unbound on year
+
+PSAT NMSQT is normally sat in grade 11, but the tab carries it at grade 10 only.
+150 current students sat it in grade 11, and their scores reach the report
+solely because no year binds a score to the enrollment row supplying its season
+— the student's grade 10 enrollment row, in a different academic year, matches
+the grade 10 scaffold row and collects the score.
+
+Binding the year would drop those 150. The alternative — adding a grade 11 NMSQT
+row to the tab — is worse: the tab has no cohort dimension, so every row added
+is expected of every student forever, and a grade 11 NMSQT row would read as a
+missing assessment for every future student when nobody is expected to sit it
+anymore.
+
+The cost of forcing them onto the grade 10 row is bounded. Of the 150, 68 sat
+NMSQT only in grade 11, so the grade 10 row is their single data point either
+way. The other 82, all class of 2027, sat it in both grades and show their best
+score rather than both administrations. Worth confirming with KIPP Forward
+whether they want that split out. `TODO(#4658)`.
+
+### Growth is measured in season order, and practice counts
+
+The value on a `Score Change` row lags over `expected_admin_season_order`, not
+test date, so it measures the seasons this report displays rather than every
+sitting a student had. It is computed as `total_growth_score_change` inside the
+model and reaches consumers as `score`, paired with that category. Season order
+is reverse-chronological — 1 is the most recent — so ordering `desc` walks a
+student's history forwards in time and `lag()` reads the earlier season.
+
+Practice administrations are ordinary links in that chain. The grade 11 practice
+SAT sits at order 17, the far end of the SAT sequence, so a grade 11 Winter
+score's change is measured against it. Nothing in the model treats practice
+specially; it follows from binding `test_type` correctly.
+
+It stays restricted to SAT totals because those are the only administrations the
+tab carries a Growth row for — grade 11 Winter and Spring, grade 12 Fall and
+Winter. Subject growth becomes available the moment KIPP Forward adds those
+rows.
+
+The hub's own `previous_score_change` is deliberately **not** used here. It
+chains every administration a student has, including the ones the tab lists
+under `Not Official`, so a growth figure taken from it would be measured against
+a score the dashboard does not show.
+
+### It emits score categories long, so its consumers do not
+
+The model has two consumers — `rpt_tableau__college_assessment_dashboard_roster`
+and `rpt_gsheets__college_assessments_wide` — and both used to open with a
+byte-identical CTE unioning the model to itself, once as `Scale Score` and once
+as `Score Change`. That union now lives here, so each row carries `score` and
+`score_category` and both views join straight through.
+
+Folding the model into one of those views was the alternative, and it would have
+forced the same 120 lines into the other. Two views got shorter instead.
+
+The union is expressed as an `UNPIVOT`, which drops null rows, so an
+administration with no growth produces no `Score Change` row rather than one
+holding null. That is not a behavior change: a consumer left joining the
+scaffold reads null either way. It does cut the row count — 7,791 `Scale Score`
+rows plus 1,170 `Score Change`, against 15,582 when both categories were emitted
+for every administration.
+
+### What the repointing changed
+
+Official SAT, PSAT10 and PSAT NMSQT are unchanged — same rows, same students,
+zero score disagreements against production. The other two groups changed, and
+both were production defects:
+
+| group                         | before | after | why                                            |
+| ----------------------------- | -----: | ----: | ---------------------------------------------- |
+| Official SAT / PSAT10 / NMSQT |  4,980 | 4,980 | exact parity                                   |
+| Official PSAT 8/9             |  5,562 | 2,781 | every score was counted into both seasons      |
+| Practice PSAT 8/9 and PSAT10  |  4,107 |     0 | official scores carrying a practice label      |
+| Practice SAT                  |      0 |    30 | real practice scores that never had a join key |
+
+The PSAT 8/9 double-count came from the missing month binding: the tab carries
+grade 9 PSAT 8/9 in two seasons, Fall (October) and Spring (March), and every
+score matched both. All 927 students sat it in October, so the Spring rows were
+entirely fabricated. The March administration is real but has not happened yet —
+it is scheduled for 3 March 2027 — so that scaffold row is correctly empty until
+then.
+
+The practice rows were the same failure one level up: with `test_type` unbound,
+a practice scaffold row matched any official score sharing its score type. Both
+PSAT 8/9 and PSAT10 practice populations were identical to their official
+counterparts — same students, same score ranges — because they _were_ the
+official scores.
+
+!!! warning "Practice figures on the roster dashboard drop sharply"
+
+    Practice students fall from 899 to 10 and practice rows from 4,107 to 30.
+    Every row removed is fabricated and the 30 that remain are real, but anyone
+    watching the dashboard will see it as a collapse. Tell KIPP Forward before
+    they find it.
+
+## The two KIPP Forward Google Sheets extracts
+
+`rpt_gsheets__college_assessments_long` and
+`rpt_gsheets__college_assessments_wide` feed sheets KIPP Forward reads directly.
+Both were official-only until practice was added; practice is kept separate from
+official in each rather than mixed into it, because an attainment figure that
+silently blends a practice sitting with a real one is worse than no figure.
+
+### The long sheet carries a second type column, because the first one is taken
+
+It reads `int_assessments__all_college_assessments` now, so practice rows arrive
+alongside official ones. The discriminator is **`administration_type`**, holding
+`Official` or `Practice`.
+
+It could not be called `test_type`: that column already exists on this model and
+holds the **scope** — SAT, PSAT10 — via `scope as test_type` in the final
+select. Renaming it would break the enforced contract and every formula in the
+live sheet, so the new column took a new name rather than the obvious one.
+
+The change is purely additive. Official rows are identical to production scope
+by scope — PSAT 8/9 2,367, PSAT NMSQT 1,251, PSAT10 1,254, SAT 2,561 — with 33
+practice rows added.
+
+Its goals join is guarded by `test_kippfwd_goals_long_join_grain`. The view
+joins goals on test type and score type alone, with no academic year binding,
+and resolves its pivot with `any_value()`, so a second academic year stating a
+goal for a key that already has one would double every matching score row and
+pick a threshold arbitrarily. The goals model spans AY2023 and AY2026 today and
+stays unambiguous only because the 2023 rows are practice ACT while the 2026 ACT
+rows are official — a property of the data, not the model. The model's own
+uniqueness test carries `academic_year` and so cannot catch it.
+
+### The wide sheet names practice columns rather than renaming official ones
+
+Practice gets nine score columns, one per administration the tab carries — grade
+9 PSAT 8/9, grade 10 PSAT10, grade 11 SAT, all Fall — plus three practice
+attempt counts.
+
+Existing columns keep their names. Renaming them to `*_official` for symmetry
+was considered and rejected: the model is contract-enforced across 67 columns
+and feeds a live sheet, so a rename changes 40 contract entries and 40 headers
+under anyone with a formula referencing them, and buys only a label. The columns
+have always been official-only and still are. **Every score column without
+`practice` in its name is official.**
+
+### Two defects the practice work surfaced
+
+**The wide sheet was reporting practice sittings as official attempts.** It
+joined `int_students__college_assessment_participation_roster` without filtering
+`test_type`, a column that model only recently gained. Ten practice-only
+students were carrying a practice sitting in `sat_count_lifetime`. With the
+filter, `sat_count_lifetime` reconciles to production exactly minus the
+documented 86-student duplicate correction.
+
+**Its score columns keyed on score type, season and grade but not test type.**
+No column collided only because no practice PSAT data exists yet — the tab
+carries practice administrations at the same score type and grade as official
+ones, so the first practice PSAT scores would have landed silently in official
+columns. The score is now split by test type in the `roster` CTE, so each column
+picks from one side or the other:
+
+```sql
+if(ea.expected_test_type = 'Official', a.score, null) as official_score,
+if(ea.expected_test_type = 'Practice', a.score, null) as practice_score,
+```
+
+That shape was chosen over adding a predicate to each of the 39 `CASE` blocks,
+which is the same fix applied 39 times and 39 chances to miss one.
+
+### `sat_highlights` replaces three joins, on all three consumers
+
+`_dashboard_roster`, and both sheets, each left joined
+`int_assessments__college_assessment` three times — once for the SAT superscore,
+once for the highest EBRW, once for the highest Math — differing only by subject
+area. One CTE with conditional aggregation replaces all three, so each model
+scans that source once instead of three times.
+
+`rn_highest = 1` already yields exactly one row per student per subject area
+(1,974 Total, 1,414 EBRW, 1,414 Math, no fan-out), so the aggregate picks rather
+than collapses and every value is unchanged.
+
+The aggregate would absorb a future fan-out silently rather than surfacing it as
+duplicate rows. That is why `_dashboard_roster` now carries a uniqueness test on
+`(student_number, expected_field_name_score_category)` — it had none at all
+before, which repo convention requires of every `rpt_` model.
+
 ## Resolved — grade 9 and 10 AY2023 SAT is excluded from reporting
 
 **Decision: those administrations are not valid and are not reported.** Ninth
