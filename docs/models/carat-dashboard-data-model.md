@@ -1162,7 +1162,7 @@ Practice gets nine score columns, one per administration the tab carries — gra
 attempt counts.
 
 Existing columns keep their names. Renaming them to `*_official` for symmetry
-was considered and rejected: the model is contract-enforced across 68 columns
+was considered and rejected: the model is contract-enforced across 67 columns
 and feeds a live sheet, so a rename changes 40 contract entries and 40 headers
 under anyone with a formula referencing them, and buys only a label. The columns
 have always been official-only and still are. **Every score column without
